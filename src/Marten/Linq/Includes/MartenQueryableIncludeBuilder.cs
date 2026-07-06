@@ -52,7 +52,7 @@ internal class MartenQueryableIncludeBuilder<T, TInclude>: IMartenQueryableInclu
     internal IIncludePlan BuildInclude(Expression<Func<T, object>> idSource, Expression? where = null)
     {
         var storage = (IDocumentStorage<TInclude>)_martenLinqQueryable.Session.StorageFor(typeof(TInclude));
-        var identityMember = _martenLinqQueryable.Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
+        var identityMember = ((ILinqDocumentStorage)_martenLinqQueryable.Session.StorageFor(typeof(T))).QueryMembers.MemberFor(idSource);
 
         var include = new IncludePlan<TInclude>(storage, identityMember, _callback) { Where = where };
 
@@ -65,8 +65,8 @@ internal class MartenQueryableIncludeBuilder<T, TInclude>: IMartenQueryableInclu
         Expression? where = null)
     {
         var storage = (IDocumentStorage<TInclude>)_martenLinqQueryable.Session.StorageFor(typeof(TInclude));
-        var identityMember = _martenLinqQueryable.Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
-        var mappingMember = _martenLinqQueryable.Session.StorageFor(typeof(TInclude)).QueryMembers.MemberFor(idMapping);
+        var identityMember = ((ILinqDocumentStorage)_martenLinqQueryable.Session.StorageFor(typeof(T))).QueryMembers.MemberFor(idSource);
+        var mappingMember = ((ILinqDocumentStorage)_martenLinqQueryable.Session.StorageFor(typeof(TInclude))).QueryMembers.MemberFor(idMapping);
 
         var include = new IncludePlan<TInclude>(storage, identityMember, mappingMember, _callback) { Where = where };
 
@@ -177,7 +177,7 @@ internal class MartenQueryableIncludeBuilder<T, TKey, TInclude>
         var storage = (IDocumentStorage<TInclude>)_martenLinqQueryable.Session.StorageFor(typeof(TInclude));
         if (storage is IDocumentStorage<TInclude, TKey> typedStorage)
         {
-            var identityMember = _martenLinqQueryable.Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
+            var identityMember = ((ILinqDocumentStorage)_martenLinqQueryable.Session.StorageFor(typeof(T))).QueryMembers.MemberFor(idSource);
 
             void Callback(TInclude item)
             {
@@ -206,8 +206,8 @@ internal class MartenQueryableIncludeBuilder<T, TKey, TInclude>
 
         var storage = (IDocumentStorage<TInclude>)_martenLinqQueryable.Session.StorageFor(typeof(TInclude));
 
-        var identityMember = _martenLinqQueryable.Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
-        var mappingMember = _martenLinqQueryable.Session.StorageFor(typeof(TInclude)).QueryMembers.MemberFor(idMapping);
+        var identityMember = ((ILinqDocumentStorage)_martenLinqQueryable.Session.StorageFor(typeof(T))).QueryMembers.MemberFor(idSource);
+        var mappingMember = ((ILinqDocumentStorage)_martenLinqQueryable.Session.StorageFor(typeof(TInclude))).QueryMembers.MemberFor(idMapping);
 
         return new IncludePlan<TInclude>(storage, identityMember, mappingMember, Callback);
     }
@@ -230,8 +230,8 @@ internal class MartenQueryableIncludeBuilder<T, TKey, TInclude>
 
         var storage = (IDocumentStorage<TInclude>)_martenLinqQueryable.Session.StorageFor(typeof(TInclude));
 
-        var identityMember = _martenLinqQueryable.Session.StorageFor(typeof(T)).QueryMembers.MemberFor(idSource);
-        var mappingMember = _martenLinqQueryable.Session.StorageFor(typeof(TInclude)).QueryMembers.MemberFor(idMapping);
+        var identityMember = ((ILinqDocumentStorage)_martenLinqQueryable.Session.StorageFor(typeof(T))).QueryMembers.MemberFor(idSource);
+        var mappingMember = ((ILinqDocumentStorage)_martenLinqQueryable.Session.StorageFor(typeof(TInclude))).QueryMembers.MemberFor(idMapping);
 
         return new IncludePlan<TInclude>(storage, identityMember, mappingMember, Callback);
     }

@@ -26,7 +26,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal.Storage;
 
-internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>, IHaveMetadataColumns
+internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>, ILinqDocumentStorage, IHaveMetadataColumns
     where T : notnull, TRoot where TId : notnull where TRoot : notnull
 {
     private readonly ISqlFragment? _defaultWhere;

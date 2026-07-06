@@ -48,8 +48,6 @@ public interface IDocumentStorage: ISelectClause
 
     ISqlFragment? DefaultWhereFragment();
 
-    IQueryableMemberCollection QueryMembers { get; }
-
     /// <summary>
     /// Necessary (maybe) for usage within the temporary tables when using Includes()
     /// </summary>

@@ -56,7 +56,7 @@ internal interface IValueTypeStorage<TDoc, TValueType>
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>,  IValueTypeStorage<TDoc, TValueType> where TDoc : notnull where TSimple : notnull where TValueType : notnull
+internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>, ILinqDocumentStorage, IValueTypeStorage<TDoc, TValueType> where TDoc : notnull where TSimple : notnull where TValueType : notnull
 {
     private readonly Func<TSimple, TValueType> _converter;
     private readonly Func<TValueType,TSimple> _unwrapper;
@@ -110,7 +110,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public ISqlFragment DefaultWhereFragment()
         => Inner.DefaultWhereFragment();
 
-    public IQueryableMemberCollection QueryMembers => Inner.QueryMembers;
+    public IQueryableMemberCollection QueryMembers => ((ILinqDocumentStorage)Inner).QueryMembers;
     public ISelectClause SelectClauseWithDuplicatedFields => Inner.SelectClauseWithDuplicatedFields;
     public bool UseNumericRevisions => Inner.UseNumericRevisions;
     public object RawIdentityValue(object id) => Inner.RawIdentityValue(id);

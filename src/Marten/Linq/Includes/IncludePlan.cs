@@ -82,7 +82,7 @@ internal class IncludePlan<T>: IIncludePlan where T : notnull
             }
 
 
-            var parser = new WhereClauseParser(((IMartenSession)martenSession).Options, _storage.QueryMembers, filters);
+            var parser = new WhereClauseParser(((IMartenSession)martenSession).Options, ((ILinqDocumentStorage)_storage).QueryMembers, filters);
             parser.Visit(body);
         }
 

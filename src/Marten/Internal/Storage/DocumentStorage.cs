@@ -42,7 +42,7 @@ internal interface IHaveMetadataColumns
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMetadataColumns where T : notnull where TId : notnull
+public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDocumentStorage, IHaveMetadataColumns where T : notnull where TId : notnull
 {
     protected readonly string _loadArraySql;
     protected readonly string _loaderSql;
