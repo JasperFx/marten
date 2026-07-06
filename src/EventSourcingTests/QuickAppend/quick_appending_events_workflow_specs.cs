@@ -23,6 +23,8 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
+using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
+using ISqlFragment = Weasel.Postgresql.SqlGeneration.ISqlFragment;
 using Xunit;
 
 namespace EventSourcingTests.QuickAppend;

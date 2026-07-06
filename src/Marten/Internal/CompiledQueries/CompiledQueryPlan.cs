@@ -154,7 +154,7 @@ public class CompiledQueryPlan : ICommandBuilder
 
     private CommandPlan _current;
 
-    string ICommandBuilder.LastParameterName => _current.Parameters.LastOrDefault()?.Parameter.ParameterName;
+    string Weasel.Core.ICommandBuilder.LastParameterName => _current.Parameters.LastOrDefault()?.Parameter.ParameterName;
 
     private CommandPlan appendCommand()
     {
@@ -164,14 +164,14 @@ public class CompiledQueryPlan : ICommandBuilder
         return plan;
     }
 
-    void ICommandBuilder.Append(string sql)
+    void Weasel.Core.ICommandBuilder.Append(string sql)
     {
         _current ??= appendCommand();
 
         _current.CommandText += sql;
     }
 
-    void ICommandBuilder.Append(char character)
+    void Weasel.Core.ICommandBuilder.Append(char character)
     {
         _current ??= appendCommand();
         _current.CommandText += character;
@@ -237,7 +237,7 @@ public class CompiledQueryPlan : ICommandBuilder
         return usage.Parameter;
     }
 
-    void ICommandBuilder.AppendParameters(params object[] parameters)
+    void Weasel.Core.ICommandBuilder.AppendParameters(params object[] parameters)
     {
         _current ??= appendCommand();
         throw new NotSupportedException();
@@ -286,18 +286,18 @@ public class CompiledQueryPlan : ICommandBuilder
 
     // weasel#324: DbParameter[]-returning overloads. The recorded parameters are NpgsqlParameters,
     // which are DbParameters — delegate to the existing recording logic and return via array covariance.
-    DbParameter[] ICommandBuilder.AppendWithDbParameters(string text)
+    DbParameter[] Weasel.Core.ICommandBuilder.AppendWithDbParameters(string text)
         => ((ICommandBuilder)this).AppendWithParameters(text);
 
-    DbParameter[] ICommandBuilder.AppendWithDbParameters(string text, char placeholder)
+    DbParameter[] Weasel.Core.ICommandBuilder.AppendWithDbParameters(string text, char placeholder)
         => ((ICommandBuilder)this).AppendWithParameters(text, placeholder);
 
-    void ICommandBuilder.StartNewCommand()
+    void Weasel.Core.ICommandBuilder.StartNewCommand()
     {
         _current = appendCommand();
     }
 
-    void ICommandBuilder.AddParameters(object parameters)
+    void Weasel.Core.ICommandBuilder.AddParameters(object parameters)
     {
         throw new NotSupportedException(
             "No, just no. Marten does not support parameters via anonymous objects in compiled queries");
