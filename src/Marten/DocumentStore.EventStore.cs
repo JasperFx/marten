@@ -65,13 +65,17 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         }
     }
 
-    // wolverine#3280: under sharded databases + per-tenant event partitioning, multiple tenants are
-    // co-located in one shard database and each draws its own mt_events_sequence_<tenant> (independent,
-    // overlapping). A single store-global high-water cannot track them, so node-distributed daemons must
-    // fan out one agent per (shard, tenant). Single-database partitioning and database-per-tenant do NOT
-    // need this (one agent per database already covers a single tenant or the single partitioned table).
+    // wolverine#3280 + #4862: under per-tenant event partitioning every tenant draws its own
+    // mt_events_sequence_<tenant> — independent, overlapping sequences co-located in the one events
+    // table. That is true for ANY database topology (a single conjoined database exactly as much as a
+    // shard housing multiple tenants), so a store-global agent has no correct progression semantics:
+    // the store-global high water is the max across partitions and silently skips a lagging tenant's
+    // events (#4862). Hosts that start agents per-identity (Wolverine-managed distribution's
+    // StartAgentAsync) must therefore fan out one agent per (database, tenant) whenever the store is
+    // tenant-partitioned. The native daemon is unaffected either way — its StartAllAsync already fans
+    // out per tenant internally.
     bool IEventStore.DistributesAgentsPerTenant
-        => Options.Events.UseTenantPartitionedEvents && Options.Tenancy is Storage.ShardedTenancy;
+        => Options.Events.UseTenantPartitionedEvents;
 
     async ValueTask<IReadOnlyList<IEventDatabase>> IEventStore.AllDatabases()
     {

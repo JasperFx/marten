@@ -8,17 +8,18 @@ using Xunit;
 namespace TenantPartitionedEventsTests.Config;
 
 /// <summary>
-/// wolverine#3280 — how <see cref="IEventStore.DistributesAgentsPerTenant"/> is gated. It only turns on
-/// for a sharded per-tenant-partitioned store (the one tenancy where multiple tenants are co-located in a
-/// shard database with independent per-tenant sequences, so node-distributed daemons must fan agents out
-/// per (shard, tenant)). Everywhere else it stays false so distribution behaves exactly as before: one
-/// agent per database. These are pure configuration assertions — building the store never opens a
-/// connection.
+/// wolverine#3280 + #4862 — how <see cref="IEventStore.DistributesAgentsPerTenant"/> is gated. It turns
+/// on for ANY per-tenant-partitioned store: independent, overlapping mt_events_sequence_&lt;tenant&gt;
+/// sequences co-located in one events table mean a store-global agent has no correct progression
+/// semantics, whether that table lives in a single conjoined database or a shard (#4862 showed the
+/// single-DB case silently skipping a lagging tenant's events under Wolverine-managed distribution).
+/// Without partitioning it stays false so distribution behaves exactly as before: one agent per
+/// database. These are pure configuration assertions — building the store never opens a connection.
 /// </summary>
 public class distributes_agents_per_tenant_gating
 {
     [Fact]
-    public void off_on_a_single_database_store_even_with_per_tenant_partitioning()
+    public void on_for_a_single_database_store_with_per_tenant_partitioning()
     {
         using var store = DocumentStore.For(opts =>
         {
@@ -27,8 +28,23 @@ public class distributes_agents_per_tenant_gating
             opts.Events.UseTenantPartitionedEvents = true;
         });
 
+        // #4862: flipped from false. Per-tenant sequences overlap in the single events table
+        // exactly as co-located tenants do in a shard, so per-identity agent starts must fan
+        // out per tenant here too.
         ((IEventStore)store).DistributesAgentsPerTenant
-            .ShouldBeFalse("a single-database store keeps one agent per database");
+            .ShouldBeTrue("single-database per-tenant partitioning still has overlapping per-tenant sequences");
+    }
+
+    [Fact]
+    public void off_by_default_on_a_plain_single_database_store()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+        });
+
+        ((IEventStore)store).DistributesAgentsPerTenant
+            .ShouldBeFalse("without per-tenant partitioning there is a single store-global sequence");
     }
 
     [Fact]
