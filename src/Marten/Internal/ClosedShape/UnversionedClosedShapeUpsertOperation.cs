@@ -5,9 +5,10 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Operations;
-using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -35,7 +36,7 @@ internal sealed class UnversionedClosedShapeUpsertOperation<TDoc, TId>: ClosedSh
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.UpsertSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.UpsertSql, '?');
         BindPreOnConflictParameters(parameters, session);
         // Off-mode UpsertSql has no trailing concurrency-extras slot.
     }
@@ -43,7 +44,7 @@ internal sealed class UnversionedClosedShapeUpsertOperation<TDoc, TId>: ClosedSh
     public override Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
         => Task.CompletedTask;
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
+    protected override int BindClientSideBinder(DbParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         binder.BindParameter(parameters[slot], _document, session);
         return slot + 1;

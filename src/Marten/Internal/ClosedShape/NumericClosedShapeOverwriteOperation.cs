@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -38,15 +38,15 @@ internal sealed class NumericClosedShapeOverwriteOperation<TDoc, TId>: ClosedSha
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.OverwriteSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.OverwriteSql, '?');
         var slot = BindPreOnConflictParameters(parameters, session);
 
         // DO UPDATE SET mt_version = CASE WHEN ? = 0 THEN current+1 ELSE ? END
         // No WHERE guard — Overwrite always wins.
         parameters[slot].Value = Revision;
-        parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
+        _descriptor.Dialect.SetParameterType(parameters[slot], StorageColumnType.Long);
         parameters[slot + 1].Value = Revision;
-        parameters[slot + 1].NpgsqlDbType = NpgsqlDbType.Bigint;
+        _descriptor.Dialect.SetParameterType(parameters[slot + 1], StorageColumnType.Long);
     }
 
     public override async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
@@ -65,17 +65,17 @@ internal sealed class NumericClosedShapeOverwriteOperation<TDoc, TId>: ClosedSha
         }
     }
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
+    protected override int BindClientSideBinder(DbParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         if (ReferenceEquals(binder, _descriptor.RevisionBinder))
         {
             // INSERT VALUES CASE block — same shape as NumericClosedShapeUpsertOperation.
-            var revisionDbType = _descriptor.RevisionBinder!.ColumnDbType;
-            var revisionValue = revisionDbType == NpgsqlDbType.Integer
+            var revisionColumnType = _descriptor.RevisionBinder!.RevisionColumnType;
+            var revisionValue = revisionColumnType == StorageColumnType.Int
                 ? (object)checked((int)Revision)
                 : Revision;
             parameters[slot].Value = revisionValue;
-            parameters[slot].NpgsqlDbType = revisionDbType;
+            _descriptor.Dialect.SetParameterType(parameters[slot], revisionColumnType);
             slot++;
 
             if (_descriptor.UseVersionFromMatchingStream)
@@ -84,7 +84,7 @@ internal sealed class NumericClosedShapeOverwriteOperation<TDoc, TId>: ClosedSha
             }
 
             parameters[slot].Value = revisionValue;
-            parameters[slot].NpgsqlDbType = revisionDbType;
+            _descriptor.Dialect.SetParameterType(parameters[slot], revisionColumnType);
             return slot + 1;
         }
 

@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
 using Marten.Exceptions;
-using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -42,7 +42,7 @@ internal sealed class OptimisticClosedShapeInsertOperation<TDoc, TId>: ClosedSha
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.InsertSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.InsertSql, '?');
         var slot = BindLeadingParameters(parameters, session);
 
         foreach (var binder in _descriptor.ClientSideWriteBinders)
@@ -50,7 +50,7 @@ internal sealed class OptimisticClosedShapeInsertOperation<TDoc, TId>: ClosedSha
             if (ReferenceEquals(binder, _descriptor.VersionBinder))
             {
                 parameters[slot].Value = _newVersion;
-                parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
+                _descriptor.Dialect.SetParameterType(parameters[slot], StorageColumnType.Guid);
                 _descriptor.VersionBinder!.ApplyVersionTo(_document, _newVersion);
             }
             else

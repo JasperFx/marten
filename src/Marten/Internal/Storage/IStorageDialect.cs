@@ -55,4 +55,18 @@ public interface IStorageDialect
     ///     hasn't been created yet) — the one provider error code the storage base swallows.
     /// </summary>
     bool IsUndefinedTable(Exception exception);
+
+    /// <summary>
+    ///     Set the provider parameter type on a write parameter for a fixed <see cref="StorageColumnType"/>.
+    ///     Lets the (Npgsql-typed-array) closed-shape operations bind id/tenant/version/revision slots as
+    ///     <see cref="DbParameter"/> without naming a provider type (#4828 / weasel#324).
+    /// </summary>
+    void SetParameterType(DbParameter parameter, StorageColumnType type);
+
+    /// <summary>
+    ///     Set the provider parameter type for a document id slot from the .NET type of the raw id value
+    ///     (Postgres maps it via <c>ToParameterType</c>). Distinct from <see cref="SetParameterType"/>
+    ///     because an id can be any supported scalar / strong-typed-id inner type.
+    /// </summary>
+    void SetIdParameterType(DbParameter parameter, Type rawSqlType);
 }

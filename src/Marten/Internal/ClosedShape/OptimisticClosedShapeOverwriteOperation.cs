@@ -6,10 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
-using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -43,7 +43,7 @@ internal sealed class OptimisticClosedShapeOverwriteOperation<TDoc, TId>: Closed
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.OverwriteSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.OverwriteSql, '?');
         BindPreOnConflictParameters(parameters, session);
         // Overwrite drops the trailing concurrency-guard slot vs Upsert.
     }
@@ -63,12 +63,12 @@ internal sealed class OptimisticClosedShapeOverwriteOperation<TDoc, TId>: Closed
         }
     }
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
+    protected override int BindClientSideBinder(DbParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         if (ReferenceEquals(binder, _descriptor.VersionBinder))
         {
             parameters[slot].Value = _newVersion;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
+            _descriptor.Dialect.SetParameterType(parameters[slot], StorageColumnType.Guid);
             _descriptor.VersionBinder!.ApplyVersionTo(_document, _newVersion);
             return slot + 1;
         }

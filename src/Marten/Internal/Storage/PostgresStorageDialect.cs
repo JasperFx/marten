@@ -61,4 +61,20 @@ internal sealed class PostgresStorageDialect<TId>: IStorageDialect
 
     public bool IsUndefinedTable(Exception exception)
         => exception is PostgresException pg && pg.SqlState == PostgresErrorCodes.UndefinedTable;
+
+    public void SetParameterType(DbParameter parameter, StorageColumnType type)
+        => ((NpgsqlParameter)parameter).NpgsqlDbType = type switch
+        {
+            StorageColumnType.String => NpgsqlDbType.Varchar,
+            StorageColumnType.Guid => NpgsqlDbType.Uuid,
+            StorageColumnType.Long => NpgsqlDbType.Bigint,
+            StorageColumnType.Int => NpgsqlDbType.Integer,
+            StorageColumnType.Boolean => NpgsqlDbType.Boolean,
+            StorageColumnType.Timestamp => NpgsqlDbType.TimestampTz,
+            StorageColumnType.Json => NpgsqlDbType.Jsonb,
+            _ => throw new ArgumentOutOfRangeException(nameof(type))
+        };
+
+    public void SetIdParameterType(DbParameter parameter, Type rawSqlType)
+        => ((NpgsqlParameter)parameter).NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(rawSqlType);
 }

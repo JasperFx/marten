@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 using JasperFx;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
-using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -43,7 +43,7 @@ internal sealed class NumericClosedShapeUpsertOperation<TDoc, TId>: ClosedShapeU
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.UpsertSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.UpsertSql, '?');
         var slot = BindPreOnConflictParameters(parameters, session);
 
         // ON CONFLICT trailing:
@@ -52,7 +52,7 @@ internal sealed class NumericClosedShapeUpsertOperation<TDoc, TId>: ClosedShapeU
         for (var i = 0; i < 4; i++)
         {
             parameters[slot + i].Value = Revision;
-            parameters[slot + i].NpgsqlDbType = NpgsqlDbType.Bigint;
+            _descriptor.Dialect.SetParameterType(parameters[slot + i], StorageColumnType.Long);
         }
     }
 
@@ -78,18 +78,18 @@ internal sealed class NumericClosedShapeUpsertOperation<TDoc, TId>: ClosedShapeU
         _descriptor.RevisionBinder!.ApplyRevisionTo(_document, newRevision);
     }
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
+    protected override int BindClientSideBinder(DbParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         if (ReferenceEquals(binder, _descriptor.RevisionBinder))
         {
             // INSERT VALUES CASE block — see NumericClosedShapeInsertOperation
             // for the slot-count rationale.
-            var revisionDbType = _descriptor.RevisionBinder!.ColumnDbType;
-            var revisionValue = revisionDbType == NpgsqlDbType.Integer
+            var revisionColumnType = _descriptor.RevisionBinder!.RevisionColumnType;
+            var revisionValue = revisionColumnType == StorageColumnType.Int
                 ? (object)checked((int)Revision)
                 : Revision;
             parameters[slot].Value = revisionValue;
-            parameters[slot].NpgsqlDbType = revisionDbType;
+            _descriptor.Dialect.SetParameterType(parameters[slot], revisionColumnType);
             slot++;
 
             if (_descriptor.UseVersionFromMatchingStream)
@@ -98,7 +98,7 @@ internal sealed class NumericClosedShapeUpsertOperation<TDoc, TId>: ClosedShapeU
             }
 
             parameters[slot].Value = revisionValue;
-            parameters[slot].NpgsqlDbType = revisionDbType;
+            _descriptor.Dialect.SetParameterType(parameters[slot], revisionColumnType);
             return slot + 1;
         }
 

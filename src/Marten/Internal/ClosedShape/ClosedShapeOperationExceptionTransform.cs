@@ -3,6 +3,11 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using JasperFx;
 using Marten.Exceptions;
+
+using Marten.Internal.Storage;
+
+using System.Data.Common;
+
 using Npgsql;
 
 namespace Marten.Internal.ClosedShape;

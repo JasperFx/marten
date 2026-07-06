@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
 using Marten.Exceptions;
-using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -43,7 +43,7 @@ internal sealed class OptimisticClosedShapeUpdateOperation<TDoc, TId>: ClosedSha
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.UpdateSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.UpdateSql, '?');
         var slot = BindPreConcurrencyParameters(parameters, session);
 
         // Trailing WHERE mt_version = ? guard. #4667 — null tracker (the
@@ -59,7 +59,7 @@ internal sealed class OptimisticClosedShapeUpdateOperation<TDoc, TId>: ClosedSha
         {
             parameters[slot].Value = DBNull.Value;
         }
-        parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
+        _descriptor.Dialect.SetParameterType(parameters[slot], StorageColumnType.Guid);
     }
 
     public override async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
@@ -82,12 +82,12 @@ internal sealed class OptimisticClosedShapeUpdateOperation<TDoc, TId>: ClosedSha
         }
     }
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
+    protected override int BindClientSideBinder(DbParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         if (ReferenceEquals(binder, _descriptor.VersionBinder))
         {
             parameters[slot].Value = _newVersion;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
+            _descriptor.Dialect.SetParameterType(parameters[slot], StorageColumnType.Guid);
             _descriptor.VersionBinder!.ApplyVersionTo(_document, _newVersion);
             return slot + 1;
         }

@@ -71,13 +71,12 @@ internal static class DocumentStorageDescriptorBuilder
             // Numeric revisions: mt_version is bigint (default) or integer (#4614,
             // when IRevisioned-backed). Revision and Version columns share the same
             // physical column name so never both enabled — the validation in
-            // DocumentMapping enforces it. The binder's parameter NpgsqlDbType has to
-            // match the column width so the CASE-in-VALUES bind doesn't trip Postgres'
-            // strict type check.
-            var revisionDbType = mapping.Metadata.Revision is Marten.Storage.Metadata.RevisionColumnInt32
-                ? NpgsqlTypes.NpgsqlDbType.Integer
-                : NpgsqlTypes.NpgsqlDbType.Bigint;
-            revisionBinder = new DocumentRevisionBinder<TDoc>(mapping.Metadata.Revision.Member, revisionDbType);
+            // DocumentMapping enforces it. The binder's column type has to match the
+            // column width so the CASE-in-VALUES bind doesn't trip Postgres' strict type check.
+            var revisionColumnType = mapping.Metadata.Revision is Marten.Storage.Metadata.RevisionColumnInt32
+                ? StorageColumnType.Int
+                : StorageColumnType.Long;
+            revisionBinder = new DocumentRevisionBinder<TDoc>(mapping.Metadata.Revision.Member, revisionColumnType);
             writeBinders.Add(revisionBinder);
 
             // RevisionColumn.ShouldSelect: Member != null OR (!QueryOnly && UseNumericRevisions)

@@ -6,9 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten.Exceptions;
-using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -34,7 +35,7 @@ internal sealed class UnversionedClosedShapeInsertOperation<TDoc, TId>: ClosedSh
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.InsertSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.InsertSql, '?');
         var slot = BindLeadingParameters(parameters, session);
 
         // Off mode: every client-side write binder binds its single slot.

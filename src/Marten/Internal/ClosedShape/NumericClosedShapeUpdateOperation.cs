@@ -6,10 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten.Exceptions;
-using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -39,19 +39,19 @@ internal sealed class NumericClosedShapeUpdateOperation<TDoc, TId>: ClosedShapeU
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.UpdateSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.UpdateSql, '?');
         var slot = BindPreConcurrencyParameters(parameters, session);
 
         // Trailing WHERE (? = 0 or {table}.mt_version < ?) — bind the raw
         // Revision to both slots. #4614: parameter type tracks column width.
-        var revisionDbType = _descriptor.RevisionBinder!.ColumnDbType;
-        var revisionValue = revisionDbType == NpgsqlDbType.Integer
+        var revisionColumnType = _descriptor.RevisionBinder!.RevisionColumnType;
+        var revisionValue = revisionColumnType == StorageColumnType.Int
             ? (object)checked((int)Revision)
             : Revision;
         parameters[slot].Value = revisionValue;
-        parameters[slot].NpgsqlDbType = revisionDbType;
+        _descriptor.Dialect.SetParameterType(parameters[slot], revisionColumnType);
         parameters[slot + 1].Value = revisionValue;
-        parameters[slot + 1].NpgsqlDbType = revisionDbType;
+        _descriptor.Dialect.SetParameterType(parameters[slot + 1], revisionColumnType);
     }
 
     public override async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
@@ -76,20 +76,20 @@ internal sealed class NumericClosedShapeUpdateOperation<TDoc, TId>: ClosedShapeU
         _descriptor.RevisionBinder!.ApplyRevisionTo(_document, newRevision);
     }
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
+    protected override int BindClientSideBinder(DbParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         if (ReferenceEquals(binder, _descriptor.RevisionBinder))
         {
             // SET mt_version = CASE WHEN ? = 0 THEN current+1 ELSE ? END
             // (2 slots — Update side never uses UseVersionFromMatchingStream)
-            var revisionDbType = _descriptor.RevisionBinder!.ColumnDbType;
-            var revisionValue = revisionDbType == NpgsqlDbType.Integer
+            var revisionColumnType = _descriptor.RevisionBinder!.RevisionColumnType;
+            var revisionValue = revisionColumnType == StorageColumnType.Int
                 ? (object)checked((int)Revision)
                 : Revision;
             parameters[slot].Value = revisionValue;
-            parameters[slot].NpgsqlDbType = revisionDbType;
+            _descriptor.Dialect.SetParameterType(parameters[slot], revisionColumnType);
             parameters[slot + 1].Value = revisionValue;
-            parameters[slot + 1].NpgsqlDbType = revisionDbType;
+            _descriptor.Dialect.SetParameterType(parameters[slot + 1], revisionColumnType);
             return slot + 2;
         }
 

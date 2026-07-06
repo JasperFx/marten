@@ -5,10 +5,10 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Operations;
-using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -85,18 +85,18 @@ internal abstract class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageO
     /// Correlation / Causation / Headers / LastModifiedBy etc. land on
     /// the document so they flow into the JSON data column too.
     /// </remarks>
-    protected int BindLeadingParameters(NpgsqlParameter[] parameters, IStorageSession session)
+    protected int BindLeadingParameters(DbParameter[] parameters, IStorageSession session)
     {
         var slot = 0;
         if (_descriptor.IsConjoined)
         {
             parameters[slot].Value = _tenantId;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
+            _descriptor.Dialect.SetParameterType(parameters[slot], StorageColumnType.String);
             slot++;
         }
 
         parameters[slot].Value = _descriptor.Identification.ToRawSqlValue(_id);
-        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
+        _descriptor.Dialect.SetIdParameterType(parameters[slot], _descriptor.Identification.RawSqlType);
         slot++;
 
         foreach (var binder in _descriptor.WriteBinders)
@@ -116,16 +116,16 @@ internal abstract class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageO
     /// CASE expression. Returns the next free slot. Common to the
     /// Numeric variants of Insert / Upsert / Overwrite.
     /// </summary>
-    protected int BindUseVersionFromMatchingStreamSubquery(NpgsqlParameter[] parameters, int slot)
+    protected int BindUseVersionFromMatchingStreamSubquery(DbParameter[] parameters, int slot)
     {
         parameters[slot].Value = _descriptor.Identification.ToRawSqlValue(_id);
-        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
+        _descriptor.Dialect.SetIdParameterType(parameters[slot], _descriptor.Identification.RawSqlType);
         slot++;
 
         if (_descriptor.IsConjoined)
         {
             parameters[slot].Value = _tenantId;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
+            _descriptor.Dialect.SetParameterType(parameters[slot], StorageColumnType.String);
             slot++;
         }
 
