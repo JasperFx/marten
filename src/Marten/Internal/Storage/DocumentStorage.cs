@@ -264,7 +264,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public Type SourceType => typeof(T);
 
 
-    public abstract TId AssignIdentity(T document, string tenantId, IMartenDatabase database);
+    public abstract TId AssignIdentity(T document, string tenantId, IStorageDatabase database);
 
     public DbObjectName TableName { get; }
 

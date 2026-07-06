@@ -33,7 +33,7 @@ public interface IStorageSession: IMetadataContext
 {
     IStorageSerializer Serializer { get; }
 
-    IMartenDatabase Database { get; }
+    IStorageDatabase Database { get; }
 
     IVersionTracker Versions { get; }
 

@@ -60,6 +60,11 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
 
     public IMartenDatabase Database { get; protected set; }
 
+    // #4827: the public IMartenDatabase satisfies IMartenSession.Database (new IMartenDatabase);
+    // this explicit impl satisfies the narrower IStorageSession.Database (IStorageDatabase) —
+    // interface implementation needs an exact return type, and IMartenDatabase : IStorageDatabase.
+    IStorageDatabase IStorageSession.Database => Database;
+
 
 #nullable enable
 

@@ -177,7 +177,7 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T>, IIdentitySetter<
     Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token);
 
 
-    TId AssignIdentity(T document, string tenantId, IMartenDatabase database);
+    TId AssignIdentity(T document, string tenantId, IStorageDatabase database);
     ISqlFragment ByIdFilter(TId id);
     IDeletion HardDeleteForId(TId id, string tenantId);
     NpgsqlCommand BuildLoadCommand(TId id, string tenantId);

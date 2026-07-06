@@ -188,7 +188,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public Task<IReadOnlyList<TDoc>> LoadManyProjectedAsync(TSimple[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
         => Inner.LoadManyProjectedAsync(ids.Select(_converter).ToArray(), database, tenantId, token);
 
-    public TSimple AssignIdentity(TDoc document, string tenantId, IMartenDatabase database)
+    public TSimple AssignIdentity(TDoc document, string tenantId, IStorageDatabase database)
         => _unwrapper(Inner.AssignIdentity(document, tenantId, database));
 
     public TSimple Identity(TDoc document) => _unwrapper(Inner.Identity(document));

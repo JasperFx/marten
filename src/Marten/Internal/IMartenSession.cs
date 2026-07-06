@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten.Events;
+using Marten.Storage;
 using Npgsql;
 
 namespace Marten.Internal;
@@ -24,6 +25,12 @@ public interface IMartenSession: IDisposable, IAsyncDisposable, IStorageSession
     // #4826: the closed-shape storage runtime never reads StoreOptions off the session, so Options
     // stays on IMartenSession, not the agnostic IStorageSession contract (LINQ reads it via IMartenSession).
     StoreOptions Options { get; }
+
+    // #4827: closed-shape storage sees the agnostic IStorageDatabase via IStorageSession (provider
+    // graph + sequence source); Marten's own code (projection read path, admin) keeps the full
+    // Npgsql-typed IMartenDatabase here. Every Marten session returns an IMartenDatabase, which
+    // satisfies both since IMartenDatabase : IStorageDatabase.
+    new IMartenDatabase Database { get; }
 
     IEventStorage EventStorage();
 
