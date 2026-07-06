@@ -15,6 +15,6 @@ namespace Marten.Internal.DirtyTracking;
 public interface IChangeTracker
 {
     object Document { get; }
-    bool DetectChanges(IMartenSession session, [NotNullWhen(true)]out IStorageOperation?  operation);
-    void Reset(IMartenSession session);
+    bool DetectChanges(IStorageSession session, [NotNullWhen(true)]out IStorageOperation?  operation);
+    void Reset(IStorageSession session);
 }
