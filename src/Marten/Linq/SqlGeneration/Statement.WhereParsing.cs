@@ -54,7 +54,7 @@ public abstract partial class Statement: IWhereFragmentHolder
             return;
         }
 
-        var parser = new WhereClauseParser(session.Options, collection, this);
+        var parser = new WhereClauseParser(((IMartenSession)session).Options, collection, this);
         foreach (var expression in wheres) parser.Visit(expression);
 
         if (storage != null)

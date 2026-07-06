@@ -20,16 +20,16 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         CancellationToken cancellation = default)
     {
         IDocumentStorage<TDoc, TId>? storage = null;
-        if (session.Options.Events.UseIdentityMapForAggregates)
+        if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
         {
-            storage = session.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
+            storage = ((IMartenSession)session).Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
             // Opt into the identity map mechanics for this aggregate type just in case
             // you're using a lightweight session
             session.UseIdentityMapFor<TDoc>();
         }
         else
         {
-            storage = session.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(session.TrackingMode);
+            storage = ((IMartenSession)session).Options.ResolveCorrectedDocumentStorage<TDoc, TId>(session.TrackingMode);
         }
 
         await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
@@ -87,7 +87,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
 
             // As an optimization, put the document in the identity map for later
-            if (document != null && session.Options.Events.UseIdentityMapForAggregates)
+            if (document != null && ((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
             {
                 session.StoreDocumentInItemMap(id, document);
             }

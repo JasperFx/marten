@@ -18,7 +18,7 @@ internal partial class FetchLivePlan<TDoc, TId>
     public async ValueTask<TDoc?> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
         // Optimization for having called FetchForWriting, then FetchLatest on same session in short order
-        if (session.Options.Events.UseIdentityMapForAggregates)
+        if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
         {
             if (session.TryGetAggregateFromIdentityMap<IEventStream<TDoc>, TId>(id, out var stream))
             {

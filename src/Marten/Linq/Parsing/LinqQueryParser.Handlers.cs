@@ -10,6 +10,8 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql.SqlGeneration;
 using System.Diagnostics.CodeAnalysis;
 
+using Marten.Internal;
+
 namespace Marten.Linq.Parsing;
 
 [UnconditionalSuppressMessage("Trimming", "IL2067",
@@ -68,7 +70,7 @@ internal partial class LinqQueryParser
     {
         if (!_collectionUsages.Any())
         {
-            var usage = new CollectionUsage(Session.Options, _provider.SourceType);
+            var usage = new CollectionUsage(((IMartenSession)Session).Options, _provider.SourceType);
             _collectionUsages.Insert(0, usage);
         }
 
@@ -101,7 +103,7 @@ internal partial class LinqQueryParser
     {
         if (!_collectionUsages.Any())
         {
-            var usage = new CollectionUsage(Session.Options, _provider.SourceType);
+            var usage = new CollectionUsage(((IMartenSession)Session).Options, _provider.SourceType);
             _collectionUsages.Insert(0, usage);
         }
 

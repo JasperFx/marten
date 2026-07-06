@@ -182,7 +182,7 @@ internal class QueryCompiler
 
         var plan = new CompiledQueryPlan(query.GetType(), typeof(TOut)){TenantId = session.TenantId};
 
-        assertValidityOfQueryType(plan, query.GetType(), session.Options);
+        assertValidityOfQueryType(plan, query.GetType(), ((IMartenSession)session).Options);
 
         // This *could* throw
         var queryTemplate = plan.CreateQueryTemplate(query);
@@ -223,7 +223,7 @@ internal class QueryCompiler
 
         var filters = topStatement.AllFilters().OfType<ICompiledQueryAwareFilter>().ToArray();
 
-        queryPlan.MatchParameters(session.Options, filters);
+        queryPlan.MatchParameters(((IMartenSession)session).Options, filters);
 
         return parser;
     }

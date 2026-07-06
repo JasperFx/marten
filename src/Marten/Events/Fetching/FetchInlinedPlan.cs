@@ -38,9 +38,9 @@ internal partial class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TI
     private static IDocumentStorage<TDoc, TId> findDocumentStorage(QuerySession session)
     {
         IDocumentStorage<TDoc, TId>? storage = null;
-        if (session.Options.Events.UseIdentityMapForAggregates)
+        if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
         {
-            storage = session.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
+            storage = ((IMartenSession)session).Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
             // Opt into the identity map mechanics for this aggregate type just in case
             // you're using a lightweight session
             session.UseIdentityMapFor<TDoc>();

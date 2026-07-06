@@ -35,8 +35,6 @@ public interface IStorageSession: IMetadataContext
 
     IMartenDatabase Database { get; }
 
-    StoreOptions Options { get; }
-
     IVersionTracker Versions { get; }
 
     IList<IChangeTracker> ChangeTrackers { get; }

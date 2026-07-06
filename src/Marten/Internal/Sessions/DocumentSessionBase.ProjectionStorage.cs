@@ -133,7 +133,7 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         // path; the opt-in (true) case preserves the GH-3850 semantics and
         // accepts the documented race risk per the #4667 Phase 3 design note
         // ("opt-in is not safe for parallel projection workers").
-        if (_session.Options.EventGraph.UseIdentityMapForAggregates)
+        if (((IMartenSession)_session).Options.EventGraph.UseIdentityMapForAggregates)
         {
             // The aggregate may already be in the identity map from a prior
             // SaveChangesAsync on the same session — for example, a
@@ -169,7 +169,7 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         // preserves the inline-projection identity-map semantics by falling
         // through to the session-aware LoadManyAsync — at the cost of the
         // race the flag's design note already documents.
-        var docs = _session.Options.EventGraph.UseIdentityMapForAggregates
+        var docs = ((IMartenSession)_session).Options.EventGraph.UseIdentityMapForAggregates
             ? await _storage.LoadManyAsync(identities, _session, cancellationToken).ConfigureAwait(false)
             : await _storage.LoadManyProjectedAsync(identities, _session.Database, TenantId, cancellationToken).ConfigureAwait(false);
         return docs.ToDictionary(doc => _storage.Identity(doc));
@@ -216,30 +216,30 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         }
 
         Func<TId, ArchiveStreamOperation> builder = null;
-        if (_session.Options.Events.StreamIdentity == StreamIdentity.AsGuid)
+        if (((IMartenSession)_session).Options.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
             if (typeof(TId) == typeof(Guid))
             {
-                builder = id => new ArchiveStreamOperation(_session.Options.EventGraph, id);
+                builder = id => new ArchiveStreamOperation(((IMartenSession)_session).Options.EventGraph, id);
             }
             else
             {
                 var valueType = ValueTypeInfo.ForType(typeof(TId));
                 var unWrapper = valueType.UnWrapper<TId, Guid>();
-                builder = id =>  new ArchiveStreamOperation(_session.Options.EventGraph, unWrapper(id));
+                builder = id =>  new ArchiveStreamOperation(((IMartenSession)_session).Options.EventGraph, unWrapper(id));
             }
         }
         else
         {
             if (typeof(TId) == typeof(string))
             {
-                builder = id => new ArchiveStreamOperation(_session.Options.EventGraph, id);
+                builder = id => new ArchiveStreamOperation(((IMartenSession)_session).Options.EventGraph, id);
             }
             else
             {
                 var valueType = ValueTypeInfo.ForType(typeof(TId));
                 var unWrapper = valueType.UnWrapper<TId, string>();
-                builder = id =>  new ArchiveStreamOperation(_session.Options.EventGraph, unWrapper(id));
+                builder = id =>  new ArchiveStreamOperation(((IMartenSession)_session).Options.EventGraph, unWrapper(id));
             }
         }
 
@@ -251,7 +251,7 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
     public Task<TDoc?> LoadAsync(TId id, CancellationToken cancellation)
     {
         // #4667 Phase 2 — see LoadManyAsync above for rationale.
-        return _session.Options.EventGraph.UseIdentityMapForAggregates
+        return ((IMartenSession)_session).Options.EventGraph.UseIdentityMapForAggregates
             ? _storage.LoadAsync(id, _session, cancellation)
             : _storage.LoadProjectedAsync(id, _session.Database, TenantId, cancellation);
     }

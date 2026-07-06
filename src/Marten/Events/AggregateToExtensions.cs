@@ -8,13 +8,15 @@ using JasperFx.Events;
 using Marten.Internal.Sessions;
 using Marten.Linq;
 
+using Marten.Internal;
+
 namespace Marten.Events;
 
 public static class AggregateToExtensions
 {
     private static void setIdentity<T>(QuerySession session, T aggregate, IEnumerable<IEvent> events) where T : class
     {
-        if (session.Options.Events.StreamIdentity == StreamIdentity.AsGuid)
+        if (((IMartenSession)session).Options.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
             session.StorageFor<T, Guid>().SetIdentity(aggregate, events.Last().StreamId);
         }
@@ -42,7 +44,7 @@ public static class AggregateToExtensions
         }
 
         var session = queryable.As<MartenLinqQueryable<IEvent>>().Session;
-        var aggregator = session.Options.Projections.AggregatorFor<T>();
+        var aggregator = ((IMartenSession)session).Options.Projections.AggregatorFor<T>();
 
         var aggregate = await aggregator.BuildAsync(events, session, state, token).ConfigureAwait(false)!;
 
