@@ -153,7 +153,11 @@
     <!-- 9.7.0 (weasel#327): shared Weasel.Core SQL-gen contract (neutral ICommandBuilder +
          ISqlFragment) that the Postgres/SqlServer ones derive from. Marten disambiguates the new
          simple-name collision via a GlobalUsings alias to the Weasel.Postgresql types (API-preserving). -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.7.0" />
+    <!-- 9.8.0 (marten#4830 / weasel#329): new Weasel.Storage package holds the 5 neutral closed-shape
+         storage contracts (IStorageDialect, StorageColumnType, BulkColumnValue, IStorageSerializer,
+         IVersionTracker) lifted out of Marten so Marten and Polecat share them. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.8.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.8.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

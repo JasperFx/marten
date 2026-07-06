@@ -8,3 +8,7 @@
 global using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 global using ISqlFragment = Weasel.Postgresql.SqlGeneration.ISqlFragment;
 global using ICompoundFragment = Weasel.Postgresql.SqlGeneration.ICompoundFragment;
+
+// #4821 Story 6: the dialect-neutral storage contracts (IStorageDialect, StorageColumnType,
+// BulkColumnValue, IStorageSerializer, IVersionTracker) moved to the shared Weasel.Storage library.
+global using Weasel.Storage;

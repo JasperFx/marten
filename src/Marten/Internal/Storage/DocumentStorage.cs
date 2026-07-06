@@ -205,7 +205,9 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public ISqlFragment ByIdFilter(TId id)
     {
-        return Dialect.ByIdFilter(RawIdentityValue(id));
+        // IDocumentStorage.ByIdFilter keeps its Weasel.Postgresql return type (public); the dialect's
+        // neutral Weasel.Core fragment is always a Marten (Postgres) ByIdFilter, so the cast is safe.
+        return (ISqlFragment)Dialect.ByIdFilter(RawIdentityValue(id));
     }
 
     public IDeletion HardDeleteForId(TId id, string tenant)
