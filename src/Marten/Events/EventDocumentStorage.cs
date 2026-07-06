@@ -13,6 +13,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
@@ -167,7 +168,7 @@ public abstract class EventDocumentStorage: IEventStorage
     public bool UseOptimisticConcurrency { get; } = false;
     public IOperationFragment DeleteFragment => throw new NotSupportedException();
     public IOperationFragment HardDeleteFragment => throw new NotSupportedException();
-    public IReadOnlyList<DuplicatedField> DuplicatedFields { get; } = Array.Empty<DuplicatedField>();
+    public IReadOnlyList<IDuplicatedField> DuplicatedFields { get; } = Array.Empty<IDuplicatedField>();
     public DbObjectName TableName => _mapping.TableName;
     public Type DocumentType => typeof(IEvent);
 

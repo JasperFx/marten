@@ -238,6 +238,10 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
     [IgnoreDescription]
     public IQueryableMemberCollection QueryMembers { get; }
 
+    // The public DuplicatedFields (IReadOnlyList<DuplicatedField>) satisfies IDocumentMapping; the
+    // db-neutral IDocumentStorage surface sees it through the IDuplicatedField view (covariant).
+    IReadOnlyList<IDuplicatedField> IDocumentStorage.DuplicatedFields => DuplicatedFields;
+
     [IgnoreDescription]
     public ISelectClause SelectClauseWithDuplicatedFields => this;
     public bool UseNumericRevisions { get; } = false;
