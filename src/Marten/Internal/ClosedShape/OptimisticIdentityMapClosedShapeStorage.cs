@@ -44,7 +44,7 @@ internal sealed class OptimisticIdentityMapClosedShapeStorage<TDoc, TId>: Identi
         => new OptimisticClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
     public override ISelector BuildSelector(IStorageSession session)
-        => _descriptor.HierarchyMapping is not null
+        => _descriptor.ResolveDocumentType is not null
             ? new HierarchicalOptimisticClosedShapeIdentityMapSelector<TDoc, TId>(session, _descriptor)
             : new FlatOptimisticClosedShapeIdentityMapSelector<TDoc, TId>(session, _descriptor);
 }

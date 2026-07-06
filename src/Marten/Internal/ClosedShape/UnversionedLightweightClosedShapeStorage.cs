@@ -49,7 +49,7 @@ internal sealed class UnversionedLightweightClosedShapeStorage<TDoc, TId>: Light
         => new UnversionedClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
     public override ISelector BuildSelector(IStorageSession session)
-        => _descriptor.HierarchyMapping is not null
+        => _descriptor.ResolveDocumentType is not null
             ? new HierarchicalUnversionedClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor)
             : new FlatUnversionedClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor);
 }

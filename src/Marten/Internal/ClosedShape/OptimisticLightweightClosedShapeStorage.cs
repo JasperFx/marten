@@ -54,7 +54,7 @@ internal sealed class OptimisticLightweightClosedShapeStorage<TDoc, TId>: Lightw
         => new OptimisticClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
     public override ISelector BuildSelector(IStorageSession session)
-        => _descriptor.HierarchyMapping is not null
+        => _descriptor.ResolveDocumentType is not null
             ? new HierarchicalOptimisticClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor)
             : new FlatOptimisticClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor);
 }

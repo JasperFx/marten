@@ -14,7 +14,7 @@ namespace Marten.Internal.ClosedShape;
 /// writes — QueryOnly sessions don't track loaded docs.
 /// Sealed subclasses provide a monomorphic <c>ReadDocument</c> /
 /// <c>ReadDocumentAsync</c> so the per-row hot path doesn't branch on
-/// <c>HierarchyMapping</c> (#4659 Phase 2).
+/// <c>ResolveDocumentType</c> (#4659 Phase 2).
 /// </summary>
 internal abstract class ClosedShapeQueryOnlySelector<T, TId>: ISelector<T>
     where T : notnull

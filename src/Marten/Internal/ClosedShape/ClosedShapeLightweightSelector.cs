@@ -10,7 +10,7 @@ namespace Marten.Internal.ClosedShape;
 
 /// <summary>
 /// Abstract base for the per-<see cref="ConcurrencyMode"/> ×
-/// <see cref="DocumentStorageDescriptor{T,TId}.HierarchyMapping"/>
+/// <see cref="DocumentStorageDescriptor{T,TId}.ResolveDocumentType"/>
 /// closed-shape Lightweight <see cref="ISelector{T}"/>. Owns the shared
 /// row-shape (id at col 0, data at col 1, metadata at 2+) plus
 /// metadata-apply. Sealed concurrency × hierarchy leaves provide

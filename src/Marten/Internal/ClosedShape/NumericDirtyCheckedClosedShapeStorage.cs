@@ -44,7 +44,7 @@ internal sealed class NumericDirtyCheckedClosedShapeStorage<TDoc, TId>: DirtyChe
         => new NumericClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
     public override ISelector BuildSelector(IStorageSession session)
-        => _descriptor.HierarchyMapping is not null
+        => _descriptor.ResolveDocumentType is not null
             ? new HierarchicalNumericClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor)
             : new FlatNumericClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor);
 }
