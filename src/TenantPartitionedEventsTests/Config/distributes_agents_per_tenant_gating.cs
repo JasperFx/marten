@@ -1,0 +1,70 @@
+using JasperFx.Events;
+using Marten;
+using Marten.Events;
+using Marten.Testing.Harness;
+using Shouldly;
+using Xunit;
+
+namespace TenantPartitionedEventsTests.Config;
+
+/// <summary>
+/// wolverine#3280 — how <see cref="IEventStore.DistributesAgentsPerTenant"/> is gated. It only turns on
+/// for a sharded per-tenant-partitioned store (the one tenancy where multiple tenants are co-located in a
+/// shard database with independent per-tenant sequences, so node-distributed daemons must fan agents out
+/// per (shard, tenant)). Everywhere else it stays false so distribution behaves exactly as before: one
+/// agent per database. These are pure configuration assertions — building the store never opens a
+/// connection.
+/// </summary>
+public class distributes_agents_per_tenant_gating
+{
+    [Fact]
+    public void off_on_a_single_database_store_even_with_per_tenant_partitioning()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.UseTenantPartitionedEvents = true;
+        });
+
+        ((IEventStore)store).DistributesAgentsPerTenant
+            .ShouldBeFalse("a single-database store keeps one agent per database");
+    }
+
+    [Fact]
+    public void on_for_a_sharded_per_tenant_partitioned_store()
+    {
+        using var store = ShardedStore(partitioned: true);
+
+        ((IEventStore)store).DistributesAgentsPerTenant
+            .ShouldBeTrue("sharded + per-tenant partitioning fans agents out per tenant");
+    }
+
+    [Fact]
+    public void off_for_a_sharded_store_without_per_tenant_partitioning()
+    {
+        using var store = ShardedStore(partitioned: false);
+
+        ((IEventStore)store).DistributesAgentsPerTenant
+            .ShouldBeFalse("without per-tenant partitioning a shard database has a single sequence");
+    }
+
+    // A sharded store with two databases. Dummy connection strings — the assertions only read
+    // StoreOptions, so the store is never connected or provisioned.
+    private static IDocumentStore ShardedStore(bool partitioned) =>
+        DocumentStore.For(opts =>
+        {
+            opts.MultiTenantedWithShardedDatabases(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = "distributes_gating";
+                x.PartitionSchemaName = "distributes_gating_tenants";
+                x.AddDatabase("db1", ConnectionSource.ConnectionString);
+                x.AddDatabase("db2", ConnectionSource.ConnectionString);
+            });
+
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
+            opts.Events.UseTenantPartitionedEvents = partitioned;
+        });
+}
