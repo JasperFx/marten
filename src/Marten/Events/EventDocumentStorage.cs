@@ -79,7 +79,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
 
     public EventGraph Events { get; }
 
-    public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
+    public Task TruncateDocumentStorageAsync(IStorageDatabase database, CancellationToken ct = default)
     {
         return database.RunSqlAsync($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade", ct: ct);
     }

@@ -1,4 +1,7 @@
 #nullable enable
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Weasel.Core.Sequences;
 
 namespace Marten.Internal;
@@ -22,4 +25,20 @@ namespace Marten.Internal;
 public interface IStorageDatabase: ISequenceSource
 {
     IProviderGraph Providers { get; }
+
+    /// <summary>
+    ///     Open a new database-neutral connection. The projection-safe closed-shape read path
+    ///     (<see cref="Marten.Internal.ClosedShape.ClosedShapeProjectionLoader{TDoc,TId}"/>) uses this to
+    ///     run its <see cref="DbCommand"/> off the session, so it targets the neutral
+    ///     <see cref="DbConnection"/> here instead of the Npgsql-typed
+    ///     <see cref="Marten.Storage.IMartenDatabase"/> connection factory. (Distinct name from the
+    ///     Npgsql-typed <c>CreateConnection</c> to avoid a same-signature return-type clash.)
+    /// </summary>
+    DbConnection CreateStorageConnection();
+
+    /// <summary>
+    ///     Execute a single SQL statement against a fresh connection. Used by the closed-shape
+    ///     <c>TruncateDocumentStorageAsync</c> path so it no longer needs the Npgsql-typed database.
+    /// </summary>
+    Task RunSqlAsync(string sql, CancellationToken ct = default);
 }

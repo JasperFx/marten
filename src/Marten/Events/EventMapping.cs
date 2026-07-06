@@ -250,7 +250,7 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T>, ILinqDocumentSt
         return id;
     }
 
-    public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
+    public Task TruncateDocumentStorageAsync(IStorageDatabase database, CancellationToken ct = default)
     {
         return database.RunSqlAsync($"delete from table {_tableName} where type = '{Alias}'", ct: ct);
     }

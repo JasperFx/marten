@@ -168,7 +168,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
 
     public IQueryableMemberCollection QueryMembers { get; }
 
-    public async Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
+    public async Task TruncateDocumentStorageAsync(IStorageDatabase database, CancellationToken ct = default)
     {
         var sql = $"truncate {TableName.QualifiedName} cascade";
         try
@@ -370,12 +370,12 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
     /// trackers. Non-closed-shape storages aren't reachable via the projection
     /// write path and don't need this overload.
     /// </remarks>
-    public virtual Task<T?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token)
+    public virtual Task<T?> LoadProjectedAsync(TId id, IStorageDatabase database, string tenantId, CancellationToken token)
         => throw new NotSupportedException(
             $"{GetType().Name} doesn't implement LoadProjectedAsync. Closed-shape storage variants provide this for the async-daemon projection-safe read path (#4667 Phase 2).");
 
     /// <inheritdoc />
-    public virtual Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
+    public virtual Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IStorageDatabase database, string tenantId, CancellationToken token)
         => throw new NotSupportedException(
             $"{GetType().Name} doesn't implement LoadManyProjectedAsync. Closed-shape storage variants provide this for the async-daemon projection-safe read path (#4667 Phase 2).");
 

@@ -53,7 +53,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.RawIdentityValue(id);
     }
 
-    public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
+    public Task TruncateDocumentStorageAsync(IStorageDatabase database, CancellationToken ct = default)
     {
         return database.RunSqlAsync(
             $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'",
@@ -224,13 +224,13 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
 
     // #4667 Phase 2 — delegate projection loads to the parent hierarchy storage
     // and downcast to the subclass like the session-aware path above.
-    public async Task<T?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token)
+    public async Task<T?> LoadProjectedAsync(TId id, IStorageDatabase database, string tenantId, CancellationToken token)
     {
         var doc = await _parent.LoadProjectedAsync(id, database, tenantId, token).ConfigureAwait(false);
         return doc is T x ? x : default;
     }
 
-    public async Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
+    public async Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IStorageDatabase database, string tenantId, CancellationToken token)
     {
         return (await _parent.LoadManyProjectedAsync(ids, database, tenantId, token).ConfigureAwait(false)).OfType<T>().ToList();
     }

@@ -225,6 +225,16 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
+    System.Data.Common.DbConnection IStorageDatabase.CreateStorageConnection()
+    {
+        throw new NotImplementedException();
+    }
+
+    Task IStorageDatabase.RunSqlAsync(string sql, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
+
     public void Dispose()
     {
         ((IDisposable)Tracker)?.Dispose();

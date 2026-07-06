@@ -47,11 +47,11 @@ public abstract class DirtyCheckedClosedShapeStorage<TDoc, TId>: DirtyCheckedDoc
             _descriptor.Identification.RawSqlType);
 
     // #4667 Phase 2 — session-free projection load; see Lightweight peer.
-    public override Task<TDoc?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token)
+    public override Task<TDoc?> LoadProjectedAsync(TId id, IStorageDatabase database, string tenantId, CancellationToken token)
         => ClosedShapeProjectionLoader<TDoc, TId>.LoadAsync(
             BuildLoadCommand(id, tenantId), _descriptor, _descriptor.Serializer, database, token);
 
-    public override Task<IReadOnlyList<TDoc>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
+    public override Task<IReadOnlyList<TDoc>> LoadManyProjectedAsync(TId[] ids, IStorageDatabase database, string tenantId, CancellationToken token)
         => ClosedShapeProjectionLoader<TDoc, TId>.LoadManyAsync(
             BuildLoadManyCommand(ids, tenantId), _descriptor, _descriptor.Serializer, database, token);
 }
