@@ -482,13 +482,29 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         }
     }
 
-    protected Task<T?> loadAsync(TId id, IStorageSession session, CancellationToken token)
+    protected async Task<T?> loadAsync(TId id, IStorageSession session, CancellationToken token)
     {
         var command = BuildLoadCommand(id, session.TenantId);
         var selector = (ISelector<T>)BuildSelector(session);
 
-        // TODO -- eliminate the downcast here!
-        return session.As<QuerySession>().LoadOneAsync(command, selector, token);
+        // #4828: read through the agnostic IStorageSession.ExecuteReaderAsync(DbCommand)
+        // execution seam (#4810) instead of downcasting to QuerySession.LoadOneAsync —
+        // mirrors the LoadManyAsync overrides. Behavior-identical to
+        // QuerySession.LoadOneAsync (execute → read one → resolve → close).
+        await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        try
+        {
+            if (!await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                return default;
+            }
+
+            return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
     }
 }
 
