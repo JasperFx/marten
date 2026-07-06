@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Internal.Sessions;
 using Marten.Storage.Metadata;
 using Npgsql;
@@ -85,7 +86,7 @@ internal sealed class DocumentHeadersBinder<TDoc>: IDocumentMetadataBinder<TDoc>
         _setter(document, headers);
     }
 
-    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation)
-        => writer.WriteAsync<object>(DBNull.Value, NpgsqlDbType.Jsonb, cancellation);
+    public BulkColumnValue GetBulkValue(TDoc document)
+        // Headers aren't carried on the COPY path — write a typed JSONB null, as before.
+        => BulkColumnValue.TypedNull(StorageColumnType.Json);
 }

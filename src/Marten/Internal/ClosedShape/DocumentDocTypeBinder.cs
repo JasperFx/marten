@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -56,10 +57,9 @@ internal sealed class DocumentDocTypeBinder<TDoc>: IDocumentMetadataBinder<TDoc>
         // the document.
     }
 
-    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation)
+    public BulkColumnValue GetBulkValue(TDoc document)
     {
         var alias = _aliasCache.GetOrAdd(document.GetType(), t => _resolveAlias(t));
-        return writer.WriteAsync(alias, NpgsqlDbType.Varchar, cancellation);
+        return new BulkColumnValue(alias, StorageColumnType.String);
     }
 }

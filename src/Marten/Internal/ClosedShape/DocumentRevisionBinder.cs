@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -102,15 +103,14 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
     public void ApplyRevisionTo(TDoc document, long revision)
         => _setter?.Invoke(document, revision);
 
-    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation)
+    public BulkColumnValue GetBulkValue(TDoc document)
     {
         // Bulk path defaults to revision 1 — matches the codegen
         // BulkLoader.GenerateBulkWriterCodeAsync's hard-coded "write
         // (long)1" for RevisionArgument. The parameter type follows the column.
         _setter?.Invoke(document, 1L);
         return _columnDbType == NpgsqlDbType.Integer
-            ? writer.WriteAsync(1, NpgsqlDbType.Integer, cancellation)
-            : writer.WriteAsync(1L, NpgsqlDbType.Bigint, cancellation);
+            ? new BulkColumnValue(1, StorageColumnType.Int)
+            : new BulkColumnValue(1L, StorageColumnType.Long);
     }
 }
