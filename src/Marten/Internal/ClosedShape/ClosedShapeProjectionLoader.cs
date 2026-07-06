@@ -51,10 +51,10 @@ internal static class ClosedShapeProjectionLoader<TDoc, TId>
         DbCommand command,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
         IStorageSerializer serializer,
-        IMartenDatabase database,
+        IStorageDatabase database,
         CancellationToken token)
     {
-        await using var conn = database.CreateConnection();
+        await using var conn = database.CreateStorageConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
         try
         {
@@ -77,10 +77,10 @@ internal static class ClosedShapeProjectionLoader<TDoc, TId>
         DbCommand command,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
         IStorageSerializer serializer,
-        IMartenDatabase database,
+        IStorageDatabase database,
         CancellationToken token)
     {
-        await using var conn = database.CreateConnection();
+        await using var conn = database.CreateStorageConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
         try
         {

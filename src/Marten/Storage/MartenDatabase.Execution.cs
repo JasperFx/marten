@@ -2,6 +2,7 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal;
 using Marten.Services;
 using Npgsql;
 
@@ -83,6 +84,27 @@ public partial class MartenDatabase : ISingleQueryRunner
         }
 
         return CreateConnection(Options.Advanced.MultiHostSettings.WriteSessionPreference);
+    }
+
+    // Neutral IStorageDatabase surface the closed-shape storage runtime targets. The public
+    // CreateConnection above returns the Npgsql-typed connection for Marten's own callers; this
+    // exposes it as a DbConnection so the movable storage code stays Npgsql-free.
+    DbConnection IStorageDatabase.CreateStorageConnection() => CreateConnection();
+
+    async Task IStorageDatabase.RunSqlAsync(string sql, CancellationToken ct)
+    {
+        await using var conn = CreateConnection();
+        await conn.OpenAsync(ct).ConfigureAwait(false);
+        try
+        {
+            var command = conn.CreateCommand();
+            command.CommandText = sql;
+            await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
     }
 
 }

@@ -101,7 +101,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public Type DocumentType => Inner.DocumentType;
     public TenancyStyle TenancyStyle => Inner.TenancyStyle;
 
-    public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
+    public Task TruncateDocumentStorageAsync(IStorageDatabase database, CancellationToken ct = default)
         => Inner.TruncateDocumentStorageAsync(database, ct);
 
     public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session)
@@ -183,10 +183,10 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
         => Inner.LoadManyAsync(ids.Select(_converter).ToArray(), session, token);
 
     // #4667 Phase 2 — delegate to inner with the unwrapped id like the session-aware path.
-    public Task<TDoc?> LoadProjectedAsync(TSimple id, IMartenDatabase database, string tenantId, CancellationToken token)
+    public Task<TDoc?> LoadProjectedAsync(TSimple id, IStorageDatabase database, string tenantId, CancellationToken token)
         => Inner.LoadProjectedAsync(_converter(id), database, tenantId, token);
 
-    public Task<IReadOnlyList<TDoc>> LoadManyProjectedAsync(TSimple[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
+    public Task<IReadOnlyList<TDoc>> LoadManyProjectedAsync(TSimple[] ids, IStorageDatabase database, string tenantId, CancellationToken token)
         => Inner.LoadManyProjectedAsync(ids.Select(_converter).ToArray(), database, tenantId, token);
 
     public TSimple AssignIdentity(TDoc document, string tenantId, IStorageDatabase database)

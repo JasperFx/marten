@@ -42,7 +42,7 @@ public interface IDocumentStorage: ISelectClause
     Type DocumentType { get; }
 
     TenancyStyle TenancyStyle { get; }
-    Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default);
+    Task TruncateDocumentStorageAsync(IStorageDatabase database, CancellationToken ct = default);
 
     ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session);
 
@@ -167,13 +167,13 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T>, IIdentitySetter<
     /// from parallel async-daemon slice handlers that share an
     /// <see cref="IMartenSession"/>.
     /// </summary>
-    Task<T?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token);
+    Task<T?> LoadProjectedAsync(TId id, IStorageDatabase database, string tenantId, CancellationToken token);
 
     /// <summary>
     /// Session-free LoadMany for projection storage (#4667 Phase 2). See
     /// <see cref="LoadProjectedAsync"/>.
     /// </summary>
-    Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token);
+    Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IStorageDatabase database, string tenantId, CancellationToken token);
 
 
     TId AssignIdentity(T document, string tenantId, IStorageDatabase database);
