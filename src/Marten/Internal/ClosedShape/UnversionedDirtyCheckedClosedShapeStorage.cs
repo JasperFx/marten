@@ -44,7 +44,7 @@ internal sealed class UnversionedDirtyCheckedClosedShapeStorage<TDoc, TId>: Dirt
         => new UnversionedClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
     public override ISelector BuildSelector(IStorageSession session)
-        => _descriptor.HierarchyMapping is not null
+        => _descriptor.ResolveDocumentType is not null
             ? new HierarchicalUnversionedClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor)
             : new FlatUnversionedClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor);
 }

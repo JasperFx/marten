@@ -1,6 +1,5 @@
 #nullable enable
-using Marten.Schema;
-
+using System;
 using Weasel.Core.Identity;
 
 namespace Marten.Internal.ClosedShape;
@@ -65,7 +64,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         DocumentVersionBinder<TDoc>? versionBinder,
         DocumentRevisionBinder<TDoc>? revisionBinder,
         int versionReadIndex,
-        Marten.Schema.DocumentMapping? hierarchyMapping,
+        Func<string, Type>? resolveDocumentType,
         int docTypeReadIndex,
         string tableName,
         IDocumentMetadataBinder<TDoc>[]? partitionPkBinders = null,
@@ -86,7 +85,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         VersionBinder = versionBinder;
         RevisionBinder = revisionBinder;
         VersionReadIndex = versionReadIndex;
-        HierarchyMapping = hierarchyMapping;
+        ResolveDocumentType = resolveDocumentType;
         DocTypeReadIndex = docTypeReadIndex;
         PartitionPkBinders = partitionPkBinders ?? System.Array.Empty<IDocumentMetadataBinder<TDoc>>();
         UseVersionFromMatchingStream = useVersionFromMatchingStream;
@@ -251,12 +250,14 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     public int VersionReadIndex { get; }
 
     /// <summary>
-    /// W3 spike (M11): the root <see cref="Marten.Schema.DocumentMapping"/>
-    /// when the mapping is hierarchical, otherwise <c>null</c>. Selectors
-    /// use it to resolve the <c>mt_doc_type</c> alias back to a .NET
-    /// <see cref="Type"/> for polymorphic deserialization.
+    /// W3 spike (M11): agnostic <c>mt_doc_type</c> alias → .NET <see cref="Type"/>
+    /// resolver, present when the mapping is hierarchical, otherwise <c>null</c>.
+    /// Selectors use it for polymorphic deserialization. #4829: this replaced a
+    /// direct <c>Marten.Schema.DocumentMapping</c> reference (the builder now
+    /// captures <c>mapping.TypeFor</c> as a delegate) so the movable descriptor +
+    /// selector runtime no longer depends on the Marten mapping type.
     /// </summary>
-    internal Marten.Schema.DocumentMapping? HierarchyMapping { get; }
+    internal Func<string, Type>? ResolveDocumentType { get; }
 
     /// <summary>
     /// W3 spike (M11): zero-based index of the <c>mt_doc_type</c> binder

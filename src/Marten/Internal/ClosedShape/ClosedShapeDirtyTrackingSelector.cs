@@ -12,7 +12,7 @@ namespace Marten.Internal.ClosedShape;
 
 /// <summary>
 /// Abstract base for the per-<see cref="ConcurrencyMode"/> ×
-/// <see cref="DocumentStorageDescriptor{T,TId}.HierarchyMapping"/>
+/// <see cref="DocumentStorageDescriptor{T,TId}.ResolveDocumentType"/>
 /// closed-shape DirtyTracking <see cref="ISelector{T}"/>. Identity-map
 /// writes (like <see cref="ClosedShapeIdentityMapSelector{T, TId}"/>)
 /// plus a <see cref="ChangeTracker{T}"/> registered on the session per

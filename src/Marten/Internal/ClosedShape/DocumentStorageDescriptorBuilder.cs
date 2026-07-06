@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
@@ -39,7 +40,7 @@ internal static class DocumentStorageDescriptorBuilder
         DocumentRevisionBinder<TDoc>? revisionBinder = null;
         var versionReadIndex = -1;
         var docTypeReadIndex = -1;
-        DocumentMapping? hierarchyMapping = null;
+        Func<string, Type>? resolveDocumentType = null;
 
         // #4602: the version/revision column is the one metadata column whose
         // presence in the SELECT depends on the storage style — Version/Revision
@@ -55,7 +56,9 @@ internal static class DocumentStorageDescriptorBuilder
         // dispatch deserialization to the right subclass type.
         if (mapping.IsHierarchy())
         {
-            hierarchyMapping = mapping;
+            // #4829: capture the alias→Type lookup as an agnostic delegate so the
+            // descriptor + selectors don't hold the Marten DocumentMapping type.
+            resolveDocumentType = mapping.TypeFor;
             var docTypeBinder = new DocumentDocTypeBinder<TDoc>(mapping);
             writeBinders.Add(docTypeBinder);
             docTypeReadIndex = readBinders.Count;
@@ -292,7 +295,7 @@ internal static class DocumentStorageDescriptorBuilder
             versionBinder: versionBinder,
             revisionBinder: revisionBinder,
             versionReadIndex: versionReadIndex,
-            hierarchyMapping: hierarchyMapping,
+            resolveDocumentType: resolveDocumentType,
             docTypeReadIndex: docTypeReadIndex,
             tableName: mapping.TableName.Name,
             partitionPkBinders: partitionPkBinders,

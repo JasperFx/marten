@@ -3,7 +3,6 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Schema;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -11,34 +10,34 @@ namespace Marten.Internal.ClosedShape;
 /// Hierarchical, Off-mode Lightweight selector. Reads <c>mt_doc_type</c>
 /// from the descriptor's <see cref="DocumentStorageDescriptor{T,TId}.DocTypeReadIndex"/>
 /// and dispatches deserialization through the
-/// <see cref="DocumentStorageDescriptor{T,TId}.HierarchyMapping"/> root.
+/// <see cref="DocumentStorageDescriptor{T,TId}.ResolveDocumentType"/> root.
 /// #4659 Phase 2 leaf.
 /// </summary>
 internal sealed class HierarchicalUnversionedClosedShapeLightweightSelector<T, TId>: UnversionedClosedShapeLightweightSelector<T, TId>
     where T : notnull
     where TId : notnull
 {
-    private readonly DocumentMapping _hierarchy;
+    private readonly Func<string, Type> _resolveType;
     private readonly int _docTypeOrdinal;
 
     public HierarchicalUnversionedClosedShapeLightweightSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
-        _hierarchy = descriptor.HierarchyMapping
+        _resolveType = descriptor.ResolveDocumentType
             ?? throw new InvalidOperationException(
-                "HierarchicalUnversionedClosedShapeLightweightSelector requires a non-null descriptor.HierarchyMapping.");
+                "HierarchicalUnversionedClosedShapeLightweightSelector requires a non-null descriptor.ResolveDocumentType.");
         _docTypeOrdinal = FirstMetadataColumn + descriptor.DocTypeReadIndex;
     }
 
     protected override T ReadDocument(DbDataReader reader)
     {
         var alias = reader.GetFieldValue<string>(_docTypeOrdinal);
-        return (T)_serializer.FromJson(_hierarchy.TypeFor(alias), reader, DataColumn);
+        return (T)_serializer.FromJson(_resolveType(alias), reader, DataColumn);
     }
 
     protected override async ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token)
     {
         var alias = await reader.GetFieldValueAsync<string>(_docTypeOrdinal, token).ConfigureAwait(false);
-        return (T)await _serializer.FromJsonAsync(_hierarchy.TypeFor(alias), reader, DataColumn, token).ConfigureAwait(false);
+        return (T)await _serializer.FromJsonAsync(_resolveType(alias), reader, DataColumn, token).ConfigureAwait(false);
     }
 }

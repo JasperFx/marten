@@ -112,11 +112,11 @@ internal static class ClosedShapeProjectionLoader<TDoc, TId>
     {
         // Hierarchical: dispatch via mt_doc_type alias just like
         // HierarchicalClosedShapeQueryOnlySelector. Flat: straight deserialize.
-        if (descriptor.HierarchyMapping is { } hierarchy)
+        if (descriptor.ResolveDocumentType is { } resolveType)
         {
             var docTypeOrdinal = FirstMetadataColumn + descriptor.DocTypeReadIndex;
             var alias = await reader.GetFieldValueAsync<string>(docTypeOrdinal, token).ConfigureAwait(false);
-            return (TDoc)await serializer.FromJsonAsync(hierarchy.TypeFor(alias), reader, DataColumn, token).ConfigureAwait(false);
+            return (TDoc)await serializer.FromJsonAsync(resolveType(alias), reader, DataColumn, token).ConfigureAwait(false);
         }
 
         return await serializer.FromJsonAsync<TDoc>(reader, DataColumn, token).ConfigureAwait(false);

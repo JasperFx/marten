@@ -82,9 +82,9 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
 
     public override ISelector BuildSelector(IStorageSession session)
         // #4659 Phase 2: pick the Flat / Hierarchical selector ONCE per
-        // query — neither selector class branches on HierarchyMapping per
+        // query — neither selector class branches on ResolveDocumentType per
         // row.
-        => _descriptor.HierarchyMapping is not null
+        => _descriptor.ResolveDocumentType is not null
             ? new HierarchicalClosedShapeQueryOnlySelector<TDoc, TId>(session, _descriptor)
             : new FlatClosedShapeQueryOnlySelector<TDoc, TId>(session, _descriptor);
 }

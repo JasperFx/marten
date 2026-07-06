@@ -11,7 +11,7 @@ namespace Marten.Internal.ClosedShape;
 
 /// <summary>
 /// Abstract base for the per-<see cref="ConcurrencyMode"/> ×
-/// <see cref="DocumentStorageDescriptor{T,TId}.HierarchyMapping"/>
+/// <see cref="DocumentStorageDescriptor{T,TId}.ResolveDocumentType"/>
 /// closed-shape IdentityMap <see cref="ISelector{T}"/>. Owns the
 /// identity-map cache init + lookup; sealed concurrency × hierarchy
 /// leaves override <c>CaptureVersion</c> + <c>ReadDocument</c> so the
