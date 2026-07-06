@@ -43,6 +43,7 @@
         </PackageReference>
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
         <PackageReference Include="Weasel.Postgresql" />
+        <PackageReference Include="Weasel.Storage" />
     </ItemGroup>
 
     <!-- #4557: Bundle the JasperFx.Events.SourceGenerator analyzer into Marten's own

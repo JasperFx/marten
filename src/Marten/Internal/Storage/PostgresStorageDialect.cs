@@ -57,7 +57,9 @@ internal sealed class PostgresStorageDialect<TId>: IStorageDialect
         return command;
     }
 
-    public ISqlFragment ByIdFilter(object rawId) => new ByIdFilter(rawId, IdParameterType);
+    // The neutral IStorageDialect (in Weasel.Storage) returns the Weasel.Core fragment; the concrete
+    // ByIdFilter is a Weasel.Postgresql fragment, which derives from it.
+    public Weasel.Core.SqlGeneration.ISqlFragment ByIdFilter(object rawId) => new ByIdFilter(rawId, IdParameterType);
 
     public bool IsUndefinedTable(Exception exception)
         => exception is PostgresException pg && pg.SqlState == PostgresErrorCodes.UndefinedTable;
