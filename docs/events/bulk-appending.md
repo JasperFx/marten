@@ -190,6 +190,46 @@ The bulk append API supports all combinations of:
 | Archived stream partitioning | On, Off |
 | Metadata columns | Correlation ID, Causation ID, Headers, User Name (any combination) |
 
+## Streaming Import of an Existing Event Log
+
+`BulkInsertEventsAsync` materializes every event of the import in memory, which is fine for seeding but
+not for migrating a large existing event store. For that scenario use the streaming overload,
+`BulkInsertEventStreamAsync`, which consumes an `IAsyncEnumerable<IEvent>` lazily in `batchSize` blocks —
+a tenant with millions of events imports in bounded memory:
+
+```cs
+// One small header per stream seeds mt_streams up front (the foreign-key target),
+// while the events themselves stream through in COPY blocks.
+var headers = new[]
+{
+    new BulkEventStreamHeader { Id = streamId, Version = 3, AggregateType = typeof(Order) }
+};
+
+await store.BulkInsertEventStreamAsync(
+    tenantId,
+    headers,
+    ReadSourceEventsInSequenceOrderAsync(), // IAsyncEnumerable<IEvent>, in source seq_id order
+    batchSize: 1000);
+```
+
+Three properties make this suitable as the primitive for event-store migrations:
+
+- **Cross-stream ordering is preserved.** Each event receives the next ascending `seq_id` in arrival
+  order, so supplying the source log's global order (read by the source's `seq_id`) reproduces the
+  interleaving of events across streams — which multi-stream projections and subscriptions depend on.
+  The batch overload assigns seq_ids the same way, honoring the order events carry in their `Sequence`.
+- **Per-tenant sequences stay consistent.** Under per-tenant event partitioning, seq_ids are drawn
+  from the tenant's own `mt_events_sequence_{suffix}` — the same sequence live appends use — so the first
+  real append after a migration continues seamlessly instead of colliding with imported seq_ids.
+- **One transaction per tenant.** A failed import rolls back cleanly, making per-tenant resume logic in a
+  migration tool trivial.
+
+The streaming overload deliberately performs **no schema work**: apply the schema at startup and register
+the tenant (`AddMartenManagedTenantsAsync`, or `AddTenantToShardAsync` under sharded tenancy) before
+importing. Schema application from inside a bulk-import loop costs DDL proportional to the number of
+registered tenants for every fresh database it touches, which does not scale to migrations of hundreds of
+tenants.
+
 ## Limitations
 
 The bulk append API intentionally trades off features for throughput:

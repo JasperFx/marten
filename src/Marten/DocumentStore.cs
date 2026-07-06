@@ -248,6 +248,49 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         }
     }
 
+    /// <summary>
+    /// Streaming, order-preserving bulk import of an existing event log for a single tenant. Unlike
+    /// <see cref="BulkInsertEventsAsync(string,IReadOnlyList{StreamAction},int,CancellationToken)"/> — which
+    /// materializes every event of the tenant in memory — this consumes <paramref name="orderedEvents"/>
+    /// lazily in batches, so a tenant with millions of events imports in bounded memory. The events MUST be
+    /// supplied in the exact order their <c>seq_id</c>s should be assigned (typically the source log's global
+    /// order): each is given the next ascending sequence in arrival order, so cross-stream ordering is
+    /// preserved. Per-stream versions are taken from the events. <paramref name="streamHeaders"/> seed
+    /// <c>mt_streams</c> (written first, for the foreign key). Runs as one transaction per tenant.
+    /// </summary>
+    public async Task BulkInsertEventStreamAsync(string tenantId,
+        IReadOnlyList<BulkEventStreamHeader> streamHeaders, IAsyncEnumerable<IEvent> orderedEvents,
+        int batchSize = 1000, CancellationToken cancellation = default)
+    {
+        var tenant = await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
+            .ConfigureAwait(false);
+
+        // Deliberately NO schema work here — provisioning is the caller's contract: apply the base schema
+        // at startup and register the tenant first (AddMartenManagedTenantsAsync / the sharded
+        // AddTenantToShardAsync creates the tenant's own partitions + sequence). Any ensure/apply from the
+        // import path is O(registered tenants) worth of DDL per fresh database under a shared
+        // tenant-partition registry — measured grinding a 500-tenant migration to a near-halt as the
+        // registered count grew.
+        var appender = new BulkEventAppender(Events, Options.Serializer());
+
+        await using var conn = tenant.Database.CreateConnection();
+        await conn.OpenAsync(cancellation).ConfigureAwait(false);
+        var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+
+        try
+        {
+            await appender
+                .BulkInsertEventStreamAsync(conn, tenantId, streamHeaders, orderedEvents, batchSize, cancellation)
+                .ConfigureAwait(false);
+            await tx.CommitAsync(cancellation).ConfigureAwait(false);
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellation).ConfigureAwait(false);
+            throw;
+        }
+    }
+
     public IDiagnostics Diagnostics { get; }
 
     public IDocumentSession OpenSession(SessionOptions options)
