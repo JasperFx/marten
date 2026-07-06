@@ -5,9 +5,10 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
-using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -32,7 +33,7 @@ internal sealed class UnversionedClosedShapeUpdateOperation<TDoc, TId>: ClosedSh
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.UpdateSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.UpdateSql, '?');
         // Off mode has no trailing concurrency-guard slot — we just consume
         // data + binders + id + tenant + partition PK.
         BindPreConcurrencyParameters(parameters, session);
@@ -49,7 +50,7 @@ internal sealed class UnversionedClosedShapeUpdateOperation<TDoc, TId>: ClosedSh
         }
     }
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
+    protected override int BindClientSideBinder(DbParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         binder.BindParameter(parameters[slot], _document, session);
         return slot + 1;

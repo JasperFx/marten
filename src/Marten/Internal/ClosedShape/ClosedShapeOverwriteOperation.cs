@@ -5,10 +5,10 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Operations;
-using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -68,18 +68,18 @@ internal abstract class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStora
     /// up to (not including) the trailing ON CONFLICT SET concurrency
     /// slots. Returns the next free parameter slot.
     /// </summary>
-    protected int BindPreOnConflictParameters(NpgsqlParameter[] parameters, IStorageSession session)
+    protected int BindPreOnConflictParameters(DbParameter[] parameters, IStorageSession session)
     {
         var slot = 0;
         if (_descriptor.IsConjoined)
         {
             parameters[slot].Value = _tenantId;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
+            _descriptor.Dialect.SetParameterType(parameters[slot], StorageColumnType.String);
             slot++;
         }
 
         parameters[slot].Value = _descriptor.Identification.ToRawSqlValue(_id);
-        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
+        _descriptor.Dialect.SetIdParameterType(parameters[slot], _descriptor.Identification.RawSqlType);
         slot++;
 
         foreach (var binder in _descriptor.WriteBinders)
@@ -103,16 +103,16 @@ internal abstract class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStora
     /// <c>UseVersionFromMatchingStream</c> emits inside the revision CASE
     /// expression.
     /// </summary>
-    protected int BindUseVersionFromMatchingStreamSubquery(NpgsqlParameter[] parameters, int slot)
+    protected int BindUseVersionFromMatchingStreamSubquery(DbParameter[] parameters, int slot)
     {
         parameters[slot].Value = _descriptor.Identification.ToRawSqlValue(_id);
-        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
+        _descriptor.Dialect.SetIdParameterType(parameters[slot], _descriptor.Identification.RawSqlType);
         slot++;
 
         if (_descriptor.IsConjoined)
         {
             parameters[slot].Value = _tenantId;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
+            _descriptor.Dialect.SetParameterType(parameters[slot], StorageColumnType.String);
             slot++;
         }
 
@@ -123,7 +123,7 @@ internal abstract class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStora
     /// Concurrency-aware subclasses override to special-case the
     /// VersionBinder / RevisionBinder.
     /// </summary>
-    protected abstract int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session);
+    protected abstract int BindClientSideBinder(DbParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session);
 
     public bool TryTransform(System.Exception original, out System.Exception? transformed)
         => ClosedShapeOperationExceptionTransform.TryTransform(original, _descriptor.TableName, typeof(TDoc), _id!, out transformed);

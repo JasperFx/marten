@@ -31,20 +31,20 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
     where TDoc : notnull
 {
     private readonly Action<TDoc, long>? _setter;
-    private readonly NpgsqlDbType _columnDbType;
+    private readonly StorageColumnType _columnType;
 
     public DocumentRevisionBinder(MemberInfo? revisionMember)
-        : this(revisionMember, NpgsqlDbType.Bigint)
+        : this(revisionMember, StorageColumnType.Long)
     {
     }
 
-    public DocumentRevisionBinder(MemberInfo? revisionMember, NpgsqlDbType columnDbType)
+    public DocumentRevisionBinder(MemberInfo? revisionMember, StorageColumnType columnType)
     {
         // #4614: the mt_version column comes in two widths — bigint (default, used for
         // ILongVersioned docs) or integer (used for IRevisioned docs, restored Marten 8
         // behavior). The parameter NpgsqlDbType has to match the column type so Postgres
         // doesn't refuse the bind on the strict VALUES (CASE … END) path.
-        _columnDbType = columnDbType;
+        _columnType = columnType;
 
         if (revisionMember is not null)
         {
@@ -65,7 +65,7 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
         }
     }
 
-    public NpgsqlDbType ColumnDbType => _columnDbType;
+    public StorageColumnType RevisionColumnType => _columnType;
 
     public string ColumnName => Marten.Schema.SchemaConstants.VersionColumn;
 
@@ -73,7 +73,7 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
 
     public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
-        if (_columnDbType == NpgsqlDbType.Integer)
+        if (_columnType == StorageColumnType.Int)
         {
             parameter.Value = 0;
             ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Integer;
@@ -109,7 +109,7 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
         // BulkLoader.GenerateBulkWriterCodeAsync's hard-coded "write
         // (long)1" for RevisionArgument. The parameter type follows the column.
         _setter?.Invoke(document, 1L);
-        return _columnDbType == NpgsqlDbType.Integer
+        return _columnType == StorageColumnType.Int
             ? new BulkColumnValue(1, StorageColumnType.Int)
             : new BulkColumnValue(1L, StorageColumnType.Long);
     }

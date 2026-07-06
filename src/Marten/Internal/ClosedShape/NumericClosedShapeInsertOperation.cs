@@ -6,10 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten.Exceptions;
-using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
+
+using Marten.Internal.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -41,7 +41,7 @@ internal sealed class NumericClosedShapeInsertOperation<TDoc, TId>: ClosedShapeI
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_descriptor.InsertSql, '?');
+        var parameters = builder.AppendWithDbParameters(_descriptor.InsertSql, '?');
         var slot = BindLeadingParameters(parameters, session);
 
         foreach (var binder in _descriptor.ClientSideWriteBinders)
@@ -91,15 +91,15 @@ internal sealed class NumericClosedShapeInsertOperation<TDoc, TId>: ClosedShapeI
     /// #4614: the parameter type tracks the column width (integer vs bigint)
     /// so the CASE branch types align.
     /// </summary>
-    private int BindRevisionBlock(NpgsqlParameter[] parameters, int slot)
+    private int BindRevisionBlock(DbParameter[] parameters, int slot)
     {
-        var revisionDbType = _descriptor.RevisionBinder!.ColumnDbType;
-        var revisionValue = revisionDbType == NpgsqlDbType.Integer
+        var revisionColumnType = _descriptor.RevisionBinder!.RevisionColumnType;
+        var revisionValue = revisionColumnType == StorageColumnType.Int
             ? (object)checked((int)Revision)
             : Revision;
 
         parameters[slot].Value = revisionValue;
-        parameters[slot].NpgsqlDbType = revisionDbType;
+        _descriptor.Dialect.SetParameterType(parameters[slot], revisionColumnType);
         slot++;
 
         if (_descriptor.UseVersionFromMatchingStream)
@@ -108,7 +108,7 @@ internal sealed class NumericClosedShapeInsertOperation<TDoc, TId>: ClosedShapeI
         }
 
         parameters[slot].Value = revisionValue;
-        parameters[slot].NpgsqlDbType = revisionDbType;
+        _descriptor.Dialect.SetParameterType(parameters[slot], revisionColumnType);
         return slot + 1;
     }
 }
