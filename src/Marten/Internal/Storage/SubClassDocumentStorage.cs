@@ -234,7 +234,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return (await _parent.LoadManyProjectedAsync(ids, database, tenantId, token).ConfigureAwait(false)).OfType<T>().ToList();
     }
 
-    public TId AssignIdentity(T document, string tenantId, IMartenDatabase database)
+    public TId AssignIdentity(T document, string tenantId, IStorageDatabase database)
     {
         return _parent.AssignIdentity(document, tenantId, database);
     }

@@ -45,7 +45,7 @@ public abstract class LightweightClosedShapeStorage<TDoc, TId>: LightweightDocum
     public override TId Identity(TDoc document)
         => _descriptor.Identification.Identity(document);
 
-    public override TId AssignIdentity(TDoc document, string tenantId, IMartenDatabase database)
+    public override TId AssignIdentity(TDoc document, string tenantId, IStorageDatabase database)
         => _descriptor.Identification.AssignIfMissing(document, database);
 
     // M15: strong-typed wrappers need to bind the inner primitive
