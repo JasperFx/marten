@@ -37,6 +37,10 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
     // interface implementation needs an exact return type, and ISerializer : IStorageSerializer.
     IStorageSerializer IStorageSession.Serializer => Serializer;
 
+    // #4825: concrete Versions satisfies IMartenSession (new VersionTracker); this explicit impl
+    // satisfies the narrower IStorageSession.Versions (IVersionTracker).
+    IVersionTracker IStorageSession.Versions => Versions;
+
     public StoreOptions Options { get; }
     public IQueryEventStore Events { get; }
 

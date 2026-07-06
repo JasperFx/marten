@@ -17,6 +17,10 @@ public interface IMartenSession: IDisposable, IAsyncDisposable, IStorageSession
     // both since ISerializer : IStorageSerializer.
     new ISerializer Serializer { get; }
 
+    // #4825: closed-shape storage sees the agnostic IVersionTracker via IStorageSession; Marten's
+    // own code keeps the concrete VersionTracker here.
+    new VersionTracker Versions { get; }
+
     IEventStorage EventStorage();
 
     /// <summary>
