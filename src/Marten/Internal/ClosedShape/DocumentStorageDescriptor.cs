@@ -51,6 +51,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
 {
     internal DocumentStorageDescriptor(
         IIdentification<TDoc, TId> identification,
+        IStorageSerializer serializer,
         IDocumentMetadataBinder<TDoc>[] clientSideWriteBinders,
         IDocumentMetadataBinder<TDoc>[] writeBinders,
         IDocumentMetadataBinder<TDoc>[] readBinders,
@@ -71,6 +72,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         bool useVersionFromMatchingStream = false)
     {
         Identification = identification;
+        Serializer = serializer;
         ClientSideWriteBinders = clientSideWriteBinders;
         WriteBinders = writeBinders;
         ReadBinders = readBinders;
@@ -114,6 +116,15 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     internal IDocumentMetadataBinder<TDoc>[] PartitionPkBinders { get; }
 
     public IIdentification<TDoc, TId> Identification { get; }
+
+    /// <summary>
+    /// #4829: the store-global serializer, captured on the descriptor so the
+    /// projection read path (<c>LoadProjectedAsync</c>/<c>LoadManyProjectedAsync</c>)
+    /// no longer reads <c>DocumentMapping.StoreOptions.Serializer()</c> — one fewer
+    /// Marten mapping reference in the movable storage runtime. Db-neutral
+    /// <see cref="IStorageSerializer"/> (#4819).
+    /// </summary>
+    public IStorageSerializer Serializer { get; }
 
     /// <summary>
     /// Subset of the metadata binders that consume a <c>?</c> parameter
