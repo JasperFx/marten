@@ -60,9 +60,10 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     // fragment. Stored so the base no longer reads DocumentMapping post-construction.
     private readonly DeleteStyle _deleteStyle;
 
-    // #4828: the ADO/SQL-dialect strategy. Postgres by default; the seam lets the movable base
-    // build load commands / id filters / interpret error codes without a direct Npgsql reference.
-    protected virtual IStorageDialect Dialect => PostgresStorageDialect<TId>.Instance;
+    // #4828: the ADO/SQL-dialect strategy — the movable base builds load commands / id filters /
+    // interprets error codes through it, with no direct Npgsql/Postgres reference. Supplied by the
+    // concrete (closed-shape) storages off their descriptor; see PostgresStorageDialect.
+    protected abstract IStorageDialect Dialect { get; }
 
     public DocumentStorage(StorageStyle storageStyle, DocumentMapping document)
     {

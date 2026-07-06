@@ -5,6 +5,7 @@ using System.Linq;
 using JasperFx.Core;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Internal.Storage;
 
 using Weasel.Core.Identity;
 
@@ -283,6 +284,7 @@ internal static class DocumentStorageDescriptorBuilder
         return new DocumentStorageDescriptor<TDoc, TId>(
             identification,
             serializer: mapping.StoreOptions.Serializer(),
+            dialect: PostgresStorageDialect<TId>.Instance,
             clientSideWriteBinders: clientSide,
             writeBinders: writeArray,
             readBinders: readArray,

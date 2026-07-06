@@ -36,6 +36,9 @@ public abstract class LightweightClosedShapeStorage<TDoc, TId>: LightweightDocum
 {
     protected readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
 
+    // #4828: expose the descriptor's dialect as the base storage dialect (Strategy).
+    protected override IStorageDialect Dialect => _descriptor.Dialect;
+
     protected LightweightClosedShapeStorage(DocumentMapping mapping, DocumentStorageDescriptor<TDoc, TId> descriptor)
         : base(mapping)
     {

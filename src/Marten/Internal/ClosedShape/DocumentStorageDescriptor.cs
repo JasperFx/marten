@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using Marten.Internal.Storage;
 using Weasel.Core.Identity;
 
 namespace Marten.Internal.ClosedShape;
@@ -52,6 +53,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     internal DocumentStorageDescriptor(
         IIdentification<TDoc, TId> identification,
         IStorageSerializer serializer,
+        IStorageDialect dialect,
         IDocumentMetadataBinder<TDoc>[] clientSideWriteBinders,
         IDocumentMetadataBinder<TDoc>[] writeBinders,
         IDocumentMetadataBinder<TDoc>[] readBinders,
@@ -73,6 +75,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     {
         Identification = identification;
         Serializer = serializer;
+        Dialect = dialect;
         ClientSideWriteBinders = clientSideWriteBinders;
         WriteBinders = writeBinders;
         ReadBinders = readBinders;
@@ -125,6 +128,14 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     /// <see cref="IStorageSerializer"/> (#4819).
     /// </summary>
     public IStorageSerializer Serializer { get; }
+
+    /// <summary>
+    /// #4828: the ADO/SQL-dialect strategy for this document type. The Marten-resident builder
+    /// supplies <c>PostgresStorageDialect&lt;TId&gt;.Instance</c>; the closed-shape storage classes
+    /// expose it as their <c>DocumentStorage.Dialect</c> so the movable base holds no direct
+    /// Postgres reference.
+    /// </summary>
+    public IStorageDialect Dialect { get; }
 
     /// <summary>
     /// Subset of the metadata binders that consume a <c>?</c> parameter
