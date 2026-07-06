@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -254,12 +255,12 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.HardDeleteForId(id, tenant);
     }
 
-    public NpgsqlCommand BuildLoadCommand(TId id, string tenant)
+    public DbCommand BuildLoadCommand(TId id, string tenant)
     {
         return _parent.BuildLoadCommand(id, tenant);
     }
 
-    public NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant)
+    public DbCommand BuildLoadManyCommand(TId[] ids, string tenant)
     {
         return _parent.BuildLoadManyCommand(ids, tenant);
     }

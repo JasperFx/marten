@@ -5,8 +5,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Data.Common;
 using Marten.Util;
-using Npgsql;
 
 namespace Marten.Services;
 
@@ -17,7 +17,7 @@ internal static class JsonStreamingExtensions
     internal static readonly byte[] Comma = Encoding.Default.GetBytes(",");
     private static readonly byte[] NullLiteral = Encoding.Default.GetBytes("null");
 
-    internal static async Task<int> StreamOne(this NpgsqlDataReader reader, Stream stream, CancellationToken token)
+    internal static async Task<int> StreamOne(this DbDataReader reader, Stream stream, CancellationToken token)
     {
         if (!await reader.ReadAsync(token).ConfigureAwait(false))
         {
@@ -36,7 +36,7 @@ internal static class JsonStreamingExtensions
         return stream.WriteAsync(bytes, token);
     }
 
-    internal static async Task<int> StreamMany(this NpgsqlDataReader reader, Stream stream, CancellationToken token)
+    internal static async Task<int> StreamMany(this DbDataReader reader, Stream stream, CancellationToken token)
     {
         var count = 0;
         var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
@@ -78,12 +78,13 @@ internal static class JsonStreamingExtensions
     /// quoted and escaped, numerics/bools/datetimes get their JSON literal
     /// representation, and DBNull becomes <c>null</c>.
     /// </summary>
-    internal static async Task WriteJsonValueAsync(this NpgsqlDataReader reader, int ordinal, Stream stream, CancellationToken token)
+    internal static async Task WriteJsonValueAsync(this DbDataReader reader, int ordinal, Stream stream, CancellationToken token)
     {
         var dataTypeName = reader.GetDataTypeName(ordinal);
         if (dataTypeName is "jsonb" or "json")
         {
-            var source = await reader.GetStreamAsync(ordinal, token).ConfigureAwait(false);
+            // #4828/Axis B: GetStream is the base DbDataReader method (no Npgsql-typed reader needed).
+            await using var source = reader.GetStream(ordinal);
             await source.CopyStreamSkippingSOHAsync(stream, token).ConfigureAwait(false);
             return;
         }

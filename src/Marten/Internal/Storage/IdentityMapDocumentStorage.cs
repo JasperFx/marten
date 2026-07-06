@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -99,7 +100,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    private List<T> preselectLoadedDocuments(TId[] ids, IStorageSession session, out NpgsqlCommand command)
+    private List<T> preselectLoadedDocuments(TId[] ids, IStorageSession session, out DbCommand command)
     {
         var list = new List<T>();
 
