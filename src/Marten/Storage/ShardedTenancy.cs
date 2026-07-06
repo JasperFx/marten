@@ -357,21 +357,29 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
                     .With("prev", previousDatabaseId)
                     .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             }
-
-            // Create partition in the target database
-            if (_databasesById.TryFind(databaseId, out var database))
-            {
-                database.TenantIds.Fill(tenantId);
-                _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
-
-                await createPartitionsForTenant(database, tenantId, ct).ConfigureAwait(false);
-            }
         }
         finally
         {
             await conn.CreateCommand($"select pg_advisory_unlock({AdvisoryLockKey})")
                 .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             await conn.CloseAsync().ConfigureAwait(false);
+        }
+
+        // Create the tenant's partitions + per-tenant event sequence in the target database — OUTSIDE the
+        // global advisory lock. The lock exists to keep the master registry rows (assignment + pool
+        // counts) consistent; the partition DDL runs against the tenant's own shard database, is
+        // idempotent, and can take tens of seconds on a store with many partitioned document tables.
+        // Holding the global lock through it serializes ALL tenant provisioning store-wide (a 500-tenant
+        // bulk migration measured ~26s between tenant starts on exactly this, while the median tenant's
+        // actual work took 4s) and pushes concurrent waiters past their command timeout. Crash-safety is
+        // unchanged: with the assignment row committed but partitions missing, a re-run of
+        // AssignTenantAsync (or any idempotent provisioning repair) completes the tenant.
+        if (_databasesById.TryFind(databaseId, out var database))
+        {
+            database.TenantIds.Fill(tenantId);
+            _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
+
+            await createPartitionsForTenant(database, tenantId, ct).ConfigureAwait(false);
         }
     }
 
@@ -659,11 +667,6 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
             database.TenantIds.Fill(tenantId);
             _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
-
-            // Create partitions in the target database
-            await createPartitionsForTenant(database, tenantId, CancellationToken.None).ConfigureAwait(false);
-
-            return database;
         }
         finally
         {
@@ -671,6 +674,13 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
                 .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
             await conn.CloseAsync().ConfigureAwait(false);
         }
+
+        // Partition DDL outside the global registry lock — same rationale as AssignTenantAsync above:
+        // the lock guards the registry rows, not the tenant's shard-local (idempotent) DDL, and holding
+        // it through the DDL serializes every tenant assignment store-wide.
+        await createPartitionsForTenant(database, tenantId, CancellationToken.None).ConfigureAwait(false);
+
+        return database;
     }
 
     private async Task createPartitionsForTenant(MartenDatabase database, string tenantId, CancellationToken ct)
