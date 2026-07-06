@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -198,10 +199,10 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public IDeletion HardDeleteForId(TSimple id, string tenantId)
         => Inner.HardDeleteForId(_converter(id), tenantId);
 
-    public NpgsqlCommand BuildLoadCommand(TSimple id, string tenantId)
+    public DbCommand BuildLoadCommand(TSimple id, string tenantId)
         => Inner.BuildLoadCommand(_converter(id), tenantId);
 
-    public NpgsqlCommand BuildLoadManyCommand(TSimple[] ids, string tenantId)
+    public DbCommand BuildLoadManyCommand(TSimple[] ids, string tenantId)
         => Inner.BuildLoadManyCommand(ids.Select(_converter).ToArray(), tenantId);
 
     public object RawIdentityValue(TSimple id) => id;

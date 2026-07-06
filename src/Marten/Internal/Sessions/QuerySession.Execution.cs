@@ -55,7 +55,7 @@ public partial class QuerySession
             new BatchExecution(batch, _connection), token).AsTask();
     }
 
-    internal async Task<T?> LoadOneAsync<T>(NpgsqlCommand command, ISelector<T> selector, CancellationToken token)
+    internal async Task<T?> LoadOneAsync<T>(DbCommand command, ISelector<T> selector, CancellationToken token)
     {
         await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
         try
@@ -73,9 +73,9 @@ public partial class QuerySession
         }
     }
 
-    internal async Task<bool> StreamOne(NpgsqlCommand command, Stream stream, CancellationToken token)
+    internal async Task<bool> StreamOne(DbCommand command, Stream stream, CancellationToken token)
     {
-        await using var reader = (NpgsqlDataReader)await ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
         try
         {
             return await reader.StreamOne(stream, token).ConfigureAwait(false) == 1;
@@ -86,9 +86,9 @@ public partial class QuerySession
         }
     }
 
-    internal async Task<int> StreamMany(NpgsqlCommand command, Stream stream, CancellationToken token)
+    internal async Task<int> StreamMany(DbCommand command, Stream stream, CancellationToken token)
     {
-        await using var reader = (NpgsqlDataReader)await ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
 
         try
         {

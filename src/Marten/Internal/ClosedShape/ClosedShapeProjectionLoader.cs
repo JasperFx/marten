@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Storage;
-using Npgsql;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -49,7 +48,7 @@ internal static class ClosedShapeProjectionLoader<TDoc, TId>
     private const int FirstMetadataColumn = 2;
 
     public static async Task<TDoc?> LoadAsync(
-        NpgsqlCommand command,
+        DbCommand command,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
         IStorageSerializer serializer,
         IMartenDatabase database,
@@ -75,7 +74,7 @@ internal static class ClosedShapeProjectionLoader<TDoc, TId>
     }
 
     public static async Task<IReadOnlyList<TDoc>> LoadManyAsync(
-        NpgsqlCommand command,
+        DbCommand command,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
         IStorageSerializer serializer,
         IMartenDatabase database,

@@ -409,10 +409,10 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public virtual object RawIdentityValue(TId id) => id;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public NpgsqlCommand BuildLoadCommand(TId id, string tenant)
+    public DbCommand BuildLoadCommand(TId id, string tenant)
         // #4828: the (Postgres) dialect materializes the command; cast back to keep the public
         // IDocumentStorage.BuildLoadCommand signature (NpgsqlCommand) until it is widened to DbCommand.
-        => (NpgsqlCommand)Dialect.BuildLoadCommand(_loaderSql,
+        => Dialect.BuildLoadCommand(_loaderSql,
             RawIdentityValue(id),
             TenancyStyle == TenancyStyle.Conjoined ? tenant : null);
 
@@ -421,8 +421,8 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public virtual DbParameter BuildManyIdParameter(TId[] ids)
         => Dialect.CreateIdArrayParameter(ids, typeof(TId));
 
-    public NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant)
-        => (NpgsqlCommand)Dialect.BuildLoadManyCommand(_loadArraySql,
+    public DbCommand BuildLoadManyCommand(TId[] ids, string tenant)
+        => Dialect.BuildLoadManyCommand(_loadArraySql,
             BuildManyIdParameter(ids),
             TenancyStyle == TenancyStyle.Conjoined ? tenant : null);
 
