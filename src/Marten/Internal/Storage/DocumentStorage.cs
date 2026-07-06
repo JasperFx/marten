@@ -22,7 +22,6 @@ using Marten.Services;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
-using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -44,8 +43,6 @@ internal interface IHaveMetadataColumns
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMetadataColumns where T : notnull where TId : notnull
 {
-    private readonly NpgsqlDbType _idType;
-
     protected readonly string _loadArraySql;
     protected readonly string _loaderSql;
     private readonly string _selectClause;
@@ -62,6 +59,10 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     // fragment. Stored so the base no longer reads DocumentMapping post-construction.
     private readonly DeleteStyle _deleteStyle;
 
+    // #4828: the ADO/SQL-dialect strategy. Postgres by default; the seam lets the movable base
+    // build load commands / id filters / interpret error codes without a direct Npgsql reference.
+    protected virtual IStorageDialect Dialect => PostgresStorageDialect<TId>.Instance;
+
     public DocumentStorage(StorageStyle storageStyle, DocumentMapping document)
     {
         // #4828: read everything the base needs off the mapping here, in the ctor,
@@ -76,8 +77,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         _metadataColumns = document.Schema.Table.Columns.OfType<MetadataColumn>().ToArray();
 
         determineDefaultWhereFragment();
-
-        _idType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
 
         var table = document.Schema.Table;
 
@@ -174,12 +173,9 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         {
             await database.RunSqlAsync(sql, ct).ConfigureAwait(false);
         }
-        catch (PostgresException e)
+        catch (Exception e) when (Dialect.IsUndefinedTable(e))
         {
-            if (e.SqlState != PostgresErrorCodes.UndefinedTable)
-            {
-                throw;
-            }
+            // the table doesn't exist yet — nothing to truncate
         }
     }
 
@@ -207,7 +203,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public ISqlFragment ByIdFilter(TId id)
     {
-        return new ByIdFilter(RawIdentityValue(id), _idType);
+        return Dialect.ByIdFilter(RawIdentityValue(id));
     }
 
     public IDeletion HardDeleteForId(TId id, string tenant)
@@ -415,22 +411,11 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public NpgsqlCommand BuildLoadCommand(TId id, string tenant)
-    {
-        return TenancyStyle == TenancyStyle.Conjoined
-            ? new NpgsqlCommand(_loaderSql) {
-                Parameters = {
-                    ParameterForId(id),
-                    new() { Value = tenant }
-                }
-            }
-            : new NpgsqlCommand(_loaderSql)
-            {
-                Parameters =
-                {
-                    ParameterForId(id)
-                }
-            };
-    }
+        // #4828: the (Postgres) dialect materializes the command; cast back to keep the public
+        // IDocumentStorage.BuildLoadCommand signature (NpgsqlCommand) until it is widened to DbCommand.
+        => (NpgsqlCommand)Dialect.BuildLoadCommand(_loaderSql,
+            RawIdentityValue(id),
+            TenancyStyle == TenancyStyle.Conjoined ? tenant : null);
 
     public virtual NpgsqlParameter BuildManyIdParameter(TId[] ids) => new() { Value = ids };
 
