@@ -1,10 +1,10 @@
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Schema.BulkLoading;
 using Marten.Storage;
-using Npgsql;
 
 namespace Marten.Internal.CodeGeneration;
 
@@ -17,7 +17,7 @@ public class SubClassBulkLoader<T, TRoot>: IBulkLoader<T> where T : TRoot
         _inner = inner;
     }
 
-    public Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents,
+    public Task LoadAsync(Tenant tenant, ISerializer serializer, DbConnection conn, IEnumerable<T> documents,
         CancellationToken cancellation)
     {
         return _inner.LoadAsync(tenant, serializer, conn, documents.OfType<TRoot>(), cancellation);
@@ -28,7 +28,7 @@ public class SubClassBulkLoader<T, TRoot>: IBulkLoader<T> where T : TRoot
         return _inner.CreateTempTableForCopying();
     }
 
-    public Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
+    public Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, DbConnection conn,
         IEnumerable<T> documents,
         CancellationToken cancellation)
     {

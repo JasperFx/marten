@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
@@ -19,11 +20,13 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T> where TId : notnull whe
         _storage = storage;
     }
 
-    public async Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
+    public async Task LoadAsync(Tenant tenant, ISerializer serializer, DbConnection conn,
         IEnumerable<T> documents,
         CancellationToken cancellation)
     {
-        await using var writer = await conn.BeginBinaryImportAsync(MainLoaderSql(), cancellation).ConfigureAwait(false);
+        // Bulk loading uses the Postgres COPY (binary import) protocol; the neutral IBulkLoader
+        // contract takes a DbConnection, so the Postgres loader casts to NpgsqlConnection here.
+        await using var writer = await ((NpgsqlConnection)conn).BeginBinaryImportAsync(MainLoaderSql(), cancellation).ConfigureAwait(false);
 
         foreach (var document in documents)
         {
@@ -38,11 +41,11 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T> where TId : notnull whe
 
     public abstract string CreateTempTableForCopying();
 
-    public async Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
+    public async Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, DbConnection conn,
         IEnumerable<T> documents,
         CancellationToken cancellation)
     {
-        await using var writer = await conn.BeginBinaryImportAsync(TempLoaderSql(), cancellation).ConfigureAwait(false);
+        await using var writer = await ((NpgsqlConnection)conn).BeginBinaryImportAsync(TempLoaderSql(), cancellation).ConfigureAwait(false);
         foreach (var document in documents)
         {
             await writer.StartRowAsync(cancellation).ConfigureAwait(false);

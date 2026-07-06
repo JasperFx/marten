@@ -1,8 +1,8 @@
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Storage;
-using Npgsql;
 
 namespace Marten.Schema.BulkLoading;
 
@@ -12,12 +12,12 @@ namespace Marten.Schema.BulkLoading;
 /// <typeparam name="T"></typeparam>
 public interface IBulkLoader<T>
 {
-    Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents,
+    Task LoadAsync(Tenant tenant, ISerializer serializer, DbConnection conn, IEnumerable<T> documents,
         CancellationToken cancellation);
 
     string CreateTempTableForCopying();
 
-    Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents,
+    Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, DbConnection conn, IEnumerable<T> documents,
         CancellationToken cancellation);
 
     string CopyNewDocumentsFromTempTable();
