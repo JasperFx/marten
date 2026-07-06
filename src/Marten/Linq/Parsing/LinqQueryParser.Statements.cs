@@ -3,6 +3,7 @@ using System.Linq;
 using Marten.Linq.SqlGeneration;
 
 using Marten.Internal;
+using Marten.Internal.Storage;
 
 namespace Marten.Linq.Parsing;
 
@@ -23,7 +24,7 @@ internal partial class LinqQueryParser
             _collectionUsages[i - 1].Inner = _collectionUsages[i];
         }
 
-        var documentStorage = Session.StorageFor(top.ElementType);
+        var documentStorage = (ILinqDocumentStorage)Session.StorageFor(top.ElementType);
         var collection = documentStorage.QueryMembers;
 
         // In case the single value mode is passed through by the MartenLinqProvider

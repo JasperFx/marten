@@ -216,7 +216,7 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
     }
 }
 
-public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
+public class EventMapping<T>: EventMapping, IDocumentStorage<T>, ILinqDocumentStorage where T : class
 {
     private readonly string _tableName;
     private readonly Type _idType;

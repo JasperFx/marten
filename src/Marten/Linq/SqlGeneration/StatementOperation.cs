@@ -78,7 +78,7 @@ internal class StatementOperation: Statement, IStorageOperation
             body = l.Body;
         }
 
-        ParseWhereClause(new[] { body }, session, _storage.QueryMembers, _storage);
+        ParseWhereClause(new[] { body }, session, ((ILinqDocumentStorage)_storage).QueryMembers, _storage);
 
         return Wheres.SingleOrDefault();
     }

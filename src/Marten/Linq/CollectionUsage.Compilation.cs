@@ -334,7 +334,7 @@ public partial class CollectionUsage
         }
 
         // 1. Convert the outer statement to a CTE
-        var outerStorage = session.StorageFor(ElementType);
+        var outerStorage = (ILinqDocumentStorage)session.StorageFor(ElementType);
         var outerCollection = outerStorage.QueryMembers;
 
         outerStatement.Mode = StatementMode.CommonTableExpression;
@@ -345,7 +345,7 @@ public partial class CollectionUsage
         outerStatement.SelectClause = outerStorage.SelectClauseWithDuplicatedFields;
 
         // 2. Create the inner CTE
-        var innerStorage = session.StorageFor(groupJoin.InnerElementType);
+        var innerStorage = (ILinqDocumentStorage)session.StorageFor(groupJoin.InnerElementType);
         var innerCollection = innerStorage.QueryMembers;
 
         var innerStatement = new SelectorStatement

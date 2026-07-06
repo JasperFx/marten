@@ -35,7 +35,7 @@ namespace Marten.Events;
 ///     mapping for the event store in a running system. The actual implementation of this
 ///     base type is generated and compiled at runtime by Marten
 /// </summary>
-public abstract class EventDocumentStorage: IEventStorage
+public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
 {
     private readonly ISqlFragment _defaultWhere;
     private readonly string[] _fields;
