@@ -36,7 +36,7 @@ internal sealed class DocumentLastModifiedBinder<TDoc>: IDocumentMetadataBinder<
 
     public string ValueSql => "transaction_timestamp()";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
         // No-op — IsServerSide is true; the operation skips this binder
         // in its write loop. The SQL literal in ValueSql does the work.

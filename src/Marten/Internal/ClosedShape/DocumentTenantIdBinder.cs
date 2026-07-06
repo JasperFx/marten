@@ -39,7 +39,7 @@ internal sealed class DocumentTenantIdBinder<TDoc>: IDocumentMetadataBinder<TDoc
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
         => throw new NotSupportedException(
             "tenant_id is bound directly by the storage operation; this binder is read-only.");
 

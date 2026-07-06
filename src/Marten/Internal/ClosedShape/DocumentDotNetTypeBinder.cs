@@ -27,10 +27,10 @@ internal sealed class DocumentDotNetTypeBinder<TDoc>: IDocumentMetadataBinder<TD
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
         parameter.Value = ResolveTypeName(document);
-        parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
+        ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Varchar;
     }
 
     public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)

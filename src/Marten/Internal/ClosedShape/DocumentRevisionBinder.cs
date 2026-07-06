@@ -71,17 +71,17 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
         if (_columnDbType == NpgsqlDbType.Integer)
         {
             parameter.Value = 0;
-            parameter.NpgsqlDbType = NpgsqlDbType.Integer;
+            ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Integer;
         }
         else
         {
             parameter.Value = 0L;
-            parameter.NpgsqlDbType = NpgsqlDbType.Bigint;
+            ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Bigint;
         }
     }
 
