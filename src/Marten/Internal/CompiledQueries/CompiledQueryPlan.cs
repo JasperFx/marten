@@ -9,6 +9,7 @@ using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
+using System.Data.Common;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
@@ -282,6 +283,14 @@ public class CompiledQueryPlan : ICommandBuilder
 
         return parameters;
     }
+
+    // weasel#324: DbParameter[]-returning overloads. The recorded parameters are NpgsqlParameters,
+    // which are DbParameters — delegate to the existing recording logic and return via array covariance.
+    DbParameter[] ICommandBuilder.AppendWithDbParameters(string text)
+        => ((ICommandBuilder)this).AppendWithParameters(text);
+
+    DbParameter[] ICommandBuilder.AppendWithDbParameters(string text, char placeholder)
+        => ((ICommandBuilder)this).AppendWithParameters(text, placeholder);
 
     void ICommandBuilder.StartNewCommand()
     {

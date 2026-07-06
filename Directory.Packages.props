@@ -147,7 +147,10 @@
          Polecat share it; Weasel.Core 9.4.0 flows in transitively. -->
     <!-- 9.5.0 (weasel#323): adds a shared Weasel.Core.ISerializer base for the Critter Stack
          dedupe. Weasel.Core 9.5.0 flows in transitively. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.5.0" />
+    <!-- 9.6.0 (weasel#324): adds DbParameter[]-returning AppendWithDbParameters to the non-generic
+         ICommandBuilder, unblocking the closed-shape operation param path (#4821/#4828). Weasel.Core
+         9.6.0 flows in transitively. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.6.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
