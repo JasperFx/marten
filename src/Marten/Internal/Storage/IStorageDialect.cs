@@ -31,6 +31,20 @@ public interface IStorageDialect
     DbCommand BuildLoadCommand(string loaderSql, object rawId, string? tenant);
 
     /// <summary>
+    ///     Create the id-array parameter for a load-many command from the raw (already
+    ///     <c>ToRawSqlValue</c>'d) id values and the .NET type of a single raw id. Postgres binds a
+    ///     single array parameter (<c>= ANY($1)</c>); other dialects may shape this differently.
+    /// </summary>
+    DbParameter CreateIdArrayParameter(Array rawIds, Type rawSqlType);
+
+    /// <summary>
+    ///     Build a load-many command over the storage's prebuilt array-loader SQL, binding the
+    ///     id-array parameter (from <see cref="CreateIdArrayParameter"/>) and, for conjoined tenancy,
+    ///     the tenant id.
+    /// </summary>
+    DbCommand BuildLoadManyCommand(string loadArraySql, DbParameter idArrayParameter, string? tenant);
+
+    /// <summary>
     ///     The id-equality <see cref="ISqlFragment"/> for a raw id — carries the dialect's parameter
     ///     type so the emitted predicate binds correctly.
     /// </summary>

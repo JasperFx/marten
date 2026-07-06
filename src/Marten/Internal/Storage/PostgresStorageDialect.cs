@@ -38,6 +38,25 @@ internal sealed class PostgresStorageDialect<TId>: IStorageDialect
         return command;
     }
 
+    public DbParameter CreateIdArrayParameter(Array rawIds, Type rawSqlType)
+        => new NpgsqlParameter
+        {
+            Value = rawIds,
+            NpgsqlDbType = NpgsqlDbType.Array | PostgresqlProvider.Instance.ToParameterType(rawSqlType)
+        };
+
+    public DbCommand BuildLoadManyCommand(string loadArraySql, DbParameter idArrayParameter, string? tenant)
+    {
+        var command = new NpgsqlCommand(loadArraySql);
+        command.Parameters.Add(idArrayParameter);
+        if (tenant is not null)
+        {
+            command.Parameters.Add(new NpgsqlParameter { Value = tenant });
+        }
+
+        return command;
+    }
+
     public ISqlFragment ByIdFilter(object rawId) => new ByIdFilter(rawId, IdParameterType);
 
     public bool IsUndefinedTable(Exception exception)

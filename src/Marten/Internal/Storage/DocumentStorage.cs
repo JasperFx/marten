@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -407,9 +408,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public virtual object RawIdentityValue(TId id) => id;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public NpgsqlParameter ParameterForId(TId id) => new() {Value = RawIdentityValue(id)};
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public NpgsqlCommand BuildLoadCommand(TId id, string tenant)
         // #4828: the (Postgres) dialect materializes the command; cast back to keep the public
         // IDocumentStorage.BuildLoadCommand signature (NpgsqlCommand) until it is widened to DbCommand.
@@ -417,25 +415,15 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
             RawIdentityValue(id),
             TenancyStyle == TenancyStyle.Conjoined ? tenant : null);
 
-    public virtual NpgsqlParameter BuildManyIdParameter(TId[] ids) => new() { Value = ids };
+    // #4828: default id-array parameter via the dialect. Closed-shape storages override this to
+    // project strong-typed ids to their raw values first (using the descriptor's Identification).
+    public virtual DbParameter BuildManyIdParameter(TId[] ids)
+        => Dialect.CreateIdArrayParameter(ids, typeof(TId));
 
     public NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant)
-    {
-        return TenancyStyle == TenancyStyle.Conjoined
-            ? new NpgsqlCommand(_loadArraySql) {
-                Parameters = {
-                    BuildManyIdParameter(ids),
-                    new() { Value = tenant }
-                }
-            }
-            : new NpgsqlCommand(_loadArraySql)
-            {
-                Parameters =
-                {
-                    BuildManyIdParameter(ids)
-                }
-            };
-    }
+        => (NpgsqlCommand)Dialect.BuildLoadManyCommand(_loadArraySql,
+            BuildManyIdParameter(ids),
+            TenancyStyle == TenancyStyle.Conjoined ? tenant : null);
 
     private void determineDefaultWhereFragment()
     {
