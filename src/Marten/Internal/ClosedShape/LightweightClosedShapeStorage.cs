@@ -62,9 +62,9 @@ public abstract class LightweightClosedShapeStorage<TDoc, TId>: LightweightDocum
     // ItemMap / ChangeTrackers per row. Shared with IdentityMap / DirtyChecked.
     public override Task<TDoc?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token)
         => ClosedShapeProjectionLoader<TDoc, TId>.LoadAsync(
-            BuildLoadCommand(id, tenantId), _descriptor, _mapping.StoreOptions.Serializer(), database, token);
+            BuildLoadCommand(id, tenantId), _descriptor, _descriptor.Serializer, database, token);
 
     public override Task<IReadOnlyList<TDoc>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
         => ClosedShapeProjectionLoader<TDoc, TId>.LoadManyAsync(
-            BuildLoadManyCommand(ids, tenantId), _descriptor, _mapping.StoreOptions.Serializer(), database, token);
+            BuildLoadManyCommand(ids, tenantId), _descriptor, _descriptor.Serializer, database, token);
 }

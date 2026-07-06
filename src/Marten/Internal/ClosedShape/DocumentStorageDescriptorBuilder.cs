@@ -59,7 +59,7 @@ internal static class DocumentStorageDescriptorBuilder
             // #4829: capture the alias→Type lookup as an agnostic delegate so the
             // descriptor + selectors don't hold the Marten DocumentMapping type.
             resolveDocumentType = mapping.TypeFor;
-            var docTypeBinder = new DocumentDocTypeBinder<TDoc>(mapping);
+            var docTypeBinder = new DocumentDocTypeBinder<TDoc>(mapping.AliasFor);
             writeBinders.Add(docTypeBinder);
             docTypeReadIndex = readBinders.Count;
             readBinders.Add(docTypeBinder);
@@ -282,6 +282,7 @@ internal static class DocumentStorageDescriptorBuilder
 
         return new DocumentStorageDescriptor<TDoc, TId>(
             identification,
+            serializer: mapping.StoreOptions.Serializer(),
             clientSideWriteBinders: clientSide,
             writeBinders: writeArray,
             readBinders: readArray,
