@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Linq.Members;
 using Npgsql;
 using Weasel.Core;
@@ -107,6 +108,14 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
         // No-op — duplicated columns aren't in the document SELECT.
         // The canonical value is deserialized from the data column.
     }
+
+    // #4828: duplicated fields carry an arbitrary, user-overridable provider parameter type
+    // (_field.DbType), which can't be reduced to the neutral StorageColumnType vocabulary — so this
+    // binder is not part of the movable set. GetBulkValue is never called for it (the Postgres bulk
+    // loader special-cases it and calls WriteToBulkAsync directly); it throws to make that contract loud.
+    public BulkColumnValue GetBulkValue(TDoc document)
+        => throw new NotSupportedException(
+            "Duplicated fields use the Postgres-native bulk path (WriteToBulkAsync); GetBulkValue is not applicable.");
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
         IStorageSerializer serializer, CancellationToken cancellation)

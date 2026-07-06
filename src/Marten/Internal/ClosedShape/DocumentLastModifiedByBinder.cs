@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
 using NpgsqlTypes;
@@ -57,7 +58,5 @@ internal sealed class DocumentLastModifiedByBinder<TDoc>: IDocumentMetadataBinde
         _setter(document, value);
     }
 
-    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation)
-        => writer.WriteNullAsync(cancellation);
+    public BulkColumnValue GetBulkValue(TDoc document) => BulkColumnValue.Null;
 }

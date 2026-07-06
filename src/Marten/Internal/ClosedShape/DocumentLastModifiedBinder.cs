@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -50,14 +51,13 @@ internal sealed class DocumentLastModifiedBinder<TDoc>: IDocumentMetadataBinder<
         _setter(document, ts);
     }
 
-    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation)
+    public BulkColumnValue GetBulkValue(TDoc document)
     {
         // COPY can't run transaction_timestamp() — compute client-side.
         // Slight skew vs. SQL writes that get the transaction's
         // commit time; acceptable for the bulk path.
         var now = DateTimeOffset.UtcNow;
         _setter?.Invoke(document, now);
-        return writer.WriteAsync(now, NpgsqlDbType.TimestampTz, cancellation);
+        return new BulkColumnValue(now, StorageColumnType.Timestamp);
     }
 }

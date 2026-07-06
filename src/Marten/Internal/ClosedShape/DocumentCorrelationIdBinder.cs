@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
 using NpgsqlTypes;
@@ -56,13 +57,8 @@ internal sealed class DocumentCorrelationIdBinder<TDoc>: IDocumentMetadataBinder
         _setter(document, value);
     }
 
-    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation)
-    {
-        // Bulk loader has no session — no source for a correlation id.
-        // Write null; mirrors the codegen path's bulk emit which writes a
-        // constant placeholder (the column was never session-aware on the
-        // COPY path).
-        return writer.WriteNullAsync(cancellation);
-    }
+    public BulkColumnValue GetBulkValue(TDoc document)
+        // Bulk loader has no session — no source for a correlation id. Write null;
+        // mirrors the codegen path's bulk emit (the column was never session-aware on COPY).
+        => BulkColumnValue.Null;
 }

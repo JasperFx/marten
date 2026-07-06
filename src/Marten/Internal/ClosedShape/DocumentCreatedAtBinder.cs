@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Npgsql;
 
 namespace Marten.Internal.ClosedShape;
@@ -63,8 +64,7 @@ internal sealed class DocumentCreatedAtBinder<TDoc>: IDocumentMetadataBinder<TDo
         _setter(document, ts);
     }
 
-    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation)
+    public BulkColumnValue GetBulkValue(TDoc document)
         => throw new NotSupportedException(
             "mt_created_at is filled by the column DEFAULT during bulk load; this binder is read-only.");
 }

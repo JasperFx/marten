@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
 
@@ -51,8 +52,7 @@ internal sealed class DocumentTenantIdBinder<TDoc>: IDocumentMetadataBinder<TDoc
         _setter(document, value);
     }
 
-    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation)
+    public BulkColumnValue GetBulkValue(TDoc document)
         => throw new NotSupportedException(
             "tenant_id is handled directly by the bulk loader; this binder is read-only.");
 }

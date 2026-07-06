@@ -261,11 +261,46 @@ internal sealed class ClosedShapeBulkLoader<TDoc, TId>: BulkLoader<TDoc, TId>
         var json = serializer.ToJson(document);
         await writer.WriteAsync(json, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
 
-        // Each metadata binder writes its column value.
+        // Each metadata binder contributes its column value. The fixed metadata binders return a
+        // dialect-neutral BulkColumnValue; duplicated fields carry an arbitrary provider type and
+        // stay on the Postgres-native write (#4828).
         foreach (var binder in _descriptor.WriteBinders)
         {
-            await binder.WriteToBulkAsync(writer, document, serializer, cancellation).ConfigureAwait(false);
+            if (binder is DocumentDuplicatedFieldBinder<TDoc> duplicated)
+            {
+                await duplicated.WriteToBulkAsync(writer, document, serializer, cancellation).ConfigureAwait(false);
+            }
+            else
+            {
+                await WriteBulkValueAsync(writer, binder.GetBulkValue(document), cancellation).ConfigureAwait(false);
+            }
         }
+    }
+
+    private static Task WriteBulkValueAsync(NpgsqlBinaryImporter writer, BulkColumnValue column,
+        CancellationToken cancellation)
+    {
+        if (column.Value is null)
+        {
+            return writer.WriteNullAsync(cancellation);
+        }
+
+        var dbType = column.Type switch
+        {
+            StorageColumnType.String => NpgsqlDbType.Varchar,
+            StorageColumnType.Guid => NpgsqlDbType.Uuid,
+            StorageColumnType.Long => NpgsqlDbType.Bigint,
+            StorageColumnType.Int => NpgsqlDbType.Integer,
+            StorageColumnType.Boolean => NpgsqlDbType.Boolean,
+            StorageColumnType.Timestamp => NpgsqlDbType.TimestampTz,
+            StorageColumnType.Json => NpgsqlDbType.Jsonb,
+            _ => throw new ArgumentOutOfRangeException(nameof(column))
+        };
+
+        // DBNull → typed NULL of the column type (e.g. a JSONB null); otherwise the value itself.
+        return column.Value is DBNull
+            ? writer.WriteAsync<object>(DBNull.Value, dbType, cancellation)
+            : writer.WriteAsync(column.Value, dbType, cancellation);
     }
 
     private string ColumnList(bool includeExpectedVersion)

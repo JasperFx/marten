@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Npgsql;
 using NpgsqlTypes;
 
@@ -71,11 +72,10 @@ internal sealed class DocumentVersionBinder<TDoc>: IDocumentMetadataBinder<TDoc>
     public void ApplyVersionTo(TDoc document, Guid version)
         => _setter?.Invoke(document, version);
 
-    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation)
+    public BulkColumnValue GetBulkValue(TDoc document)
     {
         var newVersion = CombGuidIdGeneration.NewGuid();
         _setter?.Invoke(document, newVersion);
-        return writer.WriteAsync(newVersion, NpgsqlDbType.Uuid, cancellation);
+        return new BulkColumnValue(newVersion, StorageColumnType.Guid);
     }
 }

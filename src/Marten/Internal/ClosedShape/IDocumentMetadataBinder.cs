@@ -1,8 +1,7 @@
 #nullable enable
 using System.Data.Common;
-using System.Threading;
-using System.Threading.Tasks;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Npgsql;
 
 namespace Marten.Internal.ClosedShape;
@@ -92,15 +91,15 @@ public interface IDocumentMetadataBinder<TDoc>
     void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session);
 
     /// <summary>
-    /// W3 spike (M16): per-row write hook on the COPY (bulk) path. Each
-    /// binder produces a value + NpgsqlDbType and writes both to the
-    /// <see cref="NpgsqlBinaryImporter"/> in COPY column order. Unlike
-    /// <see cref="BindParameter"/>, server-side binders (e.g.
-    /// <c>transaction_timestamp()</c>) must compute a client-side value
-    /// here since COPY doesn't honor inline SQL literals — the override
-    /// produces <see cref="System.DateTimeOffset.UtcNow"/> for the
-    /// LastModified case.
+    /// #4828: the binder's contribution to a bulk-load row, as a dialect-neutral
+    /// <see cref="BulkColumnValue"/> (value + <see cref="StorageColumnType"/>) — replacing the
+    /// previous <c>WriteToBulkAsync(NpgsqlBinaryImporter, …)</c> so the metadata binders no longer
+    /// depend on the Npgsql COPY writer. The dialect-specific bulk loader maps the type to its
+    /// provider and writes. Like the old bulk path, server-side binders (e.g.
+    /// <c>transaction_timestamp()</c>) compute a client-side value here since COPY doesn't honor
+    /// inline SQL literals — the LastModified binder produces <see cref="System.DateTimeOffset.UtcNow"/>.
+    /// Any document mutation the value implies (version writeback, LastModified) happens as a side
+    /// effect of this call, exactly as it did in the old bulk write.
     /// </summary>
-    Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        IStorageSerializer serializer, CancellationToken cancellation);
+    BulkColumnValue GetBulkValue(TDoc document);
 }
