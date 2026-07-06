@@ -1,11 +1,11 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Schema.BulkLoading;
 using Marten.Storage;
-using Npgsql;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -20,12 +20,12 @@ internal sealed class SpikeNotImplementedBulkLoader<T>: IBulkLoader<T>
     private const string Message =
         "Bulk insert isn't covered by the W3 spike's closed-shape document storage.";
 
-    public Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents,
+    public Task LoadAsync(Tenant tenant, ISerializer serializer, DbConnection conn, IEnumerable<T> documents,
         CancellationToken cancellation) => throw new NotSupportedException(Message);
 
     public string CreateTempTableForCopying() => throw new NotSupportedException(Message);
 
-    public Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
+    public Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, DbConnection conn,
         IEnumerable<T> documents, CancellationToken cancellation) => throw new NotSupportedException(Message);
 
     public string CopyNewDocumentsFromTempTable() => throw new NotSupportedException(Message);
