@@ -87,13 +87,13 @@
          IEventStore.DistributesAgentsPerTenant into BuildDistributor (ProjectionCoordinator).
          Also DaemonMode.ExternallyManaged (jasperfx#490, wolverine#3290 — external hosts run
          projections; the store hosts no coordination and must not warn). -->
-    <PackageVersion Include="JasperFx" Version="2.23.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.23.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.23.0">
+    <PackageVersion Include="JasperFx" Version="2.24.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.24.0" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.24.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.23.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.24.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
