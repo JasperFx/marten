@@ -29,7 +29,22 @@ public partial class MartenDatabase : ICrossTenantRebuildSource
     /// would otherwise be skipped — that's the opposite of what
     /// "rebuild X everywhere" should do.
     /// </summary>
-    public async Task<IReadOnlyList<string>> FindRebuildTenantsAsync(string projectionName, CancellationToken token)
+    public Task<IReadOnlyList<string>> FindRebuildTenantsAsync(string projectionName, CancellationToken token)
+    {
+        return FetchManagedTenantIdsAsync(token);
+    }
+
+    /// <summary>
+    /// #4862 — the Marten-managed tenant list for this database, read fresh from the
+    /// <c>mt_tenant_partitions</c> lookup table. This is the single source of truth for
+    /// "which tenants live here" under Marten-managed partitioning; it backs both the
+    /// cross-tenant rebuild fan-out above and
+    /// <see cref="TenantPartitionedSingleDatabaseTenancy"/>'s usage descriptor
+    /// <c>TenantIds</c> (so hosts that distribute agents per tenant know which
+    /// tenants to start agents for).
+    /// Returns an empty list when Marten-managed partitioning isn't active.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> FetchManagedTenantIdsAsync(CancellationToken token)
     {
         var tenantPartitions = Options.TenantPartitions;
         if (tenantPartitions == null)
