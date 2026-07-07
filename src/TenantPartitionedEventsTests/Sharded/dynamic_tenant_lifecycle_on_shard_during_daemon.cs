@@ -46,6 +46,14 @@ namespace TenantPartitionedEventsTests.Sharded;
 ///     the SHARD database's own <c>mt_event_progression</c> and the projection catches up to the
 ///     tenant's own height — WITHOUT a restart and WITHOUT the explicit per-tenant
 ///     <c>StartAgentAsync</c> (wolverine#3280) workaround this test previously had to drive.</item>
+///   <item>#4868/#4880 — the REMOVE side of the lifecycle: <c>Advanced.RemoveTenantFromShardAsync</c>
+///     mid-run (from the separate client store) shrinks the client store's usage descriptor
+///     immediately (no restart), drops the tenant from the shard's own
+///     <c>mt_tenant_partitions</c> registry, and the RUNNING HotCold coordinator's next
+///     re-expansion stops producing the tenant's shard name — its agent is REAPED by
+///     the jasperfx#491 reconciliation pass (<c>reapOrphanedAgentsAsync</c>). The tenant's
+///     per-tenant progression + high-water rows are cleaned (#4683 semantics) and stay gone,
+///     while the surviving tenant keeps processing new events on the same shard daemon.</item>
 /// </list>
 /// LeadershipPollingTime is tuned down to 250ms so the mid-run discovery converges fast and
 /// deterministically instead of sleeping the default window.
@@ -232,11 +240,81 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             {
                 (await query.LoadAsync<ShardedDaemonCounter>(stream1))!.EventCount.ShouldBe(3);
             }
+
+            // ---- Phase 2 (#4868 / #4880): REMOVE tenant 2 while the coordinator keeps running ----
+            await _store.Advanced.RemoveTenantFromShardAsync(tenant2, CancellationToken.None);
+
+            // #4868: the client store's own usage descriptor shrinks IMMEDIATELY — no restart.
+            // This is the signal Wolverine-managed distribution diffs per cycle to retire the
+            // tenant's agents (the descriptor used to be add-only and never shrank).
+            var clientUsage = await _store.Options.Tenancy.DescribeDatabasesAsync(CancellationToken.None);
+            clientUsage.Databases.SelectMany(x => x.TenantIds).ShouldNotContain(tenant2);
+            clientUsage.Databases.SelectMany(x => x.TenantIds).ShouldContain(tenant1);
+
+            // ... and so does a FRESH DescribeDatabasesAsync on the RUNNING coordinator node's
+            // store — the fresh-read reconciliation in BuildDatabases, i.e. the cross-node path.
+            var nodeStore = node.Services.GetRequiredService<IDocumentStore>();
+            var nodeUsage = await nodeStore.Options.Tenancy.DescribeDatabasesAsync(CancellationToken.None);
+            nodeUsage.Databases.SelectMany(x => x.TenantIds).ShouldNotContain(tenant2);
+
+            // #4880: the NATIVE HotCold coordinator retires the removed tenant's agent on its
+            // own — the shard's mt_tenant_partitions registry no longer lists tenant 2, the
+            // next leadership-cycle re-expansion (jasperfx#491's PerTenantShardExpansion) stops
+            // producing its shard name, and reapOrphanedAgentsAsync stops the running agent.
+            await WaitForConditionAsync(
+                () => daemon.CurrentAgents().All(x =>
+                    x.Name.Identity != $"{ShardedDaemonProjection.ProjectionName}:All:{tenant2}"),
+                30.Seconds(),
+                "tenant 2's agent is reaped by coordinator reconciliation after removal");
+            _output.WriteLine("shard A agents after removal: " +
+                              string.Join(", ", daemon.CurrentAgents().Select(x => x.Name.Identity)));
+
+            // Progression-row contract on REMOVE (pinned by #4880): the tenant's per-tenant
+            // progression + high-water rows are CLEANED (#4683 semantics), and nothing
+            // re-creates them once the agent is reaped — a re-added tenant starts fresh.
+            var afterRemoval = await ProgressionRowsAsync(shardConnStr);
+            DumpRows("shard A progression after removing tenant 2", afterRemoval);
+            afterRemoval.Any(r => r.Name == $"{ShardedDaemonProjection.ProjectionName}:All:{tenant2}")
+                .ShouldBeFalse("the removed tenant's projection progression rows must be cleaned");
+            afterRemoval.Any(r => r.Name == $"HighWaterMark:{tenant2}")
+                .ShouldBeFalse("the removed tenant's high-water row must be cleaned");
+
+            // The surviving tenant keeps processing NEW events on the same shard daemon —
+            // the reap didn't take the shard's other agents down with it.
+            await using (var session = _store.LightweightSession(tenant1))
+            {
+                session.Events.Append(stream1, new ShardedDaemonEvent("t1-4"));
+                await session.SaveChangesAsync();
+            }
+
+            var survivorRows = await WaitForProgressionAsync(shardConnStr, r =>
+                    SeqOf(r, $"{ShardedDaemonProjection.ProjectionName}:All:{tenant1}") >= 4,
+                30.Seconds(), "the surviving tenant's agent keeps catching up after the removal");
+
+            // ... and the removed tenant's rows never came back across those polling cycles.
+            survivorRows.Any(r => r.Name.EndsWith($":{tenant2}", StringComparison.Ordinal))
+                .ShouldBeFalse("no per-tenant progression rows may be re-persisted for the removed tenant");
         }
         finally
         {
             await node.StopAsync();
         }
+    }
+
+    private static async Task WaitForConditionAsync(Func<bool> condition, TimeSpan timeout, string what)
+    {
+        var sw = Stopwatch.StartNew();
+        while (sw.Elapsed < timeout)
+        {
+            if (condition())
+            {
+                return;
+            }
+
+            await Task.Delay(250);
+        }
+
+        throw new TimeoutException($"Timed out after {timeout} waiting for: {what}");
     }
 
     private static async Task<bool> SequenceExistsAsync(string connectionString, string sequenceName)

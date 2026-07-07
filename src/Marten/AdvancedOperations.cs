@@ -661,8 +661,26 @@ public class AdvancedOperations
 
         if (_store.Tenancy is not DefaultTenancy)
         {
+            // #4880: route the sharded case to the full per-tenant removal path — the
+            // symmetric inverse of AddMartenManagedTenantsAsync's sharded routing. Under the
+            // sharded 1:1 tenant↔suffix shape, ShardedTenancy.RemoveTenantAsync drops the
+            // tenant's partitions + per-tenant event sequence + progression rows on its shard
+            // AND deletes the master-registry assignment row (see #4868 for the descriptor
+            // shrink that lets running hosts retire the tenant's daemon agents).
+            if (_store.Tenancy is ShardedTenancy shardedTenancy)
+            {
+                foreach (var suffix in suffixes)
+                {
+                    await shardedTenancy.RemoveTenantAsync(suffix, token).ConfigureAwait(false);
+                }
+
+                return;
+            }
+
             throw new InvalidOperationException(
-                "This option is not (yet) supported in combination with database per tenant multi-tenancy");
+                "RemoveMartenManagedTenantsAsync supports DefaultTenancy and ShardedTenancy. " +
+                "MasterTableTenancy tenants own their whole database — call " +
+                "IServiceProvider.RemoveTenantAsync(tenantId) instead.");
         }
 
         var database = (PostgresqlDatabase)_store.Tenancy.Default.Database;
@@ -718,6 +736,25 @@ public class AdvancedOperations
         // entry point and the store-agnostic JasperFx admin extension drive ONE code path
         // (auto-assign → createPartitionsForTenant → per-tenant event sequence).
         return sharded.AddTenantAsync(tenantId, ct);
+    }
+
+    /// <summary>
+    ///     Fully remove a tenant from the sharded pool — the symmetric inverse of
+    ///     <see cref="AddTenantToShardAsync(string, CancellationToken)"/>. Drops the tenant's list
+    ///     partitions (and, under <c>UseTenantPartitionedEvents</c>, its per-tenant event sequence
+    ///     and event-progression rows) from its shard database, deletes the master-registry
+    ///     assignment, and shrinks the store's usage descriptor so running hosts can retire the
+    ///     tenant's daemon agents without a restart (#4868/#4880). DESTRUCTIVE on the shard —
+    ///     use the <c>IDynamicTenantSource</c> disable lifecycle for a non-destructive soft-delete.
+    ///     Only available with sharded tenancy.
+    /// </summary>
+    public async Task RemoveTenantFromShardAsync(string tenantId, CancellationToken ct)
+    {
+        var sharded = _store.Options.Tenancy as ShardedTenancy
+            ?? throw new InvalidOperationException(
+                "RemoveTenantFromShardAsync is only available when using MultiTenantedWithShardedDatabases()");
+
+        await sharded.RemoveTenantAsync(tenantId, ct).ConfigureAwait(false);
     }
 
     /// <summary>

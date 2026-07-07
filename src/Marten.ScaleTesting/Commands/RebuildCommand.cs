@@ -78,6 +78,21 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
             table.AddRow("Progression max waiters", lw.MaxConcurrentWaiters.ToString("N0"));
             table.AddRow("Progression max single-wait (ms)", lw.MaxSingleWaitMs.ToString("N0"));
             table.AddRow("Progression observed waiter-seconds", lw.ObservedWaiterSeconds.ToString("N1"));
+            var pb = snapshot.PerBatch;
+            table.AddRow("Batches observed", pb.BatchCount.ToString("N0"));
+            if (pb.BatchCount > 0)
+            {
+                table.AddRow("Batch p50 total/fetch/group/exec (ms)",
+                    $"{pb.P50.TotalMs:N0} / {pb.P50.EventFetchMs:N0} / {pb.P50.GroupingMs:N0} / {pb.P50.ExecutionMs:N0}");
+                table.AddRow("Batch p95 total/fetch/group/exec (ms)",
+                    $"{pb.P95.TotalMs:N0} / {pb.P95.EventFetchMs:N0} / {pb.P95.GroupingMs:N0} / {pb.P95.ExecutionMs:N0}");
+                table.AddRow("Batch p50/p95 DB round-trips", $"{pb.P50.RoundTripCount:N0} / {pb.P95.RoundTripCount:N0}");
+            }
+            foreach (var (projection, lookups) in snapshot.Lookups.OrderBy(x => x.Key))
+            {
+                table.AddRow($"Lookups: {projection}",
+                    $"{lookups.Lookups:N0} over {lookups.Events:N0} events ({lookups.LookupsPerEvent:N3}/event)");
+            }
         }
         AnsiConsole.Write(table);
 
@@ -92,13 +107,15 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
         // have to remember the master toggle separately.
         var enabled = input.InstrumentFlag
             || !string.IsNullOrWhiteSpace(input.InstrumentTraceFlag)
-            || !string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag);
+            || !string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag)
+            || !string.IsNullOrWhiteSpace(input.InstrumentBatchTraceFlag);
         return new InstrumentationOptions
         {
             Enabled = enabled,
             ProgressSampleInterval = TimeSpan.FromSeconds(Math.Max(0.1, input.InstrumentSampleSecondsFlag)),
             TracePath = string.IsNullOrWhiteSpace(input.InstrumentTraceFlag) ? null : input.InstrumentTraceFlag,
-            LockTracePath = string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag) ? null : input.InstrumentLockTraceFlag
+            LockTracePath = string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag) ? null : input.InstrumentLockTraceFlag,
+            BatchTracePath = string.IsNullOrWhiteSpace(input.InstrumentBatchTraceFlag) ? null : input.InstrumentBatchTraceFlag
         };
     }
 
@@ -127,7 +144,16 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
                 sampleCount = snapshot.Samples.Count,
                 npgsqlCommandCount = snapshot.NpgsqlCommandCount,
                 throughput = snapshot.Throughput,
-                progressionLockWaits = snapshot.ProgressionLockWaits
+                progressionLockWaits = snapshot.ProgressionLockWaits,
+                perBatch = new
+                {
+                    batches = snapshot.PerBatch.BatchCount,
+                    p50 = snapshot.PerBatch.P50,
+                    p95 = snapshot.PerBatch.P95,
+                    p99 = snapshot.PerBatch.P99,
+                    perShard = snapshot.PerBatch.PerShard
+                },
+                lookups = snapshot.Lookups
             }
         };
         await File.WriteAllTextAsync(path,
