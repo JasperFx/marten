@@ -34,7 +34,7 @@ internal class TenantDataCleaner
         // drop the freestanding mt_events_sequence_{suffix} afterwards. The Weasel managed-list
         // partition registry may forget the tenant once DropPartitionFromAllTablesForValue runs.
         var capturedSuffixes = PerTenantPartitionedCleanup.CaptureSequenceSuffixes(
-            _store.Options, new[] { _tenantId });
+            _store.Options, database, new[] { _tenantId });
 
         if (_store.Options is { TenantPartitions: not null})
         {

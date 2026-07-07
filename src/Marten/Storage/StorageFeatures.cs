@@ -467,6 +467,22 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
             .Where(x => x.GetType().Assembly != GetType().Assembly).ToArray();
 
         foreach (var featureSchema in custom) yield return featureSchema;
+
+        // #4863/#4855: the Marten-managed tenant partition registry (mt_tenant_partitions) is
+        // registered as a feature, but its type — DatabaseScopedTenantPartitions — now lives in the
+        // Marten assembly, so the assembly-based `custom` filter above excludes it (the plain Weasel
+        // ManagedListPartitions it replaced was in the Weasel assembly and so slipped through). Yield
+        // it explicitly so the registry table is materialized on EVERY database of the store during a
+        // full apply, not only on databases that happen to get an explicit provisioning touch. Under
+        // sharded tenancy the projection coordinator reads each shard's own mt_tenant_partitions to
+        // expand per-tenant agents; a shard that never had that table created would fail every
+        // leadership polling cycle with 42P01. Guard against a double-yield in case a future partition
+        // manager type lands back in a non-Marten assembly (then `custom` would already include it).
+        var tenantPartitions = _options.TenantPartitions?.Partitions;
+        if (tenantPartitions != null && !custom.Contains(tenantPartitions))
+        {
+            yield return tenantPartitions;
+        }
     }
 
     internal bool SequenceIsRequired()

@@ -32,14 +32,18 @@ public class MartenManagedTenantListPartitions : IDocumentPolicy
         // internal Table private — the wrapper is the public access point.
         TenantsTableName = new DbObjectName(schemaName ?? options.DatabaseSchemaName, TableName);
 
-        Partitions = new ManagedListPartitions("TenantIds", TenantsTableName);
+        // #4863/#4855: the database-scoped subclass keys the expected partition set per database,
+        // hydrated from each database's own mt_tenant_partitions — the plain Weasel
+        // ManagedListPartitions keeps one store-wide snapshot, which is wrong the moment a store
+        // spans multiple databases (sharded pools, master-table tenancy).
+        Partitions = new DatabaseScopedTenantPartitions("TenantIds", TenantsTableName);
 
         _options.Storage.Add(Partitions);
 
         _options.TenantPartitions = this;
     }
 
-    public ManagedListPartitions Partitions { get; }
+    public DatabaseScopedTenantPartitions Partitions { get; }
 
     /// <summary>
     /// Fully qualified name of the <c>mt_tenant_partitions</c> table this

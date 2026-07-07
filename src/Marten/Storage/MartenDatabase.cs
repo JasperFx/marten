@@ -35,6 +35,18 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
         _features = options.Storage;
         Options = options;
 
+        // #4863: EVERY database of the store — not just DefaultTenancy's single database —
+        // must hydrate the Marten-managed tenant partition state from its OWN
+        // mt_tenant_partitions registry before migrations run against it. Without this,
+        // a table created lazily on a shard by a fresh store instance was created
+        // partitioned with zero partitions and every write failed with 23514.
+        // (Options.TenantPartitions is always set before any MartenDatabase exists:
+        // at config time for sharded tenancy, in StoreOptions.Validate() otherwise.)
+        if (options.TenantPartitions != null)
+        {
+            AddInitializer(new TenantPartitionsDatabaseInitializer(this, options.TenantPartitions.Partitions));
+        }
+
         resetSequences();
 
         Providers = options.Providers;
@@ -100,7 +112,24 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
 
     public override IFeatureSchema[] BuildFeatureSchemas()
     {
+        markTenantPartitionScope();
         return Options.Storage.AllActiveFeatures(this).ToArray();
+    }
+
+    /// <summary>
+    /// #4863/#4855: stamp the ambient "database being migrated" scope for
+    /// <see cref="Marten.Schema.DatabaseScopedTenantPartitions"/>. Weasel's DatabaseBase calls
+    /// <c>BuildFeatureSchemas()</c> / <c>FindFeature()</c> synchronously at the head of every
+    /// migration operation on this database, and AsyncLocal writes from a synchronous callee flow
+    /// onward through the rest of that operation — so the partition manager's expected set can be
+    /// resolved per database even from Weasel internals that have no database parameter.
+    /// </summary>
+    private void markTenantPartitionScope()
+    {
+        if (Options.TenantPartitions != null && !ReferenceEquals(TenantPartitionDatabaseScope.Current, this))
+        {
+            TenantPartitionDatabaseScope.Current = this;
+        }
     }
 
     public void Dispose()
@@ -134,6 +163,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
 
     public override IFeatureSchema FindFeature(Type featureType)
     {
+        markTenantPartitionScope();
         return _features.FindFeature(featureType);
     }
 

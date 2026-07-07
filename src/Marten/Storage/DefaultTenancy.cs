@@ -57,11 +57,10 @@ internal class DefaultTenancy: Tenancy, ITenancy
 
     internal void Initialize()
     {
+        // #4863: the Marten-managed tenant partition initializer is now registered inside the
+        // MartenDatabase constructor itself, so EVERY database of the store gets it — sharded
+        // pool databases included — not just this default one.
         var martenDatabase = new MartenDatabase(Options, _dataSource, Options.StoreName);
-        if (Options.TenantPartitions != null)
-        {
-            martenDatabase.AddInitializer(Options.TenantPartitions.Partitions);
-        }
 
         Default = new Tenant(StorageConstants.DefaultTenantId, martenDatabase);
     }
