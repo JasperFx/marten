@@ -311,6 +311,18 @@ public static async Task ShowDaemonDiagnostics(IDocumentStore store)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L109-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+Both `AllProjectionProgress()` and `ProjectionProgressFor()` accept an optional tenant id. With a
+tenant id, the read targets the database containing that tenant. When the tenant id is omitted on
+a store with a single database, the default database is used. When the tenant id is omitted under
+multi-tenancy with multiple databases — including `MultiTenantedWithShardedDatabases()` — the read
+spans _every_ known database: `AllProjectionProgress()` concatenates each database's progression
+rows (with `Events.UseTenantPartitionedEvents` the per-tenant rows carry the tenant id in their
+shard identity, `{Name}:{ShardKey}:{tenantId}`, so results remain attributable per tenant), and
+`ProjectionProgressFor()` returns the highest progression found for the shard name across the
+databases. Since a tenant-qualified shard identity only ever exists in the one database that owns
+the tenant, `ProjectionProgressFor()` with such an identity returns that tenant's exact
+progression.
+
 ## Command Line Support
 
 If you're using [Marten's command line support](/configuration/cli), you have the new `projections` command to help
