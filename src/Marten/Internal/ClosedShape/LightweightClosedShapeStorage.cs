@@ -61,6 +61,35 @@ public abstract class LightweightClosedShapeStorage<TDoc, TId>: LightweightDocum
             System.Array.ConvertAll(ids, id => _descriptor.Identification.ToRawSqlValue(id)),
             _descriptor.Identification.RawSqlType);
 
+    // #4838 — Query<T>() / QueryAsync<T>(sql) / CreateBatchQuery() called from
+    // inside a projection's Apply run on the async daemon's parallel slice
+    // workers against ONE shared ProjectionDocumentSession. The version-capturing
+    // Lightweight selectors do an unguarded get-or-add on session.Versions at
+    // construction and per-row writes into the shared Dictionary<TId, …> — a
+    // data race across workers. For the daemon session, hand back the Unversioned
+    // selector instead: identical Lightweight row shape (id col 0, data col 1,
+    // metadata 2+, so [Version]-mapped members are still set on the document),
+    // but CaptureVersion is a no-op — the read path never touches session-shared
+    // state, mirroring how LoadAsync routes through LoadProjectedAsync (#4667
+    // Phase 3). No daemon path consumes query-captured versions: the
+    // UseIdentityMapForAggregates aggregate cache reads/writes ItemMap via
+    // ProjectionStorage (never session.Versions), and the projection write path
+    // uses the *Projected operations with a null tracker. Event projections that
+    // opt into EnableDocumentTrackingByIdentity run the session as IdentityOnly,
+    // which selects the IdentityMap storages — not this Lightweight path — so
+    // their document tracking is unaffected.
+    private protected ISelector? tryBuildSessionFreeSelector(IStorageSession session)
+    {
+        if (session is not Events.Daemon.Internals.ProjectionDocumentSession)
+        {
+            return null;
+        }
+
+        return _descriptor.ResolveDocumentType is not null
+            ? new HierarchicalUnversionedClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor)
+            : new FlatUnversionedClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor);
+    }
+
     // #4667 Phase 2 — session-free projection load. Opens a fresh connection
     // from the supplied database and deserializes the data column directly,
     // bypassing the session-aware BuildSelector path that writes versions /

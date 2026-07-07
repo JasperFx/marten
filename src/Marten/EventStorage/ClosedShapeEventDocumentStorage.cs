@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Schema;
+using Marten.EventStorage.Querying;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
@@ -126,9 +127,17 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
 
     public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
     {
+        // Implemented here rather than on EventStorage<TId> (E0 pre-work for
+        // the Weasel.Storage move): the stream-state lookup rides Marten's
+        // query-handler pipeline (IQueryHandler<T> / StreamStateQueryHandler),
+        // which stays Marten-local — and the implementation was identical
+        // across all three append-mode storages anyway. Keeping it on the
+        // adapter leaves the movable hierarchy purely write-side.
+        var tenantId = Events.TenancyStyle == TenancyStyle.Conjoined ? stream.TenantId : null;
+
         return Events.StreamIdentity == StreamIdentity.AsGuid
-            ? GuidStorage.QueryForStream(stream)
-            : StringStorage.QueryForStream(stream);
+            ? new ClosedShapeStreamStateQueryHandler<Guid>(StreamStateSelectSql, stream.Id, tenantId)
+            : new ClosedShapeStreamStateQueryHandler<string>(StreamStateSelectSql, stream.Key!, tenantId);
     }
 
     // Read-side: closed-shape implementation (#4411). Iterates the descriptor's

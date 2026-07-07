@@ -1,11 +1,9 @@
 #nullable enable
 using System;
 using JasperFx.Events;
-using Marten.EventStorage.Querying;
 using Marten.EventStorage.Quick;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Marten.Linq.QueryHandlers;
 
 namespace Marten.EventStorage.Rich;
 
@@ -63,20 +61,4 @@ internal sealed class RichEventStorage<TId>: EventStorage<TId>
         => _descriptor.IsTenancyConjoined
             ? new ConjoinedAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream)
             : new SingleTenantAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream);
-
-    public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
-    {
-        // Pick the per-call streamId — Guid streams use stream.Id; string
-        // streams use stream.Key. The base TId fixes which.
-        object streamIdentity = typeof(TId) == typeof(Guid)
-            ? stream.Id
-            : stream.Key!;
-
-        var tenantId = _descriptor.IsTenancyConjoined ? stream.TenantId : null;
-
-        return new ClosedShapeStreamStateQueryHandler<TId>(
-            _descriptor.StreamStateSelectSql,
-            (TId)streamIdentity,
-            tenantId);
-    }
 }

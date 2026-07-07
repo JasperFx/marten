@@ -53,8 +53,11 @@ internal sealed class OptimisticLightweightClosedShapeStorage<TDoc, TId>: Lightw
     public override Weasel.Storage.IStorageOperation UpdateProjected(TDoc document, string tenant)
         => new OptimisticClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
+    // #4838 — the daemon's shared ProjectionDocumentSession gets the
+    // session-state-free Unversioned selector; see the helper's comment.
     public override ISelector BuildSelector(IStorageSession session)
-        => _descriptor.ResolveDocumentType is not null
-            ? new HierarchicalOptimisticClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor)
-            : new FlatOptimisticClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor);
+        => tryBuildSessionFreeSelector(session)
+           ?? (_descriptor.ResolveDocumentType is not null
+               ? new HierarchicalOptimisticClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor)
+               : new FlatOptimisticClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor));
 }
