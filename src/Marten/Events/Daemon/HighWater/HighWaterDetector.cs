@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
@@ -34,6 +35,15 @@ internal class HighWaterDetector: IHighWaterDetector
     private readonly MartenDatabase _database;
     private readonly EventGraph _graph;
     private readonly ProjectionOptions _settings;
+
+    // #4867: per-tenant stale clocks for the vectorized high-water path. When a tenant's mark is
+    // blocked by a gap immediately above it (an allocated-but-uncommitted — or rolled-back — seq_id),
+    // this records WHEN the detector first observed that tenant stuck at that mark, so the gap can be
+    // skipped once the tenant has been stale past StaleSequenceThreshold. This is the per-tenant
+    // analogue of HighWaterAgent's in-memory `_current` timestamp on the store-global path: the state
+    // is detector-scoped (one detector instance per running daemon) and resets on restart, which only
+    // means a stale tenant waits one fresh threshold before skipping — never that events are lost.
+    private readonly ConcurrentDictionary<string, DateTimeOffset> _tenantStaleSince = new();
 
     public HighWaterDetector(MartenDatabase runner, EventGraph graph, ILogger logger)
     {
@@ -165,9 +175,10 @@ internal class HighWaterDetector: IHighWaterDetector
 
     /// <summary>
     /// Safe-zone variant of <see cref="DetectForTenantsAsync"/>. Same vectorized
-    /// shape; per-tenant independent gap detection is the caller's job
-    /// (<see cref="VectorizedHighWaterMonitor"/>). When the flag is off, inherit
-    /// the default interface impl (store-global safe-zone reading).
+    /// shape; per-tenant gap detection + stale-threshold skipping are internal to
+    /// <see cref="loadPerTenantStatistics"/> (#4867), so both variants share one
+    /// implementation. When the flag is off, inherit the default interface impl
+    /// (store-global safe-zone reading).
     /// </summary>
     public async Task<HighWaterVector> DetectInSafeZoneForTenantsAsync(
         IReadOnlyCollection<string> tenantIds, CancellationToken token)
@@ -183,10 +194,11 @@ internal class HighWaterDetector: IHighWaterDetector
             return new HighWaterVector([]);
         }
 
-        // The vectorized poll itself is the same; the daemon-level safe-zone
-        // behavior (skipping gaps for stale tenants) is layered on top by
-        // VectorizedHighWaterMonitor — store responsibility is just one
-        // round-trip per poll regardless of normal vs safe-zone mode.
+        // The vectorized poll is identical to DetectForTenantsAsync: per-tenant
+        // advancement, gap holding, and threshold-gated gap skipping all live
+        // inside loadPerTenantStatistics because the JasperFx coordinator drives
+        // only the normal poll (there is no daemon-level per-tenant safe-zone
+        // scheduling to defer to).
         var stats = await loadPerTenantStatistics(tenantIds, token).ConfigureAwait(false);
         return new HighWaterVector(stats);
     }
@@ -212,6 +224,13 @@ internal class HighWaterDetector: IHighWaterDetector
         // no persisted progression row yet still gets its true high-water and its per-tenant agent advances.
         // The LEFT JOINs preserve a row per input tenant even when its partition / progression row does not
         // exist yet (returns null → treated as zero downstream).
+        //
+        // #4867: the `walk` lateral is the per-tenant analogue of the store-global GapDetector — the
+        // highest committed seq_id reachable from the persisted mark without crossing a gap. Without it,
+        // CurrentMark was seeded straight from the persisted progression row, so a tenant's mark froze
+        // forever after the first persisted HighWaterMark:{tenant} row and second batches never projected.
+        // The walk is only computed when there is a persisted mark with committed events above it
+        // (the gates on prog.last_seq_id / ev.max_seq_id), so caught-up tenants stay cheap.
         var sql = $@"
 with inputs(tenant_id) as (select unnest(:tenants))
 select
@@ -219,7 +238,8 @@ select
     coalesce(ev.max_seq_id, 0)         as last_value,
     coalesce(prog.last_seq_id, 0)      as last_seq_id,
     prog.last_updated                  as last_updated,
-    transaction_timestamp()            as ""timestamp""
+    transaction_timestamp()            as ""timestamp"",
+    walk.current_bound                 as current_bound
 from inputs i
 left join lateral (
     select max(e.seq_id) as max_seq_id
@@ -227,47 +247,108 @@ left join lateral (
     where e.tenant_id = i.tenant_id
 ) ev on true
 left join {schema}.mt_event_progression prog
-    on prog.name = :prefix || i.tenant_id;";
+    on prog.name = :prefix || i.tenant_id
+left join lateral (
+    select coalesce(
+        (select g.seq_id
+         from (select e.seq_id,
+                      lead(e.seq_id) over (order by e.seq_id) as next_seq
+               from {schema}.mt_events e
+               where e.tenant_id = i.tenant_id
+                 and e.seq_id >= prog.last_seq_id) g
+         where g.next_seq is not null
+           and g.next_seq - g.seq_id > 1
+         order by g.seq_id
+         limit 1),
+        ev.max_seq_id
+    ) as current_bound
+    where coalesce(prog.last_seq_id, 0) > 0
+      and coalesce(ev.max_seq_id, 0) > prog.last_seq_id
+) walk on true;";
 
         await using var conn = _database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
         try
         {
-            await using var cmd = conn.CreateCommand(sql)
-                .With("tenants", tenantIds.ToArray())
-                .With("prefix", highWaterPrefix);
-            await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
-
             var results = new List<HighWaterStatistics>(tenantIds.Count);
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            var staleTenants = new List<HighWaterStatistics>();
+
+            await using (var cmd = conn.CreateCommand(sql)
+                             .With("tenants", tenantIds.ToArray())
+                             .With("prefix", highWaterPrefix))
             {
-                var tenantId = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-                var lastValue = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
-                var lastSeqId = await reader.GetFieldValueAsync<long>(2, token).ConfigureAwait(false);
+                await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
 
-                DateTimeOffset? lastUpdated = await reader.IsDBNullAsync(3, token).ConfigureAwait(false)
-                    ? null
-                    : await reader.GetFieldValueAsync<DateTimeOffset>(3, token).ConfigureAwait(false);
-                var timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(4, token).ConfigureAwait(false);
-
-                // CurrentMark = the latest sequence the daemon may treat as
-                // "caught up". With per-tenant gap detection not yet wired in
-                // (a Phase 3 refinement), seed CurrentMark from the saved
-                // progression row when one exists, otherwise from the
-                // tenant's sequence last_value. SafeStartMark mirrors
-                // CurrentMark for the same reason — the safe-zone walker
-                // resumes from the last good mark.
-                var currentMark = lastSeqId > 0 ? lastSeqId : lastValue;
-                results.Add(new HighWaterStatistics
+                while (await reader.ReadAsync(token).ConfigureAwait(false))
                 {
-                    TenantId = tenantId,
-                    HighestSequence = lastValue,
-                    LastMark = lastSeqId,
-                    SafeStartMark = currentMark,
-                    CurrentMark = currentMark,
-                    LastUpdated = lastUpdated,
-                    Timestamp = timestamp
-                });
+                    var tenantId = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+                    var lastValue = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
+                    var lastSeqId = await reader.GetFieldValueAsync<long>(2, token).ConfigureAwait(false);
+
+                    DateTimeOffset? lastUpdated = await reader.IsDBNullAsync(3, token).ConfigureAwait(false)
+                        ? null
+                        : await reader.GetFieldValueAsync<DateTimeOffset>(3, token).ConfigureAwait(false);
+                    var timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(4, token).ConfigureAwait(false);
+                    long? currentBound = await reader.IsDBNullAsync(5, token).ConfigureAwait(false)
+                        ? null
+                        : await reader.GetFieldValueAsync<long>(5, token).ConfigureAwait(false);
+
+                    var statistics = new HighWaterStatistics
+                    {
+                        TenantId = tenantId,
+                        HighestSequence = lastValue,
+                        LastMark = lastSeqId,
+                        LastUpdated = lastUpdated,
+                        Timestamp = timestamp
+                    };
+
+                    // CurrentMark = the latest sequence the daemon may treat as "caught up".
+                    // SafeStartMark mirrors CurrentMark — a per-tenant walker resumes from the
+                    // last good mark.
+                    if (lastSeqId == 0)
+                    {
+                        // No persisted progression row yet — seed from the tenant's committed
+                        // max(seq_id), exactly the pre-#4867 first-sighting behavior.
+                        statistics.CurrentMark = statistics.SafeStartMark = lastValue;
+                        _tenantStaleSince.TryRemove(tenantId, out _);
+                    }
+                    else if (lastValue <= lastSeqId)
+                    {
+                        // Caught up — and never rewind a persisted mark, even if committed
+                        // events were archived out from under it.
+                        statistics.CurrentMark = statistics.SafeStartMark = lastSeqId;
+                        _tenantStaleSince.TryRemove(tenantId, out _);
+                    }
+                    else if (currentBound > lastSeqId)
+                    {
+                        // #4867 THE fix: committed events reach contiguously above the persisted
+                        // mark, so advance immediately — this is what un-freezes a tenant's second
+                        // batch. The walk stops before any gap, so an allocated-but-uncommitted
+                        // lower seq_id is never silently skipped.
+                        statistics.CurrentMark = statistics.SafeStartMark = currentBound.Value;
+                        _tenantStaleSince.TryRemove(tenantId, out _);
+                    }
+                    else
+                    {
+                        // A gap sits immediately above the persisted mark (in-flight append or a
+                        // rolled-back sequence number). Hold the mark and let the stale clock run;
+                        // once the tenant has been stuck past StaleSequenceThreshold, skip the gap
+                        // below — the per-tenant mirror of the store-global DetectInSafeZone wait.
+                        statistics.CurrentMark = statistics.SafeStartMark = lastSeqId;
+                        var staleSince = _tenantStaleSince.GetOrAdd(tenantId, timestamp);
+                        if (timestamp.Subtract(staleSince) > _settings.StaleSequenceThreshold)
+                        {
+                            staleTenants.Add(statistics);
+                        }
+                    }
+
+                    results.Add(statistics);
+                }
+            }
+
+            foreach (var statistics in staleTenants)
+            {
+                await trySkipStaleTenantGapAsync(conn, statistics, token).ConfigureAwait(false);
             }
 
             return results;
@@ -276,6 +357,50 @@ left join {schema}.mt_event_progression prog
         {
             await conn.CloseAsync().ConfigureAwait(false);
         }
+    }
+
+    // #4867: safe-harbor skip for one tenant that has been stale past StaleSequenceThreshold. Walks the
+    // tenant's committed events from just above the stuck mark (the store-global equivalent is
+    // DetectInSafeZone's `_gapDetector.Start = SafeStartMark + 1`) and lands on the highest seq_id
+    // reachable without crossing ANOTHER gap, so multiple gaps are skipped one threshold at a time —
+    // the same iterative cadence as the store-global agent.
+    private async Task trySkipStaleTenantGapAsync(NpgsqlConnection conn, HighWaterStatistics statistics,
+        CancellationToken token)
+    {
+        var sql = $@"
+select coalesce(
+    (select g.seq_id
+     from (select e.seq_id,
+                  lead(e.seq_id) over (order by e.seq_id) as next_seq
+           from {_graph.DatabaseSchemaName}.mt_events e
+           where e.tenant_id = :tenant
+             and e.seq_id > :mark) g
+     where g.next_seq is not null
+       and g.next_seq - g.seq_id > 1
+     order by g.seq_id
+     limit 1),
+    (select max(e.seq_id)
+     from {_graph.DatabaseSchemaName}.mt_events e
+     where e.tenant_id = :tenant
+       and e.seq_id > :mark));";
+
+        await using var cmd = conn.CreateCommand(sql)
+            .With("tenant", statistics.TenantId!)
+            .With("mark", statistics.LastMark);
+
+        var raw = await cmd.ExecuteScalarAsync(token).ConfigureAwait(false);
+        if (raw is not long safeSequence || safeSequence <= statistics.LastMark)
+        {
+            return;
+        }
+
+        _logger.LogInformation(
+            "Daemon projection high water detection for tenant {TenantId} skipping a gap in the event sequence after being stale past the {Threshold} threshold, determined that the 'safe harbor' sequence is at {SafeHarborSequence}",
+            statistics.TenantId, _settings.StaleSequenceThreshold, safeSequence);
+
+        statistics.CurrentMark = statistics.SafeStartMark = safeSequence;
+        statistics.IncludesSkipping = true;
+        _tenantStaleSince.TryRemove(statistics.TenantId!, out _);
     }
 
     private async Task calculateHighWaterMark(HighWaterStatistics statistics, DetectionType detectionType,
