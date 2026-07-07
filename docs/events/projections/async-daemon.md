@@ -111,6 +111,34 @@ will end up running on the first process to start up. If your system requires be
 contact [JasperFx Software](https://jasperfx.net) about their "Critter Stack Pro" product.
 :::
 
+## Daemon Connection Governors <Badge type="tip" text="9.13" />
+
+Every running projection or subscription agent opens its own database session both to load pages of events and to
+commit each batch of projected documents plus its progression update. On a wide store — many projections, or
+[per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning) where the daemon runs one agent
+per (projection × tenant) — an unbounded daemon can drive the connection pool's high-water mark toward the total
+agent count even though only a handful of loads or writes are ever active at the same instant.
+
+Marten therefore governs the daemon's concurrent database work out of the box with two caps, both applied per
+daemon instance (one daemon per store × database):
+
+```cs
+// These are the defaults — you don't need to set either one
+opts.Projections.MaxConcurrentEventLoadsPerDatabase = 4;
+opts.Projections.MaxConcurrentBatchWritesPerDatabase = 4;
+```
+
+* **`MaxConcurrentEventLoadsPerDatabase`** (default 4) caps how many agents may load pages of events from the
+  database concurrently. All of a daemon's agents share one throttle, collapsing the steady-state connection
+  footprint to *O(databases)* with no measured throughput cost.
+* **`MaxConcurrentBatchWritesPerDatabase`** (default 4) caps how many projection batches may execute their SQL
+  (the commit round trip) concurrently against one database.
+
+Setting either knob to zero or a negative number disables that governor and restores the historical unbounded
+behavior. The governors apply to continuous (running daemon) work only — projection rebuilds are capped separately
+by `MaxConcurrentRebuildsPerDatabase`, which derives its default from the Npgsql connection pool size. See
+[Capping Rebuild Concurrency](/events/projections/rebuilding#capping-rebuild-concurrency).
+
 ## Daemon Logging
 
 The daemon logs through the standard .Net `ILogger` interface service registered in your application's underlying DI container. In the case of the daemon having to skip
