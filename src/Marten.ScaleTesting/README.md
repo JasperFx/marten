@@ -130,9 +130,37 @@ that tenant's own per-tenant sequence ceiling within `--catch-up-timeout-seconds
 gate: the WS2 goal is connections O(databases), not O(tenant agents), so run this before
 and after the daemon command-batching work to quantify the win and then pin it.
 
+### Sharded variant (marten#4882, epic jasperfx#486 WS6)
+
+`--databases N` (N > 1) pools the tenants across N shard databases on the same server via
+`MultiTenantedWithShardedDatabases` — `scaletest_dl_shard_0..N-1` are created on demand
+(`--wipe` drops them first), tenants are assigned round-robin with explicit placement, the
+harness runs **one projection daemon per shard**, and the `pg_stat_activity` sampler
+groups the store's Application-Name-attributed connections by `datname` so every shard
+database reports its own peak/mean series (the master/registry database is reported
+separately). Three health assertions on top of the single-DB ones:
+
+* **Per-database gate** — `--max-connections` is enforced per shard database; the WS6
+  expectation from the 2.22.0 governors (4 event loads + 4 batch writes + HWM per
+  database) is that each shard's peak mirrors the single-DB daemonload result, giving
+  O(databases) total rather than O(agents)
+* **Per-tenant catch-up on every shard** — every tenant's per-tenant progression rows
+  reach that tenant's own sequence ceiling in its own shard database
+* **Database-affine placement** — each tenant's per-tenant event sequence exists in
+  exactly its assigned shard; a sequence on a foreign shard (or missing at home) fails
+  the run as cross-shard bleed
+
+```bash
+# 100 tenants pooled over 4 shard databases, per-database ceiling of 16
+dotnet run --project src/Marten.ScaleTesting -- daemonload \
+    --databases 4 --tenants 100 --projections 2 --duration-seconds 120 --wipe \
+    --max-connections 16 --metrics daemonload-sharded.json --trace daemonload-sharded.csv
+```
+
 ## Non-goals
 
 * Not a microbenchmark — `src/MartenBenchmarks/` covers per-method timings.
 * Not a NuGet package — internal tool only.
 * Not wired into CI.
-* Not sharded-PG or distributed.
+* Not distributed across machines — the sharded `daemonload` variant shards across
+  databases on ONE Postgres server.

@@ -36,12 +36,21 @@ namespace Marten.ScaleTesting.Commands;
 /// turns the report into a pass/fail gate for regression runs.
 /// </summary>
 [Description("WS2 (jasperfx#486): run the async daemon over N partitioned tenants under continuous append load and sample pg_stat_activity for the store's connection footprint.")]
-public sealed class DaemonLoadCommand: JasperFxAsyncCommand<DaemonLoadInput>
+public sealed partial class DaemonLoadCommand: JasperFxAsyncCommand<DaemonLoadInput>
 {
     private const string Schema = "scaletest_daemonload";
     private const string ApplicationName = "scaletest-daemonload";
 
-    public override async Task<bool> Execute(DaemonLoadInput input)
+    public override Task<bool> Execute(DaemonLoadInput input)
+    {
+        // marten#4882: N > 1 pools the tenants across N shard databases (sharded tenancy);
+        // the original single-database WS2 scenario is untouched at the default of 1.
+        return input.DatabasesFlag > 1
+            ? ExecuteShardedAsync(input)
+            : ExecuteSingleDatabaseAsync(input);
+    }
+
+    private async Task<bool> ExecuteSingleDatabaseAsync(DaemonLoadInput input)
     {
         var totalElapsed = Stopwatch.StartNew();
 
@@ -246,8 +255,12 @@ public sealed class DaemonLoadCommand: JasperFxAsyncCommand<DaemonLoadInput>
     /// progression row has reached that tenant's own sequence ceiling
     /// (<c>last_value</c> of the per-tenant event sequence).
     /// </summary>
-    private static async Task<(HashSet<string> CaughtUp, List<string> Stalled)> WaitForCatchUpAsync(
+    private static Task<(HashSet<string> CaughtUp, List<string> Stalled)> WaitForCatchUpAsync(
         string[] tenants, string[] projectionNames, TimeSpan timeout)
+        => WaitForCatchUpAsync(ConnectionSource.ConnectionString, Schema, tenants, projectionNames, timeout);
+
+    private static async Task<(HashSet<string> CaughtUp, List<string> Stalled)> WaitForCatchUpAsync(
+        string connectionString, string schema, string[] tenants, string[] projectionNames, TimeSpan timeout)
     {
         var deadline = DateTime.UtcNow + timeout;
         var stalled = new List<string>();
@@ -255,7 +268,7 @@ public sealed class DaemonLoadCommand: JasperFxAsyncCommand<DaemonLoadInput>
 
         while (DateTime.UtcNow < deadline)
         {
-            (caughtUp, stalled) = await CheckCatchUpOnceAsync(tenants, projectionNames).ConfigureAwait(false);
+            (caughtUp, stalled) = await CheckCatchUpOnceAsync(connectionString, schema, tenants, projectionNames).ConfigureAwait(false);
             if (stalled.Count == 0)
             {
                 return (caughtUp, stalled);
@@ -268,7 +281,7 @@ public sealed class DaemonLoadCommand: JasperFxAsyncCommand<DaemonLoadInput>
     }
 
     private static async Task<(HashSet<string> CaughtUp, List<string> Stalled)> CheckCatchUpOnceAsync(
-        string[] tenants, string[] projectionNames)
+        string connectionString, string schema, string[] tenants, string[] projectionNames)
     {
         // One round-trip: per tenant, min progression across the per-tenant projection rows vs the
         // tenant's own sequence ceiling. Sequences are named mt_events_sequence_{tenant} by the
@@ -292,14 +305,14 @@ GROUP BY s.tenant;";
         var stalled = new List<string>();
         var expectedRows = projectionNames.Length;
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(connectionString);
         await conn.OpenAsync().ConfigureAwait(false);
 
         // Also require the full per-tenant row COUNT so a tenant whose agents never started (zero
         // progression rows) reads as stalled, not vacuously caught up.
         var perTenantRows = new Dictionary<string, int>();
         await using (var countCmd = new NpgsqlCommand(
-                         $"select split_part(name, ':', 3), count(*) from {Schema}.mt_event_progression where name like '%:All:%' group by 1",
+                         $"select split_part(name, ':', 3), count(*) from {schema}.mt_event_progression where name like '%:All:%' group by 1",
                          conn))
         await using (var countReader = await countCmd.ExecuteReaderAsync().ConfigureAwait(false))
         {
@@ -309,8 +322,8 @@ GROUP BY s.tenant;";
             }
         }
 
-        await using var cmd = new NpgsqlCommand(sql.Replace("{SCHEMA}", Schema), conn);
-        cmd.Parameters.AddWithValue("schema", Schema);
+        await using var cmd = new NpgsqlCommand(sql.Replace("{SCHEMA}", schema), conn);
+        cmd.Parameters.AddWithValue("schema", schema);
         await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
 
         var seen = new HashSet<string>();
