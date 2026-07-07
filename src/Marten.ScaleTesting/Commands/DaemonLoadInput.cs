@@ -16,6 +16,9 @@ public sealed class DaemonLoadInput: NetCoreInput
     [Description("Number of tenants to register on the partitioned store. Default: 100.")]
     public int TenantsFlag { get; set; } = 100;
 
+    [Description("marten#4882: number of shard databases to pool the tenants across (sharded tenancy via MultiTenantedWithShardedDatabases). 1 = the original single-database scenario; N > 1 creates scaletest_dl_shard_0..N-1 databases on the same server, assigns tenants round-robin, and runs one daemon per shard. Default: 1.")]
+    public int DatabasesFlag { get; set; } = 1;
+
     [Description("Number of async projections to register — each fans out one agent per tenant. Default: 2.")]
     public int ProjectionsFlag { get; set; } = 2;
 
@@ -34,7 +37,7 @@ public sealed class DaemonLoadInput: NetCoreInput
     [Description("Seconds to wait after appends stop for every tenant's agents to catch up to that tenant's ceiling. Default: 60.")]
     public int CatchUpTimeoutSecondsFlag { get; set; } = 60;
 
-    [Description("Fail (exit 1) if the store's peak concurrent connections exceed this. Default: 0 = report only.")]
+    [Description("Fail (exit 1) if the store's peak concurrent connections exceed this. With --databases > 1 the gate is enforced PER SHARD DATABASE (the WS6 expectation: each shard's peak mirrors the single-DB governor result, O(databases) total). Default: 0 = report only.")]
     public int MaxConnectionsFlag { get; set; }
 
     [Description("Drop + recreate the dedicated schema before the run. Default: false.")]
