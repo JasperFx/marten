@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
 using Marten.Schema;
+using Marten.Storage.Metadata;
 using Marten.Storage;
 using Marten.Internal.Storage;
 
@@ -26,6 +27,9 @@ internal static class DocumentStorageDescriptorBuilder
         where TDoc : notnull
         where TId : notnull
     {
+        // #4821 INC-3: the moved (Weasel.Storage) binders take the dialect + column name by ctor.
+        var dialect = PostgresStorageDialect<TId>.Instance;
+
         // Two binder lists with subtly different membership rules — write
         // matches what's IN THE TABLE (every enabled metadata column),
         // read matches what's IN THE SELECT (the column.ShouldSelect
@@ -60,7 +64,7 @@ internal static class DocumentStorageDescriptorBuilder
             // #4829: capture the alias→Type lookup as an agnostic delegate so the
             // descriptor + selectors don't hold the Marten DocumentMapping type.
             resolveDocumentType = mapping.TypeFor;
-            var docTypeBinder = new DocumentDocTypeBinder<TDoc>(mapping.AliasFor);
+            var docTypeBinder = new DocumentDocTypeBinder<TDoc>(SchemaConstants.DocumentTypeColumn, dialect, mapping.AliasFor);
             writeBinders.Add(docTypeBinder);
             docTypeReadIndex = readBinders.Count;
             readBinders.Add(docTypeBinder);
@@ -76,7 +80,7 @@ internal static class DocumentStorageDescriptorBuilder
             var revisionColumnType = mapping.Metadata.Revision is Marten.Storage.Metadata.RevisionColumnInt32
                 ? StorageColumnType.Int
                 : StorageColumnType.Long;
-            revisionBinder = new DocumentRevisionBinder<TDoc>(mapping.Metadata.Revision.Member, revisionColumnType);
+            revisionBinder = new DocumentRevisionBinder<TDoc>(SchemaConstants.VersionColumn, dialect, mapping.Metadata.Revision.Member, revisionColumnType);
             writeBinders.Add(revisionBinder);
 
             // RevisionColumn.ShouldSelect: Member != null OR (!QueryOnly && UseNumericRevisions)
@@ -91,7 +95,7 @@ internal static class DocumentStorageDescriptorBuilder
         }
         else if (mapping.Metadata.Version.Enabled)
         {
-            versionBinder = new DocumentVersionBinder<TDoc>(mapping.Metadata.Version.Member);
+            versionBinder = new DocumentVersionBinder<TDoc>(SchemaConstants.VersionColumn, dialect, mapping.Metadata.Version.Member);
             writeBinders.Add(versionBinder);
 
             // VersionColumn.ShouldSelect: Member != null OR (!QueryOnly && UseOptimisticConcurrency)
@@ -108,7 +112,7 @@ internal static class DocumentStorageDescriptorBuilder
             // DotNetTypeColumn is IEventTableColumn only (not
             // ISelectableColumn), so it's in the table but NOT in the
             // document SELECT projection — write only.
-            var binder = new DocumentDotNetTypeBinder<TDoc>();
+            var binder = new DocumentDotNetTypeBinder<TDoc>(SchemaConstants.DotNetTypeColumn, dialect);
             writeBinders.Add(binder);
         }
 
@@ -123,13 +127,13 @@ internal static class DocumentStorageDescriptorBuilder
         if (mapping.TenancyStyle == TenancyStyle.Conjoined
             && mapping.Metadata.TenantId.Member is not null)
         {
-            readBinders.Add(new DocumentTenantIdBinder<TDoc>(mapping.Metadata.TenantId.Member));
+            readBinders.Add(new DocumentTenantIdBinder<TDoc>(TenantIdColumn.Name, mapping.Metadata.TenantId.Member));
         }
 
         if (mapping.Metadata.LastModified.Enabled)
         {
             // LastModifiedColumn.ShouldSelect: Member != null.
-            var binder = new DocumentLastModifiedBinder<TDoc>(mapping.Metadata.LastModified.Member);
+            var binder = new DocumentLastModifiedBinder<TDoc>(SchemaConstants.LastModifiedColumn, mapping.Metadata.LastModified.Member);
             writeBinders.Add(binder);
             if (mapping.Metadata.LastModified.Member is not null)
             {
@@ -147,7 +151,7 @@ internal static class DocumentStorageDescriptorBuilder
         // avoid clobbering the creation time on subsequent saves.
         if (mapping.Metadata.CreatedAt.Enabled && mapping.Metadata.CreatedAt.Member is not null)
         {
-            readBinders.Add(new DocumentCreatedAtBinder<TDoc>(mapping.Metadata.CreatedAt.Member));
+            readBinders.Add(new DocumentCreatedAtBinder<TDoc>(SchemaConstants.CreatedAtColumn, mapping.Metadata.CreatedAt.Member));
         }
 
         // Session-derived metadata columns: correlation_id, causation_id,
@@ -158,7 +162,7 @@ internal static class DocumentStorageDescriptorBuilder
         // on the underlying MetadataColumn).
         if (mapping.Metadata.CorrelationId.Enabled)
         {
-            var binder = new DocumentCorrelationIdBinder<TDoc>(mapping.Metadata.CorrelationId.Member);
+            var binder = new DocumentCorrelationIdBinder<TDoc>(CorrelationIdColumn.ColumnName, dialect, mapping.Metadata.CorrelationId.Member);
             writeBinders.Add(binder);
             if (mapping.Metadata.CorrelationId.Member is not null)
             {
@@ -168,7 +172,7 @@ internal static class DocumentStorageDescriptorBuilder
 
         if (mapping.Metadata.CausationId.Enabled)
         {
-            var binder = new DocumentCausationIdBinder<TDoc>(mapping.Metadata.CausationId.Member);
+            var binder = new DocumentCausationIdBinder<TDoc>(CausationIdColumn.ColumnName, dialect, mapping.Metadata.CausationId.Member);
             writeBinders.Add(binder);
             if (mapping.Metadata.CausationId.Member is not null)
             {
@@ -178,7 +182,7 @@ internal static class DocumentStorageDescriptorBuilder
 
         if (mapping.Metadata.LastModifiedBy.Enabled)
         {
-            var binder = new DocumentLastModifiedByBinder<TDoc>(mapping.Metadata.LastModifiedBy.Member);
+            var binder = new DocumentLastModifiedByBinder<TDoc>(LastModifiedByColumn.ColumnName, dialect, mapping.Metadata.LastModifiedBy.Member);
             writeBinders.Add(binder);
             if (mapping.Metadata.LastModifiedBy.Member is not null)
             {
@@ -194,7 +198,7 @@ internal static class DocumentStorageDescriptorBuilder
             // the JSON data column instead (ApplyToDocument projects the
             // session's Headers dict onto the document before
             // serialization). Hence write-only here.
-            var binder = new DocumentHeadersBinder<TDoc>(mapping.Metadata.Headers.Member);
+            var binder = new DocumentHeadersBinder<TDoc>(HeadersColumn.ColumnName, dialect, mapping.Metadata.Headers.Member);
             writeBinders.Add(binder);
         }
 
@@ -223,14 +227,14 @@ internal static class DocumentStorageDescriptorBuilder
         // mapping's delete style.
         if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
         {
-            var isDeleted = new DocumentSoftDeletedBinder<TDoc>(mapping.Metadata.IsSoftDeleted.Member);
+            var isDeleted = new DocumentSoftDeletedBinder<TDoc>(SchemaConstants.DeletedColumn, dialect, mapping.Metadata.IsSoftDeleted.Member);
             writeBinders.Add(isDeleted);
             if (mapping.Metadata.IsSoftDeleted.Member is not null)
             {
                 readBinders.Add(isDeleted);
             }
 
-            var deletedAt = new DocumentSoftDeletedAtBinder<TDoc>(mapping.Metadata.SoftDeletedAt.Member);
+            var deletedAt = new DocumentSoftDeletedAtBinder<TDoc>(SchemaConstants.DeletedAtColumn, dialect, mapping.Metadata.SoftDeletedAt.Member);
             writeBinders.Add(deletedAt);
             if (mapping.Metadata.SoftDeletedAt.Member is not null)
             {

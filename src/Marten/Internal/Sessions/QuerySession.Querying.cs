@@ -18,6 +18,13 @@ public partial class QuerySession
         return LinqConstants.IdListTableName + ++_tableNumber;
     }
 
+    /// <summary>
+    ///     IStorageSession headers-cache seam (#4821 INC-3): query sessions have no header
+    ///     mutation surface, so there is never a cached serialization here.
+    ///     DocumentSessionBase overrides with its per-batch cache.
+    /// </summary>
+    public virtual byte[]? TryGetCachedSerializedHeaders() => null;
+
     public IMartenQueryable<T> Query<T>() where T : notnull
     {
         return new MartenLinqQueryable<T>(this);

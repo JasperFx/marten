@@ -309,6 +309,8 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     /// Returns the JSON bytes for the session's current <see cref="Headers"/> dictionary,
     /// computing and caching on first call. Returns <c>null</c> when there are no headers.
     /// </summary>
+    public override byte[]? TryGetCachedSerializedHeaders() => GetCachedSerializedHeaders();
+
     internal byte[]? GetCachedSerializedHeaders()
     {
         if (Headers is null || Headers.Count == 0) return null;
