@@ -279,5 +279,5 @@ logs, external integrations) stays valid. Instead, for each tenant the migration
 
 Tenants are migrated **one at a time, each in a single transaction**. A failure rolls the in-flight tenant
 back cleanly; re-running `ExecuteAsync` skips tenants already recorded as completed in
-`mt_tenant_migration_log` and retries the failed one. Inline projection documents are *not* migrated —
+`mt_tenant_migration_log` and retries the failed one. Inline projection documents are _not_ migrated —
 rebuild projections on the target after the copy (they replay from the migrated events).
