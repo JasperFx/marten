@@ -188,6 +188,53 @@ different nodes (that cross-node distribution variant, and the Wolverine-managed
 from wolverine#3328, are the remaining WS6 multi-node work; the harness references only Marten,
 not Wolverine).
 
+## The `rebuildload` scenario (marten#4884, epic jasperfx#486 WS6/WS3)
+
+Where `daemonload` measures the running daemon, `rebuildload` measures **concurrent projection
+rebuilds** and sweeps the three governor knobs so their shipped defaults can be confirmed — or a
+change recommended — from evidence, without ever mutating a shipped default (measurement tool
+only). It registers `--projections N` independent async projections over `--tenants`
+per-tenant-partitioned tenants, seeds `--events-per-tenant` events (idempotent by row count),
+then for each configuration in the sweep:
+
+* applies the two inner governors (`MaxConcurrentEventLoadsPerDatabase`,
+  `MaxConcurrentBatchWritesPerDatabase`) and optionally `EnableExtendedProgressionTracking`,
+* rebuilds every projection with the outer fan-out throttled to the swept cap
+  (`MaxConcurrentRebuildsPerDatabase`) — the same `SemaphoreSlim(cap)` shape as
+  `ProjectionHost.RebuildProjectionsWithCapAsync` (jasperfx#463), whose shipped default is
+  `max(1, MaxPoolSize / 8)`,
+* samples `pg_stat_activity` + `mt_event_progression` lock-waits throughout,
+
+and prints a per-configuration comparison (wall-clock, throughput, peak/mean/idle connections,
+progression waiters) plus an advisory recommendation. The default cap for the current pool is
+flagged with `*`.
+
+```bash
+# Sweep caps 2/4/8/12 (incl. the shipped default) and the extended-progression cost
+dotnet run --project src/Marten.ScaleTesting -- rebuildload \
+    --tenants 100 --projections 8 --events-per-tenant 5000 \
+    --caps 2,4,8,12 --sweep-extended-progression --wipe --metrics rebuildload.json
+```
+
+### Local-scale finding (20 tenants × 8 projections × 1200 events, MaxPoolSize=100 ⇒ default cap 12)
+
+| cap | ext | elapsed | peak conns | max progression waiters |
+|----:|-----|--------:|-----------:|------------------------:|
+| 2   | off | 6.0s | 3 | 0 |
+| 4   | off | 5.6s | 5 | 0 |
+| 8   | off | 5.3s | 9 | 0 |
+| 12* | off | 5.2s | 9 | 0 |
+| 12* | on  | 5.0s | 9 | 0 |
+
+Two-layer model validated at this scale: **peak connections ≈ min(cap, projections) + 1** — the
+outer cap is the dominant connection driver, and it never exceeds pool headroom (9 ≪ 100).
+Wall-clock improvement flattens past cap=4 (diminishing returns). **Zero `mt_event_progression`
+waiters** at every cap — the concurrent-rebuild cap creates no progression-row contention at this
+scale. `EnableExtendedProgressionTracking` showed no measurable overhead (within noise).
+**Recommendation: CONFIRM the shipped `max(1, MaxPoolSize/8)` default cap and the load/write
+governor default of 4.** Local-scale evidence is indicative only — re-run at production pool +
+event volume before amending `rebuilding.md`.
+
 ## Non-goals
 
 * Not a microbenchmark — `src/MartenBenchmarks/` covers per-method timings.
