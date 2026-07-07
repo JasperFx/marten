@@ -163,22 +163,22 @@ internal class UnitOfWork: ISessionWorkTracker
         return Streams;
     }
 
-    // IUnitOfWork (public PendingChanges surface) stays Marten-typed; the internal queue is the
-    // neutral Weasel.Storage.IStorageOperation (#4821), and every Marten-built operation
-    // implements the Marten interface, so the filtered casts below are total.
-    IEnumerable<IStorageOperation> IUnitOfWork.Operations()
+    // #4821 INC-4: the public IUnitOfWork surface reports the neutral Weasel.Storage operation
+    // type — the closed-shape operations moved to Weasel.Storage and no longer implement the
+    // Marten-derived interface.
+    IEnumerable<Weasel.Storage.IStorageOperation> IUnitOfWork.Operations()
     {
-        return _operations.OfType<IStorageOperation>();
+        return _operations;
     }
 
-    IEnumerable<IStorageOperation> IUnitOfWork.OperationsFor<T>()
+    IEnumerable<Weasel.Storage.IStorageOperation> IUnitOfWork.OperationsFor<T>()
     {
-        return _operations.OfType<IStorageOperation>().Where(x => x.DocumentType.CanBeCastTo<T>());
+        return _operations.Where(x => x.DocumentType.CanBeCastTo<T>());
     }
 
-    IEnumerable<IStorageOperation> IUnitOfWork.OperationsFor(Type documentType)
+    IEnumerable<Weasel.Storage.IStorageOperation> IUnitOfWork.OperationsFor(Type documentType)
     {
-        return _operations.OfType<IStorageOperation>().Where(x => x.DocumentType.CanBeCastTo(documentType));
+        return _operations.Where(x => x.DocumentType.CanBeCastTo(documentType));
     }
 
     IEnumerable<object> IChangeSet.Updated => _operations.OfType<IDocumentStorageOperation>()

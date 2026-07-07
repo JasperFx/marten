@@ -16,27 +16,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Internal.Operations;
 
-public interface IRevisionedOperation
-{
-    long Revision { get; set; }
-    bool IgnoreConcurrencyViolation { get; set; }
-}
-
-/// <summary>
-/// Implemented by storage operations that carry a typed document id, so
-/// the session's unit-of-work can dedupe pending operations when a
-/// caller issues Store-then-Delete on the same id (see
-/// <see cref="Marten.Internal.UnitOfWork.PurgeOperations{T, TId}"/>).
-/// The codegen path got this for free by deriving from
-/// <see cref="StorageOperation{T, TId}"/>; the closed-shape operations
-/// (which don't derive from it) implement this directly.
-/// </summary>
-internal interface IIdentifiedOperation<TDoc, TId> where TDoc : notnull where TId : notnull
-{
-    TId Id { get; }
-}
-
-public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExceptionTransform, IRevisionedOperation where TId: notnull
+public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IStorageOperation, IExceptionTransform, IRevisionedOperation where TId: notnull
 {
     private readonly T _document;
     protected readonly TId _id;
