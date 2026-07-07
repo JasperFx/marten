@@ -513,6 +513,9 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
 
     private void warnIfAsyncDaemonIsDisabledWithAsyncProjections()
     {
+        // Deliberately == Disabled, not != Solo/HotCold: DaemonMode.ExternallyManaged (jasperfx#490)
+        // means an external host (e.g. Wolverine's managed event-subscription distribution) runs the
+        // async projections, so they WILL execute — warning would be wrong there.
         if (Options.Projections.HasAnyAsyncProjections() && Options.Projections.AsyncMode == DaemonMode.Disabled)
         {
             Console.WriteLine("Warning: The async daemon is disabled.");
