@@ -69,7 +69,7 @@ Two things to know about the shape of the throttle:
 
 - **It caps rebuild only.** Continuous catch-up is governed separately by
   `opts.Projections.MaxConcurrentEventLoadsPerDatabase` and `opts.Projections.MaxConcurrentBatchWritesPerDatabase`
-  (both default 4).
+  (both default 4) — see [Daemon Connection Governors](/events/projections/async-daemon#daemon-connection-governors).
 - **It's a two-layer model.** The cap bounds how many cells run at once; each cell still uses its own internal
   slice workers while it runs. A cap of 4 therefore means "4 rebuilding projections/tenants at a time," not 4
   concurrent database operations.

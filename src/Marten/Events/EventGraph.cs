@@ -285,9 +285,14 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     /// <summary>
     /// Per-tenant partitioning master flag (CritterStack #209 / Marten #4596).
-    /// Phase 0 — surface only; opting in does not yet partition storage or
-    /// alter daemon behavior. Validated at <c>DocumentStore</c> construction
-    /// to reject combinations with <see cref="EventAppendMode.Rich"/>.
+    /// Partitions mt_events / mt_streams by tenant_id, gives each tenant its own
+    /// event sequence, keys mt_event_progression by (name, tenant_id), and runs
+    /// the async daemon with per-tenant high-water tracking, per-tenant agent
+    /// distribution, and per-tenant rebuild isolation. Validated at
+    /// <c>DocumentStore</c> construction: requires <see cref="TenancyStyle.Conjoined"/>
+    /// and a quick append mode (rejects <see cref="EventAppendMode.Rich"/> and
+    /// <see cref="UseArchivedStreamPartitioning"/>). See
+    /// <see cref="Marten.Events.IEventStoreOptions.UseTenantPartitionedEvents"/>.
     /// </summary>
     public bool UseTenantPartitionedEvents { get; set; }
 

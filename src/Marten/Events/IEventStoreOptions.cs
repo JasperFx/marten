@@ -113,9 +113,17 @@ namespace Marten.Events
         /// per-tenant rebuild isolation.
         ///
         /// <para>
-        /// Opt-in flag, defaults to false. Currently in Phase 0 — surface only.
-        /// The flag exists so consumer code can be written against the future
-        /// behavior, but enabling it is not yet meaningful at runtime.
+        /// Opt-in flag, defaults to false. Enabling it also turns on per-tenant
+        /// async-daemon agent distribution for hosts that distribute agents per
+        /// identity (see <c>IEventStore.DistributesAgentsPerTenant</c>) — no
+        /// further opt-in is needed. See
+        /// https://martendb.io/events/multitenancy#per-tenant-event-partitioning.
+        /// </para>
+        /// <para>
+        /// Constraint: requires <c>TenancyStyle.Conjoined</c> on the event
+        /// store. Setting this with <c>TenancyStyle.Single</c> throws at
+        /// <c>DocumentStore</c> construction — there is nothing to partition
+        /// by when every event lives in the default tenant.
         /// </para>
         /// <para>
         /// Constraint: only the quick append modes

@@ -171,6 +171,35 @@ When `UseTenantPartitionedEvents` is enabled, Marten:
   position for every active tenant in a single round trip — plus **per-tenant rebuild isolation**, so a projection can
   be rebuilt for a single tenant without tearing down or replaying every other tenant's progress.
 
+### What You Get Automatically <Badge type="tip" text="9.13" />
+
+`UseTenantPartitionedEvents` plus your tenancy choice is the whole opt-in — everything below is derived from that
+combination with no further configuration:
+
+* **One async daemon agent per (database, tenant).** The daemon runs each async projection or subscription
+  independently per tenant, so a lagging or rebuilding tenant never stalls its neighbors. This applies both to
+  Marten's own daemon and to [Wolverine-managed projection distribution](https://wolverinefx.net/guide/durability/marten/distribution.html),
+  which detects a tenant-partitioned store and automatically fans its distributed agents out per tenant across the
+  cluster.
+* **Tenant discovery on a plain single database.** With nothing but `opts.Connection(...)`, Marten quietly swaps in
+  a tenancy that reads the registered tenant list from the `mt_tenant_partitions` table, so per-tenant agent
+  distribution always has the current tenant set to fan out to — tenants added or removed at runtime converge
+  without a restart.
+* **Database-affine agent placement on multi-database tenancies.** When the store spans multiple databases (e.g.
+  [sharded multi-tenancy with database pooling](/configuration/multitenancy#sharded-multi-tenancy-with-database-pooling)),
+  distributed hosts group all of one database's agents on the same node, keeping the connection count per database
+  flat instead of every node holding connections to every database.
+* **Daemon connection governors.** The running daemon caps concurrent event loads and concurrent batch writes at 4
+  per database by default, so the connection footprint stays _O(databases)_ rather than growing with
+  (projections × tenants). See [Daemon Connection Governors](/events/projections/async-daemon#daemon-connection-governors).
+* **A pool-derived rebuild cap.** Projection rebuilds fan out one cell per (projection × tenant), capped by default
+  at `max(1, MaxPoolSize / 8)` concurrent cells per database. See
+  [Capping Rebuild Concurrency](/events/projections/rebuilding#capping-rebuild-concurrency).
+* **Managed partition bookkeeping.** The `mt_tenant_partitions` lookup table and its management machinery are
+  created automatically — you do not need to also opt into
+  `Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()` (though the two compose if you want partitioned
+  document tables too).
+
 ### Constraints
 
 Per-tenant partitioning is validated at `DocumentStore` construction. The following combinations throw immediately
