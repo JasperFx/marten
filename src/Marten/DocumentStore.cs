@@ -258,9 +258,24 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     /// preserved. Per-stream versions are taken from the events. <paramref name="streamHeaders"/> seed
     /// <c>mt_streams</c> (written first, for the foreign key). Runs as one transaction per tenant.
     /// </summary>
-    public async Task BulkInsertEventStreamAsync(string tenantId,
+    public Task BulkInsertEventStreamAsync(string tenantId,
         IReadOnlyList<BulkEventStreamHeader> streamHeaders, IAsyncEnumerable<IEvent> orderedEvents,
         int batchSize = 1000, CancellationToken cancellation = default)
+    {
+        return BulkInsertEventStreamAsync(tenantId, streamHeaders, orderedEvents,
+            BulkEventSequenceMode.AssignFromSequence, batchSize, cancellation);
+    }
+
+    /// <summary>
+    /// Streaming, order-preserving bulk import with explicit <c>seq_id</c> assignment control.
+    /// <see cref="BulkEventSequenceMode.PreserveSourceSequence"/> keeps each event's carried
+    /// <c>Sequence</c> — the migration data policy is to never renumber history (marten#4682) —
+    /// then advances the target sequence past the imported maximum and, under per-tenant event
+    /// partitioning, seeds the tenant's <c>HighWaterMark:{tenant}</c> progression row.
+    /// </summary>
+    public async Task BulkInsertEventStreamAsync(string tenantId,
+        IReadOnlyList<BulkEventStreamHeader> streamHeaders, IAsyncEnumerable<IEvent> orderedEvents,
+        BulkEventSequenceMode sequenceMode, int batchSize = 1000, CancellationToken cancellation = default)
     {
         var tenant = await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
             .ConfigureAwait(false);
@@ -280,7 +295,8 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         try
         {
             await appender
-                .BulkInsertEventStreamAsync(conn, tenantId, streamHeaders, orderedEvents, batchSize, cancellation)
+                .BulkInsertEventStreamAsync(conn, tenantId, streamHeaders, orderedEvents, sequenceMode,
+                    batchSize, cancellation)
                 .ConfigureAwait(false);
             await tx.CommitAsync(cancellation).ConfigureAwait(false);
         }

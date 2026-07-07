@@ -24,4 +24,10 @@ public sealed class BulkEventStreamHeader
 
     /// <summary>Optional pre-resolved aggregate alias; takes precedence over <see cref="AggregateType"/>.</summary>
     public string? AggregateTypeName { get; init; }
+
+    /// <summary>
+    /// Whether the stream is archived. A migration read should carry the source's
+    /// <c>mt_streams.is_archived</c> flag through so archived streams stay archived in the target.
+    /// </summary>
+    public bool IsArchived { get; init; }
 }

@@ -230,3 +230,54 @@ untouched.
 The cleanup identifies per-tenant `mt_event_progression` rows by parsing the
 `ShardName` grammar rather than pattern-matching the name, so a projection whose name
 happens to end with a tenant id is never mistakenly deleted (#4683).
+
+### Migrating an Existing Conjoined Store
+
+::: warning
+The migration is **offline-first**: take source writes offline for the migration window. During the
+migration both the source and target event tables exist side by side, so plan for roughly 2x the current
+event-store disk usage — and take a backup first.
+:::
+
+There is one canonical path for moving an existing conjoined event store onto per-tenant partitioning:
+`ConjoinedToPartitionedMigration`, driven per tenant by the
+[sequence-preserving streaming bulk import](/events/bulk-appending#preserving-source-sequence-numbers).
+Point it at the existing store (the source) and a store configured with `UseTenantPartitionedEvents = true`
+in a **different schema or database** (the target — the source tables are never touched, so rolling back is
+simply "keep using the source"):
+
+```cs
+var migration = new ConjoinedToPartitionedMigration(sourceStore, targetStore)
+{
+    // Optional: rows per COPY batch (default 1000)
+    BatchSize = 5000,
+
+    // Optional: migrate only a subset of tenants (default: every tenant found in the source)
+    TenantIds = new[] { "tenant-a", "tenant-b" }
+};
+
+// Phase 1 — the dry run: per-tenant inventory (event count, stream count, max seq_id)
+// plus which tenants a resumed run would skip. Moves no data.
+var plan = await migration.BuildPlanAsync(cancellationToken);
+
+// Phase 2 — per-tenant copy: registers each tenant's partitions on the target, streams its
+// events across with their original seq_ids preserved, verifies row counts, and records
+// completion in the target's mt_tenant_migration_log table.
+var result = await migration.ExecuteAsync(cancellationToken);
+```
+
+The migration's **data policy is to never renumber historical events**. Every event keeps its original
+`seq_id` — per-tenant gaps are expected, because the conjoined source interleaved all tenants on one global
+sequence — so anything that captured a sequence position (progression rows, downstream warehouses, audit
+logs, external integrations) stays valid. Instead, for each tenant the migration:
+
+* advances the tenant's own `mt_events_sequence_{suffix}` past its imported maximum, so the first live
+  append after cut-over works on the first try (no primary-key or sequence collisions);
+* seeds the tenant's `HighWaterMark:{tenantId}` progression row at that maximum, so high-water detection
+  starts above the gappy imported history;
+* carries the `is_archived` flag across for both streams and events.
+
+Tenants are migrated **one at a time, each in a single transaction**. A failure rolls the in-flight tenant
+back cleanly; re-running `ExecuteAsync` skips tenants already recorded as completed in
+`mt_tenant_migration_log` and retries the failed one. Inline projection documents are *not* migrated —
+rebuild projections on the target after the copy (they replay from the migrated events).
