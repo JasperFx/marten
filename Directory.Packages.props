@@ -170,8 +170,11 @@
     <!-- 9.8.0 (marten#4830 / weasel#329): new Weasel.Storage package holds the 5 neutral closed-shape
          storage contracts (IStorageDialect, StorageColumnType, BulkColumnValue, IStorageSerializer,
          IVersionTracker) lifted out of Marten so Marten and Polecat share them. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.13.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.13.0" />
+    <!-- 9.14.0 (weasel#339): dialect-neutral grouped-parameter seam (Weasel.Core.IGroupedParameterBuilder
+         + ICommandBuilder.CreateGroupedParameterBuilder/AppendParameter(object)) + StorageColumnType.Binary,
+         so the closed-shape EVENT binders + per-event ops drop their direct Npgsql reference (#4821 event E1). -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.14.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.14.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

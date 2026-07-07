@@ -2,8 +2,8 @@
 using JasperFx.Events;
 using Marten.Events.Operations;
 using Marten.Internal;
-using NpgsqlTypes;
-using Weasel.Postgresql;
+using Weasel.Core;
+using Weasel.Storage;
 
 namespace Marten.EventStorage.Rich;
 
@@ -45,46 +45,50 @@ internal sealed class RichAppendEventOperation: AppendEventOperationBase
     {
         builder.Append(_descriptor.AppendEventSqlPrefix);
 
-        var pb = builder.CreateGroupedParameterBuilder(',');
+        var dialect = _descriptor.Dialect;
+        IGroupedParameterBuilder pb = builder.CreateGroupedParameterBuilder(',');
 
         // --- Core columns, in the dialect's column order ---
         // Must match BuildAppendEventFullColumnsAndPrefix:
         //   data, type, mt_dotnet_type, id, stream_id, version, timestamp, tenant_id,
         //   then metadata binders (e.g., seq_id) at the end.
+        // Parameter provider types come from the dialect's SetParameterType so
+        // the op carries no direct Npgsql reference.
 
         // data — jsonb. Closed-shape uses the descriptor's serializer
         // closure (returns string). Source-gen target (#4413 hot-path
         // hardening) can switch to Serializer.WriteToParameter to skip the
         // intermediate UTF-16 allocation, matching codegen.
-        pb.AppendParameter(_descriptor.SerializeEventData(Event), NpgsqlDbType.Jsonb);
+        dialect.SetParameterType(pb.AppendParameter(_descriptor.SerializeEventData(Event)), StorageColumnType.Json);
 
-        pb.AppendParameter(Event.EventTypeName, NpgsqlDbType.Varchar);
-        pb.AppendParameter(Event.DotNetTypeName, NpgsqlDbType.Varchar);
+        dialect.SetParameterType(pb.AppendParameter(Event.EventTypeName), StorageColumnType.String);
+        dialect.SetParameterType(pb.AppendParameter(Event.DotNetTypeName), StorageColumnType.String);
 
         // #4515: bdata bytea (nullable). For JSON-serialized events this is
         // NULL; for binary-serialized events it carries the payload. Column
         // order matches EventsTable.SelectColumns — bdata is pinned at
-        // position 3 right after mt_dotnet_type.
+        // position 3 right after mt_dotnet_type. The neutral AppendParameter
+        // writes a null byte[] as DBNull.
         var bdataBytes = _descriptor.SerializeEventBdata(Event);
-        pb.AppendParameter(bdataBytes ?? (object)System.DBNull.Value, NpgsqlDbType.Bytea);
+        dialect.SetParameterType(pb.AppendParameter(bdataBytes), StorageColumnType.Binary);
 
-        pb.AppendParameter(Event.Id, NpgsqlDbType.Uuid);
+        dialect.SetParameterType(pb.AppendParameter(Event.Id), StorageColumnType.Guid);
 
         // stream_id — Guid streams use Stream.Id, string streams use Stream.Key.
         // The descriptor flag is set once at startup; per-call cost is a
         // branch-predictable field read.
         if (_descriptor.IsGuidStreamIdentity)
         {
-            pb.AppendParameter(Stream.Id, NpgsqlDbType.Uuid);
+            dialect.SetParameterType(pb.AppendParameter(Stream.Id), StorageColumnType.Guid);
         }
         else
         {
-            pb.AppendParameter(Stream.Key, NpgsqlDbType.Varchar);
+            dialect.SetParameterType(pb.AppendParameter(Stream.Key), StorageColumnType.String);
         }
 
-        pb.AppendParameter(Event.Version, NpgsqlDbType.Bigint);
-        pb.AppendParameter(Event.Timestamp, NpgsqlDbType.TimestampTz);
-        pb.AppendParameter(Stream.TenantId, NpgsqlDbType.Varchar);
+        dialect.SetParameterType(pb.AppendParameter(Event.Version), StorageColumnType.Long);
+        dialect.SetParameterType(pb.AppendParameter(Event.Timestamp), StorageColumnType.Timestamp);
+        dialect.SetParameterType(pb.AppendParameter(Stream.TenantId), StorageColumnType.String);
 
         // --- Metadata binders (seq_id + any optional metadata columns) ---
         // Order matches the metadata slice of the SQL prefix's column list.

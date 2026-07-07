@@ -59,6 +59,15 @@ public sealed class QuickWithServerTimestampsEventStorageDescriptor
     /// <summary>Guid stream identity (writeId) vs string identity (writeKey).</summary>
     public bool IsGuidStreamIdentity { get; init; }
 
+    /// <summary>
+    /// The storage dialect used to set provider parameter types on the
+    /// per-event QuickWithVersion INSERT's bound parameters
+    /// (<see cref="Weasel.Storage.IStorageDialect.SetParameterType"/>), keeping
+    /// the closed-shape ops free of any direct Npgsql reference. Installed by
+    /// the event dialect at descriptor-build time.
+    /// </summary>
+    public Weasel.Storage.IStorageDialect Dialect { get; init; } = default!;
+
     /// <summary>Conjoined-tenant — affects per-stream ops (InsertStream / UpdateStreamVersion / StreamState).</summary>
     public bool IsTenancyConjoined { get; init; }
 

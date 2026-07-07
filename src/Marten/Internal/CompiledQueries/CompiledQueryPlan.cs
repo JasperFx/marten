@@ -224,6 +224,13 @@ public class CompiledQueryPlan : ICommandBuilder
         return appendParameter(value, dbType);
     }
 
+    // weasel#339: the neutral Weasel.Core.ICommandBuilder members are distinct
+    // interface slots from the Npgsql-typed Weasel.Postgresql ones above;
+    // delegate to the PG implementations (NpgsqlParameter derives from
+    // DbParameter, the PG grouped builder from the neutral one).
+    DbParameter Weasel.Core.ICommandBuilder.AppendParameter(object value)
+        => ((ICommandBuilder)this).AppendParameter(value);
+
     private NpgsqlParameter appendParameter(object value, NpgsqlDbType? dbType)
     {
         _current ??= appendCommand();
@@ -247,6 +254,9 @@ public class CompiledQueryPlan : ICommandBuilder
     {
         throw new NotSupportedException();
     }
+
+    Weasel.Core.IGroupedParameterBuilder Weasel.Core.ICommandBuilder.CreateGroupedParameterBuilder(char? separator)
+        => CreateGroupedParameterBuilder(separator);
 
     NpgsqlParameter[] ICommandBuilder.AppendWithParameters(string text)
     {

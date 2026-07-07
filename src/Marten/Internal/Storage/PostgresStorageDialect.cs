@@ -74,6 +74,7 @@ internal sealed class PostgresStorageDialect<TId>: IStorageDialect
             StorageColumnType.Boolean => NpgsqlDbType.Boolean,
             StorageColumnType.Timestamp => NpgsqlDbType.TimestampTz,
             StorageColumnType.Json => NpgsqlDbType.Jsonb,
+            StorageColumnType.Binary => NpgsqlDbType.Bytea,
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
 

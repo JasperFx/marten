@@ -1,8 +1,8 @@
 #nullable enable
 using JasperFx.Events;
 using Marten.Internal;
-using NpgsqlTypes;
-using Weasel.Postgresql;
+using Weasel.Core;
+using Weasel.Storage;
 
 namespace Marten.EventStorage.Metadata;
 
@@ -20,11 +20,19 @@ namespace Marten.EventStorage.Metadata;
 /// </remarks>
 internal sealed class CausationIdColumnBinder: IEventMetadataBinder
 {
+    private readonly IStorageDialect _dialect;
+
+    public CausationIdColumnBinder(IStorageDialect dialect)
+    {
+        _dialect = dialect;
+    }
+
     public string ColumnName => "causation_id";
     public string ValueSql => "?";
 
     public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IStorageSession session)
     {
-        pb.AppendParameter(@event.CausationId, NpgsqlDbType.Varchar);
+        var parameter = pb.AppendParameter(@event.CausationId);
+        _dialect.SetParameterType(parameter, StorageColumnType.String);
     }
 }

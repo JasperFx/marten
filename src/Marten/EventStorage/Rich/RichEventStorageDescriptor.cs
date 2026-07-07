@@ -118,6 +118,15 @@ public sealed class RichEventStorageDescriptor
     public bool IsGuidStreamIdentity { get; init; }
 
     /// <summary>
+    /// The storage dialect used to set provider parameter types on the
+    /// per-event append operation's bound parameters
+    /// (<see cref="Weasel.Storage.IStorageDialect.SetParameterType"/>), keeping
+    /// the closed-shape ops free of any direct Npgsql reference. Installed by
+    /// the event dialect at descriptor-build time.
+    /// </summary>
+    public Weasel.Storage.IStorageDialect Dialect { get; init; } = default!;
+
+    /// <summary>
     /// Configures the <c>mt_streams</c> insert command. The closure owns
     /// the SQL shape (column list, parameter binds, tenancy/identity
     /// variants) and the actual <see cref="IGroupedParameterBuilder"/>

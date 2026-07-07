@@ -7,6 +7,7 @@ using JasperFx.Events;
 using Marten.EventStorage.Metadata;
 using Marten.EventStorage.Quick;
 using Marten.EventStorage.QuickWithServerTimestamps;
+using Marten.Internal.Storage;
 using Marten.EventStorage.Rich;
 using Marten.Events;
 using Marten.Events.Archiving;
@@ -42,12 +43,13 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     public RichEventStorageDescriptor BuildRichDescriptor(EventGraph graph, ISerializer serializer)
     {
         var (orderedColumns, sqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
-        var metadataBinders = SelectRichMetadataBinders(orderedColumns);
+        var storageDialect = ResolveStorageDialect(graph);
+        var metadataBinders = SelectRichMetadataBinders(orderedColumns, storageDialect);
         // #4428: side-effect replay through EventSlice.BuildOperations calls
         // QuickAppendEventWithVersion on the Rich storage. That path uses the
         // same per-event INSERT shape but with a server-side seq_id nextval()
         // literal and no SequenceColumnBinder.
-        var metadataBindersWithoutSequence = SelectQuickModeMetadataBinders(orderedColumns);
+        var metadataBindersWithoutSequence = SelectQuickModeMetadataBinders(orderedColumns, storageDialect);
         var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
         var isConjoined = graph.TenancyStyle == TenancyStyle.Conjoined;
         var isGuid = graph.StreamIdentity == StreamIdentity.AsGuid;
@@ -81,6 +83,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             IsTenancyConjoined = isConjoined,
             AssertStreamVersionSql = BuildAssertStreamVersionSql(graph),
             IsGuidStreamIdentity = isGuid,
+            Dialect = storageDialect,
             AppendEventQuickWithVersionSqlSuffix = quickWithVersionSuffix,
             MetadataBindersWithoutSequence = metadataBindersWithoutSequence,
             ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
@@ -284,9 +287,10 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             = ReadQuickFlags(graph);
 
         var (orderedColumns, appendEventSqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
+        var storageDialect = ResolveStorageDialect(graph);
         var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
-        var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns);
-        var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns);
+        var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns, storageDialect);
+        var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns, storageDialect);
 
         return new QuickEventStorageDescriptor(
             quickAppendEventsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: false),
@@ -311,6 +315,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             })
         {
             IsGuidStreamIdentity = isGuid,
+            Dialect = storageDialect,
             IsTenancyConjoined = isConjoined,
             AssertStreamVersionSql = BuildAssertStreamVersionSql(graph),
             HasCausationId = hasCausation,
@@ -348,9 +353,10 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             = ReadQuickFlags(graph);
 
         var (orderedColumns, appendEventSqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
+        var storageDialect = ResolveStorageDialect(graph);
         var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
-        var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns);
-        var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns);
+        var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns, storageDialect);
+        var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns, storageDialect);
 
         return new QuickWithServerTimestampsEventStorageDescriptor(
             quickAppendEventsWithServerTimestampsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: true),
@@ -373,6 +379,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             })
         {
             IsGuidStreamIdentity = isGuid,
+            Dialect = storageDialect,
             IsTenancyConjoined = isConjoined,
             AssertStreamVersionSql = BuildAssertStreamVersionSql(graph),
             HasCausationId = hasCausation,
@@ -415,7 +422,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     /// server-side <c>nextval(...)</c> literal in the SQL suffix, not a
     /// bound parameter.
     /// </summary>
-    private static IEventMetadataBinder[] SelectQuickModeMetadataBinders(IReadOnlyList<IEventTableColumn> orderedColumns)
+    private static IEventMetadataBinder[] SelectQuickModeMetadataBinders(
+        IReadOnlyList<IEventTableColumn> orderedColumns, IStorageDialect dialect)
     {
         var binders = new List<IEventMetadataBinder>(4);
         foreach (var column in orderedColumns)
@@ -430,19 +438,19 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                     continue;
 
                 case "causation_id":
-                    binders.Add(new CausationIdColumnBinder());
+                    binders.Add(new CausationIdColumnBinder(dialect));
                     break;
 
                 case "correlation_id":
-                    binders.Add(new CorrelationIdColumnBinder());
+                    binders.Add(new CorrelationIdColumnBinder(dialect));
                     break;
 
                 case "user_name":
-                    binders.Add(new UserNameColumnBinder());
+                    binders.Add(new UserNameColumnBinder(dialect));
                     break;
 
                 case "headers":
-                    binders.Add(new HeadersColumnBinder());
+                    binders.Add(new HeadersColumnBinder(dialect));
                     break;
 
                 default:
@@ -505,13 +513,27 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     }
 
     /// <summary>
+    /// The Postgres <see cref="IStorageDialect"/> the closed-shape event
+    /// binders + per-event ops use to set provider parameter types via
+    /// <see cref="IStorageDialect.SetParameterType"/> — keeping them free of a
+    /// direct Npgsql reference. <see cref="PostgresStorageDialect{TId}"/>'s
+    /// <c>SetParameterType</c> is stream-identity-independent, but the closed
+    /// generic is chosen to match the stream identity for clarity.
+    /// </summary>
+    private static IStorageDialect ResolveStorageDialect(EventGraph graph)
+        => graph.StreamIdentity == StreamIdentity.AsGuid
+            ? PostgresStorageDialect<System.Guid>.Instance
+            : PostgresStorageDialect<string>.Instance;
+
+    /// <summary>
     /// Picks the <see cref="IEventMetadataBinder"/> for each column past the
     /// core slice (id, stream_id/key, version, data, type, tenant_id,
     /// mt_dotnet_type). Order matches the dialect's column ordering, so the
     /// operation's per-column bind sequence (inlined core writes + metadata
     /// binder loop) stays aligned with the SQL.
     /// </summary>
-    private static IEventMetadataBinder[] SelectRichMetadataBinders(IReadOnlyList<IEventTableColumn> orderedColumns)
+    private static IEventMetadataBinder[] SelectRichMetadataBinders(
+        IReadOnlyList<IEventTableColumn> orderedColumns, IStorageDialect dialect)
     {
         // Selection by column NAME (not CLR type) because Marten's event-store
         // column model uses a single generic `EventTableColumn` class for
@@ -534,19 +556,19 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             {
                 case "seq_id":
                 case "mt_events_sequence":
-                    binders.Add(new SequenceColumnBinder());
+                    binders.Add(new SequenceColumnBinder(dialect));
                     break;
 
                 case "causation_id":
-                    binders.Add(new CausationIdColumnBinder());
+                    binders.Add(new CausationIdColumnBinder(dialect));
                     break;
 
                 case "correlation_id":
-                    binders.Add(new CorrelationIdColumnBinder());
+                    binders.Add(new CorrelationIdColumnBinder(dialect));
                     break;
 
                 case "user_name":
-                    binders.Add(new UserNameColumnBinder());
+                    binders.Add(new UserNameColumnBinder(dialect));
                     break;
 
                 case "headers":
@@ -555,7 +577,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                     // HeadersColumn.ReadValueSync because the IEventTableColumn
                     // read surface doesn't yet thread ISerializer. Tracked as
                     // #4416 part 2.
-                    binders.Add(new HeadersColumnBinder());
+                    binders.Add(new HeadersColumnBinder(dialect));
                     break;
 
                 // TODO (#4416): remaining binders:
