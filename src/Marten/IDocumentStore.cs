@@ -345,6 +345,26 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable
         IAsyncEnumerable<IEvent> orderedEvents, int batchSize = 1000, CancellationToken cancellation = default);
 
     /// <summary>
+    ///     Streaming, order-preserving bulk import of an existing event log for a single tenant, with explicit
+    ///     control over <c>seq_id</c> assignment. <see cref="BulkEventSequenceMode.AssignFromSequence" /> is the
+    ///     behavior of the other overload; <see cref="BulkEventSequenceMode.PreserveSourceSequence" /> keeps each
+    ///     event's carried <c>Sequence</c> (historical events are never renumbered), requires strictly ascending
+    ///     input, advances the target sequence past the imported maximum, and — under per-tenant event
+    ///     partitioning — seeds the tenant's high-water progression row. This is the engine of the
+    ///     conjoined-to-partitioned migration. Does no schema work: apply the schema and register the tenant
+    ///     before importing.
+    /// </summary>
+    /// <param name="tenantId">The tenant to insert events for</param>
+    /// <param name="streamHeaders">One header per stream, to seed mt_streams</param>
+    /// <param name="orderedEvents">The tenant's events, in ascending target seq_id order</param>
+    /// <param name="sequenceMode">How seq_ids are assigned to the imported events</param>
+    /// <param name="batchSize">Number of rows per COPY batch and sequence-allocation block</param>
+    /// <param name="cancellation"></param>
+    Task BulkInsertEventStreamAsync(string tenantId, IReadOnlyList<BulkEventStreamHeader> streamHeaders,
+        IAsyncEnumerable<IEvent> orderedEvents, BulkEventSequenceMode sequenceMode, int batchSize = 1000,
+        CancellationToken cancellation = default);
+
+    /// <summary>
     ///     Build a new instance of the asynchronous projection daemon to use interactively
     ///     in your own code
     /// </summary>

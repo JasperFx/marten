@@ -232,12 +232,9 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
 
     /// <summary>
     ///     Check the current progress of all asynchronous projections
+    ///     within this database
     /// </summary>
     /// <param name="token"></param>
-    /// <param name="tenantId">
-    ///     Specify the database containing this tenant id. If omitted, this method uses the default
-    ///     database
-    /// </param>
     /// <returns></returns>
     public async Task<IReadOnlyList<ShardState>> AllProjectionProgress(
         CancellationToken token = default)
@@ -435,11 +432,9 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
 
     /// <summary>
     ///     Check the current progress of a single projection or projection shard
+    ///     within this database
     /// </summary>
-    /// <param name="tenantId">
-    ///     Specify the database containing this tenant id. If omitted, this method uses the default
-    ///     database
-    /// </param>
+    /// <param name="name"></param>
     /// <param name="token"></param>
     /// <returns></returns>
     public async Task<long> ProjectionProgressFor(ShardName name,

@@ -82,32 +82,71 @@ public class add_global_projection_under_partitioning : IAsyncLifetime
     }
 
     [Fact]
-    public async Task append_to_global_aggregate_fails_with_MT002_under_partitioning_pin()
+    public async Task append_to_global_aggregate_succeeds_and_rolls_up_across_tenants()
     {
-        // The currently-broken surface: AddGlobalProjection's GlobalEventAppenderDecorator
-        // writes the global aggregate's events to the *DEFAULT* tenant slot
-        // (StorageConstants.DefaultTenantId). Under UseTenantPartitionedEvents,
-        // every tenant must be registered as a Postgres partition suffix —
-        // but `*DEFAULT*` contains characters PG identifiers can't carry, so
-        // it can't be registered. Writing therefore fails with MT002 from the
-        // mt_quick_append_events function.
-        //
-        // Pin this as a known-incompatible combination so a future fix —
-        // either (a) routing global-aggregate events through a non-partitioned
-        // sibling table, or (b) special-casing the default tenant inside the
-        // bulk function — flips the assertion intentionally.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
+        // #4648 fix (flips the former MT002 pin): AddGlobalProjection's
+        // GlobalEventAppenderDecorator routes the global aggregate's events to the
+        // *DEFAULT* tenant slot. That sentinel can't be a partition-table SUFFIX
+        // (illegal identifier characters), but a LIST partition VALUE can be any
+        // string — so AddMartenManagedTenantsAsync now auto-provisions a reserved
+        // '__default__' suffix for the '*DEFAULT*' partition value whenever the
+        // store has global aggregates registered. The rerouted appends then land
+        // in a real partition (with their own per-tenant event sequence) instead
+        // of raising MT002.
+        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         var globalId = Guid.NewGuid();
 
-        await using var session = _store.LightweightSession("alpha");
-        session.Events.StartStream<GlobalCounter>(globalId,
-            new GlobalTickEvent("first"));
+        // Two different tenants funnel events into the SAME global stream
+        await using (var alpha = _store.LightweightSession("alpha"))
+        {
+            alpha.Events.StartStream<GlobalCounter>(globalId,
+                new GlobalTickEvent("first"), new GlobalTickEvent("second"));
+            await alpha.SaveChangesAsync();
+        }
 
-        var ex = await Should.ThrowAsync<Marten.Exceptions.MartenCommandException>(async () =>
-            await session.SaveChangesAsync());
-        ex.Message.ShouldContain("MT002");
-        ex.Message.ShouldContain("*DEFAULT*");
+        await using (var beta = _store.LightweightSession("beta"))
+        {
+            beta.Events.Append(globalId, new GlobalTickEvent("third"));
+            await beta.SaveChangesAsync();
+        }
+
+        // The inline global projection doc is single-tenanted, so it reads the
+        // same from any tenant's session — and reflects BOTH tenants' appends
+        await using (var reader = _store.QuerySession("beta"))
+        {
+            var counter = await reader.LoadAsync<GlobalCounter>(globalId);
+            counter.ShouldNotBeNull();
+            counter.TickCount.ShouldBe(3);
+        }
+
+        // The storage-level shape: the default tenant slot is registered with the
+        // reserved suffix and all three events live in its partition
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        var suffix = (string?)await conn.CreateCommand(
+                $"select partition_suffix from {_schema}.mt_tenant_partitions where partition_value = '{StorageConstants.DefaultTenantId}'")
+            .ExecuteScalarAsync();
+        suffix.ShouldBe("__default__");
+
+        var eventCount = (long)(await conn.CreateCommand(
+                $"select count(*) from {_schema}.mt_events___default__")
+            .ExecuteScalarAsync())!;
+        eventCount.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task reserved_default_suffix_is_rejected_for_regular_tenants()
+    {
+        // A regular tenant may not claim the '__default__' suffix reserved for the
+        // global-projection default tenant slot — a shared suffix would fold two
+        // partition VALUES into one partition table and corrupt tenant isolation.
+        var ex = await Should.ThrowAsync<ArgumentException>(() =>
+            _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None,
+                new System.Collections.Generic.Dictionary<string, string> { ["acme"] = "__default__" }));
+
+        ex.Message.ShouldContain("reserved");
     }
 }
 

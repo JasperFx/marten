@@ -73,6 +73,28 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// </summary>
     public bool DiscoverGeneratedEvolversOnStartup { get; set; } = true;
 
+    /// <summary>
+    ///     <para>
+    ///     Experimental opt-in for #4685 (rebuild write-side performance): when a projection
+    ///     <b>rebuild</b> batch's document writes are pure inserts (user projection code calling
+    ///     <c>IDocumentOperations.Insert(...)</c>, e.g. an event-to-row transform projection),
+    ///     Marten buffers those inserts and flushes them through PostgreSQL's binary
+    ///     <c>COPY</c> protocol (the same BulkWriter machinery behind
+    ///     <c>IDocumentStore.BulkInsertAsync</c>) instead of the per-row INSERT command path.
+    ///     Binary COPY is typically several times faster for bulk loads.
+    ///     </para>
+    ///     <para>
+    ///     Safety: the COPY dispatch degrades gracefully. If any non-insert document operation
+    ///     (update, upsert, patch, delete, ad-hoc SQL) arrives in the same batch, the buffered
+    ///     inserts drain back onto the ordinary per-row command path in their original order and
+    ///     the batch executes exactly as it would without this flag. Continuous (non-rebuild)
+    ///     projection execution is never affected. Everything still commits in the one batch
+    ///     transaction, so a failed rebuild cannot leak partially-copied rows.
+    ///     </para>
+    ///     <para>Default is <see langword="false"/>.</para>
+    /// </summary>
+    public bool RebuildWithBulkCopy { get; set; }
+
     // Snapshot of AppDomain.CurrentDomain.GetAssemblies() taken on first construction
     // of any DocumentStore in the process. The audit row #4294/Lens-1/#1 calls this out
     // as a top-fix candidate — multiple DocumentStore instances (multi-database tenancy)

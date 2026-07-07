@@ -171,6 +171,35 @@ When `UseTenantPartitionedEvents` is enabled, Marten:
   position for every active tenant in a single round trip — plus **per-tenant rebuild isolation**, so a projection can
   be rebuilt for a single tenant without tearing down or replaying every other tenant's progress.
 
+### What You Get Automatically <Badge type="tip" text="9.13" />
+
+`UseTenantPartitionedEvents` plus your tenancy choice is the whole opt-in — everything below is derived from that
+combination with no further configuration:
+
+* **One async daemon agent per (database, tenant).** The daemon runs each async projection or subscription
+  independently per tenant, so a lagging or rebuilding tenant never stalls its neighbors. This applies both to
+  Marten's own daemon and to [Wolverine-managed projection distribution](https://wolverinefx.net/guide/durability/marten/distribution.html),
+  which detects a tenant-partitioned store and automatically fans its distributed agents out per tenant across the
+  cluster.
+* **Tenant discovery on a plain single database.** With nothing but `opts.Connection(...)`, Marten quietly swaps in
+  a tenancy that reads the registered tenant list from the `mt_tenant_partitions` table, so per-tenant agent
+  distribution always has the current tenant set to fan out to — tenants added or removed at runtime converge
+  without a restart.
+* **Database-affine agent placement on multi-database tenancies.** When the store spans multiple databases (e.g.
+  [sharded multi-tenancy with database pooling](/configuration/multitenancy#sharded-multi-tenancy-with-database-pooling)),
+  distributed hosts group all of one database's agents on the same node, keeping the connection count per database
+  flat instead of every node holding connections to every database.
+* **Daemon connection governors.** The running daemon caps concurrent event loads and concurrent batch writes at 4
+  per database by default, so the connection footprint stays _O(databases)_ rather than growing with
+  (projections × tenants). See [Daemon Connection Governors](/events/projections/async-daemon#daemon-connection-governors).
+* **A pool-derived rebuild cap.** Projection rebuilds fan out one cell per (projection × tenant), capped by default
+  at `max(1, MaxPoolSize / 8)` concurrent cells per database. See
+  [Capping Rebuild Concurrency](/events/projections/rebuilding#capping-rebuild-concurrency).
+* **Managed partition bookkeeping.** The `mt_tenant_partitions` lookup table and its management machinery are
+  created automatically — you do not need to also opt into
+  `Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()` (though the two compose if you want partitioned
+  document tables too).
+
 ### Constraints
 
 Per-tenant partitioning is validated at `DocumentStore` construction. The following combinations throw immediately
@@ -206,6 +235,21 @@ model: sharding distributes tenants across a pool of databases, and per-tenant p
 tenant's events _within_ whichever database hosts that tenant.
 :::
 
+### Global Projections
+
+Global projections registered with `AddGlobalProjection` (described earlier on this page) route their aggregate's
+events to the default tenant slot (`*DEFAULT*`) so that every tenant's contribution lands in one canonical,
+single-tenanted timeline. That sentinel value contains characters that are not legal in PostgreSQL identifiers, so it
+can never be a partition-table _suffix_ — but a LIST partition _value_ can be any string. Whenever a store has global
+aggregates registered, `AddMartenManagedTenantsAsync` automatically provisions a partition for the `*DEFAULT*` tenant
+value using the reserved suffix `__default__` (`mt_events___default__`, `mt_streams___default__`, its own
+`mt_events_sequence___default__`, and so on) alongside the tenants you register. No extra registration call is
+needed. Two things to be aware of:
+
+* The reserved suffix `__default__` is rejected if you try to claim it for a regular tenant.
+* The `*DEFAULT*` slot appears in the `mt_tenant_partitions` registry — and therefore in tenant listings derived
+  from it — like any other tenant.
+
 ### Dropping Tenants
 
 Both routes that remove a tenant under `UseTenantPartitionedEvents` clean up the full
@@ -230,3 +274,54 @@ untouched.
 The cleanup identifies per-tenant `mt_event_progression` rows by parsing the
 `ShardName` grammar rather than pattern-matching the name, so a projection whose name
 happens to end with a tenant id is never mistakenly deleted (#4683).
+
+### Migrating an Existing Conjoined Store
+
+::: warning
+The migration is **offline-first**: take source writes offline for the migration window. During the
+migration both the source and target event tables exist side by side, so plan for roughly 2x the current
+event-store disk usage — and take a backup first.
+:::
+
+There is one canonical path for moving an existing conjoined event store onto per-tenant partitioning:
+`ConjoinedToPartitionedMigration`, driven per tenant by the
+[sequence-preserving streaming bulk import](/events/bulk-appending#preserving-source-sequence-numbers).
+Point it at the existing store (the source) and a store configured with `UseTenantPartitionedEvents = true`
+in a **different schema or database** (the target — the source tables are never touched, so rolling back is
+simply "keep using the source"):
+
+```cs
+var migration = new ConjoinedToPartitionedMigration(sourceStore, targetStore)
+{
+    // Optional: rows per COPY batch (default 1000)
+    BatchSize = 5000,
+
+    // Optional: migrate only a subset of tenants (default: every tenant found in the source)
+    TenantIds = new[] { "tenant-a", "tenant-b" }
+};
+
+// Phase 1 — the dry run: per-tenant inventory (event count, stream count, max seq_id)
+// plus which tenants a resumed run would skip. Moves no data.
+var plan = await migration.BuildPlanAsync(cancellationToken);
+
+// Phase 2 — per-tenant copy: registers each tenant's partitions on the target, streams its
+// events across with their original seq_ids preserved, verifies row counts, and records
+// completion in the target's mt_tenant_migration_log table.
+var result = await migration.ExecuteAsync(cancellationToken);
+```
+
+The migration's **data policy is to never renumber historical events**. Every event keeps its original
+`seq_id` — per-tenant gaps are expected, because the conjoined source interleaved all tenants on one global
+sequence — so anything that captured a sequence position (progression rows, downstream warehouses, audit
+logs, external integrations) stays valid. Instead, for each tenant the migration:
+
+* advances the tenant's own `mt_events_sequence_{suffix}` past its imported maximum, so the first live
+  append after cut-over works on the first try (no primary-key or sequence collisions);
+* seeds the tenant's `HighWaterMark:{tenantId}` progression row at that maximum, so high-water detection
+  starts above the gappy imported history;
+* carries the `is_archived` flag across for both streams and events.
+
+Tenants are migrated **one at a time, each in a single transaction**. A failure rolls the in-flight tenant
+back cleanly; re-running `ExecuteAsync` skips tenants already recorded as completed in
+`mt_tenant_migration_log` and retries the failed one. Inline projection documents are _not_ migrated —
+rebuild projections on the target after the copy (they replay from the migrated events).
