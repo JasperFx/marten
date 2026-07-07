@@ -77,6 +77,37 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     bool IEventStore.DistributesAgentsPerTenant
         => Options.Events.UseTenantPartitionedEvents;
 
+    // jasperfx#420 / marten#4710: the resolved per-database rebuild concurrency cap read by the
+    // CLI rebuild path (ProjectionHost.TryRebuildShardsAsync). Explicit configuration on
+    // StoreOptions.Projections wins; otherwise derive max(1, MaxPoolSize / 8) from the default
+    // database's Npgsql pool so a wide store cannot blow the connection pool during a rebuild
+    // while leaving headroom for application traffic. Falls back to null (the historical
+    // unbounded fan-out) when no pool signal is reachable.
+    int? IEventStore.MaxConcurrentRebuildsPerDatabase
+    {
+        get
+        {
+            if (Options.Projections.MaxConcurrentRebuildsPerDatabase.HasValue)
+            {
+                var configured = Options.Projections.MaxConcurrentRebuildsPerDatabase.Value;
+                return configured > 0 ? configured : null;
+            }
+
+            try
+            {
+                using var connection = Options.Tenancy.Default.Database.CreateConnection();
+                var poolSize = new NpgsqlConnectionStringBuilder(connection.ConnectionString).MaxPoolSize;
+                return Math.Max(1, poolSize / 8);
+            }
+            catch (Exception)
+            {
+                // No resolvable default database / connection string (e.g. tenancy models that
+                // cannot answer Default before runtime discovery) — stay unbounded.
+                return null;
+            }
+        }
+    }
+
     async ValueTask<IReadOnlyList<IEventDatabase>> IEventStore.AllDatabases()
     {
         // Straight delegation to ITenancy, mirroring IMartenStorage.AllDatabases(). The IMartenDatabase
@@ -569,6 +600,10 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             SkipUnknownEvents = Options.Projections.RebuildErrors.SkipUnknownEvents,
             SkipSerializationErrors = Options.Projections.RebuildErrors.SkipSerializationErrors
         };
+
+        // jasperfx#434 / marten#4710: surface the effective rebuild cap so monitoring tools
+        // (CritterWatch#309's rebuild dispatcher) can size their orchestration off the wire.
+        usage.MaxConcurrentRebuildsPerDatabase = ((IEventStore)this).MaxConcurrentRebuildsPerDatabase;
 
         foreach (var eventMapping in Options.EventGraph.AllEvents())
         {

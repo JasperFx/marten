@@ -49,6 +49,57 @@ public async Task RunRebuildAsync()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RebuildRunner.cs#L30-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild-single-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Capping Rebuild Concurrency <Badge type="tip" text="9.13" />
+
+Rebuilding fans out one rebuild "cell" per (projection × tenant/shard). On a wide store — many projections, or
+`UseTenantPartitionedEvents` with many tenants — an unbounded fan-out can exhaust the database connection pool and
+thrash the buffer cache. Marten caps the number of cells that run concurrently against one database:
+
+```cs
+// Explicit cap
+opts.Projections.MaxConcurrentRebuildsPerDatabase = 6;
+```
+
+If you don't set it, Marten derives a conservative default from the Npgsql connection pool size:
+`max(1, MaxPoolSize / 8)` — e.g. a 100-connection pool (the Npgsql default) allows 12 concurrent rebuild cells, a
+20-connection pool allows 2. The fraction leaves headroom for application traffic during rebuild windows. Setting
+the knob to zero or a negative number opts back into the historical unbounded fan-out.
+
+Two things to know about the shape of the throttle:
+
+- **It caps rebuild only.** Continuous catch-up is governed separately by
+  `opts.Projections.MaxConcurrentEventLoadsPerDatabase` and `opts.Projections.MaxConcurrentBatchWritesPerDatabase`
+  (both default 4).
+- **It's a two-layer model.** The cap bounds how many cells run at once; each cell still uses its own internal
+  slice workers while it runs. A cap of 4 therefore means "4 rebuilding projections/tenants at a time," not 4
+  concurrent database operations.
+
+For one-off operational rebuilds, the `--max-concurrent` flag on the [command line](/configuration/cli) overrides
+the configured value for that run:
+
+```bash
+dotnet run -- projections rebuild --max-concurrent 2
+```
+
+The effective cap is surfaced to monitoring tools through the store's usage descriptor
+(`EventStoreUsage.MaxConcurrentRebuildsPerDatabase`), so tools like CritterWatch can size their own rebuild
+orchestration to match.
+
+## Cancelling a Rebuild <Badge type="tip" text="9.13" />
+
+`RebuildProjectionAsync` overloads accept a `CancellationToken`, including the per-tenant overload
+(`RebuildProjectionAsync(name, tenantId, token)`) used with per-tenant event partitioning. Cancellation honors
+this contract:
+
+- Cancelling an in-flight rebuild leaves the cell's `mt_event_progression` row in a consistent state — either
+  unchanged from before the rebuild or at the actual partial position the rebuild reached. Never a torn,
+  in-between state.
+- A subsequent `RebuildProjectionAsync` on the same (projection, tenant) cell completes successfully with no
+  manual intervention — a rebuild always starts by resetting the cell, so a cancelled rebuild can simply be
+  retried.
+
+This is what makes it safe for operational tooling to expose a "cancel" affordance on long-running rebuilds.
+
 ## Optimized Projection Rebuilds <Badge type="tip" text="7.30" />
 
 ::: tip
