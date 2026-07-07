@@ -315,7 +315,7 @@ Both `AllProjectionProgress()` and `ProjectionProgressFor()` accept an optional 
 tenant id, the read targets the database containing that tenant. When the tenant id is omitted on
 a store with a single database, the default database is used. When the tenant id is omitted under
 multi-tenancy with multiple databases — including `MultiTenantedWithShardedDatabases()` — the read
-spans _every_ known database: `AllProjectionProgress()` concatenates each database's progression
+spans *every* known database: `AllProjectionProgress()` concatenates each database's progression
 rows (with `Events.UseTenantPartitionedEvents` the per-tenant rows carry the tenant id in their
 shard identity, `{Name}:{ShardKey}:{tenantId}`, so results remain attributable per tenant), and
 `ProjectionProgressFor()` returns the highest progression found for the shard name across the
