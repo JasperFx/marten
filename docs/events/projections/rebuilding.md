@@ -85,6 +85,20 @@ The effective cap is surfaced to monitoring tools through the store's usage desc
 (`EventStoreUsage.MaxConcurrentRebuildsPerDatabase`), so tools like CritterWatch can size their own rebuild
 orchestration to match.
 
+### Load-test evidence for the defaults
+
+The `max(1, MaxPoolSize / 8)` cap and the load/write governor default of 4 are confirmed by the
+`rebuildload` scenario in the `Marten.ScaleTesting` harness (marten#4884), which sweeps the three knobs
+against many partitioned tenants rebuilding concurrently and samples `pg_stat_activity` +
+`mt_event_progression` contention per configuration. The governing observation is that peak database
+connections track the outer cap directly — **peak connections ≈ min(cap, projections) + 1** — so the cap,
+not the inner slice workers, is the dominant connection driver, and the `MaxPoolSize / 8` fraction keeps peak
+usage comfortably inside pool headroom (e.g. peak 9 against a 100-connection pool at cap 12). Wall-clock gains
+flatten past a handful of concurrent cells (diminishing returns), and no `mt_event_progression` waiters appear
+across the swept caps, so raising the cap trades pool headroom for little rebuild speedup once past ~4.
+`EnableExtendedProgressionTracking` adds no measurable rebuild overhead at the scales tested. Re-run
+`rebuildload` at your production pool size and event volume before deviating from the defaults.
+
 ## Cancelling a Rebuild <Badge type="tip" text="9.13" />
 
 `RebuildProjectionAsync` overloads accept a `CancellationToken`, including the per-tenant overload
