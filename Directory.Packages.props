@@ -87,13 +87,13 @@
          IEventStore.DistributesAgentsPerTenant into BuildDistributor (ProjectionCoordinator).
          Also DaemonMode.ExternallyManaged (jasperfx#490, wolverine#3290 — external hosts run
          projections; the store hosts no coordination and must not warn). -->
-    <PackageVersion Include="JasperFx" Version="2.23.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.23.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.23.0">
+    <PackageVersion Include="JasperFx" Version="2.24.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.24.0" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.24.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.23.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.24.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -173,8 +173,11 @@
     <!-- 9.14.0 (weasel#339): dialect-neutral grouped-parameter seam (Weasel.Core.IGroupedParameterBuilder
          + ICommandBuilder.CreateGroupedParameterBuilder/AppendParameter(object)) + StorageColumnType.Binary,
          so the closed-shape EVENT binders + per-event ops drop their direct Npgsql reference (#4821 event E1). -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.14.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.14.0" />
+    <!-- 9.15.0 (weasel#341): closed-shape EVENT descriptor core moved into Weasel.Storage — the 3
+         descriptors, IEventMetadataBinder + 5 metadata binders, IEventStoreSqlDialect — so Marten and
+         Polecat share them (#4821 event E2). -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.15.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.15.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

@@ -55,7 +55,9 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
         // mt_quick_append_events function; another dialect may use an entirely
         // different SQL shape (e.g. multi-row INSERT + OUTPUT on SQL Server),
         // so the operation's construction lives on the descriptor, not here.
-        => _descriptor.CreateQuickAppendEventsOperation(_descriptor, stream);
+        // The descriptor's factory returns the neutral Weasel.Storage.IStorageOperation
+        // (Marten's IStorageOperation derives from it); cast back to Marten's.
+        => (Marten.Internal.Operations.IStorageOperation)_descriptor.CreateQuickAppendEventsOperation(_descriptor, stream);
 
     public override IStorageOperation InsertStream(StreamAction stream)
         => new QuickInsertStreamOperation(_descriptor, stream);
