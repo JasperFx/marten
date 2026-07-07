@@ -130,7 +130,18 @@ public abstract partial class DocumentSessionBase
         }
 
         var pages = batch.BuildPages(this);
-        if (!pages.Any()) return;
+        if (!pages.Any())
+        {
+            // #4685: a rebuild-mode ProjectionUpdateBatch that routed every document insert
+            // into its bulk-copy buffer has no command pages but still carries pending COPY
+            // work in its transaction participant. Batch-level participants are only ever
+            // populated on the daemon path, so this doesn't change inline-session behavior
+            // (UpdateBatch.TransactionParticipants is always empty).
+            if (batch.TransactionParticipants is not { Count: > 0 })
+            {
+                return;
+            }
+        }
 
         // Merge participants from both the batch (async daemon) and the session (inline projections)
         IReadOnlyList<ITransactionParticipant>? participants = null;

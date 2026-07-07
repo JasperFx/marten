@@ -401,7 +401,12 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         }
 
         var session = (DocumentSessionBase)OpenSession(sessionOptions);
-        var batch = new ProjectionUpdateBatch(Options.Projections, session, ShardExecutionMode.Rebuild, token)
+
+        // #4685: pass the actual execution mode through. This used to hardcode
+        // ShardExecutionMode.Rebuild — harmless while ProjectionUpdateBatch.Mode was unused,
+        // but the BulkWriter (binary COPY) rebuild flush keys off the batch's mode, and a
+        // continuous batch masquerading as Rebuild would wrongly opt into it.
+        var batch = new ProjectionUpdateBatch(Options.Projections, session, mode, token)
         {
             ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any()
         };

@@ -36,6 +36,8 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     private IMessageBatch? _batch;
     private OperationPage? _current;
     private DocumentSessionBase _session;
+    private readonly RebuildBulkCopyBuffer? _bulkCopy;
+    private bool _bulkCopyParticipantRegistered;
 
     internal ProjectionUpdateBatch(ProjectionOptions settings,
         DocumentSessionBase? session, ShardExecutionMode mode, CancellationToken token)
@@ -44,6 +46,14 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _token = token;
         Mode = mode;
+
+        // #4685 PR 3: rebuild batches can opt into flushing document inserts through the
+        // BulkWriter (binary COPY) path. Continuous batches never do — the per-row UPSERT
+        // path is unchanged there by design.
+        if (settings.RebuildWithBulkCopy && mode == ShardExecutionMode.Rebuild)
+        {
+            _bulkCopy = new RebuildBulkCopyBuffer(session.Database, ((IMartenSession)session).Serializer);
+        }
 
         Queue = new Block<Weasel.Storage.IStorageOperation>(processOperationAsync);
 
@@ -68,6 +78,15 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     /// not change the flush behavior</b>.
     /// </summary>
     public BatchFlushMode FlushMode { get; private set; } = BatchFlushModeClassifier.Initial;
+
+    /// <summary>
+    ///     #4685 PR 3: true when this batch was built for a rebuild with
+    ///     <see cref="ProjectionOptions.RebuildWithBulkCopy"/> enabled. Sessions whose work
+    ///     tracker is this batch wrap document inserts in <see cref="BulkCopyableInsert"/> so
+    ///     the batch can route them to the BulkWriter (binary COPY) flush. Fixed at
+    ///     construction, so reads from the daemon's parallel worker threads are safe.
+    /// </summary>
+    internal bool AcceptsBulkInserts => _bulkCopy is not null;
 
     // TODO -- make this private
     public Block<Weasel.Storage.IStorageOperation> Queue { get; }
@@ -365,12 +384,66 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     private void applyOperation(Weasel.Storage.IStorageOperation operation)
     {
+        // #4685 PR 3: BulkWriter (binary COPY) dispatch for rebuild batches. Wrapped document
+        // inserts are buffered for a COPY flush inside the batch transaction; the arrival of
+        // any non-insert document operation drains the buffer back onto the per-row command
+        // pages in original order (graceful degradation — a mixed batch just doesn't get the
+        // COPY win). Operations with OperationRole.Events (progression writes, event-table
+        // maintenance) are neutral: they never touch document tables, and every daemon batch
+        // carries a progression write, so treating them as demoting would make the COPY path
+        // unreachable.
+        if (_bulkCopy != null)
+        {
+            if (operation is BulkCopyableInsert insert)
+            {
+                if (!_bulkCopy.Demoted && _bulkCopy.TryBuffer(insert))
+                {
+                    _documentTypes.Fill(insert.DocumentType);
+                    FlushMode = BatchFlushModeClassifier.WithOperation(FlushMode, OperationRole.Insert);
+
+                    if (!_bulkCopyParticipantRegistered)
+                    {
+                        // Lazy registration keeps participant-only execution from kicking in
+                        // for batches that never buffered anything.
+                        AddTransactionParticipant(_bulkCopy);
+                        _bulkCopyParticipantRegistered = true;
+                    }
+
+                    return;
+                }
+
+                // Demoted batch (or a document shape without a bulk loader): fall back to the
+                // original per-row insert operation.
+                operation = insert.Inner;
+            }
+            else if (!_bulkCopy.Demoted && demotesBulkCopy(operation.Role()))
+            {
+                foreach (var drained in _bulkCopy.Demote())
+                {
+                    appendToPage(drained.Inner);
+                }
+            }
+        }
+
+        appendToPage(operation);
+    }
+
+    private static bool demotesBulkCopy(OperationRole role)
+    {
+        // Insert keeps the insert-only premise; Events-role operations target the event /
+        // progression tables and are independent of document-table write order. Anything
+        // else (update, upsert, patch, delete, ad-hoc SQL) could depend on a buffered insert
+        // being visible, so the buffer drains and the batch stays on the per-row path.
+        return role != OperationRole.Insert && role != OperationRole.Events;
+    }
+
+    private void appendToPage(Weasel.Storage.IStorageOperation operation)
+    {
         _current.Append(operation);
 
         _documentTypes.Fill(operation.DocumentType);
 
         // #4685 PR 1 plumbing: keep FlushMode in sync with the operations queued so far.
-        // Subsequent PRs dispatch the BulkWriter (binary COPY) path on this signal.
         FlushMode = BatchFlushModeClassifier.WithOperation(FlushMode, operation.Role());
 
         if (_session != null && !_token.IsCancellationRequested && _current.Count >= ((IMartenSession)Session).Options.UpdateBatchSize)
