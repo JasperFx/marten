@@ -43,6 +43,7 @@ internal sealed class RichEventStorage<TId>: EventStorage<TId>
             _descriptor.IsGuidStreamIdentity,
             _descriptor.SerializeEventData,
             _descriptor.SerializeEventBdata,
+            _descriptor.Dialect,
             stream,
             @event);
 

@@ -2,7 +2,7 @@
 using System.Data.Common;
 using JasperFx.Events;
 using Marten.Internal;
-using Weasel.Postgresql;
+using Weasel.Core;
 
 namespace Marten.EventStorage;
 

@@ -1,8 +1,8 @@
 #nullable enable
 using JasperFx.Events;
 using Marten.Internal;
-using NpgsqlTypes;
-using Weasel.Postgresql;
+using Weasel.Core;
+using Weasel.Storage;
 
 namespace Marten.EventStorage.Metadata;
 
@@ -21,6 +21,13 @@ namespace Marten.EventStorage.Metadata;
 /// </remarks>
 internal sealed class HeadersColumnBinder: IEventMetadataBinder
 {
+    private readonly IStorageDialect _dialect;
+
+    public HeadersColumnBinder(IStorageDialect dialect)
+    {
+        _dialect = dialect;
+    }
+
     public string ColumnName => "headers";
 
     public string ValueSql => "?";
@@ -32,15 +39,14 @@ internal sealed class HeadersColumnBinder: IEventMetadataBinder
         //     var parameter = parameterBuilder.AppendParameter<object>(DBNull.Value);
         //     session.Serializer.WriteToParameter(parameter, evt.Headers);
         //
-        // Using AppendParameter<object> (not AppendParameter<DBNull> via the
-        // raw DBNull static type) is important — Npgsql refuses to serialize
-        // DBNull as a typed parameter, but accepts object + DBNull.Value with
-        // NpgsqlDbType.Jsonb as a NULL jsonb. WriteToParameter then either
-        // writes the actual JSON bytes (skipping intermediate string
-        // allocation via ISerializer.WriteTo) or leaves the parameter at
-        // DBNull when Headers is null.
-        var parameter = pb.AppendParameter<object>(System.DBNull.Value);
-        parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+        // Bind a DBNull placeholder typed as the dialect's json column type,
+        // then let WriteToParameter fill in the actual JSON bytes (skipping
+        // the intermediate string allocation via ISerializer.WriteTo) or leave
+        // the parameter at DBNull when Headers is null. The neutral
+        // AppendParameter writes DBNull.Value as-is; the dialect maps
+        // StorageColumnType.Json to its provider json type (Postgres jsonb).
+        var parameter = pb.AppendParameter(System.DBNull.Value);
+        _dialect.SetParameterType(parameter, StorageColumnType.Json);
         session.Serializer.WriteToParameter(parameter, @event.Headers);
     }
 

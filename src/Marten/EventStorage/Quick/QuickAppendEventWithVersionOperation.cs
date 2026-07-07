@@ -2,8 +2,8 @@
 using JasperFx.Events;
 using Marten.Events.Operations;
 using Marten.Internal;
-using NpgsqlTypes;
-using Weasel.Postgresql;
+using Weasel.Core;
+using Weasel.Storage;
 
 namespace Marten.EventStorage.Quick;
 
@@ -43,6 +43,7 @@ internal sealed class QuickAppendEventWithVersionOperation: AppendEventOperation
     private readonly bool _isGuidStreamIdentity;
     private readonly System.Func<IEvent, string> _serializeEventData;
     private readonly System.Func<IEvent, byte[]?> _serializeEventBdata;
+    private readonly IStorageDialect _dialect;
 
     public QuickAppendEventWithVersionOperation(
         string appendEventSqlPrefix,
@@ -51,6 +52,7 @@ internal sealed class QuickAppendEventWithVersionOperation: AppendEventOperation
         bool isGuidStreamIdentity,
         System.Func<IEvent, string> serializeEventData,
         System.Func<IEvent, byte[]?> serializeEventBdata,
+        IStorageDialect dialect,
         StreamAction stream,
         IEvent e)
         : base(stream, e)
@@ -61,36 +63,41 @@ internal sealed class QuickAppendEventWithVersionOperation: AppendEventOperation
         _isGuidStreamIdentity = isGuidStreamIdentity;
         _serializeEventData = serializeEventData;
         _serializeEventBdata = serializeEventBdata;
+        _dialect = dialect;
     }
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append(_appendEventSqlPrefix);
 
-        var pb = builder.CreateGroupedParameterBuilder(',');
+        var dialect = _dialect;
+        IGroupedParameterBuilder pb = builder.CreateGroupedParameterBuilder(',');
 
         // Core columns — same order + types as RichAppendEventOperation.
-        pb.AppendParameter(_serializeEventData(Event), NpgsqlDbType.Jsonb);
-        pb.AppendParameter(Event.EventTypeName, NpgsqlDbType.Varchar);
-        pb.AppendParameter(Event.DotNetTypeName, NpgsqlDbType.Varchar);
+        // Provider parameter types come from the dialect so the op carries no
+        // direct Npgsql reference.
+        dialect.SetParameterType(pb.AppendParameter(_serializeEventData(Event)), StorageColumnType.Json);
+        dialect.SetParameterType(pb.AppendParameter(Event.EventTypeName), StorageColumnType.String);
+        dialect.SetParameterType(pb.AppendParameter(Event.DotNetTypeName), StorageColumnType.String);
 
         // #4515: bdata bytea (nullable). NULL for JSON-serialized events;
         // bytes for binary-serialized events. Pinned at SELECT position 3
         // (right after mt_dotnet_type) by EventsTable.SelectColumns, so the
-        // bind sequence here mirrors that position.
+        // bind sequence here mirrors that position. The neutral AppendParameter
+        // writes a null byte[] as DBNull.
         var bdataBytes = _serializeEventBdata(Event);
-        pb.AppendParameter(bdataBytes ?? (object)System.DBNull.Value, NpgsqlDbType.Bytea);
+        dialect.SetParameterType(pb.AppendParameter(bdataBytes), StorageColumnType.Binary);
 
-        pb.AppendParameter(Event.Id, NpgsqlDbType.Uuid);
+        dialect.SetParameterType(pb.AppendParameter(Event.Id), StorageColumnType.Guid);
 
         if (_isGuidStreamIdentity)
-            pb.AppendParameter(Stream.Id, NpgsqlDbType.Uuid);
+            dialect.SetParameterType(pb.AppendParameter(Stream.Id), StorageColumnType.Guid);
         else
-            pb.AppendParameter(Stream.Key, NpgsqlDbType.Varchar);
+            dialect.SetParameterType(pb.AppendParameter(Stream.Key), StorageColumnType.String);
 
-        pb.AppendParameter(Event.Version, NpgsqlDbType.Bigint);
-        pb.AppendParameter(Event.Timestamp, NpgsqlDbType.TimestampTz);
-        pb.AppendParameter(Stream.TenantId, NpgsqlDbType.Varchar);
+        dialect.SetParameterType(pb.AppendParameter(Event.Version), StorageColumnType.Long);
+        dialect.SetParameterType(pb.AppendParameter(Event.Timestamp), StorageColumnType.Timestamp);
+        dialect.SetParameterType(pb.AppendParameter(Stream.TenantId), StorageColumnType.String);
 
         // Optional metadata binders (causation / correlation / headers /
         // user_name). The dialect's filtered list excludes SequenceColumnBinder

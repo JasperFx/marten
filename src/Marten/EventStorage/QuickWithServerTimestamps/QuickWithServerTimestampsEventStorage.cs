@@ -31,6 +31,7 @@ internal sealed class QuickWithServerTimestampsEventStorage<TId>: EventStorage<T
             _descriptor.IsGuidStreamIdentity,
             _descriptor.SerializeEventData,
             _descriptor.SerializeEventBdata,
+            _descriptor.Dialect,
             stream,
             @event);
 
@@ -42,6 +43,7 @@ internal sealed class QuickWithServerTimestampsEventStorage<TId>: EventStorage<T
             _descriptor.IsGuidStreamIdentity,
             _descriptor.SerializeEventData,
             _descriptor.SerializeEventBdata,
+            _descriptor.Dialect,
             stream,
             @event);
 

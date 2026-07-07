@@ -33,6 +33,7 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
             _descriptor.IsGuidStreamIdentity,
             _descriptor.SerializeEventData,
             _descriptor.SerializeEventBdata,
+            _descriptor.Dialect,
             stream,
             @event);
 
@@ -44,6 +45,7 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
             _descriptor.IsGuidStreamIdentity,
             _descriptor.SerializeEventData,
             _descriptor.SerializeEventBdata,
+            _descriptor.Dialect,
             stream,
             @event);
 
