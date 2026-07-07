@@ -3,7 +3,6 @@ using System;
 using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Marten.Linq.QueryHandlers;
 
 namespace Marten.EventStorage;
 
@@ -83,7 +82,4 @@ public abstract class EventStorage<TId>
     /// the storage layer, not in the operation's per-call command build.
     /// </summary>
     public abstract IStorageOperation AssertStreamVersion(StreamAction stream);
-
-    /// <summary>Stream-state lookup query handler.</summary>
-    public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
 }
