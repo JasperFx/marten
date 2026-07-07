@@ -33,25 +33,25 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// <c>AddAsyncDaemon(DaemonMode.HotCold)</c> with the same DaemonLockId.
 ///
 /// <para>
-/// DISTRIBUTION GRANULARITY OBSERVED AND PINNED HERE (JasperFx.Events 2.20.0 + Marten master):
-/// non-default tenancy routes the coordinator to <c>MultiTenantedProjectionDistributor</c> — ONE
-/// advisory-lock-guarded <c>IProjectionSet</c> PER DATABASE carrying ALL the store-global shard
-/// names. So a shard database's projections run WHOLE on exactly one node (unlike the single-DB
-/// matrix cell, where the SingleTenant distributor can split individual projections across nodes),
-/// while different shard databases can land on different nodes.
+/// DISTRIBUTION GRANULARITY (JasperFx.Events 2.21.0, jasperfx#491 + Marten #4862): non-default
+/// tenancy routes the coordinator to <c>MultiTenantedProjectionDistributor</c> — ONE
+/// advisory-lock-guarded <c>IProjectionSet</c> PER DATABASE. So a shard database's projections run
+/// WHOLE on exactly one node (unlike the single-DB matrix cell, where the SingleTenant distributor
+/// can split individual projections across nodes), while different shard databases can land on
+/// different nodes.
 /// </para>
 ///
 /// <para>
-/// As in the single-database cell, the winning node hands each STORE-GLOBAL identity
-/// (<c>{Projection}:All</c>) to <c>StartAgentAsync</c>, whose exact-identity path builds the
-/// store-global agent — the per-tenant fan-out only runs inside <c>StartAllAsync</c>, which the
-/// native coordinator never calls. The WS1 per-tenant baseline (<c>{Projection}:All:{tenant}</c> +
-/// <c>HighWaterMark:{tenant}</c> rows per shard) is therefore NOT met on this path today, even
-/// though Marten explicitly marks this topology as needing per-tenant agents
-/// (<c>IEventStore.DistributesAgentsPerTenant</c> is true for ShardedTenancy +
-/// UseTenantPartitionedEvents — but only Wolverine-style external distributors consume it). When
-/// epic #486 teaches the native coordinator the per-tenant shape, flip the per-tenant assertions
-/// below from absent to present.
+/// Because the store is tenant-partitioned (<c>IEventStore.DistributesAgentsPerTenant</c>), each
+/// database's set now expands its store-global shard names into per-tenant
+/// <c>{Projection}:All:{tenant}</c> ShardNames from THAT shard database's own tenant registry
+/// (<c>PerTenantShardExpansion</c> over <c>ICrossTenantRebuildSource</c>), and the winning node
+/// starts each tenant-bearing identity through <c>StartAgentAsync</c>'s per-tenant branch
+/// (jasperfx#487). The WS1 per-tenant baseline is therefore met per shard: per-tenant progression
+/// rows reach each tenant's OWN height and <c>HighWaterMark:{tenant}</c> rows appear in the shard
+/// database's own <c>mt_event_progression</c>, with no store-global agent ever running. This test
+/// previously pinned the pre-#491 store-global-only behavior; the assertions were flipped when
+/// the fix landed.
 /// </para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
@@ -136,7 +136,7 @@ public partial class multi_node_hotcold_sharded_partitioned_events: IAsyncLifeti
     }
 
     [Fact]
-    public async Task two_hotcold_nodes_own_whole_shard_databases_without_per_tenant_fan_out()
+    public async Task two_hotcold_nodes_own_whole_shard_databases_with_per_tenant_fan_out()
     {
         var shardA = _fixture.DbNames[0];
         var shardB = _fixture.DbNames[1];
@@ -192,63 +192,84 @@ public partial class multi_node_hotcold_sharded_partitioned_events: IAsyncLifeti
 
         try
         {
-            // Deterministic wait on per-shard progression state: each shard database's store-global
-            // shards must reach that shard's own high water (max over its overlapping per-tenant
-            // sequences).
+            var projections = new[] { ShTripProjection.ProjectionName, ShTallyProjection.ProjectionName };
+
+            // Deterministic wait on per-shard progression state: every (projection, tenant) pair on
+            // each shard database must reach that tenant's OWN height (the WS1 per-tenant baseline),
+            // and the shard's global high-water row its own max.
             var rowsByShard = new Dictionary<string, List<(string Name, long Seq)>>();
             foreach (var shard in new[] { shardA, shardB })
             {
+                var shardTenants = tenantsByShard[shard];
                 rowsByShard[shard] = await WaitForProgressionAsync(
                     _fixture.ConnectionStrings[shard], r =>
-                        SeqOf(r, $"{ShTripProjection.ProjectionName}:All") >= shardHighWater[shard] &&
-                        SeqOf(r, $"{ShTallyProjection.ProjectionName}:All") >= shardHighWater[shard],
-                    60.Seconds(), $"store-global shards reach high water {shardHighWater[shard]} on {shard}");
+                        shardTenants.Keys.All(t =>
+                            SeqOf(r, $"{ShTripProjection.ProjectionName}:All:{t}") >= expectedHeight[t] &&
+                            SeqOf(r, $"{ShTallyProjection.ProjectionName}:All:{t}") >= expectedHeight[t] &&
+                            SeqOf(r, $"HighWaterMark:{t}") >= expectedHeight[t]) &&
+                        SeqOf(r, "HighWaterMark") >= shardHighWater[shard],
+                    60.Seconds(), $"per-tenant shards reach their own heights on {shard}");
                 DumpRows($"{shard} mt_event_progression once caught up", rowsByShard[shard]);
             }
 
-            // ---- Placement: whole shard database per node ----
-            var allShardIdentities = new[]
-            {
-                $"{ShTripProjection.ProjectionName}:All", $"{ShTallyProjection.ProjectionName}:All"
-            };
-
+            // ---- Placement: whole shard database per node, per-tenant agents inside ----
             foreach (var shard in new[] { shardA, shardB })
             {
+                // jasperfx#491: the shard database's set expands into per-tenant identities from
+                // THAT database's own tenant registry — its winner runs one agent per
+                // (projection, tenant-on-this-shard), and no store-global agent exists.
+                var perTenantIdentities = projections
+                    .SelectMany(p => tenantsByShard[shard].Keys.Select(t => $"{p}:All:{t}"))
+                    .ToArray();
+
                 var onA = await AgentIdentitiesAsync(nodeA, shard);
                 var onB = await AgentIdentitiesAsync(nodeB, shard);
                 _output.WriteLine($"{shard}: node A runs [{string.Join(", ", onA)}], " +
                                   $"node B runs [{string.Join(", ", onB)}]");
 
-                // Only store-global agents run — no tenant-bearing agent identities on either node.
-                onA.Concat(onB).ShouldAllBe(identity => allShardIdentities.Contains(identity));
+                // Only tenant-bearing agents run, and only for THIS shard's tenants — the
+                // expansion never leaks another shard database's tenants into this set.
+                onA.Concat(onB).ShouldAllBe(identity => perTenantIdentities.Contains(identity));
 
                 // Per-database lock granularity: exactly one node owns the shard database, and it
-                // runs ALL of the database's shards — the set is never split across nodes. Which
-                // node wins which database is a lock race (the two databases CAN land on different
-                // nodes); assert exclusivity + completeness, not the split.
+                // runs ALL of the database's per-tenant agents — the set is never split across
+                // nodes. Which node wins which database is a lock race (the two databases CAN land
+                // on different nodes); assert exclusivity + completeness, not the split.
                 var owners = new[] { onA.Any(), onB.Any() }.Count(x => x);
                 owners.ShouldBe(1, $"{shard} must be owned by exactly one of the two HotCold nodes");
 
                 var winner = onA.Any() ? onA : onB;
-                winner.OrderBy(x => x).ShouldBe(allShardIdentities.OrderBy(x => x),
-                    $"the node owning {shard} must run ALL of that database's shards " +
+                winner.OrderBy(x => x).ShouldBe(perTenantIdentities.OrderBy(x => x),
+                    $"the node owning {shard} must run one agent per (projection, tenant) " +
                     "(MultiTenantedProjectionDistributor distributes whole databases)");
             }
 
-            // ---- WS1 per-tenant baseline: NOT met on this path today (see class doc) ----
+            // ---- WS1 per-tenant baseline: met per shard as of jasperfx#491 ----
             foreach (var shard in new[] { shardA, shardB })
             {
                 var rows = rowsByShard[shard];
+                var perTenantIdentities = projections
+                    .SelectMany(p => tenantsByShard[shard].Keys.Select(t => $"{p}:All:{t}"))
+                    .ToArray();
+
                 rows.Where(r => r.Name.StartsWith("Ws1Sh", StringComparison.Ordinal))
-                    .ShouldAllBe(r => allShardIdentities.Contains(r.Name),
-                        $"current behavior on {shard}: only store-global progression rows exist " +
-                        "under the native HotCold coordinator — no {Projection}:All:{tenant} rows. " +
-                        "If per-tenant rows now appear, the native coordinator gained per-tenant " +
-                        "fan-out and this test should assert the WS1 per-tenant baseline instead");
-                rows.Any(r => r.Name.StartsWith("HighWaterMark:", StringComparison.Ordinal))
-                    .ShouldBeFalse(
-                        $"current behavior on {shard}: no per-tenant HighWaterMark rows without " +
-                        "tenant-bearing agents");
+                    .ShouldAllBe(r => perTenantIdentities.Contains(r.Name),
+                        $"per-tenant fan-out on {shard}: every projection progression row is " +
+                        "tenant-bearing (no store-global {Projection}:All row) and belongs to one " +
+                        "of this shard's own tenants");
+
+                foreach (var tenant in tenantsByShard[shard].Keys)
+                {
+                    SeqOf(rows, $"{ShTripProjection.ProjectionName}:All:{tenant}")
+                        .ShouldBe(expectedHeight[tenant],
+                            $"tenant {tenant}'s trip shard tracks the tenant's OWN height on {shard}");
+                    SeqOf(rows, $"{ShTallyProjection.ProjectionName}:All:{tenant}")
+                        .ShouldBe(expectedHeight[tenant],
+                            $"tenant {tenant}'s tally shard tracks the tenant's OWN height on {shard}");
+                    SeqOf(rows, $"HighWaterMark:{tenant}").ShouldBe(expectedHeight[tenant],
+                        $"tenant {tenant}'s own high-water row is persisted on {shard}");
+                }
+
                 SeqOf(rows, "HighWaterMark").ShouldBe(shardHighWater[shard],
                     $"{shard}'s store-global high water = max over its tenants' overlapping heights");
             }
@@ -264,9 +285,6 @@ public partial class multi_node_hotcold_sharded_partitioned_events: IAsyncLifeti
                 tally.ShouldNotBeNull($"tenant {tenant}'s ShTally doc must materialize on its shard");
                 tally!.Count.ShouldBe(legs);
             }
-
-            _ = expectedHeight; // per-tenant heights are documented above; the per-tenant rows that
-                                // would carry them do not exist on this path today.
         }
         finally
         {
