@@ -595,7 +595,21 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         }
 
         _tenancy = new Lazy<ITenancy>(() =>
-            new DefaultTenancy(NpgsqlDataSourceFactory.Create(connectionString), this));
+        {
+            var dataSource = NpgsqlDataSourceFactory.Create(connectionString);
+
+            // #4862: this Lazy resolves on the first Tenancy access — during DocumentStore
+            // construction, after all user configuration has run — so the partitioning flag
+            // is settled by the time we choose. With per-tenant event partitioning on a
+            // plain single-database setup, swap in the tenancy whose usage descriptor
+            // surfaces the Marten-managed tenant list (TenantIds) so per-tenant agent
+            // distribution has tenants to fan out to. A user-supplied ITenancy — set via
+            // the Tenancy property or any of the MultiTenanted* helpers — replaces this
+            // Lazy wholesale and is never touched by this swap.
+            return Events.UseTenantPartitionedEvents
+                ? new TenantPartitionedSingleDatabaseTenancy(dataSource, this)
+                : new DefaultTenancy(dataSource, this);
+        });
     }
 
 
