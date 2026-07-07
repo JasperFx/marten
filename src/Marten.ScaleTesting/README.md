@@ -157,6 +157,37 @@ dotnet run --project src/Marten.ScaleTesting -- daemonload \
     --max-connections 16 --metrics daemonload-sharded.json --trace daemonload-sharded.csv
 ```
 
+### Multi-node native HotCold (marten#4883, epic jasperfx#486 WS6)
+
+`daemonload-multinode` is the COORDINATOR of a multi-process scenario: multi-node here means
+multiple OS processes of this same binary (no cluster infra). It provisions one
+tenant-partitioned store, launches `--nodes` child processes (`daemonload-node`, an internal
+worker role) each running `AddAsyncDaemon(DaemonMode.HotCold)` against the shared store on one
+`DaemonLockId`, appends continuously from the coordinator, samples `pg_stat_activity` grouped by
+per-node Application Name × database, optionally kills the current leader
+(`--kill-leader-after-seconds`) to exercise leadership failover, and verifies per-tenant catch-up.
+
+Under native HotCold + one tenant-partitioned database, the `MultiTenantedProjectionDistributor`
+locks the database's whole per-tenant agent set to ONE leader node at a time (jasperfx#491
+per-tenant fan-out runs on the winner). So the scenario asserts: single-leader **exclusivity**,
+**failover** to a survivor when the leader is killed (identified as the node holding the agent
+connections), **per-tenant catch-up** to every tenant's own ceiling afterward, and a per-node
+connection footprint that stays governed (`--max-connections-per-node`).
+
+```bash
+# 3 nodes, kill the leader 30s in, verify a survivor takes over and every tenant catches up
+dotnet run --project src/Marten.ScaleTesting -- daemonload-multinode \
+    --nodes 3 --tenants 100 --projections 2 --duration-seconds 120 \
+    --kill-leader-after-seconds 30 --wipe \
+    --max-connections-per-node 16 --metrics daemonload-multinode.json --trace daemonload-multinode.csv
+```
+
+To get agents running on DIFFERENT nodes simultaneously (rather than one hot leader), combine
+with the sharded topology — multiple shard databases, whose per-database locks CAN land on
+different nodes (that cross-node distribution variant, and the Wolverine-managed distribution mode
+from wolverine#3328, are the remaining WS6 multi-node work; the harness references only Marten,
+not Wolverine).
+
 ## Non-goals
 
 * Not a microbenchmark — `src/MartenBenchmarks/` covers per-method timings.

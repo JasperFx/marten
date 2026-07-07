@@ -280,6 +280,15 @@ public sealed partial class DaemonLoadCommand: JasperFxAsyncCommand<DaemonLoadIn
         return (caughtUp, stalled);
     }
 
+    /// <summary>
+    /// Public per-tenant catch-up probe reused by the marten#4883 multi-node coordinator — every
+    /// tenant's <c>{projection}:All:{tenant}</c> progression row vs that tenant's own sequence
+    /// ceiling, in the given schema on the given connection.
+    /// </summary>
+    internal static Task<(HashSet<string> CaughtUp, List<string> Stalled)> CheckCatchUpForSchemaAsync(
+        string connectionString, string schema, string[] tenants, string[] projectionNames)
+        => CheckCatchUpOnceAsync(connectionString, schema, tenants, projectionNames);
+
     private static async Task<(HashSet<string> CaughtUp, List<string> Stalled)> CheckCatchUpOnceAsync(
         string connectionString, string schema, string[] tenants, string[] projectionNames)
     {
