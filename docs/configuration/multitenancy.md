@@ -449,6 +449,18 @@ runs asynchronous projections across all of them. When new databases or tenants 
 the daemon's periodic health check picks them up and starts projection processing without any
 downtime or reconfiguration.
 
+When projection work is distributed across an application cluster — either by Marten's own daemon or by
+[Wolverine-managed projection distribution](https://wolverinefx.net/guide/durability/marten/distribution.html) —
+multi-database tenancies like this one get **database-affine assignment** automatically: all of one database's
+projection agents are grouped onto the same node, so the number of open connections per shard database stays flat
+instead of every node in the cluster holding connections to every database. This is derived from the tenancy model
+itself and requires no extra configuration. <Badge type="tip" text="9.13" />
+
+Sharded multi-tenancy also composes with
+[per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning): sharding distributes tenants
+across the database pool, while `Events.UseTenantPartitionedEvents` physically isolates each tenant's events (and
+projection progress) *within* whichever database hosts that tenant, running one daemon agent per (database, tenant).
+
 ## Dynamically applying changes to tenants databases
 
 If you didn't call the `ApplyAllDatabaseChangesOnStartup` method, Marten would still try to create a database [upon the session creation](/documents/sessions). This action is invasive and can cause issues like timeouts, cold starts, or deadlocks. It also won't apply all defined changes upfront (so, e.g. [indexes](/documents/indexing/), [custom schema extensions](/schema/extensions)).

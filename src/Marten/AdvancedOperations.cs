@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using JasperFx.MultiTenancy;
@@ -186,18 +187,46 @@ public class AdvancedOperations
     /// <param name="token"></param>
     /// <param name="tenantId">
     ///     Specify the database containing this tenant id. If omitted, this method uses the default
-    ///     database
+    ///     database when the store has a single database, or spans <em>every</em> known database
+    ///     under multi-tenancy with multiple databases (including
+    ///     <c>MultiTenantedWithShardedDatabases</c>), concatenating each database's progression rows.
+    ///     Under <c>Events.UseTenantPartitionedEvents</c> the per-tenant rows carry the tenant id in
+    ///     their <c>ShardName.Identity</c> (<c>{Name}:{ShardKey}:{tenantId}</c>), so the aggregated
+    ///     result remains attributable per tenant. See
+    ///     <a href="https://github.com/JasperFx/marten/issues/4797">#4797</a>.
     /// </param>
     /// <returns></returns>
     public async Task<IReadOnlyList<ShardState>> AllProjectionProgress(string? tenantId = null,
         CancellationToken token = default)
     {
-        var database = tenantId == null
-            ? _store.Tenancy.Default.Database
-            : (await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
-                .ConfigureAwait(false)).Database;
+        if (tenantId != null)
+        {
+            var database =
+                (await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
+                    .ConfigureAwait(false)).Database;
+            return await database.AllProjectionProgress(token).ConfigureAwait(false);
+        }
 
-        return await database.AllProjectionProgress(token).ConfigureAwait(false);
+        // #4797: mirror WaitForNonStaleProjectionDataAsync's sharded-aware shape (#4366).
+        // A single-database store keeps today's default-database behavior; any
+        // multi-database tenancy (sharded, database per tenant, master-table, ...) has no
+        // usable "default" database — ShardedTenancy.Default even throws — so fan out
+        // across every database the store knows about and concatenate the results.
+        if (_store.Tenancy is DefaultTenancy)
+        {
+            return await _store.Tenancy.Default.Database.AllProjectionProgress(token).ConfigureAwait(false);
+        }
+
+        var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);
+        assertHasDatabases(databases);
+
+        var states = new List<ShardState>();
+        foreach (var database in databases)
+        {
+            states.AddRange(await database.AllProjectionProgress(token).ConfigureAwait(false));
+        }
+
+        return states;
     }
 
     /// <summary>
@@ -205,20 +234,57 @@ public class AdvancedOperations
     /// </summary>
     /// <param name="tenantId">
     ///     Specify the database containing this tenant id. If omitted, this method uses the default
-    ///     database
+    ///     database when the store has a single database. Under multi-tenancy with multiple databases
+    ///     (including <c>MultiTenantedWithShardedDatabases</c>) an omitted tenant id spans
+    ///     <em>every</em> known database and returns the highest progression found for the shard
+    ///     name. With <c>Events.UseTenantPartitionedEvents</c>, a tenant-qualified
+    ///     <c>ShardName</c> identity (<c>{Name}:{ShardKey}:{tenantId}</c>) only ever exists in the
+    ///     single database that owns the tenant, so the result is that tenant's exact progression;
+    ///     databases without the row contribute 0. See
+    ///     <a href="https://github.com/JasperFx/marten/issues/4797">#4797</a>.
     /// </param>
     /// <param name="token"></param>
     /// <returns></returns>
     public async Task<long> ProjectionProgressFor(ShardName name, string? tenantId = null,
         CancellationToken token = default)
     {
-        var tenant = tenantId == null
-            ? _store.Tenancy.Default
-            : await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
+        if (tenantId != null)
+        {
+            var tenant = await _store.Tenancy
+                .GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
                 .ConfigureAwait(false);
-        var database = tenant.Database;
+            return await tenant.Database.ProjectionProgressFor(name, token).ConfigureAwait(false);
+        }
 
-        return await database.ProjectionProgressFor(name, token).ConfigureAwait(false);
+        // #4797: same sharded-aware fan-out as AllProjectionProgress above.
+        if (_store.Tenancy is DefaultTenancy)
+        {
+            return await _store.Tenancy.Default.Database.ProjectionProgressFor(name, token).ConfigureAwait(false);
+        }
+
+        var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);
+        assertHasDatabases(databases);
+
+        var highest = 0L;
+        foreach (var database in databases)
+        {
+            var sequence = await database.ProjectionProgressFor(name, token).ConfigureAwait(false);
+            if (sequence > highest)
+            {
+                highest = sequence;
+            }
+        }
+
+        return highest;
+    }
+
+    private static void assertHasDatabases(IReadOnlyList<IMartenDatabase> databases)
+    {
+        if (databases.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "The document store has no databases registered with its tenancy. Either configure a tenancy strategy that exposes databases (e.g. MultiTenantedWithShardedDatabases) or invoke a specific tenant id overload.");
+        }
     }
 
     /// <summary>
@@ -443,6 +509,38 @@ public class AdvancedOperations
                 "IServiceProvider.AddTenantAsync(tenantId, connectionValue) instead.");
         }
 
+        // #4648: AddGlobalProjection routes its aggregate's events to the *DEFAULT* tenant
+        // slot (GlobalEventAppenderDecorator), and under UseTenantPartitionedEvents every
+        // tenant id that receives events must have a registered partition — otherwise the
+        // append raises MT002. The sentinel '*DEFAULT*' can never be its own partition
+        // SUFFIX (it contains characters that are illegal in PG identifiers), but a LIST
+        // partition VALUE can be any string — only the child table's NAME is
+        // identifier-constrained. So whenever this store has global aggregates registered,
+        // auto-provision the reserved '__default__' suffix for the '*DEFAULT*' partition
+        // value alongside whatever tenants the caller is registering. Idempotent: the
+        // partition upsert and CREATE SEQUENCE IF NOT EXISTS both tolerate re-registration.
+        if (_store.Options.Events.UseTenantPartitionedEvents
+            && _store.Options.EventGraph.GlobalAggregates.Any()
+            && !tenantIdToPartitionMapping.ContainsKey(StorageConstants.DefaultTenantId))
+        {
+            var conflict = tenantIdToPartitionMapping.FirstOrDefault(pair =>
+                pair.Value == MartenManagedTenantListPartitions.DefaultTenantSuffix);
+            if (conflict.Key != null)
+            {
+                throw new ArgumentException(
+                    $"The partition suffix '{MartenManagedTenantListPartitions.DefaultTenantSuffix}' is reserved " +
+                    $"for the default tenant partition backing global projections (AddGlobalProjection) and cannot " +
+                    $"be used for tenant '{conflict.Key}'.",
+                    nameof(tenantIdToPartitionMapping));
+            }
+
+            // Copy rather than mutating the caller's dictionary
+            tenantIdToPartitionMapping = new Dictionary<string, string>(tenantIdToPartitionMapping)
+            {
+                [StorageConstants.DefaultTenantId] = MartenManagedTenantListPartitions.DefaultTenantSuffix
+            };
+        }
+
         AssertValidPostgresqlIdentifiers(tenantIdToPartitionMapping.Values);
 
         var database = (PostgresqlDatabase)_store.Tenancy.Default.Database;
@@ -627,7 +725,7 @@ public class AdvancedOperations
         // clear the tenant from the partition registry, and we still need the suffix to drop
         // the freestanding mt_events_sequence_{suffix} afterwards.
         var capturedSuffixes = Marten.Internal.PerTenantPartitionedCleanup.CaptureSequenceSuffixes(
-            _store.Options, suffixes);
+            _store.Options, database, suffixes);
 
         await _store.Options.TenantPartitions.Partitions.DropPartitionFromAllTables(database, logger, suffixes,
             token).ConfigureAwait(false);

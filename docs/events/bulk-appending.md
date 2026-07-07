@@ -230,6 +230,38 @@ importing. Schema application from inside a bulk-import loop costs DDL proportio
 registered tenants for every fresh database it touches, which does not scale to migrations of hundreds of
 tenants.
 
+### Preserving Source Sequence Numbers
+
+By default the streaming import assigns **new** `seq_id`s (drawn from the target's sequence, in arrival
+order). When migrating between stores in the *same system* — most importantly the
+[conjoined → per-tenant-partitioned migration](/events/multitenancy#migrating-an-existing-conjoined-store) —
+renumbering history is exactly wrong: progression rows, downstream warehouses, audit logs, and any external
+consumer that captured a sequence position would all be invalidated. For that case pass
+`BulkEventSequenceMode.PreserveSourceSequence`:
+
+```cs
+await store.BulkInsertEventStreamAsync(
+    tenantId,
+    headers,
+    ReadSourceEventsInSequenceOrderAsync(), // MUST be strictly ascending by the carried Sequence
+    BulkEventSequenceMode.PreserveSourceSequence,
+    batchSize: 1000);
+```
+
+In this mode every event keeps the `Sequence` it carries — per-tenant gaps are fine and expected, since a
+conjoined source interleaves all tenants on one global sequence — and after the copy Marten:
+
+- **Advances the target sequence past the imported maximum** with `setval` (the tenant's own
+  `mt_events_sequence_{suffix}` under per-tenant partitioning, otherwise the store-global sequence), so the
+  first live append can never re-issue an imported `seq_id`.
+- **Seeds the tenant's `HighWaterMark:{tenantId}` progression row** at the imported maximum under
+  per-tenant event partitioning. This matters: gaps *below* a persisted high-water mark are never
+  revisited, so the daemon starts cleanly above the (gappy) imported history instead of gap-walking
+  through it.
+
+Events must arrive in strictly ascending `Sequence` order; anything else (including unnumbered events,
+which arrive as `0`) is rejected before commit.
+
 ## Limitations
 
 The bulk append API intentionally trades off features for throughput:

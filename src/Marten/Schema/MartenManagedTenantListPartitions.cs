@@ -21,6 +21,19 @@ public class MartenManagedTenantListPartitions : IDocumentPolicy
     private readonly StoreOptions _options;
     public const string TableName = "mt_tenant_partitions";
 
+    /// <summary>
+    /// Reserved partition suffix backing the default-tenant (<c>*DEFAULT*</c>) slot that
+    /// global projections (<c>AddGlobalProjection</c>) write to under
+    /// <c>Events.UseTenantPartitionedEvents</c>. The sentinel tenant id itself contains
+    /// characters that are illegal in PostgreSQL identifiers so it can never be its own
+    /// partition-table suffix — but a LIST partition VALUE can be any string, so the
+    /// default tenant's rows live in partitions named with this fixed, identifier-legal
+    /// suffix instead (<c>mt_events___default__</c> etc.). Auto-provisioned by
+    /// <c>AdvancedOperations.AddMartenManagedTenantsAsync</c> whenever the store has
+    /// global aggregates registered. See https://github.com/JasperFx/marten/issues/4648.
+    /// </summary>
+    public const string DefaultTenantSuffix = "__default__";
+
     public MartenManagedTenantListPartitions(StoreOptions options, string? schemaName)
     {
         _options = options;
@@ -32,14 +45,18 @@ public class MartenManagedTenantListPartitions : IDocumentPolicy
         // internal Table private — the wrapper is the public access point.
         TenantsTableName = new DbObjectName(schemaName ?? options.DatabaseSchemaName, TableName);
 
-        Partitions = new ManagedListPartitions("TenantIds", TenantsTableName);
+        // #4863/#4855: the database-scoped subclass keys the expected partition set per database,
+        // hydrated from each database's own mt_tenant_partitions — the plain Weasel
+        // ManagedListPartitions keeps one store-wide snapshot, which is wrong the moment a store
+        // spans multiple databases (sharded pools, master-table tenancy).
+        Partitions = new DatabaseScopedTenantPartitions("TenantIds", TenantsTableName);
 
         _options.Storage.Add(Partitions);
 
         _options.TenantPartitions = this;
     }
 
-    public ManagedListPartitions Partitions { get; }
+    public DatabaseScopedTenantPartitions Partitions { get; }
 
     /// <summary>
     /// Fully qualified name of the <c>mt_tenant_partitions</c> table this

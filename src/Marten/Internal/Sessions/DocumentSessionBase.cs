@@ -6,6 +6,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten.Events;
+using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -158,9 +159,30 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
                     r.Revision = 1;
                 }
 
-                _workTracker.Add(op);
+                QueueInsertOperation(op, entity, typeof(T));
             }
         }
+    }
+
+    /// <summary>
+    ///     #4685 PR 3 — chokepoint for queueing document insert operations. When the session's
+    ///     work tracker is a rebuild-mode <see cref="ProjectionUpdateBatch"/> with
+    ///     <see cref="Events.Projections.ProjectionOptions.RebuildWithBulkCopy"/> enabled, the
+    ///     insert travels wrapped in a <see cref="BulkCopyableInsert"/> that carries the
+    ///     document and this session's tenant id (per-tenant daemon sessions share the batch as
+    ///     their tracker, so the tenant can't be recovered from the batch side), making it
+    ///     eligible for the BulkWriter (binary COPY) flush. Everything else queues the raw
+    ///     operation exactly as before.
+    /// </summary>
+    internal void QueueInsertOperation(Weasel.Storage.IStorageOperation op, object document, Type documentType)
+    {
+        if (_workTracker is ProjectionUpdateBatch { AcceptsBulkInserts: true })
+        {
+            _workTracker.Add(new BulkCopyableInsert(op, document, documentType, TenantId));
+            return;
+        }
+
+        _workTracker.Add(op);
     }
 
     public void Update<T>(IEnumerable<T> entities) where T : notnull

@@ -69,7 +69,7 @@ Two things to know about the shape of the throttle:
 
 - **It caps rebuild only.** Continuous catch-up is governed separately by
   `opts.Projections.MaxConcurrentEventLoadsPerDatabase` and `opts.Projections.MaxConcurrentBatchWritesPerDatabase`
-  (both default 4).
+  (both default 4) — see [Daemon Connection Governors](/events/projections/async-daemon#daemon-connection-governors).
 - **It's a two-layer model.** The cap bounds how many cells run at once; each cell still uses its own internal
   slice workers while it runs. A cap of 4 therefore means "4 rebuilding projections/tenants at a time," not 4
   concurrent database operations.
@@ -99,6 +99,52 @@ this contract:
   retried.
 
 This is what makes it safe for operational tooling to expose a "cancel" affordance on long-running rebuilds.
+
+## Bulk Copy Rebuild Writes <Badge type="tip" text="experimental" />
+
+A projection rebuild has a property that continuous catch-up does not: after the projection's
+existing rows are torn down, the entire rebuild write path is **insert-only** — the rebuild is
+authoritative by definition, so there is no need for the `UPSERT` / `ON CONFLICT` machinery the
+continuous path uses. PostgreSQL's binary `COPY` protocol is typically several times faster than
+per-row `INSERT` for bulk loads, and Marten already uses it for `IDocumentStore.BulkInsertAsync`.
+
+Opt in with:
+
+```cs
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection("some connection string");
+
+    // When a rebuild batch's document writes are pure inserts, flush them
+    // through PostgreSQL binary COPY instead of the per-row INSERT path.
+    opts.Projections.RebuildWithBulkCopy = true;
+});
+```
+
+When enabled, a **rebuild** batch buffers document inserts and flushes them through the same
+`COPY` (BulkWriter) machinery `BulkInsertAsync` uses — id assignment, `tenant_id`, the `data`
+column, and every metadata column (version, last-modified, .NET type, soft-delete flags,
+duplicated fields) are written exactly as the per-row path writes them, and the `COPY` runs
+inside the batch's existing transaction so a failed rebuild cannot leak partially-copied rows.
+
+This targets **event-to-document (`EventProjection`) rebuilds** — a projection whose handlers call
+`IDocumentOperations.Insert(...)`, producing one new document per event. That shape is genuinely
+insert-only across event pages, so it is safe today.
+
+The dispatch degrades gracefully and is safe to leave on:
+
+- Only **rebuild** batches are affected. Continuous (catch-up) projection execution always keeps
+  the per-row `UPSERT` path — there is no behavior change there.
+- If any non-insert document operation (update, upsert, patch, delete, ad-hoc SQL) shows up in the
+  same batch, the buffered inserts drain back onto the ordinary per-row command path in their
+  original order and the batch executes exactly as it would without the flag. A mixed batch simply
+  doesn't get the `COPY` win.
+- Aggregation / single-stream-snapshot projections re-store the same aggregate id across event
+  pages during a rebuild; that is an `UPSERT`, not a pure insert, so those rebuilds continue to use
+  the per-row path even with the flag on. Extending the `COPY` win to aggregation rebuilds composes
+  with the deferred-flush work tracked separately.
+
+The flag defaults to `false`.
 
 ## Optimized Projection Rebuilds <Badge type="tip" text="7.30" />
 

@@ -216,4 +216,95 @@ public class BulkEventStreamAppendTests : OneOffConfigurationsContext
         (await VersionsForStreamAsync(store, "A")).ShouldBe(new long[] { 1, 2 });
         (await VersionsForStreamAsync(store, "B")).ShouldBe(new long[] { 1, 2 });
     }
+
+    // Stored seq_ids in order — for the sequence-preserving import the values themselves matter, not
+    // just their relative order.
+    private static async Task<List<long>> SeqIdsAsync(DocumentStore store)
+    {
+        var seqs = new List<long>();
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand(
+            $"select seq_id from {store.Options.Events.DatabaseSchemaName}.mt_events order by seq_id", conn);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            seqs.Add(reader.GetInt64(0));
+        }
+
+        return seqs;
+    }
+
+    [Fact]
+    public async Task streaming_import_can_preserve_the_source_seq_ids_and_advance_the_sequence()
+    {
+        // marten#4879/#4682: migration mode. The imported events keep the exact (gappy) seq_ids they carry
+        // — history is never renumbered — and mt_events_sequence is setval'd past the imported maximum so
+        // the first live append cannot re-issue an imported seq_id.
+        var store = await ProvisionedStringIdentityStoreAsync();
+
+        var ordered = new[]
+        {
+            EventFor("A", 1, new Started("A1")),
+            EventFor("B", 1, new Started("B1")),
+            EventFor("A", 2, new Ended("A2"))
+        };
+        ordered[0].Sequence = 5;
+        ordered[1].Sequence = 11;
+        ordered[2].Sequence = 30;
+
+        var headers = new List<BulkEventStreamHeader>
+        {
+            new() { Key = "A", Version = 2 },
+            new() { Key = "B", Version = 1 }
+        };
+
+        await store.BulkInsertEventStreamAsync(StorageConstants.DefaultTenantId, headers, Stream(ordered),
+            BulkEventSequenceMode.PreserveSourceSequence, batchSize: 2, cancellation: CancellationToken.None);
+
+        (await SeqIdsAsync(store)).ShouldBe(new long[] { 5, 11, 30 });
+
+        // A live append continues ABOVE the imported history on the first try.
+        await using (var session = store.LightweightSession())
+        {
+            session.Events.Append("A", new Ended("A3"));
+            await session.SaveChangesAsync();
+        }
+
+        var after = await SeqIdsAsync(store);
+        after.Count.ShouldBe(4);
+        after[^1].ShouldBeGreaterThan(30);
+
+        // The store-global high water mark is seeded at the imported maximum or above.
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand(
+            $"select last_seq_id from {store.Options.Events.DatabaseSchemaName}.mt_event_progression where name = 'HighWaterMark'",
+            conn);
+        ((long)(await cmd.ExecuteScalarAsync())!).ShouldBeGreaterThanOrEqualTo(30);
+    }
+
+    [Fact]
+    public async Task streaming_import_rejects_non_ascending_sequences_in_preserve_mode()
+    {
+        var store = await ProvisionedStringIdentityStoreAsync();
+
+        var ordered = new[]
+        {
+            EventFor("A", 1, new Started("A1")),
+            EventFor("A", 2, new Ended("A2"))
+        };
+        ordered[0].Sequence = 8;
+        ordered[1].Sequence = 8; // not strictly ascending
+
+        var headers = new List<BulkEventStreamHeader> { new() { Key = "A", Version = 2 } };
+
+        var ex = await Should.ThrowAsync<InvalidOperationException>(() =>
+            store.BulkInsertEventStreamAsync(StorageConstants.DefaultTenantId, headers, Stream(ordered),
+                BulkEventSequenceMode.PreserveSourceSequence, cancellation: CancellationToken.None));
+        ex.Message.ShouldContain("strictly ascending");
+
+        // Single transaction: nothing committed.
+        (await SeqIdsAsync(store)).ShouldBeEmpty();
+    }
 }
