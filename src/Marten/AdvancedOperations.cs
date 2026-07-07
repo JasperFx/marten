@@ -609,7 +609,7 @@ public class AdvancedOperations
         // clear the tenant from the partition registry, and we still need the suffix to drop
         // the freestanding mt_events_sequence_{suffix} afterwards.
         var capturedSuffixes = Marten.Internal.PerTenantPartitionedCleanup.CaptureSequenceSuffixes(
-            _store.Options, suffixes);
+            _store.Options, database, suffixes);
 
         await _store.Options.TenantPartitions.Partitions.DropPartitionFromAllTables(database, logger, suffixes,
             token).ConfigureAwait(false);

@@ -34,11 +34,15 @@ internal static class PerTenantPartitionedCleanup
     /// existed).
     /// </summary>
     public static IReadOnlyDictionary<string, string> CaptureSequenceSuffixes(
-        StoreOptions options, IEnumerable<string> tenantIds)
+        StoreOptions options, Weasel.Core.Migrations.IDatabase database, IEnumerable<string> tenantIds)
     {
         var suffixes = new Dictionary<string, string>(StringComparer.Ordinal);
         if (!options.Events.UseTenantPartitionedEvents) return suffixes;
-        if (options.TenantPartitions?.Partitions.Partitions is not { } registry) return suffixes;
+
+        // #4863/#4855: resolve the suffix from the registry view of the database the tenant
+        // actually lives in — the store-wide snapshot may have been hydrated from a different
+        // database entirely under multi-database tenancy.
+        if (options.TenantPartitions?.Partitions.PartitionsFor(database) is not { } registry) return suffixes;
 
         foreach (var tenantId in tenantIds)
         {
