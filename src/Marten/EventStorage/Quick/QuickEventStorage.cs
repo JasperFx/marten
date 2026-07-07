@@ -1,10 +1,7 @@
 #nullable enable
-using System;
 using JasperFx.Events;
-using Marten.EventStorage.Querying;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Marten.Linq.QueryHandlers;
 
 namespace Marten.EventStorage.Quick;
 
@@ -51,7 +48,12 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
             @event);
 
     public override IStorageOperation QuickAppendEvents(StreamAction stream)
-        => new QuickAppendEventsOperation(_descriptor, stream);
+        // E0 prep for the Weasel.Storage move: the batched append operation is
+        // dialect-supplied. Postgres binds array parameters to the
+        // mt_quick_append_events function; another dialect may use an entirely
+        // different SQL shape (e.g. multi-row INSERT + OUTPUT on SQL Server),
+        // so the operation's construction lives on the descriptor, not here.
+        => _descriptor.CreateQuickAppendEventsOperation(_descriptor, stream);
 
     public override IStorageOperation InsertStream(StreamAction stream)
         => new QuickInsertStreamOperation(_descriptor, stream);
@@ -63,18 +65,4 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
         => _descriptor.IsTenancyConjoined
             ? new ConjoinedAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream)
             : new SingleTenantAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream);
-
-    public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
-    {
-        object streamIdentity = typeof(TId) == typeof(Guid)
-            ? stream.Id
-            : stream.Key!;
-
-        var tenantId = _descriptor.IsTenancyConjoined ? stream.TenantId : null;
-
-        return new ClosedShapeStreamStateQueryHandler<TId>(
-            _descriptor.StreamStateSelectSql,
-            (TId)streamIdentity,
-            tenantId);
-    }
 }

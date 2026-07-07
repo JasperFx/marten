@@ -37,14 +37,12 @@ public sealed class QuickEventStorageDescriptor
         string quickAppendEventsSql,
         string insertStreamSql,
         string updateStreamVersionSql,
-        string streamStateSelectSql,
         Func<IEvent, string> serializeEventData,
         Func<IEvent, byte[]?> serializeEventBdata)
     {
         QuickAppendEventsSql = quickAppendEventsSql;
         InsertStreamSql = insertStreamSql;
         UpdateStreamVersionSql = updateStreamVersionSql;
-        StreamStateSelectSql = streamStateSelectSql;
         SerializeEventData = serializeEventData;
         SerializeEventBdata = serializeEventBdata;
     }
@@ -61,7 +59,6 @@ public sealed class QuickEventStorageDescriptor
 
     public string InsertStreamSql { get; }
     public string UpdateStreamVersionSql { get; }
-    public string StreamStateSelectSql { get; }
     public Func<IEvent, string> SerializeEventData { get; }
 
     /// <summary>
@@ -181,4 +178,18 @@ public sealed class QuickEventStorageDescriptor
     public System.Action<Weasel.Postgresql.ICommandBuilder, StreamAction> ConfigureUpdateStreamVersionCommand { get; init; }
         = static (_, _) => throw new System.NotSupportedException(
             "QuickEventStorageDescriptor.ConfigureUpdateStreamVersionCommand was not installed by the dialect.");
+
+    /// <summary>
+    /// Creates the batched append operation for a stream. Dialect-installed —
+    /// the batch shape is inherently dialect-specific (Postgres binds
+    /// per-column array parameters to <c>mt_quick_append_events</c>; another
+    /// dialect may use a multi-row INSERT with an OUTPUT/RETURNING read-back),
+    /// so the operation type itself lives with the dialect rather than the
+    /// shared storage hierarchy. Takes the descriptor as an argument because
+    /// init-only slots can't close over the instance under construction.
+    /// </summary>
+    public System.Func<QuickEventStorageDescriptor, StreamAction, Marten.Internal.Operations.IStorageOperation>
+        CreateQuickAppendEventsOperation { get; init; }
+        = static (_, _) => throw new System.NotSupportedException(
+            "QuickEventStorageDescriptor.CreateQuickAppendEventsOperation was not installed by the dialect.");
 }
