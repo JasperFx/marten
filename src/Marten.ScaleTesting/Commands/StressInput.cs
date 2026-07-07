@@ -58,6 +58,9 @@ public sealed class StressInput: NetCoreInput
     [Description("Optional CSV trace path for the progression lock-wait sampler (#4684 Phase E.2). One row per sample: timestamp, current waiter count, max single-waiter wait in ms. Implies --instrument.")]
     public string? InstrumentLockTraceFlag { get; set; }
 
+    [Description("Optional CSV trace path for the per-batch breakdown (#4684 Phase E.3). One row per completed event page. Implies --instrument.")]
+    public string? InstrumentBatchTraceFlag { get; set; }
+
     [Description("Sample interval for the progression poller when --instrument is on. Default 1s.")]
     public double InstrumentSampleSecondsFlag { get; set; } = 1.0;
 

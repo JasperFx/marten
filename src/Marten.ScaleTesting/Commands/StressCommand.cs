@@ -182,13 +182,15 @@ public sealed class StressCommand: JasperFxAsyncCommand<StressInput>
     {
         var enabled = input.InstrumentFlag
             || !string.IsNullOrWhiteSpace(input.InstrumentTraceFlag)
-            || !string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag);
+            || !string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag)
+            || !string.IsNullOrWhiteSpace(input.InstrumentBatchTraceFlag);
         return new InstrumentationOptions
         {
             Enabled = enabled,
             ProgressSampleInterval = TimeSpan.FromSeconds(Math.Max(0.1, input.InstrumentSampleSecondsFlag)),
             TracePath = string.IsNullOrWhiteSpace(input.InstrumentTraceFlag) ? null : input.InstrumentTraceFlag,
-            LockTracePath = string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag) ? null : input.InstrumentLockTraceFlag
+            LockTracePath = string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag) ? null : input.InstrumentLockTraceFlag,
+            BatchTracePath = string.IsNullOrWhiteSpace(input.InstrumentBatchTraceFlag) ? null : input.InstrumentBatchTraceFlag
         };
     }
 
