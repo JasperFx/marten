@@ -85,12 +85,16 @@ internal class BulkEventAppender
     /// lazily in batches (bounded memory), assigning each event the next ascending sequence in arrival order
     /// (so cross-stream ordering is preserved) and taking per-stream versions from the events themselves.
     /// <paramref name="streamHeaders" /> seed mt_streams first so the mt_events foreign key holds.
+    /// Under <see cref="BulkEventSequenceMode.PreserveSourceSequence"/> the events keep the Sequence they
+    /// already carry (a migration never renumbers history — see marten#4682's data policy) and the target
+    /// sequence is advanced past the imported maximum via setval instead of being drawn from.
     /// </summary>
     public async Task BulkInsertEventStreamAsync(
         NpgsqlConnection conn,
         string tenantId,
         IReadOnlyList<BulkEventStreamHeader> streamHeaders,
         IAsyncEnumerable<IEvent> orderedEvents,
+        BulkEventSequenceMode sequenceMode,
         int batchSize,
         CancellationToken cancellation)
     {
@@ -115,7 +119,10 @@ internal class BulkEventAppender
         // block boundary is the ONLY place the nextval SELECT runs. That matters: a regular command cannot run
         // on a connection that is mid-COPY (Npgsql throws "connection is already in state 'Copy'"), so the
         // writer is always CLOSED before refillSequences and reopened afterwards. Same single connection, so
-        // no extra connection is taken from a tightly pooled shard database.
+        // no extra connection is taken from a tightly pooled shard database. In PreserveSourceSequence mode
+        // there are no mid-stream sequence SELECTs at all — one COPY spans the whole import and the target
+        // sequence is advanced once at the end.
+        var preserveSequences = sequenceMode == BulkEventSequenceMode.PreserveSourceSequence;
         var sequences = new Queue<long>(batchSize);
         long maxSequence = 0;
         var count = 0;
@@ -125,22 +132,43 @@ internal class BulkEventAppender
         {
             await foreach (var e in orderedEvents.WithCancellation(cancellation).ConfigureAwait(false))
             {
-                if (sequences.Count == 0)
+                long seq;
+                if (preserveSequences)
                 {
-                    // Close the open COPY before the sequence SELECT, then start a fresh one for the next block.
-                    if (writer != null)
+                    // Migration mode: the event keeps the seq_id it already carries. Strictly ascending
+                    // arrival order is REQUIRED — it both guarantees the preserved cross-stream ordering
+                    // and catches a caller feeding unsorted (or unnumbered) source events, which would
+                    // otherwise silently corrupt the tenant's replay order. maxSequence starts at 0, so
+                    // the first event's Sequence must be positive.
+                    seq = e.Sequence;
+                    if (seq <= maxSequence)
                     {
-                        await writer.CompleteAsync(cancellation).ConfigureAwait(false);
-                        await writer.DisposeAsync().ConfigureAwait(false);
-                        writer = null;
+                        throw new InvalidOperationException(
+                            $"{nameof(BulkEventSequenceMode.PreserveSourceSequence)} requires the incoming events " +
+                            $"to carry strictly ascending, positive Sequence values, but got {seq} after {maxSequence}. " +
+                            "Supply the source events ordered by their original seq_id.");
+                    }
+                }
+                else
+                {
+                    if (sequences.Count == 0)
+                    {
+                        // Close the open COPY before the sequence SELECT, then start a fresh one for the next block.
+                        if (writer != null)
+                        {
+                            await writer.CompleteAsync(cancellation).ConfigureAwait(false);
+                            await writer.DisposeAsync().ConfigureAwait(false);
+                            writer = null;
+                        }
+
+                        await refillSequences(conn, sequenceName, sequences, batchSize, cancellation).ConfigureAwait(false);
                     }
 
-                    await refillSequences(conn, sequenceName, sequences, batchSize, cancellation).ConfigureAwait(false);
+                    seq = sequences.Dequeue();
                 }
 
                 writer ??= await conn.BeginBinaryImportAsync(copySql, cancellation).ConfigureAwait(false);
 
-                var seq = sequences.Dequeue();
                 e.Sequence = seq;
                 if (seq > maxSequence)
                 {
@@ -185,12 +213,33 @@ internal class BulkEventAppender
             return;
         }
 
-        // High water: under per-tenant event partitioning, deliberately write NOTHING — since #4847 the
-        // per-tenant high-water detection derives each tenant's mark from max(seq_id) of its own events,
-        // and advancing the store-global row with a tenant-local seq would misrepresent one tenant's
-        // height as the whole store's. Non-partitioned stores keep the store-global upsert, mirroring
-        // the batch overload.
-        if (!_events.UseTenantPartitionedEvents)
+        if (preserveSequences)
+        {
+            // The imported seq_ids were NOT drawn from the sequence, so advance it past the imported
+            // maximum — otherwise the tenant's first live append re-issues an already-used seq_id
+            // (PK collision on its events partition). GREATEST keeps an already-further-along sequence
+            // untouched.
+            await advanceSequencePastAsync(conn, sequenceName, maxSequence, cancellation).ConfigureAwait(false);
+        }
+
+        // High water: under per-tenant event partitioning, AssignFromSequence deliberately writes NOTHING —
+        // since #4847 the per-tenant high-water detection derives each tenant's mark from max(seq_id) of its
+        // own events, and advancing the store-global row with a tenant-local seq would misrepresent one
+        // tenant's height as the whole store's. PreserveSourceSequence DOES seed the tenant's own
+        // HighWaterMark:{tenant} progression row (marten#4682 Phase 2 step 8): a migrated tenant's seq_ids
+        // are extremely gappy (the conjoined source interleaved tenants on one global sequence), and without
+        // a persisted mark above that history the detector's gap-walk (#4867) has to grind through every
+        // hole before the tenant's projections can start. Gaps BELOW a persisted mark are never revisited.
+        // Non-partitioned stores keep the store-global upsert in both modes, mirroring the batch overload.
+        if (_events.UseTenantPartitionedEvents)
+        {
+            if (preserveSequences)
+            {
+                await upsertPerTenantHighWaterMark(conn, schema, tenantId, maxSequence, cancellation)
+                    .ConfigureAwait(false);
+            }
+        }
+        else
         {
             await upsertStoreGlobalHighWaterMark(conn, schema, maxSequence, cancellation).ConfigureAwait(false);
         }
@@ -263,7 +312,7 @@ internal class BulkEventAppender
                 }
 
                 await writer.WriteAsync(header.Version, NpgsqlDbType.Bigint, cancellation).ConfigureAwait(false);
-                await writer.WriteAsync(false, NpgsqlDbType.Boolean, cancellation).ConfigureAwait(false);
+                await writer.WriteAsync(header.IsArchived, NpgsqlDbType.Boolean, cancellation).ConfigureAwait(false);
 
                 batch++;
             }
@@ -740,6 +789,43 @@ ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progre
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
         cmd.Parameters.AddWithValue("seq", maxSequence);
+        await cmd.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+    }
+
+    // PreserveSourceSequence only: push the (tenant or store-global) sequence past the imported maximum
+    // so live appends continue above the preserved history. setval(..., true) makes the NEXT nextval
+    // return seq + 1; GREATEST leaves a sequence that is already further along untouched.
+    private static async Task advanceSequencePastAsync(
+        NpgsqlConnection conn,
+        string sequenceName,
+        long seq,
+        CancellationToken cancellation)
+    {
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            $"select setval('{sequenceName}', greatest((select last_value from {sequenceName}), @seq), true)";
+        cmd.Parameters.AddWithValue("seq", seq);
+        await cmd.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+    }
+
+    // PreserveSourceSequence + per-tenant partitioning: seed the tenant's own high-water progression row.
+    // #4681: the identity is produced by HighWaterShardIdentity, never hand-rolled SQL concatenation.
+    private static async Task upsertPerTenantHighWaterMark(
+        NpgsqlConnection conn,
+        string schema,
+        string tenantId,
+        long seq,
+        CancellationToken cancellation)
+    {
+        var sql = $@"
+INSERT INTO {schema}.mt_event_progression (name, last_seq_id)
+VALUES (@name, @seq)
+ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progression.last_seq_id, @seq)";
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        cmd.Parameters.AddWithValue("name", HighWaterShardIdentity.PerTenant(tenantId));
+        cmd.Parameters.AddWithValue("seq", seq);
         await cmd.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
     }
 
