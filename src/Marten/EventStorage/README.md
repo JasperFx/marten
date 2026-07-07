@@ -8,6 +8,16 @@ in Marten 9; planned default-on in 10.
 See the [`UseClosedShapeStorage` migration-guide section](../../../docs/migration-guide.md#closed-shape-event-storage)
 for the consumer-facing intro and the v9 / v10 / v11 transition plan.
 
+> **#4821 event-storage extraction (in progress).** The dialect-neutral pieces of this
+> hierarchy are being moved into the shared `Weasel.Storage` package so Marten and Polecat
+> (SQL Server) share them. As of Weasel 9.15.0 (event E2) the descriptor classes
+> (`RichEventStorageDescriptor` / `QuickEventStorageDescriptor` /
+> `QuickWithServerTimestampsEventStorageDescriptor`), `IEventMetadataBinder` + the metadata
+> binders, and `IEventStoreSqlDialect` now live in `namespace Weasel.Storage` — the in-repo
+> relative links below to those specific types point at their former Marten location.
+> `PostgresEventStoreDialect` (the Postgres implementation), the storage classes, and the
+> operations remain here.
+
 ## Architecture overview
 
 Three concrete `EventStorage<TId>` subclasses, one per

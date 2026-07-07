@@ -49,7 +49,7 @@ internal sealed class QuickWithServerTimestampsEventStorage<TId>: EventStorage<T
 
     public override IStorageOperation QuickAppendEvents(StreamAction stream)
         // Dialect-supplied — see Quick.QuickEventStorage<TId>.QuickAppendEvents.
-        => _descriptor.CreateQuickAppendEventsOperation(_descriptor, stream);
+        => (Marten.Internal.Operations.IStorageOperation)_descriptor.CreateQuickAppendEventsOperation(_descriptor, stream);
 
     public override IStorageOperation InsertStream(StreamAction stream)
         => new QuickWithServerTimestampsInsertStreamOperation(_descriptor, stream);

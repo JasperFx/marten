@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.Events;
-using Marten.EventStorage.Metadata;
 using Marten.EventStorage.Quick;
 using Marten.EventStorage.QuickWithServerTimestamps;
 using Marten.Internal.Storage;
@@ -40,8 +39,12 @@ namespace Marten.EventStorage.Dialects;
 /// </remarks>
 internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 {
-    public RichEventStorageDescriptor BuildRichDescriptor(EventGraph graph, ISerializer serializer)
+    public RichEventStorageDescriptor BuildRichDescriptor(EventRegistry registry, IStorageSerializer storageSerializer)
     {
+        // The neutral IEventStoreSqlDialect contract (Weasel.Storage) types these as
+        // EventRegistry / IStorageSerializer; Marten's concrete types derive from both.
+        var graph = (EventGraph)registry;
+        var serializer = (ISerializer)storageSerializer;
         var (orderedColumns, sqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
         var storageDialect = ResolveStorageDialect(graph);
         var metadataBinders = SelectRichMetadataBinders(orderedColumns, storageDialect);
@@ -86,8 +89,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             Dialect = storageDialect,
             AppendEventQuickWithVersionSqlSuffix = quickWithVersionSuffix,
             MetadataBindersWithoutSequence = metadataBindersWithoutSequence,
-            ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
-            ConfigureUpdateStreamVersionCommand = BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid),
+            ConfigureInsertStreamCommand = Adapt(BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid)),
+            ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
         };
     }
 
@@ -108,6 +111,17 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     /// (<c>timestamp</c> and <c>created</c> are <c>Writes=false</c>;
     /// <c>is_archived</c> isn't an <c>IStreamTableColumn</c>.)
     /// </remarks>
+    /// <summary>
+    /// Adapts a Postgres-typed stream-command configurer to the neutral
+    /// <c>Action&lt;Weasel.Core.ICommandBuilder, StreamAction&gt;</c> slot the moved
+    /// descriptors (Weasel.Storage) now expose. The runtime command builder is
+    /// always the Postgres one, so the cast back inside the adapter is safe —
+    /// this is the same dialect-boundary downcast the operations do.
+    /// </summary>
+    private static Action<Weasel.Core.ICommandBuilder, StreamAction> Adapt(
+        Action<ICommandBuilder, StreamAction> pgConfigurer)
+        => (builder, stream) => pgConfigurer((ICommandBuilder)builder, stream);
+
     private static Action<ICommandBuilder, StreamAction> BuildInsertStreamCommandConfigurer(
         EventGraph graph, bool isConjoined, bool isGuid)
     {
@@ -275,8 +289,10 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         };
     }
 
-    public QuickEventStorageDescriptor BuildQuickDescriptor(EventGraph graph, ISerializer serializer)
+    public QuickEventStorageDescriptor BuildQuickDescriptor(EventRegistry registry, IStorageSerializer storageSerializer)
     {
+        var graph = (EventGraph)registry;
+        var serializer = (ISerializer)storageSerializer;
         // #4515 Phase 2: Quick mode now supports binary events too. The
         // mt_quick_append_events PG function gained a `bdatas bytea[]`
         // parameter that's inserted into mt_events.bdata in parallel with
@@ -328,8 +344,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             // and what NpgsqlDbType it should be.
             UseTenantPartitionedEvents = graph.UseTenantPartitionedEvents,
             UseBigIntEvents = graph.EnableBigIntEvents,
-            ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
-            ConfigureUpdateStreamVersionCommand = BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid),
+            ConfigureInsertStreamCommand = Adapt(BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid)),
+            ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
             AppendEventSqlPrefix = appendEventSqlPrefix,
             AppendEventSqlSuffix = quickWithVersionSuffix,
             MetadataBinders = quickMetadataBinders,
@@ -344,8 +360,10 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     }
 
     public QuickWithServerTimestampsEventStorageDescriptor BuildQuickWithServerTimestampsDescriptor(
-        EventGraph graph, ISerializer serializer)
+        EventRegistry registry, IStorageSerializer storageSerializer)
     {
+        var graph = (EventGraph)registry;
+        var serializer = (ISerializer)storageSerializer;
         // #4515 Phase 2: Quick-with-server-timestamps supports binary events
         // too — see BuildQuickDescriptor for the dispatch shape.
 
@@ -392,8 +410,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             // and what NpgsqlDbType it should be.
             UseTenantPartitionedEvents = graph.UseTenantPartitionedEvents,
             UseBigIntEvents = graph.EnableBigIntEvents,
-            ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
-            ConfigureUpdateStreamVersionCommand = BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid),
+            ConfigureInsertStreamCommand = Adapt(BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid)),
+            ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
             AppendEventSqlPrefix = appendEventSqlPrefix,
             AppendEventSqlSuffix = quickWithVersionSuffix,
             MetadataBinders = quickMetadataBinders,
