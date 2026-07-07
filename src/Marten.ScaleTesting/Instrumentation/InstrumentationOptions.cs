@@ -28,4 +28,10 @@ public sealed class InstrumentationOptions
     /// <c>--instrument-lock-trace &lt;path&gt;</c>; when null, only the rolled-up stats
     /// land in <c>metrics.json</c>.</summary>
     public string? LockTracePath { get; init; }
+
+    /// <summary>Optional CSV trace path for the per-batch breakdown (#4684 Phase E.3). One row
+    /// per completed event page: shard, floor/ceiling, event count, loading/grouping/execution
+    /// wall-clock and DB round-trip count. Set via <c>--instrument-batch-trace &lt;path&gt;</c>;
+    /// when null, only the p50/p95/p99 roll-up lands in <c>metrics.json</c>.</summary>
+    public string? BatchTracePath { get; init; }
 }

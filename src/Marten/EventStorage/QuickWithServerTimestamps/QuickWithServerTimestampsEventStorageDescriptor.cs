@@ -28,14 +28,12 @@ public sealed class QuickWithServerTimestampsEventStorageDescriptor
         string quickAppendEventsWithServerTimestampsSql,
         string insertStreamSql,
         string updateStreamVersionSql,
-        string streamStateSelectSql,
         Func<IEvent, string> serializeEventData,
         Func<IEvent, byte[]?> serializeEventBdata)
     {
         QuickAppendEventsWithServerTimestampsSql = quickAppendEventsWithServerTimestampsSql;
         InsertStreamSql = insertStreamSql;
         UpdateStreamVersionSql = updateStreamVersionSql;
-        StreamStateSelectSql = streamStateSelectSql;
         SerializeEventData = serializeEventData;
         SerializeEventBdata = serializeEventBdata;
     }
@@ -48,7 +46,6 @@ public sealed class QuickWithServerTimestampsEventStorageDescriptor
 
     public string InsertStreamSql { get; }
     public string UpdateStreamVersionSql { get; }
-    public string StreamStateSelectSql { get; }
     public Func<IEvent, string> SerializeEventData { get; }
 
     /// <summary>
@@ -145,4 +142,13 @@ public sealed class QuickWithServerTimestampsEventStorageDescriptor
     public System.Action<Weasel.Postgresql.ICommandBuilder, StreamAction> ConfigureUpdateStreamVersionCommand { get; init; }
         = static (_, _) => throw new System.NotSupportedException(
             "QuickWithServerTimestampsEventStorageDescriptor.ConfigureUpdateStreamVersionCommand was not installed by the dialect.");
+
+    /// <summary>
+    /// Creates the batched append operation for a stream. Dialect-installed —
+    /// see <see cref="Quick.QuickEventStorageDescriptor.CreateQuickAppendEventsOperation"/>.
+    /// </summary>
+    public System.Func<QuickWithServerTimestampsEventStorageDescriptor, StreamAction, Marten.Internal.Operations.IStorageOperation>
+        CreateQuickAppendEventsOperation { get; init; }
+        = static (_, _) => throw new System.NotSupportedException(
+            "QuickWithServerTimestampsEventStorageDescriptor.CreateQuickAppendEventsOperation was not installed by the dialect.");
 }

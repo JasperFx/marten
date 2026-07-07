@@ -57,7 +57,6 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             appendEventSqlSuffix: ")",
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
-            streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
             // #4515 dispatch: binary events write a {} placeholder to `data`
             // (the canonical "valid but empty" jsonb) and the real payload to
             // `bdata`. JSON events write JSON to `data` and NULL to `bdata`.
@@ -293,7 +292,6 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             quickAppendEventsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: false),
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
-            streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
             // #4515 Phase 2: binary events write {} to data + real bytes to
             // bdata; JSON events write JSON to data + NULL to bdata. Same
             // dispatch shape as the Rich descriptor.
@@ -332,6 +330,11 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             MetadataBinders = quickMetadataBinders,
             AppendEventFullSqlSuffix = ")",
             AppendEventFullMetadataBinders = fullMetadataBinders,
+            // The Postgres batch shape: array parameters bound to the
+            // mt_quick_append_events function. Dialect-owned because the batch
+            // SQL + parameter shape are inherently provider-specific.
+            CreateQuickAppendEventsOperation = static (descriptor, stream) =>
+                new QuickAppendEventsOperation(descriptor, stream),
         };
     }
 
@@ -353,7 +356,6 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             quickAppendEventsWithServerTimestampsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: true),
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
-            streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
             // #4515 Phase 2: same dispatch as BuildQuickDescriptor.
             serializeEventData: e =>
             {
@@ -390,6 +392,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             MetadataBinders = quickMetadataBinders,
             AppendEventFullSqlSuffix = ")",
             AppendEventFullMetadataBinders = fullMetadataBinders,
+            CreateQuickAppendEventsOperation = static (descriptor, stream) =>
+                new QuickAppendEventsWithServerTimestampsOperation(descriptor, stream),
         };
     }
 

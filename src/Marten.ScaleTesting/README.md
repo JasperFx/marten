@@ -42,12 +42,13 @@ Override with the `marten_testing_database` env var.
 * **Phase C:** `validate` (single-shard baseline diff) + `stress` (chain `seed` + `rebuild` + `validate`) + JSON metrics sink.
 * **Phase D:** use it. Drive the daemon-thread-safety fixes against the harness — each fix should hold the crash gate AND not regress rebuild time.
 * **Phase E.1:** per-period throughput sampling + Npgsql round-trip counting via `--instrument`. Surfaces p50/p95/p99/max throughput + total command count in the console summary and `--metrics` JSON; per-sample CSV trace under `--instrument-trace`.
-* **Phase E.2:** progression-row lock-wait sampler. `pg_stat_activity` joined to `pg_locks` at each interval, counting ungranted lock holders on `mt_event_progression` that aren't our own session. Surfaces `MaxConcurrentWaiters`, `MaxSingleWaitMs`, and the approximation `ObservedWaiterSeconds = sum(waiter_count_per_sample) * sample_interval`. Per-sample CSV trace under `--instrument-lock-trace`. Out of scope and pinned as Phase E.3-E.4 follow-ups (need JasperFx-side hooks that don't exist yet): per-batch wall-clock breakdown, per-stage composite timing, `RecentlyUsedCache` hit/miss, lookup-count per `EvolveAsync`.
+* **Phase E.2:** progression-row lock-wait sampler. `pg_stat_activity` joined to `pg_locks` at each interval, counting ungranted lock holders on `mt_event_progression` that aren't our own session. Surfaces `MaxConcurrentWaiters`, `MaxSingleWaitMs`, and the approximation `ObservedWaiterSeconds = sum(waiter_count_per_sample) * sample_interval`. Per-sample CSV trace under `--instrument-lock-trace`.
+* **Phase E.3 (#4684 remainder):** per-batch wall-clock breakdown + per-batch DB round-trip attribution + lookup counting. The daemon (JasperFx.Events `SubscriptionMetrics`) already emits three spans per event page on the store's `Marten` ActivitySource — `.page.loading` (event fetch), `.page.grouping` (slicing/enrichment) and `.page.execution` (user code + operation building + batch flush) — but only when something listens. `BatchSpanSampler` is that listener under `--instrument`: it stitches the three spans per `(shard, floor)` into one `BatchRecord`, and attributes Npgsql command spans to their enclosing page span by walking the Activity parent chain, giving true per-batch round-trip counts. Output: `perBatch.p50/p95/p99` (total / eventFetch / grouping / execution ms + roundTripCount) plus a `perShard` roll-up in `metrics.json`; per-batch CSV under `--instrument-batch-trace`. `LookupCounters` (item 4) counts the explicit cross-aggregate lookups in the harness projections' own code (`AppointmentMetricsProjection`'s per-specialty `LoadAsync`, `AppointmentDetailsProjection`'s `EnrichUsingEntityQuery` escape hatch) as lookups-per-event distributions per projection. Still blocked on JasperFx-side seams and deliberately NOT approximated here: `RecentlyUsedCache` hit/miss counters (`AggregationRunner.CacheFor` hard-constructs the cache; no injection point) and per-stage timing inside a single composite batch (the composite executor runs stages within one `.page.execution` span; the declarative `EnrichWith<T>().AddReferences()` lookups likewise run inside JasperFx.Events and show up only in the per-batch `grouping`/`execution` round-trip counts).
 * **#4683 Fix 3 (this PR):** `dropcycle` subcommand. Exercises the drop-tenant cleanup (#4683) end-to-end against an isolated `UseTenantPartitionedEvents = true` store: registers N tenants, seeds events to populate the per-tenant sequence + progression rows, drops one, asserts the per-tenant artifacts are gone and peers + store-global rows survive. Optionally re-adds + re-seeds and verifies the sequence starts fresh at zero. 14 boolean checks; non-zero exit on any failure. Run via `dotnet run --project src/Marten.ScaleTesting -- dropcycle`.
 
 ## Measuring a rebuild
 
-Add `--instrument` to either subcommand to enable per-period sampling against `mt_event_progression`, Npgsql round-trip counting, and (E.2) `pg_stat_activity`-based progression lock-wait sampling. Default 1s sample interval; tune with `--instrument-sample-seconds`. The console summary picks up seven extra rows (throughput percentiles + total Npgsql commands + sample count + three lock-wait counters). `--metrics <path>` writes a JSON file with the rolled-up percentiles + lock-wait stats; `--instrument-trace <path>` adds per-sample progress CSV; `--instrument-lock-trace <path>` adds per-sample lock-wait CSV.
+Add `--instrument` to either subcommand to enable per-period sampling against `mt_event_progression`, Npgsql round-trip counting, (E.2) `pg_stat_activity`-based progression lock-wait sampling, and (E.3) the per-batch span sampler + lookup counters. Default 1s sample interval; tune with `--instrument-sample-seconds`. The console summary picks up seven extra rows (throughput percentiles + total Npgsql commands + sample count + three lock-wait counters). `--metrics <path>` writes a JSON file with the rolled-up percentiles + lock-wait stats; `--instrument-trace <path>` adds per-sample progress CSV; `--instrument-lock-trace <path>` adds per-sample lock-wait CSV.
 
 ```bash
 # Instrumented rebuild against existing seeded data, JSON + CSV output
@@ -91,6 +92,18 @@ dotnet run --project src/Marten.ScaleTesting -- daemonload \
       "MaxConcurrentWaiters": 0,
       "MaxSingleWaitMs": 0,
       "ObservedWaiterSeconds": 0.0
+    },
+    "perBatch": {
+      "batches": 23,
+      "p50": { "TotalMs": 67.6, "EventFetchMs": 7.4, "GroupingMs": 0.3, "ExecutionMs": 58.8, "RoundTripCount": 31, "Events": 500 },
+      "p95": { "...": "..." },
+      "p99": { "...": "..." },
+      "perShard": {
+        "marten.telehealthcomposite.all": { "Batches": 23, "Events": 11100, "TotalMsP50": 67.6, "MeanEventsPerBatch": 482.6, "MeanRoundTripsPerBatch": 29.7 }
+      }
+    },
+    "lookups": {
+      "AppointmentMetricsProjection": { "Invocations": 115, "Lookups": 636, "Events": 1075, "LookupsPerEvent": 0.59, "PerEventP50": 0.6, "PerEventP95": 0.88 }
     }
   }
 }
