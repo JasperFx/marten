@@ -64,6 +64,12 @@ dotnet run --project src/Marten.ScaleTesting -- stress \
     --shard-timeout-seconds 3600 --baseline scaletest-baseline.json \
     --instrument --instrument-trace stress-trace.csv \
     --instrument-lock-trace stress-lock-trace.csv
+
+# WS2 (jasperfx#486): RUNNING daemon over 100 partitioned tenants under continuous
+# append load, sampling pg_stat_activity for the store's connection footprint
+dotnet run --project src/Marten.ScaleTesting -- daemonload \
+    --tenants 100 --projections 2 --duration-seconds 120 --wipe \
+    --metrics daemonload-metrics.json --trace daemonload-connections.csv
 ```
 
 `metrics.json` shape:
@@ -93,6 +99,23 @@ dotnet run --project src/Marten.ScaleTesting -- stress \
 `progressionLockWaits.ObservedWaiterSeconds` is the approximation `sum(waiter_count_per_sample) * sample_interval_seconds` — zero means no rebuild ever found a contended waiter on the progression row at sample time; a non-zero number signals the new concurrent-rebuild cap (jasperfx#420 in 2.9.0) is being exercised or that something outside the daemon is racing the same row.
 
 Without `--instrument` the samplers / counter / activity are not constructed at all -- a measured rebuild has no perceptible overhead and the JSON section reads `"enabled": false` with zeroed totals.
+
+## The `daemonload` scenario (jasperfx#486 WS2)
+
+Everything above measures **rebuilds**; `daemonload` measures the **steady-state running
+daemon** — the deployment shape whose connection footprint at ~100 tenants is the WS2
+concern. It builds an isolated `UseTenantPartitionedEvents` store in the
+`scaletest_daemonload` schema with `--projections` async projections, registers
+`--tenants` tenants, starts the daemon (which fans out one subscription agent per
+projection × tenant), appends continuously across every tenant for `--duration-seconds`,
+and samples `pg_stat_activity` throughout. The store's connection string carries a
+dedicated `Application Name` so the sampler counts exactly the store's connections.
+
+The run fails (exit 1) on any append failure or any tenant whose agents don't catch up to
+that tenant's own per-tenant sequence ceiling within `--catch-up-timeout-seconds`.
+`--max-connections N` additionally turns the peak-connection reading into a pass/fail
+gate: the WS2 goal is connections O(databases), not O(tenant agents), so run this before
+and after the daemon command-batching work to quantify the win and then pin it.
 
 ## Non-goals
 

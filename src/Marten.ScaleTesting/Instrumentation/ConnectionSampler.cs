@@ -38,7 +38,8 @@ WHERE datname = current_database()
         _cts = CancellationTokenSource.CreateLinkedTokenSource(outerCancellation);
         if (tracePath != null)
         {
-            _traceWriter = new StreamWriter(tracePath, append: false);
+            // AutoFlush so a long-running scenario's trace can be tailed live
+            _traceWriter = new StreamWriter(tracePath, append: false) { AutoFlush = true };
             _traceWriter.WriteLine("timestamp,total_connections,busy_connections");
         }
 
