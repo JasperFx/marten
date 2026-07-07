@@ -511,7 +511,12 @@ public static class MartenServiceCollectionExtensions
         public MartenStoreExpression<T> AddAsyncDaemon(DaemonMode mode)
         {
             Services.ConfigureMarten<T>(opts => opts.Projections.AsyncMode = mode);
-            if (mode != DaemonMode.Disabled)
+
+            // Only Solo/HotCold mean "this process hosts the daemon". Disabled hosts nothing, and
+            // ExternallyManaged (jasperfx#490) means an external system (e.g. Wolverine's managed
+            // event-subscription distribution) executes the async projections — Marten must not
+            // register its own coordination for either.
+            if (mode is DaemonMode.Solo or DaemonMode.HotCold)
             {
                 Services.AddSingleton<Marten.Events.Daemon.Coordination.IProjectionCoordinator<T>, ProjectionCoordinator<T>>();
                 Services.AddSingleton<IHostedService>(s => s.GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator<T>>());
@@ -754,7 +759,11 @@ public static class MartenServiceCollectionExtensions
         {
             Services.ConfigureMarten(opts => opts.Projections.AsyncMode = mode);
 
-            if (mode != DaemonMode.Disabled)
+            // Only Solo/HotCold mean "this process hosts the daemon". Disabled hosts nothing, and
+            // ExternallyManaged (jasperfx#490) means an external system (e.g. Wolverine's managed
+            // event-subscription distribution) executes the async projections — Marten must not
+            // register its own coordination for either.
+            if (mode is DaemonMode.Solo or DaemonMode.HotCold)
             {
                 Services.AddSingleton<Marten.Events.Daemon.Coordination.IProjectionCoordinator, ProjectionCoordinator>();
                 Services.AddSingleton<IHostedService>(s => s.GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator>());

@@ -97,6 +97,9 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
 
             default:
                 // DaemonMode.Disabled: no async daemon, so there is nothing to distribute.
+                // DaemonMode.ExternallyManaged (jasperfx#490): an external system (e.g. Wolverine's
+                // managed event-subscription distribution) executes the async projections, so this
+                // store hosts nothing either — same null-distributor posture as Disabled.
                 // ProjectionCoordinatorBase (JasperFx.Events) tolerates a null distributor as
                 // the "nothing to coordinate" state since jasperfx#352 — the ctor no longer
                 // throws, StartAsync no-ops, and StopAsync guards ReleaseAllLocks. A
