@@ -28,7 +28,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     private readonly List<OperationPage> _pages = new();
     private readonly List<ITransactionParticipant> _transactionParticipants = new();
 
-    private readonly List<IStorageOperation> _patches = new();
+    private readonly List<Weasel.Storage.IStorageOperation> _patches = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly ProjectionOptions _settings;
     private readonly CancellationToken _token;
@@ -45,7 +45,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         _token = token;
         Mode = mode;
 
-        Queue = new Block<IStorageOperation>(processOperationAsync);
+        Queue = new Block<Weasel.Storage.IStorageOperation>(processOperationAsync);
 
         startNewPage(session);
     }
@@ -70,7 +70,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     public BatchFlushMode FlushMode { get; private set; } = BatchFlushModeClassifier.Initial;
 
     // TODO -- make this private
-    public Block<IStorageOperation> Queue { get; }
+    public Block<Weasel.Storage.IStorageOperation> Queue { get; }
 
     public async ValueTask DisposeAsync()
     {
@@ -142,17 +142,17 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
-    IEnumerable<IStorageOperation> IUnitOfWork.Operations()
+    IEnumerable<Weasel.Storage.IStorageOperation> IUnitOfWork.Operations()
     {
         throw new NotSupportedException();
     }
 
-    IEnumerable<IStorageOperation> IUnitOfWork.OperationsFor<T>()
+    IEnumerable<Weasel.Storage.IStorageOperation> IUnitOfWork.OperationsFor<T>()
     {
         throw new NotSupportedException();
     }
 
-    IEnumerable<IStorageOperation> IUnitOfWork.OperationsFor(Type documentType)
+    IEnumerable<Weasel.Storage.IStorageOperation> IUnitOfWork.OperationsFor(Type documentType)
     {
         throw new NotSupportedException();
     }
@@ -185,7 +185,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     void ISessionWorkTracker.Add(Weasel.Storage.IStorageOperation operation)
     {
-        Queue.Post((IStorageOperation)operation);
+        Queue.Post(operation);
     }
 
     void ISessionWorkTracker.Sort(StoreOptions options)
@@ -344,7 +344,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         _pages.Add(_current);
     }
 
-    private Task processOperationAsync(IStorageOperation operation, CancellationToken _)
+    private Task processOperationAsync(Weasel.Storage.IStorageOperation operation, CancellationToken _)
     {
         if (_token.IsCancellationRequested)
         {
@@ -363,7 +363,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         return Task.CompletedTask;
     }
 
-    private void applyOperation(IStorageOperation operation)
+    private void applyOperation(Weasel.Storage.IStorageOperation operation)
     {
         _current.Append(operation);
 

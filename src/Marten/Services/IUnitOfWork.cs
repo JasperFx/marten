@@ -78,14 +78,14 @@ public interface IUnitOfWork
     ///     All the storage operations that will be executed when this session is committed
     /// </summary>
     /// <returns></returns>
-    IEnumerable<IStorageOperation> Operations();
+    IEnumerable<Weasel.Storage.IStorageOperation> Operations();
 
     /// <summary>
     ///     All the storage operations that will be executed for documents of type T when this
     ///     session is committed
     /// </summary>
     /// <returns></returns>
-    IEnumerable<IStorageOperation> OperationsFor<T>();
+    IEnumerable<Weasel.Storage.IStorageOperation> OperationsFor<T>();
 
     /// <summary>
     ///     All the storage operations that will be executed for documents of type T when this
@@ -93,5 +93,5 @@ public interface IUnitOfWork
     /// </summary>
     /// <param name="documentType"></param>
     /// <returns></returns>
-    IEnumerable<IStorageOperation> OperationsFor(Type documentType);
+    IEnumerable<Weasel.Storage.IStorageOperation> OperationsFor(Type documentType);
 }

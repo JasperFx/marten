@@ -51,3 +51,21 @@ internal static class ClosedShapeOperationExceptionTransform
         return false;
     }
 }
+
+/// <summary>
+///     #4821 INC-4: adapter that plugs the static Postgres exception transform into the
+///     descriptor-carried <see cref="IOperationExceptionTransform"/> seam the moved
+///     (Weasel.Storage) closed-shape operations consume.
+/// </summary>
+internal sealed class MartenOperationExceptionTransform: IOperationExceptionTransform
+{
+    public static readonly MartenOperationExceptionTransform Instance = new();
+
+    private MartenOperationExceptionTransform()
+    {
+    }
+
+    public bool TryTransform(Exception original, string tableName, Type documentType, object id,
+        out Exception? transformed)
+        => ClosedShapeOperationExceptionTransform.TryTransform(original, tableName, documentType, id, out transformed);
+}

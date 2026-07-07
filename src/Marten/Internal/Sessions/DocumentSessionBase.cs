@@ -266,7 +266,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     public new Marten.Events.IEventStoreOperations Events => (Marten.Events.IEventStoreOperations)base.Events;
 
 
-    public void QueueOperation(IStorageOperation storageOperation)
+    public void QueueOperation(Weasel.Storage.IStorageOperation storageOperation)
     {
         _workTracker.Add(storageOperation);
     }

@@ -305,7 +305,11 @@ internal static class DocumentStorageDescriptorBuilder
             docTypeReadIndex: docTypeReadIndex,
             tableName: mapping.TableName.Name,
             partitionPkBinders: partitionPkBinders,
-            useVersionFromMatchingStream: mapping.UseVersionFromMatchingStream && concurrencyMode == ConcurrencyMode.Numeric);
+            useVersionFromMatchingStream: mapping.UseVersionFromMatchingStream && concurrencyMode == ConcurrencyMode.Numeric,
+            // #4821 INC-4: the moved (Weasel.Storage) operations consume Marten's Postgres
+            // exception transform + missing-document exception through descriptor seams.
+            exceptionTransform: MartenOperationExceptionTransform.Instance,
+            createMissingDocumentException: static (docType, id) => new Marten.Exceptions.NonExistentDocumentException(docType, id));
     }
 
     /// <summary>

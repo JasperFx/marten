@@ -135,7 +135,7 @@ public interface IDocumentOperations: IQuerySession, IStorageOperations
     ///     updates in SaveChanges()/SaveChangesAsync()
     /// </summary>
     /// <param name="storageOperation"></param>
-    void QueueOperation(IStorageOperation storageOperation);
+    void QueueOperation(Weasel.Storage.IStorageOperation storageOperation);
 
     /// <summary>
     ///     Explicitly marks a document as needing to be inserted upon the next call to SaveChanges().
