@@ -4,7 +4,6 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
-using Marten.Internal.DirtyTracking;
 using Marten.Linq.Selectors;
 using Marten.Internal.CodeGeneration;
 

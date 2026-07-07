@@ -27,7 +27,7 @@ namespace Marten.Internal.ClosedShape;
 /// default that writes <c>0</c> and lets the SQL's <c>CASE</c>
 /// expression compute the effective value.
 /// </remarks>
-internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc>
+internal sealed class DocumentRevisionBinder<TDoc>: IRevisionMetadataBinder<TDoc>
     where TDoc : notnull
 {
     private readonly Action<TDoc, long>? _setter;

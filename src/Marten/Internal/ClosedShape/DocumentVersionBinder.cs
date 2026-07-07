@@ -28,7 +28,7 @@ namespace Marten.Internal.ClosedShape;
 /// raise <c>ConcurrencyException</c>. Today's spike just writes the new
 /// version unconditionally.
 /// </remarks>
-internal sealed class DocumentVersionBinder<TDoc>: IDocumentMetadataBinder<TDoc>
+internal sealed class DocumentVersionBinder<TDoc>: IVersionMetadataBinder<TDoc>
     where TDoc : notnull
 {
     private readonly Action<TDoc, Guid>? _setter;

@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Marten.Internal.DirtyTracking;
 
 namespace Marten.Internal.Sessions;
 
