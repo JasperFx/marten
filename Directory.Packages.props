@@ -77,9 +77,16 @@
          node-distributed daemon hosts (Wolverine) to fan out one agent per (shard, tenant), plus the
          hardened per-tenant StartAgentAsync: tenant ceilings primed before start (SubscribeFromPresent
          no longer rewinds to 0), exact-identity precedence, loud failure on non-partitioned stores. -->
-    <!-- JasperFx 2.21.0: jasperfx#490 DaemonMode.ExternallyManaged (external hosts run projections;
-         store hosts no coordination and must not warn — wolverine#3290) + jasperfx#491 distributor-level
-         per-tenant shard expansion with coordinator reconciliation (jasperfx#489). -->
+    <!-- JasperFx 2.21.0: jasperfx#491 (epic jasperfx#486) — distributor-level per-tenant shard
+         expansion for the NATIVE daemon: the Solo / SingleTenant / MultiTenanted distributor
+         concretes grow a distributesAgentsPerTenant ctor overload that expands store-global shard
+         names into per-tenant ShardNames (PerTenantShardExpansion, re-evaluated every
+         BuildDistributionAsync so tenant add/remove converges on the leadership polling cycle),
+         and the coordinator reconciles running agents against the freshly built distribution
+         (stops agents whose identity disappeared). Marten threads
+         IEventStore.DistributesAgentsPerTenant into BuildDistributor (ProjectionCoordinator).
+         Also DaemonMode.ExternallyManaged (jasperfx#490, wolverine#3290 — external hosts run
+         projections; the store hosts no coordination and must not warn). -->
     <PackageVersion Include="JasperFx" Version="2.21.0" />
     <PackageVersion Include="JasperFx.Events" Version="2.21.0" />
     <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.21.0">
