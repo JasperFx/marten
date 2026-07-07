@@ -42,11 +42,32 @@ internal class BulkEventAppender
 
         var schema = _events.DatabaseSchemaName;
 
-        // Step 1: Pre-allocate sequence numbers
-        var sequences = await fetchSequences(conn, schema, totalEvents, cancellation).ConfigureAwait(false);
+        // Steps 1+2: pre-allocate sequence numbers and assign them (with versions) to all events. Under
+        // per-tenant event partitioning each tenant MUST draw from its own mt_events_sequence_{suffix} —
+        // the same sequence the quick-append function uses for live appends. Drawing from the store-global
+        // sequence would leave every imported tenant's own sequence at 1, so the tenant's first live
+        // append re-issues an already-used seq_id (PK collision on its events partition).
+        if (_events.UseTenantPartitionedEvents)
+        {
+            foreach (var tenantGroup in streams.GroupBy(s => s.TenantId))
+            {
+                var tenantStreams = tenantGroup.ToList();
+                var tenantEventCount = tenantStreams.Sum(s => s.Events.Count);
+                if (tenantEventCount == 0) continue;
 
-        // Step 2: Assign versions and sequences to all events
-        assignVersionsAndSequences(streams, sequences);
+                var sequenceName = await resolveSequenceNameAsync(conn, schema, tenantGroup.Key, cancellation)
+                    .ConfigureAwait(false);
+                var tenantSequences = await fetchSequences(conn, sequenceName, tenantEventCount, cancellation)
+                    .ConfigureAwait(false);
+                assignVersionsAndSequences(tenantStreams, tenantSequences);
+            }
+        }
+        else
+        {
+            var sequences = await fetchSequences(conn, $"{schema}.mt_events_sequence", totalEvents, cancellation)
+                .ConfigureAwait(false);
+            assignVersionsAndSequences(streams, sequences);
+        }
 
         // Step 3: COPY streams
         await copyStreams(conn, schema, streams, batchSize, cancellation).ConfigureAwait(false);
@@ -58,13 +79,47 @@ internal class BulkEventAppender
         await updateHighWaterMark(conn, schema, streams, cancellation).ConfigureAwait(false);
     }
 
-    private async Task<Queue<long>> fetchSequences(
+    /// <summary>
+    /// The (schema-qualified) sequence that seq_ids for this tenant's events must be drawn from. Under
+    /// per-tenant event partitioning that is the tenant's own <c>mt_events_sequence_{suffix}</c> — the
+    /// suffix resolved from the tenants partition table exactly like the quick-append function does —
+    /// so the sequence's position stays consistent with the imported events and live appends continue
+    /// seamlessly after an import. Otherwise the store-global <c>mt_events_sequence</c>.
+    /// </summary>
+    private async Task<string> resolveSequenceNameAsync(
         NpgsqlConnection conn,
         string schema,
+        string? tenantId,
+        CancellationToken cancellation)
+    {
+        if (!_events.UseTenantPartitionedEvents || tenantId == null)
+        {
+            return $"{schema}.mt_events_sequence";
+        }
+
+        var tenantsTable = _events.Options.TenantPartitions!.TenantsTableName;
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"select partition_suffix from {tenantsTable} where partition_value = @tenant";
+        cmd.Parameters.AddWithValue("tenant", tenantId);
+        var suffix = await cmd.ExecuteScalarAsync(cancellation).ConfigureAwait(false) as string;
+
+        if (suffix == null)
+        {
+            throw new InvalidOperationException(
+                $"Tenant '{tenantId}' has no registered partition. Call AddMartenManagedTenantsAsync " +
+                "(or the sharded AddTenantToShardAsync) before bulk-importing its events.");
+        }
+
+        return $"{schema}.mt_events_sequence_{suffix}";
+    }
+
+    private async Task<Queue<long>> fetchSequences(
+        NpgsqlConnection conn,
+        string sequenceName,
         int count,
         CancellationToken cancellation)
     {
-        var sql = $"select nextval('{schema}.mt_events_sequence') from generate_series(1,{count})";
+        var sql = $"select nextval('{sequenceName}') from generate_series(1,{count})";
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
         await using var reader = await cmd.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
