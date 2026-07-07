@@ -20,6 +20,9 @@ public sealed class RebuildInput: NetCoreInput
     [Description("Optional CSV trace path for the progression lock-wait sampler (#4684 Phase E.2). One row per sample: timestamp, current waiter count on mt_event_progression, max single-waiter wait in ms. Implies --instrument.")]
     public string? InstrumentLockTraceFlag { get; set; }
 
+    [Description("Optional CSV trace path for the per-batch breakdown (#4684 Phase E.3). One row per completed event page: shard, floor, ceiling, events, loading/grouping/execution ms, DB round-trips. Implies --instrument.")]
+    public string? InstrumentBatchTraceFlag { get; set; }
+
     [Description("Sample interval for the progression poller when --instrument is on. Default 1s. Lower for finer-grained percentiles; raise to keep harness overhead negligible on multi-hour runs.")]
     public double InstrumentSampleSecondsFlag { get; set; } = 1.0;
 
