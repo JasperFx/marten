@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using JasperFx.MultiTenancy;
@@ -441,6 +442,38 @@ public class AdvancedOperations
                 "AddMartenManagedTenantsAsync supports DefaultTenancy and ShardedTenancy. " +
                 "MasterTableTenancy uses caller-supplied connection strings — call " +
                 "IServiceProvider.AddTenantAsync(tenantId, connectionValue) instead.");
+        }
+
+        // #4648: AddGlobalProjection routes its aggregate's events to the *DEFAULT* tenant
+        // slot (GlobalEventAppenderDecorator), and under UseTenantPartitionedEvents every
+        // tenant id that receives events must have a registered partition — otherwise the
+        // append raises MT002. The sentinel '*DEFAULT*' can never be its own partition
+        // SUFFIX (it contains characters that are illegal in PG identifiers), but a LIST
+        // partition VALUE can be any string — only the child table's NAME is
+        // identifier-constrained. So whenever this store has global aggregates registered,
+        // auto-provision the reserved '__default__' suffix for the '*DEFAULT*' partition
+        // value alongside whatever tenants the caller is registering. Idempotent: the
+        // partition upsert and CREATE SEQUENCE IF NOT EXISTS both tolerate re-registration.
+        if (_store.Options.Events.UseTenantPartitionedEvents
+            && _store.Options.EventGraph.GlobalAggregates.Any()
+            && !tenantIdToPartitionMapping.ContainsKey(StorageConstants.DefaultTenantId))
+        {
+            var conflict = tenantIdToPartitionMapping.FirstOrDefault(pair =>
+                pair.Value == MartenManagedTenantListPartitions.DefaultTenantSuffix);
+            if (conflict.Key != null)
+            {
+                throw new ArgumentException(
+                    $"The partition suffix '{MartenManagedTenantListPartitions.DefaultTenantSuffix}' is reserved " +
+                    $"for the default tenant partition backing global projections (AddGlobalProjection) and cannot " +
+                    $"be used for tenant '{conflict.Key}'.",
+                    nameof(tenantIdToPartitionMapping));
+            }
+
+            // Copy rather than mutating the caller's dictionary
+            tenantIdToPartitionMapping = new Dictionary<string, string>(tenantIdToPartitionMapping)
+            {
+                [StorageConstants.DefaultTenantId] = MartenManagedTenantListPartitions.DefaultTenantSuffix
+            };
         }
 
         AssertValidPostgresqlIdentifiers(tenantIdToPartitionMapping.Values);
