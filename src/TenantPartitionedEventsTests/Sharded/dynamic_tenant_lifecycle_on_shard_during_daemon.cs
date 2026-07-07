@@ -169,20 +169,18 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
                 $"AddTenantToShardAsync must provision mt_events_sequence_{tenant2} on shard {shard}");
 
             // ... so appending for the new tenant works right away (Quick append would raise MT002
-            // against an unregistered tenant partition). Tenant 2 is deliberately seeded ABOVE the
-            // shard's current global high water (tenant 1 is at 3, so tenant 2 gets 4 events in its
-            // own overlapping sequence): the vectorized per-tenant high-water poll rides the GLOBAL
-            // high-water cadence (fires only when max(seq_id) over the shard's whole events table
-            // moves), so if the coordinator's discovery wins the race against this append and
-            // primes tenant 2's agent at ceiling 0, events staying below the shard's global mark
-            // would never be routed to it. See the single-database flavor
-            // (dynamic_tenant_lifecycle_during_continuous_daemon) for the full cadence-gap notes.
+            // against an unregistered tenant partition). Tenant 2 is deliberately seeded BELOW the
+            // shard's current global high water (tenant 1 is at 3, tenant 2 gets only 2 events in
+            // its own overlapping sequence) — pinning the jasperfx#492 fix (2.21.1): the per-tenant
+            // high-water poll now runs on the daemon's own timer cadence, so tenant 2 converges
+            // even though its appends never move max(seq_id) over the shard's whole events table.
+            // See the single-database flavor (dynamic_tenant_lifecycle_during_continuous_daemon)
+            // for the full history of the cadence gap this used to work around.
             var stream2 = Guid.NewGuid();
             await using (var session = _store.LightweightSession(tenant2))
             {
                 session.Events.StartStream<ShardedDaemonCounter>(stream2,
-                    new ShardedDaemonEvent("t2-1"), new ShardedDaemonEvent("t2-2"),
-                    new ShardedDaemonEvent("t2-3"), new ShardedDaemonEvent("t2-4"));
+                    new ShardedDaemonEvent("t2-1"), new ShardedDaemonEvent("t2-2"));
                 await session.SaveChangesAsync();
             }
 
@@ -191,8 +189,8 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             // the shard database's set re-expands from its own tenants.mt_tenant_partitions
             // registry and tenant 2's agent starts and catches up. No StartAgentAsync, no restart.
             var rows = await WaitForProgressionAsync(shardConnStr, r =>
-                    SeqOf(r, $"{ShardedDaemonProjection.ProjectionName}:All:{tenant2}") >= 4 &&
-                    SeqOf(r, $"HighWaterMark:{tenant2}") >= 4,
+                    SeqOf(r, $"{ShardedDaemonProjection.ProjectionName}:All:{tenant2}") >= 2 &&
+                    SeqOf(r, $"HighWaterMark:{tenant2}") >= 2,
                 30.Seconds(),
                 "new tenant's per-tenant progression + high-water rows appear on shard A via the " +
                 "coordinator's own re-enumeration");
@@ -217,7 +215,7 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             {
                 await using var query = _store.QuerySession(tenant2);
                 doc2 = await query.LoadAsync<ShardedDaemonCounter>(stream2);
-                if (doc2 is { EventCount: 4 })
+                if (doc2 is { EventCount: 2 })
                 {
                     break;
                 }
@@ -226,7 +224,7 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             }
 
             doc2.ShouldNotBeNull("tenant 2's projection doc must materialize on shard A");
-            doc2!.EventCount.ShouldBe(4);
+            doc2!.EventCount.ShouldBe(2);
 
             // And the original tenant is untouched by the dynamic add — still at its own height.
             SeqOf(rows, $"{ShardedDaemonProjection.ProjectionName}:All:{tenant1}").ShouldBe(3);

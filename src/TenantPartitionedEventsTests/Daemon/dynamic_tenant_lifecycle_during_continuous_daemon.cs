@@ -50,10 +50,10 @@ namespace TenantPartitionedEventsTests.Daemon;
 /// </list>
 /// This test previously pinned the pre-#491 behavior (no mid-run discovery, lingering agent after
 /// removal) and was flipped when the fix landed. LeadershipPollingTime is tuned down to 250ms so
-/// convergence is fast and deterministic instead of sleeping the default window. NOTE the cadence
-/// caveat documented at Phase 1: the per-tenant high-water poll currently rides the GLOBAL
-/// high-water cadence, so the mid-run tenant is seeded above the store's global mark to converge
-/// deterministically on either side of the discovery-vs-append race.
+/// convergence is fast and deterministic instead of sleeping the default window. Phase 1 also
+/// pins the jasperfx#492 fix (2.21.1): the mid-run tenant is seeded BELOW the store's global mark,
+/// which converges only because the per-tenant high-water poll now runs on the daemon's own timer
+/// cadence rather than solely on store-global mark changes.
 /// </para>
 /// </summary>
 public partial class dynamic_tenant_lifecycle_during_continuous_daemon
@@ -140,30 +140,26 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
             }.OrderBy(x => x));
 
             // ---- Phase 1: a NEW tenant joins while the coordinator keeps running ----
-            // Tenant C is deliberately seeded ABOVE the store's current global high water (a is at
-            // 5, so C gets 7 events in its own overlapping sequence). KNOWN CADENCE GAP (jasperfx,
-            // observed against JasperFx.Events 2.21.0): the vectorized per-tenant high-water poll
-            // rides the GLOBAL high-water cadence — JasperFxAsyncDaemon only calls
-            // pollTenantHighWaterAsync when the store-global HighWaterMark shard state fires, which
-            // under overlapping per-tenant sequences only happens when max(seq_id) over the whole
-            // table moves. If the coordinator's discovery wins the race against this append (it
-            // polls every 250ms here), C's agent is primed at ceiling 0, and events that stay
-            // BELOW the global mark would never be routed to it — the agent stalls at 0
-            // indefinitely. Seeding C past the global mark forces a global high-water change, which
-            // triggers the per-tenant poll and converges C on EITHER side of the race. When the
-            // cadence gap is fixed upstream (per-tenant polls on the timer, not on global-mark
-            // change), C's height can go back below the global mark.
+            // Tenant C is deliberately seeded BELOW the store's current global high water (A is at
+            // 5, C gets only 3 events in its own overlapping sequence). This actively pins the
+            // jasperfx#492 fix (JasperFx 2.21.1 / jasperfx#493): the vectorized per-tenant
+            // high-water poll now runs on the daemon's SlowPollingTime timer, not solely on
+            // store-global mark changes — so even though C's appends never move max(seq_id) over
+            // the whole table, C's agent still learns its per-tenant ceiling and converges. Against
+            // 2.21.0 this exact shape stalled C's agent at 0 indefinitely whenever the
+            // coordinator's discovery won the race against the append (the test previously worked
+            // around it by seeding C ABOVE the global mark to force a global tick).
             const string tenantC = "dynlife_c";
             await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenantC);
-            var streamC = await AppendStreamAsync(store, tenantC, 6); // 7 events > global HW of 5
+            var streamC = await AppendStreamAsync(store, tenantC, 2); // 3 events < global HW of 5
 
             // FLIPPED (was the pre-#491 pin): the running coordinator DOES discover the new tenant
             // on its own — the next BuildDistributionAsync re-expands from mt_tenant_partitions and
             // starts tenant C's agent, which catches up to the tenant's own height. No explicit
             // per-tenant StartAgentAsync (wolverine#3280) workaround, no restart.
             await WaitForProgressionAsync(rows =>
-                SeqOf(rows, $"{DynLifeProjection.ProjectionName}:All:{tenantC}") >= 7 &&
-                SeqOf(rows, $"HighWaterMark:{tenantC}") >= 7,
+                SeqOf(rows, $"{DynLifeProjection.ProjectionName}:All:{tenantC}") >= 3 &&
+                SeqOf(rows, $"HighWaterMark:{tenantC}") >= 3,
                 30.Seconds(),
                 "tenant C converges via the coordinator's own re-enumeration, no explicit agent start");
 
@@ -175,7 +171,7 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
             {
                 var doc = await query.LoadAsync<DynCounter>(streamC);
                 doc.ShouldNotBeNull();
-                doc.Count.ShouldBe(6);
+                doc.Count.ShouldBe(2);
             }
 
             // The original tenants were untouched by the dynamic add.
@@ -216,7 +212,7 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
 
             // Survivors are unaffected by the removal.
             SeqOf(finalRows, $"{DynLifeProjection.ProjectionName}:All:{tenantA}").ShouldBe(5);
-            SeqOf(finalRows, $"{DynLifeProjection.ProjectionName}:All:{tenantC}").ShouldBe(7);
+            SeqOf(finalRows, $"{DynLifeProjection.ProjectionName}:All:{tenantC}").ShouldBe(3);
         }
         finally
         {
