@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ImTools;
 using JasperFx.Core;
+using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Storage;
@@ -77,10 +78,19 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
             return databases.OfType<IProjectionDatabase>().ToList();
         };
 
+        // jasperfx#489/#491 (marten#4862): when the store is tenant-partitioned
+        // (IEventStore.DistributesAgentsPerTenant), the distributors expand each store-global
+        // shard name into per-tenant ShardNames from the database's own registered tenant list
+        // (MartenDatabase implements ICrossTenantRebuildSource over mt_tenant_partitions). The
+        // expansion is re-evaluated on every BuildDistributionAsync, so tenants added or removed
+        // at runtime converge on the coordinator's leadership polling cycle without a restart.
+        var distributesAgentsPerTenant = ((IEventStore)store).DistributesAgentsPerTenant;
+
         switch (projections.AsyncMode)
         {
             case DaemonMode.Solo:
-                return new SoloProjectionDistributor(allDatabases, allShards, setFactory, baseLockId);
+                return new SoloProjectionDistributor(allDatabases, allShards, setFactory, baseLockId,
+                    distributesAgentsPerTenant);
 
             case DaemonMode.HotCold:
                 var lockFactory = buildLockFactory(store);
@@ -89,11 +99,12 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
                     return new SingleTenantProjectionDistributor(
                         () => (IProjectionDatabase)store.Storage.Database,
                         allShards, lockFactory, setFactory,
-                        store.Options.EventGraph.DatabaseSchemaName, baseLockId);
+                        store.Options.EventGraph.DatabaseSchemaName, baseLockId,
+                        distributesAgentsPerTenant);
                 }
 
                 return new MultiTenantedProjectionDistributor(allDatabases, allShards, lockFactory, setFactory,
-                    baseLockId);
+                    baseLockId, distributesAgentsPerTenant);
 
             default:
                 // DaemonMode.Disabled: no async daemon, so there is nothing to distribute.
