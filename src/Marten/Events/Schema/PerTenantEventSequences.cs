@@ -86,9 +86,9 @@ internal class PerTenantEventSequences: ISchemaObject
     {
         // Single query — count of per-tenant sequences in this schema that
         // match our `mt_events_sequence_%` prefix. CreateDeltaAsync compares
-        // the count against expected; on mismatch the WriteUpdate path
-        // re-emits the IF-NOT-EXISTS create script which is safe to run
-        // against an already-partially-applied database.
+        // the count against expected; on mismatch the (additive-only, see
+        // CreateSequencesDelta) update path re-emits the IF-NOT-EXISTS create
+        // script which is safe to run against an already-partially-applied database.
         var schemaParam = builder.AddParameter(_events.DatabaseSchemaName).ParameterName;
         builder.Append(
             "select count(*) from information_schema.sequences where sequence_schema = :"
@@ -113,7 +113,40 @@ internal class PerTenantEventSequences: ISchemaObject
             ? SchemaPatchDifference.Update
             : SchemaPatchDifference.None;
 
-        return new SchemaObjectDelta(this, difference);
+        return new CreateSequencesDelta(this, difference);
+    }
+
+    /// <summary>
+    /// Additive-only update delta. The generic <see cref="SchemaObjectDelta"/> writes updates as
+    /// WriteDropStatement + WriteCreateStatement — for this wrapper that would DROP every existing
+    /// per-tenant sequence and recreate it at 1 whenever a NEW tenant's sequence is missing,
+    /// resetting live tenants' event sequences (seq_id reuse = silent event-store corruption).
+    /// A missing sequence only ever needs the IF-NOT-EXISTS creates; existing sequences must
+    /// never be touched by an update.
+    /// </summary>
+    private sealed class CreateSequencesDelta: ISchemaObjectDelta
+    {
+        public CreateSequencesDelta(PerTenantEventSequences sequences, SchemaPatchDifference difference)
+        {
+            SchemaObject = sequences;
+            Difference = difference;
+        }
+
+        public ISchemaObject SchemaObject { get; }
+        public SchemaPatchDifference Difference { get; }
+
+        public void WriteUpdate(Migrator rules, TextWriter writer)
+        {
+            SchemaObject.WriteCreateStatement(rules, writer);
+        }
+
+        public void WriteRollback(Migrator rules, TextWriter writer)
+        {
+        }
+
+        public void WriteRestorationOfPreviousState(Migrator rules, TextWriter writer)
+        {
+        }
     }
 
     public IEnumerable<DbObjectName> AllNames()
