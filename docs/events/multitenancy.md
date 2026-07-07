@@ -211,7 +211,7 @@ tenant's events _within_ whichever database hosts that tenant.
 Global projections registered with `AddGlobalProjection` (described earlier on this page) route their aggregate's
 events to the default tenant slot (`*DEFAULT*`) so that every tenant's contribution lands in one canonical,
 single-tenanted timeline. That sentinel value contains characters that are not legal in PostgreSQL identifiers, so it
-can never be a partition-table *suffix* — but a LIST partition *value* can be any string. Whenever a store has global
+can never be a partition-table _suffix_ — but a LIST partition _value_ can be any string. Whenever a store has global
 aggregates registered, `AddMartenManagedTenantsAsync` automatically provisions a partition for the `*DEFAULT*` tenant
 value using the reserved suffix `__default__` (`mt_events___default__`, `mt_streams___default__`, its own
 `mt_events_sequence___default__`, and so on) alongside the tenants you register. No extra registration call is
