@@ -21,6 +21,19 @@ public class MartenManagedTenantListPartitions : IDocumentPolicy
     private readonly StoreOptions _options;
     public const string TableName = "mt_tenant_partitions";
 
+    /// <summary>
+    /// Reserved partition suffix backing the default-tenant (<c>*DEFAULT*</c>) slot that
+    /// global projections (<c>AddGlobalProjection</c>) write to under
+    /// <c>Events.UseTenantPartitionedEvents</c>. The sentinel tenant id itself contains
+    /// characters that are illegal in PostgreSQL identifiers so it can never be its own
+    /// partition-table suffix — but a LIST partition VALUE can be any string, so the
+    /// default tenant's rows live in partitions named with this fixed, identifier-legal
+    /// suffix instead (<c>mt_events___default__</c> etc.). Auto-provisioned by
+    /// <c>AdvancedOperations.AddMartenManagedTenantsAsync</c> whenever the store has
+    /// global aggregates registered. See https://github.com/JasperFx/marten/issues/4648.
+    /// </summary>
+    public const string DefaultTenantSuffix = "__default__";
+
     public MartenManagedTenantListPartitions(StoreOptions options, string? schemaName)
     {
         _options = options;
