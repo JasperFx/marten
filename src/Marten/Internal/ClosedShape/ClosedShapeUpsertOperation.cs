@@ -59,7 +59,7 @@ internal abstract class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageO
     public object Document => _document;
 
     public IChangeTracker ToTracker(IStorageSession session)
-        => new Marten.Internal.DirtyTracking.ChangeTracker<TDoc>(session, _document);
+        => new ChangeTracker<TDoc>(session, _document);
 
     public OperationRole Role() => _role;
 
