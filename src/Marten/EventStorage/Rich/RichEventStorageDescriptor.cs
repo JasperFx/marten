@@ -24,7 +24,6 @@ public sealed class RichEventStorageDescriptor
         string appendEventSqlSuffix,
         string insertStreamSql,
         string updateStreamVersionSql,
-        string streamStateSelectSql,
         Func<IEvent, string> serializeEventData,
         Func<IEvent, byte[]?> serializeEventBdata,
         IEventMetadataBinder[] metadataBinders)
@@ -33,7 +32,6 @@ public sealed class RichEventStorageDescriptor
         AppendEventSqlSuffix = appendEventSqlSuffix;
         InsertStreamSql = insertStreamSql;
         UpdateStreamVersionSql = updateStreamVersionSql;
-        StreamStateSelectSql = streamStateSelectSql;
         SerializeEventData = serializeEventData;
         SerializeEventBdata = serializeEventBdata;
         MetadataBinders = metadataBinders;
@@ -43,7 +41,6 @@ public sealed class RichEventStorageDescriptor
     public string AppendEventSqlSuffix { get; }
     public string InsertStreamSql { get; }
     public string UpdateStreamVersionSql { get; }
-    public string StreamStateSelectSql { get; }
 
     /// <summary>
     ///     Serializer for the <c>data</c> jsonb column. Returns the full JSON

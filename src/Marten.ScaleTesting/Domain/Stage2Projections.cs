@@ -130,6 +130,12 @@ public partial class AppointmentDetailsProjection: MultiStreamProjection<Appoint
                     }
                 }
 
+                // #4684 item 4: the escape-hatch business-key lookup — one batched query when
+                // any codes miss the slice cache, zero when the cache fully covers the page
+                Instrumentation.LookupCounters.Record(
+                    nameof(AppointmentDetailsProjection) + ".RoutingReason",
+                    missingCodes.Count > 0 ? 1 : 0, events.Count);
+
                 foreach (var slice in slices)
                 {
                     var codesInSlice = slice.Events()
@@ -290,7 +296,8 @@ public class AppointmentMetricsProjection: IProjection
         var groups = events
             .Where(e => e.Data is AppointmentRequested)
             .Select(e => (AppointmentRequested)e.Data)
-            .GroupBy(r => r.SpecialtyCode);
+            .GroupBy(r => r.SpecialtyCode)
+            .ToArray();
 
         foreach (var group in groups)
         {
@@ -299,5 +306,9 @@ public class AppointmentMetricsProjection: IProjection
             metrics.Count += group.Count();
             operations.Store(metrics);
         }
+
+        // #4684 item 4: one LoadAsync round-trip per specialty group in this invocation
+        Instrumentation.LookupCounters.Record(nameof(AppointmentMetricsProjection),
+            groups.Length, groups.Sum(g => g.Count()));
     }
 }

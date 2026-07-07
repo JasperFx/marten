@@ -1,10 +1,7 @@
 #nullable enable
-using System;
 using JasperFx.Events;
-using Marten.EventStorage.Querying;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Marten.Linq.QueryHandlers;
 
 namespace Marten.EventStorage.QuickWithServerTimestamps;
 
@@ -49,7 +46,8 @@ internal sealed class QuickWithServerTimestampsEventStorage<TId>: EventStorage<T
             @event);
 
     public override IStorageOperation QuickAppendEvents(StreamAction stream)
-        => new QuickAppendEventsWithServerTimestampsOperation(_descriptor, stream);
+        // Dialect-supplied — see Quick.QuickEventStorage<TId>.QuickAppendEvents.
+        => _descriptor.CreateQuickAppendEventsOperation(_descriptor, stream);
 
     public override IStorageOperation InsertStream(StreamAction stream)
         => new QuickWithServerTimestampsInsertStreamOperation(_descriptor, stream);
@@ -61,18 +59,4 @@ internal sealed class QuickWithServerTimestampsEventStorage<TId>: EventStorage<T
         => _descriptor.IsTenancyConjoined
             ? new ConjoinedAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream)
             : new SingleTenantAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream);
-
-    public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
-    {
-        object streamIdentity = typeof(TId) == typeof(Guid)
-            ? stream.Id
-            : stream.Key!;
-
-        var tenantId = _descriptor.IsTenancyConjoined ? stream.TenantId : null;
-
-        return new ClosedShapeStreamStateQueryHandler<TId>(
-            _descriptor.StreamStateSelectSql,
-            (TId)streamIdentity,
-            tenantId);
-    }
 }

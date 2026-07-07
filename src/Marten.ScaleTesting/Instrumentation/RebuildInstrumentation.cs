@@ -17,16 +17,19 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
     private readonly ProgressSampler? _sampler;
     private readonly NpgsqlCommandCounter? _commands;
     private readonly ProgressionLockSampler? _lockSampler;
+    private readonly BatchSpanSampler? _batchSampler;
     private readonly Activity? _activity;
     private static readonly ActivitySource s_activitySource = new("Marten.ScaleTesting", "1.0");
 
     private RebuildInstrumentation(InstrumentationOptions options, ProgressSampler? sampler,
-        NpgsqlCommandCounter? commands, ProgressionLockSampler? lockSampler, Activity? activity)
+        NpgsqlCommandCounter? commands, ProgressionLockSampler? lockSampler,
+        BatchSpanSampler? batchSampler, Activity? activity)
     {
         _options = options;
         _sampler = sampler;
         _commands = commands;
         _lockSampler = lockSampler;
+        _batchSampler = batchSampler;
         _activity = activity;
     }
 
@@ -44,7 +47,7 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
     {
         if (!options.Enabled)
         {
-            return new RebuildInstrumentation(options, null, null, null, null);
+            return new RebuildInstrumentation(options, null, null, null, null, null);
         }
 
         var activity = s_activitySource.StartActivity("scaletest.rebuild", ActivityKind.Internal);
@@ -58,7 +61,12 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
         var lockSampler = ProgressionLockSampler.Start(
             connectionString, options.ProgressSampleInterval, options.LockTracePath, cancellation);
 
-        return new RebuildInstrumentation(options, sampler, commands, lockSampler, activity);
+        // E.3: listening to the Marten source is what turns the daemon's per-page spans on
+        var batchSampler = BatchSpanSampler.Start();
+        LookupCounters.Reset();
+        LookupCounters.Enabled = true;
+
+        return new RebuildInstrumentation(options, sampler, commands, lockSampler, batchSampler, activity);
     }
 
     /// <summary>
@@ -74,10 +82,19 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
         var samples = _sampler != null ? await _sampler.StopAsync().ConfigureAwait(false) : Array.Empty<ProgressSample>();
         var commandCount = _commands?.Stop() ?? 0;
         var lockWait = _lockSampler != null ? await _lockSampler.StopAsync().ConfigureAwait(false) : LockWaitStats.Empty;
+
+        // E.3: roll the per-page spans up into per-batch breakdown + lookup profile
+        var batchRecords = _batchSampler?.Capture(_options.BatchTracePath) ?? Array.Empty<BatchRecord>();
+        _batchSampler?.Dispose();
+        LookupCounters.Enabled = false;
+        var lookups = LookupCounters.Capture();
+        LookupCounters.Reset();
+
         _activity?.SetTag("samples", samples.Length);
         _activity?.SetTag("npgsql.commands", commandCount);
         _activity?.SetTag("progression.max_waiters", lockWait.MaxConcurrentWaiters);
         _activity?.SetTag("progression.observed_waiter_seconds", lockWait.ObservedWaiterSeconds);
+        _activity?.SetTag("batches", batchRecords.Count);
         _activity?.Stop();
 
         return new Snapshot(
@@ -85,7 +102,9 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
             Samples: samples,
             NpgsqlCommandCount: commandCount,
             Throughput: ThroughputPercentiles.From(samples),
-            ProgressionLockWaits: lockWait);
+            ProgressionLockWaits: lockWait,
+            PerBatch: BatchBreakdownStats.From(batchRecords),
+            Lookups: lookups);
     }
 
     public async ValueTask DisposeAsync()
@@ -101,6 +120,8 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
             await _lockSampler.DisposeAsync().ConfigureAwait(false);
         }
         _commands?.Dispose();
+        _batchSampler?.Dispose();
+        LookupCounters.Enabled = false;
         _activity?.Dispose();
     }
 
@@ -110,10 +131,13 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
         IReadOnlyList<ProgressSample> Samples,
         long NpgsqlCommandCount,
         ThroughputPercentiles Throughput,
-        LockWaitStats ProgressionLockWaits)
+        LockWaitStats ProgressionLockWaits,
+        BatchBreakdownStats PerBatch,
+        IReadOnlyDictionary<string, LookupStats> Lookups)
     {
         public static Snapshot Disabled { get; } =
-            new(false, Array.Empty<ProgressSample>(), 0, ThroughputPercentiles.Empty, LockWaitStats.Empty);
+            new(false, Array.Empty<ProgressSample>(), 0, ThroughputPercentiles.Empty, LockWaitStats.Empty,
+                BatchBreakdownStats.Empty, new Dictionary<string, LookupStats>());
     }
 }
 

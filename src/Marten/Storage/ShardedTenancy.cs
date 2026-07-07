@@ -200,11 +200,18 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
                     .CreateCommand($"select tenant_id, database_id from {_schemaName}.{TenantAssignmentTable.TableName} where {MartenTenantAssignmentTable.DisabledColumn} = false"))
                 .ExecuteReaderAsync().ConfigureAwait(false);
 
+            // #4868: the fresh assignment read below is the single source of truth for
+            // "which active tenants live on which shard" — collect it so the in-memory
+            // registry can be RECONCILED against it (shrunk, not just grown) afterwards.
+            var activeAssignments = new Dictionary<string, string>(StringComparer.Ordinal);
+
             while (await assignReader.ReadAsync().ConfigureAwait(false))
             {
                 var tenantId = await assignReader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
                 tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
                 var databaseId = await assignReader.GetFieldValueAsync<string>(1).ConfigureAwait(false);
+
+                activeAssignments[tenantId] = databaseId;
 
                 if (_databasesById.TryFind(databaseId, out var database))
                 {
@@ -214,6 +221,36 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
             }
 
             await assignReader.CloseAsync().ConfigureAwait(false);
+
+            // #4868: reconcile the in-memory registry against the fresh read. TenantIds /
+            // _tenantToDatabase used to be add-only (`Fill`), so a running store's usage
+            // descriptor (DescribeDatabasesAsync → TryCreateUsage) never shrank after
+            // RemoveTenantAsync / DisableTenantAsync — locally OR from another node — and
+            // hosts that retire per-tenant daemon agents off the descriptor's supported-set
+            // diff (Wolverine-managed distribution, per-cycle) could never see a tenant
+            // leave until a process restart. Pruning here makes every BuildDatabases /
+            // DescribeDatabasesAsync call a fresh-read re-enumeration, mirroring #4864's
+            // rationale for the single-database path: one source, invalidation-free.
+            foreach (var pair in _databasesById.Enumerate())
+            {
+                var staleTenantIds = pair.Value.TenantIds
+                    .Where(t => !activeAssignments.TryGetValue(t, out var assignedDb) ||
+                                !assignedDb.EqualsIgnoreCase(pair.Key))
+                    .ToArray();
+
+                foreach (var stale in staleTenantIds)
+                {
+                    pair.Value.TenantIds.Remove(stale);
+                }
+            }
+
+            foreach (var pair in _tenantToDatabase.Enumerate().ToArray())
+            {
+                if (!activeAssignments.ContainsKey(pair.Key))
+                {
+                    _tenantToDatabase = _tenantToDatabase.Remove(pair.Key);
+                }
+            }
         }
         finally
         {
@@ -383,16 +420,208 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         }
     }
 
+    /// <summary>
+    /// #4868 / #4880: full removal of a tenant from the sharded pool — the symmetric inverse of
+    /// <see cref="AddTenantAsync(string, CancellationToken)"/> / <c>Advanced.AddTenantToShardAsync</c>.
+    /// <list type="bullet">
+    ///   <item>Drops the tenant's LIST partitions from all managed tables on its shard database,
+    ///     including the shard's own <c>mt_tenant_partitions</c> registry rows — so the native
+    ///     coordinator's per-tenant re-expansion (jasperfx#491's
+    ///     <c>PerTenantShardExpansion</c> over <c>ICrossTenantRebuildSource</c>) stops seeing the
+    ///     tenant and its running daemon agents are reaped on the next leadership polling cycle.</item>
+    ///   <item>Under <c>UseTenantPartitionedEvents</c>, also drops the tenant's
+    ///     <c>mt_events_sequence_{tenant}</c> and deletes its per-tenant
+    ///     <c>mt_event_progression</c> + <c>HighWaterMark:{tenant}</c> rows (the #4683 cleanup) —
+    ///     progression rows are CLEANED on removal, not retained; a re-added tenant starts fresh.</item>
+    ///   <item>Deletes the master-registry assignment row and recomputes the shard's
+    ///     <c>tenant_count</c> (mirrors #4763's recompute-on-reassignment).</item>
+    ///   <item>Shrinks the in-memory registry so this store's usage descriptor
+    ///     (<see cref="DescribeDatabasesAsync"/> → <c>TryCreateUsage</c>) stops reporting the
+    ///     tenant immediately — hosts that retire agents off the descriptor diff converge without
+    ///     a restart. Other nodes converge via the fresh-read reconciliation in
+    ///     <see cref="BuildDatabases"/>.</item>
+    /// </list>
+    /// This is DESTRUCTIVE on the shard (partition drop == data drop), matching the single-database
+    /// removal contract of <c>AdvancedOperations.RemoveMartenManagedTenantsAsync</c>. Use
+    /// <see cref="DisableTenantAsync"/> for the non-destructive soft-delete that retains all data
+    /// and progression state. Idempotent — a re-run for an unknown/already-removed tenant no-ops.
+    /// </summary>
     public async ValueTask RemoveTenantAsync(string tenantId, CancellationToken ct)
     {
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         await maybeApplyChanges().ConfigureAwait(false);
+
+        // Resolve the tenant's shard BEFORE deleting the assignment row — deliberately NOT
+        // filtered on the disabled flag, so removing a soft-deleted tenant still cleans its shard.
+        var databaseId = (await _dataSource.Value
+            .CreateCommand(
+                $"select database_id from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id")
+            .With("id", tenantId)
+            .ExecuteScalarAsync(ct).ConfigureAwait(false)) as string;
+
+        if (databaseId != null)
+        {
+            // Ensure the shard database is materialized in the local cache (this store may never
+            // have resolved the tenant) — mirrors findOrAssignTenantDatabaseAsync's cache repair.
+            if (!_databasesById.TryFind(databaseId, out var database))
+            {
+                await BuildDatabases().ConfigureAwait(false);
+                _databasesById.TryFind(databaseId, out database);
+            }
+
+            if (database != null)
+            {
+                // Shard-side DDL FIRST (outside the master advisory lock — same rationale as
+                // AssignTenantAsync's partition DDL: the lock guards registry rows, not the
+                // shard-local idempotent DDL). If this throws, the assignment row is still
+                // intact and the removal can simply be re-run.
+                await dropPartitionsForTenant(database, tenantId, ct).ConfigureAwait(false);
+            }
+        }
 
         await _dataSource.Value
             .CreateCommand(
                 $"delete from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id")
             .With("id", tenantId)
             .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+        if (databaseId != null)
+        {
+            // #4763-style recompute: without this the source shard's tenant_count stays
+            // permanently inflated after removals and UseSmallestDatabaseAssignment mis-ranks it.
+            await _dataSource.Value.CreateCommand(
+                    $"update {_schemaName}.{DatabasePoolTable.TableName} set tenant_count = (select count(*) from {_schemaName}.{TenantAssignmentTable.TableName} where database_id = :did and {MartenTenantAssignmentTable.DisabledColumn} = false) where database_id = :did")
+                .With("did", databaseId)
+                .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        // #4868: shrink the in-memory registry so DescribeDatabasesAsync stops reporting the
+        // tenant on THIS node immediately (other nodes shrink via BuildDatabases' fresh read).
+        _tenantToDatabase = _tenantToDatabase.Remove(tenantId);
+        if (databaseId != null && _databasesById.TryFind(databaseId, out var cached))
+        {
+            cached.TenantIds.Remove(tenantId);
+        }
+    }
+
+    /// <summary>
+    /// Drop the tenant's shard-side footprint — the mirror of <see cref="createPartitionsForTenant"/>.
+    /// Sharded provisioning has a 1:1 tenant↔partition-suffix shape (enforced in
+    /// <c>AdvancedOperations.AddMartenManagedTenantsAsync</c>'s sharded routing), so the suffix is
+    /// always the tenant id. Skips the partition drop when the shard's own
+    /// <c>mt_tenant_partitions</c> registry no longer knows the tenant (partial prior removal) so
+    /// re-runs stay safe, but always runs the #4683 sequence/progression cleanup, which is
+    /// idempotent by construction.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately NOT Weasel's <c>ManagedListPartitions.DropPartitionFromAllTables</c>: that
+    /// path interpolates the partition table name unquoted into the DETACH/DROP DDL, which fails
+    /// with 42601 for any tenant id that isn't a bare PostgreSQL identifier (hyphens, uppercase —
+    /// e.g. GUID-shaped or "tenant-a"-style ids). The sharded assignment path never restricted
+    /// tenant ids the way <c>AddMartenManagedTenantsAsync</c>'s
+    /// <c>AssertValidPostgresqlIdentifiers</c> does — the CREATE side quotes properly, so quoted
+    /// partitions exist in the wild and the drop must quote too. Fold this back into Weasel when
+    /// its drop path learns to quote (see the PR for #4868/#4880).
+    /// </remarks>
+    private async Task dropPartitionsForTenant(MartenDatabase database, string tenantId, CancellationToken ct)
+    {
+        if (_options.TenantPartitions == null)
+        {
+            return;
+        }
+
+        IReadOnlyList<string> registered;
+        try
+        {
+            registered = await database.FetchManagedTenantIdsAsync(ct).ConfigureAwait(false);
+        }
+        catch (NpgsqlException)
+        {
+            // The shard's partition registry table was never provisioned (assignment row
+            // committed but the partition DDL never ran) — nothing shard-side to drop.
+            return;
+        }
+
+        if (registered.Contains(tenantId, StringComparer.Ordinal))
+        {
+            var logger = _options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+
+            // Same table enumeration Weasel's managed drop uses — every table whose LIST
+            // partitioning is managed by this store's tenant-partition manager.
+            var tables = database.AllObjects().OfType<Table>()
+                .Where(x => x.Partitioning is ListPartitioning lp &&
+                            ReferenceEquals(lp.PartitionManager, _options.TenantPartitions.Partitions))
+                .ToArray();
+
+            await using var conn = database.CreateConnection();
+            await conn.OpenAsync(ct).ConfigureAwait(false);
+            try
+            {
+                // Remove the tenant from the shard's own registry FIRST (mirrors Weasel's
+                // ordering) — this is what the native coordinator's per-tenant re-expansion
+                // (ICrossTenantRebuildSource) reads, so the tenant's agents can be reaped even
+                // if a partition drop below fails midway.
+                await conn.CreateCommand(
+                        $"delete from {_options.TenantPartitions.TenantsTableName} where partition_value = :value")
+                    .With("value", tenantId)
+                    .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+                foreach (var table in tables)
+                {
+                    var quotedPartition = $"\"{table.Identifier.Schema}\".\"{table.Identifier.Name}_{tenantId}\"";
+
+                    var exists = await conn.CreateCommand("select to_regclass(:name)::text")
+                        .With("name", quotedPartition)
+                        .ExecuteScalarAsync(ct).ConfigureAwait(false);
+                    if (exists == null || exists == DBNull.Value)
+                    {
+                        continue;
+                    }
+
+                    // Best-effort DETACH (CONCURRENTLY first for lock-friendliness) — the DROP
+                    // TABLE below is authoritative either way: PostgreSQL drops an attached
+                    // partition directly, and IF EXISTS keeps re-runs safe.
+                    try
+                    {
+                        await conn.CreateCommand(
+                                $"alter table {table.Identifier.QualifiedName} detach partition {quotedPartition} CONCURRENTLY;")
+                            .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                    }
+                    catch (Exception)
+                    {
+                        try
+                        {
+                            await conn.CreateCommand(
+                                    $"alter table {table.Identifier.QualifiedName} detach partition {quotedPartition};")
+                                .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+                        }
+                        catch (Exception)
+                        {
+                            // already detached by a prior partial run — the drop below settles it
+                        }
+                    }
+
+                    await conn.CreateCommand($"drop table if exists {quotedPartition} cascade;")
+                        .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+                    logger.LogInformation(
+                        "Dropped partition {Partition} of {Table} for removed tenant {TenantId}",
+                        quotedPartition, table.Identifier.QualifiedName, tenantId);
+                }
+            }
+            finally
+            {
+                await conn.CloseAsync().ConfigureAwait(false);
+            }
+        }
+
+        // #4683 cleanup: the freestanding per-tenant event sequence and the tenant's
+        // mt_event_progression rows (per-projection + HighWaterMark:{tenant}) leak otherwise.
+        // Gated internally on UseTenantPartitionedEvents.
+        await Internal.PerTenantPartitionedCleanup.RunAsync(
+            _options, database, [tenantId],
+            new Dictionary<string, string> { [tenantId] = tenantId },
+            ct).ConfigureAwait(false);
     }
 
     #endregion
@@ -403,9 +632,8 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
     // surface (AddTenantAsync(tenantId, databaseId)) maps to AssignTenantAsync, and the
     // auto-assign override (AddTenantAsync(tenantId, ct) → string) maps to the same path
     // that Advanced.AddTenantToShardAsync(tenantId, ct) drives. The DisableTenantAsync /
-    // EnableTenantAsync / AllDisabledAsync surface is intentionally NOT yet implemented —
-    // the sharded tenant assignment table has no `disabled` column and no consumer needs
-    // those yet. Add column + lifecycle if/when a consumer surfaces.
+    // EnableTenantAsync / AllDisabledAsync soft-delete surface (#4607) is backed by the
+    // Marten-added `disabled` column on the assignment table.
 
     /// <summary>
     /// jasperfx#413 / #4598: store-agnostic FindAsync. For ShardedTenancy the "value" is
@@ -480,16 +708,37 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         await maybeApplyChanges().ConfigureAwait(false);
 
-        await _dataSource.Value
+        // `returning database_id` so the in-memory registry + pool counts can shrink below.
+        var databaseId = (await _dataSource.Value
             .CreateCommand(
-                $"update {_schemaName}.{TenantAssignmentTable.TableName} set {MartenTenantAssignmentTable.DisabledColumn} = true where tenant_id = :id")
+                $"update {_schemaName}.{TenantAssignmentTable.TableName} set {MartenTenantAssignmentTable.DisabledColumn} = true where tenant_id = :id returning database_id")
             .With("id", tenantId)
-            .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false)) as string;
 
         // Evict from cache (and dispose only if no other tenant is using the same
         // shared shard database — sharded tenancy reuses one MartenDatabase per
         // assigned shard across tenants, unlike MasterTableTenancy's per-tenant DBs).
         _tenantToDatabase = _tenantToDatabase.Remove(tenantId);
+
+        if (databaseId != null)
+        {
+            // #4868: shrink the shard's in-memory TenantIds so this store's usage descriptor
+            // (DescribeDatabasesAsync → TryCreateUsage) stops reporting the disabled tenant —
+            // hosts that retire per-tenant daemon agents off the descriptor's supported-set
+            // diff converge without a restart. All data, partitions, and progression rows are
+            // RETAINED (soft-delete) — EnableTenantAsync restores everything in place.
+            if (_databasesById.TryFind(databaseId, out var database))
+            {
+                database.TenantIds.Remove(tenantId);
+            }
+
+            // Disabled tenants are excluded from assignment ranking (AssignTenantAsync's
+            // recompute filters on disabled = false), so keep tenant_count in step here too.
+            await _dataSource.Value.CreateCommand(
+                    $"update {_schemaName}.{DatabasePoolTable.TableName} set tenant_count = (select count(*) from {_schemaName}.{TenantAssignmentTable.TableName} where database_id = :did and {MartenTenantAssignmentTable.DisabledColumn} = false) where database_id = :did")
+                .With("did", databaseId)
+                .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -503,11 +752,29 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         await maybeApplyChanges().ConfigureAwait(false);
 
-        await _dataSource.Value
+        var databaseId = (await _dataSource.Value
             .CreateCommand(
-                $"update {_schemaName}.{TenantAssignmentTable.TableName} set {MartenTenantAssignmentTable.DisabledColumn} = false where tenant_id = :id")
+                $"update {_schemaName}.{TenantAssignmentTable.TableName} set {MartenTenantAssignmentTable.DisabledColumn} = false where tenant_id = :id returning database_id")
             .With("id", tenantId)
-            .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false)) as string;
+
+        if (databaseId != null)
+        {
+            // #4868: symmetric with DisableTenantAsync — re-grow the in-memory registry
+            // eagerly so the usage descriptor reports the tenant again on this store
+            // without waiting for the next fresh-read reconciliation, and put the tenant
+            // back into the assignment-ranking count.
+            if (_databasesById.TryFind(databaseId, out var database))
+            {
+                database.TenantIds.Fill(tenantId);
+                _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
+            }
+
+            await _dataSource.Value.CreateCommand(
+                    $"update {_schemaName}.{DatabasePoolTable.TableName} set tenant_count = (select count(*) from {_schemaName}.{TenantAssignmentTable.TableName} where database_id = :did and {MartenTenantAssignmentTable.DisabledColumn} = false) where database_id = :did")
+                .With("did", databaseId)
+                .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+        }
     }
 
     Task IDynamicTenantSource<string>.RemoveTenantAsync(string tenantId)
@@ -748,8 +1015,17 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
         var list = _databasesById.Enumerate().Select(pair =>
         {
+            // MartenDatabase.Describe() already copies TenantIds onto the descriptor —
+            // Fill (not AddRange) so each tenant id appears exactly once. The BuildDatabases
+            // call above reconciled TenantIds against a fresh assignment read (#4868), so
+            // the descriptor shrinks after RemoveTenantAsync/DisableTenantAsync — including
+            // removals made from other nodes — without a restart.
             var descriptor = pair.Value.Describe();
-            descriptor.TenantIds.AddRange(pair.Value.TenantIds);
+            foreach (var tenantId in pair.Value.TenantIds)
+            {
+                descriptor.TenantIds.Fill(tenantId);
+            }
+
             return descriptor;
         }).ToList();
 
