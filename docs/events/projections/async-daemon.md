@@ -130,7 +130,7 @@ opts.Projections.MaxConcurrentBatchWritesPerDatabase = 4;
 
 * **`MaxConcurrentEventLoadsPerDatabase`** (default 4) caps how many agents may load pages of events from the
   database concurrently. All of a daemon's agents share one throttle, collapsing the steady-state connection
-  footprint to *O(databases)* with no measured throughput cost.
+  footprint to _O(databases)_ with no measured throughput cost.
 * **`MaxConcurrentBatchWritesPerDatabase`** (default 4) caps how many projection batches may execute their SQL
   (the commit round trip) concurrently against one database.
 

@@ -459,7 +459,7 @@ itself and requires no extra configuration. <Badge type="tip" text="9.13" />
 Sharded multi-tenancy also composes with
 [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning): sharding distributes tenants
 across the database pool, while `Events.UseTenantPartitionedEvents` physically isolates each tenant's events (and
-projection progress) *within* whichever database hosts that tenant, running one daemon agent per (database, tenant).
+projection progress) _within_ whichever database hosts that tenant, running one daemon agent per (database, tenant).
 
 ## Dynamically applying changes to tenants databases
 

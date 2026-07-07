@@ -190,7 +190,7 @@ combination with no further configuration:
   distributed hosts group all of one database's agents on the same node, keeping the connection count per database
   flat instead of every node holding connections to every database.
 * **Daemon connection governors.** The running daemon caps concurrent event loads and concurrent batch writes at 4
-  per database by default, so the connection footprint stays *O(databases)* rather than growing with
+  per database by default, so the connection footprint stays _O(databases)_ rather than growing with
   (projections × tenants). See [Daemon Connection Governors](/events/projections/async-daemon#daemon-connection-governors).
 * **A pool-derived rebuild cap.** Projection rebuilds fan out one cell per (projection × tenant), capped by default
   at `max(1, MaxPoolSize / 8)` concurrent cells per database. See
