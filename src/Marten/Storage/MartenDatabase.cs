@@ -30,7 +30,11 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
         StoreOptions options,
         NpgsqlDataSource npgsqlDataSource,
         string identifier
-    ): base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, npgsqlDataSource)
+        // #4874: flow the data-source ownership into the Weasel base (weasel#345/#346) so the inherited
+        // async PostgresqlDatabase.DisposeAsync() also skips disposing a caller-owned NpgsqlDataSource —
+        // the sync MartenDatabase.Dispose() below was already guarded by #4903, but the async path was not.
+    ): base(options, options.AutoCreateSchemaObjects, options.Advanced.Migrator, identifier, npgsqlDataSource,
+        options.OwnsPrimaryDataSource)
     {
         _features = options.Storage;
         Options = options;
@@ -136,8 +140,10 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
     {
         // #4874: never dispose a data source the caller owns (supplied via Connection(NpgsqlDataSource)
         // / UseNpgsqlDataSource). Disposing it aborts every connection rented from it — fatal when the
-        // caller shares one across stores or a running daemon still holds connections.
-        if (Options.OwnsPrimaryDataSource)
+        // caller shares one across stores or a running daemon still holds connections. OwnsDataSource is
+        // the Weasel base flag we set from Options.OwnsPrimaryDataSource in the constructor, so the sync
+        // and async (base DisposeAsync) teardown paths read the exact same ownership signal.
+        if (OwnsDataSource)
         {
             DataSource?.Dispose();
         }

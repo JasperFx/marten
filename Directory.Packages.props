@@ -181,7 +181,10 @@
     <!-- 9.16.0 (weasel#343): closed-shape EVENT storage hierarchy + operations + new neutral op
          bases moved into Weasel.Storage — EventStorage<TId>, the 3 storages, EventStorageBuilder,
          and the per-event/insert/update/assert ops — so Marten and Polecat share them (#4821 event E3). -->
-    <!-- 9.16.1: latest Weasel patch consumed for the 9.13.0-alpha.3 Marten alpha. -->
+    <!-- 9.16.1: latest Weasel patch consumed for the 9.13.0-alpha.3 Marten alpha. Also carries
+         weasel#345/#346: PostgresqlDatabase.DisposeAsync() honors an OwnsDataSource flag so a
+         caller-owned NpgsqlDataSource is not disposed on the async teardown path — the Weasel
+         sibling of marten#4874 (the sync path was guarded Marten-side by #4903). -->
     <PackageVersion Include="Weasel.Postgresql" Version="9.16.1" />
     <PackageVersion Include="Weasel.Storage" Version="9.16.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
