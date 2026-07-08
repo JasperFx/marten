@@ -146,7 +146,7 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.2.1" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.16.1" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -179,8 +179,9 @@
     <!-- 9.16.0 (weasel#343): closed-shape EVENT storage hierarchy + operations + new neutral op
          bases moved into Weasel.Storage — EventStorage<TId>, the 3 storages, EventStorageBuilder,
          and the per-event/insert/update/assert ops — so Marten and Polecat share them (#4821 event E3). -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.16.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.16.0" />
+    <!-- 9.16.1: latest Weasel patch consumed for the 9.13.0-alpha.3 Marten alpha. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.16.1" />
+    <PackageVersion Include="Weasel.Storage" Version="9.16.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
