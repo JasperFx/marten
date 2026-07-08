@@ -146,7 +146,9 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.16.1" />
+    <!-- Held at 9.2.1: investigate whether newer Weasel.EntityFrameworkCore builds
+         are actually being published (see Weasel follow-up issue). -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.2.1" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
