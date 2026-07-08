@@ -199,7 +199,10 @@ internal class EventTracingConnectionLifetime:
             var ops = pages.SelectMany(x => x.Operations);
             foreach (var op in ops)
             {
-                if (op is AppendEventOperationBase eventOp)
+                // #4821 event E3: closed-shape append ops derive from the neutral
+                // Weasel.Storage.AppendEventOperationBase (the only append path in v9);
+                // Marten's like-named base has no live derivations, so probe the neutral one.
+                if (op is Weasel.Storage.AppendEventOperationBase eventOp)
                 {
                     _databaseActivity?.AddEvent(new ActivityEvent("marten.append.event",
                         tags: new ActivityTagsCollection { { "Type", eventOp.Event.EventTypeName } }));

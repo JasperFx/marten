@@ -67,7 +67,9 @@ public partial class EventGraph
             var tombstone = new Tombstone();
             var mapping = EventMappingFor<Tombstone>();
 
-            var operations = new List<IStorageOperation>();
+            // #4821 event E3: closed-shape event ops implement only the neutral
+            // Weasel.Storage.IStorageOperation; UpdateBatch already takes the neutral list.
+            var operations = new List<Weasel.Storage.IStorageOperation>();
             var storage = session.EventStorage();
 
             operations.Add(new EstablishTombstoneStream(this, session.TenantId));
