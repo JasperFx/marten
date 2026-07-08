@@ -39,7 +39,11 @@ internal class DictionaryContainsKeyFilter: ISqlFragment, ICompiledQueryAwareFil
             builder.Append(", ");
         }
 
-        builder.Append(_keyText);
+        // The key text is inlined into a single-quoted '{ ... }' JSON-path literal. Depending
+        // on the serializer the raw value may contain unescaped single quotes (the Newtonsoft
+        // serializer leaves ' as-is, and the Enum branch bypasses the serializer entirely),
+        // so escape embedded single quotes to keep the key as data and prevent SQL injection.
+        builder.Append(_keyText.Replace("'", "''"));
         builder.Append("}' is not null");
     }
 
