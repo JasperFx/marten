@@ -19,7 +19,7 @@ using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
-public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicTenantSource<string>
+public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicTenantSource<string>, IAsyncDisposable
 {
     private readonly MasterTableTenancyOptions _configuration;
     private readonly Lazy<NpgsqlDataSource> _dataSource;
@@ -72,6 +72,21 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
         if (_dataSource.IsValueCreated)
         {
             _dataSource.Value.Dispose();
+        }
+    }
+
+    // #4874: async teardown mirror of Dispose() so DocumentStore.DisposeAsync() runs each tenant
+    // database's OwnsDataSource-aware async disposal rather than the blocking sync chain.
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var entry in _databases.Enumerate())
+        {
+            await entry.Value.DisposeAsync().ConfigureAwait(false);
+        }
+
+        if (_dataSource.IsValueCreated)
+        {
+            await _dataSource.Value.DisposeAsync().ConfigureAwait(false);
         }
     }
 

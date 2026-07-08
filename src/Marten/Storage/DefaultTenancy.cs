@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ using Weasel.Core.Migrations;
 
 namespace Marten.Storage;
 
-internal class DefaultTenancy: Tenancy, ITenancy
+internal class DefaultTenancy: Tenancy, ITenancy, IAsyncDisposable
 {
     private readonly NpgsqlDataSource _dataSource;
     private readonly StoreOptions _options;
@@ -68,6 +69,13 @@ internal class DefaultTenancy: Tenancy, ITenancy
     public void Dispose()
     {
         Default.Database.Dispose();
+    }
+
+    // #4874: prefer async teardown so DocumentStore.DisposeAsync() runs the database's
+    // OwnsDataSource-aware async disposal instead of falling back to the blocking sync chain.
+    public async ValueTask DisposeAsync()
+    {
+        await Default.Database.DisposeAsync().ConfigureAwait(false);
     }
 
     public DatabaseCardinality Cardinality => DatabaseCardinality.Single;

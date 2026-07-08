@@ -239,4 +239,12 @@ internal class StandinDatabase: IMartenDatabase
     {
         ((IDisposable)Tracker)?.Dispose();
     }
+
+    // #4874: IMartenDatabase is IAsyncDisposable so async store teardown never falls back to the
+    // blocking sync chain. This stand-in holds no data source; just mirror Dispose().
+    public ValueTask DisposeAsync()
+    {
+        ((IDisposable)Tracker)?.Dispose();
+        return ValueTask.CompletedTask;
+    }
 }

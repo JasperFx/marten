@@ -36,7 +36,7 @@ public interface ISingleServerMultiTenancy
 }
 
 internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDatabase>, ITenancy,
-    ISingleServerMultiTenancy, ITenancyWithMasterDatabase
+    ISingleServerMultiTenancy, ITenancyWithMasterDatabase, IAsyncDisposable
 {
     private readonly Lazy<NpgsqlDataSource> _masterDataSource;
     private readonly StoreOptions _options;
@@ -85,6 +85,21 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
         foreach (var entry in _tenants.Enumerate()) entry.Value.Database.Dispose();
 
         _default?.Database?.Dispose();
+    }
+
+    // #4874: async teardown mirror of Dispose() so DocumentStore.DisposeAsync() runs each tenant
+    // database's OwnsDataSource-aware async disposal rather than the blocking sync chain.
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var entry in _tenants.Enumerate())
+        {
+            await entry.Value.Database.DisposeAsync().ConfigureAwait(false);
+        }
+
+        if (_default?.Database != null)
+        {
+            await _default.Database.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     public ValueTask<IMartenDatabase> FindDatabase(DatabaseId id)
