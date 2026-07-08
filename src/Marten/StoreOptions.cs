@@ -515,6 +515,14 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     private Lazy<ITenancy>? _tenancy;
     private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory = DefaultNpgsqlDataSourceBuilderFactory;
     private INpgsqlDataSourceFactory _npgsqlDataSourceFactory;
+
+    /// <summary>
+    /// #4874: false when the primary NpgsqlDataSource was supplied by the caller
+    /// (<see cref="Connection(NpgsqlDataSource)"/> / <c>UseNpgsqlDataSource</c>) and Marten must not
+    /// dispose it. True (default) when Marten built the data source from a connection string and owns
+    /// its lifetime.
+    /// </summary>
+    internal bool OwnsPrimaryDataSource { get; set; } = true;
     private readonly List<Type> _compiledQueryTypes = new();
 
     /// <summary>
@@ -620,7 +628,15 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///     When doing that you need to handle data source disposal.
     /// </remarks>
     /// <param name="dataSource"></param>
-    public void Connection(NpgsqlDataSource dataSource) =>
+    public void Connection(NpgsqlDataSource dataSource)
+    {
+        // #4874: an externally-supplied data source is owned by the caller ("you need to handle
+        // data source disposal" — see the remarks on this method / Connection overloads). Marten
+        // must NOT dispose it on store/database teardown: disposing an NpgsqlDataSource aborts every
+        // physical connection rented from it, so if the caller shares one across stores (or keeps
+        // using it), a Marten teardown pulls the socket out from under an in-flight operation.
+        OwnsPrimaryDataSource = false;
+
         DataSourceFactory(
             new SingleNpgsqlDataSourceFactory(
                 NpgsqlDataSourceBuilderFactory,
@@ -628,6 +644,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             ),
             dataSource.ConnectionString
         );
+    }
 
     /// <summary>
     ///     Supply a mechanism for resolving an NpgsqlConnection object based on the NpgsqlDataSource
