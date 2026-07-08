@@ -182,11 +182,38 @@ dotnet run --project src/Marten.ScaleTesting -- daemonload-multinode \
     --max-connections-per-node 16 --metrics daemonload-multinode.json --trace daemonload-multinode.csv
 ```
 
-To get agents running on DIFFERENT nodes simultaneously (rather than one hot leader), combine
-with the sharded topology — multiple shard databases, whose per-database locks CAN land on
-different nodes (that cross-node distribution variant, and the Wolverine-managed distribution mode
-from wolverine#3328, are the remaining WS6 multi-node work; the harness references only Marten,
-not Wolverine).
+To get agents running on DIFFERENT nodes simultaneously (rather than one hot leader), use the
+sharded topology below — multiple shard databases, whose per-database locks land on different
+nodes.
+
+### Sharded multi-node — cross-node distribution (marten#4883, epic jasperfx#486 WS6)
+
+`daemonload-multinode-sharded` pools `--tenants` tenants across `--databases` shard databases via
+`MultiTenantedWithShardedDatabases`, then launches `--nodes` HotCold node processes over that
+sharded store. Because each shard database is its own leadership lock, the distributor spreads
+shard leadership across nodes — node A leads `shard_0`, node B leads `shard_1` — which is the
+cross-node agent distribution the epic's topology matrix calls for (single-database HotCold above
+can only ever have one hot leader).
+
+It asserts: **distribution** (leadership spans multiple nodes; `--require-distribution` makes it a
+hard gate, off by default because a fast node can transiently grab every shard before the
+leadership poll rebalances); **redistribution** on `--kill-node-after-seconds` (a killed node's
+shards move to surviving nodes with no tenant stalled); **per-tenant catch-up** on every shard; and
+a **per-node × per-shard** connection footprint that stays governed (`--max-connections-per-node-shard`).
+
+```bash
+# 3 nodes over 3 shard databases (100 tenants pooled across them); kill a node 30s in and
+# verify its shards redistribute and every tenant catches up on its home shard.
+dotnet run --project src/Marten.ScaleTesting -- daemonload-multinode-sharded \
+    --nodes 3 --databases 3 --tenants 100 --projections 2 --duration-seconds 120 \
+    --kill-node-after-seconds 30 --wipe \
+    --max-connections-per-node-shard 16 --metrics daemonload-multinode-sharded.json \
+    --trace daemonload-multinode-sharded.csv
+```
+
+The remaining WS6 multi-node work is the Wolverine-managed distribution mode (automatic per-tenant
+fan-out + affinity from wolverine#3328); this harness references only Marten, not Wolverine, so
+that variant lives in Wolverine's own load suite.
 
 ## The `rebuildload` scenario (marten#4884, epic jasperfx#486 WS6/WS3)
 

@@ -28,7 +28,7 @@ internal sealed class NodeProcess: IDisposable
     /// Launch a node process of this same binary and wait for its stdout <c>NODE_READY</c> line so
     /// the coordinator only starts sampling once the daemon is actually up.
     /// </summary>
-    public static async Task<NodeProcess> LaunchAsync(int nodeIndex, int projections)
+    public static async Task<NodeProcess> LaunchAsync(int nodeIndex, int projections, int databases = 1)
     {
         // Re-invoke the CURRENT assembly via `dotnet <thisdll> daemonload-node ...`. Using the
         // managed dll path (not the apphost) keeps this portable across the way `dotnet run`
@@ -48,6 +48,8 @@ internal sealed class NodeProcess: IDisposable
         psi.ArgumentList.Add(nodeIndex.ToString());
         psi.ArgumentList.Add("--projections");
         psi.ArgumentList.Add(projections.ToString());
+        psi.ArgumentList.Add("--databases");
+        psi.ArgumentList.Add(databases.ToString());
 
         var process = Process.Start(psi)
                       ?? throw new InvalidOperationException($"Failed to launch node {nodeIndex}");
