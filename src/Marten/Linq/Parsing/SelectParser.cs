@@ -75,7 +75,12 @@ internal class SelectParser: ExpressionVisitor
         var raw = value.Value;
         if (raw is string r)
         {
-            NewObject.Members[_currentField] = new LiteralSql($"'{r.TrimStart('"').TrimEnd('"')}'");
+            // The projected constant is a runtime value (ReduceToConstant evaluates captured
+            // locals), so it can be attacker-influenced. It is emitted verbatim into the
+            // jsonb_build_object SELECT list, so escape embedded single quotes to keep it as
+            // data and prevent SQL injection — mirroring Ordering.BuildNgramRankExpression.
+            var literal = r.TrimStart('"').TrimEnd('"').Replace("'", "''");
+            NewObject.Members[_currentField] = new LiteralSql($"'{literal}'");
         }
         else if (raw is null)
         {

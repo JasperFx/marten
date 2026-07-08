@@ -16,7 +16,14 @@ internal class DictionaryItemMember<TKey, TValue>: QueryableMember, IComparableM
         Parent = parent;
         Key = key;
 
-        RawLocator = TypedLocator = $"{Parent.TypedLocator} ->> '{key}'";
+        // The key is a runtime value (see SimpleExpression: it comes from the indexer
+        // argument evaluated at query-build time, so it is NOT restricted to compile-time
+        // literals and can be attacker-influenced in "filter by attribute name" patterns).
+        // It is inlined into a single-quoted JSON-path literal, so escape embedded single
+        // quotes to keep it as data and prevent SQL injection — mirroring the escaping in
+        // Ordering.BuildNgramRankExpression. The comparison value is already parameterized.
+        var escapedKey = key.ToString()!.Replace("'", "''");
+        RawLocator = TypedLocator = $"{Parent.TypedLocator} ->> '{escapedKey}'";
 
         if (typeof(TValue) != typeof(string))
         {
