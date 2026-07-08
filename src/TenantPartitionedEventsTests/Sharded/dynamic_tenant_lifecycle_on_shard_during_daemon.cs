@@ -294,6 +294,52 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             // ... and the removed tenant's rows never came back across those polling cycles.
             survivorRows.Any(r => r.Name.EndsWith($":{tenant2}", StringComparison.Ordinal))
                 .ShouldBeFalse("no per-tenant progression rows may be re-persisted for the removed tenant");
+
+            // ---- Phase 3 (#4880): RE-ADD tenant 2 after a destructive removal — the running
+            // coordinator gives it a FRESH agent that catches up from a fresh per-tenant sequence,
+            // pinning the "a re-added tenant starts fresh" half of the removal contract at the
+            // daemon level (the registry-level version lives in
+            // MultiTenancyTests/sharded_tenancy_remove_lifecycle_tests). ----
+            await _store.Advanced.AddTenantToShardAsync(tenant2, shard, CancellationToken.None);
+
+            // Re-add re-provisions the per-tenant sequence fresh (the old one was dropped on remove).
+            (await SequenceExistsAsync(shardConnStr, $"mt_events_sequence_{tenant2}")).ShouldBeTrue(
+                $"re-adding tenant 2 must re-provision mt_events_sequence_{tenant2} on shard {shard}");
+
+            var reStream2 = Guid.NewGuid();
+            await using (var session = _store.LightweightSession(tenant2))
+            {
+                session.Events.StartStream<ShardedDaemonCounter>(reStream2,
+                    new ShardedDaemonEvent("t2b-1"), new ShardedDaemonEvent("t2b-2"),
+                    new ShardedDaemonEvent("t2b-3"));
+                await session.SaveChangesAsync();
+            }
+
+            // The running coordinator re-discovers the re-added tenant on its next leadership cycle:
+            // a fresh {Projection}:All:tenant2 agent starts and catches up to the tenant's own height.
+            var readdedRows = await WaitForProgressionAsync(shardConnStr, r =>
+                    SeqOf(r, $"{ShardedDaemonProjection.ProjectionName}:All:{tenant2}") >= 3 &&
+                    SeqOf(r, $"HighWaterMark:{tenant2}") >= 3,
+                30.Seconds(),
+                "the re-added tenant gets a FRESH agent + progression on the running coordinator");
+            DumpRows("shard A progression after re-adding tenant 2", readdedRows);
+
+            // Fresh start: the destructive remove dropped tenant 2's partitions, so the pre-removal
+            // projection doc is gone and only the 3 newly-appended events are projected.
+            await using (var query = _store.QuerySession(tenant2))
+            {
+                var reDoc = await query.LoadAsync<ShardedDaemonCounter>(reStream2);
+                reDoc.ShouldNotBeNull("the re-added tenant's projection doc must materialize on shard A");
+                reDoc!.EventCount.ShouldBe(3);
+
+                (await query.LoadAsync<ShardedDaemonCounter>(stream2))
+                    .ShouldBeNull("the pre-removal projection doc must not survive a destructive remove + re-add");
+            }
+
+            // The re-added tenant's agent is running again on the same shard daemon.
+            daemon.CurrentAgents().Select(x => x.Name.Identity)
+                .ShouldContain($"{ShardedDaemonProjection.ProjectionName}:All:{tenant2}",
+                    "the coordinator must start a fresh agent for the re-added tenant");
         }
         finally
         {

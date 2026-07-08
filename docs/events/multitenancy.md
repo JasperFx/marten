@@ -275,6 +275,41 @@ The cleanup identifies per-tenant `mt_event_progression` rows by parsing the
 `ShardName` grammar rather than pattern-matching the name, so a projection whose name
 happens to end with a tenant id is never mistakenly deleted (#4683).
 
+#### Removing tenants at runtime <Badge type="tip" text="9.13" />
+
+Under `MultiTenantedWithShardedDatabases()`, removing or disabling a tenant is honored by an
+**already-running** store — no process restart is required. Removal shrinks the store's usage
+descriptor (`DescribeDatabasesAsync`) immediately, and a running async daemon **retires that
+tenant's per-tenant projection agents on its next leadership cycle** (the coordinator re-expands
+each shard's agent set from that shard's own tenant registry and reaps the agents whose tenant is
+gone). The surviving tenants keep processing on the same shard daemon, and no further progression
+rows are written for the departed tenant.
+
+```cs
+// Destructive removal on the tenant's shard: unassigns the tenant, drops its partitions,
+// its per-tenant mt_events_sequence, and its per-tenant mt_event_progression rows. The
+// running daemon reaps the tenant's agents; a later re-add starts the tenant fresh (a new
+// per-tenant sequence starting at 1, no surviving projection state).
+await store.Advanced.RemoveTenantFromShardAsync("tenant-b", cancellationToken);
+
+// Re-adding the same tenant later provisions fresh partitions + sequence, and the running
+// daemon starts a new agent for it that catches up from the tenant's new (empty) baseline.
+await store.Advanced.AddTenantToShardAsync("tenant-b", cancellationToken);
+```
+
+::: tip
+`RemoveTenantFromShardAsync` is **destructive** — it drops the tenant's shard-side data. For a
+**non-destructive** soft-delete that only hides the tenant from the usage descriptor (its
+partitions, per-tenant sequence, and registry rows are all retained, and re-enabling restores it
+in place), use the sharded tenancy's `DisableTenantAsync` / `EnableTenantAsync` instead:
+
+```cs
+var tenancy = (IDynamicTenantSource<string>)store.Options.Tenancy;
+await tenancy.DisableTenantAsync("tenant-b");   // descriptor shrinks; shard data retained
+await tenancy.EnableTenantAsync("tenant-b");    // restored in place, no re-seeding needed
+```
+:::
+
 ### Migrating an Existing Conjoined Store
 
 ::: warning
