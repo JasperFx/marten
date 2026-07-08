@@ -32,7 +32,7 @@ public interface IStaticMultiTenancy
     void AddSingleTenantDatabase(string connectionString, string tenantId);
 }
 
-public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
+public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy, IAsyncDisposable
 {
     private readonly INpgsqlDataSourceFactory _dataSourceFactory;
     private ImHashMap<string, MartenDatabase> _databases = ImHashMap<string, MartenDatabase>.Empty;
@@ -74,6 +74,16 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
         foreach (var entry in _tenants.Enumerate())
         {
             entry.Value.Database.Dispose();
+        }
+    }
+
+    // #4874: async teardown mirror of Dispose() so DocumentStore.DisposeAsync() runs each tenant
+    // database's OwnsDataSource-aware async disposal rather than the blocking sync chain.
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var entry in _tenants.Enumerate())
+        {
+            await entry.Value.Database.DisposeAsync().ConfigureAwait(false);
         }
     }
 

@@ -20,7 +20,7 @@ using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
-public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProjectionDatabase
+public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProjectionDatabase, IAsyncDisposable
 {
     private readonly StorageFeatures _features;
 
@@ -149,6 +149,19 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
         }
 
         ((IDisposable)Tracker)?.Dispose();
+    }
+
+    // #4874: DocumentStore.DisposeAsync() disposes the tenancy through JasperFx's MaybeDisposeAllAsync,
+    // which prefers IAsyncDisposable. Before this, MartenDatabase only exposed the inherited
+    // PostgresqlDatabase.DisposeAsync() (which disposes the data source but not Marten's tracker), and no
+    // tenancy implemented IAsyncDisposable — so async store teardown always fell back to the synchronous
+    // Dispose() chain and blocked on NpgsqlDataSource.Dispose(). Re-implement IAsyncDisposable here so the
+    // async path releases the tracker AND runs the base's OwnsDataSource-aware async data-source disposal
+    // (weasel#346), matching Dispose() above.
+    public new async ValueTask DisposeAsync()
+    {
+        ((IDisposable)Tracker)?.Dispose();
+        await base.DisposeAsync().ConfigureAwait(false);
     }
 
     public override DatabaseDescriptor Describe()

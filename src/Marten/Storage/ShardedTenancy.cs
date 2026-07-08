@@ -28,7 +28,7 @@ namespace Marten.Storage;
 /// with conjoined tenancy and native PG list partitioning per tenant within each database.
 /// </summary>
 public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatabasePool,
-    IDynamicTenantSource<string>
+    IDynamicTenantSource<string>, IAsyncDisposable
 {
     private readonly StoreOptions _options;
     private readonly ShardedTenancyOptions _configuration;
@@ -81,6 +81,21 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         if (_dataSource.IsValueCreated)
         {
             _dataSource.Value.Dispose();
+        }
+    }
+
+    // #4874: async teardown mirror of Dispose() so DocumentStore.DisposeAsync() runs each shard
+    // database's OwnsDataSource-aware async disposal rather than the blocking sync chain.
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var entry in _databasesById.Enumerate())
+        {
+            await entry.Value.DisposeAsync().ConfigureAwait(false);
+        }
+
+        if (_dataSource.IsValueCreated)
+        {
+            await _dataSource.Value.DisposeAsync().ConfigureAwait(false);
         }
     }
 
