@@ -138,12 +138,12 @@ internal sealed class EventLoader: IEventLoader
         if (TenantFilterValue != null)
         {
             // Literal (not parameterized) so the Postgres planner partition-prunes
-            // mt_events at plan time. The tenant id is a Marten-registered
-            // partition suffix that was already validated against
-            // AdvancedOperations.AssertValidPostgresqlIdentifiers (letters, digits,
-            // underscores), so it cannot carry SQL-injection shape.
+            // mt_events at plan time. The tenant id is normally a Marten-registered
+            // partition suffix validated against AdvancedOperations.AssertValidPostgresqlIdentifiers
+            // (letters, digits, underscores), but escape embedded single quotes as
+            // defense-in-depth — an escaped literal still prunes at plan time.
             builder.Append(" and d.tenant_id = '");
-            builder.Append(TenantFilterValue);
+            builder.Append(TenantFilterValue.Replace("'", "''"));
             builder.Append("'");
         }
 
@@ -338,7 +338,7 @@ internal sealed class EventLoader: IEventLoader
             // doc) — partition-prunes mt_events so the MIN doesn't scan other tenants'
             // events looking for the next match.
             minBuilder.Append(" and d.tenant_id = '");
-            minBuilder.Append(TenantFilterValue);
+            minBuilder.Append(TenantFilterValue.Replace("'", "''"));
             minBuilder.Append("'");
         }
 

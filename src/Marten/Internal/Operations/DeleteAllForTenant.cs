@@ -16,9 +16,11 @@ namespace Marten.Internal.Operations;
 /// only the rebuilding tenant's projected docs without touching the other tenants'
 /// rows — TRUNCATE would wipe everyone, which is exactly the cross-tenant
 /// corruption jasperfx#407 Phase 2b's per-tenant rebuild path is designed to
-/// avoid. The tenant id arrives as a Marten-registered partition suffix
-/// (validated against <c>AdvancedOperations.AssertValidPostgresqlIdentifiers</c>:
-/// letters, digits, underscores) so it cannot carry SQL-injection shape.
+/// avoid. The tenant id is passed as a bound parameter (it is NOT guaranteed to have
+/// been validated against <c>AdvancedOperations.AssertValidPostgresqlIdentifiers</c> —
+/// that assertion only runs on partition-suffix registration, whereas this operation is
+/// also reachable from <c>IEventStore.DeleteProjectionProgressAsync</c> teardown with an
+/// unvalidated tenant id), so it must never be interpolated into the SQL.
 /// </summary>
 internal class DeleteAllForTenant: IStorageOperation
 {
@@ -40,9 +42,8 @@ internal class DeleteAllForTenant: IStorageOperation
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var name = _tableName ?? session.StorageFor(DocumentType).TableName.QualifiedName;
-        builder.Append($"delete from {name} where tenant_id = '");
-        builder.Append(_tenantId);
-        builder.Append("'");
+        builder.Append($"delete from {name} where tenant_id = ");
+        builder.AppendParameter(_tenantId);
     }
 
     public Type DocumentType { get; }

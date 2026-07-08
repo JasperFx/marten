@@ -223,7 +223,11 @@ public class DatabaseScopedTenantPartitions: ManagedListPartitions, IListPartiti
         // Same shape as the base implementation: group values by suffix.
         foreach (var group in source.GroupBy(x => x.Value))
         {
-            yield return new ListPartition(group.Key, group.Select(x => $"'{x.Key}'").ToArray());
+            // Escape embedded single quotes in the tenant id (the partition FOR VALUES IN
+            // literal) as defense-in-depth against SQL injection through an
+            // attacker-influenced tenant id in a SaaS auto-provisioning scenario.
+            yield return new ListPartition(group.Key,
+                group.Select(x => $"'{x.Key.Replace("'", "''")}'").ToArray());
         }
     }
 
