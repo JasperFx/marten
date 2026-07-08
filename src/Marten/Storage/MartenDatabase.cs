@@ -134,7 +134,14 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
 
     public void Dispose()
     {
-        DataSource?.Dispose();
+        // #4874: never dispose a data source the caller owns (supplied via Connection(NpgsqlDataSource)
+        // / UseNpgsqlDataSource). Disposing it aborts every connection rented from it — fatal when the
+        // caller shares one across stores or a running daemon still holds connections.
+        if (Options.OwnsPrimaryDataSource)
+        {
+            DataSource?.Dispose();
+        }
+
         ((IDisposable)Tracker)?.Dispose();
     }
 
