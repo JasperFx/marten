@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten;
@@ -60,6 +61,53 @@ public class Bug_4874_shared_datasource_not_disposed
         storeB.Dispose();
 
         // The caller still owns the data source — it was never disposed by Marten and remains usable.
+        await using var conn = sharedDataSource.CreateConnection();
+        await Should.NotThrowAsync(async () => await conn.OpenAsync());
+    }
+
+    // #4874 async path: the sync MartenDatabase.Dispose() was guarded by #4903, but the inherited
+    // Weasel PostgresqlDatabase.DisposeAsync() disposed the data source unconditionally (weasel#345).
+    // Consuming the OwnsDataSource-aware Weasel base and flowing ownership through the constructor must
+    // make the async teardown honor the same caller-owned contract.
+    [Fact]
+    public async Task disposing_database_async_does_not_abort_another_store_sharing_the_datasource()
+    {
+        await using var sharedDataSource = NpgsqlDataSource.Create(ConnectionSource.ConnectionString);
+
+        var storeA = DocumentStore.For(opts =>
+        {
+            opts.Connection(sharedDataSource);
+            opts.DatabaseSchemaName = "bug4874_shared_async";
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
+        });
+
+        var storeB = DocumentStore.For(opts =>
+        {
+            opts.Connection(sharedDataSource);
+            opts.DatabaseSchemaName = "bug4874_shared_async";
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
+        });
+
+        await using (var session = storeA.LightweightSession())
+        {
+            session.Store(new Target { Id = Guid.NewGuid() });
+            await session.SaveChangesAsync();
+        }
+
+        // Tear down store A's database through the async disposal path (the inherited
+        // PostgresqlDatabase.DisposeAsync()). It shares the caller-owned data source with store B, so it
+        // must NOT dispose it. Before the fix this aborted store B's next operation.
+        await ((IAsyncDisposable)storeA.Tenancy.Default.Database).DisposeAsync();
+
+        await using (var session = storeB.LightweightSession())
+        {
+            session.Store(new Target { Id = Guid.NewGuid() });
+            await Should.NotThrowAsync(async () => await session.SaveChangesAsync());
+        }
+
+        storeB.Dispose();
+
+        // The caller still owns the data source — the async teardown never disposed it.
         await using var conn = sharedDataSource.CreateConnection();
         await Should.NotThrowAsync(async () => await conn.OpenAsync());
     }
