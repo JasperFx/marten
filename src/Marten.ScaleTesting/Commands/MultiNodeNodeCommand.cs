@@ -29,7 +29,17 @@ public sealed class MultiNodeNodeCommand: JasperFxAsyncCommand<MultiNodeNodeInpu
         using var host = await new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(opts => MultiNodeStore.Configure(opts, input.ProjectionsFlag, applicationName))
+                services.AddMarten(opts =>
+                    {
+                        if (input.DatabasesFlag > 1)
+                        {
+                            MultiNodeStore.ConfigureSharded(opts, input.ProjectionsFlag, input.DatabasesFlag, applicationName);
+                        }
+                        else
+                        {
+                            MultiNodeStore.Configure(opts, input.ProjectionsFlag, applicationName);
+                        }
+                    })
                     .AddAsyncDaemon(DaemonMode.HotCold);
             })
             .StartAsync()

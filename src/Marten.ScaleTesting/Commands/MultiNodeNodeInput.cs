@@ -19,4 +19,7 @@ public sealed class MultiNodeNodeInput: NetCoreInput
 
     [Description("Number of async projections to register. MUST match the coordinator's value so all nodes contend on an identical projection set. Default: 2.")]
     public int ProjectionsFlag { get; set; } = 2;
+
+    [Description("Number of shard databases. 1 = single tenant-partitioned database (the default HotCold-failover scenario); >1 = sharded tenancy so the node builds a MultiTenantedWithShardedDatabases store and contends per-shard. MUST match the coordinator's value. Default: 1.")]
+    public int DatabasesFlag { get; set; } = 1;
 }
