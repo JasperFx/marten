@@ -55,9 +55,13 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
     {
         _serializer = options.Serializer();
 
+        // #4821 event E3: the storage hierarchy + builder now live in Weasel.Storage and the
+        // builder is dialect-agnostic — Marten supplies the Postgres dialect here (the same
+        // Marten-resident PostgresEventStoreDialect the builder used to construct internally).
+        var dialect = new Dialects.PostgresEventStoreDialect();
         _storage = Events.StreamIdentity == StreamIdentity.AsGuid
-            ? EventStorageBuilder.Build<Guid>(Events, _serializer)
-            : EventStorageBuilder.Build<string>(Events, _serializer);
+            ? EventStorageBuilder.Build<Guid>(dialect, Events.AppendMode, Events, _serializer)
+            : EventStorageBuilder.Build<string>(dialect, Events.AppendMode, Events, _serializer);
 
         // Read-side column list for ApplyReaderDataToEvent (#4411). Built off
         // EventsTable.SelectColumns() with positions 0/1/2/3 stripped:
@@ -80,45 +84,47 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
     /// two property reads since the identity choice is fixed at
     /// construction.
     /// </summary>
-    private EventStorage<Guid> GuidStorage => (EventStorage<Guid>)_storage;
-    private EventStorage<string> StringStorage => (EventStorage<string>)_storage;
+    // Fully-qualified: this file's namespace is `Marten.EventStorage`, whose trailing segment
+    // shadows the simple name `EventStorage` (the type now lives in Weasel.Storage after E3).
+    private Weasel.Storage.EventStorage<Guid> GuidStorage => (Weasel.Storage.EventStorage<Guid>)_storage;
+    private Weasel.Storage.EventStorage<string> StringStorage => (Weasel.Storage.EventStorage<string>)_storage;
 
-    public override IStorageOperation AppendEvent(EventGraph events, IStorageSession session, StreamAction stream, IEvent e)
+    public override Weasel.Storage.IStorageOperation AppendEvent(EventGraph events, IStorageSession session, StreamAction stream, IEvent e)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
             ? GuidStorage.AppendEvent(session, stream, e)
             : StringStorage.AppendEvent(session, stream, e);
     }
 
-    public override IStorageOperation QuickAppendEventWithVersion(StreamAction stream, IEvent e)
+    public override Weasel.Storage.IStorageOperation QuickAppendEventWithVersion(StreamAction stream, IEvent e)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
             ? GuidStorage.QuickAppendEventWithVersion(stream, e)
             : StringStorage.QuickAppendEventWithVersion(stream, e);
     }
 
-    public override IStorageOperation QuickAppendEvents(StreamAction stream)
+    public override Weasel.Storage.IStorageOperation QuickAppendEvents(StreamAction stream)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
             ? GuidStorage.QuickAppendEvents(stream)
             : StringStorage.QuickAppendEvents(stream);
     }
 
-    public override IStorageOperation InsertStream(StreamAction stream)
+    public override Weasel.Storage.IStorageOperation InsertStream(StreamAction stream)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
             ? GuidStorage.InsertStream(stream)
             : StringStorage.InsertStream(stream);
     }
 
-    public override IStorageOperation UpdateStreamVersion(StreamAction stream)
+    public override Weasel.Storage.IStorageOperation UpdateStreamVersion(StreamAction stream)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
             ? GuidStorage.UpdateStreamVersion(stream)
             : StringStorage.UpdateStreamVersion(stream);
     }
 
-    public override IStorageOperation AssertStreamVersion(StreamAction stream)
+    public override Weasel.Storage.IStorageOperation AssertStreamVersion(StreamAction stream)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
             ? GuidStorage.AssertStreamVersion(stream)

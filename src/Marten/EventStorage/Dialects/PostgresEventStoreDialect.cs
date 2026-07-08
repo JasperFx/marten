@@ -7,14 +7,15 @@ using JasperFx.Events;
 using Marten.EventStorage.Quick;
 using Marten.EventStorage.QuickWithServerTimestamps;
 using Marten.Internal.Storage;
-using Marten.EventStorage.Rich;
 using Marten.Events;
 using Marten.Events.Archiving;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Schema;
+using Marten.Exceptions;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
@@ -90,6 +91,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             AppendEventQuickWithVersionSqlSuffix = quickWithVersionSuffix,
             MetadataBindersWithoutSequence = metadataBindersWithoutSequence,
             ConfigureInsertStreamCommand = Adapt(BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid)),
+            TransformInsertStreamException = MapInsertStreamException,
             ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
         };
     }
@@ -121,6 +123,35 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     private static Action<Weasel.Core.ICommandBuilder, StreamAction> Adapt(
         Action<ICommandBuilder, StreamAction> pgConfigurer)
         => (builder, stream) => pgConfigurer((ICommandBuilder)builder, stream);
+
+    /// <summary>
+    /// #4821 event E3: the InsertStream ops moved onto the neutral
+    /// <c>Weasel.Storage.InsertStreamOperationBase</c>, which can't carry the
+    /// Postgres-specific exception translation. Supply it as the descriptor's
+    /// <c>TransformInsertStreamException</c> closure — mirrors the old
+    /// <c>Marten.Events.Operations.InsertStreamBase.TryTransform</c>: a
+    /// unique-violation on <c>mt_streams</c> / <c>mt_streams_identity</c>
+    /// becomes an <see cref="ExistingStreamIdCollisionException"/> (also
+    /// unwrapping a <see cref="MartenCommandException"/>). Returns null when the
+    /// exception isn't a stream-id collision, leaving it untranslated.
+    /// </summary>
+    private static Exception? MapInsertStreamException(Exception original, StreamAction stream)
+    {
+        if (original is MartenCommandException mce && mce.InnerException is { } inner && MatchesStreamCollision(inner))
+            return new ExistingStreamIdCollisionException((object?)stream.Key ?? stream.Id, stream.AggregateType);
+
+        if (MatchesStreamCollision(original))
+            return new ExistingStreamIdCollisionException((object?)stream.Key ?? stream.Id, stream.AggregateType);
+
+        return null;
+    }
+
+    private static bool MatchesStreamCollision(Exception e)
+        => e is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            TableName: StreamsTable.TableName or StreamIdentityEnforcementTable.TableName
+        };
 
     private static Action<ICommandBuilder, StreamAction> BuildInsertStreamCommandConfigurer(
         EventGraph graph, bool isConjoined, bool isGuid)
@@ -345,6 +376,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             UseTenantPartitionedEvents = graph.UseTenantPartitionedEvents,
             UseBigIntEvents = graph.EnableBigIntEvents,
             ConfigureInsertStreamCommand = Adapt(BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid)),
+            TransformInsertStreamException = MapInsertStreamException,
             ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
             AppendEventSqlPrefix = appendEventSqlPrefix,
             AppendEventSqlSuffix = quickWithVersionSuffix,
@@ -411,6 +443,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             UseTenantPartitionedEvents = graph.UseTenantPartitionedEvents,
             UseBigIntEvents = graph.EnableBigIntEvents,
             ConfigureInsertStreamCommand = Adapt(BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid)),
+            TransformInsertStreamException = MapInsertStreamException,
             ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
             AppendEventSqlPrefix = appendEventSqlPrefix,
             AppendEventSqlSuffix = quickWithVersionSuffix,

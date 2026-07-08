@@ -246,13 +246,13 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         throw new NotSupportedException();
     }
 
-    public abstract IStorageOperation AppendEvent(EventGraph events, IStorageSession session, StreamAction stream,
+    public abstract Weasel.Storage.IStorageOperation AppendEvent(EventGraph events, IStorageSession session, StreamAction stream,
         IEvent e);
 
-    public abstract IStorageOperation InsertStream(StreamAction stream);
+    public abstract Weasel.Storage.IStorageOperation InsertStream(StreamAction stream);
     public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
-    public abstract IStorageOperation UpdateStreamVersion(StreamAction stream);
-    public abstract IStorageOperation AssertStreamVersion(StreamAction stream);
+    public abstract Weasel.Storage.IStorageOperation UpdateStreamVersion(StreamAction stream);
+    public abstract Weasel.Storage.IStorageOperation AssertStreamVersion(StreamAction stream);
 
     public string StreamStateSelectSql => Marten.EventStorage.StreamStateSql.Build(Events);
 
@@ -478,14 +478,14 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         return Events.EventMappingFor(type);
     }
 
-    public virtual IStorageOperation
+    public virtual Weasel.Storage.IStorageOperation
         QuickAppendEventWithVersion(StreamAction stream, IEvent e)
     {
         throw new NotSupportedException(
             "You will have to re-generate the Marten code before the \"quick append events\" feature is available");
     }
 
-    public virtual IStorageOperation QuickAppendEvents(StreamAction stream)
+    public virtual Weasel.Storage.IStorageOperation QuickAppendEvents(StreamAction stream)
     {
         throw new NotSupportedException(
             "You will have to re-generate the Marten code before the \"quick append events\" feature is available");

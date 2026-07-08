@@ -31,14 +31,17 @@ public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocu
     /// <param name="stream"></param>
     /// <param name="e"></param>
     /// <returns></returns>
-    IStorageOperation AppendEvent(EventGraph events, IStorageSession session, StreamAction stream, IEvent e);
+    // #4821 event E3: the closed-shape ops these return now live in Weasel.Storage and implement
+    // only the neutral Weasel.Storage.IStorageOperation (a Marten IStorageOperation is-a neutral one,
+    // so the legacy path still fits, and the session's QueueOperation already accepts neutral).
+    Weasel.Storage.IStorageOperation AppendEvent(EventGraph events, IStorageSession session, StreamAction stream, IEvent e);
 
     /// <summary>
     ///     Create a storage operation to insert a single event stream record
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    IStorageOperation InsertStream(StreamAction stream);
+    Weasel.Storage.IStorageOperation InsertStream(StreamAction stream);
 
     /// <summary>
     ///     Create an IQueryHandler to find and load a Stream
@@ -52,7 +55,7 @@ public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocu
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    IStorageOperation UpdateStreamVersion(StreamAction stream);
+    Weasel.Storage.IStorageOperation UpdateStreamVersion(StreamAction stream);
 
     /// <summary>
     ///     Create a storage operation that asserts a stream's expected version
@@ -61,7 +64,7 @@ public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocu
     /// </summary>
     /// <param name="stream"></param>
     /// <returns></returns>
-    IStorageOperation AssertStreamVersion(StreamAction stream);
+    Weasel.Storage.IStorageOperation AssertStreamVersion(StreamAction stream);
 
     /// <summary>
     /// Create a storage operation to just increment the existing stream
@@ -71,8 +74,8 @@ public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocu
     /// <returns></returns>
     IStorageOperation IncrementStreamVersion(StreamAction stream);
 
-    IStorageOperation QuickAppendEvents(StreamAction stream);
+    Weasel.Storage.IStorageOperation QuickAppendEvents(StreamAction stream);
 
-    IStorageOperation QuickAppendEventWithVersion(StreamAction stream,
+    Weasel.Storage.IStorageOperation QuickAppendEventWithVersion(StreamAction stream,
         IEvent e);
 }

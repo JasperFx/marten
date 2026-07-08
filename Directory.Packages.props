@@ -176,8 +176,11 @@
     <!-- 9.15.0 (weasel#341): closed-shape EVENT descriptor core moved into Weasel.Storage — the 3
          descriptors, IEventMetadataBinder + 5 metadata binders, IEventStoreSqlDialect — so Marten and
          Polecat share them (#4821 event E2). -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.15.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.15.0" />
+    <!-- 9.16.0 (weasel#343): closed-shape EVENT storage hierarchy + operations + new neutral op
+         bases moved into Weasel.Storage — EventStorage<TId>, the 3 storages, EventStorageBuilder,
+         and the per-event/insert/update/assert ops — so Marten and Polecat share them (#4821 event E3). -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.16.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.16.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
