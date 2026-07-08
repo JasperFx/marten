@@ -86,14 +86,18 @@
          (stops agents whose identity disappeared). Marten threads
          IEventStore.DistributesAgentsPerTenant into BuildDistributor (ProjectionCoordinator).
          Also DaemonMode.ExternallyManaged (jasperfx#490, wolverine#3290 — external hosts run
-         projections; the store hosts no coordination and must not warn). -->
-    <PackageVersion Include="JasperFx" Version="2.24.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.24.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.24.0">
+         projections; the store hosts no coordination and must not warn).
+         JasperFx 2.24.1: jasperfx#499/#500 (marten#4874 case B) — ProjectionCoordinatorBase.executeAsync
+         terminates the leadership loop on a disposed data source / wrapped cancellation instead of
+         re-polling, so a cold HotCold node's advisory-lock poll no longer spins OpenAsync against a
+         data source being disposed during shutdown. Pairs with Weasel 9.16.2 (weasel#349). -->
+    <PackageVersion Include="JasperFx" Version="2.24.1" />
+    <PackageVersion Include="JasperFx.Events" Version="2.24.1" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.24.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.24.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.24.1" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -146,9 +150,9 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
-    <!-- Held at 9.2.1: investigate whether newer Weasel.EntityFrameworkCore builds
-         are actually being published (see Weasel follow-up issue). -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.2.1" />
+    <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
+         Weasel.EntityFrameworkCore 9.16.2 is on nuget.org, so it tracks the rest of the Weasel line. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.16.2" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -184,9 +188,14 @@
     <!-- 9.16.1: latest Weasel patch consumed for the 9.13.0-alpha.3 Marten alpha. Also carries
          weasel#345/#346: PostgresqlDatabase.DisposeAsync() honors an OwnsDataSource flag so a
          caller-owned NpgsqlDataSource is not disposed on the async teardown path — the Weasel
-         sibling of marten#4874 (the sync path was guarded Marten-side by #4903). -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.16.1" />
-    <PackageVersion Include="Weasel.Storage" Version="9.16.1" />
+         sibling of marten#4874 (the sync path was guarded Marten-side by #4903).
+         9.16.2 (weasel#349/#350, marten#4874 case B): AdvisoryLock guards against a disposed
+         NpgsqlDataSource during shutdown — a disposing flag short-circuits TryAttainLockAsync and
+         disposed-pool ObjectDisposedException is swallowed to a non-acquire, so the HotCold cold-node
+         leadership poll no longer aborts OpenAsync against a data source being disposed. Pairs with
+         JasperFx 2.24.1 (jasperfx#499). -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.16.2" />
+    <PackageVersion Include="Weasel.Storage" Version="9.16.2" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
