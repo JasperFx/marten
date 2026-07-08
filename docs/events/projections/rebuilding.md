@@ -96,8 +96,12 @@ not the inner slice workers, is the dominant connection driver, and the `MaxPool
 usage comfortably inside pool headroom (e.g. peak 9 against a 100-connection pool at cap 12). Wall-clock gains
 flatten past a handful of concurrent cells (diminishing returns), and no `mt_event_progression` waiters appear
 across the swept caps, so raising the cap trades pool headroom for little rebuild speedup once past ~4.
-`EnableExtendedProgressionTracking` adds no measurable rebuild overhead at the scales tested. Re-run
-`rebuildload` at your production pool size and event volume before deviating from the defaults.
+`EnableExtendedProgressionTracking` adds no measurable rebuild overhead at the scales tested. The
+`rebuildload --databases N` sharded sweep confirms the cap is a **per-database** governor: when N
+pooled shard databases rebuild concurrently, each shard's peak tracks the cap independently, so the
+cluster footprint stays O(databases × per-database cap) rather than a shared blowup, with no
+`mt_event_progression` contention across shards. Re-run `rebuildload` at your production pool size and
+event volume before deviating from the defaults.
 
 ## Cancelling a Rebuild <Badge type="tip" text="9.13" />
 

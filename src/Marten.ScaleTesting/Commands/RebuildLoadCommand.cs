@@ -30,7 +30,7 @@ namespace Marten.ScaleTesting.Commands;
 /// advisory, to be weighed into <c>rebuilding.md</c> by a human.
 /// </summary>
 [Description("marten#4884 (epic jasperfx#486 WS6/WS3): rebuild-load governor sweep. Rebuilds N projections × many partitioned tenants under a swept per-database rebuild cap + inner load/write governors, measuring wall-clock, peak/idle connections and mt_event_progression contention per configuration, then prints a tuning recommendation. Never changes a shipped default.", Name = "rebuildload")]
-public sealed class RebuildLoadCommand: JasperFxAsyncCommand<RebuildLoadInput>
+public sealed partial class RebuildLoadCommand: JasperFxAsyncCommand<RebuildLoadInput>
 {
     private const string Schema = "scaletest_rebuildload";
 
@@ -38,8 +38,9 @@ public sealed class RebuildLoadCommand: JasperFxAsyncCommand<RebuildLoadInput>
     {
         if (input.DatabasesFlag > 1)
         {
-            AnsiConsole.MarkupLine(
-                "[yellow]--databases > 1 (sharded rebuild sweep) is a documented follow-up; running the governor sweep on a single database, which is where the tuning evidence lives.[/]");
+            // Sharded rebuild sweep: confirm the per-database governors hold when N shard databases
+            // rebuild concurrently (each shard is its own governed database). See the partial below.
+            return await ExecuteShardedAsync(input).ConfigureAwait(false);
         }
 
         var caps = ParseInts(input.CapsFlag);

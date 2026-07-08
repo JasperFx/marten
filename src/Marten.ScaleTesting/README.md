@@ -262,6 +262,27 @@ scale. `EnableExtendedProgressionTracking` showed no measurable overhead (within
 governor default of 4.** Local-scale evidence is indicative only — re-run at production pool +
 event volume before amending `rebuilding.md`.
 
+### Sharded variant (`--databases N`)
+
+`rebuildload --databases N` repeats the same governor sweep over `N` pooled shard databases
+(`MultiTenantedWithShardedDatabases`), rebuilding every shard concurrently with a per-shard
+`SemaphoreSlim(cap)` — i.e. the outer cap applied PER database. It samples `pg_stat_activity` by
+`datname` and `mt_event_progression` lock-waits per shard, and reports the worst single-shard peak
+(the governed per-database footprint) alongside the summed peak. The question it answers: does the
+per-database governor hold **independently** per shard when they rebuild at once? The finding is
+yes — each shard's peak tracks the cap, the summed footprint stays ≈ `databases × per-shard`
+(O(databases), not a shared blowup), and no `mt_event_progression` waiters appear on any shard.
+
+```bash
+# Confirm the per-database rebuild cap holds across 4 pooled shards rebuilding concurrently
+dotnet run --project src/Marten.ScaleTesting -- rebuildload \
+    --databases 4 --tenants 100 --projections 8 --events-per-tenant 5000 \
+    --caps 4,8,12 --wipe --metrics rebuildload-sharded.json
+```
+
+The remaining `rebuildload` item is triggering the same sweep through CritterWatch's rebuild
+control surface (critterwatch#371 phase 3); that lives outside this Marten-only harness.
+
 ## Non-goals
 
 * Not a microbenchmark — `src/MartenBenchmarks/` covers per-method timings.
