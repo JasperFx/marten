@@ -514,14 +514,15 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
     /// idempotent by construction.
     /// </summary>
     /// <remarks>
-    /// Deliberately NOT Weasel's <c>ManagedListPartitions.DropPartitionFromAllTables</c>: that
-    /// path interpolates the partition table name unquoted into the DETACH/DROP DDL, which fails
-    /// with 42601 for any tenant id that isn't a bare PostgreSQL identifier (hyphens, uppercase —
-    /// e.g. GUID-shaped or "tenant-a"-style ids). The sharded assignment path never restricted
-    /// tenant ids the way <c>AddMartenManagedTenantsAsync</c>'s
-    /// <c>AssertValidPostgresqlIdentifiers</c> does — the CREATE side quotes properly, so quoted
-    /// partitions exist in the wild and the drop must quote too. Fold this back into Weasel when
-    /// its drop path learns to quote (see the PR for #4868/#4880).
+    /// Delegates to Weasel's database-scoped by-value drop
+    /// (<see cref="DatabaseScopedTenantPartitions.DropPartitionFromAllTablesForValue"/>): it resolves
+    /// the sanitized partition suffix from THIS shard's own <c>mt_tenant_partitions</c> registry,
+    /// deletes the registry row (what the coordinator's per-tenant re-expansion / ICrossTenantRebuildSource
+    /// reads, so agents can be reaped), and drops the partition — symmetric with the create path
+    /// (<c>AddPartitionToAllTables</c>). Previously a hand-rolled quoted DETACH/DROP loop lived here only
+    /// because the pre-9.16 native drop interpolated the partition name unquoted and failed with 42601
+    /// for hyphenated/GUID/uppercase tenant ids; weasel#338 (Weasel 9.16) fixed the native path to
+    /// sanitize identically to create, so this now folds back to the native drop.
     /// </remarks>
     private async Task dropPartitionsForTenant(MartenDatabase database, string tenantId, CancellationToken ct)
     {
@@ -542,76 +543,25 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
             return;
         }
 
+        // Guard on the shard's own registry: skip the native by-value drop (which throws
+        // ArgumentOutOfRangeException on an unknown value) when a partial prior removal already
+        // forgot the tenant, keeping re-runs idempotent.
         if (registered.Contains(tenantId, StringComparer.Ordinal))
         {
             var logger = _options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
 
-            // Same table enumeration Weasel's managed drop uses — every table whose LIST
-            // partitioning is managed by this store's tenant-partition manager.
-            var tables = database.AllObjects().OfType<Table>()
-                .Where(x => x.Partitioning is ListPartitioning lp &&
-                            ReferenceEquals(lp.PartitionManager, _options.TenantPartitions.Partitions))
-                .ToArray();
-
-            await using var conn = database.CreateConnection();
-            await conn.OpenAsync(ct).ConfigureAwait(false);
             try
             {
-                // Remove the tenant from the shard's own registry FIRST (mirrors Weasel's
-                // ordering) — this is what the native coordinator's per-tenant re-expansion
-                // (ICrossTenantRebuildSource) reads, so the tenant's agents can be reaped even
-                // if a partition drop below fails midway.
-                await conn.CreateCommand(
-                        $"delete from {_options.TenantPartitions.TenantsTableName} where partition_value = :value")
-                    .With("value", tenantId)
-                    .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-
-                foreach (var table in tables)
-                {
-                    var quotedPartition = $"\"{table.Identifier.Schema}\".\"{table.Identifier.Name}_{tenantId}\"";
-
-                    var exists = await conn.CreateCommand("select to_regclass(:name)::text")
-                        .With("name", quotedPartition)
-                        .ExecuteScalarAsync(ct).ConfigureAwait(false);
-                    if (exists == null || exists == DBNull.Value)
-                    {
-                        continue;
-                    }
-
-                    // Best-effort DETACH (CONCURRENTLY first for lock-friendliness) — the DROP
-                    // TABLE below is authoritative either way: PostgreSQL drops an attached
-                    // partition directly, and IF EXISTS keeps re-runs safe.
-                    try
-                    {
-                        await conn.CreateCommand(
-                                $"alter table {table.Identifier.QualifiedName} detach partition {quotedPartition} CONCURRENTLY;")
-                            .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-                    }
-                    catch (Exception)
-                    {
-                        try
-                        {
-                            await conn.CreateCommand(
-                                    $"alter table {table.Identifier.QualifiedName} detach partition {quotedPartition};")
-                                .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-                        }
-                        catch (Exception)
-                        {
-                            // already detached by a prior partial run — the drop below settles it
-                        }
-                    }
-
-                    await conn.CreateCommand($"drop table if exists {quotedPartition} cascade;")
-                        .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-
-                    logger.LogInformation(
-                        "Dropped partition {Partition} of {Table} for removed tenant {TenantId}",
-                        quotedPartition, table.Identifier.QualifiedName, tenantId);
-                }
+                await _options.TenantPartitions.Partitions.DropPartitionFromAllTablesForValue(
+                    database, logger, tenantId, ct).ConfigureAwait(false);
             }
-            finally
+            catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
             {
-                await conn.CloseAsync().ConfigureAwait(false);
+                // 42P01: a configured partition-parent table isn't physically present on this shard
+                // (registered tenant, but its doc/event tables were never migrated here). There is no
+                // partition to detach — mirror the resilience the former to_regclass-guarded drop had.
+                // The registry row is cleared by the native drop before it reaches the DDL, and the
+                // #4683 cleanup below still runs.
             }
         }
 

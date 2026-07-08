@@ -336,7 +336,55 @@ public class sharded_tenancy_remove_lifecycle_tests: IAsyncLifetime
             .ShouldNotContain("managed_gone");
     }
 
+    [Fact]
+    public async Task remove_drops_the_sanitized_partition_for_a_hyphenated_tenant_id()
+    {
+        // weasel#338 regression, and the exact case the removed hand-rolled quoted DETACH/DROP
+        // existed to cover: before Weasel 9.16 the native drop interpolated the partition name
+        // unquoted and 42601'd on ids with hyphens/GUIDs. The native by-value drop now resolves
+        // the SANITIZED suffix from the shard's own registry, so a hyphenated tenant's partition
+        // (named with '-' → '_') is dropped and its raw-keyed registry row cleared — which is what
+        // lets the coordinator's per-tenant re-expansion stop seeing the tenant and reap its agents.
+        const string tenantId = "acme-corp-42";
+        var sanitized = sanitizeSuffix(tenantId); // "acme_corp_42"
+        sanitized.ShouldNotBe(tenantId, "the test id must actually require sanitization");
+
+        CreateStore();
+        await applySchemaToAllShardsAsync();
+        var sharded = (ShardedTenancy)_store.Options.Tenancy;
+
+        await sharded.AssignTenantAsync(tenantId, _fixture.DbNames[0], CancellationToken.None);
+
+        // Create sanitizes the table name; the registry keys on the raw partition_value.
+        (await shardHasPartitionTablesForSuffixAsync(_fixture.DbNames[0], sanitized)).ShouldBeTrue(
+            "create should have made a partition named with the sanitized suffix");
+        (await shardRegistryContainsAsync(_fixture.DbNames[0], tenantId)).ShouldBeTrue();
+
+        await sharded.RemoveTenantAsync(tenantId, CancellationToken.None);
+
+        (await shardHasPartitionTablesForSuffixAsync(_fixture.DbNames[0], sanitized)).ShouldBeFalse(
+            "the native by-value drop must resolve + drop the sanitized partition for a hyphenated id");
+        (await shardRegistryContainsAsync(_fixture.DbNames[0], tenantId)).ShouldBeFalse(
+            "removal must clear the hyphenated tenant's raw-keyed registry row so the reap can proceed");
+        (await sharded.FindDatabaseForTenantAsync(tenantId, CancellationToken.None)).ShouldBeNull();
+    }
+
     // ---- helpers ----
+
+    // Mirror of Weasel's internal ListPartition.SanitizeSuffix: lowercase, any char outside
+    // [a-z0-9_] → '_'. Kept in the test because Weasel does not expose it publicly.
+    private static string sanitizeSuffix(string suffix)
+        => new string(suffix.ToLowerInvariant()
+            .Select(c => (c is >= 'a' and <= 'z') || (c is >= '0' and <= '9') || c == '_' ? c : '_')
+            .ToArray());
+
+    private async Task<bool> shardHasPartitionTablesForSuffixAsync(string dbName, string suffix)
+    {
+        await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbName]);
+        await conn.OpenAsync();
+        var tables = await conn.ExistingTablesAsync();
+        return tables.Any(t => t.Name.EndsWith($"_{suffix}", StringComparison.Ordinal));
+    }
 
     private static async Task<int> countFor(ShardedTenancy sharded, string dbName)
     {
