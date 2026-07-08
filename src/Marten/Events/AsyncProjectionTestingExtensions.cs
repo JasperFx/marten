@@ -382,6 +382,25 @@ public static class TestingExtensions
         CatchUpMode mode = CatchUpMode.AndResumeNormally)
     {
         var logger = services.GetService<ILogger<ProjectionDaemon>>() ?? new NullLogger<ProjectionDaemon>();
+
+        // #4904: under DaemonMode.ExternallyManaged an external system (e.g. Wolverine's managed
+        // event-subscription distribution) OWNS the projection agents and their assignment; Marten
+        // registers no coordinator of its own (see AddAsyncDaemon). Driving the usual
+        // Pause -> Stop -> CatchUp cycle here is unsafe: PauseAsync stops the running agent instances,
+        // but the external supervisor immediately reassigns/restarts them, so our CatchUpAsync and the
+        // restarted per-tenant agent both advance the same <proj>:All:<tenant> mt_event_progression row
+        // -> ProgressionProgressOutOfOrderException. We do not own the daemon, so we cannot "force" it;
+        // degrade to a read-only wait until the externally-run agents reach the current high-water mark.
+        // (The proper active-quiesce — the external coordinator suspending agent assignment during a
+        // forced catch-up — lives in that external coordinator, not here; tracked on #4904.)
+        if (services.GetService<IDocumentStore>() is DocumentStore
+            {
+                Options.Projections.AsyncMode: JasperFx.Events.Daemon.DaemonMode.ExternallyManaged
+            } externallyManagedStore)
+        {
+            return await waitForExternallyManagedCatchUpAsync(externallyManagedStore, cancellation).ConfigureAwait(false);
+        }
+
         var coordinator = services.GetRequiredService<IProjectionCoordinator>();
 
         // Has to be paused first
@@ -438,6 +457,40 @@ public static class TestingExtensions
             _ => false
         };
 
+    // #4904: read-only catch-up wait used when the daemon is externally managed (see both
+    // ForceAll... overloads). Iterates every database the store knows about and blocks until each
+    // one's registered projection shards reach that database's current high-water mark, reusing the
+    // exact non-stale bar the WaitForNonStale* helpers use — including the per-tenant-partitioned
+    // handling in WaitForNonStaleDataAsync. It never starts, stops, or drives an agent (the external
+    // system owns that), so it cannot race the running agents into an out-of-order progression write.
+    private static async Task<IReadOnlyList<Exception>> waitForExternallyManagedCatchUpAsync(
+        DocumentStore store, CancellationToken cancellation)
+    {
+        var databases = await store.Storage.AllDatabases().ConfigureAwait(false);
+        foreach (var database in databases.OfType<MartenDatabase>())
+        {
+            // Number of active projection shards, plus the high water mark; nothing to wait on otherwise.
+            var projectionsCount = database.Options.Projections.AllShards().Count + 1;
+            if (projectionsCount == 1)
+            {
+                continue;
+            }
+
+            var initial = await database.FetchEventStoreStatistics(cancellation).ConfigureAwait(false);
+
+            // No event activity on this database yet -> nothing to catch up to.
+            if (initial.EventCount == 0 || initial.EventSequenceNumber == 0)
+            {
+                continue;
+            }
+
+            using var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+            await database.WaitForNonStaleDataAsync(cancellationSource, projectionsCount, initial).ConfigureAwait(false);
+        }
+
+        return Array.Empty<Exception>();
+    }
+
         /// <summary>
     /// Force any Marten async daemons for an ancillary Marten store to immediately advance to the latest changes. This is strictly
     /// meant for test automation scenarios with small to medium sized databases
@@ -464,6 +517,18 @@ public static class TestingExtensions
         CatchUpMode mode = CatchUpMode.AndResumeNormally) where T : class, IDocumentStore
     {
         var logger = services.GetService<ILogger<ProjectionDaemon>>() ?? new NullLogger<ProjectionDaemon>();
+
+        // #4904: see the main-store overload above — under ExternallyManaged the ancillary store's
+        // agents are also externally owned, so forcing a second-writer CatchUp races the external
+        // supervisor. Degrade to a read-only wait for the ancillary store's databases.
+        if (services.GetService<T>() is DocumentStore
+            {
+                Options.Projections.AsyncMode: JasperFx.Events.Daemon.DaemonMode.ExternallyManaged
+            } externallyManagedStore)
+        {
+            return await waitForExternallyManagedCatchUpAsync(externallyManagedStore, cancellation).ConfigureAwait(false);
+        }
+
         var coordinator = services.GetRequiredService<IProjectionCoordinator<T>>();
         var daemons = await coordinator.AllDaemonsAsync().ConfigureAwait(false);
 
