@@ -8,7 +8,7 @@ Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) ar
 | -------------- | :---------: | :-----------: | :----------------: |
 | 9              |   Current   |    Current    | Community/JasperFx |
 | 8              |  Nov 2026   | P1 Fixes Only | Community/JasperFx |
-| 7              |  Dec 2025   | P1 Fixes Only | Community/JasperFx |
+| 7              |  Dec 2025   |      EoL      | Community/JasperFx |
 | 6              |  Sep 2024   |      EoL      |      JasperFx      |
 | 5              |  Nov 2023   |      EoL      |      JasperFx      |
 | 4              |  Sep 2022   |      EoL      |      JasperFx      |
