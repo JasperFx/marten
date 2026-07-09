@@ -14,7 +14,7 @@ public void string_fields(IDocumentSession session)
     session.Query<Target>().Where(x => x.String.Equals("The same thing"));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L58-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_searching_within_string_fields' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L72-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_searching_within_string_fields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten also supports case insensitive substring searches:
@@ -34,7 +34,7 @@ public void case_insensitive_string_fields(IDocumentSession session)
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L70-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_searching_within_case_insensitive_string_fields' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L84-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_searching_within_case_insensitive_string_fields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A shorthand for case-insensitive string matching is provided through `EqualsIgnoreCase` (string extension method in *JasperFx.Core*):

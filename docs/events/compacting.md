@@ -92,7 +92,7 @@ public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOpera
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventStore.StreamCompacting.cs#L152-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ieventsarchiver' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventStore.StreamCompacting.cs#L154-L186' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ieventsarchiver' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, Marten is *not* archiving events in this operation.

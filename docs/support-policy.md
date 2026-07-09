@@ -8,7 +8,7 @@ Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) ar
 | -------------- | :---------: | :-----------: | :----------------: |
 | 9              |   Current   |    Current    | Community/JasperFx |
 | 8              |  Nov 2026   | P1 Fixes Only | Community/JasperFx |
-| 7              |  Dec 2025   | P1 Fixes Only | Community/JasperFx |
+| 7              |  Dec 2025   |      EoL      | Community/JasperFx |
 | 6              |  Sep 2024   |      EoL      |      JasperFx      |
 | 5              |  Nov 2023   |      EoL      |      JasperFx      |
 | 4              |  Sep 2022   |      EoL      |      JasperFx      |
@@ -16,7 +16,7 @@ Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) ar
 
 ## .NET Version Compatibility
 
-Marten aligns with the [.NET Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform support. Marten 9 targets `net9.0` and `net10.0`. .NET 8 support was dropped in 9.0; use Marten 8.x for applications still on .NET 8.
+Marten aligns with the [.NET Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform support. Marten 9 targets `net9.0` and `net10.0`.
 
 | Marten Version |       .NET 5       |       .NET 6       |       .NET 7       |       .NET 8       |       .NET 9       |      .NET 10       |
 | -------------- | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: |
@@ -29,5 +29,5 @@ Marten aligns with the [.NET Support Lifecycle](https://dotnet.microsoft.com/pla
 
 ## Postgres Version Compatibility
 
-Marten aligns with the [PostgreSQL Support Lifecycle](https://www.postgresql.org/support/versioning/) to determine platform support. Marten currently targets versions 13 and onwards, but our continuous integration
-builds target PostgreSQL 15 & 16. We recommend at least version 15, as Marten might require more recent JSONB features in v9.
+Marten aligns with the [PostgreSQL Support Lifecycle](https://www.postgresql.org/support/versioning/) to determine platform support. Marten currently targets versions 14 and onwards, but our continuous integration
+builds target PostgreSQL 15 & 16. We recommend at least version 15, as Marten might require more recent JSONB features in future releases.

@@ -1,3 +1,0 @@
-# Indexing (under construction)
-
-//TODO
