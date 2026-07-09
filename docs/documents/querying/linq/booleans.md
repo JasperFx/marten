@@ -20,5 +20,5 @@ public async Task query_by_booleans(IDocumentSession session)
     await session.Query<Target>().Where(x => x.Flag == false).ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L158-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_boolean_queries' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L172-L188' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_boolean_queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -1,1 +1,4 @@
 /v3/*      /v3/:splat    200!
+/postgres/pgvector         /documents/pgvector         301!
+/postgres/postgis          /documents/postgis          301!
+/postgres/read-replicas    /documents/read-replicas    301!

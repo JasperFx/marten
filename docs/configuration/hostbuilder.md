@@ -128,7 +128,7 @@ services.CritterStackDefaults(x =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ByStoreOptions/Startup.cs#L24-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenbystoreoptions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Using NpgsqlDataSource <Badge type="tip" text="7.0" />
+## NpgsqlDataSource
 
 ::: tip
 You will have to use the `NpgsqlDataSource` registration if you want to opt into Npgsql logging. See the [Npgsql documentation on logging](https://www.npgsql.org/doc/diagnostics/logging.html?tabs=console)
@@ -150,10 +150,10 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L281-L289' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L303-L311' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-If you're on .NET 8 (and above), you can also use a dedicated [keyed registration](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8#keyed-di-services). This can be useful for scenarios where you need more than one data source registered:
+You can also use a dedicated [keyed registration](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8#keyed-di-services). This can be useful for scenarios where you need more than one data source registered:
 
 <!-- snippet: sample_using_usenpgsqldatasource_keyed -->
 <a id='snippet-sample_using_usenpgsqldatasource_keyed'></a>
@@ -166,10 +166,10 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource(dataSourceKey);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L331-L341' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource_keyed' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L353-L363' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource_keyed' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Using a Multi-Host Data Source <Badge type="tip" text="7.11" />
+## Multi-Host Data Source (Read Replicas)
 
 Marten includes support for `NpgsqlMultiHostDataSource`, allowing you to spread queries over your read replicas, potentially improving throughput in read-heavy applications. To get started, your connection string should specify your primary host along a list of replicas, per [Npgsql documentation](https://www.npgsql.org/doc/failover-and-load-balancing.html):
 
@@ -192,7 +192,7 @@ services.AddMarten(x =>
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L303-L315' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasourcemultihost' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L325-L337' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasourcemultihost' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning
@@ -200,6 +200,9 @@ Marten will only use your read node preference with queries run with `IQuerySess
 
 Queries executed via `IDocumentSession`, alongside internal queries (ie async daemon), will always use your primary node to ensure write-side consistency.
 :::
+
+For more background, see the blog post
+[Scaling Marten with PostgreSQL Read Replicas](https://jeremydmiller.com/2024/05/08/scaling-marten-with-postgresql-read-replicas/).
 
 ## Composite Configuration with ConfigureMarten()
 
@@ -262,12 +265,11 @@ service that implements the `IConfigureMarten` interface into the underlying IoC
 ///     Mechanism to register additional Marten configuration that is applied after AddMarten()
 ///     configuration, but before DocumentStore is initialized
 /// </summary>
-public interface IConfigureMarten
+public interface IConfigureMarten: JasperFx.IConfigureStore<StoreOptions>
 {
-    void Configure(IServiceProvider services, StoreOptions options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L966-L977' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1028-L1038' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're working with multiple databases class like so:
@@ -326,12 +328,11 @@ That interface signature is:
 ///     configuration, but before DocumentStore is initialized when you need to utilize some
 ///     kind of asynchronous services like Microsoft's FeatureManagement feature to configure Marten
 /// </summary>
-public interface IAsyncConfigureMarten
+public interface IAsyncConfigureMarten: JasperFx.IAsyncConfigureStore<StoreOptions>
 {
-    ValueTask Configure(StoreOptions options, CancellationToken cancellationToken);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L979-L991' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1040-L1051' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As an example from the tests, here's a custom version that uses the Feature Management service:
@@ -357,7 +358,7 @@ public class FeatureManagementUsingExtension: IAsyncConfigureMarten
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L77-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_featuremanagementusingextension' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L122-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_featuremanagementusingextension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And lastly, these extensions can be registered directly against `IServiceCollection` like so:
@@ -367,7 +368,7 @@ And lastly, these extensions can be registered directly against `IServiceCollect
 ```cs
 services.ConfigureMartenWithServices<FeatureManagementUsingExtension>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L34-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_async_config_marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L42-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_async_config_marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using Lightweight Sessions 

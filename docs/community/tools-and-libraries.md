@@ -2,10 +2,14 @@
 
 This page outlines all the tools and libraries built around Marten by the community.
 
-## Sable
+## HotChocolate.Data.Marten
 
-[Sable](https://github.com/bloomberg/sable) is a database Migration Management Tool for Marten from Bloomberg Tech team (Joe Nathan Abellard et al.).
+Hot Chocolate is an open-source GraphQL server for .NET. The Marten integration provides LINQ translation support for GraphQL queries.
 
-GitHub Repository: [https://github.com/bloomberg/sable](https://github.com/bloomberg/sable)
+- [Documentation](https://chillicream.com/docs/hotchocolate/fetching-data/integrations/marten)
 
-Documentation: [https://bloomberg.github.io/sable/](https://bloomberg.github.io/sable/)
+## Wallaby
+
+Wallaby is a Postgres CDC engine for .NET. It allows you to pipeline changes from your Postgres database to external systems. The Marten provider enables materialization and transformation of your existing documents.
+
+- [Documentation](https://wallabycdc.net/)

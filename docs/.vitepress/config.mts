@@ -77,7 +77,7 @@ const config: UserConfig<DefaultTheme.Config> = {
 
     nav: [
       {
-        text: 'latest (v8.x)',
+        text: 'latest (v9.x)',
         items: [
           { text: 'v7.x', link: 'https://marten-docs-v7.netlify.app', target: "_blank" },
           { text: 'v6.x', link: 'https://marten-docs-v6.netlify.app', target: "_blank" },
@@ -203,6 +203,9 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Initial Baseline Data', link: '/documents/initial-data' },
             { text: 'Optimistic Concurrency', link: '/documents/concurrency' },
             { text: 'Full Text Searching', link: '/documents/full-text' },
+            { text: 'PostGIS Spatial Support', link: '/documents/postgis' },
+            { text: 'pgvector Support', link: '/documents/pgvector' },
+            { text: 'PostgreSQL Read Replicas', link: '/documents/read-replicas' },
             { text: 'Noda Time Support', link: '/documents/noda-time' },
             { text: 'Partial updates/patching', link: '/documents/partial-updates-patching' },
             { text: 'AspNetCore Support', link: '/documents/aspnetcore' },
@@ -361,92 +364,6 @@ const config: UserConfig<DefaultTheme.Config> = {
               text: 'Command Handler Workflow for Capturing Events',
               link: '/scenarios/command_handler_workflow'
             }
-          ]
-        },
-        {
-          text: 'Postgres for SQL Server users',
-          collapsed: true,
-          items: [
-            {
-              text: 'Naming conventions',
-              link: '/postgres/naming'
-            },
-            {
-              text: 'Escaping',
-              link: '/postgres/escaping'
-            },
-            {
-              text: 'Types',
-              link: '/postgres/types'
-            },
-            {
-              text: 'Casting',
-              link: '/postgres/casting'
-            },
-            {
-              text: 'Casing',
-              link: '/postgres/casing'
-            },
-            {
-              text: 'Unique values',
-              link: '/postgres/casing/unique-values'
-            },
-            {
-              text: 'Case insensitive data',
-              link: '/postgres/casing/case-insensitive-data'
-            },
-            {
-              text: 'Queries',
-              link: '/postgres/casing/queries'
-            },
-            {
-              text: 'Using duplicate fields',
-              link: '/postgres/casing/using-duplicate-fields'
-            },
-            {
-              text: 'Slow queries',
-              link: '/postgres/slow-queries'
-            },
-            {
-              text: 'Indexing',
-              link: '/postgres/indexing'
-            },
-            {
-              text: 'Indexing JSONB',
-              link: '/postgres/indexing-jsonb'
-            },
-            {
-              text: 'If statements',
-              link: '/postgres/if-statements'
-            },
-            {
-              text: 'Working with dates',
-              link: '/postgres/dates'
-            },
-            {
-              text: 'Read Replicas',
-              link: '/postgres/read-replicas'
-            },
-            {
-              text: 'PostGIS spatial support',
-              link: '/postgres/postgis'
-            },
-            {
-              text: 'pgvector support',
-              link: '/postgres/pgvector'
-            },
-            // {
-            //   text: 'Backup and restore',
-            //   link: '/postgres/backup-restore/'
-            // },
-            // {
-            //   text: 'Local',
-            //   link: '/postgres/backup-restore/local'
-            // },
-            // {
-            //   text: 'Remote',
-            //   link: '/postgres/backup-restore/remote'
-            // },
           ]
         },
         {
