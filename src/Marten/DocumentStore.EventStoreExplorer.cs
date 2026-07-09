@@ -333,18 +333,39 @@ public partial class DocumentStore
     }
 
     /// <summary>
-    /// #4596 Phase 1 Session 4 — override the jasperfx#407 default-throwing
-    /// per-tenant overload. Non-null <paramref name="tenantId"/> returns the
-    /// per-tenant slice of each registered projection: the shard identities
-    /// reported carry the trailing tenant suffix
-    /// (<c>{ProjName}:{ShardKey}:{tenantId}</c>) and their ProcessedSequence
-    /// comes from the matching tenant-bearing row in <c>mt_event_progression</c>.
-    /// Null preserves the today's-behavior "every registered shard, no tenant
-    /// suffix" semantics.
+    /// #4596 Phase 1 Session 4 — override the jasperfx#407 default-throwing per-tenant overload.
+    ///
+    /// <para>
+    /// The argument means one of two things, depending on how the store is tenanted, exactly as it does for
+    /// <see cref="BuildProjectionDaemonAsync(string?, ILogger?)"/>:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><b>Single database</b> (conjoined tenancy with per-tenant event partitioning): the argument names a
+    /// tenant co-located in the one database. Each registered projection reports its per-tenant slice — the shard
+    /// identities carry the trailing <c>{ProjName}:{ShardKey}:{tenantId}</c> suffix that Phase 1 Session 3 writes,
+    /// and their ProcessedSequence comes from the matching tenant-bearing progression row.</item>
+    /// <item><b>Database-per-tenant / sharded tenancy</b>: the argument names a physical database. Its shards are
+    /// NOT tenant-suffixed — each database runs its own daemon over the same shard identities — so the statuses
+    /// are read from that database with the plain shard names. This is the path that previously threw
+    /// <c>DefaultTenantUsageDisabledException</c>, because the session was always opened against the default
+    /// tenant no matter what was passed. See jasperfx#502.</item>
+    /// </list>
+    ///
+    /// <para>
+    /// A null argument preserves the "every registered shard, no tenant suffix, default database" semantics.
+    /// </para>
     /// </summary>
     async Task<IReadOnlyList<ProjectionStatus>> IEventStore.GetProjectionStatusesAsync(string? tenantId, CancellationToken ct)
     {
-        await using var session = openExplorerSession();
+        // On a store spanning several databases the argument selects the physical database whose progression
+        // rows we read. On a single-database store it selects a tenant living inside the one database, and only
+        // then does the shard identity carry the tenant suffix.
+        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
+        var shardsAreTenantScoped = tenantId != null && !spansSeveralDatabases;
+
+        await using var session = tenantId != null && spansSeveralDatabases
+            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         var schema = Options.EventGraph.DatabaseSchemaName;
@@ -358,13 +379,13 @@ public partial class DocumentStore
             var shardStatuses = new List<ShardStatus>(shards.Count);
             foreach (var shard in shards)
             {
-                // For per-tenant requests, compose the tenant-bearing ShardName
-                // so the reported identity AND the progression-row lookup both
-                // carry the trailing :tenantId suffix that Phase 1 Session 3
-                // writes for per-tenant shards.
-                var effectiveName = tenantId == null
-                    ? shard.Name
-                    : ShardName.Compose(shard.Name.Name, shard.Name.ShardKey, tenantId, shard.Name.Version);
+                // For a tenant co-located in a single database, compose the tenant-bearing ShardName so the
+                // reported identity AND the progression-row lookup both carry the trailing :tenantId suffix that
+                // Phase 1 Session 3 writes. A database-per-tenant store's shards carry no suffix — we already
+                // read them from that tenant's own database.
+                var effectiveName = shardsAreTenantScoped
+                    ? ShardName.Compose(shard.Name.Name, shard.Name.ShardKey, tenantId, shard.Name.Version)
+                    : shard.Name;
 
                 var processed = progression.TryGetValue(effectiveName.Identity, out var seq) ? seq : 0L;
                 shardStatuses.Add(new ShardStatus(
@@ -649,6 +670,17 @@ public partial class DocumentStore
             AllowAnyTenant = true,
             Tracking = DocumentTracking.None
         };
+        return (DocumentSessionBase)LightweightSession(sessionOptions);
+    }
+
+    /// <summary>
+    /// jasperfx#502 — an explorer session bound to one physical database. A store with a database per tenant
+    /// has no default tenant to resolve a session against, so the argument-less overload throws there.
+    /// </summary>
+    private DocumentSessionBase openExplorerSession(IMartenDatabase database)
+    {
+        var sessionOptions = SessionOptions.ForDatabase(database);
+        sessionOptions.Tracking = DocumentTracking.None;
         return (DocumentSessionBase)LightweightSession(sessionOptions);
     }
 
