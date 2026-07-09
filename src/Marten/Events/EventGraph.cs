@@ -70,6 +70,9 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     private readonly List<ITagTypeRegistration> _tagTypes = new();
 
+    // Roots EventMapping<>'s constructor for trimming / Native AOT. Without this root the constructor metadata is trimmed
+    // and Activator throws MissingMethodException at StoreOptions construction.
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicConstructors, typeof(EventMapping<>))]
     internal EventGraph(StoreOptions options)
     {
         StreamIdentity = StreamIdentity.AsGuid;
@@ -367,9 +370,18 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <returns>Event store options, to allow fluent definition</returns>
-    public IEventStoreOptions AddEventType<TEvent>()
+    public IEventStoreOptions AddEventType<TEvent>() where TEvent : class
     {
-        AddEventType(typeof(TEvent));
+        // Constructs EventMapping<TEvent> statically so trimming / Native AOT
+        // preserves its constructor. 
+        _events.Fill(typeof(TEvent), _ =>
+        {
+            var mapping = new EventMapping<TEvent>(this);
+            Options.Storage.AddMapping(mapping);
+
+            return mapping;
+        });
+
         return this;
     }
 
