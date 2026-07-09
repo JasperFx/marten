@@ -205,7 +205,6 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Full Text Searching', link: '/documents/full-text' },
             { text: 'PostGIS Spatial Support', link: '/documents/postgis' },
             { text: 'pgvector Support', link: '/documents/pgvector' },
-            { text: 'PostgreSQL Read Replicas', link: '/documents/read-replicas' },
             { text: 'Noda Time Support', link: '/documents/noda-time' },
             { text: 'Partial updates/patching', link: '/documents/partial-updates-patching' },
             { text: 'AspNetCore Support', link: '/documents/aspnetcore' },
