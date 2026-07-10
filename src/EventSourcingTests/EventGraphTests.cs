@@ -203,6 +203,32 @@ public class EventGraphTests
         theGraph.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeFalse();
     }
 
+    [Fact]
+    public void generic_add_event_type_registers_the_same_mapping_as_the_type_overload()
+    {
+        theGraph.AddEventType<AEvent>();
+        theGraph.AllEvents().ShouldContain(x => x.DocumentType == typeof(AEvent));
+    }
+
+    // #4917 follow-up: AddEventType<TEvent> and QueryRawEventDataOnly<T> are intentionally NOT constrained to
+    // `where T : class`. This method won't compile if either constraint is tightened back, because a
+    // `where T : notnull` type parameter does not satisfy `where T : class` -- which is exactly the generic
+    // relay pattern in downstream code that the tightening broke. The QueryRawEventDataOnly reference is a
+    // compile-time check only; it lives in a delegate that is never invoked, so the null store is never used.
+    private static void notnull_relay_still_compiles<T>(IEventStoreOptions options, Marten.Events.IQueryEventStore events)
+        where T : notnull
+    {
+        options.AddEventType<T>();
+        _ = new Action(() => events.QueryRawEventDataOnly<T>());
+    }
+
+    [Fact]
+    public void generic_relay_over_a_notnull_type_parameter_registers_the_event()
+    {
+        notnull_relay_still_compiles<AEvent>(theGraph, events: null!);
+        theGraph.AllEvents().ShouldContain(x => x.DocumentType == typeof(AEvent));
+    }
+
     public class HouseRemodeling
     {
         public Guid Id { get; set; }
