@@ -9,7 +9,7 @@ namespace LinqTests.Bugs;
 
 public class hashset_contains: BugIntegrationContext
 {
-    [Fact(Skip = "TODO: Fix it on the linq branch")]
+    [Fact]
     public async Task Can_query_by_hashset_contains()
     {
         var value = Guid.NewGuid().ToString();

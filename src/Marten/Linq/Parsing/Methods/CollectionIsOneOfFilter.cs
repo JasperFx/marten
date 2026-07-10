@@ -25,6 +25,17 @@ internal class CollectionIsOneOfFilter: ISqlFragment
 
     public void Apply(ICommandBuilder builder)
     {
+        // string collections use the jsonb "contains any of these strings" operator,
+        // which the default GIN jsonb_ops operator class can serve (jsonb_path_ops
+        // cannot) — the array-overlap form below rebuilds a typed PG array per row
+        if (_collectionMember.ElementType == typeof(string))
+        {
+            builder.Append(_collectionMember.RawLocator);
+            builder.Append(" ?| ");
+            builder.AppendParameter(_values, NpgsqlDbType.Array | NpgsqlDbType.Text);
+            return;
+        }
+
         builder.Append(_collectionMember.ArrayLocator);
         builder.Append(" && ");
         builder.AppendParameter(_values, dbTypeFor(_collectionMember.ElementType));
