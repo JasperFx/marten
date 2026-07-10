@@ -372,6 +372,7 @@ public class JsonPathOrderLine
 {
     public string ItemName { get; set; }
     public int Number { get; set; }
+    public DateTime? At { get; set; }
     public List<JsonPathSubLine> Subs { get; set; } = new();
 }
 
