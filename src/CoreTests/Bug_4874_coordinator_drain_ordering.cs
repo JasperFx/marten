@@ -40,14 +40,19 @@ namespace CoreTests;
 // out from under an OpenAsync the coordinator loop's StopAsync did not drain.
 //
 // The fix is upstream and is now consumed on master:
-//   Priority 1 - Weasel 9.16.2 (weasel#349/#350): AdvisoryLock disposing-guard + swallow disposed-pool
-//                ObjectDisposedException in TryAttainLockAsync (return false = "not attained during shutdown").
+//   Priority 1 - Weasel (weasel#349/#350, then weasel#354): AdvisoryLock disposing-guard, plus a disposed
+//                data source treated as terminal in TryAttainLockAsync -- latch and rethrow. 9.16.2 swallowed
+//                the ObjectDisposedException and returned false instead, which read as "lock held elsewhere"
+//                and made the coordinator re-poll a dead pool forever; 9.16.3 restores the escape (marten#4915).
 //   Priority 2 - JasperFx 2.24.1 (jasperfx#499/#500): ProjectionCoordinatorBase.executeAsync returns on
 //                cancellation / treats ObjectDisposedException as terminal instead of re-polling.
+//   Priority 3 - marten#4923: ProjectionCoordinator drains its loop on disposal, so a host disposed without a
+//                graceful StopAsync cannot leave the loop polling a data source the container already killed.
 //
 // This test reproduces the abort in the reporter's shape (HotCold, connection-string / Marten-owned
-// source, boot+teardown under an active cold-node poll) and asserts zero PoolingDataSource aborts. It
-// failed on the pre-fix stack and passes now that Weasel 9.16.2 + JasperFx 2.24.1 are referenced.
+// source, boot+teardown under an active cold-node poll) and asserts zero leadership-poll aborts. It failed
+// on the pre-fix stack. Note that it exercises the GRACEFUL teardown (StopAsync then Dispose); the
+// dispose-without-stop shape is Bug_4915_coordinator_disposal_drain.
 [Collection("integration")]
 public class Bug_4874_coordinator_drain_ordering
 {
@@ -63,15 +68,20 @@ public class Bug_4874_coordinator_drain_ordering
     {
         const string schema = "bug4874_coordinator_drain";
 
-        // Count only the specific abort this bug produces: an OpenAsync against a disposed Npgsql pool.
+        // Count only the specific abort this bug produces: the coordinator's leadership poll opening a
+        // connection against a disposed Npgsql pool.
+        //
+        // #4915: this used to match ANY disposed-pool ObjectDisposedException in the process, which made the
+        // test fail in a full CoreTests run while passing in isolation -- other tests leak background work
+        // that touches their own disposed data sources, and AdvisoryLock.DisposeAsync benignly touches one
+        // too. FirstChanceException is AppDomain-wide, and CoreTests already runs serially, so the only fix is
+        // to attribute the abort to the poll. See DisposedPoolAborts.
         var aborts = new ConcurrentQueue<string>();
         void handler(object? sender, FirstChanceExceptionEventArgs e)
         {
-            if (e.Exception is ObjectDisposedException ode &&
-                (ode.ObjectName?.Contains("PoolingDataSource") == true ||
-                 ode.Message.Contains("PoolingDataSource")))
+            if (DisposedPoolAborts.IsAdvisoryLockPollAbort(e.Exception))
             {
-                aborts.Enqueue(ode.ToString());
+                aborts.Enqueue(e.Exception.ToString());
             }
         }
 
@@ -115,7 +125,7 @@ public class Bug_4874_coordinator_drain_ordering
         }
 
         aborts.Count.ShouldBe(0,
-            $"Expected no ObjectDisposedException('PoolingDataSource') aborts, but saw {aborts.Count}. " +
+            $"Expected no disposed-pool aborts on the leadership poll path, but saw {aborts.Count}. " +
             "The cold-node leadership poll opened a connection against an already-disposed data source " +
             "during teardown (see #4874).");
     }
