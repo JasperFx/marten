@@ -158,6 +158,19 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
                 return jsonPath;
             }
 
+            // Predicates the jsonpath tier rejects (DateTime values, null checks) become
+            // NOT EXISTS (an element failing the predicate) — vacuously true on empty
+            // collections, and a null member fails a comparison exactly like the old
+            // "value = ALL(array)" translation did
+            if (filter.Wheres.Count == 1 && this is IExistsElementSource { ExplodedElementSource: not null } source)
+            {
+                var failing = tryBuildFailingPredicate(filter.Wheres.Single());
+                if (failing != null)
+                {
+                    return new ExistsCollectionFilter(this, failing, source.ExplodedElementSource!) { Not = true };
+                }
+            }
+
             filter.Compile(method);
 
             return filter;
@@ -168,6 +181,26 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
         }
 
 
+    }
+
+    private static ISqlFragment? tryBuildFailingPredicate(ISqlFragment fragment)
+    {
+        switch (fragment)
+        {
+            case MemberComparisonFilter { Right: CommandParameter } comparison:
+                return CompoundWhereFragment.Or(new IsNullFilter(comparison.Member),
+                    new ComparisonFilter(comparison.Member, comparison.Right,
+                        ComparisonFilter.OppositeOperators[comparison.Op]));
+
+            case IsNullFilter isNull:
+                return new IsNotNullFilter(isNull.Member);
+
+            case IsNotNullFilter isNotNull:
+                return new IsNullFilter(isNotNull.Member);
+
+            default:
+                return null;
+        }
     }
 
     public ISqlFragment ParseWhereForContains(MethodCallExpression body, IReadOnlyStoreOptions options)

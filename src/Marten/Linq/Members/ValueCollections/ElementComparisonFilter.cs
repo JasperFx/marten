@@ -76,6 +76,12 @@ internal class ElementComparisonFilter: ISqlFragment, ICollectionAware
 
     void ISqlFragment.Apply(ICommandBuilder builder)
     {
-        throw new NotSupportedException();
+        // rendered inside an exploded-element context (correlated EXISTS derived
+        // table or the legacy explode CTE), where the element is the typed "data"
+        // column
+        builder.Append("data ");
+        builder.Append(Op);
+        builder.Append(" ");
+        builder.AppendParameter(Value);
     }
 }

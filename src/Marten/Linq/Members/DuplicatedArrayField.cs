@@ -23,7 +23,8 @@ namespace Marten.Linq.Members;
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
-internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQueryableMemberCollection
+internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQueryableMemberCollection,
+    IExistsElementSource, IValueCollectionMember
 {
     public DuplicatedArrayField(EnumStorage enumStorage, QueryableMember innerMember, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false) : base(enumStorage, innerMember, useTimestampWithoutTimeZoneForDateTime, notNull)
     {
@@ -54,6 +55,8 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
 
     public ISqlFragment IsEmpty { get; }
     public ISqlFragment NotEmpty { get; }
+
+    string? IExistsElementSource.ExplodedElementSource => $"select elem as data from unnest({TypedLocator}) as elem";
 
     public Type ElementType { get; }
     public string ExplodeLocator { get; }
