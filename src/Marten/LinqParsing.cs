@@ -45,6 +45,7 @@ public class LinqParsing: IReadOnlyLinqParsing
         new StringIsNullOrEmpty(),
         new StringIsNullOrWhiteSpace(),
         new StringEquals(),
+        new RegexIsMatch(),
         new SimpleEqualsParser(),
         new AnySubQueryParser(),
 

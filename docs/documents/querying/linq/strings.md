@@ -49,3 +49,23 @@ A shorthand for case-insensitive string matching is provided through `EqualsIgno
 <!-- endSnippet -->
 
 Marten translates `EqualsIgnoreCase` to a PostgreSQL case-insensitive pattern-match (`~~*`, equivalent to `ILIKE`) rather than a .NET culture-aware comparison.
+
+## Regular Expressions <Badge type="tip" text="9.15" />
+
+`Regex.IsMatch()` translates to the PostgreSQL regex match operator (`~`, or `~*` for
+`RegexOptions.IgnoreCase` — the only supported option) on top-level members, and to a jsonpath
+`like_regex` predicate inside collection filters:
+
+```cs
+// WHERE d.data ->> 'UserName' ~ :pattern
+session.Query<User>().Where(x => Regex.IsMatch(x.UserName, "^[a-z]+-\\d+$"));
+
+// jsonb_path_exists(d.data, '$.Lines[*] ? (@.ItemName like_regex "...")')
+session.Query<Order>().Where(x => x.Lines.Any(l => Regex.IsMatch(l.ItemName, "^item-1\\d$")));
+```
+
+Two caveats: PostgreSQL regular expressions are POSIX-flavored (`like_regex` is the SQL/JSON
+XQuery subset), so exotic .NET-specific constructs may behave differently. And inside collection
+filters the pattern is embedded in the SQL, so a compiled query cannot re-bind it between
+executions — Marten fails loudly if a compiled query member feeds such a pattern. Top-level
+`Regex.IsMatch()` stays fully parameterized and works in compiled queries.
