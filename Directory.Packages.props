@@ -151,8 +151,8 @@
     <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
-         Weasel.EntityFrameworkCore 9.16.2 is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.16.2" />
+         Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.16.3" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -193,9 +193,13 @@
          NpgsqlDataSource during shutdown — a disposing flag short-circuits TryAttainLockAsync and
          disposed-pool ObjectDisposedException is swallowed to a non-acquire, so the HotCold cold-node
          leadership poll no longer aborts OpenAsync against a data source being disposed. Pairs with
-         JasperFx 2.24.1 (jasperfx#499). -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.16.2" />
-    <PackageVersion Include="Weasel.Storage" Version="9.16.2" />
+         JasperFx 2.24.1 (jasperfx#499).
+         9.16.3 (weasel#354, marten#4915): the ObjectDisposedException catch in AdvisoryLock.TryAttainLockAsync
+         now latches the disposed flag AND rethrows instead of swallowing to a non-acquire. 9.16.2's swallow
+         made jasperfx#500's terminate-on-ODE catch in ProjectionCoordinatorBase unreachable, so the HotCold
+         cold-node leadership loop re-polled a dead pool forever; rethrowing lets the coordinator terminate. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.16.3" />
+    <PackageVersion Include="Weasel.Storage" Version="9.16.3" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
