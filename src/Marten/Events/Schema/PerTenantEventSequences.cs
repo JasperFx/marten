@@ -47,19 +47,43 @@ internal class PerTenantEventSequences: ISchemaObject
 
     public DbObjectName Identifier { get; }
 
-    private IEnumerable<Sequence> currentSequences()
+    /// <summary>
+    /// The schema-qualified, <b>quoted</b> name of one tenant's event sequence.
+    ///
+    /// <para>
+    /// The partition suffix is the tenant id verbatim (Weasel's
+    /// <c>ManagedListPartitions.AddPartitionToAllTables</c> stores
+    /// <c>suffix.IsEmpty() ? value.ToLowerInvariant() : suffix</c>), so it can contain characters that are
+    /// illegal in an <em>unquoted</em> Postgres identifier — most commonly '-', which every GUID tenant id
+    /// has. The name must therefore always be quoted in DDL. See #4924.
+    /// </para>
+    ///
+    /// <para>
+    /// Quote, do <b>not</b> sanitize. <c>QuickAppendEventFunction</c> resolves this sequence at append time
+    /// as <c>format('%I.%I', schema, 'mt_events_sequence_' || partition_suffix)</c>, reading the raw suffix
+    /// straight out of the tenants table. Normalizing the name here (e.g. '-' → '_') would create a sequence
+    /// the append function can never find, trading a schema-apply failure for a
+    /// <c>42P01 relation does not exist</c> on the first append.
+    /// </para>
+    /// </summary>
+    internal static string QuotedSequenceName(string eventSchema, string partitionSuffix)
+        => $"\"{eventSchema}\".\"mt_events_sequence_{partitionSuffix}\"";
+
+    /// <summary>
+    /// The partition suffix of every tenant currently registered on the shared partition manager.
+    /// `Options.TenantPartitions` is the MartenManagedTenantListPartitions wrapper; its `.Partitions` is the
+    /// underlying Weasel ManagedListPartitions; that exposes a `.Partitions`
+    /// ReadOnlyDictionary&lt;tenantValue, partitionSuffix&gt;. Triple-`Partitions` is unfortunate but each
+    /// level names something different.
+    /// </summary>
+    private IEnumerable<string> currentPartitionSuffixes()
     {
-        // `Options.TenantPartitions` is the MartenManagedTenantListPartitions wrapper;
-        // its `.Partitions` is the underlying Weasel ManagedListPartitions; that
-        // exposes a `.Partitions` ReadOnlyDictionary<tenantValue, partitionSuffix>.
-        // Triple-`Partitions` is unfortunate but each level names something different.
         var partitions = _events.Options.TenantPartitions?.Partitions.Partitions;
         if (partitions == null) yield break;
 
         foreach (var pair in partitions)
         {
-            yield return new Sequence(new PostgresqlObjectName(
-                _events.DatabaseSchemaName, $"mt_events_sequence_{pair.Value}"));
+            yield return pair.Value;
         }
     }
 
@@ -68,17 +92,19 @@ internal class PerTenantEventSequences: ISchemaObject
         // IF NOT EXISTS keeps the statement idempotent — both for the initial
         // schema apply and for the AdvancedOperations.AddMartenManagedTenantsAsync
         // re-apply that fires after a new partition has been registered.
-        foreach (var seq in currentSequences())
+        foreach (var suffix in currentPartitionSuffixes())
         {
-            writer.WriteLine($"CREATE SEQUENCE IF NOT EXISTS {seq.Identifier};");
+            writer.WriteLine(
+                $"CREATE SEQUENCE IF NOT EXISTS {QuotedSequenceName(_events.DatabaseSchemaName, suffix)};");
         }
     }
 
     public void WriteDropStatement(Migrator rules, TextWriter writer)
     {
-        foreach (var seq in currentSequences())
+        foreach (var suffix in currentPartitionSuffixes())
         {
-            writer.WriteLine($"DROP SEQUENCE IF EXISTS {seq.Identifier};");
+            writer.WriteLine(
+                $"DROP SEQUENCE IF EXISTS {QuotedSequenceName(_events.DatabaseSchemaName, suffix)};");
         }
     }
 
@@ -104,7 +130,7 @@ internal class PerTenantEventSequences: ISchemaObject
             actualCount = await reader.GetFieldValueAsync<long>(0, ct).ConfigureAwait(false);
         }
 
-        var expectedCount = currentSequences().Count();
+        var expectedCount = currentPartitionSuffixes().Count();
 
         // The IF-NOT-EXISTS shape means we only ever ADD sequences from the
         // schema-apply path; removal is handled by the partition-drop path.
@@ -151,9 +177,9 @@ internal class PerTenantEventSequences: ISchemaObject
 
     public IEnumerable<DbObjectName> AllNames()
     {
-        foreach (var seq in currentSequences())
+        foreach (var suffix in currentPartitionSuffixes())
         {
-            yield return seq.Identifier;
+            yield return new PostgresqlObjectName(_events.DatabaseSchemaName, $"mt_events_sequence_{suffix}");
         }
     }
 
@@ -191,7 +217,7 @@ internal class PerTenantEventSequences: ISchemaObject
         await conn.OpenAsync(token).ConfigureAwait(false);
         foreach (var suffix in partitionSuffixes)
         {
-            var sequenceName = $"\"{eventSchema}\".\"mt_events_sequence_{suffix}\"";
+            var sequenceName = QuotedSequenceName(eventSchema, suffix);
             try
             {
                 await conn
