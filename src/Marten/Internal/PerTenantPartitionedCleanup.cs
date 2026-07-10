@@ -87,7 +87,10 @@ internal static class PerTenantPartitionedCleanup
         foreach (var suffix in capturedSequenceSuffixes.Values)
         {
             builder.StartNewCommand();
-            builder.Append($"DROP SEQUENCE IF EXISTS \"{eventsSchema}\".\"mt_events_sequence_{suffix}\"");
+            // #4924 — one place builds this name, so the quoting cannot drift between the create and drop
+            // paths. The suffix is the raw tenant id and may contain '-'.
+            builder.Append(
+                $"DROP SEQUENCE IF EXISTS {Events.Schema.PerTenantEventSequences.QuotedSequenceName(eventsSchema, suffix)}");
         }
 
         if (progressionRows.Count > 0)
