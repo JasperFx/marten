@@ -25,7 +25,7 @@ namespace Marten.Linq.Members.ValueCollections;
 [UnconditionalSuppressMessage("AOT", "IL3050",
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCollectionMember, ISelectableMember,
-    IExistsElementSource
+    IExistsElementSource, IAggregateableCollection
 {
     private readonly IQueryableMember _count;
     private readonly WholeDataMember _wholeDataMember;
@@ -78,6 +78,23 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
     }
 
     string? IExistsElementSource.ExplodedElementSource => _explodedElementSource;
+
+    public IComparableMember ParseComparableForAggregate(string function, Expression? selector)
+    {
+        if (selector != null)
+        {
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate a {function}() selector over the scalar value collection '{MemberName}' — use the parameterless overload");
+        }
+
+        if (_explodedElementSource == null)
+        {
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate {function}() over collection '{MemberName}' of element type {ElementType.FullNameInCode()}");
+        }
+
+        return new CollectionAggregateComparable(function, "data", _explodedElementSource);
+    }
 
     /// <summary>
     /// Only used to craft children locators later
