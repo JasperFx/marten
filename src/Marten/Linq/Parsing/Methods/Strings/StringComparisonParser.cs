@@ -3,9 +3,11 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using NpgsqlTypes;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods.Strings;
@@ -98,5 +100,42 @@ internal abstract class StringComparisonParser: IMethodCallParser
         return raw.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
     }
 
+    /// <summary>
+    ///     Writes the jsonpath reference for a member inside a collection filter:
+    ///     "@.Member.Path" for element members, or the bare "@" when the collection
+    ///     element itself is the value being compared (scalar string collections)
+    /// </summary>
+    internal static void WriteJsonPathReference(IQueryableMember member, ICommandBuilder builder)
+    {
+        // a scalar collection element IS the value under test — its JsonPathSegment
+        // ("data") is only meaningful for the explode/unnest strategy
+        if (member is Marten.Linq.Members.ValueCollections.SimpleElementMember)
+        {
+            builder.Append("@");
+            return;
+        }
+
+        var path = member.WriteJsonPath();
+        builder.Append("@");
+        if (path.IsNotEmpty())
+        {
+            builder.Append(".");
+            builder.Append(path);
+        }
+    }
+
+    /// <summary>
+    ///     Prepares a raw search value for embedding inside a like_regex "..." pattern
+    ///     that itself lives inside a single-quoted SQL jsonpath literal. Regex-escapes
+    ///     first, then escapes for the jsonpath string literal (backslash, double quote),
+    ///     then doubles single quotes for the enclosing SQL string.
+    /// </summary>
+    public static string EscapeForJsonPathRegex(string raw)
+    {
+        return System.Text.RegularExpressions.Regex.Escape(raw)
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("'", "''");
+    }
 }
 
