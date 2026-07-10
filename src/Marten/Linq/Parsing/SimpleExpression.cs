@@ -368,6 +368,20 @@ internal class SimpleExpression: ExpressionVisitor
             return null;
         }
 
+        if (node.Method.DeclaringType == typeof(Enumerable) &&
+            node.Method.Name is "Sum" or "Min" or "Max" or "Average")
+        {
+            if (_queryableMembers.MemberFor(node.Arguments[0]) is IAggregateableCollection aggregateable)
+            {
+                Comparable = aggregateable.ParseComparableForAggregate(node.Method.Name,
+                    node.Arguments.Count == 2 ? node.Arguments[1] : null);
+                return null;
+            }
+
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate the {node.Method.Name}() aggregate over this collection: '{node}'");
+        }
+
         if (node.Method.Name == "get_Item" && node.Method.DeclaringType.Closes(typeof(IDictionary<,>)))
         {
             var dictMember = (IDictionaryMember)_queryableMembers.MemberFor(node.Object);

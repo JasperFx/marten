@@ -24,7 +24,7 @@ namespace Marten.Linq.Members;
 [UnconditionalSuppressMessage("AOT", "IL3050",
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryableMemberCollection,
-    IExistsElementSource
+    IExistsElementSource, IAggregateableCollection
 {
     private readonly IQueryableMember _count;
     private readonly StoreOptions _options;
@@ -63,6 +63,31 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
     public ISqlFragment NotEmpty { get; }
 
     string? IExistsElementSource.ExplodedElementSource => $"select elem.value as data from {_arraySelector} as elem";
+
+    public IComparableMember ParseComparableForAggregate(string function, Expression? selector)
+    {
+        if (selector is not LambdaExpression lambda)
+        {
+            throw new BadLinqExpressionException(
+                $"Marten needs a member selector to translate {function}() over collection '{MemberName}', e.g. Sum(x => x.Amount)");
+        }
+
+        var members = MemberFinder.Determine(lambda.Body, "Invalid aggregate selector");
+        IQueryableMember member = FindMember(members[0]);
+        for (var i = 1; i < members.Length; i++)
+        {
+            if (member is not IHasChildrenMembers parent)
+            {
+                throw new BadLinqExpressionException(
+                    $"Marten cannot translate the {function}() selector '{lambda}'");
+            }
+
+            member = parent.FindMember(members[i]);
+        }
+
+        var source = ((IExistsElementSource)this).ExplodedElementSource!;
+        return new CollectionAggregateComparable(function, member.TypedLocator, source);
+    }
 
     public string ArrayLocator { get; set; }
 
