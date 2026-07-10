@@ -24,10 +24,12 @@ namespace Marten.Linq.Members.ValueCollections;
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
-public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCollectionMember, ISelectableMember
+public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCollectionMember, ISelectableMember,
+    IExistsElementSource
 {
     private readonly IQueryableMember _count;
     private readonly WholeDataMember _wholeDataMember;
+    private readonly string? _explodedElementSource;
 
     public ValueCollectionMember(StoreOptions storeOptions, IQueryableMember parent, Casing casing, MemberInfo member): base(parent, casing,
         member)
@@ -41,6 +43,13 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
         var rawLocator = RawLocator;
         var innerPgType = PostgresqlProvider.Instance.GetDatabaseType(ElementType, EnumStorage.AsInteger);
         var pgType = PostgresqlProvider.Instance.HasTypeMapping(ElementType) ? innerPgType + "[]" : "jsonb";
+
+        if (PostgresqlProvider.Instance.HasTypeMapping(ElementType))
+        {
+            _explodedElementSource = ElementType == typeof(string)
+                ? $"select elem.value as data from jsonb_array_elements_text(CAST({rawLocator} as jsonb)) as elem"
+                : $"select CAST(elem.value as {innerPgType}) as data from jsonb_array_elements_text(CAST({rawLocator} as jsonb)) as elem";
+        }
 
         SimpleLocator = $"{parent.RawLocator} -> '{MemberName}'";
 
@@ -67,6 +76,8 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
         IsEmpty = new CollectionIsEmpty(this);
         NotEmpty = new CollectionIsNotEmpty(this);
     }
+
+    string? IExistsElementSource.ExplodedElementSource => _explodedElementSource;
 
     /// <summary>
     /// Only used to craft children locators later
