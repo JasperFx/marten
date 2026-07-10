@@ -28,7 +28,11 @@ public class SubClassMapping: IDocumentMapping
         Alias = alias ?? GetTypeMartenAlias(documentType);
         Aliases = new[] { Alias };
 
-        QueryMembers = new DocumentQueryableMemberCollection(this, storeOptions);
+        // #4916: inherit the parent's column-backed members (duplicated fields, the id column, the
+        // soft-delete flag) so a subclass query filtering on one of them hits the shared table's column
+        // instead of falling through to JSONB. Resolved lazily — the parent registers these during store
+        // compilation, after this constructor runs.
+        QueryMembers = new DocumentQueryableMemberCollection(this, storeOptions, parent.QueryMembers);
     }
 
     public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions,
