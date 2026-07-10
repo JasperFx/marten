@@ -79,7 +79,17 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         Options = options;
         _events.OnMissing = eventType =>
         {
-            var mapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
+            // #4917 follow-up: build EventMapping<eventType> through GenericFactoryCache rather than a raw
+            // CloseAndBuildAs. GenericFactoryCache caches a compiled factory delegate per closed type, so the
+            // MakeGenericType + Activator reflection runs once per event type instead of on every cache miss,
+            // and it is the delegate-cached pattern the rest of Marten already funnels this kind of open-generic
+            // construction through. The [DynamicDependency] on this constructor is what actually keeps
+            // EventMapping<>'s constructor from being trimmed; without it Activator throws MissingMethodException.
+            var mapping = GenericFactoryCache.BuildAs<EventMapping>(
+                typeof(EventMapping<>),
+                eventType,
+                this,
+                static closed => parent => (EventMapping)Activator.CreateInstance(closed, parent)!);
             Options.Storage.AddMapping(mapping);
 
             return mapping;
@@ -370,18 +380,14 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     /// <typeparam name="TEvent"></typeparam>
     /// <returns>Event store options, to allow fluent definition</returns>
-    public IEventStoreOptions AddEventType<TEvent>() where TEvent : class
+    public IEventStoreOptions AddEventType<TEvent>()
     {
-        // Constructs EventMapping<TEvent> statically so trimming / Native AOT
-        // preserves its constructor. 
-        _events.Fill(typeof(TEvent), _ =>
-        {
-            var mapping = new EventMapping<TEvent>(this);
-            Options.Storage.AddMapping(mapping);
-
-            return mapping;
-        });
-
+        // Keep the historical, unconstrained signature (#4917 had tightened this to `where TEvent : class` so it
+        // could new up EventMapping<TEvent> directly -- EventMapping<T> is class-constrained -- but that was a
+        // source-breaking change for callers with a `where T : notnull` generic relay). Route through the
+        // runtime-Type overload instead; construction goes through the GenericFactoryCache factory in the
+        // constructor, and the [DynamicDependency] there keeps it trim-safe.
+        AddEventType(typeof(TEvent));
         return this;
     }
 

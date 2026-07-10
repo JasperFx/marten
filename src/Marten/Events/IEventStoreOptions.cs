@@ -222,9 +222,9 @@ namespace Marten.Events
         ///     the event type. It can also be used for the event namespace migration.
         ///     See more in <a href="https://martendb.io/events/versioning.html#namespace-migration">documentation</a>
         /// </summary>
-        /// <typeparam name="TEvent">CLR event type. Must be a reference type.</typeparam>
+        /// <typeparam name="TEvent">CLR event type</typeparam>
         /// <returns>Event store options, to allow fluent definition</returns>
-        IEventStoreOptions AddEventType<TEvent>() where TEvent : class;
+        IEventStoreOptions AddEventType<TEvent>();
 
         /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,

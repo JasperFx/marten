@@ -21,7 +21,7 @@ public interface IQueryEventStore : JasperFx.Events.IQueryEventStore
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    IMartenQueryable<T> QueryRawEventDataOnly<T>() where T : class;
+    IMartenQueryable<T> QueryRawEventDataOnly<T>() where T : notnull;
 
     /// <summary>
     ///     Query directly against the raw event data across all event types.
