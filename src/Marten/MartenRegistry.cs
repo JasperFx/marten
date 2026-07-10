@@ -620,6 +620,35 @@ public class MartenRegistry
         }
 
         /// <summary>
+        ///     Adds a Postgresql GIN index over a single member of the JSONB data, e.g.
+        ///     (data -> 'Children') jsonb_path_ops. Use this to accelerate containment
+        ///     filters against a child collection — Any() predicates with equality
+        ///     conditions compare against data -> 'Children' directly, which the
+        ///     whole-document index from GinIndexJsonData() cannot serve
+        /// </summary>
+        /// <param name="memberExpression">The collection (or object) member to index</param>
+        /// <param name="configureIndex"></param>
+        public DocumentMappingExpression<T> GinIndexJsonDataMember(Expression<Func<T, object>> memberExpression,
+            Action<DocumentIndex>? configureIndex = null)
+        {
+            var members = MemberFinder.Determine(memberExpression);
+            if (!members.Any())
+            {
+                throw new ArgumentOutOfRangeException(nameof(memberExpression),
+                    $"Marten is not able to determine a member from expression '{memberExpression}'");
+            }
+
+            _builder.Alter = mapping =>
+            {
+                var index = mapping.AddGinIndexToDataMember(members);
+
+                configureIndex?.Invoke(index);
+            };
+
+            return this;
+        }
+
+        /// <summary>
         ///     Programmatically directs Marten to map this type to a hierarchy of types
         /// </summary>
         /// <param name="subclassType"></param>

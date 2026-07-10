@@ -48,3 +48,28 @@ var store = DocumentStore.For(options =>
 <!-- endSnippet -->
 
 **Marten may be changed to make the GIN index on the data field be automatic in the future.**
+
+## GIN Indexes for Child Collections <Badge type="tip" text="9.15" />
+
+Containment filters against a child collection — what Marten generates for
+`Where(x => x.Children.Any(c => c.Name == "x"))` — compare against the expression
+`data -> 'Children'`, which the whole-document index from `GinIndexJsonData()` cannot serve.
+Use `GinIndexJsonDataMember()` to create an expression GIN index scoped to one member:
+
+```cs
+var store = DocumentStore.For(options =>
+{
+    // CREATE INDEX ... ON mt_doc_order USING gin ((data -> 'Lines') jsonb_path_ops)
+    options.Schema.For<Order>().GinIndexJsonDataMember(x => x.Lines);
+
+    // Nested member paths follow the JSON structure
+    options.Schema.For<Order>().GinIndexJsonDataMember(x => x.Customer.Addresses);
+});
+```
+
+The member-scoped index is substantially smaller than the whole-document index and accelerates
+the containment (`@>`) strategies described in
+[querying within child collections](/documents/querying/linq/child-collections#how-marten-translates-collection-predicates-),
+including equality `Any()` predicates, OR-of-equality predicates, and the equality pre-filter of
+mixed predicates. Whole-element `Contains()` queries anchor at the document root and are served
+by the plain `GinIndexJsonData()` index instead.
