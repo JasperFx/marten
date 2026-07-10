@@ -183,7 +183,7 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
         return aggregate;
     }
 
-    public IMartenQueryable<T> QueryRawEventDataOnly<T>() where T : notnull
+    public IMartenQueryable<T> QueryRawEventDataOnly<T>() where T : class
     {
         _store.Events.AddEventType<T>();
 
