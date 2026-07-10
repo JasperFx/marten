@@ -295,16 +295,18 @@ public class jsonpath_any_filters: IntegrationContext
     }
 
     [Fact]
-    public async Task string_method_control_still_uses_sub_query()
+    public async Task member_to_member_control_still_uses_sub_query()
     {
         await seedOrders();
 
-        var sql = sqlFor(x => x.Lines.Any(l => l.ItemName.StartsWith("item-1")));
+        // member-vs-member comparisons have no jsonpath rendering (the right side is
+        // a locator, not a constant) and stay on the sub-query strategy
+        var sql = sqlFor(x => x.Lines.Any(l => l.Number > l.Subs.Count));
         sql.ShouldContain("ctid");
 
         await assertMatchesInMemory(
-            x => x.Lines.Any(l => l.ItemName.StartsWith("item-1")),
-            x => x.Lines.Any(l => l.ItemName != null && l.ItemName.StartsWith("item-1")));
+            x => x.Lines.Any(l => l.Number > l.Subs.Count),
+            x => x.Lines.Any(l => l.Number > l.Subs.Count));
     }
 
     [Fact]
@@ -347,6 +349,7 @@ public class JsonPathOrder
     public Guid Id { get; set; }
     public List<JsonPathOrderLine> Lines { get; set; } = new();
     public List<int> Quantities { get; set; } = new();
+    public List<string> Tags { get; set; } = new();
 }
 
 public class JsonPathOrderLine

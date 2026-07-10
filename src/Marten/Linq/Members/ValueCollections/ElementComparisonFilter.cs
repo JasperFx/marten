@@ -69,7 +69,7 @@ internal class ElementComparisonFilter: ISqlFragment, ICollectionAware
         var parameter = parameters.AddJsonPathParameter(Value);
 
         builder.Append("@ ");
-        builder.Append(Op);
+        builder.Append(Op.CorrectJsonPathOperator());
         builder.Append(" ");
         builder.Append(parameter);
     }

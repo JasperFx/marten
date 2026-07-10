@@ -17,15 +17,41 @@ using Weasel.Postgresql.SqlGeneration;
 namespace Marten.Linq.SqlGeneration.Filters;
 
 /// <summary>
+///     Implemented by filters whose jsonpath rendering has to bake the comparison
+///     value into the jsonpath string literal (like_regex patterns cannot be
+///     supplied through the vars parameter). Compiled queries can never re-bind
+///     such a value, so the jsonpath machinery fails loudly instead of silently
+///     reusing a stale value.
+/// </summary>
+internal interface IInlinedJsonPathValueFilter
+{
+    bool JsonPathValueIsInlined { get; }
+}
+
+/// <summary>
+///     jsonpath string operations (starts with / like_regex) evaluate to UNKNOWN on
+///     null or missing members, so a bare !(...) negation silently skips those
+///     elements — wrong for All(predicate), where a null member must FAIL the
+///     predicate like it does in LINQ-to-objects. Implementors render their own
+///     null-guarded negation instead.
+/// </summary>
+internal interface INegationGuardedJsonPathFilter
+{
+    void BuildNegatedJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters);
+}
+
+/// <summary>
 ///     Translates a child collection Any(predicate) that cannot be reduced to JSONB
 ///     containment (@>) into a single jsonb_path_exists() predicate instead of the
 ///     much more expensive "explode the collection into a CTE and correlate on ctid"
 ///     sub-query strategy. Values are passed through the jsonpath vars parameter so
-///     the SQL stays parameterized.
+///     the SQL stays parameterized. Also serves All(predicate) as
+///     NOT jsonb_path_exists('$.coll[*] ? (!(predicate))').
 /// </summary>
 internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, ICompiledQueryAwareFilter,
     IReversibleWhereFragment
 {
+    private readonly bool _negatePredicate;
     private readonly ISqlFragment _predicate;
     private readonly ISerializer _serializer;
     private string _collectionPath;
@@ -33,12 +59,24 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
     private Dictionary<string, object>? _dict;
     private List<DictionaryValueUsage>? _usages;
 
-    private JsonPathExistsFilter(ICollectionMember collection, ISqlFragment predicate, ISerializer serializer)
+    private JsonPathExistsFilter(ICollectionMember collection, ISqlFragment predicate, ISerializer serializer,
+        bool negatePredicate = false)
     {
         CollectionMember = collection;
         _predicate = predicate;
         _serializer = serializer;
+        _negatePredicate = negatePredicate;
+        IsNot = negatePredicate;
+
+        // ChildCollectionMember's segment is "Member[*]", but scalar value collections
+        // write a bare "Member" — normalize so the filter always iterates elements
+        // explicitly instead of leaning on lax-mode array unwrapping
         _collectionPath = collection.WriteJsonPath();
+        if (!_collectionPath.EndsWith("[*]"))
+        {
+            _collectionPath += "[*]";
+        }
+
         _documentColumn = collection.Ancestors[0].RawLocator;
     }
 
@@ -56,6 +94,23 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
         }
 
         filter = new JsonPathExistsFilter(collectionMember, fragment, serializer);
+        return true;
+    }
+
+    /// <summary>
+    ///     All(predicate) == NOT EXISTS an element failing the predicate. Vacuously
+    ///     true on empty collections, matching LINQ-to-objects semantics.
+    /// </summary>
+    public static bool TryBuildForAll(ISqlFragment fragment, ICollectionMember collectionMember,
+        ISerializer serializer, [NotNullWhen(true)] out JsonPathExistsFilter? filter)
+    {
+        filter = default;
+        if (!canRender(fragment))
+        {
+            return false;
+        }
+
+        filter = new JsonPathExistsFilter(collectionMember, fragment, serializer, negatePredicate: true);
         return true;
     }
 
@@ -105,7 +160,14 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
         builder.Append(" ? (");
 
         _dict = new Dictionary<string, object>();
-        writePredicate(builder, _predicate);
+        if (_negatePredicate)
+        {
+            writeNegatedPredicate(builder, _predicate);
+        }
+        else
+        {
+            writePredicate(builder, _predicate);
+        }
 
         builder.Append(")'");
 
@@ -156,8 +218,63 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
         }
     }
 
+    /// <summary>
+    ///     Renders NOT(predicate) with the negation distributed De Morgan style so that
+    ///     each leaf can apply its own null guard. Kleene 3-valued logic makes the
+    ///     distribution itself equivalence-preserving; the per-leaf guards are what
+    ///     turn UNKNOWN (null/missing member under a string operation) into a definite
+    ///     "fails the predicate".
+    /// </summary>
+    private void writeNegatedPredicate(ICommandBuilder builder, ISqlFragment fragment)
+    {
+        switch (fragment)
+        {
+            case CompoundWhereFragment compound:
+                // !(a && b) == !a || !b ; !(a || b) == !a && !b
+                var separator = compound.Separator.ContainsIgnoreCase("and") ? " || " : " && ";
+                builder.Append("(");
+                var first = true;
+                foreach (var child in compound.Children)
+                {
+                    if (!first)
+                    {
+                        builder.Append(separator);
+                    }
+
+                    writeNegatedPredicate(builder, child);
+                    first = false;
+                }
+
+                builder.Append(")");
+                break;
+
+            case INegationGuardedJsonPathFilter guarded:
+                guarded.BuildNegatedJsonPathFilter(builder, _dict!);
+                break;
+
+            case ICollectionAware aware:
+                builder.Append("!(");
+                aware.BuildJsonPathFilter(builder, _dict!);
+                builder.Append(")");
+                break;
+
+            default:
+                throw new InvalidOperationException(
+                    $"Fragment {fragment} cannot be rendered as a jsonpath predicate. This is a Marten bug — TryBuildForAll should have rejected it.");
+        }
+    }
+
     public ISqlFragment MoveUnder(ICollectionMember ancestorCollection)
     {
+        // A NEGATED filter must not flatten: NOT(exists($.M[*].B[*] ? pred)) asserts
+        // over every middle's bottoms, which is stronger than Any(m => !m.B.Any(pred))
+        // or Any(m => m.B.All(pred)). Those nest through the explode strategy instead,
+        // where this fragment renders correctly against the exploded element.
+        if (IsNot || _negatePredicate)
+        {
+            return new SubQueryFilter(ancestorCollection, this);
+        }
+
         // An existence test over a doubly-nested collection flattens cleanly:
         // exists(middle.bottoms[*] ? pred) == '$.Middles[*].Bottoms[*] ? pred'
         _collectionPath = ancestorCollection.WriteJsonPath() + "." + _collectionPath;
@@ -178,6 +295,19 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
         var usage = _usages.FirstOrDefault(x => x.Value.Equals(value));
         if (usage != null)
         {
+            // A compiled query member value that lands in a leaf whose rendering bakes
+            // the value into the jsonpath literal (like_regex) can never be re-bound —
+            // fail loudly at plan time instead of silently reusing the stale value
+            foreach (var leaf in collectLeaves(_predicate))
+            {
+                if (leaf is IInlinedJsonPathValueFilter { JsonPathValueIsInlined: true } &&
+                    leaf.Values().Any(v => v.Value.Equals(value)))
+                {
+                    throw new Marten.Exceptions.BadLinqExpressionException(
+                        "string.Contains()/EndsWith() and case-insensitive string comparisons inside a collection predicate embed the search text in the SQL, so a compiled query cannot re-bind the value between executions. Use a case-sensitive StartsWith(), move the filter out of the compiled query, or query with session.Query<T>() instead.");
+                }
+            }
+
             usage.QueryMember = member;
             return true;
         }

@@ -90,6 +90,29 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
 
     public ISqlFragment ParseWhereForAll(MethodCallExpression expression, IReadOnlyStoreOptions options)
     {
+        // Try the jsonpath strategy first for predicates beyond simple equality
+        // (inequalities, string methods). Null comparisons throw during element
+        // parsing, so those fall through to the legacy constant-based filters below
+        if (expression.Arguments.Last() is LambdaExpression l)
+        {
+            try
+            {
+                var whereClause = new ChildCollectionWhereClause();
+                var parser = new WhereClauseParser((StoreOptions)options, this, whereClause);
+                parser.Visit(l.Body);
+
+                if (whereClause.Fragment != null && JsonPathExistsFilter.TryBuildForAll(whereClause.Fragment, this,
+                        options.Serializer(), out var jsonPath))
+                {
+                    return jsonPath;
+                }
+            }
+            catch (BadLinqExpressionException)
+            {
+                // fall through to the legacy parsing
+            }
+        }
+
         var constant = expression.Arguments[1].ReduceToConstant();
 
         if (constant.Value() == null) return new AllValuesAreNullFilter(this);

@@ -98,8 +98,12 @@ against a child collection, in this order:
 | --- | --- | --- |
 | Equalities combined with `&&`, e.g. `x.Lines.Any(l => l.Name == "a" && l.Number == 2)` | JSONB containment: `data -> 'Lines' @> '[{"Name":"a","Number":2}]'` | Yes |
 | Equalities combined with `\|\|`, e.g. `x.Lines.Any(l => l.Name == "a" \|\| l.Name == "b")` | OR of containment filters (`BitmapOr` over the index) | Yes |
+| `Contains()` of a whole element, e.g. `x.Lines.Contains(line)` | JSONB containment: `d.data @> '{"Lines":[{...serialized element...}]}'`. Note: matches elements *containing* every serialized member of the argument, so documents written with extra/evolved properties still match | Yes, including whole-document `GinIndexJsonData()` indexes |
 | Other comparisons (`>`, `<`, `>=`, `<=`, `!=`) and mixes, e.g. `x.Lines.Any(l => l.Name == "a" && l.Number > 5)` | JSONPath: `jsonb_path_exists(d.data, '$.Lines[*] ? (@.Name == $val1 && @.Number > $val2)', :params)` | No, but a single scan with a cheap per-row predicate |
-| Anything else (string methods like `StartsWith()`, member-to-member comparisons, `DateTime` values) | Explodes the collection into a common table expression and correlates on `ctid` | No |
+| Case-sensitive `StartsWith()` | JSONPath `starts with $var` — fully parameterized, works in compiled queries | No |
+| `Contains()`/`EndsWith()` on strings and case-insensitive comparisons | JSONPath `like_regex` with the (escaped) search text embedded in the SQL. **Not usable in compiled queries** — the value cannot be re-bound, and Marten fails loudly if you try | No |
+| `All(predicate)` for any jsonpath-capable predicate | `NOT jsonb_path_exists(d.data, '$.Lines[*] ? (!(...))')` — vacuously true on empty collections, and elements with null/missing members fail string predicates just like in LINQ-to-objects | No |
+| Anything else (member-to-member comparisons, `DateTime` values) | Explodes the collection into a common table expression and correlates on `ctid` | No |
 
 A couple of practical notes:
 

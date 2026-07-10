@@ -119,6 +119,17 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
             var parser = new WhereClauseParser(_options, this, filter);
             parser.Visit(body);
 
+            // All(pred) == NOT EXISTS an element failing pred, which jsonb_path_exists
+            // renders in one scan for any jsonpath-capable predicate. The legacy
+            // AllCollectionConditionFilter shapes stay as the fallback (null checks,
+            // DateTime values)
+            if (filter.Wheres.Count == 1 &&
+                JsonPathExistsFilter.TryBuildForAll(filter.Wheres.Single(), this, options.Serializer(),
+                    out var jsonPath))
+            {
+                return jsonPath;
+            }
+
             filter.Compile(method);
 
             return filter;
@@ -133,6 +144,16 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
 
     public ISqlFragment ParseWhereForContains(MethodCallExpression body, IReadOnlyStoreOptions options)
     {
+        // Contains(complexObject) is exactly what JSONB containment does best. Note the
+        // containment semantics: an element matches when it contains every serialized
+        // member of the argument, so documents written with extra/evolved properties
+        // still match
+        var constant = body.Arguments.Last().ReduceToConstant();
+        if (constant.Value() != null)
+        {
+            return ContainmentWhereFilter.ForValue(this, constant.Value()!, options.Serializer());
+        }
+
         throw new BadLinqExpressionException(
             "Marten does not (yet) support contains queries through collections of element type " +
             ElementType.FullNameInCode());
