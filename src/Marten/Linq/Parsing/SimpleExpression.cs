@@ -320,9 +320,10 @@ internal class SimpleExpression: ExpressionVisitor
             return null;
         }
 
-        if (node.Method.DeclaringType == typeof(string) &&
+        if (node.Object != null &&
             node.Method.Name == "CompareTo" &&
-            node.Arguments.Count == 1)
+            node.Arguments.Count == 1 &&
+            node.Method.ReturnType == typeof(int))
         {
             var left = new SimpleExpression(_queryableMembers, node.Object);
             var right = new SimpleExpression(_queryableMembers, node.Arguments[0]);
