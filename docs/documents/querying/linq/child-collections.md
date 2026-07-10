@@ -104,6 +104,7 @@ against a child collection, in this order:
 | `Contains()`/`EndsWith()` on strings and case-insensitive comparisons | JSONPath `like_regex` with the (escaped) search text embedded in the SQL. **Not usable in compiled queries** — the value cannot be re-bound, and Marten fails loudly if you try | No |
 | Aggregates in predicates, e.g. `x.Lines.Sum(l => l.Number) > 100` (also `Min`/`Max`/`Average`, and parameterless overloads on scalar collections) | Correlated scalar subquery: `(SELECT COALESCE(SUM(...), 0) FROM ... ) > :arg`. `Sum()` over an empty collection is 0 like LINQ-to-objects; `Min`/`Max`/`Average` over an empty collection simply fail the comparison (C# would throw) | No |
 | `All(predicate)` for any jsonpath-capable predicate | `NOT jsonb_path_exists(d.data, '$.Lines[*] ? (!(...))')` — vacuously true on empty collections, and elements with null/missing members fail string predicates just like in LINQ-to-objects | No |
+| Indexing into a collection, e.g. `x.Lines[0].Name == "x"`, `x.Lines.ElementAt(1).Number > 5` | Plain JSON path navigation: `data -> 'Lines' -> 0 ->> 'Name'`. Out-of-range indexes yield SQL NULL and simply don't match | Via computed/duplicated indexes only |
 | Anything else (member-to-member comparisons, `DateTime` values) | Correlated `EXISTS (SELECT 1 FROM ...)` over the exploded elements | No |
 
 A couple of practical notes:

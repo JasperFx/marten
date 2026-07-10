@@ -10,6 +10,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
@@ -223,6 +224,20 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
 
     public override IQueryableMember FindMember(MemberInfo member)
     {
+        if (member is ArrayIndexMember indexMember)
+        {
+            var key = $"ArrayIndex[{indexMember.Index}]";
+            if (_members.TryFind(key, out var indexed))
+            {
+                return indexed;
+            }
+
+            indexed = new ChildDocumentAtIndex(_options, this, _options.Serializer().Casing, indexMember,
+                ElementType);
+            _members = _members.AddOrUpdate(key, indexed);
+            return indexed;
+        }
+
         if (_members.TryFind(member.Name, out var m))
         {
             return m;

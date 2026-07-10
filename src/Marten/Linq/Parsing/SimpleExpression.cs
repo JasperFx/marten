@@ -382,6 +382,27 @@ internal class SimpleExpression: ExpressionVisitor
                 $"Marten cannot translate the {node.Method.Name}() aggregate over this collection: '{node}'");
         }
 
+        if (node.Method.Name == "get_Item" && node.Object != null && node.Arguments.Count == 1 &&
+            node.Arguments[0].Type == typeof(int) &&
+            !node.Method.DeclaringType.Closes(typeof(IDictionary<,>)))
+        {
+            var listIndex = (int)node.Arguments[0].ReduceToConstant().Value!;
+            Members.Insert(0, new ArrayIndexMember(listIndex));
+
+            Visit(node.Object);
+            return null;
+        }
+
+        if (node.Method.DeclaringType == typeof(Enumerable) && node.Method.Name == "ElementAt" &&
+            node.Arguments.Count == 2 && node.Arguments[1].Type == typeof(int))
+        {
+            var elementIndex = (int)node.Arguments[1].ReduceToConstant().Value!;
+            Members.Insert(0, new ArrayIndexMember(elementIndex));
+
+            Visit(node.Arguments[0]);
+            return null;
+        }
+
         if (node.Method.Name == "get_Item" && node.Method.DeclaringType.Closes(typeof(IDictionary<,>)))
         {
             var dictMember = (IDictionaryMember)_queryableMembers.MemberFor(node.Object);
