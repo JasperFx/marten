@@ -44,7 +44,7 @@ public class TenantIdMetadataAttribute: MartenAttribute
 ///     Direct Marten to copy the is soft deleted metadata to this member
 /// </summary>
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-public class IsSoftDeletedMetadataAttributeAttribute: MartenAttribute
+public class IsSoftDeletedMetadataAttribute: MartenAttribute
 {
     public override void Modify(DocumentMapping mapping, MemberInfo member)
     {
