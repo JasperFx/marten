@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
 using JasperFx.Core;
@@ -8,6 +9,7 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Storage;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Polly;
@@ -26,10 +28,11 @@ public class ProjectionCoordinator<T>: ProjectionCoordinator, IProjectionCoordin
 // JasperFx.Events.Daemon.ProjectionCoordinatorBase. Marten supplies the distributor +
 // settings via the base ctor and implements the daemon-resolution seams, keeping its
 // own ImHashMap + double-checked-lock daemon cache.
-public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordinator
+public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordinator, IAsyncDisposable, IDisposable
 {
     private readonly System.Threading.Lock _daemonLock = new();
     private readonly ILogger _logger;
+    private int _disposed;
 
     private ImHashMap<string, IProjectionDaemon> _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
 
@@ -163,6 +166,57 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
     {
         var all = await Store.Storage.AllDatabases().ConfigureAwait(false);
         return all.OfType<MartenDatabase>().Select(findDaemonForDatabase).ToList();
+    }
+
+    /// <summary>
+    ///     Drain the leadership loop and release the advisory locks, for hosts that are disposed without a
+    ///     preceding <see cref="ProjectionCoordinatorBase.StopAsync" />.
+    /// </summary>
+    /// <remarks>
+    ///     #4915. <see cref="IHostedService" /> only promises a StopAsync on graceful shutdown, and
+    ///     <c>IHost.Dispose()</c> does not stop hosted services — so the very common <c>using var host = ...</c>
+    ///     shape tears the container down underneath a running coordinator. The container then disposes the
+    ///     DocumentStore and, with it, the owned NpgsqlDataSource, while the leadership loop is still polling
+    ///     <see cref="Weasel.Postgresql.AdvisoryLock.TryAttainLockAsync" /> on its cadence. Every poll opened a
+    ///     connection against a dead pool.
+    ///
+    ///     The coordinator is constructed from an <see cref="IDocumentStore" />, so the container always creates
+    ///     (and therefore always disposes) the store around this object: reverse-order disposal runs this first,
+    ///     while the data source is still alive and the locks can still be released cleanly.
+    ///
+    ///     Weasel 9.16.3 (weasel#354) independently makes a disposed data source terminal rather than an endless
+    ///     "lock held elsewhere", so the loop can no longer churn even if it does outlive its data source. This
+    ///     is the near side of that fix: don't let it outlive the data source in the first place.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) == 1) return;
+
+        GC.SuppressFinalize(this);
+
+        try
+        {
+            // Unconditional, even after a graceful StopAsync. StopAsync is idempotent -- a cancelled token
+            // source, a completed runner, and an emptied lock dictionary all no-op -- and there is no hook to
+            // tell "already stopped" from "stopped, then ResumeAsync started a fresh loop", since neither
+            // StartAsync nor ResumeAsync is virtual on the base. Skipping on a stale flag would leak the very
+            // loop this method exists to drain.
+            await StopAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Error while draining the ProjectionCoordinator during disposal");
+        }
+    }
+
+    /// <summary>
+    ///     Synchronous disposal, for containers torn down through <see cref="IDisposable" />. Blocks on
+    ///     <see cref="DisposeAsync" />; the leadership loop runs on the thread pool with no captured context, so
+    ///     there is nothing here for the continuation to deadlock against.
+    /// </summary>
+    public void Dispose()
+    {
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
     private IProjectionDaemon findDaemonForDatabase(MartenDatabase database)
