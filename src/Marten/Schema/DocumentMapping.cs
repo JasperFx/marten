@@ -475,6 +475,47 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
         return index;
     }
 
+    /// <summary>
+    ///     Adds a GIN index over one member of the JSONB data, e.g.
+    ///     (data -> 'Children') jsonb_path_ops. Child collection containment filters
+    ///     compare against exactly this expression, which a whole-document GIN index
+    ///     cannot serve
+    /// </summary>
+    public DocumentIndex AddGinIndexToDataMember(MemberInfo[] members)
+    {
+        // resolve through the queryable member tree so the index expression uses the
+        // same serialized property names the generated SQL will use
+        IQueryableMember member = QueryMembers.FindMember(members[0]);
+        for (var i = 1; i < members.Length; i++)
+        {
+            if (member is not IHasChildrenMembers parent)
+            {
+                throw new ArgumentOutOfRangeException(nameof(members),
+                    $"Marten cannot build a GIN index through member '{member.MemberName}' of type {member.MemberType.FullNameInCode()}");
+            }
+
+            member = parent.FindMember(members[i]);
+        }
+
+        var segments = member.Ancestors
+            .Select(x => x.MemberName)
+            .Where(x => x.IsNotEmpty())
+            .Append(member.MemberName)
+            .ToArray();
+
+        var path = segments.Select(x => $" -> '{x}'").Join("");
+
+        var index = new DocumentIndex(this, "data")
+        {
+            Method = IndexMethod.gin, Mask = $"(?{path}) jsonb_path_ops"
+        };
+        index.Name = $"{TableName.Name}_idx_{segments.Join("_").ToLowerInvariant()}_gin";
+
+        Indexes.Add(index);
+
+        return index;
+    }
+
     public DocumentIndex AddLastModifiedIndex(Action<DocumentIndex>? configure = null)
     {
         var index = new DocumentIndex(this, SchemaConstants.LastModifiedColumn);
