@@ -43,16 +43,33 @@ internal abstract class QueryMember<T>: IQueryMember<T>
     public bool TryMatch(NpgsqlParameter parameter, StoreOptions options, ICompiledQueryAwareFilter[] filters,
         out ICompiledQueryAwareFilter filter)
     {
-        if (Type.IsEnum)
-        {
-            var parameterValue = options.Serializer().EnumStorage == EnumStorage.AsInteger
-                ? Value.As<int>()
-                : (object)Value.ToString();
+        return tryToFind(parameter, filters, comparableValue(options), out filter);
+    }
 
-            return tryToFind(parameter, filters, parameterValue, out filter);
+    public void MarkFilterUsages(StoreOptions options, ICompiledQueryAwareFilter[] filters)
+    {
+        var value = comparableValue(options);
+        if (value == null)
+        {
+            return;
         }
 
-        return tryToFind(parameter, filters, Value, out filter);
+        foreach (var filter in filters)
+        {
+            filter.TryMatchValue(value, Member);
+        }
+    }
+
+    private object comparableValue(StoreOptions options)
+    {
+        if (Type.IsEnum)
+        {
+            return options.Serializer().EnumStorage == EnumStorage.AsInteger
+                ? Value.As<int>()
+                : Value.ToString();
+        }
+
+        return Value;
     }
 
     public void TryWriteValue(UniqueValueSource valueSource, object query)

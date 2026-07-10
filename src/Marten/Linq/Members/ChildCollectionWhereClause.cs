@@ -1,7 +1,9 @@
 #nullable enable
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JasperFx.Core;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -67,6 +69,117 @@ internal class ChildCollectionWhereClause: IWhereFragmentHolder
             return filter;
         }
 
+        // The strategies below only apply to JSONB-backed collections. Duplicated
+        // array fields and dictionary members have their own storage semantics and
+        // keep the sub-query strategy
+        if (collectionMember is ChildCollectionMember or ValueCollectionMember)
+        {
+            // An OR spray of containment-eligible predicates beats a jsonpath filter
+            // because each branch stays eligible for a GIN index (BitmapOr)
+            if (tryBuildOrOfContainment(_fragment, collectionMember, serializer, out var orContainment))
+            {
+                return orContainment;
+            }
+
+            if (JsonPathExistsFilter.TryBuild(_fragment, collectionMember, serializer, out var jsonPath))
+            {
+                // Mixed AND (equality + something else): the equality conjuncts also go
+                // out as a logically redundant containment pre-filter so a GIN index can
+                // prune before the jsonpath predicate runs. Only at the document root —
+                // a nested filter must stay a single ICollectionAwareFilter so that an
+                // outer Any() can flatten it via MoveUnder()
+                if (collectionMember.Ancestors[0] is DocumentQueryableMemberCollection &&
+                    tryBuildContainmentPrefilter(_fragment, collectionMember, serializer, out var prefilter))
+                {
+                    return CompoundWhereFragment.And(prefilter, jsonPath);
+                }
+
+                return jsonPath;
+            }
+        }
+
         return new SubQueryFilter(collectionMember, _fragment);
+    }
+
+    private static bool tryBuildContainmentPrefilter(ISqlFragment fragment, ICollectionMember collectionMember,
+        ISerializer serializer, [NotNullWhen(true)]out ISqlFragment? prefilter)
+    {
+        prefilter = default;
+
+        if (fragment is not CompoundWhereFragment compound || !compound.Separator.ContainsIgnoreCase("and"))
+        {
+            return false;
+        }
+
+        var eligible = compound.Children
+            .OfType<ICollectionAware>()
+            .Where(x => x.CanReduceInChildCollection() && x.SupportsContainment())
+            .ToArray();
+
+        if (!eligible.Any())
+        {
+            return false;
+        }
+
+        var containment = new ContainmentWhereFilter(collectionMember, serializer)
+        {
+            Usage = ContainmentUsage.Collection
+        };
+        foreach (var child in eligible)
+        {
+            child.PlaceIntoContainmentFilter(containment);
+        }
+
+        prefilter = containment;
+        return true;
+    }
+
+    private static bool tryBuildOrOfContainment(ISqlFragment fragment, ICollectionMember collectionMember,
+        ISerializer serializer, [NotNullWhen(true)]out ISqlFragment? filter)
+    {
+        filter = default;
+
+        if (fragment is not CompoundWhereFragment compound || compound.Separator.ContainsIgnoreCase("and"))
+        {
+            return false;
+        }
+
+        var branches = new List<ISqlFragment>();
+        foreach (var child in compound.Children)
+        {
+            switch (child)
+            {
+                // ElementComparisonFilter reduces to its own single-value containment for
+                // = / != even though it reports SupportsContainment() == false (it cannot
+                // be merged with siblings), so CanReduceInChildCollection() is the gate here
+                case ICollectionAware aware when aware.CanReduceInChildCollection() &&
+                                                 (aware.SupportsContainment() || aware is ElementComparisonFilter):
+                    branches.Add(aware.BuildFragment(collectionMember, serializer));
+                    break;
+
+                case CompoundWhereFragment inner when inner.Separator.ContainsIgnoreCase("and") &&
+                                                      inner.Children.Any() &&
+                                                      inner.Children.All(x =>
+                                                          x is ICollectionAware ia &&
+                                                          ia.CanReduceInChildCollection() && ia.SupportsContainment()):
+                    var containment = new ContainmentWhereFilter(collectionMember, serializer)
+                    {
+                        Usage = ContainmentUsage.Collection
+                    };
+                    foreach (var ia in inner.Children.OfType<ICollectionAware>())
+                    {
+                        ia.PlaceIntoContainmentFilter(containment);
+                    }
+
+                    branches.Add(containment);
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        filter = CompoundWhereFragment.Or(branches.ToArray());
+        return true;
     }
 }
