@@ -103,7 +103,7 @@ against a child collection, in this order:
 | Case-sensitive `StartsWith()` | JSONPath `starts with $var` — fully parameterized, works in compiled queries | No |
 | `Contains()`/`EndsWith()` on strings and case-insensitive comparisons | JSONPath `like_regex` with the (escaped) search text embedded in the SQL. **Not usable in compiled queries** — the value cannot be re-bound, and Marten fails loudly if you try | No |
 | `All(predicate)` for any jsonpath-capable predicate | `NOT jsonb_path_exists(d.data, '$.Lines[*] ? (!(...))')` — vacuously true on empty collections, and elements with null/missing members fail string predicates just like in LINQ-to-objects | No |
-| Anything else (member-to-member comparisons, `DateTime` values) | Explodes the collection into a common table expression and correlates on `ctid` | No |
+| Anything else (member-to-member comparisons, `DateTime` values) | Correlated `EXISTS (SELECT 1 FROM ...)` over the exploded elements | No |
 
 A couple of practical notes:
 

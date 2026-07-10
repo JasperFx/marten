@@ -28,6 +28,13 @@ public abstract partial class Statement: IWhereFragmentHolder
             return compound.Children.SelectMany(enumerateWheres).ToArray();
         }
 
+        // compiled-query parameter matching has to see the filters inside a
+        // correlated EXISTS as well
+        if (where is ExistsCollectionFilter exists)
+        {
+            return enumerateWheres(exists.Inner).Append(where).ToArray();
+        }
+
         return new[] { where };
     }
 

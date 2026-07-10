@@ -272,6 +272,11 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
         // where this fragment renders correctly against the exploded element.
         if (IsNot || _negatePredicate)
         {
+            if (ancestorCollection is IExistsElementSource { ExplodedElementSource: not null } source)
+            {
+                return new ExistsCollectionFilter(ancestorCollection, this, source.ExplodedElementSource!);
+            }
+
             return new SubQueryFilter(ancestorCollection, this);
         }
 

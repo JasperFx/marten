@@ -393,12 +393,33 @@ public class jsonpath_string_all_contains_filters: IntegrationContext
         var sql = sqlFor(x => x.Lines.Any(l => l.Subs.All(s => s.Amount > 5)));
 
         // flattening NOT(exists($.Lines[*].Subs[*] ...)) would assert over every
-        // line's subs — this must stay a sub-query instead
-        sql.ShouldContain("ctid");
+        // line's subs — this nests through the correlated EXISTS strategy instead
+        sql.ShouldContain("EXISTS (SELECT 1 FROM");
+        sql.ShouldNotContain("ctid");
 
         await assertMatchesInMemory(
             x => x.Lines.Any(l => l.Subs.All(s => s.Amount > 5)),
             x => x.Lines.Any(l => l.Subs.All(s => s.Amount > 5)));
+    }
+
+    [Fact]
+    public async Task collection_filter_after_select_many_now_works()
+    {
+        await seedOrders();
+
+        // a collection predicate under an already-exploded statement used to throw
+        // "Sub Query filters are not supported for this operation" — the correlated
+        // EXISTS strategy composes there naturally
+        var fromDb = await theSession.Query<JsonPathOrder>()
+            .SelectMany(x => x.Lines)
+            .Where(l => l.Subs.Any(s => s.Amount > 90))
+            .ToListAsync();
+
+        var expected = _orders.SelectMany(x => x.Lines)
+            .Count(l => l.Subs.Any(s => s.Amount > 90));
+
+        expected.ShouldBeGreaterThan(0);
+        fromDb.Count.ShouldBe(expected);
     }
 
     public class OrdersWithLineStartingWith: ICompiledListQuery<JsonPathOrder>

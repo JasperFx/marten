@@ -98,6 +98,13 @@ internal class ChildCollectionWhereClause: IWhereFragmentHolder
             }
         }
 
+        // Correlated EXISTS over the exploded elements beats the legacy explode-CTE +
+        // ctid correlation by ~8x and composes at any nesting depth
+        if (collectionMember is IExistsElementSource { ExplodedElementSource: not null } source)
+        {
+            return new ExistsCollectionFilter(collectionMember, _fragment, source.ExplodedElementSource!);
+        }
+
         return new SubQueryFilter(collectionMember, _fragment);
     }
 

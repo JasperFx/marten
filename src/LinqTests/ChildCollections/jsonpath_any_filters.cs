@@ -295,18 +295,34 @@ public class jsonpath_any_filters: IntegrationContext
     }
 
     [Fact]
-    public async Task member_to_member_control_still_uses_sub_query()
+    public async Task member_to_member_uses_correlated_exists()
     {
         await seedOrders();
 
         // member-vs-member comparisons have no jsonpath rendering (the right side is
-        // a locator, not a constant) and stay on the sub-query strategy
+        // a locator, not a constant) — they use the correlated EXISTS strategy
         var sql = sqlFor(x => x.Lines.Any(l => l.Number > l.Subs.Count));
-        sql.ShouldContain("ctid");
+        sql.ShouldContain("EXISTS (SELECT 1 FROM");
+        sql.ShouldNotContain("ctid");
 
         await assertMatchesInMemory(
             x => x.Lines.Any(l => l.Number > l.Subs.Count),
             x => x.Lines.Any(l => l.Number > l.Subs.Count));
+    }
+
+    [Fact]
+    public async Task negated_member_to_member_uses_not_exists()
+    {
+        await seedOrders();
+
+        // Number < Subs.Count is rare per line, so most documents genuinely have
+        // no qualifying line and the negation is well populated
+        var sql = sqlFor(x => !x.Lines.Any(l => l.Number < l.Subs.Count));
+        sql.ShouldContain("NOT(EXISTS (SELECT 1 FROM");
+
+        await assertMatchesInMemory(
+            x => !x.Lines.Any(l => l.Number < l.Subs.Count),
+            x => !x.Lines.Any(l => l.Number < l.Subs.Count));
     }
 
     [Fact]
