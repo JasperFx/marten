@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,29 +49,6 @@ public class Bug_4915_coordinator_disposal_drain
         _output = output;
     }
 
-    // CoreTests runs serially ([assembly: CollectionBehavior(DisableTestParallelization = true)]), but other
-    // tests still produce disposed-pool ObjectDisposedExceptions of their own: leaked background work (daemon
-    // StopAllAsync, schema migrations, session reads), and -- benignly -- AdvisoryLock.DisposeAsync releasing a
-    // lock handle whose data source already went away, which Weasel swallows. FirstChanceException is an
-    // AppDomain-wide hook, so a bare "zero disposed-pool aborts" assertion counts all of that and flakes. That
-    // is why Bug_4874_coordinator_drain_ordering fails in a full run but passes alone.
-    //
-    // Attribute each abort to the leadership poll specifically -- TryAttainLockAsync re-opening a dead pool is
-    // the bug, and lock *disposal* touching one is not. The exception's own StackTrace is not populated at
-    // first-chance time, so walk the throwing thread's live stack.
-    private static bool IsAdvisoryLockPollAbort(Exception exception)
-    {
-        if (exception is not ObjectDisposedException ode) return false;
-
-        if (ode.ObjectName?.Contains("PoolingDataSource") != true &&
-            !ode.Message.Contains("PoolingDataSource"))
-        {
-            return false;
-        }
-
-        return new StackTrace(false).ToString().Contains("TryAttainLockAsync", StringComparison.Ordinal);
-    }
-
     [Fact]
     public async Task disposing_a_cold_node_without_stopasync_does_not_poll_the_disposed_datasource()
     {
@@ -85,7 +61,7 @@ public class Bug_4915_coordinator_disposal_drain
         {
             if (!Volatile.Read(ref counting)) return;
 
-            if (IsAdvisoryLockPollAbort(e.Exception))
+            if (DisposedPoolAborts.IsAdvisoryLockPollAbort(e.Exception))
             {
                 aborts.Enqueue(e.Exception.ToString());
             }
@@ -147,7 +123,7 @@ public class Bug_4915_coordinator_disposal_drain
         {
             if (!Volatile.Read(ref counting)) return;
 
-            if (IsAdvisoryLockPollAbort(e.Exception))
+            if (DisposedPoolAborts.IsAdvisoryLockPollAbort(e.Exception))
             {
                 aborts.Enqueue(e.Exception.ToString());
             }
