@@ -90,14 +90,20 @@
          JasperFx 2.24.1: jasperfx#499/#500 (marten#4874 case B) — ProjectionCoordinatorBase.executeAsync
          terminates the leadership loop on a disposed data source / wrapped cancellation instead of
          re-polling, so a cold HotCold node's advisory-lock poll no longer spins OpenAsync against a
-         data source being disposed during shutdown. Pairs with Weasel 9.16.2 (weasel#349). -->
-    <PackageVersion Include="JasperFx" Version="2.24.1" />
-    <PackageVersion Include="JasperFx.Events" Version="2.24.1" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.24.1">
+         data source being disposed during shutdown. Pairs with Weasel 9.16.2 (weasel#349).
+         JasperFx 2.25.0: jasperfx#501 (CritterWatch#678) — every published ShardState is stamped with
+         its owning database identifier.
+         JasperFx 2.26.0: jasperfx#4913 (marten#4913) — under UseTenantPartitionedEvents the store-global
+         HighWaterAgent no longer runs its recurring max(seq_id)-over-mt_events scan (which fanned out
+         across every tenant partition each tick); tenant high water is driven per-tenant by the
+         coordinator + the jasperfx#492 timer, so the global mark is only seeded once at startup. -->
+    <PackageVersion Include="JasperFx" Version="2.26.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.26.0" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.26.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.24.1" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.26.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
