@@ -9,6 +9,11 @@ services:
     # SQL no longer requires it.
     build:
       context: ./docker/postgres
+    # Postgres 17 keeps ~46MB of dynamic shared memory standing at boot
+    # (dynamic_shared_memory_type=posix backs it with /dev/shm), so Docker's
+    # default 64MB shm leaves parallel queries almost no headroom and the test
+    # suite can fail with "53100: could not resize shared memory segment"
+    shm_size: '512mb'
     ports:
       - "5432:5432"
     environment:

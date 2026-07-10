@@ -28,6 +28,9 @@ internal class ElementComparisonFilter: ISqlFragment, ICollectionAware
 
     bool ICollectionAware.CanReduceInChildCollection()
     {
+        // Only = and != can become containment filters; other operators flow on
+        // to the jsonpath strategy instead of BuildFragment() blowing up
+        if (Op != "=" && Op != "!=") return false;
         if (Value == null) return false;
         if (Value.GetType().IsDateTime()) return false;
         if (Value is DateTimeOffset || Value is DateTimeOffset?) return false;

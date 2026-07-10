@@ -89,6 +89,30 @@ Finally, you can query for child collections that do **not** contain a value:
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_561_negation_of_query_on_contains.cs#L81-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## How Marten Translates Collection Predicates <Badge type="tip" text="9.15" />
+
+Marten picks the most index-friendly SQL strategy it can for a `Where()` clause that filters
+against a child collection, in this order:
+
+| Predicate shape | SQL strategy | GIN index eligible? |
+| --- | --- | --- |
+| Equalities combined with `&&`, e.g. `x.Lines.Any(l => l.Name == "a" && l.Number == 2)` | JSONB containment: `data -> 'Lines' @> '[{"Name":"a","Number":2}]'` | Yes |
+| Equalities combined with `\|\|`, e.g. `x.Lines.Any(l => l.Name == "a" \|\| l.Name == "b")` | OR of containment filters (`BitmapOr` over the index) | Yes |
+| Other comparisons (`>`, `<`, `>=`, `<=`, `!=`) and mixes, e.g. `x.Lines.Any(l => l.Name == "a" && l.Number > 5)` | JSONPath: `jsonb_path_exists(d.data, '$.Lines[*] ? (@.Name == $val1 && @.Number > $val2)', :params)` | No, but a single scan with a cheap per-row predicate |
+| Anything else (string methods like `StartsWith()`, member-to-member comparisons, `DateTime` values) | Explodes the collection into a common table expression and correlates on `ctid` | No |
+
+A couple of practical notes:
+
+- The containment strategies compare against `data -> 'CollectionName'`, so a GIN index needs to
+  be an *expression* index on that same expression to be used, e.g.
+  `CREATE INDEX ON mt_doc_order USING gin ((data -> 'Lines') jsonb_path_ops)`. A whole-document
+  index from `GinIndexJsonData()` will not accelerate child collection containment.
+- The JSONPath strategy passes all comparison values through the `vars` argument of
+  `jsonb_path_exists()`, so the SQL stays fully parameterized and works with compiled queries.
+- JSONPath comparisons follow C# semantics more closely than the older
+  common-table-expression strategy did: comparing a `null` member with `!=` matches, and range
+  comparisons against `null` or missing members do not.
+
 ## Querying within Value IEnumerables
 
 As of now, Marten allows you to do "contains" searches within Arrays, Lists & ILists of primitive values like string or numbers:

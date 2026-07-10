@@ -398,6 +398,16 @@ public class CompiledQueryPlan : ICommandBuilder
 
     public void MatchParameters(StoreOptions options, ICompiledQueryAwareFilter[] filters)
     {
+        // A filter can carry more than one member value inside a single parameter
+        // (jsonpath vars payloads, containment dictionaries), but the loop below
+        // stops at the first member that matches each parameter. Let every filter
+        // see every member value first so all of its captured values get associated
+        // with the right query member. TryMatchValue marking is idempotent.
+        foreach (var queryMember in QueryMembers)
+        {
+            queryMember.MarkFilterUsages(options, filters);
+        }
+
         foreach (var commandPlan in _commands)
         {
             foreach (var usage in commandPlan.Parameters)
