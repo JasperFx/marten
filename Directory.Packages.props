@@ -96,14 +96,19 @@
          JasperFx 2.26.0: jasperfx#4913 (marten#4913) — under UseTenantPartitionedEvents the store-global
          HighWaterAgent no longer runs its recurring max(seq_id)-over-mt_events scan (which fanned out
          across every tenant partition each tick); tenant high water is driven per-tenant by the
-         coordinator + the jasperfx#492 timer, so the global mark is only seeded once at startup. -->
-    <PackageVersion Include="JasperFx" Version="2.26.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.26.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.26.0">
+         coordinator + the jasperfx#492 timer, so the global mark is only seeded once at startup.
+         JasperFx 2.27.0: jasperfx#506/#507 — Block<T> fault semantics + daemon OnError wiring (block
+         failures are loud, dead consumers throw from Post), and teardown catch clauses classify via
+         CancellationExceptions.IsCancellationLike instead of discarding every exception type while a
+         shard CTS is cancelled; jasperfx#505 — source-gen evolver two-statement fix for the
+         GetUninitializedObject cast (rides in the bundled JasperFx.Events.SourceGenerator analyzer). -->
+    <PackageVersion Include="JasperFx" Version="2.27.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.27.0" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.27.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.26.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.27.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
