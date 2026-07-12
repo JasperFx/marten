@@ -425,7 +425,9 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         // bulk migration measured ~26s between tenant starts on exactly this, while the median tenant's
         // actual work took 4s) and pushes concurrent waiters past their command timeout. Crash-safety is
         // unchanged: with the assignment row committed but partitions missing, a re-run of
-        // AssignTenantAsync (or any idempotent provisioning repair) completes the tenant.
+        // AssignTenantAsync (or any idempotent provisioning repair) completes the tenant — and since
+        // #4942 the auto-assign path (findOrAssignTenantDatabaseAsync) runs the same repair on first
+        // sight of an already-assigned tenant, so both AddTenantToShardAsync overloads honor it.
         if (_databasesById.TryFind(databaseId, out var database))
         {
             database.TenantIds.Fill(tenantId);
@@ -790,6 +792,13 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         await maybeApplyChanges().ConfigureAwait(false);
         await maybeSeedDatabases().ConfigureAwait(false);
 
+        // #4942: remember whether THIS process had already resolved the tenant before this call.
+        // The existing-assignment repair below runs only on first sight per process — the callers
+        // on the hot path (GetTenant/GetTenantAsync/FindOrCreateDatabase) consult _tenantToDatabase
+        // before ever reaching this method, so the repair costs at most one batch of IF NOT EXISTS
+        // catalog checks per tenant per process.
+        var previouslyKnown = _tenantToDatabase.TryFind(tenantId, out _);
+
         // Step 1: Check assignment table
         var databaseId = await FindDatabaseForTenantAsync(tenantId, CancellationToken.None)
             .ConfigureAwait(false);
@@ -798,6 +807,21 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         {
             database.TenantIds.Fill(tenantId);
             _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
+
+            // #4942: an existing assignment row is NOT proof the tenant was fully provisioned —
+            // AssignTenantAsync/this method commit the registry row BEFORE the (idempotent,
+            // potentially slow) partition DDL, so a crash or failure in between leaves the tenant
+            // half-provisioned: assignment present, list partitions and/or the per-tenant event
+            // sequence missing. This path used to return early and never repair such a tenant,
+            // so every write to a missing document partition failed with 23514 forever (the
+            // explicit AssignTenantAsync overload always re-ran the repair; the auto-assign path
+            // did not). Run the same idempotent repair here, guarded to first sight per process.
+            if (!previouslyKnown)
+            {
+                await createPartitionsForTenant(database, tenantId, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+
             return database;
         }
 
@@ -807,6 +831,12 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
         await conn.CreateCommand($"select pg_advisory_lock({AdvisoryLockKey})")
             .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+
+        // #4942: tracks whether the tenant turned out to already have an active assignment under
+        // the lock (raced a concurrent assigner, or its shard database wasn't materialized locally
+        // at Step 1) — those tenants get the same guarded repair as Step 1 instead of the
+        // unconditional fresh-assignment provisioning.
+        var foundExistingAssignment = false;
 
         try
         {
@@ -846,59 +876,61 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
             {
                 database.TenantIds.Fill(tenantId);
                 _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
-                return database;
+                foundExistingAssignment = true;
             }
-
-            // Get available databases
-            var availableDatabases = new List<PooledDatabase>();
-            await using var reader = await ((DbCommand)conn
-                    .CreateCommand(
-                        $"select database_id, connection_string, is_full, tenant_count from {_schemaName}.{DatabasePoolTable.TableName} where is_full = false"))
-                .ExecuteReaderAsync(CancellationToken.None).ConfigureAwait(false);
-
-            while (await reader.ReadAsync().ConfigureAwait(false))
+            else
             {
-                availableDatabases.Add(new PooledDatabase(
-                    await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false),
-                    await reader.GetFieldValueAsync<string>(1).ConfigureAwait(false),
-                    false,
-                    await reader.GetFieldValueAsync<int>(3).ConfigureAwait(false)
-                ));
-            }
+                // Get available databases
+                var availableDatabases = new List<PooledDatabase>();
+                await using var reader = await ((DbCommand)conn
+                        .CreateCommand(
+                            $"select database_id, connection_string, is_full, tenant_count from {_schemaName}.{DatabasePoolTable.TableName} where is_full = false"))
+                    .ExecuteReaderAsync(CancellationToken.None).ConfigureAwait(false);
 
-            await reader.CloseAsync().ConfigureAwait(false);
+                while (await reader.ReadAsync().ConfigureAwait(false))
+                {
+                    availableDatabases.Add(new PooledDatabase(
+                        await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false),
+                        await reader.GetFieldValueAsync<string>(1).ConfigureAwait(false),
+                        false,
+                        await reader.GetFieldValueAsync<int>(3).ConfigureAwait(false)
+                    ));
+                }
 
-            // Run assignment strategy
-            var assignedDbId = await _configuration.AssignmentStrategy
-                .AssignTenantToDatabaseAsync(tenantId, availableDatabases).ConfigureAwait(false);
+                await reader.CloseAsync().ConfigureAwait(false);
 
-            // Write assignment
-            await conn.CreateCommand(
-                    $"insert into {_schemaName}.{TenantAssignmentTable.TableName} (tenant_id, database_id) values (:tid, :did) on conflict (tenant_id) do update set database_id = :did")
-                .With("tid", tenantId)
-                .With("did", assignedDbId)
-                .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+                // Run assignment strategy
+                var assignedDbId = await _configuration.AssignmentStrategy
+                    .AssignTenantToDatabaseAsync(tenantId, availableDatabases).ConfigureAwait(false);
 
-            // Update tenant count
-            await conn.CreateCommand(
-                    $"update {_schemaName}.{DatabasePoolTable.TableName} set tenant_count = tenant_count + 1 where database_id = :did")
-                .With("did", assignedDbId)
-                .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+                // Write assignment
+                await conn.CreateCommand(
+                        $"insert into {_schemaName}.{TenantAssignmentTable.TableName} (tenant_id, database_id) values (:tid, :did) on conflict (tenant_id) do update set database_id = :did")
+                    .With("tid", tenantId)
+                    .With("did", assignedDbId)
+                    .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
 
-            // Ensure database is in cache
-            if (!_databasesById.TryFind(assignedDbId, out database))
-            {
-                // Need to build it from the pool
-                await BuildDatabases().ConfigureAwait(false);
+                // Update tenant count
+                await conn.CreateCommand(
+                        $"update {_schemaName}.{DatabasePoolTable.TableName} set tenant_count = tenant_count + 1 where database_id = :did")
+                    .With("did", assignedDbId)
+                    .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+
+                // Ensure database is in cache
                 if (!_databasesById.TryFind(assignedDbId, out database))
                 {
-                    throw new InvalidOperationException(
-                        $"Database '{assignedDbId}' was assigned but could not be found in the pool");
+                    // Need to build it from the pool
+                    await BuildDatabases().ConfigureAwait(false);
+                    if (!_databasesById.TryFind(assignedDbId, out database))
+                    {
+                        throw new InvalidOperationException(
+                            $"Database '{assignedDbId}' was assigned but could not be found in the pool");
+                    }
                 }
-            }
 
-            database.TenantIds.Fill(tenantId);
-            _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
+                database.TenantIds.Fill(tenantId);
+                _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
+            }
         }
         finally
         {
@@ -909,8 +941,13 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
         // Partition DDL outside the global registry lock — same rationale as AssignTenantAsync above:
         // the lock guards the registry rows, not the tenant's shard-local (idempotent) DDL, and holding
-        // it through the DDL serializes every tenant assignment store-wide.
-        await createPartitionsForTenant(database, tenantId, CancellationToken.None).ConfigureAwait(false);
+        // it through the DDL serializes every tenant assignment store-wide. For a fresh assignment this
+        // is the initial provisioning; for an existing assignment discovered under the lock it is the
+        // #4942 first-sight-per-process repair, same guard as Step 1.
+        if (!foundExistingAssignment || !previouslyKnown)
+        {
+            await createPartitionsForTenant(database, tenantId, CancellationToken.None).ConfigureAwait(false);
+        }
 
         return database;
     }
