@@ -28,6 +28,8 @@ internal class NestedTenantQuerySession: QuerySession, ITenantQueryOperations
 
     protected internal override IDocumentStorage<T> selectStorage<T>(DocumentProvider<T> provider)
     {
-        return _parent.selectStorage(provider);
+        var storage = _parent.selectStorage(provider);
+        this.ShareTenantNeutralStateWith(_parent, storage);
+        return storage;
     }
 }

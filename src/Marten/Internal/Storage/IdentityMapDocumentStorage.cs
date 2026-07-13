@@ -8,11 +8,28 @@ using Marten.Exceptions;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Schema;
+using Marten.Storage;
 using Npgsql;
 
 namespace Marten.Internal.Storage;
 
-public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId> where T: notnull where TId: notnull
+/// <summary>
+///     #4947 — seam that lets a nested ForTenant() session share the parent session's identity map
+///     (and version state) for a *single document type* rather than all-or-nothing per session.
+/// </summary>
+internal interface ISharedTenantNeutralSessionState
+{
+    TenancyStyle TenancyStyle { get; }
+
+    /// <summary>
+    ///     Point the nested session's identity map / version entries for this document type at the
+    ///     very same underlying dictionaries used by the parent session. Only ever called for
+    ///     tenancy-neutral documents living in the same database.
+    /// </summary>
+    void ShareTenantNeutralStateWith(IStorageSession parent, IStorageSession nested);
+}
+
+public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId>, ISharedTenantNeutralSessionState where T: notnull where TId: notnull
 {
     public IdentityMapDocumentStorage(DocumentMapping document): this(StorageStyle.IdentityMap, document)
     {
@@ -21,6 +38,66 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
     protected IdentityMapDocumentStorage(StorageStyle storageStyle, DocumentMapping document): base(storageStyle,
         document)
     {
+    }
+
+    void ISharedTenantNeutralSessionState.ShareTenantNeutralStateWith(IStorageSession parent, IStorageSession nested)
+    {
+        if (ReferenceEquals(parent.ItemMap, nested.ItemMap))
+        {
+            return;
+        }
+
+        shareIdentityMap(parent, nested);
+
+        if (UseOptimisticConcurrency || UseNumericRevisions)
+        {
+            shareVersions(parent, nested);
+        }
+    }
+
+    private static void shareIdentityMap(IStorageSession parent, IStorageSession nested)
+    {
+        if (parent.ItemMap.TryGetValue(typeof(T), out var items))
+        {
+            // A mismatched key type is diagnosed (and thrown on) by the normal storage paths --
+            // don't propagate a broken entry into the nested session here.
+            if (items is not Dictionary<TId, T>)
+            {
+                return;
+            }
+        }
+        else
+        {
+            items = new Dictionary<TId, T>();
+            parent.ItemMap[typeof(T)] = items;
+        }
+
+        nested.ItemMap[typeof(T)] = items;
+    }
+
+    private void shareVersions(IStorageSession parent, IStorageSession nested)
+    {
+        if (parent.Versions is not VersionTracker parentVersions ||
+            nested.Versions is not VersionTracker nestedVersions)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(parentVersions, nestedVersions))
+        {
+            return;
+        }
+
+        if (!parentVersions.ByType.TryGetValue(typeof(T), out var versions))
+        {
+            versions = UseNumericRevisions
+                ? new Dictionary<TId, long>()
+                : new Dictionary<TId, Guid>();
+
+            parentVersions.ByType[typeof(T)] = versions;
+        }
+
+        nestedVersions.ByType[typeof(T)] = versions;
     }
 
     public sealed override void Eject(IStorageSession session, T document)
