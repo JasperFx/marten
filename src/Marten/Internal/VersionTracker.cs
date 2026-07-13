@@ -8,6 +8,12 @@ public class VersionTracker: IVersionTracker
 {
     private readonly Dictionary<Type, object> _byType = new();
 
+    /// <summary>
+    ///     #4947 -- exposed so that a nested ForTenant() session can alias the parent session's
+    ///     version state for a tenancy-neutral document type instead of tracking its own copy.
+    /// </summary>
+    internal Dictionary<Type, object> ByType => _byType;
+
     public Dictionary<TId, long> RevisionsFor<TDoc, TId>() where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
