@@ -25,6 +25,16 @@ The bulk append API:
 This approach is significantly faster than the normal append path because it avoids per-row function
 calls, version checking, and individual INSERT statements.
 
+### Schema Application
+
+`BulkInsertEventsAsync` will apply any outstanding schema changes **at most once per database**, and only
+for the database the events are actually being imported into. It is *not* re-applied on every call, so a
+conversion tool that loops batches over a single store pays the schema introspection once rather than per
+batch. When the store's `AutoCreateSchemaObjects` is `AutoCreate.None` — schema managed out of band — the
+apply is skipped entirely, since it cannot do anything by contract and would only cost introspection.
+
+As always with `AutoCreate.None`, the event storage must exist before you import.
+
 ## Basic Usage
 
 Build a list of `StreamAction` objects representing new event streams, then call `BulkInsertEventsAsync`

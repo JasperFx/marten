@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -189,12 +190,84 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         await bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///     Tracks which databases have already had the schema apply run on behalf of the bulk event
+    ///     insert path, keyed by database identifier. See <see cref="ensureBulkInsertSchemaAsync" />.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, Lazy<Task>> _bulkInsertSchemaApplications = new();
+
+    /// <summary>
+    ///     Test hook (GH-4946): how many times the bulk event insert path has actually executed the
+    ///     schema apply. The regression being guarded is *how many times* the apply runs, not whether
+    ///     the insert works.
+    /// </summary>
+    internal int BulkInsertSchemaApplicationCount;
+
+    /// <summary>
+    ///     GH-4946: the batch <c>BulkInsertEventsAsync</c> overloads used to call
+    ///     <c>Storage.ApplyAllConfiguredChangesToDatabaseAsync()</c> on *every* call — a full schema delta
+    ///     (partition introspection + information_schema sweeps) across *every* database in the store, per
+    ///     batch. A caller importing in 1,000-event batches paid that per batch, which collapsed import
+    ///     throughput and parked the connection pool on Weasel's partition introspection query.
+    ///     <para>
+    ///     The apply is now (a) skipped altogether when the effective <see cref="AutoCreate" /> is
+    ///     <see cref="AutoCreate.None" />, where it is a no-op by contract and only the introspection cost
+    ///     remains, and (b) otherwise run at most once per *database* — not per call, and not across
+    ///     databases the import never touches. A 512-database sharded store therefore applies at most once
+    ///     per database it actually imports into.
+    ///     </para>
+    ///     <para>
+    ///     Thread safety: batches may be imported concurrently. The per-database entry is a
+    ///     <see cref="Lazy{T}" /> with <see cref="LazyThreadSafetyMode.ExecutionAndPublication" />, so
+    ///     concurrent callers for the same database all await the single in-flight apply. A failed apply is
+    ///     evicted so a later call can retry rather than caching the failure forever.
+    ///     </para>
+    /// </summary>
+    private Task ensureBulkInsertSchemaAsync(IMartenDatabase database, CancellationToken cancellation)
+    {
+        if (Options.AutoCreateSchemaObjects == AutoCreate.None)
+        {
+            return Task.CompletedTask;
+        }
+
+        var lazy = _bulkInsertSchemaApplications.GetOrAdd(database.Identifier,
+            _ => new Lazy<Task>(() => applyAsync(database),
+                LazyThreadSafetyMode.ExecutionAndPublication));
+
+        // Await the shared apply under *this* caller's token. The apply itself deliberately does not
+        // take a caller's token: the first caller to arrive owns the in-flight task that every
+        // concurrent caller for the same database awaits, so honoring its token here would let one
+        // batch's cancellation fail a sibling batch that was never cancelled. A schema apply is short
+        // and idempotent, so letting it run to completion is the cheaper trade.
+        return lazy.Value.WaitAsync(cancellation);
+
+        async Task applyAsync(IMartenDatabase db)
+        {
+            try
+            {
+                Interlocked.Increment(ref BulkInsertSchemaApplicationCount);
+
+                // MA0040 suppressed deliberately: this task is SHARED by every concurrent caller for
+                // this database, so it must not be bound to any one caller's token. Each caller applies
+                // its own token at the await site above (`lazy.Value.WaitAsync(cancellation)`).
+#pragma warning disable MA0040
+                await db.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
+#pragma warning restore MA0040
+            }
+            catch
+            {
+                _bulkInsertSchemaApplications.TryRemove(db.Identifier, out _);
+                throw;
+            }
+        }
+    }
+
     public async Task BulkInsertEventsAsync(IReadOnlyList<StreamAction> streams, int batchSize = 1000,
         CancellationToken cancellation = default)
     {
-        await Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
-
         var tenant = Tenancy.Default;
+        await ensureBulkInsertSchemaAsync(tenant.Database, cancellation).ConfigureAwait(false);
+
         var appender = new BulkEventAppender(Events, Options.Serializer());
 
         await using var conn = tenant.Database.CreateConnection();
@@ -216,10 +289,11 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     public async Task BulkInsertEventsAsync(string tenantId, IReadOnlyList<StreamAction> streams,
         int batchSize = 1000, CancellationToken cancellation = default)
     {
-        await Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
-
         var tenant = await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
             .ConfigureAwait(false);
+
+        await ensureBulkInsertSchemaAsync(tenant.Database, cancellation).ConfigureAwait(false);
+
         var appender = new BulkEventAppender(Events, Options.Serializer());
 
         // Set tenant on all streams
