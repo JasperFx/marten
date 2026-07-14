@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
@@ -79,6 +80,38 @@ public class Bug_4946_bulk_insert_does_not_apply_schema_per_call: OneOffConfigur
             .ToArray();
 
         await Task.WhenAll(batches);
+
+        store.BulkInsertSchemaApplicationCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task one_batch_cancelling_does_not_fail_a_concurrent_sibling_batch()
+    {
+        // The per-database schema apply is memoized, so the FIRST caller to arrive owns the single
+        // in-flight task that every concurrent caller for the same database awaits. If that shared
+        // task ran under the first caller's CancellationToken, then cancelling one batch would fail
+        // every sibling batch that happened to be waiting on it — batches that were never cancelled.
+        // The apply therefore runs untethered, and each caller awaits it under its OWN token.
+        var store = StoreOptions(opts => opts.Events.StreamIdentity = StreamIdentity.AsGuid);
+
+        using var doomed = new CancellationTokenSource();
+
+        var cancelled = store.BulkInsertEventsAsync(streams(store.Events, 2), cancellation: doomed.Token);
+        var survivor = store.BulkInsertEventsAsync(streams(store.Events, 2));
+
+        await doomed.CancelAsync();
+
+        // Whatever becomes of the cancelled batch, the sibling must land on its own merits
+        try
+        {
+            await cancelled;
+        }
+        catch (OperationCanceledException)
+        {
+            // expected, and immaterial to the assertion below
+        }
+
+        await Should.NotThrowAsync(async () => await survivor);
 
         store.BulkInsertSchemaApplicationCount.ShouldBe(1);
     }

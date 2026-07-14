@@ -231,17 +231,28 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         }
 
         var lazy = _bulkInsertSchemaApplications.GetOrAdd(database.Identifier,
-            _ => new Lazy<Task>(() => applyAsync(database, cancellation),
+            _ => new Lazy<Task>(() => applyAsync(database),
                 LazyThreadSafetyMode.ExecutionAndPublication));
 
-        return lazy.Value;
+        // Await the shared apply under *this* caller's token. The apply itself deliberately does not
+        // take a caller's token: the first caller to arrive owns the in-flight task that every
+        // concurrent caller for the same database awaits, so honoring its token here would let one
+        // batch's cancellation fail a sibling batch that was never cancelled. A schema apply is short
+        // and idempotent, so letting it run to completion is the cheaper trade.
+        return lazy.Value.WaitAsync(cancellation);
 
-        async Task applyAsync(IMartenDatabase db, CancellationToken token)
+        async Task applyAsync(IMartenDatabase db)
         {
             try
             {
                 Interlocked.Increment(ref BulkInsertSchemaApplicationCount);
-                await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: token).ConfigureAwait(false);
+
+                // MA0040 suppressed deliberately: this task is SHARED by every concurrent caller for
+                // this database, so it must not be bound to any one caller's token. Each caller applies
+                // its own token at the await site above (`lazy.Value.WaitAsync(cancellation)`).
+#pragma warning disable MA0040
+                await db.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
+#pragma warning restore MA0040
             }
             catch
             {
