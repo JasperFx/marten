@@ -88,7 +88,11 @@ internal class SelectParser: ExpressionVisitor
         }
         else
         {
-            NewObject.Members[_currentField] = new LiteralSql(raw.ToString());
+            // The projected constant is a runtime value (ReduceToConstant evaluates captured
+            // locals), so it can be attacker-influenced. A non-string CLR type has no
+            // SQL-safe ToString() guarantee (e.g. a JsonElement bound from a request body),
+            // so bind it as a command parameter instead of inlining ToString() into the SQL.
+            NewObject.Members[_currentField] = new ConstantParameterSql(raw);
         }
 
         _currentField = null;
