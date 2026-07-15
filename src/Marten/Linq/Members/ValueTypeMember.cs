@@ -2,9 +2,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -13,7 +15,6 @@ using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Members;
 
@@ -63,10 +64,14 @@ public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
     public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict,
         ConstantExpression constant)
     {
-        var rawValue = constant.Value;
-        if (rawValue is TOuter value)
+        switch (constant.Value)
         {
-            dict[MemberName] = _valueSource(value);
+            case TOuter outer:
+                dict[MemberName] = _valueSource(outer);
+                break;
+            case TInner inner:
+                dict[MemberName] = inner;
+                break;
         }
     }
 

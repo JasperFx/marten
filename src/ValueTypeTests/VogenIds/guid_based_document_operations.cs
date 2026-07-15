@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -224,6 +225,68 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         loaded
             .Name.ShouldBe(invoice.Name);
     }
+
+    [Fact]
+    public async Task use_in_LINQ_where_any_clause()
+    {
+        await theStore.Advanced.ResetAllData();
+
+        var item1Id = InvoiceId.From(Guid.CreateVersion7());
+        var item2Id = InvoiceId.From(Guid.CreateVersion7());
+
+        var schedule1 = new Schedule
+        {
+            Id = InvoiceId.From(Guid.CreateVersion7()),
+            Name = "Schedule 1",
+            Items = [
+                new ScheduleItem { Id = item1Id, Name = "Item 1"  },
+                new ScheduleItem { Id = item2Id, Name = "Item 2"  },
+            ]
+        };
+
+        theSession.Store(schedule1);
+
+        var item3Id = InvoiceId.From(Guid.CreateVersion7());
+        var item4Id = InvoiceId.From(Guid.CreateVersion7());
+
+        var schedule2 = new Schedule
+        {
+            Id = InvoiceId.From(Guid.CreateVersion7()),
+            Name = "Schedule 2",
+            Items = [
+                new ScheduleItem { Id = item3Id, Name = "Item 3"  },
+                new ScheduleItem { Id = item4Id, Name = "Item 4"  },
+            ]
+        };
+
+        theSession.Store(schedule2);
+
+        await theSession.SaveChangesAsync();
+
+        var query = theSession.Query<Schedule>().Where(s => s.Items.Any(i => i.Id == item1Id));
+
+        var cmd = query.ToCommand();
+
+        var loaded = await query.ToListAsync();
+
+        loaded.Count.ShouldBe(1);
+        loaded.First().Name.ShouldBe(schedule1.Name);
+    }
+
+
+    public class Schedule
+    {
+        public InvoiceId Id { get; set; }
+        public string Name { get; set; }
+        public ICollection<ScheduleItem> Items { get; set; }
+    }
+
+    public class ScheduleItem
+    {
+        public InvoiceId Id { get; set; }
+        public string Name { get; set; }
+    }
+
 
     [Fact]
     public async Task use_in_LINQ_order_clause()
