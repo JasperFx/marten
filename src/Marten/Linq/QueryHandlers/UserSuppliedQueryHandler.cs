@@ -121,7 +121,12 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
 
         if (PostgresqlProvider.Instance.HasTypeMapping(typeof(T)))
         {
-            return typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(string.Empty, string.Empty, typeof(T));
+            // Value types can be null via Nullable<T> (ScalarSelectClause<T>); reference types like
+            // byte[] are already naturally nullable and can't close over Nullable<T>, so they need
+            // the ScalarClassSelectClause<T> counterpart instead.
+            return typeof(T).IsValueType
+                ? typeof(ScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(string.Empty, string.Empty, typeof(T))
+                : typeof(ScalarClassSelectClause<>).CloseAndBuildAs<ISelectClause>(string.Empty, string.Empty, typeof(T));
         }
 
 
