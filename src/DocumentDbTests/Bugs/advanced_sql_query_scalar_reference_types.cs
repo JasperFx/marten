@@ -118,4 +118,19 @@ public class advanced_sql_query_scalar_reference_types: BugIntegrationContext
 
         results.Single().ShouldBe(theData);
     }
+
+    // UserSuppliedQueryHandler.GetSelectClause (session.QueryAsync<T>("select ...")) had the
+    // identical struct-constraint bug as AdvancedSqlQueryHandlerBase.GetSelectClause; this
+    // exercises that separate code path rather than AdvancedSql.
+    [Fact]
+    public async Task can_query_single_bytea_scalar_via_raw_sql()
+    {
+        await seedBlobTableAsync();
+
+        await using var session = theStore.QuerySession();
+        var data = (await session.QueryAsync<byte[]>(
+            $"select data from {SchemaName}.blob where id = ?", CancellationToken.None, theId)).Single();
+
+        data.ShouldBe(theData);
+    }
 }
