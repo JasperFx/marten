@@ -12,12 +12,14 @@ using Marten.Events.Archiving;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Schema;
 using Marten.Exceptions;
+using Marten.Events.Operations;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
+using Weasel.Storage;
 
 namespace Marten.EventStorage.Dialects;
 
@@ -716,4 +718,34 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     /// </summary>
     private static string BuildAssertStreamVersionSql(EventGraph graph) =>
         $"select version from {graph.DatabaseSchemaName}.{StreamsTable.TableName} where id = ";
+
+    /// <summary>
+    /// #4968: vend the shared Weasel.Storage.Events auxiliary-operation seam. Marten routes the stream
+    /// ARCHIVE operation through it, single-sourcing the invocation contract with Polecat. Tombstone and
+    /// progression stay Marten-local and are intentionally left null:
+    /// <list type="bullet">
+    /// <item>Tombstone — Marten's <see cref="EstablishTombstoneStream"/> ESTABLISHES the tombstone
+    /// bookkeeping stream (keyed only by tenant, no stream id) rather than hard-deleting a stream, so it
+    /// does not match the seam's <c>TombstoneStream(streamId, tenantId)</c> hard-delete contract.</item>
+    /// <item>Progression — Marten's <see cref="Marten.Events.Daemon.Progress.UpdateProjectionProgress"/>
+    /// guards its update with the sequence FLOOR (<c>where last_seq_id = floor</c>), which the seam's
+    /// <c>UpdateProgress(name, sequence, upsert)</c> factory signature cannot carry; routing it would drop
+    /// the optimistic-concurrency guard.</item>
+    /// </list>
+    /// </summary>
+    public EventAuxiliaryOperations BuildAuxiliaryOperations(EventRegistry registry)
+    {
+        var graph = (EventGraph)registry;
+        return new EventAuxiliaryOperations(
+            ArchiveStream: (streamId, tenantId, archived) =>
+            {
+                if (!archived)
+                {
+                    throw new NotSupportedException(
+                        "Marten does not support un-archiving a stream; only archive is issued through the event-store seam.");
+                }
+
+                return new ArchiveStreamOperation(graph, streamId) { TenantId = tenantId };
+            });
+    }
 }

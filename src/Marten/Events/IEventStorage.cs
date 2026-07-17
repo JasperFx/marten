@@ -76,6 +76,12 @@ public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocu
 
     Weasel.Storage.IStorageOperation QuickAppendEvents(StreamAction stream);
 
+    /// <summary>
+    /// #4968: create a storage operation to archive (soft-delete) a single stream and its events,
+    /// routed through the shared Weasel.Storage event-store auxiliary-operation seam.
+    /// </summary>
+    Weasel.Storage.IStorageOperation ArchiveStream(object streamId, string tenantId);
+
     Weasel.Storage.IStorageOperation QuickAppendEventWithVersion(StreamAction stream,
         IEvent e);
 }
