@@ -347,6 +347,46 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     }
 
     /// <summary>
+    /// #4975 / jasperfx#529 — exact per-cell progression read. Unlike the
+    /// <see cref="ReadProjectionProgressAsync(string,string?,CancellationToken)"/> overload this does no
+    /// version/shard collapsing: it looks up the single <c>mt_event_progression</c> row whose <c>name</c>
+    /// equals <paramref name="name"/>'s <see cref="ShardName.Identity"/> verbatim, so a blue/green deploy's
+    /// versions, a sliced projection's shard keys, and per-tenant partitions each address their own row.
+    /// A <see cref="ShardName.ShardKey"/> of <c>All</c> is the projection's global cell. Returns null when no
+    /// row exists for that identity; <see cref="ProjectionProgressRow.AgentStatus"/> and
+    /// <see cref="ProjectionProgressRow.LastHeartbeat"/> stay null (jasperfx#519).
+    /// </summary>
+    public async ValueTask<ProjectionProgressRow?> ReadProjectionProgressAsync(
+        ShardName name, CancellationToken token)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+
+            var builder = new CommandBuilder();
+            builder.Append(
+                $"select last_seq_id from {Options.EventGraph.DatabaseSchemaName}.mt_event_progression where name = ");
+            builder.AppendParameter(name.Identity);
+
+            await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
+            if (!await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            var sequence = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            return new ProjectionProgressRow(name.Name, name.TenantId, sequence, null, null);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
     /// #4785 / jasperfx#473 — Marten override of the store-agnostic
     /// <see cref="IEventDatabase.DeleteProjectionProgressByShardNameAsync"/>
     /// (default impl throws). Drops the single <c>mt_event_progression</c> row
