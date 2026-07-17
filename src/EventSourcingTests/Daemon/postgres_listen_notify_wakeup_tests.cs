@@ -155,6 +155,57 @@ public class postgres_listen_notify_wakeup_tests
     }
 
     [Fact]
+    public async Task wait_async_falls_back_to_timeout_when_the_database_is_unreachable()
+    {
+        // Repro for #4961: when the database is down (restart / failover /
+        // maintenance), the dedicated LISTEN connection cannot be opened.
+        // WaitAsync must NOT let that exception escape — the HighWaterAgent
+        // poll loop awaits the wakeup OUTSIDE any try/catch, so a throw here
+        // permanently kills the high-water loop and freezes all projection
+        // progress until the process is restarted. Instead the wakeup should
+        // log and fall back to a plain timeout wait, so the loop keeps polling
+        // and self-heals once the database returns.
+        //
+        // Follow-up (defense in depth, tracked in JasperFx.Events, jasperfx#524):
+        // this Marten fix stops THIS wakeup from throwing, but HighWaterAgent
+        // has two latent bugs of its own — (A) it awaits IDaemonWakeup.WaitAsync
+        // outside any try/catch, so any wakeup that throws still kills the loop,
+        // and (C) its restart watchdog observes the wrong task (a Task<Task> that
+        // completes at the first await) so it never restarts a faulted loop.
+        // Those live in the sibling repo; when they land, an end-to-end test that
+        // survives a real DB restart mid-poll belongs alongside them.
+        var unreachable =
+            "Host=localhost;Port=59371;Database=marten_testing;Username=postgres;password=postgres;Timeout=2;Command Timeout=2";
+        var dataSource = NpgsqlDataSource.Create(unreachable);
+        try
+        {
+            using var wakeup = new PostgresqlListenWakeup(
+                dataSource,
+                NullLogger.Instance,
+                channel: "marten_test_listen_notify_wakeup_unreachable");
+
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+            var sw = Stopwatch.StartNew();
+
+            // The heart of the fix: the connection error is swallowed rather
+            // than propagated out of WaitAsync.
+            await Should.NotThrowAsync(async () =>
+                await wakeup.WaitAsync(TimeSpan.FromMilliseconds(500), cts.Token));
+
+            sw.Stop();
+
+            // And it returned promptly (fell back to the timeout wait) rather
+            // than hanging or bubbling up the connection failure.
+            sw.Elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(15));
+        }
+        finally
+        {
+            await dataSource.DisposeAsync();
+        }
+    }
+
+    [Fact]
     public async Task wait_async_returns_when_timeout_elapses_without_a_notification()
     {
         // Sanity check the timeout path — no notification fires, so WaitAsync
