@@ -44,6 +44,10 @@ public class read_projection_progress : OneOffConfigurationsContext, IAsyncLifet
         ((IEventDatabase)theStore.Tenancy.Default.Database)
         .ReadProjectionProgressAsync(projectionName, tenantId, CancellationToken.None);
 
+    private ValueTask<ProjectionProgressRow?> read(ShardName name) =>
+        ((IEventDatabase)theStore.Tenancy.Default.Database)
+        .ReadProjectionProgressAsync(name, CancellationToken.None);
+
     [Fact]
     public async Task reads_the_store_global_row()
     {
@@ -102,5 +106,44 @@ public class read_projection_progress : OneOffConfigurationsContext, IAsyncLifet
 
         (await read("Orders", null))!.Sequence.ShouldBe(10);
         (await read("OrdersHistory", null))!.Sequence.ShouldBe(5);
+    }
+
+    // #4975 / jasperfx#529 — the exact ShardName overload does NO collapsing.
+    [Fact]
+    public async Task exact_shard_name_reads_the_specific_version_not_the_newest()
+    {
+        await seedProgression(
+            (ShardName.Compose("Orders", version: 2), 25),
+            (ShardName.Compose("Orders", version: 3), 40));
+
+        var v2 = await read(ShardName.Compose("Orders", version: 2));
+
+        v2.ShouldNotBeNull();
+        v2.Sequence.ShouldBe(25); // the exact V2 row, not the newest V3
+        v2.ProjectionName.ShouldBe("Orders");
+        v2.AgentStatus.ShouldBeNull();
+        v2.LastHeartbeat.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task exact_shard_name_returns_null_when_the_identity_does_not_exist()
+    {
+        await seedProgression((ShardName.Compose("Orders"), 10));
+
+        (await read(ShardName.Compose("Orders", version: 9))).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task exact_shard_name_distinguishes_tenant_rows()
+    {
+        await seedProgression(
+            (ShardName.Compose("Orders"), 10),
+            (ShardName.Compose("Orders", tenantId: "tenant1"), 99));
+
+        (await read(ShardName.Compose("Orders")))!.Sequence.ShouldBe(10);
+
+        var tenantRow = await read(ShardName.Compose("Orders", tenantId: "tenant1"));
+        tenantRow!.Sequence.ShouldBe(99);
+        tenantRow.TenantId.ShouldBe("tenant1");
     }
 }
