@@ -33,7 +33,32 @@ public sealed class PostgresqlListenWakeup(
 
     public async Task WaitAsync(TimeSpan timeout, CancellationToken token)
     {
-        await ensureListeningAsync(token).ConfigureAwait(false);
+        try
+        {
+            await ensureListeningAsync(token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation is the daemon shutting down — let it propagate,
+            // exactly like the SemaphoreSlim/Task.Delay waits below.
+            throw;
+        }
+        catch (Exception e)
+        {
+            // The database is unreachable (restart / failover / maintenance
+            // window). This MUST NOT escape: the HighWaterAgent poll loop
+            // awaits us outside any try/catch, so a throw here permanently
+            // kills the high-water loop and freezes all projection progress
+            // until the process is restarted (marten #4961). Fall back to a
+            // plain timeout wait — receiveLoop already nulled _connection, so
+            // the next call retries the LISTEN and self-heals once the
+            // database returns.
+            logger.LogWarning(e,
+                "Unable to establish the PostgreSQL LISTEN connection on channel '{Channel}'; falling back to timeout-based polling until the database is reachable again",
+                channel);
+            await Task.Delay(timeout, token).ConfigureAwait(false);
+            return;
+        }
 
         // Drain any accumulated signals so we don't spin through
         // multiple rapid iterations after a burst of notifications.
