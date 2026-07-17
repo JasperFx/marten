@@ -102,13 +102,13 @@
          CancellationExceptions.IsCancellationLike instead of discarding every exception type while a
          shard CTS is cancelled; jasperfx#505 — source-gen evolver two-statement fix for the
          GetUninitializedObject cast (rides in the bundled JasperFx.Events.SourceGenerator analyzer). -->
-    <PackageVersion Include="JasperFx" Version="2.27.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.27.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.27.0">
+    <PackageVersion Include="JasperFx" Version="2.28.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.28.0" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.28.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.27.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.28.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
