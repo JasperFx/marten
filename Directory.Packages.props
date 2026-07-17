@@ -163,7 +163,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.16.3" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.17.0" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -208,9 +208,13 @@
          9.16.3 (weasel#354, marten#4915): the ObjectDisposedException catch in AdvisoryLock.TryAttainLockAsync
          now latches the disposed flag AND rethrows instead of swallowing to a non-acquire. 9.16.2's swallow
          made jasperfx#500's terminate-on-ODE catch in ProjectionCoordinatorBase unreachable, so the HotCold
-         cold-node leadership loop re-polled a dead pool forever; rethrowing lets the coordinator terminate. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.16.3" />
-    <PackageVersion Include="Weasel.Storage" Version="9.16.3" />
+         cold-node leadership loop re-polled a dead pool forever; rethrowing lets the coordinator terminate.
+         9.16.4 (weasel#356/#359): db-apply bounds its connection usage over many databases and extends the
+         pool-release/retry to SqlServer, MySql and Oracle.
+         9.17.0 (weasel#360): archive/tombstone/progression seams added to Weasel.Storage.Events. Additive for
+         Marten — bumped to stay current on the Weasel line (compile-verified). -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.17.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.17.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
