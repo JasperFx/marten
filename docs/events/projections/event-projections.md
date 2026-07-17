@@ -137,6 +137,30 @@ The `Project()` methods can accept these arguments:
 
 The return value must be either `void` or `Task` depending on whether or not the method needs to be asynchronous
 
+## Rebuilds and Document Teardown
+
+::: warning
+Because an `EventProjection` writes documents through *ad-hoc* `IDocumentOperations` calls (`ops.Insert`, `ops.Store`, etc.) inside its `Project()` / `Create()` methods, Marten **cannot infer which document types the projection produces**. Unlike a single-stream or multi-stream aggregation (whose view type is known), an `EventProjection` therefore does **not** automatically wipe its documents when the projection is rebuilt.
+
+If you rebuild an `EventProjection` and want the previously-written documents cleared first (the normal rebuild semantics), **declare each written document type explicitly** so it participates in the rebuild teardown:
+
+```cs
+public class MyProjection: EventProjection
+{
+    public MyProjection()
+    {
+        // Tell Marten this projection writes MyDoc, so a rebuild TRUNCATEs it first
+        Options.DeleteViewTypeOnTeardown<MyDoc>();
+    }
+
+    public void Project(SomethingHappened e, IDocumentOperations ops)
+        => ops.Insert(new MyDoc { Id = e.Id /* ... */ });
+}
+```
+
+Without this declaration the old documents survive the rebuild. The per-row rebuild path tolerates that (re-inserting an existing id upserts), but the INSERT-only [binary `COPY` rebuild](/events/projections/rebuilding) (`Projections.RebuildWithBulkCopy`) requires an empty target table and will fail with a duplicate-key error. This is a long-standing `EventProjection` limitation, not specific to bulk-copy rebuilds.
+:::
+
 ## Identifying the Event Parameter
 
 In both the `Create()` and `Project()` conventions above, the event parameter can be named anything — Marten identifies it **by type**, not by name. Given `Project(StopEvent1 e, IDocumentOperations ops)`, `StopEvent1` is the event because it's the only concrete event type in the signature (`IDocumentOperations` is an interface and is never treated as the event). The same applies to `IEvent<T>`, which is always recognized as the event regardless of the parameter name.

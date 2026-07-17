@@ -463,6 +463,12 @@ public partial class BulkCopyInsertProjection: EventProjection
     public BulkCopyInsertProjection()
     {
         Name = ProjectionName;
+
+        // EventProjection cannot infer the document types it writes through ad-hoc ops.Insert/ops.Store,
+        // so it does not know to wipe them on rebuild. Declare the written type explicitly so the rebuild
+        // teardown TRUNCATEs it first — otherwise the INSERT-only binary COPY rebuild collides with docs a
+        // prior run left behind (duplicate key). This is a long-standing EventProjection limitation.
+        Options.DeleteViewTypeOnTeardown<BulkCopyDoc>();
     }
 
     public void Project(ItemAdded e, IDocumentOperations ops)
@@ -480,6 +486,10 @@ public partial class InsertAndDeleteProjection: EventProjection
     public InsertAndDeleteProjection()
     {
         Name = ProjectionName;
+
+        // See BulkCopyInsertProjection: an EventProjection must declare the doc types it writes ad-hoc so the
+        // rebuild teardown clears them.
+        Options.DeleteViewTypeOnTeardown<BulkCopyDoc>();
     }
 
     public void Project(ItemAdded e, IDocumentOperations ops)
