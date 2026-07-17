@@ -90,8 +90,10 @@ internal class HighWaterDetector: IHighWaterDetector
     {
         var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
 
-        // Skip gap and find next safe sequence
+        // Skip gap and find next safe sequence. #4964: the SafeZone path must NOT hold before a leading
+        // gap — its whole purpose is to skip forward past a stuck (permanent) hole and record the skip.
         _gapDetector.Start = statistics.SafeStartMark + 1;
+        _gapDetector.HoldBeforeLeadingGap = false;
 
         var safeSequence = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
         if (safeSequence.HasValue)
@@ -419,7 +421,7 @@ select coalesce(
         }
         else
         {
-            statistics.CurrentMark = await findCurrentMark(statistics, token).ConfigureAwait(false);
+            statistics.CurrentMark = await findCurrentMark(statistics, detectionType, token).ConfigureAwait(false);
         }
 
         if (statistics.HasChanged)
@@ -588,10 +590,16 @@ select coalesce(
         return await _runner.Query(_highWaterStatisticsDetector, token).ConfigureAwait(false);
     }
 
-    private async Task<long> findCurrentMark(HighWaterStatistics statistics, CancellationToken token)
+    private async Task<long> findCurrentMark(HighWaterStatistics statistics, DetectionType detectionType,
+        CancellationToken token)
     {
         // look for the current mark
         _gapDetector.Start = statistics.SafeStartMark;
+
+        // #4964: only the Normal path holds before a leading gap. The SafeZone path deliberately skips
+        // forward past a permanent hole (and records the skip), so it must keep the old skip-to-max behavior.
+        _gapDetector.HoldBeforeLeadingGap = detectionType == DetectionType.Normal;
+
         long? current;
         try
         {
