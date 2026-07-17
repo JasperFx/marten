@@ -110,6 +110,16 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
             : StringStorage.QuickAppendEvents(stream);
     }
 
+    // #4968: route stream archive through the shared Weasel seam. Marten only ever archives (never
+    // un-archives through this path), so pass archived: true; the dialect's factory builds the Postgres
+    // ArchiveStreamOperation.
+    public override Weasel.Storage.IStorageOperation ArchiveStream(object streamId, string tenantId)
+    {
+        return Events.StreamIdentity == StreamIdentity.AsGuid
+            ? GuidStorage.ArchiveStream(streamId, tenantId, true)
+            : StringStorage.ArchiveStream(streamId, tenantId, true);
+    }
+
     public override Weasel.Storage.IStorageOperation InsertStream(StreamAction stream)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid

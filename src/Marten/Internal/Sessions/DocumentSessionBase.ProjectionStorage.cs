@@ -200,51 +200,55 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
 
     public void ArchiveStream(TId sliceId, string tenantId)
     {
-        var op = archiveOperationBuilderFor<TId>()(sliceId);
-        op.TenantId = tenantId;
+        // #4968: unwrap to the raw stream id and build the archive operation through the shared Weasel
+        // seam (session.EventStorage().ArchiveStream) rather than instantiating ArchiveStreamOperation here.
+        var streamId = streamIdUnwrapperFor<TId>()(sliceId);
+        var op = _session.EventStorage().ArchiveStream(streamId, tenantId);
 
         _session.QueueOperation(op);
     }
 
-    private static ImHashMap<Type, object> _archiveBuilders = ImHashMap<Type, object>.Empty;
+    private static ImHashMap<Type, object> _archiveStreamIdUnwrappers = ImHashMap<Type, object>.Empty;
 
-    private Func<TId, ArchiveStreamOperation> archiveOperationBuilderFor<TId>()
+    // #4968: resolve the raw stream id (Guid/string) from TId, unwrapping a strong-typed id. The archive
+    // operation itself is now built through the dialect's seam factory, so this only handles id extraction.
+    private Func<TId, object> streamIdUnwrapperFor<TId>()
     {
-        if (_archiveBuilders.TryFind(typeof(TId), out var raw))
+        if (_archiveStreamIdUnwrappers.TryFind(typeof(TId), out var raw))
         {
-            return (Func<TId, ArchiveStreamOperation>)raw;
+            return (Func<TId, object>)raw;
         }
 
-        Func<TId, ArchiveStreamOperation> builder = null;
+        Func<TId, object> unwrapper;
         if (((IMartenSession)_session).Options.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
             if (typeof(TId) == typeof(Guid))
             {
-                builder = id => new ArchiveStreamOperation(((IMartenSession)_session).Options.EventGraph, id);
+                unwrapper = id => id;
             }
             else
             {
                 var valueType = ValueTypeInfo.ForType(typeof(TId));
                 var unWrapper = valueType.UnWrapper<TId, Guid>();
-                builder = id =>  new ArchiveStreamOperation(((IMartenSession)_session).Options.EventGraph, unWrapper(id));
+                unwrapper = id => unWrapper(id);
             }
         }
         else
         {
             if (typeof(TId) == typeof(string))
             {
-                builder = id => new ArchiveStreamOperation(((IMartenSession)_session).Options.EventGraph, id);
+                unwrapper = id => id;
             }
             else
             {
                 var valueType = ValueTypeInfo.ForType(typeof(TId));
                 var unWrapper = valueType.UnWrapper<TId, string>();
-                builder = id =>  new ArchiveStreamOperation(((IMartenSession)_session).Options.EventGraph, unWrapper(id));
+                unwrapper = id => unWrapper(id);
             }
         }
 
-        _archiveBuilders = _archiveBuilders.AddOrUpdate(typeof(TId), builder);
-        return builder;
+        _archiveStreamIdUnwrappers = _archiveStreamIdUnwrappers.AddOrUpdate(typeof(TId), unwrapper);
+        return unwrapper;
     }
 
     //TODO fix in IProjectionStorage
