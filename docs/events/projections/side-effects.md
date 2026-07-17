@@ -98,6 +98,10 @@ A couple important facts about this new functionality:
 
 - The `RaiseSideEffects()` method is only called during _continuous_ asynchronous projection execution, and will not
   be called during projection rebuilds or `Inline` projection usage **unless you explicitly enable this behavior as shown below**
+- Side effects are also suppressed during the **blue/green warm-up phase** of a gated new projection version. When a
+  projection opts into `GateSideEffectsBehindPriorVersion`, a freshly deployed version first replays history the prior
+  version already processed in Rebuild mode (no side effects) and only fires side effects for events past the prior
+  version's mark. See [Suppressing Side Effects During the Blue/Green Warm-up](/events/projections/rebuilding#suppressing-side-effects-during-the-blue-green-warm-up).
 - Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
 - You _can_ alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
   is on you the user to apply idempotent updates to the aggregate based on these new events in the actual handlers for

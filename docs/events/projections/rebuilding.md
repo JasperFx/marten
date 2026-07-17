@@ -224,6 +224,58 @@ of old and new projection versions.
 For a deeper discussion of this deployment strategy, see
 [Projections, Consistency Models, and Zero Downtime Deployments](https://jeremydmiller.com/2025/03/26/projections-consistency-models-and-zero-downtime-deployments-with-the-critter-stack/).
 
+### Suppressing Side Effects During the Blue/Green Warm-up
+
+A projection that raises [side effects](/events/projections/side-effects) (appended events or
+published messages via `RaiseSideEffects()`) presents a problem for blue/green versioning: when the
+new version (`V{n+1}`) starts as `Async` it catches up over the **entire** event history — including
+the events the previous version already processed and already fired side effects for. Without a
+guard, deploying a new version re-emits every one of those side effects.
+
+Opt into `GateSideEffectsBehindPriorVersion` to prevent that:
+
+```cs
+public class TripProjection : SingleStreamProjection<Trip, Guid>
+{
+    public TripProjection()
+    {
+        Version = 3;
+
+        // Only fire side effects for events the prior version (V2) never processed
+        GateSideEffectsBehindPriorVersion = true;
+    }
+
+    // Apply(...) methods and RaiseSideEffects(...) as usual
+}
+```
+
+When the flag is on and a new version starts behind the highest prior version's persisted
+progression mark `N`, the daemon does the catch-up in two phases:
+
+1. **Warm-up** — replay `(current, N]` in **Rebuild** mode, so `RaiseSideEffects()` is suppressed
+   while the new version's documents are brought up to the same point the prior version reached.
+2. **Continuous** — hand off to normal continuous execution from `N`, so side effects fire only for
+   events past `N` — the ones the prior version never saw.
+
+Behavioral notes:
+
+- **Resume after interruption** — the trigger is *own progress `< N`*, not *own progress `== 0`*. If
+  the warm-up is interrupted (a crash or restart at `M < N`), the next start resumes the suppressed
+  replay over `(M, N]` rather than re-emitting side effects from the beginning.
+- **Failed warm-up leaves the shard paused** — if the warm-up replay throws, the shard is left
+  `Paused` with the exception attached and continuous execution does **not** start (so no side
+  effects fire over history the prior version already covered). Restarting the shard resumes the
+  suppressed warm-up from its persisted progress.
+- **Incompatible with `SubscribeFromPresent`** — subscribing from "present" deliberately ignores
+  persisted progression, so there is no prior mark to gate against. The gate is skipped and a warning
+  is logged.
+- **No-ops when not needed** — the gate never adds a warm-up phase for `Version == 1`, when the flag
+  is off, or when the new version's own progress is already at/past the prior mark (a plain resume).
+- **Accepted overlap window** — `N` is snapshotted when the new version starts. If an old version is
+  still running and advances past `N` afterward, the new version can re-emit side effects for that
+  `(N, old_final]` overlap. Stop the old version before (or as) the new one starts to avoid the
+  window; fully coordinated drain-and-handoff is a separate concern.
+
 ## Rebuilding a Single Stream <Badge type="tip" text="7.28" />
 
 A long standing request has been to be able to rebuild only a single stream or subset of streams
