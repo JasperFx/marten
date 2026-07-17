@@ -277,6 +277,76 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     }
 
     /// <summary>
+    /// #4962 / jasperfx#435 — targeted per-cell progression read for a single (projection, tenant).
+    /// The <c>mt_event_progression.name</c> column holds a full <see cref="ShardName.Identity"/>, so a
+    /// projection name can map to several rows (blue/green versions, custom shard keys, per-tenant
+    /// partitions). Resolution:
+    /// <list type="bullet">
+    /// <item>candidates are the rows whose parsed <see cref="ShardName.Name"/> equals
+    /// <paramref name="projectionName"/> and whose parsed <see cref="ShardName.TenantId"/> equals
+    /// <paramref name="tenantId"/> — a null <paramref name="tenantId"/> matches only the bare
+    /// store-global rows (no tenant suffix);</item>
+    /// <item>when several match (a blue/green deploy), the NEWEST version wins, tie-broken on the highest
+    /// sequence;</item>
+    /// <item>no match returns null.</item>
+    /// </list>
+    /// <see cref="ProjectionProgressRow.AgentStatus"/> and <see cref="ProjectionProgressRow.LastHeartbeat"/>
+    /// are always null: Marten models the columns but no daemon path writes them (jasperfx#519).
+    /// </summary>
+    public async ValueTask<ProjectionProgressRow?> ReadProjectionProgressAsync(
+        string projectionName, string? tenantId, CancellationToken token)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+
+            var builder = new CommandBuilder();
+            // The trailing ':' guards against a projection whose name is a prefix of another
+            // (e.g. "Orders" must not match "OrdersHistory:All").
+            builder.Append(
+                $"select name, last_seq_id from {Options.EventGraph.DatabaseSchemaName}.mt_event_progression where name like ");
+            builder.AppendParameter(projectionName + ":%");
+
+            ShardName? best = null;
+            var bestSequence = 0L;
+
+            await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                var name = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+                var sequence = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
+
+                if (!ShardName.TryParse(name, out var shard) || shard is null)
+                {
+                    continue;
+                }
+
+                if (shard.Name != projectionName || shard.TenantId != tenantId)
+                {
+                    continue;
+                }
+
+                // Newest version wins; tie-break on the furthest-along sequence.
+                if (best is null || shard.Version > best.Version ||
+                    (shard.Version == best.Version && sequence > bestSequence))
+                {
+                    best = shard;
+                    bestSequence = sequence;
+                }
+            }
+
+            return best is null ? null : new ProjectionProgressRow(projectionName, tenantId, bestSequence, null, null);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
     /// #4785 / jasperfx#473 — Marten override of the store-agnostic
     /// <see cref="IEventDatabase.DeleteProjectionProgressByShardNameAsync"/>
     /// (default impl throws). Drops the single <c>mt_event_progression</c> row
