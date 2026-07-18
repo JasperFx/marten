@@ -107,14 +107,19 @@
          natural key that CHANGES via an update event is written to mt_natural_key_X on live append and
          rebuild; previously only the create event's key was ever recorded.
          JasperFx 2.29.0: jasperfx#529 (marten#4975) — exact ReadProjectionProgressAsync(ShardName) overload
-         on IEventDatabase (no version/shard collapsing), adopted by MartenDatabase here. -->
-    <PackageVersion Include="JasperFx" Version="2.29.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.29.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.29.0">
+         on IEventDatabase (no version/shard collapsing), adopted by MartenDatabase here.
+         JasperFx 2.29.1: jasperfx#530 (marten#4953) — HighWaterAgent.CheckNowAsync catches up to the
+         COMMITTED ceiling via the new IHighWaterDetector.FetchCommittedHighWaterCeilingAsync DIM
+         (overridden here with max(seq_id)) instead of looping DetectInSafeZone to the reserved
+         last_value, and the loop is time-bounded — rebuild/catch-up during concurrent appends now
+         waits for in-flight events instead of pressuring detection to skip them. -->
+    <PackageVersion Include="JasperFx" Version="2.29.1" />
+    <PackageVersion Include="JasperFx.Events" Version="2.29.1" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.29.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.29.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.29.1" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

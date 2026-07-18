@@ -28,7 +28,6 @@ internal enum DetectionType
 
 internal class HighWaterDetector: IHighWaterDetector
 {
-    private readonly GapDetector _gapDetector;
     private readonly HighWaterStatisticsDetector _highWaterStatisticsDetector;
     private readonly ILogger _logger;
     private readonly ISingleQueryRunner _runner;
@@ -43,7 +42,23 @@ internal class HighWaterDetector: IHighWaterDetector
     // analogue of HighWaterAgent's in-memory `_current` timestamp on the store-global path: the state
     // is detector-scoped (one detector instance per running daemon) and resets on restart, which only
     // means a stale tenant waits one fresh threshold before skipping — never that events are lost.
-    private readonly ConcurrentDictionary<string, DateTimeOffset> _tenantStaleSince = new();
+    // #4953: value carries the snapshot xmax observed when the tenant first went stale so the
+    // liveness probe can fence to transactions that could have reserved the tenant's gap.
+    private readonly ConcurrentDictionary<string, TenantStaleObservation> _tenantStaleSince = new();
+
+    private sealed record TenantStaleObservation(DateTimeOffset Since, long Xmax);
+
+    // #4953: bookkeeping for the store-global sequence gap the mark is currently stuck under. Records
+    // WHEN the detector first saw the mark pinned at this position, plus the snapshot xmax and the
+    // highest reserved sequence from that same statistics reading. The stale threshold is measured
+    // from Since (never from mt_event_progression.last_updated, which is arbitrarily old on an idle
+    // store), Xmax fences the liveness probe to transactions that could have reserved the gap, and
+    // ReservedCeiling bounds how far a proven-dead skip may advance — sequence numbers reserved AFTER
+    // the observation belong to newer transactions whose fate is not proven. Detector-scoped state:
+    // resets on restart, which only means a stuck gap waits one fresh threshold before skipping.
+    private sealed record StuckGapObservation(long Mark, DateTimeOffset Since, long Xmax, long ReservedCeiling);
+
+    private StuckGapObservation? _stuckGap;
 
     public HighWaterDetector(MartenDatabase runner, EventGraph graph, ILogger logger)
     {
@@ -51,7 +66,6 @@ internal class HighWaterDetector: IHighWaterDetector
         _database = runner;
         _graph = graph;
         _logger = logger;
-        _gapDetector = new GapDetector(graph);
         _highWaterStatisticsDetector = new HighWaterStatisticsDetector(graph);
         _settings = graph.Options.Projections;
 
@@ -80,8 +94,51 @@ internal class HighWaterDetector: IHighWaterDetector
     /// <param name="token"></param>
     public async Task AdvanceHighWaterMarkToLatest(CancellationToken token)
     {
+        // #4953: advance to the highest COMMITTED sequence, never the reserved last_value of
+        // mt_events_sequence — reserved numbers can belong to transactions still in flight, and
+        // marking past them permanently skips their events once they commit.
         var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
-        await MarkHighWaterMarkInDatabaseAsync(statistics.HighestSequence, token).ConfigureAwait(false);
+        var committed = await _runner.Query(new CommittedSequenceHandler(_graph), token).ConfigureAwait(false);
+        if (committed > statistics.LastMark)
+        {
+            await MarkHighWaterMarkInDatabaseAsync(committed, token).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// #4953: the catch-up ceiling HighWaterAgent.CheckNowAsync loops toward (jasperfx#530) — the
+    /// highest COMMITTED sequence (max(seq_id)), never mt_events_sequence.last_value, which includes
+    /// numbers reserved by transactions still in flight.
+    /// </summary>
+    public Task<long> FetchCommittedHighWaterCeilingAsync(CancellationToken token)
+    {
+        return _runner.Query(new CommittedSequenceHandler(_graph), token);
+    }
+
+    internal class CommittedSequenceHandler: ISingleQueryHandler<long>
+    {
+        private readonly EventGraph _graph;
+
+        public CommittedSequenceHandler(EventGraph graph)
+        {
+            _graph = graph;
+        }
+
+        public NpgsqlCommand BuildCommand()
+        {
+            return new NpgsqlCommand(
+                $"select coalesce(max(seq_id), 0) from {_graph.DatabaseSchemaName}.mt_events");
+        }
+
+        public async Task<long> HandleAsync(DbDataReader reader, CancellationToken token)
+        {
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                return await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            }
+
+            return 0;
+        }
     }
 
     public string DatabaseIdentity { get; }
@@ -90,12 +147,113 @@ internal class HighWaterDetector: IHighWaterDetector
     {
         var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
 
+        if (!_settings.UseTransactionEvidenceForGapSkipping)
+        {
+            return await detectInSafeZoneLegacy(statistics, token).ConfigureAwait(false);
+        }
+
+        // #4953: this method is reachable with NO staleness gating at all (rebuilds and catch-up call
+        // it through HighWaterAgent.CheckNowAsync), and even the threshold-gated route cannot tell a
+        // permanently dead sequence hole from one still held by an in-flight append. So: advance
+        // normally when possible, and only skip a gap that (a) has been stuck past the stale threshold
+        // measured from when THIS detector first observed it and (b) has no evidence of a live
+        // reserving transaction — or the configured escape-hatch cap has expired.
+
+        // Caught up / empty store: nothing to do. (A pristine store — last_value = 1 with nothing
+        // committed — falls through to the held walk, which finds no rows; trackStuckGap then refuses
+        // to observe it. A store with exactly ONE committed event must NOT be short-circuited here:
+        // its HighestSequence is also 1, but the held walk legitimately advances the mark to 1.)
+        if (statistics.LastMark == statistics.HighestSequence || statistics.HighestSequence == 0)
+        {
+            statistics.CurrentMark = statistics.LastMark;
+            _stuckGap = null;
+            return statistics;
+        }
+
+        // First: the same gap-holding walk the Normal path uses. Contiguous committed progress is
+        // taken as a plain advance — no skipping, no observability noise.
+        var held = await runGapDetectorAsync(statistics.SafeStartMark, true, token).ConfigureAwait(false);
+        if (held.HasValue && held.Value > statistics.LastMark)
+        {
+            statistics.CurrentMark = held.Value;
+            _stuckGap = null;
+            await persistDetectedMarkAsync(statistics, DetectionType.Normal, token).ConfigureAwait(false);
+            return statistics;
+        }
+
+        // The mark is pinned under a gap. Start (or continue) the per-gap clock.
+        statistics.CurrentMark = statistics.LastMark;
+        trackStuckGap(statistics);
+        var observed = _stuckGap;
+        if (observed == null)
+        {
+            return statistics;
+        }
+
+        var age = statistics.Timestamp.Subtract(observed.Since);
+        if (age < _settings.StaleSequenceThreshold)
+        {
+            // Give the gap a chance to fill in before even considering a skip
+            return statistics;
+        }
+
+        var liveness = await _runner
+            .Query(new GapLivenessProbe(_graph, observed.Since, observed.Xmax), token).ConfigureAwait(false);
+        if (liveness.IndicatesLiveReserver)
+        {
+            var cap = _settings.SkipStaleGapsDespiteLiveTransactionsAfter;
+            if (cap == null || age < cap.Value)
+            {
+                if (age > _settings.StaleSequenceThreshold * 5)
+                {
+                    _logger.LogWarning(
+                        "Daemon high water detection has held before the sequence gap above {Mark} for {Age} because a transaction that may still fill it appears to be alive ({Liveness}). Projections will not advance until it commits, aborts, or the SkipStaleGapsDespiteLiveTransactionsAfter cap expires",
+                        observed.Mark, age, liveness);
+                }
+                else
+                {
+                    _logger.LogInformation(
+                        "Daemon high water detection is holding before the sequence gap above {Mark}: {Liveness}",
+                        observed.Mark, liveness);
+                }
+
+                return statistics;
+            }
+
+            _logger.LogWarning(
+                "Daemon high water detection is skipping the sequence gap above {Mark} DESPITE evidence of a live transaction ({Liveness}) because the gap has been stuck for {Age}, past the configured SkipStaleGapsDespiteLiveTransactionsAfter cap of {Cap}. Events committed later inside the skipped range will NOT be projected",
+                observed.Mark, liveness, age, cap);
+        }
+
+        // Proven dead (or cap expired): walk past the gap, but never beyond the reserved ceiling
+        // recorded when the gap was first observed — sequence numbers reserved after that belong to
+        // newer transactions whose fate is not proven.
+        var walk = await runGapDetectorAsync(statistics.SafeStartMark + 1, false, token).ConfigureAwait(false);
+        var target = walk.HasValue ? Math.Min(walk.Value, observed.ReservedCeiling) : observed.ReservedCeiling;
+        if (target <= statistics.LastMark)
+        {
+            return statistics;
+        }
+
+        _logger.LogWarning(
+            "Daemon high water detection is skipping the event sequence range ({Mark}, {Target}] after the gap above {Mark} was stuck for {Age} with no evidence of a live transaction that could still fill it ({Liveness}). Any sequence numbers in that range that never committed were lost to rolled-back appends",
+            observed.Mark, target, observed.Mark, age, liveness);
+
+        statistics.SafeStartMark = target;
+        statistics.CurrentMark = target;
+        _stuckGap = null;
+        await persistDetectedMarkAsync(statistics, DetectionType.SafeZoneSkipping, token).ConfigureAwait(false);
+
+        return statistics;
+    }
+
+    // Pre-#4953 behavior, kept verbatim behind ProjectionOptions.UseTransactionEvidenceForGapSkipping = false
+    private async Task<HighWaterStatistics> detectInSafeZoneLegacy(HighWaterStatistics statistics,
+        CancellationToken token)
+    {
         // Skip gap and find next safe sequence. #4964: the SafeZone path must NOT hold before a leading
         // gap — its whole purpose is to skip forward past a stuck (permanent) hole and record the skip.
-        _gapDetector.Start = statistics.SafeStartMark + 1;
-        _gapDetector.HoldBeforeLeadingGap = false;
-
-        var safeSequence = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
+        var safeSequence = await runGapDetectorAsync(statistics.SafeStartMark + 1, false, token).ConfigureAwait(false);
         if (safeSequence.HasValue)
         {
             _logger.LogInformation(
@@ -136,12 +294,67 @@ internal class HighWaterDetector: IHighWaterDetector
         return statistics;
     }
 
+    // #4953: one GapDetector instance per call — Detect (the poll loop) and DetectInSafeZone
+    // (rebuild/catch-up) can run concurrently, and shared mutable Start/Hold state between them was
+    // a race. Retains the long-standing open-data-reader retry.
+    private async Task<long?> runGapDetectorAsync(long start, bool holdBeforeLeadingGap, CancellationToken token)
+    {
+        var gapDetector = new GapDetector(_graph) { Start = start, HoldBeforeLeadingGap = holdBeforeLeadingGap };
+
+        try
+        {
+            return await _runner.Query(gapDetector, token).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException e)
+        {
+            if (e.Message.Contains("An open data reader exists for this command"))
+            {
+                await Task.Delay(250.Milliseconds(), token).ConfigureAwait(false);
+                return await _runner.Query(gapDetector, token).ConfigureAwait(false);
+            }
+
+            throw;
+        }
+    }
+
+    // #4953: per-gap observation bookkeeping — see StuckGapObservation
+    private void trackStuckGap(HighWaterStatistics statistics)
+    {
+        if (statistics.CurrentMark >= statistics.HighestSequence || statistics.CurrentMark > statistics.LastMark)
+        {
+            // caught up, or the mark advanced — whatever gap existed before is resolved
+            _stuckGap = null;
+            return;
+        }
+
+        if (statistics.CurrentMark == 0 && statistics.HighestSequence <= 1)
+        {
+            // pristine store (Postgres sequences report last_value = 1 before first use)
+            _stuckGap = null;
+            return;
+        }
+
+        var current = _stuckGap;
+        if (current == null || current.Mark != statistics.CurrentMark)
+        {
+            _stuckGap = new StuckGapObservation(
+                statistics.CurrentMark,
+                statistics.Timestamp,
+                (statistics as MartenHighWaterStatistics)?.CurrentXmax ?? 0,
+                statistics.HighestSequence);
+        }
+    }
+
 
     public async Task<HighWaterStatistics> Detect(CancellationToken token)
     {
         var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
 
         await calculateHighWaterMark(statistics, DetectionType.Normal, token).ConfigureAwait(false);
+
+        // #4953: the poll loop is where a stuck gap is usually seen first — record it here so the
+        // per-gap stale clock starts as early as possible
+        trackStuckGap(statistics);
 
         return statistics;
     }
@@ -241,7 +454,8 @@ select
     coalesce(prog.last_seq_id, 0)      as last_seq_id,
     prog.last_updated                  as last_updated,
     transaction_timestamp()            as ""timestamp"",
-    walk.current_bound                 as current_bound
+    walk.current_bound                 as current_bound,
+    pg_snapshot_xmax(pg_current_snapshot())::text::bigint as current_xmax
 from inputs i
 left join lateral (
     select max(e.seq_id) as max_seq_id
@@ -294,14 +508,16 @@ left join lateral (
                     long? currentBound = await reader.IsDBNullAsync(5, token).ConfigureAwait(false)
                         ? null
                         : await reader.GetFieldValueAsync<long>(5, token).ConfigureAwait(false);
+                    var currentXmax = await reader.GetFieldValueAsync<long>(6, token).ConfigureAwait(false);
 
-                    var statistics = new HighWaterStatistics
+                    var statistics = new MartenHighWaterStatistics
                     {
                         TenantId = tenantId,
                         HighestSequence = lastValue,
                         LastMark = lastSeqId,
                         LastUpdated = lastUpdated,
-                        Timestamp = timestamp
+                        Timestamp = timestamp,
+                        CurrentXmax = currentXmax
                     };
 
                     // CurrentMark = the latest sequence the daemon may treat as "caught up".
@@ -337,8 +553,9 @@ left join lateral (
                         // once the tenant has been stuck past StaleSequenceThreshold, skip the gap
                         // below — the per-tenant mirror of the store-global DetectInSafeZone wait.
                         statistics.CurrentMark = statistics.SafeStartMark = lastSeqId;
-                        var staleSince = _tenantStaleSince.GetOrAdd(tenantId, timestamp);
-                        if (timestamp.Subtract(staleSince) > _settings.StaleSequenceThreshold)
+                        var observation = _tenantStaleSince.GetOrAdd(tenantId,
+                            new TenantStaleObservation(timestamp, currentXmax));
+                        if (timestamp.Subtract(observation.Since) > _settings.StaleSequenceThreshold)
                         {
                             staleTenants.Add(statistics);
                         }
@@ -386,6 +603,34 @@ select coalesce(
      where e.tenant_id = :tenant
        and e.seq_id > :mark));";
 
+        // #4953: same evidence rule as the store-global DetectInSafeZone — a tenant gap whose
+        // reserving transaction may still be alive is outstanding, not dead, and must not be skipped.
+        // The lock/transaction/xip fencing is store-wide rather than per-tenant (a lock on any
+        // mt_events partition blocks every tenant's skip), which errs on the conservative side.
+        if (_settings.UseTransactionEvidenceForGapSkipping
+            && _tenantStaleSince.TryGetValue(statistics.TenantId!, out var observation))
+        {
+            var age = statistics.Timestamp.Subtract(observation.Since);
+            var liveness = await _runner
+                .Query(new GapLivenessProbe(_graph, observation.Since, observation.Xmax), token)
+                .ConfigureAwait(false);
+            if (liveness.IndicatesLiveReserver)
+            {
+                var cap = _settings.SkipStaleGapsDespiteLiveTransactionsAfter;
+                if (cap == null || age < cap.Value)
+                {
+                    _logger.LogInformation(
+                        "Daemon high water detection for tenant {TenantId} is holding before the sequence gap above {Mark}: {Liveness}",
+                        statistics.TenantId, statistics.LastMark, liveness);
+                    return;
+                }
+
+                _logger.LogWarning(
+                    "Daemon high water detection for tenant {TenantId} is skipping the sequence gap above {Mark} DESPITE evidence of a live transaction ({Liveness}) because the gap has been stuck for {Age}, past the configured SkipStaleGapsDespiteLiveTransactionsAfter cap of {Cap}",
+                    statistics.TenantId, statistics.LastMark, liveness, age, cap);
+            }
+        }
+
         await using var cmd = conn.CreateCommand(sql)
             .With("tenant", statistics.TenantId!)
             .With("mark", statistics.LastMark);
@@ -396,9 +641,9 @@ select coalesce(
             return;
         }
 
-        _logger.LogInformation(
-            "Daemon projection high water detection for tenant {TenantId} skipping a gap in the event sequence after being stale past the {Threshold} threshold, determined that the 'safe harbor' sequence is at {SafeHarborSequence}",
-            statistics.TenantId, _settings.StaleSequenceThreshold, safeSequence);
+        _logger.LogWarning(
+            "Daemon projection high water detection for tenant {TenantId} is skipping the event sequence range ({Mark}, {SafeHarborSequence}] after being stale past the {Threshold} threshold. Any sequence numbers in that range that never committed were lost to rolled-back appends",
+            statistics.TenantId, statistics.LastMark, safeSequence, _settings.StaleSequenceThreshold);
 
         statistics.CurrentMark = statistics.SafeStartMark = safeSequence;
         statistics.IncludesSkipping = true;
@@ -424,41 +669,49 @@ select coalesce(
             statistics.CurrentMark = await findCurrentMark(statistics, detectionType, token).ConfigureAwait(false);
         }
 
-        if (statistics.HasChanged)
-        {
-            var currentMark = statistics.CurrentMark;
+        await persistDetectedMarkAsync(statistics, detectionType, token).ConfigureAwait(false);
+    }
 
-            if (detectionType == DetectionType.SafeZoneSkipping)
+    private async Task persistDetectedMarkAsync(HighWaterStatistics statistics, DetectionType detectionType,
+        CancellationToken token)
+    {
+        if (!statistics.HasChanged)
+        {
+            return;
+        }
+
+        var currentMark = statistics.CurrentMark;
+
+        if (detectionType == DetectionType.SafeZoneSkipping)
+        {
+            if (_graph.EnableAdvancedAsyncTracking)
             {
-                if (_graph.EnableAdvancedAsyncTracking)
+                var actual = await TryMarkHighWaterSkippingAsync(currentMark, statistics.LastMark, token).ConfigureAwait(false);
+                if (actual == currentMark)
                 {
-                    var actual = await TryMarkHighWaterSkippingAsync(currentMark, statistics.LastMark, token).ConfigureAwait(false);
-                    if (actual == currentMark)
-                    {
-                        statistics.IncludesSkipping = true;
-                    }
-                    else
-                    {
-                        statistics.CurrentMark = actual;
-                        statistics.IncludesSkipping = false;
-                    }
+                    statistics.IncludesSkipping = true;
                 }
                 else
                 {
-                    statistics.IncludesSkipping = true;
-                    await MarkHighWaterMarkInDatabaseAsync(currentMark, token).ConfigureAwait(false);
+                    statistics.CurrentMark = actual;
+                    statistics.IncludesSkipping = false;
                 }
             }
             else
             {
+                statistics.IncludesSkipping = true;
                 await MarkHighWaterMarkInDatabaseAsync(currentMark, token).ConfigureAwait(false);
             }
+        }
+        else
+        {
+            await MarkHighWaterMarkInDatabaseAsync(currentMark, token).ConfigureAwait(false);
+        }
 
-            if (!statistics.LastUpdated.HasValue)
-            {
-                var current = await loadCurrentStatistics(token).ConfigureAwait(false);
-                statistics.LastUpdated = current.LastUpdated;
-            }
+        if (!statistics.LastUpdated.HasValue)
+        {
+            var current = await loadCurrentStatistics(token).ConfigureAwait(false);
+            statistics.LastUpdated = current.LastUpdated;
         }
     }
 
@@ -593,30 +846,10 @@ select coalesce(
     private async Task<long> findCurrentMark(HighWaterStatistics statistics, DetectionType detectionType,
         CancellationToken token)
     {
-        // look for the current mark
-        _gapDetector.Start = statistics.SafeStartMark;
-
         // #4964: only the Normal path holds before a leading gap. The SafeZone path deliberately skips
         // forward past a permanent hole (and records the skip), so it must keep the old skip-to-max behavior.
-        _gapDetector.HoldBeforeLeadingGap = detectionType == DetectionType.Normal;
-
-        long? current;
-        try
-        {
-            current = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
-        }
-        catch (InvalidOperationException e)
-        {
-            if (e.Message.Contains("An open data reader exists for this command"))
-            {
-                await Task.Delay(250.Milliseconds(), token).ConfigureAwait(false);
-                current = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
-            }
-            else
-            {
-                throw;
-            }
-        }
+        var current = await runGapDetectorAsync(statistics.SafeStartMark,
+            detectionType == DetectionType.Normal, token).ConfigureAwait(false);
 
         if (current.HasValue)
         {

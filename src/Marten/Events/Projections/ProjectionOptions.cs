@@ -52,6 +52,25 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     internal List<IFetchPlanner> FetchPlanners { get; } = new();
 
     /// <summary>
+    ///     #4953: when true (the default), the async daemon's high water detection consults PostgreSQL
+    ///     transaction evidence (pg_locks on the mt_events tables, open transactions in pg_stat_activity,
+    ///     and pg_current_snapshot's in-progress list) before skipping a stale sequence gap, and holds
+    ///     while a transaction that could still fill the gap appears to be alive — a slow concurrent
+    ///     append is then waited out instead of having its events silently skipped. Set false to restore
+    ///     the pre-#4953 wall-clock-only skipping.
+    /// </summary>
+    public bool UseTransactionEvidenceForGapSkipping { get; set; } = true;
+
+    /// <summary>
+    ///     #4953: escape hatch for the transaction-evidence hold above. When set, a stale sequence gap is
+    ///     skipped once it has been stuck this long even if evidence says a transaction that could fill it
+    ///     is still alive — trading potential event loss for guaranteed projection progress (e.g. against
+    ///     leaked idle-in-transaction sessions). Null (the default) never knowingly skips past a live
+    ///     appender; PostgreSQL's own idle_in_transaction_session_timeout is the recommended backstop.
+    /// </summary>
+    public TimeSpan? SkipStaleGapsDespiteLiveTransactionsAfter { get; set; }
+
+    /// <summary>
     ///     Opt into a performance optimization that directs Marten to always use the identity map for an
     ///     Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
     ///     Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
