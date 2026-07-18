@@ -42,7 +42,11 @@ internal class HighWaterDetector: IHighWaterDetector
     // analogue of HighWaterAgent's in-memory `_current` timestamp on the store-global path: the state
     // is detector-scoped (one detector instance per running daemon) and resets on restart, which only
     // means a stale tenant waits one fresh threshold before skipping — never that events are lost.
-    private readonly ConcurrentDictionary<string, DateTimeOffset> _tenantStaleSince = new();
+    // #4953: value carries the snapshot xmax observed when the tenant first went stale so the
+    // liveness probe can fence to transactions that could have reserved the tenant's gap.
+    private readonly ConcurrentDictionary<string, TenantStaleObservation> _tenantStaleSince = new();
+
+    private sealed record TenantStaleObservation(DateTimeOffset Since, long Xmax);
 
     // #4953: bookkeeping for the store-global sequence gap the mark is currently stuck under. Records
     // WHEN the detector first saw the mark pinned at this position, plus the snapshot xmax and the
@@ -439,7 +443,8 @@ select
     coalesce(prog.last_seq_id, 0)      as last_seq_id,
     prog.last_updated                  as last_updated,
     transaction_timestamp()            as ""timestamp"",
-    walk.current_bound                 as current_bound
+    walk.current_bound                 as current_bound,
+    pg_snapshot_xmax(pg_current_snapshot())::text::bigint as current_xmax
 from inputs i
 left join lateral (
     select max(e.seq_id) as max_seq_id
@@ -492,14 +497,16 @@ left join lateral (
                     long? currentBound = await reader.IsDBNullAsync(5, token).ConfigureAwait(false)
                         ? null
                         : await reader.GetFieldValueAsync<long>(5, token).ConfigureAwait(false);
+                    var currentXmax = await reader.GetFieldValueAsync<long>(6, token).ConfigureAwait(false);
 
-                    var statistics = new HighWaterStatistics
+                    var statistics = new MartenHighWaterStatistics
                     {
                         TenantId = tenantId,
                         HighestSequence = lastValue,
                         LastMark = lastSeqId,
                         LastUpdated = lastUpdated,
-                        Timestamp = timestamp
+                        Timestamp = timestamp,
+                        CurrentXmax = currentXmax
                     };
 
                     // CurrentMark = the latest sequence the daemon may treat as "caught up".
@@ -535,8 +542,9 @@ left join lateral (
                         // once the tenant has been stuck past StaleSequenceThreshold, skip the gap
                         // below — the per-tenant mirror of the store-global DetectInSafeZone wait.
                         statistics.CurrentMark = statistics.SafeStartMark = lastSeqId;
-                        var staleSince = _tenantStaleSince.GetOrAdd(tenantId, timestamp);
-                        if (timestamp.Subtract(staleSince) > _settings.StaleSequenceThreshold)
+                        var observation = _tenantStaleSince.GetOrAdd(tenantId,
+                            new TenantStaleObservation(timestamp, currentXmax));
+                        if (timestamp.Subtract(observation.Since) > _settings.StaleSequenceThreshold)
                         {
                             staleTenants.Add(statistics);
                         }
@@ -584,6 +592,34 @@ select coalesce(
      where e.tenant_id = :tenant
        and e.seq_id > :mark));";
 
+        // #4953: same evidence rule as the store-global DetectInSafeZone — a tenant gap whose
+        // reserving transaction may still be alive is outstanding, not dead, and must not be skipped.
+        // The lock/transaction/xip fencing is store-wide rather than per-tenant (a lock on any
+        // mt_events partition blocks every tenant's skip), which errs on the conservative side.
+        if (_settings.UseTransactionEvidenceForGapSkipping
+            && _tenantStaleSince.TryGetValue(statistics.TenantId!, out var observation))
+        {
+            var age = statistics.Timestamp.Subtract(observation.Since);
+            var liveness = await _runner
+                .Query(new GapLivenessProbe(_graph, observation.Since, observation.Xmax), token)
+                .ConfigureAwait(false);
+            if (liveness.IndicatesLiveReserver)
+            {
+                var cap = _settings.SkipStaleGapsDespiteLiveTransactionsAfter;
+                if (cap == null || age < cap.Value)
+                {
+                    _logger.LogInformation(
+                        "Daemon high water detection for tenant {TenantId} is holding before the sequence gap above {Mark}: {Liveness}",
+                        statistics.TenantId, statistics.LastMark, liveness);
+                    return;
+                }
+
+                _logger.LogWarning(
+                    "Daemon high water detection for tenant {TenantId} is skipping the sequence gap above {Mark} DESPITE evidence of a live transaction ({Liveness}) because the gap has been stuck for {Age}, past the configured SkipStaleGapsDespiteLiveTransactionsAfter cap of {Cap}",
+                    statistics.TenantId, statistics.LastMark, liveness, age, cap);
+            }
+        }
+
         await using var cmd = conn.CreateCommand(sql)
             .With("tenant", statistics.TenantId!)
             .With("mark", statistics.LastMark);
@@ -594,9 +630,9 @@ select coalesce(
             return;
         }
 
-        _logger.LogInformation(
-            "Daemon projection high water detection for tenant {TenantId} skipping a gap in the event sequence after being stale past the {Threshold} threshold, determined that the 'safe harbor' sequence is at {SafeHarborSequence}",
-            statistics.TenantId, _settings.StaleSequenceThreshold, safeSequence);
+        _logger.LogWarning(
+            "Daemon projection high water detection for tenant {TenantId} is skipping the event sequence range ({Mark}, {SafeHarborSequence}] after being stale past the {Threshold} threshold. Any sequence numbers in that range that never committed were lost to rolled-back appends",
+            statistics.TenantId, statistics.LastMark, safeSequence, _settings.StaleSequenceThreshold);
 
         statistics.CurrentMark = statistics.SafeStartMark = safeSequence;
         statistics.IncludesSkipping = true;
