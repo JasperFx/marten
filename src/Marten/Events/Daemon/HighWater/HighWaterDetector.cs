@@ -105,6 +105,16 @@ internal class HighWaterDetector: IHighWaterDetector
         }
     }
 
+    /// <summary>
+    /// #4953: the catch-up ceiling HighWaterAgent.CheckNowAsync loops toward (jasperfx#530) — the
+    /// highest COMMITTED sequence (max(seq_id)), never mt_events_sequence.last_value, which includes
+    /// numbers reserved by transactions still in flight.
+    /// </summary>
+    public Task<long> FetchCommittedHighWaterCeilingAsync(CancellationToken token)
+    {
+        return _runner.Query(new CommittedSequenceHandler(_graph), token);
+    }
+
     internal class CommittedSequenceHandler: ISingleQueryHandler<long>
     {
         private readonly EventGraph _graph;
@@ -149,10 +159,11 @@ internal class HighWaterDetector: IHighWaterDetector
         // measured from when THIS detector first observed it and (b) has no evidence of a live
         // reserving transaction — or the configured escape-hatch cap has expired.
 
-        // Caught up / empty store: nothing to do
-        if (statistics.LastMark == statistics.HighestSequence
-            || statistics.HighestSequence == 0
-            || (statistics.HighestSequence <= 1 && statistics.LastMark == 0))
+        // Caught up / empty store: nothing to do. (A pristine store — last_value = 1 with nothing
+        // committed — falls through to the held walk, which finds no rows; trackStuckGap then refuses
+        // to observe it. A store with exactly ONE committed event must NOT be short-circuited here:
+        // its HighestSequence is also 1, but the held walk legitimately advances the mark to 1.)
+        if (statistics.LastMark == statistics.HighestSequence || statistics.HighestSequence == 0)
         {
             statistics.CurrentMark = statistics.LastMark;
             _stuckGap = null;

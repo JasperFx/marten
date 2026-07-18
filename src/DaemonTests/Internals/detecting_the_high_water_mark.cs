@@ -101,7 +101,11 @@ public class HighWaterDetectorTests: DaemonContext
     [InlineData(false)]
     public async Task starting_from_first_detection_some_gaps_with_nonzero_buffer(bool useAdvancedTracking)
     {
-        StoreOptions(opts => opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking);
+        StoreOptions(opts =>
+        {
+            opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking;
+            opts.Projections.StaleSequenceThreshold = 500.Milliseconds();
+        });
         await theStore.EnsureStorageExistsAsync(typeof(IEvent));
 
         NumberOfStreams = 10;
@@ -118,9 +122,18 @@ public class HighWaterDetectorTests: DaemonContext
         statistics.CurrentMark.ShouldBe(NumberOfEvents - 101);
         statistics.HighestSequence.ShouldBe(NumberOfEvents);
 
+        // #4953: a stale gap is no longer skipped on first sighting — the safe zone holds until the
+        // gap has been stuck past StaleSequenceThreshold (measured from when the detector first
+        // observed it) and no live transaction could still fill it
+        var held = await theDetector.DetectInSafeZone(CancellationToken.None);
+        held.CurrentMark.ShouldBe(NumberOfEvents - 101);
+
+        await Task.Delay(700);
+
         var statistics2 = await theDetector.DetectInSafeZone(CancellationToken.None);
 
         statistics2.CurrentMark.ShouldBe(NumberOfEvents - 96);
+        statistics2.IncludesSkipping.ShouldBeTrue();
     }
 
     [Theory]
@@ -128,7 +141,11 @@ public class HighWaterDetectorTests: DaemonContext
     [InlineData(false)]
     public async Task look_for_safe_harbor_time_if_there_are_gaps_between_highest_assigned_event_and_the_sequence(bool useAdvancedTracking)
     {
-        StoreOptions(opts => opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking);
+        StoreOptions(opts =>
+        {
+            opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking;
+            opts.Projections.StaleSequenceThreshold = 500.Milliseconds();
+        });
         await theStore.EnsureStorageExistsAsync(typeof(IEvent));
 
         NumberOfStreams = 10;
@@ -136,23 +153,33 @@ public class HighWaterDetectorTests: DaemonContext
 
         var statistics = await theDetector.Detect(CancellationToken.None);
 
-        await Task.Delay(5.Seconds());
-
-        await makeOldWhereSequenceIsLessThanOrEqualTo(NumberOfEvents + 10000);
-
-        // Should not move at all.
+        // A tail of reserved-but-never-committed sequence numbers (rolled-back appends)
         await advanceSequenceBy(20);
 
+        // #4953: first sighting of the dead tail — hold, never teleport on sight
         var statistics2 = await theDetector.DetectInSafeZone(CancellationToken.None);
 
         statistics2.CurrentMark.ShouldBe(statistics.CurrentMark);
 
-        await advanceSequenceBy(20);
+        await Task.Delay(700);
 
+        // Stuck past the threshold with no live transaction that could fill the tail: advance to the
+        // reserved ceiling recorded when the gap was first observed — the whole dead tail, no magic -32
         var statistics3 = await theDetector.DetectInSafeZone(CancellationToken.None);
 
-        // 20 + 20 - 32 = 8
-        statistics3.CurrentMark.ShouldBe(statistics.CurrentMark + 8);
+        statistics3.CurrentMark.ShouldBe(statistics.CurrentMark + 20);
+        statistics3.IncludesSkipping.ShouldBeTrue();
+
+        // A LATER batch of dead reservations needs its own observation cycle
+        await advanceSequenceBy(20);
+
+        var statistics4 = await theDetector.DetectInSafeZone(CancellationToken.None);
+        statistics4.CurrentMark.ShouldBe(statistics.CurrentMark + 20);
+
+        await Task.Delay(700);
+
+        var statistics5 = await theDetector.DetectInSafeZone(CancellationToken.None);
+        statistics5.CurrentMark.ShouldBe(statistics.CurrentMark + 40);
 
         if (useAdvancedTracking)
         {

@@ -70,6 +70,7 @@ select
       and l.granted
       and l.mode = 'RowExclusiveLock'
       and l.pid <> pg_backend_pid()
+      and l.database = (select d.oid from pg_database d where d.datname = current_database())
       and a.xact_start <= :first_observed
       and l.relation in (select c.oid
                            from pg_class c
