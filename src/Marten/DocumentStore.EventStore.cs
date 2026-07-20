@@ -183,7 +183,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             else
             {
                 session.QueueSqlCommand(
-                    $"insert into {Options.EventGraph.ProgressionTable} (name, last_seq_id) values (?, ?) on conflict (name) do update set last_seq_id = ?",
+                    // #4981: keep last_updated in step with the rewound progress on the update branch
+                $"insert into {Options.EventGraph.ProgressionTable} (name, last_seq_id) values (?, ?) on conflict (name) do update set last_seq_id = ?, last_updated = transaction_timestamp()",
                     name.Identity, sequenceFloor, sequenceFloor);
             }
         }
@@ -205,7 +206,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         if (sequenceFloor > 0)
         {
             session.QueueSqlCommand(
-                $"insert into {Options.EventGraph.ProgressionTable} (name, last_seq_id) values (?, ?) on conflict (name) do update set last_seq_id = ?",
+                // #4981: keep last_updated in step with the rewound progress on the update branch
+                $"insert into {Options.EventGraph.ProgressionTable} (name, last_seq_id) values (?, ?) on conflict (name) do update set last_seq_id = ?, last_updated = transaction_timestamp()",
                 shardName, sequenceFloor, sequenceFloor);
         }
 

@@ -561,19 +561,32 @@ by setting the toggle to true explicitly:
 opts.Events.EnableExtendedProgressionTracking = true;
 ```
 
-Marten implements the storage-agnostic
+Marten registers a storage-agnostic
 [`IEventStoreInstrumentation`](https://github.com/JasperFx/jasperfx/blob/main/src/JasperFx.Events/IEventStoreInstrumentation.cs)
-abstraction from JasperFx.Events 2.9.0 -- `Wolverine.CritterWatch.Marten` and
-similar satellite packages can flip the same toggle via the interface without
-referencing Marten's concrete `EventGraph`:
+adapter (from JasperFx.Events 2.9.0) in the container. Satellite packages such as
+`Wolverine.CritterWatch.Marten` enable the same columns by resolving that service
+from DI and setting the interface property -- no reference to Marten's concrete
+`EventGraph` required:
 
 ```cs
-((IEventStoreInstrumentation)opts.Events).ExtendedProgressionEnabled = true;
+builder.Services.AddSingleton<IConfigureMarten>(new EnableExtendedProgression());
+
+// ...
+
+public class EnableExtendedProgression: IConfigureMarten
+{
+    public void Configure(IServiceProvider services, StoreOptions options)
+    {
+        options.Events.EnableExtendedProgressionTracking = true;
+    }
+}
 ```
 
-Both names refer to the same underlying field. New code is encouraged to prefer
-the interface property; `EnableExtendedProgressionTracking` continues to work
-without deprecation warnings.
+The adapter's value is applied at store build and does **not** overwrite a direct
+`opts.Events.EnableExtendedProgressionTracking = true`, so the two opt-in paths
+compose. (Note that `opts.Events` -- Marten's `EventGraph` -- does not itself
+implement `IEventStoreInstrumentation`; use the `EnableExtendedProgressionTracking`
+property shown above.)
 
 ## Advanced Skipping Tracking <Badge type="tip" text="8.6" />
 
