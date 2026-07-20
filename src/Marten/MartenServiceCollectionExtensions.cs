@@ -1113,8 +1113,19 @@ internal class SetEventStoreInstrumentation: IConfigureMarten, IEventStoreInstru
 {
     public void Configure(IServiceProvider services, StoreOptions options)
     {
-        options.EventGraph.EnableExtendedProgressionTracking = ExtendedProgressionEnabled;
-        options.EventGraph.AppendObserver = AppendObserver;
+        // #4981: only apply the adapter's values, never overwrite. This adapter is always
+        // registered by AddMarten, so an unconditional assignment clobbered a direct
+        // `opts.Events.EnableExtendedProgressionTracking = true` (and any directly-set
+        // AppendObserver) back to the adapter defaults at store build.
+        if (ExtendedProgressionEnabled)
+        {
+            options.EventGraph.EnableExtendedProgressionTracking = true;
+        }
+
+        if (AppendObserver != null)
+        {
+            options.EventGraph.AppendObserver += AppendObserver;
+        }
     }
 
     public bool ExtendedProgressionEnabled { get; set; }
@@ -1125,8 +1136,16 @@ internal class SetEventStoreInstrumentation<T>: IConfigureMarten<T>, IEventStore
 {
     public void Configure(IServiceProvider services, StoreOptions options)
     {
-        options.EventGraph.EnableExtendedProgressionTracking = ExtendedProgressionEnabled;
-        options.EventGraph.AppendObserver = AppendObserver;
+        // #4981: see SetEventStoreInstrumentation.Configure — apply, do not clobber.
+        if (ExtendedProgressionEnabled)
+        {
+            options.EventGraph.EnableExtendedProgressionTracking = true;
+        }
+
+        if (AppendObserver != null)
+        {
+            options.EventGraph.AppendObserver += AppendObserver;
+        }
     }
 
     public bool ExtendedProgressionEnabled { get; set; }

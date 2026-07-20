@@ -34,9 +34,13 @@ internal class UpdateProjectionProgress: IStorageOperation, AssertsOnCallback, N
         // through ShardName.Identity — per-tenant shards (Phase 2) get a
         // distinct Identity per (projection, shardKey, tenant) so the same
         // WHERE name = ? optimistic update naturally scopes to one tenant.
+        // #4981: advance last_updated on every progress write so it reflects the last time this
+        // shard actually moved. Previously only last_seq_id was set, so daemon shard rows froze
+        // last_updated at insert time and it looked exactly like a stalled projection. Matches
+        // HighWaterDetector / mt_mark_event_progression, which already use transaction_timestamp().
         var parameters =
             builder.AppendWithParameters(
-                $"update {_events.ProgressionTable} set last_seq_id = ? where name = ? and last_seq_id = ?");
+                $"update {_events.ProgressionTable} set last_seq_id = ?, last_updated = transaction_timestamp() where name = ? and last_seq_id = ?");
 
         parameters[0].Value = Range.SequenceCeiling;
         parameters[0].NpgsqlDbType = NpgsqlDbType.Bigint;
