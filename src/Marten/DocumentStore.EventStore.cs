@@ -48,6 +48,13 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
     DatabaseCardinality IEventStore.DatabaseCardinality => Options.Tenancy.Cardinality;
 
+    // #750: gate the daemon's ExtendedProgressionWriter observer on the store's opt-in — without this
+    // the observer (which reads IEventStore.ExtendedProgressionEnabled, default false) never fires and
+    // the heartbeat/agent_status/pause_reason/running_on_node columns stay NULL. Both the direct
+    // opt-in (opts.Events.EnableExtendedProgressionTracking) and CritterWatch's instrumentation
+    // adapter converge on this same flag (see SetEventStoreInstrumentation).
+    bool IEventStore.ExtendedProgressionEnabled => Options.EventGraph.EnableExtendedProgressionTracking;
+
     bool IEventStore.HasMultipleTenants
     {
         get
