@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
@@ -39,9 +41,19 @@ public class HighWaterHealthCheckTests: DaemonContext
         _timeProvider.GetUtcNow().Returns(_now);
     }
 
-    private HighWaterHealthCheck buildCheck(TimeSpan? staleThreshold = null, long minimumGap = 1) =>
-        new(theStore, new HighWaterHealthCheckSettings(staleThreshold ?? 30.Seconds(), minimumGap), _timeProvider,
-            _tracker);
+    private HighWaterHealthCheck buildCheck(TimeSpan? staleThreshold = null, long minimumGap = 1,
+        bool autoRestart = false, IProjectionCoordinator? coordinator = null)
+    {
+        var services = new ServiceCollection();
+        if (coordinator != null)
+        {
+            services.AddSingleton(coordinator);
+        }
+
+        return new(theStore,
+            new HighWaterHealthCheckSettings(staleThreshold ?? 30.Seconds(), minimumGap, autoRestart), _timeProvider,
+            _tracker, services.BuildServiceProvider());
+    }
 
     private async Task appendEventsAsync(int count)
     {
@@ -61,6 +73,17 @@ public class HighWaterHealthCheckTests: DaemonContext
             $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated) " +
             $"values ('HighWaterMark', {sequence}, now()) " +
             "on conflict (name) do update set last_seq_id = excluded.last_seq_id";
+        await theSession.ExecuteAsync(new NpgsqlCommand(sql));
+    }
+
+    // Seeds the HighWaterMark row's liveness heartbeat (jasperfx#539). Requires
+    // EnableExtendedProgressionTracking so the `heartbeat` column exists.
+    private async Task seedHighWaterHeartbeatAsync(long sequence, DateTimeOffset heartbeat)
+    {
+        var sql =
+            $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated, heartbeat) " +
+            $"values ('HighWaterMark', {sequence}, now(), '{heartbeat:O}'::timestamptz) " +
+            "on conflict (name) do update set last_seq_id = excluded.last_seq_id, heartbeat = excluded.heartbeat";
         await theSession.ExecuteAsync(new NpgsqlCommand(sql));
     }
 
@@ -195,5 +218,122 @@ public class HighWaterHealthCheckTests: DaemonContext
         var result = await check.CheckHealthAsync(new HealthCheckContext());
 
         result.Status.ShouldBe(HealthStatus.Healthy);
+    }
+
+    // ---- heartbeat primary signal (marten#4986) ------------------------------------------
+
+    [Fact]
+    public async Task healthy_when_heartbeat_is_fresh_even_though_mark_is_behind()
+    {
+        // ExtendedProgression on -> the heartbeat is the primary signal. A fresh heartbeat means the
+        // agent is cycling, so a mark sitting behind the latest event is NOT unhealthy (unlike the gap
+        // heuristic, which would trip here).
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+            x.Events.EnableExtendedProgressionTracking = true;
+        });
+        await appendEventsAsync(20);
+        await seedHighWaterHeartbeatAsync(1, _now.AddSeconds(-5)); // mark stuck at 1, but heartbeat is 5s old
+
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+
+        result.Status.ShouldBe(HealthStatus.Healthy);
+    }
+
+    [Fact]
+    public async Task unhealthy_when_heartbeat_is_stale_even_though_mark_is_caught_up()
+    {
+        // A stale heartbeat means the loop stopped cycling. This trips even when the mark is fully caught
+        // up (gap == 0) — the case the gap heuristic is blind to.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+            x.Events.EnableExtendedProgressionTracking = true;
+        });
+        await appendEventsAsync(20);
+        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90)); // caught up, heartbeat 90s old
+
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+
+        result.Status.ShouldBe(HealthStatus.Unhealthy);
+    }
+
+    // ---- autoRestart remediation (marten#4986) -------------------------------------------
+
+    [Fact]
+    public async Task autorestart_triggers_a_restart_once_and_still_reports_unhealthy()
+    {
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+            x.Events.EnableExtendedProgressionTracking = true;
+        });
+        await appendEventsAsync(20);
+        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
+
+        var daemon = Substitute.For<IProjectionDaemon>();
+        var coordinator = new FakeCoordinator(daemon);
+
+        var check = buildCheck(30.Seconds(), autoRestart: true, coordinator: coordinator);
+
+        // First stale cycle: restart the loop, still report Unhealthy so an alert fires.
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Unhealthy);
+        await daemon.Received(1).RestartHighWaterAgentAsync(Arg.Any<CancellationToken>());
+
+        // Second cycle inside the same staleness window: still Unhealthy, but NOT restarted again (capped).
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Unhealthy);
+        await daemon.Received(1).RestartHighWaterAgentAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task without_autorestart_no_restart_is_attempted()
+    {
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+            x.Events.EnableExtendedProgressionTracking = true;
+        });
+        await appendEventsAsync(20);
+        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
+
+        var daemon = Substitute.For<IProjectionDaemon>();
+        var coordinator = new FakeCoordinator(daemon);
+
+        var result = await buildCheck(30.Seconds(), coordinator: coordinator).CheckHealthAsync(new HealthCheckContext());
+
+        result.Status.ShouldBe(HealthStatus.Unhealthy);
+        await daemon.DidNotReceive().RestartHighWaterAgentAsync(Arg.Any<CancellationToken>());
+    }
+
+    // Minimal IProjectionCoordinator that hands back a single daemon — avoids mocking a ValueTask-returning
+    // member (CA2012) while letting the daemon itself stay an NSubstitute for Received(...) assertions.
+    private sealed class FakeCoordinator: IProjectionCoordinator
+    {
+        private readonly IProjectionDaemon _daemon;
+
+        public FakeCoordinator(IProjectionDaemon daemon) => _daemon = daemon;
+
+        public IProjectionDaemon DaemonForMainDatabase() => _daemon;
+
+        public ValueTask<IProjectionDaemon> DaemonForDatabase(string databaseIdentifier) => new(_daemon);
+
+        public ValueTask<IReadOnlyList<IProjectionDaemon>> AllDaemonsAsync() =>
+            new(new[] { _daemon });
+
+        public Task PauseAsync() => Task.CompletedTask;
+
+        public Task ResumeAsync() => Task.CompletedTask;
+
+        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
