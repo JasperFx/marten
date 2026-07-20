@@ -46,6 +46,38 @@ public partial class MartenDatabase : IEventDatabase
         }
     }
 
+    /// <summary>
+    ///     Persist the extended progression telemetry (heartbeat / agent_status / pause_reason /
+    ///     running_on_node) the async daemon publishes for a shard, via the
+    ///     <c>mt_mark_event_progression_extended</c> function. Driven by the JasperFx.Events
+    ///     <c>ExtendedProgressionWriter</c> observer on status transitions and throttled heartbeats
+    ///     (CritterWatch #750). The function updates only the telemetry columns on an existing row,
+    ///     so it never rolls back committed <c>last_seq_id</c>.
+    /// </summary>
+    public async Task WriteExtendedProgressionAsync(ShardState state, CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            await conn.CreateCommand(
+                    $"select {Options.EventGraph.DatabaseSchemaName}.mt_mark_event_progression_extended(:name, :seq, :heartbeat, :status, :reason, :node)")
+                .With("name", state.ShardName, NpgsqlDbType.Varchar)
+                .With("seq", state.Sequence, NpgsqlDbType.Bigint)
+                .With("heartbeat", (object?)state.LastHeartbeat ?? DBNull.Value, NpgsqlDbType.TimestampTz)
+                .With("status", (object?)state.AgentStatus ?? DBNull.Value, NpgsqlDbType.Varchar)
+                .With("reason", (object?)state.PauseReason ?? DBNull.Value, NpgsqlDbType.Text)
+                .With("node", (object?)state.RunningOnNode ?? DBNull.Value, NpgsqlDbType.Integer)
+                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
     public async Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token)
     {
         var sql =
