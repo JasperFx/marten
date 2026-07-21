@@ -136,6 +136,7 @@ const config: UserConfig<DefaultTheme.Config> = {
           collapsed: true,
           items: [
             { text: 'Bootstrapping Marten', link: '/configuration/hostbuilder' },
+            { text: 'Azure PostgreSQL with Entra ID', link: '/configuration/azure-managed-identity' },
             { text: 'Composite Configuration Across Assemblies', link: '/configuration/composite-configuration' },
             { text: 'Configuring Document Storage', link: '/configuration/storeoptions' },
             { text: 'Json Serialization', link: '/configuration/json' },
