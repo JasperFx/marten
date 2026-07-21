@@ -22,7 +22,7 @@ namespace Marten.Events.Daemon.HighWater;
 /// </para>
 /// </summary>
 /// <seealso cref="ShardState.HighWaterMark"/>
-internal static class HighWaterShardIdentity
+public static class HighWaterShardIdentity
 {
     /// <summary>
     /// Identity for the store-global high-water progression row -- the only row that exists

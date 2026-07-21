@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using Marten.Events.Daemon.HighWater;
 using Marten.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -143,12 +144,10 @@ public static class HighWaterHealthCheckExtensions
     /// </summary>
     public class HighWaterHealthCheck: IHealthCheck
     {
-        // The store-global high-water identity and the per-tenant prefix. Kept in lock-step with
-        // Marten's internal HighWaterShardIdentity (Marten.Events.Daemon.HighWater) — both derive
-        // from the same ShardState.HighWaterMark constant, so the grammar cannot drift. (Marten.AspNetCore
-        // is a separate assembly and cannot see that internal helper directly.)
-        private const string HighWaterMarkShard = ShardState.HighWaterMark;
-        private const string PerTenantHighWaterPrefix = ShardState.HighWaterMark + ":";
+        // The store-global high-water identity and the per-tenant prefix — the canonical grammar the
+        // high-water machinery writes and reads (Marten.Events.Daemon.HighWater.HighWaterShardIdentity).
+        private const string HighWaterMarkShard = HighWaterShardIdentity.StoreGlobal;
+        private const string PerTenantHighWaterPrefix = HighWaterShardIdentity.PerTenantPrefix;
 
         private readonly IDocumentStore _store;
         private readonly TimeProvider _timeProvider;
