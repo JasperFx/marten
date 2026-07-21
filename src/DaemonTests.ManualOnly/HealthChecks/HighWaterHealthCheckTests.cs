@@ -8,6 +8,7 @@ using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
+using Marten.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Npgsql;
@@ -42,7 +43,8 @@ public class HighWaterHealthCheckTests: DaemonContext
     }
 
     private HighWaterHealthCheck buildCheck(TimeSpan? staleThreshold = null, long minimumGap = 1,
-        bool autoRestart = false, IProjectionCoordinator? coordinator = null)
+        bool autoRestart = false, IProjectionCoordinator? coordinator = null,
+        Func<IMartenDatabase, bool>? databaseFilter = null, bool includeExternallyManaged = false)
     {
         var services = new ServiceCollection();
         if (coordinator != null)
@@ -51,7 +53,8 @@ public class HighWaterHealthCheckTests: DaemonContext
         }
 
         return new(theStore,
-            new HighWaterHealthCheckSettings(staleThreshold ?? 30.Seconds(), minimumGap, autoRestart), _timeProvider,
+            new HighWaterHealthCheckSettings(staleThreshold ?? 30.Seconds(), minimumGap, autoRestart, databaseFilter,
+                includeExternallyManaged), _timeProvider,
             _tracker, services.BuildServiceProvider());
     }
 
@@ -84,6 +87,21 @@ public class HighWaterHealthCheckTests: DaemonContext
             $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated, heartbeat) " +
             $"values ('HighWaterMark', {sequence}, now(), '{heartbeat:O}'::timestamptz) " +
             "on conflict (name) do update set last_seq_id = excluded.last_seq_id, heartbeat = excluded.heartbeat";
+        await theSession.ExecuteAsync(new NpgsqlCommand(sql));
+    }
+
+    // Seeds an arbitrary progression row (store-global "HighWaterMark" or a per-tenant
+    // "HighWaterMark:<tenant>" row) with an optional liveness heartbeat. The heartbeat column only
+    // exists when EnableExtendedProgressionTracking is on, so pass a heartbeat only in that case.
+    private async Task seedProgressionRowAsync(string name, long sequence, DateTimeOffset? heartbeat = null)
+    {
+        var sql = heartbeat is { } hb
+            ? $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated, heartbeat) " +
+              $"values ('{name}', {sequence}, now(), '{hb:O}'::timestamptz) " +
+              "on conflict (name) do update set last_seq_id = excluded.last_seq_id, heartbeat = excluded.heartbeat"
+            : $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated) " +
+              $"values ('{name}', {sequence}, now()) " +
+              "on conflict (name) do update set last_seq_id = excluded.last_seq_id";
         await theSession.ExecuteAsync(new NpgsqlCommand(sql));
     }
 
@@ -311,6 +329,174 @@ public class HighWaterHealthCheckTests: DaemonContext
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
         await daemon.DidNotReceive().RestartHighWaterAgentAsync(Arg.Any<CancellationToken>());
+    }
+
+    // ---- database scoping (marten#4991) --------------------------------------------------
+
+    [Fact]
+    public async Task database_filter_excluding_the_database_reports_healthy_despite_stuck_mark()
+    {
+        // marten#4991: a predicate that excludes this node's non-owned databases must stop the check
+        // from probing (and asserting on) them at all — even a hard-stuck mark stays Healthy.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+        });
+        await appendEventsAsync(20);
+        await seedHighWaterMarkAsync(1);
+
+        var check = buildCheck(30.Seconds(), databaseFilter: _ => false);
+
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+
+        // still Healthy well past the staleness threshold, because the database is never probed
+        _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+    }
+
+    [Fact]
+    public async Task database_filter_including_the_database_still_detects_stuck_mark()
+    {
+        // The complementary case: a predicate that includes the database behaves exactly like no filter.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+        });
+        await appendEventsAsync(20);
+        await seedHighWaterMarkAsync(1);
+
+        var check = buildCheck(30.Seconds(), databaseFilter: _ => true);
+
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+
+        _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Unhealthy);
+    }
+
+    // ---- ExternallyManaged gate (marten#4991) --------------------------------------------
+
+    [Fact]
+    public async Task healthy_under_externally_managed_by_default_even_if_heartbeat_stale()
+    {
+        // Default: ExternallyManaged (e.g. Wolverine-managed distribution) hosts no local daemon, so the
+        // check stays a no-op and a stale heartbeat is not asserted.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.ExternallyManaged;
+            x.Events.EnableExtendedProgressionTracking = true;
+        });
+        await appendEventsAsync(20);
+        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
+
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+
+        result.Status.ShouldBe(HealthStatus.Healthy);
+    }
+
+    [Fact]
+    public async Task unhealthy_under_externally_managed_when_opted_in_and_heartbeat_stale()
+    {
+        // Opted in: assert under ExternallyManaged too — via the heartbeat signal.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.ExternallyManaged;
+            x.Events.EnableExtendedProgressionTracking = true;
+        });
+        await appendEventsAsync(20);
+        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
+
+        var result = await buildCheck(30.Seconds(), includeExternallyManaged: true)
+            .CheckHealthAsync(new HealthCheckContext());
+
+        result.Status.ShouldBe(HealthStatus.Unhealthy);
+    }
+
+    [Fact]
+    public async Task externally_managed_opted_in_does_not_use_gap_fallback_without_heartbeat()
+    {
+        // Opted in but ExtendedProgression off -> no heartbeat. The gap fallback must be suppressed under
+        // ExternallyManaged because an external owner can legitimately pause the mark; it stays Healthy.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.ExternallyManaged;
+        });
+        await appendEventsAsync(20);
+        await seedHighWaterMarkAsync(1);
+
+        var check = buildCheck(30.Seconds(), includeExternallyManaged: true);
+
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+
+        _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+    }
+
+    // ---- per-tenant high water (marten#4991) ---------------------------------------------
+
+    [Fact]
+    public async Task detects_stale_per_tenant_high_water_via_heartbeat()
+    {
+        // UseTenantPartitionedEvents persists HighWaterMark:<tenant> rows rather than a single
+        // store-global HighWaterMark. The original check matched only "HighWaterMark" and was blind to
+        // a stalled per-tenant agent; now a stale per-tenant heartbeat is detected.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+            x.Events.EnableExtendedProgressionTracking = true;
+        });
+        await appendEventsAsync(20);
+        await seedProgressionRowAsync("HighWaterMark:acme", 5, _now.AddSeconds(-90));
+
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+
+        result.Status.ShouldBe(HealthStatus.Unhealthy);
+    }
+
+    [Fact]
+    public async Task healthy_when_per_tenant_high_water_heartbeat_is_fresh()
+    {
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+            x.Events.EnableExtendedProgressionTracking = true;
+        });
+        await appendEventsAsync(20);
+        await seedProgressionRowAsync("HighWaterMark:acme", 5, _now.AddSeconds(-5));
+
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+
+        result.Status.ShouldBe(HealthStatus.Healthy);
+    }
+
+    [Fact]
+    public async Task per_tenant_high_water_without_heartbeat_is_not_gap_assessed()
+    {
+        // ExtendedProgression off -> a per-tenant row has no heartbeat, and there is no per-tenant
+        // highest-sequence to compute a meaningful gap (FetchHighestEventSequenceNumber is store-global),
+        // so the gap fallback must NOT run for it — otherwise a tenant with no new events false-positives.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+        });
+        await appendEventsAsync(20);
+        await seedProgressionRowAsync("HighWaterMark:acme", 1);
+
+        var check = buildCheck(30.Seconds());
+
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+
+        _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
+        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
     }
 
     // Minimal IProjectionCoordinator that hands back a single daemon — avoids mocking a ValueTask-returning
