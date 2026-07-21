@@ -84,7 +84,9 @@ The check is deliberately conservative to avoid false positives:
 
 - **Gating.** It reports Healthy (not applicable) unless the store actually runs the daemon —
   it needs at least one `Async` projection or subscription registered, and an `AsyncMode` of
-  `Solo` or `HotCold`. `Disabled` and `ExternallyManaged` stores never assert on the mark.
+  `Solo` or `HotCold`. `Disabled` stores never assert on the mark. `ExternallyManaged` stores
+  (for example Wolverine-managed daemon distribution) also skip by default, but you can opt in
+  with `includeExternallyManaged: true` (see below).
 - **Sustained non-advance only.** A non-zero gap between the highest event sequence and the
   mark is *normal* transiently (the detector deliberately holds the mark inside a "safe
   harbor" behind in-flight or gapped sequences). The check therefore trips only when the mark
@@ -93,6 +95,39 @@ The check is deliberately conservative to avoid false positives:
 - **Store-global reading.** It reads database state, so it is correct on any node regardless of
   which one runs the agent; it fails only when *no* node is advancing the mark.
 
+### Sharded and multi-tenant stores
+
+On a multi-database store (`MultiTenantedWithShardedDatabases`, or any store with more than one
+tenant database) the check probes **every** database by default. With hundreds of shard
+databases that is a connection fan-out on each health probe, and — when daemon distribution is
+spread across nodes (e.g. Wolverine-managed) — a node ends up probing databases it does not host
+the daemon for. Two options scope it to the databases the local node actually owns
+(see [marten#4991](https://github.com/JasperFx/marten/issues/4991)):
+
+```cs
+Services.AddHealthChecks().AddMartenHighWaterHealthCheck(
+    staleThreshold: TimeSpan.FromSeconds(30),
+
+    // Only probe (and, with autoRestart, only restart) the databases this node owns. The
+    // predicate receives each IMartenDatabase; return true for the ones the local node hosts.
+    databaseFilter: db => LocallyOwnedDatabaseIdentifiers.Contains(db.Identifier),
+
+    // Assert even under DaemonMode.ExternallyManaged (Wolverine-managed distribution). In this
+    // mode only the liveness heartbeat signal is used (never the sequence-gap fallback), because
+    // an external owner can legitimately pause the mark — so this requires
+    // Events.EnableExtendedProgressionTracking to be turned on.
+    includeExternallyManaged: true);
+```
+
+Under `UseTenantPartitionedEvents` the high-water mark is tracked **per tenant** as
+`HighWaterMark:<tenant>` progression rows rather than a single store-global `HighWaterMark`. The
+check evaluates those per-tenant rows too, using the liveness heartbeat (the sequence-gap
+fallback is store-global and cannot be applied per tenant). Enable
+`Events.EnableExtendedProgressionTracking` so the per-tenant heartbeats are persisted, otherwise
+a stalled per-tenant high-water agent cannot be detected.
+
 ::: tip INFO
 This health check does **not** force the high-water mark forward — it is detection only.
+`autoRestart: true` may additionally ask the local coordinator to restart the high-water poll
+loop, which also never advances the mark.
 :::
