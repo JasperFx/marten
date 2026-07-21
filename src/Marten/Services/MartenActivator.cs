@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Microsoft.Extensions.Hosting;
@@ -65,6 +66,14 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        // GH-3521 (jasperfx#543): surface the application-assembly-reuse warning buffered from
+        // JasperFxOptions during StoreOptions.ReadJasperFxOptions. Only non-null in the multi-host
+        // test-harness divergence case, so this stays silent for a normal single-host application.
+        if (Store.Options.ApplicationAssemblyReuseWarning.IsNotEmpty())
+        {
+            _logger.LogWarning("{ApplicationAssemblyReuseWarning}", Store.Options.ApplicationAssemblyReuseWarning);
+        }
+
         if (Store.Options.CreateDatabases != null)
         {
             var databaseGenerator = new DatabaseGenerator();
