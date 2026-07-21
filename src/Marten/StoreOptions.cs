@@ -327,6 +327,15 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// </summary>
     public Assembly? ApplicationAssembly { get; set; }
 
+    /// <summary>
+    /// GH-3521 (jasperfx#543): buffered from <see cref="JasperFxOptions.ApplicationAssemblyReuseWarning"/>
+    /// during <see cref="ReadJasperFxOptions"/> and surfaced once at startup by
+    /// <see cref="Services.MartenActivator"/> (which has a logger). Non-null only when this host adopted an
+    /// application assembly pinned by an EARLIER host in the same process (a process-wide value) that differs
+    /// from where this store was registered — the multi-host test-harness divergence case. Null otherwise.
+    /// </summary>
+    internal string? ApplicationAssemblyReuseWarning { get; set; }
+
     internal void ReadJasperFxOptions(JasperFxOptions? options)
     {
         if (options == null) return;
@@ -337,6 +346,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         }
 
         ApplicationAssembly ??= options.ApplicationAssembly;
+
+        // GH-3521: buffer JasperFx's application-assembly-reuse warning so MartenActivator can log it once
+        // at startup where a logger is available (JasperFx is a library with no always-on startup service).
+        ApplicationAssemblyReuseWarning ??= options.ApplicationAssemblyReuseWarning;
         _autoCreate ??= options.ActiveProfile.ResourceAutoCreate;
         _resourceMigrationFailureMode ??= options.ActiveProfile.ResourceMigrationFailureMode;
 

@@ -119,14 +119,19 @@
          local restart seam (IProjectionDaemon.HighWaterLastPolledAt / IsHighWaterStale /
          RestartHighWaterAgentAsync; DaemonSettings.HighWaterStalenessThreshold; ShardAction.Faulted/
          Restarted). Also carries the jasperfx#540 faulted-start teardown that first shipped in 2.32.0.
-         Foundation for the Phase 2 high-water health check (marten#4986). -->
-    <PackageVersion Include="JasperFx" Version="2.32.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.32.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.32.0">
+         Foundation for the Phase 2 high-water health check (marten#4986).
+         JasperFx 2.33.0: jasperfx#543 (GH-3521) — JasperFxOptions.ApplicationAssemblyReuseWarning
+         surfaces divergent process-pinned application-assembly reuse across multi-host test processes;
+         Marten buffers and logs it at startup (marten#4996). Also ships the step-instrumented
+         aggregation fold + MultiAggregateProjectionResult (jasperfx#547) and the serializable
+         EventTagQuery DCB source (jasperfx#548). -->
+    <PackageVersion Include="JasperFx" Version="2.33.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.33.0" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.33.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.32.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.33.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 using JasperFx;
 using JasperFx.CommandLine.Descriptions;
 using JasperFx.Core.Reflection;
@@ -11,6 +12,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using Shouldly;
 using Weasel.Core.CommandLine;
@@ -432,7 +434,119 @@ public class jasper_fx_mechanics
         var first = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
         first.Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
     }
+
+    [Fact]
+    public async Task divergent_application_assembly_reuse_warning_is_buffered_and_logged()
+    {
+        // GH-3521 (jasperfx#543 / marten#4996): a later host that adopts a process-pinned application
+        // assembly differing from where it was registered should get a startup warning. Force the
+        // divergence by pinning RememberedApplicationAssembly to a DIFFERENT assembly than the one this
+        // Marten host is registered from, then assert Marten buffers the warning onto StoreOptions and
+        // logs it once from MartenActivator.
+        var previous = JasperFxOptions.RememberedApplicationAssembly;
+        JasperFxOptions.RememberedApplicationAssembly = typeof(string).Assembly; // System.Private.CoreLib
+
+        var logs = new CapturingLoggerProvider();
+        try
+        {
+            using var host = await Host.CreateDefaultBuilder()
+                .ConfigureLogging(logging =>
+                {
+                    logging.AddProvider(logs);
+                    logging.SetMinimumLevel(LogLevel.Trace);
+                })
+                .ConfigureServices(services =>
+                {
+                    // ApplyAllDatabaseChangesOnStartup registers MartenActivator as the startup
+                    // hosted service — the always-on surface where the warning is logged.
+                    services.AddMarten(m =>
+                    {
+                        m.Connection(ConnectionSource.ConnectionString);
+                        m.DatabaseSchemaName = "assembly_reuse_warning";
+                    }).ApplyAllDatabaseChangesOnStartup();
+                }).StartAsync();
+
+            var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+
+            // Buffered from JasperFxOptions during ReadJasperFxOptions...
+            store.Options.ApplicationAssemblyReuseWarning.ShouldNotBeNull();
+            store.Options.ApplicationAssemblyReuseWarning.ShouldContain("System.Private.CoreLib");
+
+            // ...and surfaced once at startup by MartenActivator.
+            logs.Messages.ShouldContain(x => x.Contains("System.Private.CoreLib"));
+        }
+        finally
+        {
+            JasperFxOptions.RememberedApplicationAssembly = previous;
+        }
+    }
+
+    [Fact]
+    public async Task no_reuse_warning_for_a_normal_single_host()
+    {
+        // The first (and only) host in the process pins its own assembly and never diverges, so nothing
+        // is buffered or logged. Guards against the warning firing spuriously in the common case.
+        var previous = JasperFxOptions.RememberedApplicationAssembly;
+        JasperFxOptions.RememberedApplicationAssembly = null;
+
+        try
+        {
+            using var host = await Host.CreateDefaultBuilder()
+                .ConfigureServices(services =>
+                {
+                    services.AddMarten(m =>
+                    {
+                        m.Connection(ConnectionSource.ConnectionString);
+                        m.DatabaseSchemaName = "assembly_reuse_no_warning";
+                    });
+                }).StartAsync();
+
+            var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+            store.Options.ApplicationAssemblyReuseWarning.ShouldBeNull();
+        }
+        finally
+        {
+            JasperFxOptions.RememberedApplicationAssembly = previous;
+        }
+    }
 }
 
 public interface IFirstStore : IDocumentStore{}
 public interface ISecondStore : IDocumentStore{}
+
+internal class CapturingLoggerProvider: ILoggerProvider
+{
+    public ConcurrentQueue<string> Messages { get; } = new();
+
+    public ILogger CreateLogger(string categoryName) => new CapturingLogger(Messages);
+
+    public void Dispose()
+    {
+    }
+
+    private class CapturingLogger: ILogger
+    {
+        private readonly ConcurrentQueue<string> _messages;
+
+        public CapturingLogger(ConcurrentQueue<string> messages)
+        {
+            _messages = messages;
+        }
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
+            Func<TState, Exception, string> formatter)
+        {
+            _messages.Enqueue(formatter(state, exception));
+        }
+
+        private class NullScope: IDisposable
+        {
+            public static readonly NullScope Instance = new();
+            public void Dispose() { }
+        }
+    }
+}
