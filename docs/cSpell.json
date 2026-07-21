@@ -2,6 +2,12 @@
   "version": "0.1",
   "language": "en",
   "words": [
+    "TimescaleDB",
+    "timescaledb",
+    "hypertable",
+    "hypertables",
+    "idempotently",
+    "rollups",
     "Polecat",
     "Oakton",
     "Serilog",

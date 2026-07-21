@@ -59,7 +59,14 @@ internal class DocumentTable: Table
 
         foreach (var field in mapping.DuplicatedFields.Where(x => !x.OnlyForSearching))
         {
-            AddColumn(new DuplicatedFieldColumn(field));
+            var column = AddColumn(new DuplicatedFieldColumn(field));
+
+            // A duplicated field can opt into the primary key (e.g. to satisfy TimescaleDB's
+            // requirement that a hypertable's partition column participates in the PK).
+            if (field.PartOfPrimaryKey)
+            {
+                column.AsPrimaryKey();
+            }
         }
 
         if (mapping.IsHierarchy())

@@ -1,0 +1,81 @@
+name: Build & Test - Extensions - TimescaleDB
+
+# Dedicated workflow for the Marten.TimescaleDB test project. TimescaleDB is a
+# loadable module that must be preloaded via shared_preload_libraries, so it needs
+# a Postgres image with the extension installed and preloaded — the official
+# `timescale/timescaledb-ha` image ships exactly that.
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'azure-pipelines.yml'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'azure-pipelines.yml'
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  pg_db: marten_testing
+  pg_user: postgres
+  CONFIGURATION: Release
+  FRAMEWORK: net9.0
+  DISABLE_TEST_PARALLELIZATION: true
+  DEFAULT_SERIALIZER: "Newtonsoft"
+  NUKE_TELEMETRY_OPTOUT: true
+
+jobs:
+  timescaledb:
+    name: TimescaleDB extension tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: timescale/timescaledb-ha:pg17
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: ${{ env.pg_db }}
+          NAMEDATALEN: 150
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --user postgres
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Optimize database for running tests faster
+        run: |
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfull_page_writes = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nsynchronous_commit = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker container restart $PG_CONTAINER_NAME
+        shell: bash
+
+      - name: compile
+        run: ./build.sh compile
+        shell: bash
+
+      - name: test-timescaledb
+        if: ${{ success() || failure() }}
+        run: ./build.sh TestTimescaleDB
+        shell: bash

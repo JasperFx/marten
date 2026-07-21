@@ -1,0 +1,19 @@
+version: '3'
+services:
+  timescaledb:
+    # TimescaleDB is a loadable module that must be preloaded via
+    # shared_preload_libraries, which the official timescaledb-ha image already
+    # does. Runs on 5433 so it can coexist with the main postgresql service
+    # (docker-compose.yml, port 5432) during local development.
+    #
+    # Point the Marten.TimescaleDB test project at it with:
+    #   export marten_testing_database="Host=localhost;Port=5433;Database=marten_testing;Username=postgres;password=postgres"
+    image: timescale/timescaledb-ha:pg17
+    shm_size: '512mb'
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: marten_testing
+      NAMEDATALEN: 100

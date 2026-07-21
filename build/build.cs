@@ -176,6 +176,18 @@ class Build : NukeBuild
                 .SetFramework(Framework));
         });
 
+    Target TestTimescaleDB => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/Marten.TimescaleDB.Tests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
     Target TestCore => _ => _
         .ProceedAfterFailure()
         .Executes(() =>
@@ -414,6 +426,7 @@ class Build : NukeBuild
                 // them up. Without this they'd silently never reach NuGet.
                 "./src/Marten.PostGIS",        // PostGIS spatial support (#4576)
                 "./src/Marten.PgVector",       // pgvector similarity search (#4576)
+                "./src/Marten.TimescaleDB",    // TimescaleDB hypertables (#4980)
                 "./src/Marten.MemoryPack"      // binary event serialization (#4515 / #4578)
             };
 

@@ -12,6 +12,8 @@ using JasperFx.Core.TypeScanning;
 [assembly: InternalsVisibleTo("Marten.CommandLine")]
 [assembly: InternalsVisibleTo("Marten.PLv8")]
 [assembly: InternalsVisibleTo("Marten.PLv8.Testing")]
+[assembly: InternalsVisibleTo("Marten.TimescaleDB")]
+[assembly: InternalsVisibleTo("Marten.TimescaleDB.Tests")]
 [assembly: InternalsVisibleTo("Marten.Schema.Testing")]
 [assembly: InternalsVisibleTo("DaemonTests")]
 [assembly: InternalsVisibleTo("ConfigurationTests")]

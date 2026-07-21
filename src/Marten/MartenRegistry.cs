@@ -194,11 +194,12 @@ public class MartenRegistry
         /// <param name="dbType">Optional, overrides the Npgsql DbType for any parameter usage of this property</param>
         /// <returns></returns>
         public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object?>> expression, string? pgType = null,
-            NpgsqlDbType? dbType = null, Action<DocumentIndex>? configure = null, bool notNull = false)
+            NpgsqlDbType? dbType = null, Action<DocumentIndex>? configure = null, bool notNull = false,
+            bool partOfPrimaryKey = false)
         {
             _builder.Alter = mapping =>
             {
-                mapping.Duplicate(expression, pgType, dbType, configure, notNull);
+                mapping.Duplicate(expression, pgType, dbType, configure, notNull, partOfPrimaryKey);
             };
             return this;
         }
