@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
@@ -476,6 +477,110 @@ public partial class DocumentStore
         JsonElement? finalJson = finalObj == null ? null : JsonSerializer.SerializeToElement(finalObj, aggregateType, ExplorerJson);
 
         return new ProjectionTimelineRaw(stepRecords, finalJson);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Multi-stream projection step-through: unlike <see cref="IEventStore.RunProjectionByNameAsync"/>
+    /// (a single-identity, reflection-<c>Apply</c>, sessionless replay) this drives the projection's
+    /// REAL execution path — the same slicer/grouper the async daemon uses, <c>EnrichEventsAsync</c> per
+    /// group, then a one-event-at-a-time fold through <c>Create</c>/<c>Apply</c>/<c>ShouldDelete</c> —
+    /// against a read-only <see cref="IQuerySession"/>. A flat event list spanning multiple streams fans
+    /// out into one <see cref="ProjectionTimelineRaw"/> per resulting aggregate identity; a single-stream
+    /// projection collapses to exactly one. The shared fold lives in JasperFx.Events
+    /// (<see cref="ISteppableAggregation{TQuerySession}.BuildTimelinesAsync"/>) so Marten and Polecat
+    /// can't diverge. Stateless: nothing is persisted.
+    /// </remarks>
+    async Task<MultiAggregateProjectionResult> IEventStore.RunMultiStreamProjectionAsync(
+        string projectionName,
+        IReadOnlyList<EventRecord> events,
+        CancellationToken ct)
+    {
+        var source = Options.Projections.All.FirstOrDefault(x => x.Name.EqualsIgnoreCase(projectionName))
+            ?? throw new ArgumentOutOfRangeException(nameof(projectionName),
+                $"No projection named '{projectionName}' is registered. Available projections: {Options.Projections.All.Select(p => p.Name).Join(", ")}");
+
+        if (source is not ISteppableAggregation<IQuerySession> steppable)
+        {
+            throw new ArgumentException(
+                $"Projection '{projectionName}' is not an aggregate projection that supports multi-stream step-through.",
+                nameof(projectionName));
+        }
+
+        // Rebuild real IEvent instances from the wire records so the projection's slicer/grouper can run.
+        // Remember the source record per event (by reference) so the fold can map each folded event back
+        // to exactly the record the caller supplied — preserving the original Data/Metadata JSON verbatim.
+        var recordByEvent = new Dictionary<IEvent, EventRecord>(ReferenceEqualityComparer.Instance);
+        var domainEvents = new List<IEvent>(events.Count);
+        foreach (var record in events)
+        {
+            var built = buildEventFromRecord(record);
+            recordByEvent[built] = record;
+            domainEvents.Add(built);
+        }
+
+        await using var session = openExplorerSession();
+
+        JsonElement? serialize(object? state) =>
+            state is null ? null : JsonSerializer.SerializeToElement(state, state.GetType(), ExplorerJson);
+
+        EventRecord toRecord(IEvent e) =>
+            recordByEvent.TryGetValue(e, out var record) ? record : buildRecordFromEvent(e);
+
+        return await steppable
+            .BuildTimelinesAsync(domainEvents, session, serialize, toRecord, observer: null, ct)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Rebuild a real Marten <see cref="IEvent"/> from an explorer <see cref="EventRecord"/> so the
+    /// projection's slicer/grouper (which read stream id, version, and the deserialized event body) can
+    /// run against it. The event body is deserialized to its registered CLR type and wrapped via
+    /// <see cref="EventGraph.BuildEvent"/>; stream identity, version, sequence, timestamp, and tenant are
+    /// copied across so grouping-by-stream and grouping-by-event-data both behave as in the daemon.
+    /// </summary>
+    private IEvent buildEventFromRecord(EventRecord record)
+    {
+        var data = deserializeEventBody(record);
+        var e = Options.EventGraph.BuildEvent(data);
+
+        e.Id = record.EventId;
+        e.Sequence = record.Sequence;
+        e.Version = record.StreamVersion;
+        e.Timestamp = record.Timestamp;
+        e.TenantId = record.TenantId ?? StorageConstants.DefaultTenantId;
+
+        if (Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid)
+        {
+            if (Guid.TryParse(record.StreamId, out var streamGuid))
+            {
+                e.StreamId = streamGuid;
+            }
+        }
+        else
+        {
+            e.StreamKey = record.StreamId;
+        }
+
+        return e;
+    }
+
+    /// <summary>
+    /// Fallback used by <see cref="IEventStore.RunMultiStreamProjectionAsync"/>'s <c>toRecord</c> when a
+    /// folded event isn't one of the instances we built (defensive — the slicer preserves references, so
+    /// this normally never runs). Reconstructs an <see cref="EventRecord"/> straight off the
+    /// <see cref="IEvent"/>.
+    /// </summary>
+    private EventRecord buildRecordFromEvent(IEvent e)
+    {
+        var streamId = Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid
+            ? e.StreamId.ToString()
+            : e.StreamKey ?? string.Empty;
+
+        var data = JsonSerializer.SerializeToElement(e.Data, e.Data.GetType(), ExplorerJson);
+
+        return new EventRecord(e.Id, e.Sequence, e.Version, streamId, e.EventTypeName, data, null,
+            e.Timestamp, e.TenantId, null);
     }
 
     private Type findProjectionAggregateType(string projectionName)
