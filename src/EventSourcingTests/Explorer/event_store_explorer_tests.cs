@@ -11,6 +11,7 @@ using JasperFx.Events.Tags;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 
 namespace EventSourcingTests.Explorer;
@@ -305,5 +306,95 @@ public class event_store_explorer_tests: OneOffConfigurationsContext
         usage!.DcbTagTypes.ShouldContain(t => t.Name == nameof(CustomerId));
         usage.RegisteredEventTypes.ShouldContain(e => e.Alias == "order_placed");
         usage.RegisteredEventTypes.ShouldContain(e => e.Alias == "item_added");
+    }
+
+    // #782 / jasperfx#503 — on a conjoined multi-tenant store the same stream id can live
+    // under two tenants. The tenant-less read returns an ambiguous union of both; the
+    // tenant-scoped overload must isolate each tenant's slice via a tenant_id predicate.
+    private void ConfigureConjoinedStore()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.AddEventType<OrderPlaced>();
+            opts.Events.AddEventType<ItemAdded>();
+            opts.Policies.AllDocumentsAreMultiTenanted();
+        });
+    }
+
+    [Fact]
+    public async Task read_stream_is_isolated_per_tenant_on_conjoined_store()
+    {
+        ConfigureConjoinedStore();
+
+        // Same stream id under two tenants — the exact cross-tenant ambiguity #782 closes.
+        var streamId = Guid.NewGuid();
+
+        await using (var a = theStore.LightweightSession("tenant-a"))
+        {
+            a.Events.StartStream<Order>(streamId, new OrderPlaced("Alice"), new ItemAdded(new OrderItem("A-1", 1)));
+            await a.SaveChangesAsync();
+        }
+
+        await using (var b = theStore.LightweightSession("tenant-b"))
+        {
+            b.Events.StartStream<Order>(streamId, new OrderPlaced("Bob"));
+            await b.SaveChangesAsync();
+        }
+
+        var explorer = (IEventStore)theStore;
+
+        var tenantA = new List<EventRecord>();
+        await foreach (var e in explorer.ReadStreamAsync(streamId.ToString(), "tenant-a", CancellationToken.None))
+            tenantA.Add(e);
+
+        var tenantB = new List<EventRecord>();
+        await foreach (var e in explorer.ReadStreamAsync(streamId.ToString(), "tenant-b", CancellationToken.None))
+            tenantB.Add(e);
+
+        tenantA.Count.ShouldBe(2);
+        tenantA.ShouldAllBe(e => e.TenantId == "tenant-a");
+        tenantB.Count.ShouldBe(1);
+        tenantB.ShouldAllBe(e => e.TenantId == "tenant-b");
+
+        // The tenant-less overload is unchanged: it still reads across every tenant, so it
+        // sees the union — this is the ambiguity the tenant-scoped read exists to resolve.
+        var union = new List<EventRecord>();
+        await foreach (var e in explorer.ReadStreamAsync(streamId.ToString(), CancellationToken.None))
+            union.Add(e);
+        union.Count.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task recent_streams_is_isolated_per_tenant_on_conjoined_store()
+    {
+        ConfigureConjoinedStore();
+
+        var streamA = Guid.NewGuid();
+        var streamB = Guid.NewGuid();
+
+        await using (var a = theStore.LightweightSession("tenant-a"))
+        {
+            a.Events.StartStream<Order>(streamA, new OrderPlaced("Alice"));
+            await a.SaveChangesAsync();
+        }
+
+        await using (var b = theStore.LightweightSession("tenant-b"))
+        {
+            b.Events.StartStream<Order>(streamB, new OrderPlaced("Bob"));
+            await b.SaveChangesAsync();
+        }
+
+        var explorer = (IEventStore)theStore;
+
+        var tenantA = await explorer.GetRecentStreamsAsync(50, "tenant-a", CancellationToken.None);
+        tenantA.ShouldAllBe(s => s.TenantId == "tenant-a");
+        tenantA.ShouldContain(s => s.StreamId == streamA.ToString());
+        tenantA.ShouldNotContain(s => s.StreamId == streamB.ToString());
+
+        var tenantB = await explorer.GetRecentStreamsAsync(50, "tenant-b", CancellationToken.None);
+        tenantB.ShouldAllBe(s => s.TenantId == "tenant-b");
+        tenantB.ShouldContain(s => s.StreamId == streamB.ToString());
+        tenantB.ShouldNotContain(s => s.StreamId == streamA.ToString());
     }
 }

@@ -59,12 +59,35 @@ public partial class DocumentStore
     /// <see cref="RecentStreamsCap"/> regardless of the requested count to keep the
     /// explorer's stream-list view bounded. Archived streams are included.
     /// </remarks>
-    async Task<IReadOnlyList<StreamSummary>> IEventStore.GetRecentStreamsAsync(int count, CancellationToken ct)
+    Task<IReadOnlyList<StreamSummary>> IEventStore.GetRecentStreamsAsync(int count, CancellationToken ct)
+        => ((IEventStore)this).GetRecentStreamsAsync(count, null, ct);
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// #782 / jasperfx#503 — tenant-scoped recent-streams listing, mirroring the two tenancy
+    /// models <see cref="IEventStore.GetProjectionStatusesAsync(string?,CancellationToken)"/>
+    /// distinguishes (jasperfx#502):
+    /// <list type="bullet">
+    /// <item><b>Single database</b> (conjoined tenancy): the tenant is co-located in the one
+    /// database, so the listing is bounded by a <c>tenant_id</c> predicate on the same
+    /// <c>AllowAnyTenant</c> explorer session.</item>
+    /// <item><b>Database-per-tenant / sharded</b>: the argument names a physical database, so
+    /// the session is opened against that tenant's own database and no <c>tenant_id</c> filter
+    /// is needed — every stream in that database already belongs to the tenant.</item>
+    /// </list>
+    /// A null <paramref name="tenantId"/> preserves the store-global (across every tenant) listing.
+    /// </remarks>
+    async Task<IReadOnlyList<StreamSummary>> IEventStore.GetRecentStreamsAsync(int count, string? tenantId, CancellationToken ct)
     {
         var limit = Math.Clamp(count, 0, RecentStreamsCap);
         if (limit == 0) return Array.Empty<StreamSummary>();
 
-        await using var session = openExplorerSession();
+        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
+        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+
+        await using var session = tenantId != null && spansSeveralDatabases
+            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         // The leading six columns deliberately mirror IEventStorage.StreamStateSelectSql
@@ -74,21 +97,23 @@ public partial class DocumentStore
         // list against the selector's Resolve method; this site's matching SELECT is
         // verified by the explorer tests in EventSourcingTests/Explorer.
         var schema = Options.EventGraph.DatabaseSchemaName;
+        var tenantFilter = scopeByColumn ? "where tenant_id = @tenant_id " : "";
         var cmd = new NpgsqlCommand(
             $"select id, version, type, timestamp, created, is_archived, tenant_id from {schema}.mt_streams " +
-            "order by timestamp desc limit @limit");
+            $"{tenantFilter}order by timestamp desc limit @limit");
         cmd.Parameters.AddWithValue("limit", limit);
+        if (scopeByColumn) cmd.Parameters.AddWithValue("tenant_id", tenantId!);
 
         var summaries = new List<StreamSummary>(limit);
         await using var reader = await session.ExecuteReaderAsync(cmd, ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false))
         {
             var row = await readStreamRowAsync(reader, ct).ConfigureAwait(false);
-            var tenantId = await reader.IsDBNullAsync(StreamStateColumnCount, ct).ConfigureAwait(false)
+            var tenant = await reader.IsDBNullAsync(StreamStateColumnCount, ct).ConfigureAwait(false)
                 ? null
                 : reader.GetString(StreamStateColumnCount);
 
-            summaries.Add(new StreamSummary(row.StreamId, row.StreamType, row.Version, row.Created, row.LastUpdated, tenantId));
+            summaries.Add(new StreamSummary(row.StreamId, row.StreamType, row.Version, row.Created, row.LastUpdated, tenant));
         }
 
         return summaries;
@@ -103,20 +128,42 @@ public partial class DocumentStore
     /// the per-event tag join would multiply the row cost — explorers that need tags
     /// should use <c>QueryByTagsAsync</c>.
     /// </remarks>
-    async IAsyncEnumerable<EventRecord> IEventStore.ReadStreamAsync(string streamId, [EnumeratorCancellation] CancellationToken ct)
+    IAsyncEnumerable<EventRecord> IEventStore.ReadStreamAsync(string streamId, CancellationToken ct)
+        => ((IEventStore)this).ReadStreamAsync(streamId, null, ct);
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// #782 / jasperfx#503 — tenant-scoped stream read. On a conjoined multi-tenant store the
+    /// same stream id can exist under two tenants; the tenant-less overload reads across every
+    /// tenant and returns their ambiguous union. This overload isolates a single tenant, using
+    /// the same two-model scoping as
+    /// <see cref="IEventStore.GetProjectionStatusesAsync(string?,CancellationToken)"/>
+    /// (jasperfx#502): a <c>tenant_id</c> predicate for a tenant co-located in one database, or
+    /// the tenant's own database session for a database-per-tenant / sharded store. Null preserves
+    /// the store-global read.
+    /// </remarks>
+    async IAsyncEnumerable<EventRecord> IEventStore.ReadStreamAsync(
+        string streamId, string? tenantId, [EnumeratorCancellation] CancellationToken ct)
     {
+        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
+        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+
         var schema = Options.EventGraph.DatabaseSchemaName;
+        var tenantFilter = scopeByColumn ? " and tenant_id = @tenant_id" : "";
         var sql =
             $"select id, seq_id, version, stream_id, type, data, timestamp, tenant_id " +
             $"from {schema}.mt_events " +
-            $"where stream_id = @stream_id " +
+            $"where stream_id = @stream_id{tenantFilter} " +
             $"order by version asc";
 
-        await using var session = openExplorerSession();
+        await using var session = tenantId != null && spansSeveralDatabases
+            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         var cmd = new NpgsqlCommand(sql);
         cmd.Parameters.AddWithValue("stream_id", parseStreamId(streamId));
+        if (scopeByColumn) cmd.Parameters.AddWithValue("tenant_id", tenantId!);
 
         await using var reader = await session.ExecuteReaderAsync(cmd, ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false))
