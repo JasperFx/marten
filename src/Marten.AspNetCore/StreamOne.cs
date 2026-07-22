@@ -27,7 +27,7 @@ namespace Marten.AspNetCore;
 /// </para>
 /// </summary>
 /// <typeparam name="T">The document type to stream.</typeparam>
-public sealed class StreamOne<T> : IResult, IEndpointMetadataProvider where T : notnull
+public sealed class StreamOne<T> : IResult, IEndpointMetadataProvider
 {
     private readonly IQueryable<T> _queryable;
 

@@ -50,6 +50,12 @@ public static class StreamingMinimalEndpoints
                     EmitETag = false
                 });
 
+        // Document type whose version metadata is disabled — no mt_version column, so
+        // EmitETag = true (the default) must still emit NO ETag rather than a constant zero-Guid.
+        app.MapGet("/minimal/versionless/{id:guid}",
+            (Guid id, IQuerySession session)
+                => new StreamOne<VersionlessDoc>(session.Query<VersionlessDoc>().Where(x => x.Id == id)));
+
         // --- StreamMany<T> ---
 
         app.MapGet("/minimal/issues/open",
@@ -119,4 +125,14 @@ public static class StreamingMinimalEndpoints
 
         return app;
     }
+}
+
+/// <summary>
+/// A document type registered with version metadata disabled (no <c>mt_version</c> column),
+/// used to prove <see cref="StreamOne{T}"/> emits no ETag for versionless documents.
+/// </summary>
+public class VersionlessDoc
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; }
 }

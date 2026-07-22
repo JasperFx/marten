@@ -45,6 +45,10 @@ public class Startup
                 options.DatabaseSchemaName = martenSettings.SchemaName;
             }
 
+            // A document type with version metadata disabled — used to prove StreamOne emits
+            // no ETag when there is no mt_version column to derive one from.
+            options.Schema.For<VersionlessDoc>().Metadata(m => m.Version.Enabled = false);
+
             if (martenSettings.UseStringStreamIdentity)
             {
                 options.Events.StreamIdentity = StreamIdentity.AsString;

@@ -87,6 +87,21 @@ public partial class QuerySession
         }
     }
 
+    internal async Task<(bool found, Guid? version)> StreamOneWithVersion(DbCommand command, Stream stream,
+        CancellationToken token)
+    {
+        await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
+
+        try
+        {
+            return await reader.StreamOneWithVersion(stream, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
     internal async Task<int> StreamMany(DbCommand command, Stream stream, CancellationToken token)
     {
         await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);

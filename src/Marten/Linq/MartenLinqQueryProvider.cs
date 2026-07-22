@@ -13,11 +13,21 @@ using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
+using Marten.Linq.SqlGeneration;
+using Marten.Schema;
 using Marten.Util;
 
 namespace Marten.Linq;
 
 internal record WaitForAggregate(TimeSpan Timeout, NonStaleDataTimeoutMode TimeoutMode = NonStaleDataTimeoutMode.ThrowException);
+
+/// <summary>
+/// Outcome of a single-document JSON stream that also read the document's <c>mt_version</c>
+/// inline. <see cref="Found"/> is false when the query matched no row; <see cref="Version"/>
+/// is null when the document type has no <c>mt_version</c> column (version metadata disabled)
+/// or the value was SQL NULL — in which case no ETag should be emitted.
+/// </summary>
+internal readonly record struct StreamOneJsonResult(bool Found, Guid? Version);
 
 internal class MartenLinqQueryProvider: IQueryProvider
 {
@@ -219,5 +229,47 @@ internal class MartenLinqQueryProvider: IQueryProvider
         var command = statement.BuildCommand(_session);
 
         return await _session.StreamOne(command, destination, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Streams the first matching document as JSON AND reads its <c>mt_version</c> in the same
+    /// round trip — the version column is piggy-backed onto the streaming query via
+    /// <see cref="VersionSelectClause{T}"/> (analogous to the <c>count(*) OVER()</c> stats column),
+    /// so the ASP.NET Core <c>StreamOne</c> ETag support no longer needs a follow-up metadata query.
+    /// When the document type <typeparamref name="T"/> has no <c>mt_version</c> column (version
+    /// metadata disabled), the version column is not appended and <see cref="StreamOneJsonResult.Version"/>
+    /// comes back null so the caller emits no ETag.
+    /// </summary>
+    public async Task<StreamOneJsonResult> StreamOneWithVersion<T>(Expression expression, Stream destination,
+        CancellationToken token) where T : notnull
+    {
+        var parser = new LinqQueryParser(this, _session, expression);
+        var statements = parser.BuildStatements();
+
+        await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
+
+        var statement = statements.Top;
+        var main = statements.MainSelector;
+        main.Limit = 1;
+
+        var versionEnabled = _session.Options.Storage.FindMapping(typeof(T)) is DocumentMapping
+        {
+            Metadata.Version.Enabled: true
+        };
+
+        if (!versionEnabled)
+        {
+            var plainCommand = statement.BuildCommand(_session);
+            var found = await _session.StreamOne(plainCommand, destination, token).ConfigureAwait(false);
+            return new StreamOneJsonResult(found, null);
+        }
+
+        main.SelectClause = new VersionSelectClause<T>(main.SelectClause);
+
+        var command = statement.BuildCommand(_session);
+        var (streamed, version) = await _session.StreamOneWithVersion(command, destination, token)
+            .ConfigureAwait(false);
+
+        return new StreamOneJsonResult(streamed, version);
     }
 }

@@ -341,6 +341,11 @@ still current:
 - For `StreamOne<T>`, the ETag is derived from the document's `mt_version`
   (the same optimistic-concurrency version Marten tracks for every stored
   document), formatted as a quoted GUID, e.g. `"3f2504e0-4f89-11d3-9a0c-0305e82c3301"`.
+  The `mt_version` value is read **inline with the document in the same single
+  database round trip** (piggy-backed onto the streaming query), so enabling the
+  ETag adds no extra query. Document types whose version metadata is disabled (no
+  `mt_version` column) simply emit no ETag. Because the document is streamed in that
+  one round trip, a `304` on `StreamOne<T>` saves response bandwidth but not the read.
 - For `StreamAggregate<T>`, the ETag is derived from the event stream's
   version (a `long`), formatted as a quoted integer, e.g. `"42"`. The version
   is looked up before the aggregate is folded, so a cache hit (`304`) skips
