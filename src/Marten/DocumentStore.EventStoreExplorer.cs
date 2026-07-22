@@ -230,13 +230,43 @@ public partial class DocumentStore
     /// going through Postgres' text cast. Throws <see cref="ArgumentException"/> when a
     /// tag name is not registered.
     /// </remarks>
+    IAsyncEnumerable<EventRecord> IEventStore.QueryByTagsAsync(
+        IReadOnlyDictionary<string, string> tags,
+        CancellationToken ct)
+        => ((IEventStore)this).QueryByTagsAsync(tags, null, ct);
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// #5021 / jasperfx#555 — tenant-scoped DCB tag query, companion to the jasperfx#503 stream reads.
+    /// On a conjoined multi-tenant store the same tag value can be attached to events living under two
+    /// tenants, so the tenant-less overload resolves an ambiguous cross-tenant union. This overload
+    /// isolates a single tenant using the same two-model scoping as
+    /// <see cref="IEventStore.ReadStreamAsync(string,string?,CancellationToken)"/> and
+    /// <see cref="IEventStore.GetProjectionStatusesAsync(string?,CancellationToken)"/> (jasperfx#502):
+    /// <list type="bullet">
+    /// <item><b>Single database</b> (conjoined tenancy): the tenant is co-located in the one database,
+    /// so the outer <c>mt_events</c> scan is bounded by an <c>e.tenant_id</c> predicate on the same
+    /// <c>AllowAnyTenant</c> explorer session. The tag sub-selects need no tenant filter — they match by
+    /// the globally-unique <c>seq_id</c>, and the outer predicate discards any matched seq_id belonging
+    /// to another tenant.</item>
+    /// <item><b>Database-per-tenant / sharded</b>: the argument names a physical database, so the session
+    /// is opened against that tenant's own database and no <c>tenant_id</c> filter is needed.</item>
+    /// </list>
+    /// A null <paramref name="tenantId"/> preserves the store-global (across every tenant) query.
+    /// </remarks>
     async IAsyncEnumerable<EventRecord> IEventStore.QueryByTagsAsync(
         IReadOnlyDictionary<string, string> tags,
+        string? tenantId,
         [EnumeratorCancellation] CancellationToken ct)
     {
         if (tags == null) throw new ArgumentNullException(nameof(tags));
 
-        await using var session = openExplorerSession();
+        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
+        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+
+        await using var session = tenantId != null && spansSeveralDatabases
+            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         if (tags.Count == 0) yield break;
@@ -264,14 +294,16 @@ public partial class DocumentStore
             idx++;
         }
 
+        var tenantFilter = scopeByColumn ? " and e.tenant_id = @tenant_id" : "";
         var sql =
             $"select e.id, e.seq_id, e.version, e.stream_id, e.type, e.data, e.timestamp, e.tenant_id " +
             $"from {schema}.mt_events e " +
-            $"where {subqueries.Join(" and ")} " +
+            $"where {subqueries.Join(" and ")}{tenantFilter} " +
             $"order by e.seq_id asc";
 
         var cmd = new NpgsqlCommand(sql);
         foreach (var p in parameters) cmd.Parameters.Add(p);
+        if (scopeByColumn) cmd.Parameters.AddWithValue("tenant_id", tenantId!);
 
         await using var reader = await session.ExecuteReaderAsync(cmd, ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false))
