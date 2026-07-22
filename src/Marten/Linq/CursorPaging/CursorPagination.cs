@@ -298,7 +298,17 @@ internal static class CursorPagination
             var values = new object?[orderings.Count];
             for (var i = 0; i < orderings.Count; i++)
             {
-                values[i] = JsonSerializer.Deserialize(root[i].GetRawText(), orderings[i].KeyType);
+                try
+                {
+                    values[i] = JsonSerializer.Deserialize(root[i].GetRawText(), orderings[i].KeyType);
+                }
+                catch (JsonException e)
+                {
+                    // Cursors are client-supplied: a well-formed JSON array whose element can't bind
+                    // to the key type (e.g. "abc" for a Guid key) must surface as a clean ArgumentException
+                    // (=> 400) rather than an uncaught JsonException (=> 500).
+                    throw new ArgumentException("Invalid cursor.", nameof(cursor), e);
+                }
             }
 
             return values;

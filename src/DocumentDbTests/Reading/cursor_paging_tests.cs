@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Linq.CursorPaging;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -200,5 +202,43 @@ public class cursor_paging_tests: IntegrationContext
         await Should.ThrowAsync<ArgumentOutOfRangeException>(async () =>
             await theSession.Query<User>().OrderBy(x => x.FirstName).ThenBy(x => x.Id)
                 .ToJsonPageByCursorAsync(cursor: null, pageSize: 0));
+    }
+
+    [Fact]
+    public async Task items_json_is_byte_identical_to_stream_many()
+    {
+        await seedUsers("a", "b", "c", "d", "e");
+
+        // The cursor page must emit the raw persisted `data` column, byte-identical to what
+        // StreamMany produces for the same documents in the same order — no hydrate/re-serialize.
+        var page = await theSession.Query<User>()
+            .OrderBy(x => x.FirstName).ThenBy(x => x.Id)
+            .ToJsonPageByCursorAsync(cursor: null, pageSize: 3);
+
+        var stream = new MemoryStream();
+        await theSession.Query<User>()
+            .OrderBy(x => x.FirstName).ThenBy(x => x.Id)
+            .Take(3)
+            .StreamJsonArray(stream, default);
+        stream.Position = 0;
+        var streamManyJson = await new StreamReader(stream).ReadToEndAsync();
+
+        page.Count.ShouldBe(3);
+        page.ItemsJson.ShouldBe(streamManyJson);
+    }
+
+    [Fact]
+    public async Task malformed_cursor_value_that_cannot_bind_to_key_type_throws_argument_exception()
+    {
+        await seedUsers("a", "b", "c");
+
+        // A well-formed, correct-length cursor array whose terminal element ("not-a-guid")
+        // cannot bind to the Guid Id key. This must surface as a clean ArgumentException (=> 400),
+        // not an uncaught JsonException (=> 500). Cursors are client-supplied.
+        var tampered = CursorPagination.EncodeCursor(new object?[] { "a", "not-a-guid" });
+
+        await Should.ThrowAsync<ArgumentException>(async () =>
+            await theSession.Query<User>().OrderBy(x => x.FirstName).ThenBy(x => x.Id)
+                .ToJsonPageByCursorAsync(tampered, pageSize: 2));
     }
 }
