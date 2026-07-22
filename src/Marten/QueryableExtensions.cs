@@ -262,6 +262,27 @@ public static class QueryableExtensions
         return queryable.As<MartenLinqQueryable<T>>().ToJsonArray(token);
     }
 
+    /// <summary>
+    ///     Write a single "page" of results from the Linq query as a JSON envelope containing
+    ///     paging metadata (pageNumber, pageSize, totalItemCount, pageCount, hasNextPage,
+    ///     hasPreviousPage) and the raw persisted JSON for the matching documents ("items"),
+    ///     directly to the destination stream. This makes exactly one round trip to the
+    ///     database by using a <c>count(*) OVER()</c> window function to retrieve the total
+    ///     item count in the same query used to fetch the page of documents.
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="destination"></param>
+    /// <param name="pageNumber">1-based page number</param>
+    /// <param name="pageSize"></param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns>The total number of items across all pages</returns>
+    public static Task<int> StreamPagedJsonArray<T>(this IQueryable<T> queryable, Stream destination, int pageNumber,
+        int pageSize, CancellationToken token = default) where T : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().StreamPagedJsonArray(destination, pageNumber, pageSize, token);
+    }
+
     public static Task StreamJsonFirst<T>(this IQueryable<T> queryable, Stream destination,
         CancellationToken token = default) where T : notnull
     {

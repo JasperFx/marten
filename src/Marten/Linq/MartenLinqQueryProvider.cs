@@ -185,6 +185,26 @@ internal class MartenLinqQueryProvider: IQueryProvider
         return await _session.StreamMany(command, destination, token).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Stream a single "page" of results plus paging metadata (total item count, page count, etc.)
+    /// as a JSON envelope directly to <paramref name="destination"/> in one round trip to the database.
+    /// The total row count is retrieved via the same <c>count(*) OVER()</c> mechanism used by
+    /// <see cref="QueryStatistics"/> / <see cref="MartenLinqQueryable{T}.Stats"/>.
+    /// </summary>
+    public async Task<int> StreamPagedMany(Expression expression, Stream destination, int pageNumber, int pageSize,
+        QueryStatistics statistics, CancellationToken token)
+    {
+        var parser = new LinqQueryParser(this, _session, expression);
+
+        await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
+
+        var statements = parser.BuildStatements();
+
+        var command = statements.Top.BuildCommand(_session);
+
+        return await _session.StreamPagedMany(command, destination, pageNumber, pageSize, statistics, token).ConfigureAwait(false);
+    }
+
     public async Task<bool> StreamOne(Expression expression, Stream destination, CancellationToken token)
     {
         var parser = new LinqQueryParser(this, _session, expression);

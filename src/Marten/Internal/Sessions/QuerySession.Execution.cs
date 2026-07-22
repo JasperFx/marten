@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Services;
@@ -93,6 +94,21 @@ public partial class QuerySession
         try
         {
             return await reader.StreamMany(stream, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
+    internal async Task<int> StreamPagedMany(DbCommand command, Stream stream, int pageNumber, int pageSize,
+        QueryStatistics statistics, CancellationToken token)
+    {
+        await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
+
+        try
+        {
+            return await reader.StreamPagedMany(stream, pageNumber, pageSize, statistics, token).ConfigureAwait(false);
         }
         finally
         {

@@ -67,6 +67,35 @@ public static class QueryableExtensions
     }
 
     /// <summary>
+    /// Write a single "page" of results from the Linq query as a JSON envelope -- containing
+    /// paging metadata (pageNumber, pageSize, totalItemCount, pageCount, hasNextPage,
+    /// hasPreviousPage) and the matching documents ("items") -- to the HttpContext response.
+    /// This is a single round-trip to the database: the total item count is retrieved via a
+    /// <c>count(*) OVER()</c> window function in the same query used to fetch the page of documents.
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="context"></param>
+    /// <param name="pageNumber">1-based page number</param>
+    /// <param name="pageSize"></param>
+    /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
+    /// <typeparam name="T"></typeparam>
+    public static async Task WritePaged<T>(
+        this IQueryable<T> queryable,
+        HttpContext context,
+        int pageNumber,
+        int pageSize,
+        string contentType = "application/json",
+        int onFoundStatus = 200
+    )
+    {
+        context.Response.StatusCode = onFoundStatus;
+        context.Response.ContentType = contentType;
+
+        await queryable.StreamPagedJsonArray(context.Response.Body, pageNumber, pageSize, context.RequestAborted).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Quickly write the JSON for a document by Id to an HttpContext. Will also handle status code mechanics
     /// </summary>
     /// <param name="json"></param>
