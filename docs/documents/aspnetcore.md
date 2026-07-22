@@ -233,7 +233,7 @@ bool found = await session.Events.StreamLatestJson<Order>(orderId, stream);
 ## Typed Streaming Result Types <Badge type="tip" text="8.x" />
 
 For Minimal API endpoints (and for frameworks like [Wolverine.Http](https://wolverinefx.net/guide/http/)
-that dispatch any `IResult` return value), `Marten.AspNetCore` ships three typed
+that dispatch any `IResult` return value), `Marten.AspNetCore` ships five typed
 result wrappers that carry the streaming behavior above as endpoint return values
 while also contributing correct OpenAPI metadata:
 
@@ -242,6 +242,7 @@ while also contributing correct OpenAPI metadata:
 | `StreamOne<T>`           | `IQueryable<T>` — regular Marten document query | Single `T`                     | yes                    |
 | `StreamMany<T>`          | `IQueryable<T>` — regular Marten document query | JSON array `T[]`               | no (empty array = 200) |
 | `StreamAggregate<T>`     | `IDocumentSession` + stream id — event-sourced  | Single `T`                     | yes                    |
+| `StreamPaged<T>`         | `IQueryable<T>` — regular Marten document query | Paged JSON envelope            | no (empty page = 200)  |
 | `StreamPagedByCursor<T>` | `IQueryable<T>` (with `OrderBy`/`ThenBy`)       | { "items": T[], "nextCursor" } | no (empty array = 200) |
 
 Each type implements both `IResult` (so ASP.NET Minimal API dispatches it via
@@ -274,6 +275,34 @@ app.MapGet("/issues/open",
 Returns `200 application/json` with a JSON array body. An empty result set
 yields `[]`, not a 404 — matching the behavior of `WriteArray<T>`.
 
+### `StreamPaged<T>` — paged JSON envelope (single round trip) <Badge type="tip" text="9.18" />
+
+```csharp
+app.MapGet("/issues/paged/{pageNumber:int}/{pageSize:int}",
+    (int pageNumber, int pageSize, IQuerySession session) =>
+        new StreamPaged<Issue>(session.Query<Issue>().OrderBy(x => x.Description), pageNumber, pageSize));
+```
+
+Returns `200 application/json` with a single JSON envelope combining paging
+metadata and the matching documents for that page:
+
+```json
+{"pageNumber":3,"pageSize":25,"totalItemCount":1207,"pageCount":49,"hasNextPage":true,"hasPreviousPage":true,"items":[...]}
+```
+
+`pageNumber` is 1-based. `totalItemCount` and `pageCount` are computed from a
+`count(*) OVER()` window function added to the _same_ SQL query that fetches
+the page, so the whole response -- count and documents both -- comes from a
+single database round trip. Documents inside `items` are streamed as raw,
+already-persisted JSON, without a deserialize/serialize step. An empty page
+still returns `200` with `totalItemCount: 0`, `pageCount: 0`, and an empty
+`items` array -- never a `404`.
+
+Internally, `StreamPaged<T>` delegates to the `IQueryable<T>.StreamPagedJsonArray()`
+extension method described in the [Paging](/documents/querying/linq/paging) docs,
+which can also be used directly (e.g. from an MVC controller action) instead of
+through the `IResult` wrapper.
+
 ### `StreamAggregate<T>` — event-sourced aggregate (latest)
 
 ```csharp
@@ -295,6 +324,61 @@ ids for stores configured with string-keyed streams.
   latest aggregate state by folding events from the event store (or reads a
   projected snapshot if one is configured). Use this when `T` is an
   event-sourced aggregate, not a stored document.
+
+### ETag / Conditional Requests <Badge type="tip" text="9.18" />
+
+::: tip
+`StreamOne<T>` and `StreamAggregate<T>` support HTTP conditional requests.
+`StreamMany<T>` does not — a collection-wide ETag is harder to derive cheaply
+and is out of scope for the initial implementation.
+:::
+
+Both `StreamOne<T>` and `StreamAggregate<T>` set an `ETag` response header
+by default and honor an incoming `If-None-Match` request header, responding
+`304 Not Modified` with an empty body when the client's cached version is
+still current:
+
+- For `StreamOne<T>`, the ETag is derived from the document's `mt_version`
+  (the same optimistic-concurrency version Marten tracks for every stored
+  document), formatted as a quoted GUID, e.g. `"3f2504e0-4f89-11d3-9a0c-0305e82c3301"`.
+- For `StreamAggregate<T>`, the ETag is derived from the event stream's
+  version (a `long`), formatted as a quoted integer, e.g. `"42"`. The version
+  is looked up before the aggregate is folded, so a cache hit (`304`) skips
+  that work entirely.
+
+```csharp
+app.MapGet("/issues/{id:guid}",
+    (Guid id, IQuerySession session) =>
+        new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == id)));
+
+app.MapGet("/orders/{id:guid}",
+    (Guid id, IDocumentSession session) =>
+        new StreamAggregate<Order>(session, id));
+```
+
+A poller can send the previously-received `ETag` value back as `If-None-Match`:
+
+```http
+GET /issues/f47ac10b-58cc-4372-a567-0e02b2c3d479 HTTP/1.1
+If-None-Match: "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
+```
+
+```http
+HTTP/1.1 304 Not Modified
+ETag: "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
+```
+
+Set `EmitETag = false` to opt out and restore the pre-ETag behavior (no
+`ETag` header, no conditional-request handling):
+
+```csharp
+app.MapGet("/issues/{id:guid}",
+    (Guid id, IQuerySession session) =>
+        new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == id))
+        {
+            EmitETag = false
+        });
+```
 
 ### Customizing status code and content type
 

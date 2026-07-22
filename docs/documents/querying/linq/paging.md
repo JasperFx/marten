@@ -91,6 +91,38 @@ where CAST(d.data ->> 'Number' as integer) > :arg0 LIMIT 5
 
 The `Stats()` Linq operator can be used in conjunction with `Include()` and within batch queries. Compiled queries also support `QueryStatistics` by declaring a `QueryStatistics Stats { get; } = new QueryStatistics()` property on the compiled query class.
 
+## Streaming a Paged JSON Envelope <Badge type="tip" text="9.18" />
+
+For HTTP endpoints that need to return a page of documents together with paging metadata,
+`Marten.AspNetCore` provides `StreamPagedJsonArray<T>()`, an `IQueryable<T>` extension method
+that writes a single JSON envelope straight to a `Stream`:
+
+```json
+{"pageNumber":3,"pageSize":25,"totalItemCount":1207,"pageCount":49,"hasNextPage":true,"hasPreviousPage":true,"items":[...]}
+```
+
+Like `Stats()` above, this uses the `count(*) OVER()` window function to get the total row
+count in the _same_ SQL query used to fetch the page of documents -- a single database round
+trip for the whole paged response. Unlike `Stats()` + `ToListAsync()` though, the matching
+documents are streamed as raw, already-persisted JSON directly into the `items` array without
+ever being deserialized into .NET objects or serialized back to JSON.
+
+```csharp
+var pageNumber = 3;
+var pageSize = 25;
+
+await theSession.Query<Target>()
+    .Where(x => x.Flag)
+    .StreamPagedJsonArray(httpResponseStream, pageNumber, pageSize);
+```
+
+If the page has zero matching rows, the envelope still comes back with a `200`-shaped body:
+`totalItemCount: 0`, `pageCount: 0`, `hasNextPage: false`, and an empty `items` array.
+
+For Minimal API / Wolverine.Http endpoints, prefer the higher-level `StreamPaged<T>` result
+type described in the [Marten.AspNetCore](/documents/aspnetcore) docs,
+which wraps this same extension method as an `IResult`.
+
 ## Keyset (Cursor) Pagination <Badge type="tip" text="9.18" />
 
 The paging shown above is **offset-based**: every page is fetched with `Skip(pageNumber * pageSize).Take(pageSize)`, typically paired with a `count(*) OVER()` window function (or a separate `count(*)` query) to compute the total row count. Offset paging is simple and lets you jump straight to an arbitrary page number, but the cost of `Skip()` grows with the offset — Postgres still has to walk and discard every skipped row — so deep pages against large tables get progressively slower, and a `count(*)` over a huge table isn't free either.

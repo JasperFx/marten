@@ -796,8 +796,11 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
     }
 
     public DuplicatedField DuplicateField(MemberInfo[] members, string? pgType = null, string? columnName = null,
-        bool notNull = false)
+        bool notNull = false, bool partOfPrimaryKey = false)
     {
+        // A primary-key column must be NOT NULL.
+        notNull = notNull || partOfPrimaryKey;
+
         var member = QueryMembers.FindMember(members[0]);
         IHasChildrenMembers parent = QueryMembers;
         for (var i = 1; i < members.Length; i++)
@@ -813,6 +816,8 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
             if (columnName != null)
                 d.ColumnName = columnName;
             d.NotNull = notNull;
+            if (partOfPrimaryKey)
+                d.PartOfPrimaryKey = true;
             return d;
         }
 
@@ -852,6 +857,8 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
         {
             duplicatedField.ColumnName = columnName;
         }
+
+        duplicatedField.PartOfPrimaryKey = partOfPrimaryKey;
 
         _duplicates.Add(duplicatedField);
 
@@ -952,8 +959,8 @@ public class DocumentMapping<T>: DocumentMapping
     /// </param>
     /// <returns></returns>
     public void Duplicate(Expression<Func<T, object?>> expression, string? pgType = null, NpgsqlDbType? dbType = null,
-        Action<DocumentIndex>? configure = null, bool notNull = false)
-        => Duplicate<T>(expression, pgType, dbType, configure, notNull);
+        Action<DocumentIndex>? configure = null, bool notNull = false, bool partOfPrimaryKey = false)
+        => Duplicate<T>(expression, pgType, dbType, configure, notNull, partOfPrimaryKey);
 
     /// <summary>
     /// Duplicates a member from a subclass of <typeparamref name="T"/> into a
@@ -978,20 +985,24 @@ public class DocumentMapping<T>: DocumentMapping
     /// When true, the duplicated column is created with <c>NOT NULL</c>.
     /// </param>
     public void Duplicate<TSub>(Expression<Func<TSub, object?>> expression, string? pgType = null, NpgsqlDbType? dbType = null,
-        Action<DocumentIndex>? configure = null, bool notNull = false) where TSub : T
+        Action<DocumentIndex>? configure = null, bool notNull = false, bool partOfPrimaryKey = false) where TSub : T
     {
         var visitor = new FindMembers();
         visitor.Visit(expression);
 
-        var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType, notNull: notNull);
+        var duplicateField = DuplicateField(visitor.Members.ToArray(), pgType, notNull: notNull, partOfPrimaryKey: partOfPrimaryKey);
 
         if (dbType.HasValue)
         {
             duplicateField.DbType = dbType.Value;
         }
 
-        var indexDefinition = AddIndex(duplicateField.ColumnName);
-        configure?.Invoke(indexDefinition);
+        // A primary-key column is already indexed by the PK constraint, so skip the extra index.
+        if (!partOfPrimaryKey)
+        {
+            var indexDefinition = AddIndex(duplicateField.ColumnName);
+            configure?.Invoke(indexDefinition);
+        }
     }
 
     /// <summary>

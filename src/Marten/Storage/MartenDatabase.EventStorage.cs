@@ -78,6 +78,75 @@ public partial class MartenDatabase : IEventDatabase
         }
     }
 
+    /// <summary>
+    ///     Persist the extended progression telemetry for a whole batch of shards in ONE round trip on
+    ///     ONE rented connection. The JasperFx.Events <c>ExtendedProgressionWriter</c> coalesces every
+    ///     shard's heartbeat on a database into one batch per flush interval and drives this overload,
+    ///     because the per-shard single-row write does not scale under per-tenant agent fan-out
+    ///     (agents = projections × tenants — jasperfx#553). Deliberately a plain UPDATE ... FROM unnest
+    ///     join instead of a new batched database function, so no schema object is added and deployments
+    ///     running <c>AutoCreate.None</c> pick the batching up without a migration. Semantics match
+    ///     <c>mt_mark_event_progression_extended</c> exactly: update-only telemetry decoration of
+    ///     existing progression rows — never INSERT, never touch <c>last_seq_id</c> / <c>last_updated</c>,
+    ///     shards without a progression row yet are skipped silently.
+    /// </summary>
+    public async Task WriteExtendedProgressionAsync(IReadOnlyList<ShardState> states, CancellationToken token = default)
+    {
+        if (states.Count == 0)
+        {
+            return;
+        }
+
+        if (states.Count == 1)
+        {
+            await WriteExtendedProgressionAsync(states[0], token).ConfigureAwait(false);
+            return;
+        }
+
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        var names = new string[states.Count];
+        var heartbeats = new DateTimeOffset?[states.Count];
+        var statuses = new string?[states.Count];
+        var reasons = new string?[states.Count];
+        var nodes = new int?[states.Count];
+
+        for (var i = 0; i < states.Count; i++)
+        {
+            names[i] = states[i].ShardName;
+            heartbeats[i] = states[i].LastHeartbeat;
+            statuses[i] = states[i].AgentStatus;
+            reasons[i] = states[i].PauseReason;
+            nodes[i] = states[i].RunningOnNode;
+        }
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            await conn.CreateCommand($"""
+                update {Options.EventGraph.DatabaseSchemaName}.mt_event_progression as p
+                set heartbeat = t.heartbeat,
+                    agent_status = t.agent_status,
+                    pause_reason = t.pause_reason,
+                    running_on_node = t.running_on_node
+                from unnest(:names, :heartbeats, :statuses, :reasons, :nodes)
+                    as t(name, heartbeat, agent_status, pause_reason, running_on_node)
+                where p.name = t.name
+                """)
+                .With("names", names, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
+                .With("heartbeats", heartbeats, NpgsqlDbType.Array | NpgsqlDbType.TimestampTz)
+                .With("statuses", statuses, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
+                .With("reasons", reasons, NpgsqlDbType.Array | NpgsqlDbType.Text)
+                .With("nodes", nodes, NpgsqlDbType.Array | NpgsqlDbType.Integer)
+                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
     public async Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token)
     {
         var sql =

@@ -252,6 +252,26 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         return MartenProvider.StreamMany(Expression, destination, token);
     }
 
+    public Task<int> StreamPagedJsonArray(Stream destination, int pageNumber, int pageSize, CancellationToken token)
+    {
+        if (pageNumber < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageNumber), $"pageNumber = {pageNumber}. PageNumber cannot be below 1.");
+        }
+
+        if (pageSize < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(pageSize), $"pageSize = {pageSize}. PageSize cannot be below 1.");
+        }
+
+        Statistics = new QueryStatistics();
+        var statistics = Statistics;
+
+        var paged = ((IQueryable<T>)this).Skip((pageNumber - 1) * pageSize).Take(pageSize).As<MartenLinqQueryable<T>>();
+
+        return paged.MartenProvider.StreamPagedMany(paged.Expression, destination, pageNumber, pageSize, statistics, token);
+    }
+
     public NpgsqlCommand ToPreviewCommand(FetchType fetchType)
     {
         var parser = new LinqQueryParser(MartenProvider, Session, Expression);

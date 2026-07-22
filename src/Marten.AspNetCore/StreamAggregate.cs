@@ -67,11 +67,56 @@ public sealed class StreamAggregate<T> : IResult, IEndpointMetadataProvider wher
     /// </summary>
     public string ContentType { get; init; } = "application/json";
 
+    /// <summary>
+    /// Whether to emit an <c>ETag</c> response header derived from the event stream's
+    /// version, and honor an incoming <c>If-None-Match</c> request header by responding
+    /// <c>304 Not Modified</c> with an empty body when it matches. The stream version is
+    /// cheap to look up (an indexed read against <c>mt_streams</c>) and is fetched before
+    /// the aggregate snapshot/fold work, so a cache hit skips that work entirely. Defaults
+    /// to <c>true</c>. Set to <c>false</c> to opt out if a consumer's contract cannot
+    /// tolerate the extra header.
+    /// </summary>
+    public bool EmitETag { get; init; } = true;
+
     /// <inheritdoc />
-    public Task ExecuteAsync(HttpContext httpContext)
+    public async Task ExecuteAsync(HttpContext httpContext)
     {
         if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
 
+        if (!EmitETag)
+        {
+            await writeLatest(httpContext).ConfigureAwait(false);
+            return;
+        }
+
+        var state = _useGuid
+            ? await _session.Events.FetchStreamStateAsync(_guidId, httpContext.RequestAborted).ConfigureAwait(false)
+            : await _session.Events.FetchStreamStateAsync(_stringId!, httpContext.RequestAborted).ConfigureAwait(false);
+
+        if (state == null)
+        {
+            httpContext.Response.StatusCode = 404;
+            httpContext.Response.ContentLength = 0;
+            return;
+        }
+
+        var etag = ETagHelpers.Format(state.Version);
+
+        if (ETagHelpers.IfNoneMatchMatches(httpContext, etag))
+        {
+            httpContext.Response.StatusCode = StatusCodes.Status304NotModified;
+            httpContext.Response.Headers["ETag"] = etag;
+            httpContext.Response.ContentLength = 0;
+            return;
+        }
+
+        httpContext.Response.Headers["ETag"] = etag;
+
+        await writeLatest(httpContext).ConfigureAwait(false);
+    }
+
+    private Task writeLatest(HttpContext httpContext)
+    {
         return _useGuid
             ? _session.Events.WriteLatest<T>(_guidId, httpContext, ContentType, OnFoundStatus)
             : _session.Events.WriteLatest<T>(_stringId!, httpContext, ContentType, OnFoundStatus);
@@ -79,7 +124,7 @@ public sealed class StreamAggregate<T> : IResult, IEndpointMetadataProvider wher
 
     /// <summary>
     /// Populates endpoint metadata so OpenAPI correctly advertises a
-    /// <c>200: T</c> and <c>404</c> response for this endpoint.
+    /// <c>200: T</c>, <c>304</c>, and <c>404</c> response for this endpoint.
     /// </summary>
     public static void PopulateMetadata(MethodInfo method, EndpointBuilder builder)
     {
@@ -87,6 +132,8 @@ public sealed class StreamAggregate<T> : IResult, IEndpointMetadataProvider wher
 
         builder.Metadata.Add(new ProducesResponseTypeMetadata(
             StatusCodes.Status200OK, typeof(T), new[] { "application/json" }));
+        builder.Metadata.Add(new ProducesResponseTypeMetadata(
+            StatusCodes.Status304NotModified, typeof(void), Array.Empty<string>()));
         builder.Metadata.Add(new ProducesResponseTypeMetadata(
             StatusCodes.Status404NotFound, typeof(void), Array.Empty<string>()));
     }

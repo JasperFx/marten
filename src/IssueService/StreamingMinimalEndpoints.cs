@@ -42,6 +42,14 @@ public static class StreamingMinimalEndpoints
                     ContentType = "application/vnd.marten.issue+json"
                 });
 
+        // EmitETag = false opt-out
+        app.MapGet("/minimal/issue/{id:guid}/no-etag",
+            (Guid id, IQuerySession session)
+                => new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == id))
+                {
+                    EmitETag = false
+                });
+
         // --- StreamMany<T> ---
 
         app.MapGet("/minimal/issues/open",
@@ -52,6 +60,14 @@ public static class StreamingMinimalEndpoints
         app.MapGet("/minimal/issues/none",
             (IQuerySession session)
                 => new StreamMany<Issue>(session.Query<Issue>().Where(x => x.Id == Guid.Empty)));
+
+        // --- StreamPaged<T> ---
+
+        app.MapGet("/minimal/issues/paged/{pageNumber:int}/{pageSize:int}",
+            (int pageNumber, int pageSize, IQuerySession session)
+                => new StreamPaged<Issue>(
+                    session.Query<Issue>().Where(x => x.Open).OrderBy(x => x.Description),
+                    pageNumber, pageSize));
 
         // --- StreamAggregate<T> ---
 

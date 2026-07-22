@@ -25,3 +25,4 @@ using JasperFx.Core.TypeScanning;
 [assembly: InternalsVisibleTo("PatchingTests")]
 [assembly: InternalsVisibleTo("StressTests")]
 [assembly: InternalsVisibleTo("ContainerScopedProjectionTests")]
+[assembly: InternalsVisibleTo("Marten.AspNetCore")]

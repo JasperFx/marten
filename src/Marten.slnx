@@ -81,6 +81,9 @@
     <Project Path="StressTests/StressTests.csproj" />
     <Project Path="ValueTypeTests/ValueTypeTests.csproj" />
   </Folder>
+  <Folder Name="/TimescaleDB/">
+    <Project Path="Marten.TimescaleDB.Tests/Marten.TimescaleDB.Tests.csproj" />
+  </Folder>
   <Project Path="../build/build.csproj" />
   <Project Path="EventAppenderPerfTester/EventAppenderPerfTester.csproj" />
   <Project Path="Marten.ScaleTesting/Marten.ScaleTesting.csproj" />

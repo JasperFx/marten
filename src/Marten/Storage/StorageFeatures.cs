@@ -463,8 +463,16 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
             yield return _options.EventGraph;
         }
 
+        // Features explicitly registered via Storage.Add() that aren't one of Marten's built-ins already
+        // yielded above. The assembly check is the proxy for "built-in": SystemFunctions, the EventGraph,
+        // and every document mapping schema live in the Marten assembly and are yielded directly above, so
+        // they must not be re-emitted here (a double-yield reruns their DDL — e.g. "column already exists").
+        // A feature FOLDED INTO the Marten assembly but contributed by an opt-in extension carries the
+        // IExtensionFeatureSchema marker (e.g. TimescaleDBFeatureSchema, #4980) so it is still yielded here,
+        // after the document/event tables, so its create_hypertable / continuous-aggregate DDL lands once the
+        // underlying tables exist.
         var custom = _features.Value.ToArray().Select(e => e.Value)
-            .Where(x => x.GetType().Assembly != GetType().Assembly).ToArray();
+            .Where(x => x.GetType().Assembly != GetType().Assembly || x is IExtensionFeatureSchema).ToArray();
 
         foreach (var featureSchema in custom) yield return featureSchema;
 
