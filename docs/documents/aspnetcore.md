@@ -237,11 +237,12 @@ that dispatch any `IResult` return value), `Marten.AspNetCore` ships three typed
 result wrappers that carry the streaming behavior above as endpoint return values
 while also contributing correct OpenAPI metadata:
 
-| Type                 | Source                                           | Response shape    | 404 on miss?           |
-| -------------------- | ------------------------------------------------ | ----------------- | ---------------------- |
-| `StreamOne<T>`       | `IQueryable<T>` — regular Marten document query  | Single `T`        | yes                    |
-| `StreamMany<T>`      | `IQueryable<T>` — regular Marten document query  | JSON array `T[]`  | no (empty array = 200) |
-| `StreamAggregate<T>` | `IDocumentSession` + stream id — event-sourced   | Single `T`        | yes                    |
+| Type                     | Source                                          | Response shape                 | 404 on miss?           |
+| ------------------------ | ----------------------------------------------- | ------------------------------ | ---------------------- |
+| `StreamOne<T>`           | `IQueryable<T>` — regular Marten document query | Single `T`                     | yes                    |
+| `StreamMany<T>`          | `IQueryable<T>` — regular Marten document query | JSON array `T[]`               | no (empty array = 200) |
+| `StreamAggregate<T>`     | `IDocumentSession` + stream id — event-sourced  | Single `T`                     | yes                    |
+| `StreamPagedByCursor<T>` | `IQueryable<T>` (with `OrderBy`/`ThenBy`)       | { "items": T[], "nextCursor" } | no (empty array = 200) |
 
 Each type implements both `IResult` (so ASP.NET Minimal API dispatches it via
 `ExecuteAsync`) and `IEndpointMetadataProvider` (so Swashbuckle, NSwag, and the
@@ -343,3 +344,103 @@ metadata advertises `200: TOut` (and `404` for `StreamOne`), where `TOut` is the
 compiled query's declared return type. Prefer compiled queries when the endpoint
 is on a hot path — Marten caches the compiled SQL and bypasses LINQ parsing on
 subsequent calls.
+
+## StreamPagedByCursor<T> — keyset-paginated streaming
+
+::: tip
+New in 9.0
+:::
+
+`StreamMany<T>` and `WriteArray()` stream an entire result set. For very large or
+open-ended result sets — infinite scroll UIs, data exports, catch-up feeds — you
+usually want to hand the client back a _page_ at a time instead, together with a
+token to fetch the next page. `StreamPagedByCursor<T>` is an `IResult` that does
+exactly that using **keyset (a.k.a. seek) pagination** rather than `Skip`/`Take`
+offsets. See [Keyset (Cursor) Pagination](/documents/querying/linq/paging#keyset-cursor-pagination)
+for a deeper explanation of how keyset pagination works and how it compares to
+offset-based paging.
+
+```csharp
+app.MapGet("/issues",
+    (IQuerySession session, string? cursor, int pageSize) =>
+        new StreamPagedByCursor<Issue>(
+            session.Query<Issue>().OrderBy(x => x.Description).ThenBy(x => x.Id),
+            cursor,
+            pageSize));
+```
+
+Call it the same way on every request; only the `cursor` query string value
+changes between calls:
+
+- **First request** — omit `cursor` (or pass `null`/empty). Marten runs
+  `ORDER BY ... LIMIT @pageSize` and returns the first page.
+- **Every later request** — pass the `nextCursor` value returned by the
+  previous call. Marten decodes it, translates it into a `WHERE` seek predicate
+  matching your `OrderBy`/`ThenBy` chain, and returns the next page at the same
+  cost regardless of how many pages have already been read.
+- **End of the result set** — when a page comes back with fewer than
+  `pageSize` rows, there is no `nextCursor`; stop paging.
+
+The response body is a small JSON envelope:
+
+```json
+{
+  "items": [{ "id": "...", "description": "..." }, { "id": "...", "description": "..." }],
+  "nextCursor": "v1:W3siRGVzY3JpcHRpb24iOiJEZXNjcmlwdGlvbiIsIklkIjoiLi4uIn1d"
+}
+```
+
+The same value is also written to a `Marten-Continuation` response header, so
+callers that would rather keep the body a plain array can read the cursor from
+there instead of parsing the envelope.
+
+### The `OrderBy`/`ThenBy` requirement
+
+The queryable passed to `StreamPagedByCursor<T>` **must** have at least one
+`OrderBy`/`OrderByDescending` clause, and the **last** ordering in the chain
+must be on a member that is guaranteed unique across the result set — normally
+the document's `Id`. This guarantees the cursor is deterministic: without a
+unique tie-breaker, rows that share the same leading sort key(s) could be
+skipped or repeated across pages.
+
+```csharp
+// Good: Description is not unique on its own, so Id is added as a tie-breaker
+session.Query<Issue>().OrderBy(x => x.Description).ThenBy(x => x.Id)
+
+// Throws InvalidOperationException: no OrderBy clause at all
+session.Query<Issue>()
+
+// Throws InvalidOperationException: terminal clause (Description) isn't unique
+session.Query<Issue>().OrderBy(x => x.Description)
+```
+
+Mixed ascending/descending orderings are supported — each `ThenBy`/`ThenByDescending`
+clause keeps its own direction when Marten builds the seek predicate:
+
+```csharp
+session.Query<Issue>()
+    .OrderByDescending(x => x.Description)
+    .ThenBy(x => x.Id)
+```
+
+### Constructor and options
+
+```csharp
+public StreamPagedByCursor(IQueryable<T> queryable, string? cursor, int pageSize)
+```
+
+Like the other typed result wrappers, it exposes init-only properties for
+customizing the response:
+
+```csharp
+app.MapGet("/issues",
+    (IQuerySession session, string? cursor, int pageSize) =>
+        new StreamPagedByCursor<Issue>(
+            session.Query<Issue>().OrderBy(x => x.Description).ThenBy(x => x.Id),
+            cursor,
+            pageSize)
+        {
+            OnFoundStatus = StatusCodes.Status200OK,
+            ContentType = "application/vnd.myapi.issue-page+json"
+        });
+```
