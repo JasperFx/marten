@@ -42,14 +42,6 @@ public static class StreamingMinimalEndpoints
                     ContentType = "application/vnd.marten.issue+json"
                 });
 
-        // EmitETag = false opt-out
-        app.MapGet("/minimal/issue/{id:guid}/no-etag",
-            (Guid id, IQuerySession session)
-                => new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == id))
-                {
-                    EmitETag = false
-                });
-
         // --- StreamMany<T> ---
 
         app.MapGet("/minimal/issues/open",
