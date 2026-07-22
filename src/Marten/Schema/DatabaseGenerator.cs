@@ -14,13 +14,37 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
 {
     private readonly Dictionary<string, TenantDatabaseCreationExpressions> _configurationPerTenant = new();
     private string _maintenanceDbConnectionString;
+    private NpgsqlDataSource _maintenanceDataSource;
 
     public IDatabaseCreationExpressions MaintenanceDatabase(string maintenanceDbConnectionString)
     {
         _maintenanceDbConnectionString = maintenanceDbConnectionString ??
                                          throw new ArgumentNullException(nameof(maintenanceDbConnectionString));
 
+        // last-writer-wins: a connection string supersedes a previously supplied data source
+        _maintenanceDataSource = null;
+
         return this;
+    }
+
+    public IDatabaseCreationExpressions MaintenanceDatabase(NpgsqlDataSource maintenanceDataSource)
+    {
+        _maintenanceDataSource = maintenanceDataSource ??
+                                 throw new ArgumentNullException(nameof(maintenanceDataSource));
+
+        // last-writer-wins: the data source supersedes a previously supplied connection string
+        _maintenanceDbConnectionString = null;
+
+        return this;
+    }
+
+    // #4994: rent the maintenance connection from a caller-supplied NpgsqlDataSource when one was
+    // provided (so an Entra ID / managed-identity token provider is honoured), otherwise open a plain
+    // connection from the maintenance connection string. The data source is caller-owned and never
+    // disposed here — only the returned connection is disposed by the caller.
+    private NpgsqlConnection createMaintenanceConnection(string maintenanceDb)
+    {
+        return _maintenanceDataSource?.CreateConnection() ?? new NpgsqlConnection(maintenanceDb);
     }
 
     public ITenantDatabaseCreationExpressions ForTenant(string tenantId = StorageConstants.DefaultTenantId)
@@ -60,7 +84,10 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
         {
             catalog = t.Database;
 
-            if (maintenanceDb == null)
+            // A caller-supplied maintenance data source already encodes where to connect, so only
+            // fall back to deriving a 'postgres' maintenance string from the tenant connection when
+            // neither a data source nor an explicit maintenance string was configured.
+            if (maintenanceDb == null && _maintenanceDataSource == null)
             {
                 var cstringBuilder = new NpgsqlConnectionStringBuilder(t.ConnectionString);
                 cstringBuilder.Database = "postgres";
@@ -88,7 +115,7 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
 
     private async Task<bool> IsNotInPgDatabase(string catalog, string maintenanceDb, CancellationToken ct = default)
     {
-        var connection = new NpgsqlConnection(maintenanceDb);
+        var connection = createMaintenanceConnection(maintenanceDb);
         await using var _ = connection.ConfigureAwait(false);
         await using var cmd = connection.CreateCommand("SELECT datname FROM pg_database where datname = @catalog");
         await using var __ = cmd.ConfigureAwait(false);
@@ -137,7 +164,7 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
             await dropCurrentDatabaseAsync(catalog, config, maintenanceDb, ct).ConfigureAwait(false);
         }
 
-        await using var connection = new NpgsqlConnection(maintenanceDb);
+        await using var connection = createMaintenanceConnection(maintenanceDb);
         await connection.OpenAsync(ct).ConfigureAwait(false);
         try
         {
@@ -151,7 +178,7 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
         }
     }
 
-    private static async Task dropCurrentDatabaseAsync(string catalog, TenantDatabaseCreationExpressions config,
+    private async Task dropCurrentDatabaseAsync(string catalog, TenantDatabaseCreationExpressions config,
         string maintenanceDb, CancellationToken ct)
     {
         var cmdText = string.Empty;
@@ -163,7 +190,7 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
 
         cmdText += $"DROP DATABASE IF EXISTS \"{catalog}\";";
 
-        await using var conn = new NpgsqlConnection(maintenanceDb);
+        await using var conn = createMaintenanceConnection(maintenanceDb);
         await conn.OpenAsync(ct).ConfigureAwait(false);
         await conn.CreateCommand(cmdText).ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         await conn.CloseAsync().ConfigureAwait(false);
