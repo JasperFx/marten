@@ -1083,6 +1083,69 @@ public class streaming_json_results : IntegrationContext
         return await System.Text.Json.JsonSerializer.DeserializeAsync<PagedEnvelope<Target>>(stream, options);
     }
 
+    private async Task<string> streamPageRaw(IQueryable<Target> queryable, int pageNumber, int pageSize)
+    {
+        var stream = new MemoryStream();
+        await queryable.StreamPagedJsonArray(stream, pageNumber, pageSize);
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_wire_format_is_camel_case()
+    {
+        var targets = Target.GenerateRandomData(10).ToArray();
+        for (var i = 0; i < targets.Length; i++) targets[i].Number = i;
+        await theStore.BulkInsertAsync(targets);
+
+        // Assert against the raw bytes so the client-facing JSON contract is pinned
+        // independently of any case-insensitive deserialization on the read side.
+        var json = await streamPageRaw(theSession.Query<Target>().OrderBy(x => x.Number), 1, 3);
+
+        json.ShouldContain("\"pageNumber\":");
+        json.ShouldContain("\"pageSize\":");
+        json.ShouldContain("\"totalItemCount\":");
+        json.ShouldContain("\"pageCount\":");
+        json.ShouldContain("\"hasNextPage\":");
+        json.ShouldContain("\"hasPreviousPage\":");
+        json.ShouldContain("\"items\":[");
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_page_beyond_end_of_nonempty_set()
+    {
+        var targets = Target.GenerateRandomData(10).ToArray();
+        for (var i = 0; i < targets.Length; i++) targets[i].Number = i;
+        await theStore.BulkInsertAsync(targets);
+
+        // Offset 12 > 10 rows: zero rows come back, so count(*) OVER() rides on no row
+        // and the envelope reports totalItemCount 0 even though items exist. This documents
+        // the window-function limitation (same quirk as PagedList) as an intentional contract.
+        var envelope = await streamPage(theSession.Query<Target>().OrderBy(x => x.Number), 5, 3);
+
+        envelope.Items.Length.ShouldBe(0);
+        envelope.TotalItemCount.ShouldBe(0);
+        envelope.HasNextPage.ShouldBeFalse();
+        envelope.HasPreviousPage.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_total_reflects_filter()
+    {
+        var targets = Target.GenerateRandomData(20).ToArray();
+        for (var i = 0; i < targets.Length; i++) targets[i].Number = i;
+        await theStore.BulkInsertAsync(targets);
+
+        // 8 matches (Number 0..7), paged 3 at a time — the total must reflect the filter,
+        // not the whole table.
+        var envelope = await streamPage(
+            theSession.Query<Target>().Where(x => x.Number < 8).OrderBy(x => x.Number), 1, 3);
+
+        envelope.TotalItemCount.ShouldBe(8);
+        envelope.PageCount.ShouldBe(3);
+        envelope.Items.Select(x => x.Number).ShouldBe(new[] { 0, 1, 2 });
+    }
+
     [Fact]
     public async Task stream_paged_json_array_first_page()
     {
