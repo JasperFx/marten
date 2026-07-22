@@ -121,6 +121,14 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
 
     public bool NotNull { get; internal set; }
 
+    /// <summary>
+    ///     When true, this duplicated column participates in the document table's primary key
+    ///     (in addition to <c>id</c>). Used to satisfy storage engines that require a partitioning
+    ///     column to be part of the primary key — e.g. turning the table into a TimescaleDB
+    ///     hypertable. The duplicated value must be immutable for a given document id.
+    /// </summary>
+    public bool PartOfPrimaryKey { get; internal set; }
+
     public bool OnlyForSearching { get; set; } = false;
 
     /// <summary>
