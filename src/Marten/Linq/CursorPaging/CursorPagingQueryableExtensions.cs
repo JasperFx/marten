@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using Marten.Internal.Storage;
 using Marten.Linq;
+using Marten.Linq.Parsing;
 
 namespace Marten.Linq.CursorPaging;
 
@@ -73,28 +75,25 @@ public static class CursorPagingQueryableExtensions
             working = working.Where(predicate);
         }
 
-        var fetched = await working.Take(pageSize + 1).ToListAsync<T>(token).ConfigureAwait(false);
+        // Fetch one extra row so we can tell whether a further page exists.
+        working = working.Take(pageSize + 1);
 
-        var hasMore = fetched.Count > pageSize;
-        var items = hasMore ? fetched.Take(pageSize).ToList() : fetched.ToList();
-
-        string? nextCursor = null;
-        if (hasMore && items.Count > 0)
+        // Resolve each ordering to the SAME SQL locator the OrderBy chain uses, and append it to the
+        // page query as a projected column (the "extra column riding the page query" technique
+        // StreamPaged uses for count(*) OVER()). This lets us read the next cursor's key values off
+        // the reader instead of hydrating each document.
+        var queryMembers = ((ILinqDocumentStorage)session.StorageFor(typeof(T))).QueryMembers;
+        var keyColumns = new string[orderings.Count];
+        var keyTypes = new Type[orderings.Count];
+        for (var i = 0; i < orderings.Count; i++)
         {
-            var lastItem = items[^1];
-            var values = new object?[orderings.Count];
-            for (var i = 0; i < orderings.Count; i++)
-            {
-                values[i] = orderings[i].GetValue(lastItem);
-            }
-
-            nextCursor = CursorPagination.EncodeCursor(values);
+            var member = queryMembers.MemberFor(orderings[i].Selector.Body);
+            keyColumns[i] = $"{member.TypedLocator} as cursor_key_{i}";
+            keyTypes[i] = orderings[i].KeyType;
         }
 
-        var itemsJson = items.Count == 0
-            ? "[]"
-            : "[" + string.Join(",", items.Select(i => session.Serializer.ToJson(i))) + "]";
-
-        return new CursorPageResult(itemsJson, items.Count, nextCursor);
+        return await martenQueryable.MartenProvider
+            .StreamCursorPage(working.As<MartenLinqQueryable<T>>().Expression, keyColumns, keyTypes, pageSize, token)
+            .ConfigureAwait(false);
     }
 }

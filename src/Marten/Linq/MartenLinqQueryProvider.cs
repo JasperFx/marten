@@ -10,11 +10,13 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
+using Marten.Linq.CursorPaging;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Util;
 
 namespace Marten.Linq;
@@ -194,6 +196,40 @@ internal class MartenLinqQueryProvider: IQueryProvider
         var command = statements.Top.BuildCommand(_session);
 
         return await _session.StreamMany(command, destination, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Execute a keyset ("cursor") page: stream the matching documents' raw <c>data</c> JSON
+    /// (byte-identical to <see cref="StreamMany"/>) and read the ORDER BY key value(s) of the last
+    /// row inline via appended <c>cursor_key_N</c> columns, so the next cursor is built without
+    /// hydrating or re-serializing any document. <paramref name="keyColumns"/> are the pre-formatted
+    /// <c>&lt;locator&gt; as cursor_key_N</c> SELECT fragments; <paramref name="keyTypes"/> the CLR key
+    /// types used to read those columns back. The <paramref name="expression"/> must already carry
+    /// the seek <c>Where</c>, the OrderBy chain, and <c>Take(pageSize + 1)</c>.
+    /// </summary>
+    internal async Task<CursorPageResult> StreamCursorPage(Expression expression, IReadOnlyList<string> keyColumns,
+        Type[] keyTypes, int pageSize, CancellationToken token)
+    {
+        var parser = new LinqQueryParser(this, _session, expression);
+
+        await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
+
+        var statements = parser.BuildStatements();
+        LinqQueryParser.AssertCanStreamRawJson(statements.MainSelector);
+
+        statements.MainSelector.SelectClause =
+            new CursorKeySelectClause(statements.MainSelector.SelectClause, keyColumns);
+
+        var command = statements.Top.BuildCommand(_session);
+
+        await using var reader = await _session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        var read = await reader.StreamCursorKeyset(keyTypes, pageSize, token).ConfigureAwait(false);
+
+        var nextCursor = read is { HasMore: true, LastKeys: not null }
+            ? CursorPagination.EncodeCursor(read.LastKeys)
+            : null;
+
+        return new CursorPageResult(read.ItemsJson, read.Count, nextCursor);
     }
 
     /// <summary>
