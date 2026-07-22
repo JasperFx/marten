@@ -779,7 +779,7 @@ public async Task use_as_batch()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_plans.cs#L34-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_plan_in_batch_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Query Plan Cache for Ad Hoc Linq Queries
+## Query Plan Cache for Ad Hoc Linq Queries <Badge type="tip" text="9.18" />
 
 ::: info
 Not to be confused with the `IQueryPlan<T>` "Specification" pattern described above, or with the Postgres `EXPLAIN`
