@@ -146,13 +146,21 @@ and the raw `StreamJsonArray()`/`StreamOne()`/`StreamMany()` methods on `IQuerya
 
 If a `Select()` projection contains anything Marten can't safely translate into
 `jsonb_build_object(...)` -- a method call (`x.Name.ToUpper()`), arithmetic, string
-interpolation, a cast, or a conditional expression -- Marten instead deserializes the full
-source document and applies your original projection lambda on the client, exactly as it
+interpolation, a *lossy* cast, or a conditional expression -- Marten instead deserializes the
+full source document and applies your original projection lambda on the client, exactly as it
 always has. This fallback always produces correct results, but because the underlying
 `data` column no longer matches the shape of `TResult`, it **cannot** be streamed as raw
 JSON: calling `StreamJsonArray()`/`StreamOne()`/`ToJsonArray()` (or similar) against such a
 projection will throw a `BadLinqExpressionException` telling you to use `ToListAsync()` (or
 another non-streaming method) instead.
+
+Value-preserving conversions do **not** trigger the fallback: a widening numeric cast
+(`int` &rarr; `long`/`decimal`), boxing to `object`, wrapping in a nullable (`int` &rarr;
+`int?`), or an `enum` &rarr; its underlying integral (when enums are stored as integers) all
+keep translating to `jsonb_build_object(...)` and can still be streamed as raw JSON, because
+the stored JSON value already equals the converted value. Only genuinely lossy or computed
+conversions
+(narrowing casts, `enum`&harr;`string`, `Convert.ToXxx`) fall back.
 
 ## Chaining other Linq Methods
 
