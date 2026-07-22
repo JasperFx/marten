@@ -11,6 +11,12 @@
         <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
                           OutputItemType="Analyzer"
                           ReferenceOutputAssembly="false" />
+        <!-- NuGet analyzer assets from JasperFx.Events (Marten's own aggregation-dispatcher
+             source generator) don't flow transitively across a ProjectReference to Marten.
+             Reference it directly here so SingleStreamProjection/Snapshot<T> types declared
+             in this project (e.g. Order) get their generated dispatcher, matching the pattern
+             used by EventSourcingTests.csproj. -->
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>
