@@ -127,6 +127,17 @@ _host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L96-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: warning Rotating credentials (Entra ID / managed identity)
+The administration connection above is supplied as a plain connection string, so this on-the-fly
+`MultiTenantedWithSingleServer` provisioning path cannot authenticate to a server that only accepts a
+rotating credential (for example an Azure Entra ID access token). That support is still connection-string only.
+
+If instead you provision a known set of tenant databases up front through
+[`CreateDatabasesForTenants`](/schema/#create-database), you *can* use a rotating credential: its
+`MaintenanceDatabase()` option accepts a caller-owned `NpgsqlDataSource` carrying a periodic password
+provider. See [Azure Database for PostgreSQL with Entra ID](/configuration/azure-managed-identity#database-provisioning-with-a-rotating-credential).
+:::
+
 ## Master Table Tenancy Model
 
 ::: info

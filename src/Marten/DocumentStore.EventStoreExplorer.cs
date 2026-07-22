@@ -9,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
@@ -58,12 +59,35 @@ public partial class DocumentStore
     /// <see cref="RecentStreamsCap"/> regardless of the requested count to keep the
     /// explorer's stream-list view bounded. Archived streams are included.
     /// </remarks>
-    async Task<IReadOnlyList<StreamSummary>> IEventStore.GetRecentStreamsAsync(int count, CancellationToken ct)
+    Task<IReadOnlyList<StreamSummary>> IEventStore.GetRecentStreamsAsync(int count, CancellationToken ct)
+        => ((IEventStore)this).GetRecentStreamsAsync(count, null, ct);
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// #782 / jasperfx#503 — tenant-scoped recent-streams listing, mirroring the two tenancy
+    /// models <see cref="IEventStore.GetProjectionStatusesAsync(string?,CancellationToken)"/>
+    /// distinguishes (jasperfx#502):
+    /// <list type="bullet">
+    /// <item><b>Single database</b> (conjoined tenancy): the tenant is co-located in the one
+    /// database, so the listing is bounded by a <c>tenant_id</c> predicate on the same
+    /// <c>AllowAnyTenant</c> explorer session.</item>
+    /// <item><b>Database-per-tenant / sharded</b>: the argument names a physical database, so
+    /// the session is opened against that tenant's own database and no <c>tenant_id</c> filter
+    /// is needed — every stream in that database already belongs to the tenant.</item>
+    /// </list>
+    /// A null <paramref name="tenantId"/> preserves the store-global (across every tenant) listing.
+    /// </remarks>
+    async Task<IReadOnlyList<StreamSummary>> IEventStore.GetRecentStreamsAsync(int count, string? tenantId, CancellationToken ct)
     {
         var limit = Math.Clamp(count, 0, RecentStreamsCap);
         if (limit == 0) return Array.Empty<StreamSummary>();
 
-        await using var session = openExplorerSession();
+        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
+        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+
+        await using var session = tenantId != null && spansSeveralDatabases
+            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         // The leading six columns deliberately mirror IEventStorage.StreamStateSelectSql
@@ -73,21 +97,23 @@ public partial class DocumentStore
         // list against the selector's Resolve method; this site's matching SELECT is
         // verified by the explorer tests in EventSourcingTests/Explorer.
         var schema = Options.EventGraph.DatabaseSchemaName;
+        var tenantFilter = scopeByColumn ? "where tenant_id = @tenant_id " : "";
         var cmd = new NpgsqlCommand(
             $"select id, version, type, timestamp, created, is_archived, tenant_id from {schema}.mt_streams " +
-            "order by timestamp desc limit @limit");
+            $"{tenantFilter}order by timestamp desc limit @limit");
         cmd.Parameters.AddWithValue("limit", limit);
+        if (scopeByColumn) cmd.Parameters.AddWithValue("tenant_id", tenantId!);
 
         var summaries = new List<StreamSummary>(limit);
         await using var reader = await session.ExecuteReaderAsync(cmd, ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false))
         {
             var row = await readStreamRowAsync(reader, ct).ConfigureAwait(false);
-            var tenantId = await reader.IsDBNullAsync(StreamStateColumnCount, ct).ConfigureAwait(false)
+            var tenant = await reader.IsDBNullAsync(StreamStateColumnCount, ct).ConfigureAwait(false)
                 ? null
                 : reader.GetString(StreamStateColumnCount);
 
-            summaries.Add(new StreamSummary(row.StreamId, row.StreamType, row.Version, row.Created, row.LastUpdated, tenantId));
+            summaries.Add(new StreamSummary(row.StreamId, row.StreamType, row.Version, row.Created, row.LastUpdated, tenant));
         }
 
         return summaries;
@@ -102,20 +128,42 @@ public partial class DocumentStore
     /// the per-event tag join would multiply the row cost — explorers that need tags
     /// should use <c>QueryByTagsAsync</c>.
     /// </remarks>
-    async IAsyncEnumerable<EventRecord> IEventStore.ReadStreamAsync(string streamId, [EnumeratorCancellation] CancellationToken ct)
+    IAsyncEnumerable<EventRecord> IEventStore.ReadStreamAsync(string streamId, CancellationToken ct)
+        => ((IEventStore)this).ReadStreamAsync(streamId, null, ct);
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// #782 / jasperfx#503 — tenant-scoped stream read. On a conjoined multi-tenant store the
+    /// same stream id can exist under two tenants; the tenant-less overload reads across every
+    /// tenant and returns their ambiguous union. This overload isolates a single tenant, using
+    /// the same two-model scoping as
+    /// <see cref="IEventStore.GetProjectionStatusesAsync(string?,CancellationToken)"/>
+    /// (jasperfx#502): a <c>tenant_id</c> predicate for a tenant co-located in one database, or
+    /// the tenant's own database session for a database-per-tenant / sharded store. Null preserves
+    /// the store-global read.
+    /// </remarks>
+    async IAsyncEnumerable<EventRecord> IEventStore.ReadStreamAsync(
+        string streamId, string? tenantId, [EnumeratorCancellation] CancellationToken ct)
     {
+        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
+        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+
         var schema = Options.EventGraph.DatabaseSchemaName;
+        var tenantFilter = scopeByColumn ? " and tenant_id = @tenant_id" : "";
         var sql =
             $"select id, seq_id, version, stream_id, type, data, timestamp, tenant_id " +
             $"from {schema}.mt_events " +
-            $"where stream_id = @stream_id " +
+            $"where stream_id = @stream_id{tenantFilter} " +
             $"order by version asc";
 
-        await using var session = openExplorerSession();
+        await using var session = tenantId != null && spansSeveralDatabases
+            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         var cmd = new NpgsqlCommand(sql);
         cmd.Parameters.AddWithValue("stream_id", parseStreamId(streamId));
+        if (scopeByColumn) cmd.Parameters.AddWithValue("tenant_id", tenantId!);
 
         await using var reader = await session.ExecuteReaderAsync(cmd, ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false))
@@ -182,13 +230,43 @@ public partial class DocumentStore
     /// going through Postgres' text cast. Throws <see cref="ArgumentException"/> when a
     /// tag name is not registered.
     /// </remarks>
+    IAsyncEnumerable<EventRecord> IEventStore.QueryByTagsAsync(
+        IReadOnlyDictionary<string, string> tags,
+        CancellationToken ct)
+        => ((IEventStore)this).QueryByTagsAsync(tags, null, ct);
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// #5021 / jasperfx#555 — tenant-scoped DCB tag query, companion to the jasperfx#503 stream reads.
+    /// On a conjoined multi-tenant store the same tag value can be attached to events living under two
+    /// tenants, so the tenant-less overload resolves an ambiguous cross-tenant union. This overload
+    /// isolates a single tenant using the same two-model scoping as
+    /// <see cref="IEventStore.ReadStreamAsync(string,string?,CancellationToken)"/> and
+    /// <see cref="IEventStore.GetProjectionStatusesAsync(string?,CancellationToken)"/> (jasperfx#502):
+    /// <list type="bullet">
+    /// <item><b>Single database</b> (conjoined tenancy): the tenant is co-located in the one database,
+    /// so the outer <c>mt_events</c> scan is bounded by an <c>e.tenant_id</c> predicate on the same
+    /// <c>AllowAnyTenant</c> explorer session. The tag sub-selects need no tenant filter — they match by
+    /// the globally-unique <c>seq_id</c>, and the outer predicate discards any matched seq_id belonging
+    /// to another tenant.</item>
+    /// <item><b>Database-per-tenant / sharded</b>: the argument names a physical database, so the session
+    /// is opened against that tenant's own database and no <c>tenant_id</c> filter is needed.</item>
+    /// </list>
+    /// A null <paramref name="tenantId"/> preserves the store-global (across every tenant) query.
+    /// </remarks>
     async IAsyncEnumerable<EventRecord> IEventStore.QueryByTagsAsync(
         IReadOnlyDictionary<string, string> tags,
+        string? tenantId,
         [EnumeratorCancellation] CancellationToken ct)
     {
         if (tags == null) throw new ArgumentNullException(nameof(tags));
 
-        await using var session = openExplorerSession();
+        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
+        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+
+        await using var session = tenantId != null && spansSeveralDatabases
+            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         if (tags.Count == 0) yield break;
@@ -216,14 +294,16 @@ public partial class DocumentStore
             idx++;
         }
 
+        var tenantFilter = scopeByColumn ? " and e.tenant_id = @tenant_id" : "";
         var sql =
             $"select e.id, e.seq_id, e.version, e.stream_id, e.type, e.data, e.timestamp, e.tenant_id " +
             $"from {schema}.mt_events e " +
-            $"where {subqueries.Join(" and ")} " +
+            $"where {subqueries.Join(" and ")}{tenantFilter} " +
             $"order by e.seq_id asc";
 
         var cmd = new NpgsqlCommand(sql);
         foreach (var p in parameters) cmd.Parameters.Add(p);
+        if (scopeByColumn) cmd.Parameters.AddWithValue("tenant_id", tenantId!);
 
         await using var reader = await session.ExecuteReaderAsync(cmd, ct).ConfigureAwait(false);
         while (await reader.ReadAsync(ct).ConfigureAwait(false))
@@ -476,6 +556,110 @@ public partial class DocumentStore
         JsonElement? finalJson = finalObj == null ? null : JsonSerializer.SerializeToElement(finalObj, aggregateType, ExplorerJson);
 
         return new ProjectionTimelineRaw(stepRecords, finalJson);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Multi-stream projection step-through: unlike <see cref="IEventStore.RunProjectionByNameAsync"/>
+    /// (a single-identity, reflection-<c>Apply</c>, sessionless replay) this drives the projection's
+    /// REAL execution path — the same slicer/grouper the async daemon uses, <c>EnrichEventsAsync</c> per
+    /// group, then a one-event-at-a-time fold through <c>Create</c>/<c>Apply</c>/<c>ShouldDelete</c> —
+    /// against a read-only <see cref="IQuerySession"/>. A flat event list spanning multiple streams fans
+    /// out into one <see cref="ProjectionTimelineRaw"/> per resulting aggregate identity; a single-stream
+    /// projection collapses to exactly one. The shared fold lives in JasperFx.Events
+    /// (<see cref="ISteppableAggregation{TQuerySession}.BuildTimelinesAsync"/>) so Marten and Polecat
+    /// can't diverge. Stateless: nothing is persisted.
+    /// </remarks>
+    async Task<MultiAggregateProjectionResult> IEventStore.RunMultiStreamProjectionAsync(
+        string projectionName,
+        IReadOnlyList<EventRecord> events,
+        CancellationToken ct)
+    {
+        var source = Options.Projections.All.FirstOrDefault(x => x.Name.EqualsIgnoreCase(projectionName))
+            ?? throw new ArgumentOutOfRangeException(nameof(projectionName),
+                $"No projection named '{projectionName}' is registered. Available projections: {Options.Projections.All.Select(p => p.Name).Join(", ")}");
+
+        if (source is not ISteppableAggregation<IQuerySession> steppable)
+        {
+            throw new ArgumentException(
+                $"Projection '{projectionName}' is not an aggregate projection that supports multi-stream step-through.",
+                nameof(projectionName));
+        }
+
+        // Rebuild real IEvent instances from the wire records so the projection's slicer/grouper can run.
+        // Remember the source record per event (by reference) so the fold can map each folded event back
+        // to exactly the record the caller supplied — preserving the original Data/Metadata JSON verbatim.
+        var recordByEvent = new Dictionary<IEvent, EventRecord>(ReferenceEqualityComparer.Instance);
+        var domainEvents = new List<IEvent>(events.Count);
+        foreach (var record in events)
+        {
+            var built = buildEventFromRecord(record);
+            recordByEvent[built] = record;
+            domainEvents.Add(built);
+        }
+
+        await using var session = openExplorerSession();
+
+        JsonElement? serialize(object? state) =>
+            state is null ? null : JsonSerializer.SerializeToElement(state, state.GetType(), ExplorerJson);
+
+        EventRecord toRecord(IEvent e) =>
+            recordByEvent.TryGetValue(e, out var record) ? record : buildRecordFromEvent(e);
+
+        return await steppable
+            .BuildTimelinesAsync(domainEvents, session, serialize, toRecord, observer: null, ct)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Rebuild a real Marten <see cref="IEvent"/> from an explorer <see cref="EventRecord"/> so the
+    /// projection's slicer/grouper (which read stream id, version, and the deserialized event body) can
+    /// run against it. The event body is deserialized to its registered CLR type and wrapped via
+    /// <see cref="EventGraph.BuildEvent"/>; stream identity, version, sequence, timestamp, and tenant are
+    /// copied across so grouping-by-stream and grouping-by-event-data both behave as in the daemon.
+    /// </summary>
+    private IEvent buildEventFromRecord(EventRecord record)
+    {
+        var data = deserializeEventBody(record);
+        var e = Options.EventGraph.BuildEvent(data);
+
+        e.Id = record.EventId;
+        e.Sequence = record.Sequence;
+        e.Version = record.StreamVersion;
+        e.Timestamp = record.Timestamp;
+        e.TenantId = record.TenantId ?? StorageConstants.DefaultTenantId;
+
+        if (Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid)
+        {
+            if (Guid.TryParse(record.StreamId, out var streamGuid))
+            {
+                e.StreamId = streamGuid;
+            }
+        }
+        else
+        {
+            e.StreamKey = record.StreamId;
+        }
+
+        return e;
+    }
+
+    /// <summary>
+    /// Fallback used by <see cref="IEventStore.RunMultiStreamProjectionAsync"/>'s <c>toRecord</c> when a
+    /// folded event isn't one of the instances we built (defensive — the slicer preserves references, so
+    /// this normally never runs). Reconstructs an <see cref="EventRecord"/> straight off the
+    /// <see cref="IEvent"/>.
+    /// </summary>
+    private EventRecord buildRecordFromEvent(IEvent e)
+    {
+        var streamId = Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid
+            ? e.StreamId.ToString()
+            : e.StreamKey ?? string.Empty;
+
+        var data = JsonSerializer.SerializeToElement(e.Data, e.Data.GetType(), ExplorerJson);
+
+        return new EventRecord(e.Id, e.Sequence, e.Version, streamId, e.EventTypeName, data, null,
+            e.Timestamp, e.TenantId, null);
     }
 
     private Type findProjectionAggregateType(string projectionName)

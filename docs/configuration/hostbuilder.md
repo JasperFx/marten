@@ -135,6 +135,11 @@ You will have to use the `NpgsqlDataSource` registration if you want to opt into
 for more information.
 :::
 
+::: tip
+The `NpgsqlDataSource` registration is also the way to connect with rotating credentials such as
+Microsoft Entra ID access tokens — see [Azure Database for PostgreSQL with Entra ID](/configuration/azure-managed-identity).
+:::
+
 You can also use the [NpgsqlDataSource](https://www.npgsql.org/doc/basic-usage.html#data-source) to configure Marten connection settings. From [Npgsql docs](https://www.npgsql.org/doc/basic-usage.html#data-source):
 
 > The data source represents your PostgreSQL database and can hand out connections to it or support direct execution of SQL against it. The data source encapsulates the various Npgsql configuration needed to connect to PostgreSQL, as well the connection pooling which makes Npgsql efficient.

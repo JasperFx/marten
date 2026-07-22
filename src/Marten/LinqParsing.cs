@@ -75,6 +75,7 @@ public class LinqParsing: IReadOnlyLinqParsing
         // event is archived
         new MaybeArchivedMethodCallParser(),
         new EventTypesAreParser(),
+        new HasTagParser(),
 
         // last modified
         new ModifiedSinceParser(),
