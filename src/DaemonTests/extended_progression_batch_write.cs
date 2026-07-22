@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
-using JasperFx.Core;
+using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
@@ -70,7 +70,15 @@ public class extended_progression_batch_write: DaemonContext
         return Convert.ToInt64(raw);
     }
 
-    private async Task startCaughtUpDaemonAsync()
+    // #5022: the original helper started a live daemon, waited for it to catch up, then
+    // StopAllAsync()'d it before the tests asserted on the rows. Daemon shutdown itself emits a
+    // "Stopped" extended-progression heartbeat ASYNCHRONOUSLY, which is not drained before the daemon
+    // is considered stopped — so it races back in and clobbers the very rows these tests assert on
+    // (the intermittent `should be "Paused" but was "Stopped"` failure), and can reach an
+    // already-disposed shutdown SemaphoreSlim on the JasperFx.Events side. Nothing here actually needs
+    // a running daemon: seed the committed progression rows directly via mt_mark_event_progression so
+    // the ONLY writer left against these rows is the WriteExtendedProgressionAsync call under test.
+    private async Task seedProgressionRowsAsync()
     {
         StoreOptions(x =>
         {
@@ -79,23 +87,19 @@ public class extended_progression_batch_write: DaemonContext
             x.Projections.Add(new OtherBatchTelemetryProjection(), ProjectionLifecycle.Async);
         });
 
-        var daemon = await StartDaemon();
+        // Build the event storage (mt_event_progression + the mt_mark_event_progression* functions)
+        // without ever starting a daemon.
+        var database = (MartenDatabase)theStore.Storage.Database;
+        await database.EnsureStorageExistsAsync(typeof(IEvent));
 
-        await using (var session = theStore.LightweightSession())
+        await using var session = theStore.LightweightSession();
+        foreach (var shard in new[] { "BatchTelemetryStream:All", "OtherBatchTelemetry:All" })
         {
-            for (var i = 0; i < 10; i++)
-            {
-                session.Events.Append(Guid.NewGuid(), new BatchTelemetryEvent());
-            }
-
-            await session.SaveChangesAsync();
+            session.QueueSqlCommand(
+                $"select {theStore.Events.DatabaseSchemaName}.mt_mark_event_progression(?, ?)", shard, 10L);
         }
 
-        await daemon.Tracker.WaitForShardState(new ShardState("BatchTelemetryStream:All", 10), 30.Seconds());
-        await daemon.Tracker.WaitForShardState(new ShardState("OtherBatchTelemetry:All", 10), 30.Seconds());
-
-        // Stop the daemon so nothing else races telemetry writes into the rows we assert on
-        await daemon.StopAllAsync();
+        await session.SaveChangesAsync();
     }
 
     private static ShardState telemetry(string shard, string status, string? reason = null, int? node = null)
@@ -113,7 +117,7 @@ public class extended_progression_batch_write: DaemonContext
     [Fact]
     public async Task updates_every_existing_row_in_one_batch()
     {
-        await startCaughtUpDaemonAsync();
+        await seedProgressionRowsAsync();
 
         var database = (MartenDatabase)theStore.Storage.Database;
 
@@ -137,7 +141,7 @@ public class extended_progression_batch_write: DaemonContext
     [Fact]
     public async Task never_inserts_a_row_and_never_touches_progression()
     {
-        await startCaughtUpDaemonAsync();
+        await seedProgressionRowsAsync();
 
         var database = (MartenDatabase)theStore.Storage.Database;
         var rowsBefore = await countRowsAsync();
@@ -161,7 +165,7 @@ public class extended_progression_batch_write: DaemonContext
     [Fact]
     public async Task an_empty_batch_is_a_no_op_and_a_single_state_batch_delegates()
     {
-        await startCaughtUpDaemonAsync();
+        await seedProgressionRowsAsync();
 
         var database = (MartenDatabase)theStore.Storage.Database;
 
