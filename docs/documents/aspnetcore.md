@@ -345,11 +345,7 @@ compiled query's declared return type. Prefer compiled queries when the endpoint
 is on a hot path — Marten caches the compiled SQL and bypasses LINQ parsing on
 subsequent calls.
 
-## StreamPagedByCursor<T> — keyset-paginated streaming
-
-::: tip
-New in 9.0
-:::
+## StreamPagedByCursor<T> — keyset-paginated streaming <Badge type="tip" text="9.18" />
 
 `StreamMany<T>` and `WriteArray()` stream an entire result set. For very large or
 open-ended result sets — infinite scroll UIs, data exports, catch-up feeds — you

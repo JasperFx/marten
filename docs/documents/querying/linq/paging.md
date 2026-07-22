@@ -91,7 +91,7 @@ where CAST(d.data ->> 'Number' as integer) > :arg0 LIMIT 5
 
 The `Stats()` Linq operator can be used in conjunction with `Include()` and within batch queries. Compiled queries also support `QueryStatistics` by declaring a `QueryStatistics Stats { get; } = new QueryStatistics()` property on the compiled query class.
 
-## Keyset (Cursor) Pagination
+## Keyset (Cursor) Pagination <Badge type="tip" text="9.18" />
 
 The paging shown above is **offset-based**: every page is fetched with `Skip(pageNumber * pageSize).Take(pageSize)`, typically paired with a `count(*) OVER()` window function (or a separate `count(*)` query) to compute the total row count. Offset paging is simple and lets you jump straight to an arbitrary page number, but the cost of `Skip()` grows with the offset — Postgres still has to walk and discard every skipped row — so deep pages against large tables get progressively slower, and a `count(*)` over a huge table isn't free either.
 
