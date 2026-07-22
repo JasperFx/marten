@@ -250,6 +250,19 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 
         var queryable = QueryAllRawEvents();
 
+        // #5021 / jasperfx#555 — honour the tenant scope the Event Explorer sets. On a conjoined
+        // multi-tenant store the same event can exist under two tenants, so the Explorer sets
+        // EventQuery.TenantId to isolate one tenant; TenantIsOneOf overrides the session's own tenant
+        // filter (the Explorer reads through an AllowAnyTenant session). A null TenantId is left
+        // untouched: the query keeps the session's existing tenancy — the store-global read on an
+        // AllowAnyTenant session, or the session's own tenant on a tenant-scoped session. This preserves
+        // the pre-existing QueryEventsAsync contract (TenantPartitionedEventsTests
+        // QueryEventsAsync_pages_only_within_the_querying_tenant) exactly.
+        if (query.TenantId != null)
+        {
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.TenantIsOneOf(query.TenantId));
+        }
+
         if (query.EventTypeName != null)
         {
             queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.EventTypeName == query.EventTypeName);
