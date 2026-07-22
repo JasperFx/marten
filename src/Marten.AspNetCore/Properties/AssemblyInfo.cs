@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Marten.Testing")]
+[assembly: InternalsVisibleTo("Marten.AspNetCore.Testing")]
 [assembly: InternalsVisibleTo("Marten.CommandLine")]
 [assembly: InternalsVisibleTo("Marten.PLv8")]
 [assembly: InternalsVisibleTo("Marten.PLv8.Testing")]

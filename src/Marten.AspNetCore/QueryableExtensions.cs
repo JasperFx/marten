@@ -16,9 +16,11 @@ public static class QueryableExtensions
     /// 404 if not found.
     /// <para>
     /// When <paramref name="emitETag"/> is true (the default), the document's <c>mt_version</c>
-    /// is read via a follow-up metadata query and written as a quoted <c>ETag</c> response header.
-    /// If the incoming request's <c>If-None-Match</c> header matches that version, a <c>304 Not
-    /// Modified</c> is written instead, with an empty body.
+    /// is read <b>inline with the document in the same single round trip</b> (piggy-backed onto the
+    /// streaming query, analogous to the <c>count(*) OVER()</c> stats column) and written as a quoted
+    /// <c>ETag</c> response header. If the incoming request's <c>If-None-Match</c> header matches that
+    /// version, a <c>304 Not Modified</c> is written instead, with an empty body. Document types with
+    /// version metadata disabled (no <c>mt_version</c> column) emit no ETag.
     /// </para>
     /// </summary>
     /// <param name="queryable"></param>
@@ -33,48 +35,59 @@ public static class QueryableExtensions
         string contentType = "application/json",
         int onFoundStatus = 200,
         bool emitETag = true
-    ) where T : notnull
+    )
     {
         var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
-        var found = await queryable.StreamJsonFirstOrDefault(stream, context.RequestAborted).ConfigureAwait(false);
 
-        if (!found)
+        if (!emitETag)
+        {
+            var found = await queryable.StreamJsonFirstOrDefault(stream, context.RequestAborted).ConfigureAwait(false);
+            if (!found)
+            {
+                context.Response.StatusCode = 404;
+                context.Response.ContentLength = 0;
+                return;
+            }
+
+            await writeBufferedBody(context, stream, contentType, onFoundStatus).ConfigureAwait(false);
+            return;
+        }
+
+        // Fetch the document JSON and its mt_version in a single round trip. The version rides
+        // on the same streaming query (see MartenLinqQueryProvider.StreamOneWithVersion), so there
+        // is no follow-up MetadataForAsync query and no re-deserialization of the buffered JSON.
+        var result = await ((MartenLinqQueryable<T>)queryable)
+            .StreamJsonFirstOrDefaultWithVersion(stream, context.RequestAborted)
+            .ConfigureAwait(false);
+
+        if (!result.Found)
         {
             context.Response.StatusCode = 404;
             context.Response.ContentLength = 0;
             return;
         }
 
-        if (emitETag)
+        if (result.Version.HasValue)
         {
-            // The queryable was built off a Marten session; walk back to it (internal access
-            // granted via [InternalsVisibleTo] on Marten's assembly) so we can look up the
-            // document's mt_version without asking the caller to plumb an IQuerySession through.
-            IMartenSession session = ((IMartenLinqQueryable)queryable).Session;
+            var etag = ETagHelpers.Format(result.Version.Value);
 
-            stream.Position = 0;
-            var entity = session.Serializer.FromJson<T>(stream);
-
-            var metadata = await ((IQuerySession)session)
-                .MetadataForAsync(entity, context.RequestAborted)
-                .ConfigureAwait(false);
-
-            if (metadata != null)
+            if (ETagHelpers.IfNoneMatchMatches(context, etag))
             {
-                var etag = ETagHelpers.Format(metadata.CurrentVersion);
-
-                if (ETagHelpers.IfNoneMatchMatches(context, etag))
-                {
-                    context.Response.StatusCode = StatusCodes.Status304NotModified;
-                    context.Response.Headers["ETag"] = etag;
-                    context.Response.ContentLength = 0;
-                    return;
-                }
-
+                context.Response.StatusCode = StatusCodes.Status304NotModified;
                 context.Response.Headers["ETag"] = etag;
+                context.Response.ContentLength = 0;
+                return;
             }
+
+            context.Response.Headers["ETag"] = etag;
         }
 
+        await writeBufferedBody(context, stream, contentType, onFoundStatus).ConfigureAwait(false);
+    }
+
+    private static async Task writeBufferedBody(HttpContext context, System.IO.Stream stream, string contentType,
+        int onFoundStatus)
+    {
         context.Response.StatusCode = onFoundStatus;
         context.Response.ContentLength = stream.Length;
         context.Response.ContentType = contentType;

@@ -32,6 +32,33 @@ internal static class JsonStreamingExtensions
         return 1;
     }
 
+    /// <summary>
+    /// Streams the first row's <c>data</c> column to <paramref name="stream"/> (as
+    /// <see cref="StreamOne"/> does) AND reads the piggy-backed <c>mt_version</c> value
+    /// aliased as <see cref="Marten.Linq.SqlGeneration.VersionSelectClause{T}.VersionAlias"/>,
+    /// so a single-document JSON stream and its version come back in one round trip.
+    /// Returns <c>found = false</c> when the query matched no row, and a null
+    /// <c>version</c> when the version column value was SQL NULL.
+    /// </summary>
+    internal static async Task<(bool found, Guid? version)> StreamOneWithVersion(this DbDataReader reader,
+        Stream stream, CancellationToken token)
+    {
+        if (!await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            return (false, null);
+        }
+
+        var dataOrdinal = reader.GetOrdinal("data");
+        await reader.WriteJsonValueAsync(dataOrdinal, stream, token).ConfigureAwait(false);
+
+        var versionOrdinal = reader.GetOrdinal(Marten.Linq.SqlGeneration.VersionSelectClause.VersionAlias);
+        Guid? version = await reader.IsDBNullAsync(versionOrdinal, token).ConfigureAwait(false)
+            ? null
+            : await reader.GetFieldValueAsync<Guid>(versionOrdinal, token).ConfigureAwait(false);
+
+        return (true, version);
+    }
+
     internal static ValueTask WriteBytes(this Stream stream, byte[] bytes, CancellationToken token)
     {
         return stream.WriteAsync(bytes, token);

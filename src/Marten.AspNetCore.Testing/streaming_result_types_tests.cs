@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Alba;
+using IssueService;
 using IssueService.Controllers;
+using Marten.AspNetCore;
+using Marten.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
@@ -207,6 +211,94 @@ public class streaming_result_types_tests: IntegrationContext
         });
 
         result.Context.Response.Headers.ContainsKey("ETag").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task stream_one_emits_no_etag_when_version_metadata_disabled()
+    {
+        // VersionlessDoc is registered with Metadata.Version.Enabled = false, so there is no
+        // mt_version column to derive an ETag from. EmitETag defaults to true, but the inline
+        // version read comes back null and no ETag (and no false 304) is produced.
+        var doc = new VersionlessDoc { Id = Guid.NewGuid(), Name = "no version column" };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(doc);
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/versionless/{doc.Id}");
+            s.StatusCodeShouldBe(200);
+            s.ContentTypeShouldBe("application/json");
+        });
+
+        result.Context.Response.Headers.ContainsKey("ETag").ShouldBeFalse();
+
+        var read = result.ReadAsJson<VersionlessDoc>();
+        read.Name.ShouldBe(doc.Name);
+    }
+
+    [Fact]
+    public async Task stream_one_returns_404_without_etag_when_no_match()
+    {
+        // The 404 path must not leak an ETag header even with EmitETag on.
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{Guid.NewGuid()}");
+            s.StatusCodeShouldBe(404);
+        });
+
+        result.Context.Response.Headers.ContainsKey("ETag").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task stream_one_with_etag_executes_a_single_db_command()
+    {
+        // Acceptance for #5027: with EmitETag = true (default), the document JSON and its
+        // mt_version come back in ONE round trip — no follow-up MetadataForAsync query.
+        var store = theHost.Services.GetRequiredService<IDocumentStore>();
+
+        var issue = new Issue { Description = "single command", Open = true };
+        await using (var session = store.LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = store.QuerySession();
+        var logger = new CommandCountingLogger();
+        query.Logger = logger;
+
+        // Warm up storage-existence checks on this session so they don't count against us,
+        // then reset the counter to isolate the WriteSingle round trips.
+        await query.Query<Issue>().Where(x => x.Id == Guid.NewGuid())
+            .StreamJsonFirstOrDefault(new MemoryStream());
+        logger.Count = 0;
+
+        var context = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+
+        await query.Query<Issue>().Where(x => x.Id == issue.Id)
+            .WriteSingle(context, emitETag: true);
+
+        context.Response.StatusCode.ShouldBe(200);
+        context.Response.Headers.ContainsKey("ETag").ShouldBeTrue();
+        logger.Count.ShouldBe(1);
+    }
+
+    /// <summary>Minimal session logger that counts executed commands for the round-trip acceptance test.</summary>
+    private sealed class CommandCountingLogger: Marten.IMartenSessionLogger
+    {
+        public int Count { get; set; }
+
+        public void LogSuccess(Npgsql.NpgsqlCommand command) { }
+        public void LogFailure(Npgsql.NpgsqlCommand command, Exception ex) { }
+        public void LogSuccess(Npgsql.NpgsqlBatch batch) { }
+        public void LogFailure(Npgsql.NpgsqlBatch batch, Exception ex) { }
+        public void LogFailure(Exception ex, string message) { }
+        public void RecordSavedChanges(Marten.IDocumentSession session, Marten.Services.IChangeSet commit) { }
+        public void OnBeforeExecute(Npgsql.NpgsqlCommand command) => Count++;
+        public void OnBeforeExecute(Npgsql.NpgsqlBatch batch) => Count++;
     }
 
     // ───────────────────────── StreamMany<T> ─────────────────────────

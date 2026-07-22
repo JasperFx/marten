@@ -306,6 +306,17 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         return MartenProvider.StreamJson<T>(destination, Expression, token, SingleValueMode.FirstOrDefault);
     }
 
+    /// <summary>
+    /// Streams the first matching document as JSON to <paramref name="destination"/> and reads its
+    /// <c>mt_version</c> in the SAME database round trip (see
+    /// <see cref="MartenLinqQueryProvider.StreamOneWithVersion{T}"/>). Used by the ASP.NET Core
+    /// <c>StreamOne</c> ETag support to avoid a follow-up metadata query.
+    /// </summary>
+    internal Task<StreamOneJsonResult> StreamJsonFirstOrDefaultWithVersion(Stream destination, CancellationToken token)
+    {
+        return MartenProvider.StreamOneWithVersion<T>(Expression, destination, token);
+    }
+
     public Task StreamJsonSingle(Stream destination, CancellationToken token)
     {
         return MartenProvider.StreamJson<T>(destination, Expression, token, SingleValueMode.Single);
