@@ -14,7 +14,7 @@ namespace Marten.TimescaleDB.Internal;
 /// document, projection, and event tables, so every table it references has already been created by the
 /// time <c>create_hypertable</c> / the continuous-aggregate views run.
 /// </summary>
-internal sealed class TimescaleDBFeatureSchema: IFeatureSchema
+internal sealed class TimescaleDBFeatureSchema: IExtensionFeatureSchema
 {
     private readonly StoreOptions _options;
     private readonly IReadOnlyList<IHypertableTarget> _targets;
