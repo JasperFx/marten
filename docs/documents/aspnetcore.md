@@ -295,7 +295,7 @@ ids for stores configured with string-keyed streams.
   projected snapshot if one is configured). Use this when `T` is an
   event-sourced aggregate, not a stored document.
 
-### ETag / conditional request support (`If-None-Match` → `304`)
+### ETag / Conditional Requests <Badge type="tip" text="9.18" />
 
 ::: tip
 `StreamOne<T>` and `StreamAggregate<T>` support HTTP conditional requests.
