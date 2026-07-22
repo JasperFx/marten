@@ -1,3 +1,7 @@
+using System.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Marten.Storage;
 using Weasel.Core;
 using Weasel.Core.Migrations;
@@ -5,10 +9,10 @@ using Weasel.Core.Migrations;
 namespace Marten.TimescaleDB.Internal;
 
 /// <summary>
-/// A custom Marten feature schema that emits the TimescaleDB hypertable / continuous-aggregate
-/// DDL. Because it lives in the Marten.TimescaleDB assembly (not Marten core), Marten yields it
-/// LAST in <c>StorageFeatures.AllActiveFeatures</c>, so every document, projection, and event
-/// table it references has already been created by the time these objects run.
+/// A Marten feature schema that emits the TimescaleDB hypertable / continuous-aggregate DDL. It is
+/// registered via <c>Storage.Add()</c> and yielded by <c>StorageFeatures.AllActiveFeatures</c> after the
+/// document, projection, and event tables, so every table it references has already been created by the
+/// time <c>create_hypertable</c> / the continuous-aggregate views run.
 /// </summary>
 internal sealed class TimescaleDBFeatureSchema: IFeatureSchema
 {

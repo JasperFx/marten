@@ -64,11 +64,17 @@ jobs:
 
       - name: Optimize database for running tests faster
         run: |
-          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
-          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/postgresql.conf"
-          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfull_page_writes = off' >> /var/lib/postgresql/data/postgresql.conf"
-          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nsynchronous_commit = off' >> /var/lib/postgresql/data/postgresql.conf"
-          docker container restart $PG_CONTAINER_NAME
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format '{{.Names}}')
+          # Tune via ALTER SYSTEM rather than exec-editing postgresql.conf: the
+          # timescale/timescaledb-ha image keeps its data dir at /home/postgres/pgdata/data,
+          # not /var/lib/postgresql/data, so the old path-based redirect failed under
+          # `bash -e -o pipefail` and killed the job before any test ran. ALTER SYSTEM lets the
+          # server write postgresql.auto.conf into its own data dir wherever that is — image-agnostic.
+          docker exec "$PG_CONTAINER_NAME" psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 \
+            -c "ALTER SYSTEM SET fsync = off;" \
+            -c "ALTER SYSTEM SET full_page_writes = off;" \
+            -c "ALTER SYSTEM SET synchronous_commit = off;"
+          docker container restart "$PG_CONTAINER_NAME"
         shell: bash
 
       - name: compile

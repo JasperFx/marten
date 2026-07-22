@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Marten.TimescaleDB.Internal;
 using Weasel.Postgresql;
 
@@ -28,9 +30,9 @@ public static class TimescaleDBExtensions
         var timescale = new TimescaleDBOptions(opts);
         configure?.Invoke(timescale);
 
-        // The hypertable DDL must run AFTER the underlying tables exist. A custom, non-Marten
-        // feature schema is yielded last by StorageFeatures.AllActiveFeatures, so it is the
-        // correct home for create_hypertable / continuous-aggregate objects.
+        // The hypertable DDL must run AFTER the underlying tables exist. Feature schemas registered via
+        // Storage.Add() are yielded by StorageFeatures.AllActiveFeatures after the document/event tables,
+        // so this is the correct home for create_hypertable / continuous-aggregate objects.
         if (timescale.Targets.Count > 0)
         {
             opts.Storage.Add(new TimescaleDBFeatureSchema(opts, timescale.Targets));

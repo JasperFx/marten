@@ -1,9 +1,10 @@
 # TimescaleDB Support
 
-`Marten.TimescaleDB` is an optional companion package that lets Marten turn its tables into
+TimescaleDB support lets Marten turn its tables into
 [TimescaleDB](https://github.com/timescale/timescaledb) **hypertables** — automatically time-partitioned
-tables with columnar compression, retention policies, and continuous aggregates. It is published from the
-Marten repo under the MIT license and ships as the `Marten.TimescaleDB` NuGet package.
+tables with columnar compression, retention policies, and continuous aggregates. It ships **in the core
+Marten package** under the MIT license, scoped behind its own `Marten.TimescaleDB` namespace, and is
+entirely opt-in at runtime via `UseTimescaleDB()` — stores that never call it pay nothing.
 
 What it gives you today:
 
@@ -12,11 +13,10 @@ What it gives you today:
 - `DocumentAsHypertable<T>()` to turn an append-heavy document table (audit logs, metrics, activity records) into a hypertable partitioned by one of its own timestamp members
 - full participation in Marten's schema migration model — the hypertable, its policies, and its continuous aggregates are created idempotently through the normal `ApplyAllConfiguredChangesToDatabaseAsync` path, and do **not** show up as drift on subsequent migrations
 
-## Installation
+## Requirements
 
-```shell
-dotnet add package Marten.TimescaleDB
-```
+The feature ships in core Marten, so there is no separate package to install — reach it with
+`using Marten.TimescaleDB;` and enable it with `UseTimescaleDB()`.
 
 TimescaleDB is a **loadable module**: unlike PostGIS or pgvector it must be listed in
 `shared_preload_libraries` before `CREATE EXTENSION timescaledb` will succeed. The official
@@ -89,6 +89,15 @@ public class MetricsProjection: FlatTableProjection
 | `CompressSegmentBy` / `CompressOrderBy` | compression settings | Optional segment-by / order-by keys. Order-by defaults to the time column `DESC`. |
 | `RetainFor` | `add_retention_policy(...)` | Drops chunks older than this age. |
 | `ContinuousAggregate(view, bucket, select, groupBy?)` | `CREATE MATERIALIZED VIEW ... WITH (timescaledb.continuous)` | A self-refreshing rollup view. Marten creates the view `WITH NO DATA`; set the refresh policy (`add_continuous_aggregate_policy`) with your own operational tooling. |
+
+::: warning Compression / retention policies are applied on creation only
+The compression and retention settings (`CompressAfter`, `RetainFor`, `CompressSegmentBy`/`CompressOrderBy`)
+are emitted when the hypertable is first created. Later **changes** to those values are not diffed and
+re-applied on subsequent migrations — adjust an existing policy with TimescaleDB's own
+`add_/remove_compression_policy` / `add_/remove_retention_policy` functions (or drop and recreate the
+hypertable). The hypertable, its policies, and its continuous aggregates are otherwise created idempotently
+and do not show up as drift.
+:::
 
 ::: warning The partition column must be the projection's primary key
 TimescaleDB requires the partitioning column to participate in **every** unique/primary key on a hypertable.

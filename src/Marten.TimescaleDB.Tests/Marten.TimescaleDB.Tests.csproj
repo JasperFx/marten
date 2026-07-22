@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten.TimescaleDB\Marten.TimescaleDB.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
     </ItemGroup>
 </Project>

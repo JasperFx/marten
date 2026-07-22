@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Marten.Events;
 using Marten.Events.Projections.Flattened;
 using Weasel.Core;

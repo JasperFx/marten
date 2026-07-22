@@ -463,22 +463,36 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
             yield return _options.EventGraph;
         }
 
+        // Features explicitly registered via Storage.Add(). A few built-ins are also stored here yet
+        // yielded directly above — SystemFunctions, the EventGraph, and the tenant-partition registry —
+        // so exclude those by reference to avoid emitting them twice. This replaces an older
+        // assembly-based heuristic ("type not in the Marten assembly") that suppressed the same built-ins
+        // but ALSO silently dropped a feature folded INTO the Marten assembly while still registered via
+        // Storage.Add() — e.g. the TimescaleDB feature schema (#4980), whose create_hypertable / policy /
+        // continuous-aggregate DDL would then never run. Because AllActiveFeatures yields it after the
+        // document/event tables, create_hypertable still lands after the underlying tables exist.
+        var tenantPartitions = _options.TenantPartitions?.Partitions;
+        var builtInFeatures = new HashSet<IFeatureSchema>(ReferenceEqualityComparer.Instance)
+        {
+            SystemFunctions,
+            _options.EventGraph
+        };
+        if (tenantPartitions != null) builtInFeatures.Add(tenantPartitions);
+
         var custom = _features.Value.ToArray().Select(e => e.Value)
-            .Where(x => x.GetType().Assembly != GetType().Assembly).ToArray();
+            .Where(x => !builtInFeatures.Contains(x)).ToArray();
 
         foreach (var featureSchema in custom) yield return featureSchema;
 
         // #4863/#4855: the Marten-managed tenant partition registry (mt_tenant_partitions) is
-        // registered as a feature, but its type — DatabaseScopedTenantPartitions — now lives in the
-        // Marten assembly, so the assembly-based `custom` filter above excludes it (the plain Weasel
-        // ManagedListPartitions it replaced was in the Weasel assembly and so slipped through). Yield
-        // it explicitly so the registry table is materialized on EVERY database of the store during a
+        // registered as a feature, but its type — DatabaseScopedTenantPartitions — lives in the Marten
+        // assembly and is excluded from `custom` above (kept out via builtInFeatures). Yield it
+        // explicitly so the registry table is materialized on EVERY database of the store during a
         // full apply, not only on databases that happen to get an explicit provisioning touch. Under
         // sharded tenancy the projection coordinator reads each shard's own mt_tenant_partitions to
         // expand per-tenant agents; a shard that never had that table created would fail every
         // leadership polling cycle with 42P01. Guard against a double-yield in case a future partition
-        // manager type lands back in a non-Marten assembly (then `custom` would already include it).
-        var tenantPartitions = _options.TenantPartitions?.Partitions;
+        // manager also flows through `custom`.
         if (tenantPartitions != null && !custom.Contains(tenantPartitions))
         {
             yield return tenantPartitions;

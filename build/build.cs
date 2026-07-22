@@ -426,7 +426,8 @@ class Build : NukeBuild
                 // them up. Without this they'd silently never reach NuGet.
                 "./src/Marten.PostGIS",        // PostGIS spatial support (#4576)
                 "./src/Marten.PgVector",       // pgvector similarity search (#4576)
-                "./src/Marten.TimescaleDB",    // TimescaleDB hypertables (#4980)
+                // Marten.TimescaleDB folded into core Marten (#4980) — the feature ships in
+                // the core assembly (opt-in via UseTimescaleDB()), so there is no separate package.
                 "./src/Marten.MemoryPack"      // binary event serialization (#4515 / #4578)
             };
 
