@@ -1,4 +1,5 @@
 #nullable disable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -13,6 +14,19 @@ using Weasel.Postgresql.SqlGeneration;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Parsing;
+
+/// <summary>
+/// Signals that a Select() projection is not a "simple" flat member-access transform
+/// (GH-5011) -- e.g. it contains a method call, arithmetic, a cast/conversion, or a
+/// conditional expression -- and cannot be translated to a server-side
+/// <c>jsonb_build_object(...)</c> expression. Callers catch this and fall back to
+/// compiling the original Select() lambda and applying it against the fully
+/// deserialized document on the client, so behavior is unchanged from before the
+/// jsonb_build_object optimization was introduced.
+/// </summary>
+internal sealed class SelectProjectionNotSimpleException: Exception
+{
+}
 
 [UnconditionalSuppressMessage("Trimming", "IL2075",
     Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
@@ -66,7 +80,29 @@ internal class SelectParser: ExpressionVisitor
                 return null;
         }
 
-        return base.VisitBinary(node);
+        // Any other binary node reaching here is arithmetic/computation (Add, Subtract,
+        // string concatenation via '+', comparisons used as a projected bool, etc.) that
+        // can't be proven equivalent to a jsonb_build_object() expression. Signal the
+        // caller to fall back to a client-side compiled transform (GH-5011) instead of
+        // silently dropping the operation and returning the raw member value.
+        throw new SelectProjectionNotSimpleException();
+    }
+
+    protected override Expression VisitUnary(UnaryExpression node)
+    {
+        // Casts/conversions (numeric narrowing/widening, boxing to object, enum-to-int,
+        // etc.) and other unary operators (negation, logical not) are computed
+        // expressions -- the underlying member's raw JSON value is not guaranteed to
+        // equal the converted value. Fall back to a client-side compiled transform
+        // (GH-5011) rather than silently ignoring the conversion.
+        throw new SelectProjectionNotSimpleException();
+    }
+
+    protected override Expression VisitConditional(ConditionalExpression node)
+    {
+        // Ternary/conditional expressions are computed expressions; fall back to a
+        // client-side compiled transform (GH-5011).
+        throw new SelectProjectionNotSimpleException();
     }
 
     protected override Expression VisitConstant(ConstantExpression node)
@@ -147,7 +183,11 @@ internal class SelectParser: ExpressionVisitor
             }
         }
 
-        return base.VisitMethodCall(node);
+        // Any other method call (string.ToUpper(), custom methods, LINQ helpers, etc.)
+        // is a computed expression that jsonb_build_object() cannot reproduce. Signal the
+        // caller to fall back to a client-side compiled transform (GH-5011) instead of
+        // silently dropping the call and returning the raw member value underneath it.
+        throw new SelectProjectionNotSimpleException();
     }
 
     protected override Expression VisitMember(MemberExpression node)
