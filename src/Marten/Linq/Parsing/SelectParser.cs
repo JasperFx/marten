@@ -24,7 +24,7 @@ namespace Marten.Linq.Parsing;
 /// deserialized document on the client, so behavior is unchanged from before the
 /// jsonb_build_object optimization was introduced.
 /// </summary>
-internal sealed class SelectProjectionNotSimpleException: Exception
+internal sealed class SelectProjectionNotSimpleException: MartenException
 {
 }
 
