@@ -27,7 +27,7 @@ namespace Marten.AspNetCore;
 /// </para>
 /// </summary>
 /// <typeparam name="T">The document type to stream.</typeparam>
-public sealed class StreamOne<T> : IResult, IEndpointMetadataProvider
+public sealed class StreamOne<T> : IResult, IEndpointMetadataProvider where T : notnull
 {
     private readonly IQueryable<T> _queryable;
 
@@ -51,16 +51,25 @@ public sealed class StreamOne<T> : IResult, IEndpointMetadataProvider
     /// </summary>
     public string ContentType { get; init; } = "application/json";
 
+    /// <summary>
+    /// Whether to emit an <c>ETag</c> response header derived from the document's
+    /// <c>mt_version</c>, and honor an incoming <c>If-None-Match</c> request header by
+    /// responding <c>304 Not Modified</c> with an empty body when it matches. Defaults to
+    /// <c>true</c>. Set to <c>false</c> to opt out if a consumer's contract cannot tolerate
+    /// the extra header.
+    /// </summary>
+    public bool EmitETag { get; init; } = true;
+
     /// <inheritdoc />
     public Task ExecuteAsync(HttpContext httpContext)
     {
         if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
-        return _queryable.WriteSingle(httpContext, ContentType, OnFoundStatus);
+        return _queryable.WriteSingle(httpContext, ContentType, OnFoundStatus, EmitETag);
     }
 
     /// <summary>
     /// Populates endpoint metadata so OpenAPI correctly advertises a
-    /// <c>200: T</c> and <c>404</c> response for this endpoint.
+    /// <c>200: T</c>, <c>304</c>, and <c>404</c> response for this endpoint.
     /// </summary>
     public static void PopulateMetadata(MethodInfo method, EndpointBuilder builder)
     {
@@ -68,6 +77,8 @@ public sealed class StreamOne<T> : IResult, IEndpointMetadataProvider
 
         builder.Metadata.Add(new ProducesResponseTypeMetadata(
             StatusCodes.Status200OK, typeof(T), new[] { "application/json" }));
+        builder.Metadata.Add(new ProducesResponseTypeMetadata(
+            StatusCodes.Status304NotModified, typeof(void), Array.Empty<string>()));
         builder.Metadata.Add(new ProducesResponseTypeMetadata(
             StatusCodes.Status404NotFound, typeof(void), Array.Empty<string>()));
     }

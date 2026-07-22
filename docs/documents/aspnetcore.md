@@ -295,6 +295,61 @@ ids for stores configured with string-keyed streams.
   projected snapshot if one is configured). Use this when `T` is an
   event-sourced aggregate, not a stored document.
 
+### ETag / conditional request support (`If-None-Match` → `304`)
+
+::: tip
+`StreamOne<T>` and `StreamAggregate<T>` support HTTP conditional requests.
+`StreamMany<T>` does not — a collection-wide ETag is harder to derive cheaply
+and is out of scope for the initial implementation.
+:::
+
+Both `StreamOne<T>` and `StreamAggregate<T>` set an `ETag` response header
+by default and honor an incoming `If-None-Match` request header, responding
+`304 Not Modified` with an empty body when the client's cached version is
+still current:
+
+- For `StreamOne<T>`, the ETag is derived from the document's `mt_version`
+  (the same optimistic-concurrency version Marten tracks for every stored
+  document), formatted as a quoted GUID, e.g. `"3f2504e0-4f89-11d3-9a0c-0305e82c3301"`.
+- For `StreamAggregate<T>`, the ETag is derived from the event stream's
+  version (a `long`), formatted as a quoted integer, e.g. `"42"`. The version
+  is looked up before the aggregate is folded, so a cache hit (`304`) skips
+  that work entirely.
+
+```csharp
+app.MapGet("/issues/{id:guid}",
+    (Guid id, IQuerySession session) =>
+        new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == id)));
+
+app.MapGet("/orders/{id:guid}",
+    (Guid id, IDocumentSession session) =>
+        new StreamAggregate<Order>(session, id));
+```
+
+A poller can send the previously-received `ETag` value back as `If-None-Match`:
+
+```http
+GET /issues/f47ac10b-58cc-4372-a567-0e02b2c3d479 HTTP/1.1
+If-None-Match: "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
+```
+
+```http
+HTTP/1.1 304 Not Modified
+ETag: "3f2504e0-4f89-11d3-9a0c-0305e82c3301"
+```
+
+Set `EmitETag = false` to opt out and restore the pre-ETag behavior (no
+`ETag` header, no conditional-request handling):
+
+```csharp
+app.MapGet("/issues/{id:guid}",
+    (Guid id, IQuerySession session) =>
+        new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == id))
+        {
+            EmitETag = false
+        });
+```
+
 ### Customizing status code and content type
 
 All three types expose init-only properties:

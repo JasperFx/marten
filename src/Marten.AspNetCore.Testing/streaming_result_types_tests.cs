@@ -117,6 +117,98 @@ public class streaming_result_types_tests: IntegrationContext
         });
     }
 
+    // ───────────────────────── StreamOne<T> ETag / If-None-Match ─────────────────────────
+
+    [Fact]
+    public async Task stream_one_sets_etag_header_on_hit()
+    {
+        var issue = new Issue { Description = "etag hit", Open = true };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{issue.Id}");
+            s.StatusCodeShouldBe(200);
+        });
+
+        result.Context.Response.Headers.ContainsKey("ETag").ShouldBeTrue();
+        result.Context.Response.Headers["ETag"].ToString().ShouldNotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task stream_one_returns_304_when_if_none_match_matches_current_version()
+    {
+        var issue = new Issue { Description = "etag 304", Open = true };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        var first = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{issue.Id}");
+            s.StatusCodeShouldBe(200);
+        });
+
+        var etag = first.Context.Response.Headers["ETag"].ToString();
+        etag.ShouldNotBeNullOrEmpty();
+
+        var second = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{issue.Id}");
+            s.WithRequestHeader("If-None-Match", etag);
+            s.StatusCodeShouldBe(304);
+        });
+
+        second.Context.Response.Headers["ETag"].ToString().ShouldBe(etag);
+        second.ReadAsText().ShouldBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task stream_one_returns_full_body_when_if_none_match_is_stale()
+    {
+        var issue = new Issue { Description = "etag stale", Open = true };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{issue.Id}");
+            s.WithRequestHeader("If-None-Match", "\"" + Guid.NewGuid().ToString("D") + "\"");
+            s.StatusCodeShouldBe(200);
+        });
+
+        var read = result.ReadAsJson<Issue>();
+        read.Description.ShouldBe(issue.Description);
+    }
+
+    [Fact]
+    public async Task stream_one_suppresses_etag_when_emit_etag_is_false()
+    {
+        var issue = new Issue { Description = "no etag", Open = true };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{issue.Id}/no-etag");
+            s.StatusCodeShouldBe(200);
+        });
+
+        result.Context.Response.Headers.ContainsKey("ETag").ShouldBeFalse();
+    }
+
     // ───────────────────────── StreamMany<T> ─────────────────────────
 
     [Fact]
@@ -189,6 +281,69 @@ public class streaming_result_types_tests: IntegrationContext
             s.Get.Url($"/minimal/order/{Guid.NewGuid()}");
             s.StatusCodeShouldBe(404);
         });
+    }
+
+    // ───────────── StreamAggregate<T> ETag / If-None-Match ─────────────
+
+    [Fact]
+    public async Task stream_aggregate_sets_etag_header_on_hit()
+    {
+        var orderId = Guid.NewGuid();
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("Etag Book", 9.99m));
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order/{orderId}");
+            s.StatusCodeShouldBe(200);
+        });
+
+        result.Context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+    }
+
+    [Fact]
+    public async Task stream_aggregate_returns_304_when_if_none_match_matches_stream_version()
+    {
+        var orderId = Guid.NewGuid();
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("Cached Book", 5.00m));
+            await session.SaveChangesAsync();
+        }
+
+        var second = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order/{orderId}");
+            s.WithRequestHeader("If-None-Match", "\"1\"");
+            s.StatusCodeShouldBe(304);
+        });
+
+        second.Context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+        second.ReadAsText().ShouldBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task stream_aggregate_returns_full_body_when_if_none_match_is_stale()
+    {
+        var orderId = Guid.NewGuid();
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("Fresh Book", 15.00m));
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order/{orderId}");
+            s.WithRequestHeader("If-None-Match", "\"999\"");
+            s.StatusCodeShouldBe(200);
+        });
+
+        var order = result.ReadAsJson<Order>();
+        order.Description.ShouldBe("Fresh Book");
     }
 
     // ───────────────────────── OpenAPI metadata ─────────────────────────
