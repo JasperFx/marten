@@ -1057,4 +1057,148 @@ public class streaming_json_results : IntegrationContext
             actual.Length.ShouldBe(expected);
         }
     }
+
+    private class PagedEnvelope<T>
+    {
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public int TotalItemCount { get; set; }
+        public int PageCount { get; set; }
+        public bool HasNextPage { get; set; }
+        public bool HasPreviousPage { get; set; }
+        public T[] Items { get; set; }
+    }
+
+    private async Task<PagedEnvelope<Target>> streamPage(IQueryable<Target> queryable, int pageNumber, int pageSize)
+    {
+        var stream = new MemoryStream();
+        await queryable.StreamPagedJsonArray(stream, pageNumber, pageSize);
+        stream.Position = 0;
+
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        return await System.Text.Json.JsonSerializer.DeserializeAsync<PagedEnvelope<Target>>(stream, options);
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_first_page()
+    {
+        var targets = Target.GenerateRandomData(10).ToArray();
+        for (var i = 0; i < targets.Length; i++) targets[i].Number = i;
+        await theStore.BulkInsertAsync(targets);
+
+        var envelope = await streamPage(theSession.Query<Target>().OrderBy(x => x.Number), 1, 3);
+
+        envelope.PageNumber.ShouldBe(1);
+        envelope.PageSize.ShouldBe(3);
+        envelope.TotalItemCount.ShouldBe(10);
+        envelope.PageCount.ShouldBe(4);
+        envelope.HasNextPage.ShouldBeTrue();
+        envelope.HasPreviousPage.ShouldBeFalse();
+        envelope.Items.Length.ShouldBe(3);
+        envelope.Items.Select(x => x.Number).ShouldBe(new[] { 0, 1, 2 });
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_middle_page()
+    {
+        var targets = Target.GenerateRandomData(10).ToArray();
+        for (var i = 0; i < targets.Length; i++) targets[i].Number = i;
+        await theStore.BulkInsertAsync(targets);
+
+        var envelope = await streamPage(theSession.Query<Target>().OrderBy(x => x.Number), 2, 3);
+
+        envelope.PageNumber.ShouldBe(2);
+        envelope.PageSize.ShouldBe(3);
+        envelope.TotalItemCount.ShouldBe(10);
+        envelope.PageCount.ShouldBe(4);
+        envelope.HasNextPage.ShouldBeTrue();
+        envelope.HasPreviousPage.ShouldBeTrue();
+        envelope.Items.Length.ShouldBe(3);
+        envelope.Items.Select(x => x.Number).ShouldBe(new[] { 3, 4, 5 });
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_last_partial_page()
+    {
+        var targets = Target.GenerateRandomData(10).ToArray();
+        for (var i = 0; i < targets.Length; i++) targets[i].Number = i;
+        await theStore.BulkInsertAsync(targets);
+
+        var envelope = await streamPage(theSession.Query<Target>().OrderBy(x => x.Number), 4, 3);
+
+        envelope.PageNumber.ShouldBe(4);
+        envelope.PageSize.ShouldBe(3);
+        envelope.TotalItemCount.ShouldBe(10);
+        envelope.PageCount.ShouldBe(4);
+        envelope.HasNextPage.ShouldBeFalse();
+        envelope.HasPreviousPage.ShouldBeTrue();
+        envelope.Items.Length.ShouldBe(1);
+        envelope.Items.Select(x => x.Number).ShouldBe(new[] { 9 });
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_single_page()
+    {
+        var targets = Target.GenerateRandomData(5).ToArray();
+        await theStore.BulkInsertAsync(targets);
+
+        var envelope = await streamPage(theSession.Query<Target>(), 1, 25);
+
+        envelope.PageNumber.ShouldBe(1);
+        envelope.PageSize.ShouldBe(25);
+        envelope.TotalItemCount.ShouldBe(5);
+        envelope.PageCount.ShouldBe(1);
+        envelope.HasNextPage.ShouldBeFalse();
+        envelope.HasPreviousPage.ShouldBeFalse();
+        envelope.Items.Length.ShouldBe(5);
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_no_hits()
+    {
+        var envelope = await streamPage(theSession.Query<Target>().Where(x => x.Id == Guid.NewGuid()), 1, 10);
+
+        envelope.PageNumber.ShouldBe(1);
+        envelope.PageSize.ShouldBe(10);
+        envelope.TotalItemCount.ShouldBe(0);
+        envelope.PageCount.ShouldBe(0);
+        envelope.HasNextPage.ShouldBeFalse();
+        envelope.HasPreviousPage.ShouldBeFalse();
+        envelope.Items.ShouldNotBeNull();
+        envelope.Items.Length.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_no_hits_beyond_first_page_has_previous_page()
+    {
+        var envelope = await streamPage(theSession.Query<Target>().Where(x => x.Id == Guid.NewGuid()), 3, 10);
+
+        envelope.TotalItemCount.ShouldBe(0);
+        envelope.HasPreviousPage.ShouldBeTrue();
+        envelope.HasNextPage.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_throws_for_page_number_below_one()
+    {
+        await Should.ThrowAsync<ArgumentOutOfRangeException>(async () =>
+        {
+            var stream = new MemoryStream();
+            await theSession.Query<Target>().StreamPagedJsonArray(stream, 0, 10);
+        });
+    }
+
+    [Fact]
+    public async Task stream_paged_json_array_throws_for_page_size_below_one()
+    {
+        await Should.ThrowAsync<ArgumentOutOfRangeException>(async () =>
+        {
+            var stream = new MemoryStream();
+            await theSession.Query<Target>().StreamPagedJsonArray(stream, 1, 0);
+        });
+    }
 }

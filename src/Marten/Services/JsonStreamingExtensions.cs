@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Data.Common;
+using Marten.Linq;
 using Marten.Util;
 
 namespace Marten.Services;
@@ -60,6 +61,58 @@ internal static class JsonStreamingExtensions
         await stream.WriteBytes(RightBracket, token).ConfigureAwait(false);
 
         return count;
+    }
+
+    /// <summary>
+    /// Streams a single "page" of documents plus paging metadata as a JSON envelope of the shape
+    /// <c>{"pageNumber":1,"pageSize":25,"totalItemCount":100,"pageCount":4,"hasNextPage":true,"hasPreviousPage":false,"items":[...]}</c>
+    /// directly to <paramref name="stream"/>. The reader is expected to have a <c>total_rows</c>
+    /// column (added by <c>count(*) OVER()</c>) alongside the document "data" column.
+    /// </summary>
+    internal static async Task<int> StreamPagedMany(this DbDataReader reader, Stream stream, int pageNumber,
+        int pageSize, QueryStatistics statistics, CancellationToken token)
+    {
+        var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
+
+        await stream.WriteBytes(Encoding.UTF8.GetBytes($"{{\"pageNumber\":{pageNumber},\"pageSize\":{pageSize},"), token)
+            .ConfigureAwait(false);
+
+        if (!await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            statistics.TotalResults = 0;
+
+            await stream.WriteBytes(Encoding.UTF8.GetBytes(
+                    $"\"totalItemCount\":0,\"pageCount\":0,\"hasNextPage\":false,\"hasPreviousPage\":{(pageNumber > 1 ? "true" : "false")},\"items\":[]}}"),
+                    token)
+                .ConfigureAwait(false);
+
+            return 0;
+        }
+
+        var totalRowsOrdinal = reader.GetOrdinal("total_rows");
+        var totalItemCount = await reader.GetFieldValueAsync<int>(totalRowsOrdinal, token).ConfigureAwait(false);
+        statistics.TotalResults = totalItemCount;
+
+        var pageCount = totalItemCount > 0 ? (int)Math.Ceiling(totalItemCount / (double)pageSize) : 0;
+        var hasNextPage = pageNumber < pageCount;
+        var hasPreviousPage = pageNumber > 1;
+
+        await stream.WriteBytes(Encoding.UTF8.GetBytes(
+                $"\"totalItemCount\":{totalItemCount},\"pageCount\":{pageCount},\"hasNextPage\":{(hasNextPage ? "true" : "false")},\"hasPreviousPage\":{(hasPreviousPage ? "true" : "false")},\"items\":["),
+                token)
+            .ConfigureAwait(false);
+
+        await reader.WriteJsonValueAsync(ordinal, stream, token).ConfigureAwait(false);
+
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            await stream.WriteBytes(Comma, token).ConfigureAwait(false);
+            await reader.WriteJsonValueAsync(ordinal, stream, token).ConfigureAwait(false);
+        }
+
+        await stream.WriteBytes(Encoding.UTF8.GetBytes("]}"), token).ConfigureAwait(false);
+
+        return totalItemCount;
     }
 
     /// <summary>

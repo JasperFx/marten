@@ -53,6 +53,14 @@ public static class StreamingMinimalEndpoints
             (IQuerySession session)
                 => new StreamMany<Issue>(session.Query<Issue>().Where(x => x.Id == Guid.Empty)));
 
+        // --- StreamPaged<T> ---
+
+        app.MapGet("/minimal/issues/paged/{pageNumber:int}/{pageSize:int}",
+            (int pageNumber, int pageSize, IQuerySession session)
+                => new StreamPaged<Issue>(
+                    session.Query<Issue>().Where(x => x.Open).OrderBy(x => x.Description),
+                    pageNumber, pageSize));
+
         // --- StreamAggregate<T> ---
 
         app.MapGet("/minimal/order/{id:guid}",
