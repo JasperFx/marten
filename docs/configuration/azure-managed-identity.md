@@ -80,6 +80,21 @@ builder.Services.AddMartenStore<IInvoicingStore>(opts =>
 
 Marten treats a caller-supplied `NpgsqlDataSource` — whether it arrives through `UseNpgsqlDataSource()` or `opts.Connection(NpgsqlDataSource)` — as owned by the caller. Marten will never dispose it, so a single instance is safe to share across the main store, ancillary stores, and your own non-Marten usage. Dispose it yourself when the application shuts down (the container does this for you when the data source is registered as a singleton).
 
-## Limitation: database provisioning
+## Database provisioning with a rotating credential
 
-Marten's tenant database provisioning (`StoreOptions.CreateDatabasesForTenants` and its `MaintenanceDatabase()` option, see [database management](/schema/#create-database)) builds plain `NpgsqlConnection` objects from connection strings and does not flow the data source or its token provider. On a server that only accepts Entra ID authentication, that provisioning path cannot log in on its own — create the databases through your own maintenance connection (or infrastructure tooling) instead, and let Marten manage the schema objects within them.
+Marten's tenant database provisioning (`StoreOptions.CreateDatabasesForTenants`, see [database management](/schema/#create-database)) opens a separate *maintenance* connection to create or drop tenant databases. By default that maintenance connection is built from a connection string, which — just like `opts.Connection(string)` — cannot carry a rotating credential. On a server that only accepts Entra ID authentication, provisioning would then fail to log in.
+
+Supply the maintenance connection as an `NpgsqlDataSource` instead. The `MaintenanceDatabase()` option has an overload that takes a caller-owned data source, so the same periodic password provider that authenticates your store connections also authenticates provisioning:
+
+<!-- snippet: sample_marten_create_database_with_datasource -->
+<a id='snippet-sample_marten_create_database_with_datasource'></a>
+```cs
+// Hand provisioning a caller-owned NpgsqlDataSource carrying, for example, an Entra ID
+// token provider. Point it at an administrative database ('postgres') whose principal
+// holds the CREATEDB privilege. Marten never disposes this data source.
+c.MaintenanceDatabase(maintenanceDataSource);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/create_database_Tests.cs#L125-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database_with_datasource' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Point that data source at an administrative database (typically `postgres`) whose Entra principal holds the `CREATEDB` privilege — this is frequently a *different*, more privileged identity than the one your application uses at runtime, which is exactly why the maintenance data source is configured separately from the store connection. As with every caller-supplied `NpgsqlDataSource`, Marten never disposes it; dispose it yourself when the application shuts down.

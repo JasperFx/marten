@@ -127,3 +127,7 @@ await host.StartAsync();
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behavior to check for database existence from `pg_database`.
 
 Note that database creation requires the `CREATEDB` privilege. See PostgreSQL [CREATE DATABASE](https://www.postgresql.org/docs/current/static/sql-createdatabase.html) documentation for more.
+
+::: tip
+`MaintenanceDatabase()` also accepts a caller-owned `NpgsqlDataSource` instead of a connection string. Use that overload when the maintenance server authenticates with a rotating credential — for example an Azure Entra ID / managed-identity access token — so provisioning can log in through the data source's token provider. See [Azure Database for PostgreSQL with Entra ID](/configuration/azure-managed-identity#database-provisioning-with-a-rotating-credential).
+:::

@@ -103,6 +103,95 @@ public class create_database_Tests : IDisposable
     }
 
     [Fact]
+    public async Task can_create_new_database_using_a_maintenance_NpgsqlDataSource()
+    {
+        // #4994: the maintenance connection can be supplied as a caller-owned NpgsqlDataSource so that
+        // provisioning honours a rotating credential (e.g. an Azure Entra ID / managed-identity token
+        // provider registered on the data source builder). Here we just prove functional parity with the
+        // connection-string overload against the local server.
+        TryDropDb(dbName);
+
+        await using var maintenanceDataSource =
+            new NpgsqlDataSourceBuilder(ConnectionSource.ConnectionString).Build();
+
+        var dbCreated = false;
+
+        using var store = DocumentStore.For(storeOptions =>
+        {
+            storeOptions.Connection(dbToCreateConnectionString);
+
+            storeOptions.CreateDatabasesForTenants(c =>
+            {
+                #region sample_marten_create_database_with_datasource
+
+                // Hand provisioning a caller-owned NpgsqlDataSource carrying, for example, an Entra ID
+                // token provider. Point it at an administrative database ('postgres') whose principal
+                // holds the CREATEDB privilege. Marten never disposes this data source.
+                c.MaintenanceDatabase(maintenanceDataSource);
+
+                #endregion
+
+                c.ForTenant()
+                    .CheckAgainstPgDatabase()
+                    .DropExisting()
+                    .WithOwner("postgres")
+                    .WithEncoding("UTF-8")
+                    .ConnectionLimit(-1)
+                    .OnDatabaseCreated(_ =>
+                    {
+                        dbCreated = true;
+                    });
+            });
+        });
+
+        var databaseGenerator = new DatabaseGenerator();
+        await databaseGenerator.CreateDatabasesAsync(store.Tenancy, store.Options.CreateDatabases).ConfigureAwait(false);
+
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        Assert.True(dbCreated);
+    }
+
+    [Fact]
+    public async Task maintenance_datasource_overload_wins_over_a_previously_set_connection_string()
+    {
+        // last-writer-wins: setting the data source after a connection string must route provisioning
+        // through the data source (and vice versa). Proven functionally by a successful create.
+        TryDropDb(dbName);
+
+        await using var maintenanceDataSource =
+            new NpgsqlDataSourceBuilder(ConnectionSource.ConnectionString).Build();
+
+        var dbCreated = false;
+
+        using var store = DocumentStore.For(storeOptions =>
+        {
+            storeOptions.Connection(dbToCreateConnectionString);
+
+            storeOptions.CreateDatabasesForTenants(c =>
+            {
+                // The bogus string would fail to connect; the later data source overload must supersede it.
+                c.MaintenanceDatabase("Host=nonexistent.invalid;Database=postgres;Username=nobody;Password=nope");
+                c.MaintenanceDatabase(maintenanceDataSource);
+
+                c.ForTenant()
+                    .CheckAgainstPgDatabase()
+                    .WithOwner("postgres")
+                    .WithEncoding("UTF-8")
+                    .ConnectionLimit(-1)
+                    .OnDatabaseCreated(_ => dbCreated = true);
+            });
+        });
+
+        var databaseGenerator = new DatabaseGenerator();
+        await databaseGenerator.CreateDatabasesAsync(store.Tenancy, store.Options.CreateDatabases).ConfigureAwait(false);
+
+        Assert.True(dbCreated);
+    }
+
+    [Fact]
     public async Task can_use_existing_database_without_calling_into_create()
     {
         var user1 = new User { FirstName = "User" };
