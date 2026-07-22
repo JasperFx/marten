@@ -237,11 +237,12 @@ that dispatch any `IResult` return value), `Marten.AspNetCore` ships three typed
 result wrappers that carry the streaming behavior above as endpoint return values
 while also contributing correct OpenAPI metadata:
 
-| Type                 | Source                                           | Response shape    | 404 on miss?           |
-| -------------------- | ------------------------------------------------ | ----------------- | ---------------------- |
-| `StreamOne<T>`       | `IQueryable<T>` — regular Marten document query  | Single `T`        | yes                    |
-| `StreamMany<T>`      | `IQueryable<T>` — regular Marten document query  | JSON array `T[]`  | no (empty array = 200) |
-| `StreamAggregate<T>` | `IDocumentSession` + stream id — event-sourced   | Single `T`        | yes                    |
+| Type                 | Source                                          | Response shape      | 404 on miss?           |
+|----------------------|-------------------------------------------------|---------------------|------------------------|
+| `StreamOne<T>`       | `IQueryable<T>` — regular Marten document query | Single `T`          | yes                    |
+| `StreamMany<T>`      | `IQueryable<T>` — regular Marten document query | JSON array `T[]`    | no (empty array = 200) |
+| `StreamAggregate<T>` | `IDocumentSession` + stream id — event-sourced  | Single `T`          | yes                    |
+| `StreamPaged<T>`     | `IQueryable<T>` — regular Marten document query | Paged JSON envelope | no (empty page = 200)  |
 
 Each type implements both `IResult` (so ASP.NET Minimal API dispatches it via
 `ExecuteAsync`) and `IEndpointMetadataProvider` (so Swashbuckle, NSwag, and the
@@ -272,6 +273,34 @@ app.MapGet("/issues/open",
 
 Returns `200 application/json` with a JSON array body. An empty result set
 yields `[]`, not a 404 — matching the behavior of `WriteArray<T>`.
+
+### `StreamPaged<T>` — paged JSON envelope (single round trip) <Badge type="tip" text="9.18" />
+
+```csharp
+app.MapGet("/issues/paged/{pageNumber:int}/{pageSize:int}",
+    (int pageNumber, int pageSize, IQuerySession session) =>
+        new StreamPaged<Issue>(session.Query<Issue>().OrderBy(x => x.Description), pageNumber, pageSize));
+```
+
+Returns `200 application/json` with a single JSON envelope combining paging
+metadata and the matching documents for that page:
+
+```json
+{"pageNumber":3,"pageSize":25,"totalItemCount":1207,"pageCount":49,"hasNextPage":true,"hasPreviousPage":true,"items":[...]}
+```
+
+`pageNumber` is 1-based. `totalItemCount` and `pageCount` are computed from a
+`count(*) OVER()` window function added to the _same_ SQL query that fetches
+the page, so the whole response -- count and documents both -- comes from a
+single database round trip. Documents inside `items` are streamed as raw,
+already-persisted JSON, without a deserialize/serialize step. An empty page
+still returns `200` with `totalItemCount: 0`, `pageCount: 0`, and an empty
+`items` array -- never a `404`.
+
+Internally, `StreamPaged<T>` delegates to the `IQueryable<T>.StreamPagedJsonArray()`
+extension method described in the [Paging](/documents/querying/linq/paging) docs,
+which can also be used directly (e.g. from an MVC controller action) instead of
+through the `IResult` wrapper.
 
 ### `StreamAggregate<T>` — event-sourced aggregate (latest)
 
