@@ -90,12 +90,99 @@ internal class SelectParser: ExpressionVisitor
 
     protected override Expression VisitUnary(UnaryExpression node)
     {
-        // Casts/conversions (numeric narrowing/widening, boxing to object, enum-to-int,
-        // etc.) and other unary operators (negation, logical not) are computed
-        // expressions -- the underlying member's raw JSON value is not guaranteed to
-        // equal the converted value. Fall back to a client-side compiled transform
-        // (GH-5011) rather than silently ignoring the conversion.
+        // GH-5031: A no-op / reference / value-preserving-widening Convert leaves the
+        // underlying member's raw JSON value equal to the converted value, so we can keep
+        // translating the operand into the jsonb_build_object() SELECT list (and preserve
+        // streamability). Only genuinely lossy or computed conversions -- narrowing,
+        // enum<->string, Convert.ToXxx, negation, logical-not, etc. -- fall back to the
+        // client-side compiled transform (GH-5011).
+        if (isSafeSelectConversion(node))
+        {
+            Visit(node.Operand);
+            return null;
+        }
+
         throw new SelectProjectionNotSimpleException();
+    }
+
+    // Rank of the primitive numeric types for widening checks. Higher == wider.
+    private static readonly Dictionary<Type, int> _numericRank = new()
+    {
+        [typeof(byte)] = 1, [typeof(sbyte)] = 1,
+        [typeof(short)] = 2, [typeof(ushort)] = 2,
+        [typeof(int)] = 3, [typeof(uint)] = 3,
+        [typeof(long)] = 4, [typeof(ulong)] = 4,
+        [typeof(float)] = 5,
+        [typeof(double)] = 6,
+        [typeof(decimal)] = 7
+    };
+
+    private bool isSafeSelectConversion(UnaryExpression node)
+    {
+        // Only Convert/ConvertChecked can be safe; negation, logical-not, TypeAs, etc. are computed.
+        if (node.NodeType != ExpressionType.Convert && node.NodeType != ExpressionType.ConvertChecked)
+        {
+            return false;
+        }
+
+        var source = node.Operand.Type;
+        var target = node.Type;
+
+        // Identity conversion.
+        if (source == target)
+        {
+            return true;
+        }
+
+        // Boxing / reference upcast (T -> object, T -> base/interface): the stored JSON is unchanged.
+        if (!target.IsValueType && target.IsAssignableFrom(source))
+        {
+            return true;
+        }
+
+        var sourceUnderlying = Nullable.GetUnderlyingType(source) ?? source;
+        var targetUnderlying = Nullable.GetUnderlyingType(target) ?? target;
+
+        // Nullable wrapping (int -> int?) or unwrap to the same underlying type.
+        if (sourceUnderlying == targetUnderlying)
+        {
+            return true;
+        }
+
+        // enum -> its underlying integral, only when enums are persisted as integers (so the
+        // raw JSON already holds the integral value). Under EnumStorage.AsString the JSON is
+        // the name and the conversion is NOT value-preserving, so fall back.
+        if (sourceUnderlying.IsEnum
+            && _serializer.EnumStorage == Weasel.Core.EnumStorage.AsInteger
+            && targetUnderlying == Enum.GetUnderlyingType(sourceUnderlying))
+        {
+            return true;
+        }
+
+        // Value-preserving numeric widening (int -> long, int -> decimal, float -> double, ...).
+        return isWideningNumeric(sourceUnderlying, targetUnderlying);
+    }
+
+    private static bool isWideningNumeric(Type source, Type target)
+    {
+        if (!_numericRank.TryGetValue(source, out var sourceRank)
+            || !_numericRank.TryGetValue(target, out var targetRank))
+        {
+            return false;
+        }
+
+        // Integer -> wider integer (int -> long): strictly wider rank within the integer range.
+        // Integer -> floating/decimal (int -> double/decimal) and float -> double are widening too.
+        // Everything else (narrowing, floating/double -> decimal, same-rank sign flips) falls back.
+        const int integerCeiling = 4; // long/ulong
+
+        if (sourceRank <= integerCeiling)
+        {
+            return targetRank > sourceRank;
+        }
+
+        // float (5) -> double (6) only; double/decimal never widen to something value-preserving here.
+        return source == typeof(float) && target == typeof(double);
     }
 
     protected override Expression VisitConditional(ConditionalExpression node)
