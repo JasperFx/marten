@@ -174,6 +174,52 @@ public class stream_paged_tests: IntegrationContext
     }
 
     [Fact]
+    public async Task wire_format_is_camel_case()
+    {
+        await seedOpenIssues(10, "casing_" + Guid.NewGuid().ToString("N")[..8]);
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url("/minimal/issues/paged/1/3");
+            s.StatusCodeShouldBe(200);
+            s.ContentTypeShouldBe("application/json");
+        });
+
+        // Pin the client-facing contract against the raw body — ReadAsJson deserializes
+        // case-insensitively and would happily accept PascalCase too.
+        var json = result.ReadAsText();
+
+        json.ShouldContain("\"pageNumber\":");
+        json.ShouldContain("\"pageSize\":");
+        json.ShouldContain("\"totalItemCount\":");
+        json.ShouldContain("\"pageCount\":");
+        json.ShouldContain("\"hasNextPage\":");
+        json.ShouldContain("\"hasPreviousPage\":");
+        json.ShouldContain("\"items\":[");
+    }
+
+    [Fact]
+    public async Task page_beyond_end_of_nonempty_set()
+    {
+        await seedOpenIssues(10, "beyond_" + Guid.NewGuid().ToString("N")[..8]);
+
+        // Offset 12 > 10 rows: zero rows returned, so count(*) OVER() reports 0 even though
+        // items exist. Documents the same window-function limitation as PagedList.
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url("/minimal/issues/paged/5/3");
+            s.StatusCodeShouldBe(200);
+        });
+
+        var envelope = result.ReadAsJson<PagedEnvelope<Issue>>();
+
+        envelope.Items.Length.ShouldBe(0);
+        envelope.TotalItemCount.ShouldBe(0);
+        envelope.HasNextPage.ShouldBeFalse();
+        envelope.HasPreviousPage.ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task items_are_in_expected_order_across_pages()
     {
         var prefix = "order_" + Guid.NewGuid().ToString("N")[..8];
