@@ -161,6 +161,21 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         return await MartenProvider.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///     Same as <see cref="ToListAsync{TResult}(CancellationToken)" />, but allows opting
+    ///     this specific query into the store's <see cref="QueryPlanCache" /> via
+    ///     <paramref name="caching" />. See https://github.com/JasperFx/marten/issues/5013.
+    /// </summary>
+    public Task<IReadOnlyList<TResult>> ToListAsync<TResult>(CancellationToken token, QueryPlanCaching caching)
+    {
+        if (caching == QueryPlanCaching.Cached)
+        {
+            return MartenProvider.ExecuteListWithPlanCacheAsync<TResult>(Expression, token);
+        }
+
+        return ToListAsync<TResult>(token);
+    }
+
     public IAsyncEnumerable<T> ToAsyncEnumerable(CancellationToken token = default)
     {
         return MartenProvider.ExecuteAsyncEnumerable<T>(Expression, MartenProvider, token);

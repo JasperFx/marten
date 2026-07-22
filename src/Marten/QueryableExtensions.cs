@@ -57,6 +57,23 @@ public static class QueryableExtensions
         return queryable.As<MartenLinqQueryable<T>>().ToListAsync<T>(token);
     }
 
+    /// <summary>
+    ///     Fetch results asynchronously to a read only list, opting this specific query into
+    ///     the store's opt-in <see cref="QueryPlanCache" /> when <paramref name="caching" />
+    ///     is <see cref="QueryPlanCaching.Cached" />. See
+    ///     https://github.com/JasperFx/marten/issues/5013.
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="token"></param>
+    /// <param name="caching"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public static Task<IReadOnlyList<T>> ToListAsync<T>(this IQueryable<T> queryable,
+        CancellationToken token, QueryPlanCaching caching) where T : notnull
+    {
+        return queryable.As<MartenLinqQueryable<T>>().ToListAsync<T>(token, caching);
+    }
+
     #endregion ToList
 
     /// <summary>
