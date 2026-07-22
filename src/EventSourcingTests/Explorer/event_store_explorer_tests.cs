@@ -9,8 +9,10 @@ using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Tags;
 using Marten;
+using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Xunit;
 
 namespace EventSourcingTests.Explorer;
@@ -305,5 +307,205 @@ public class event_store_explorer_tests: OneOffConfigurationsContext
         usage!.DcbTagTypes.ShouldContain(t => t.Name == nameof(CustomerId));
         usage.RegisteredEventTypes.ShouldContain(e => e.Alias == "order_placed");
         usage.RegisteredEventTypes.ShouldContain(e => e.Alias == "item_added");
+    }
+
+    // #782 / jasperfx#503 — on a conjoined multi-tenant store the same stream id can live
+    // under two tenants. The tenant-less read returns an ambiguous union of both; the
+    // tenant-scoped overload must isolate each tenant's slice via a tenant_id predicate.
+    private void ConfigureConjoinedStore()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.AddEventType<OrderPlaced>();
+            opts.Events.AddEventType<ItemAdded>();
+            opts.Policies.AllDocumentsAreMultiTenanted();
+        });
+    }
+
+    [Fact]
+    public async Task read_stream_is_isolated_per_tenant_on_conjoined_store()
+    {
+        ConfigureConjoinedStore();
+
+        // Same stream id under two tenants — the exact cross-tenant ambiguity #782 closes.
+        var streamId = Guid.NewGuid();
+
+        await using (var a = theStore.LightweightSession("tenant-a"))
+        {
+            a.Events.StartStream<Order>(streamId, new OrderPlaced("Alice"), new ItemAdded(new OrderItem("A-1", 1)));
+            await a.SaveChangesAsync();
+        }
+
+        await using (var b = theStore.LightweightSession("tenant-b"))
+        {
+            b.Events.StartStream<Order>(streamId, new OrderPlaced("Bob"));
+            await b.SaveChangesAsync();
+        }
+
+        var explorer = (IEventStore)theStore;
+
+        var tenantA = new List<EventRecord>();
+        await foreach (var e in explorer.ReadStreamAsync(streamId.ToString(), "tenant-a", CancellationToken.None))
+            tenantA.Add(e);
+
+        var tenantB = new List<EventRecord>();
+        await foreach (var e in explorer.ReadStreamAsync(streamId.ToString(), "tenant-b", CancellationToken.None))
+            tenantB.Add(e);
+
+        tenantA.Count.ShouldBe(2);
+        tenantA.ShouldAllBe(e => e.TenantId == "tenant-a");
+        tenantB.Count.ShouldBe(1);
+        tenantB.ShouldAllBe(e => e.TenantId == "tenant-b");
+
+        // The tenant-less overload is unchanged: it still reads across every tenant, so it
+        // sees the union — this is the ambiguity the tenant-scoped read exists to resolve.
+        var union = new List<EventRecord>();
+        await foreach (var e in explorer.ReadStreamAsync(streamId.ToString(), CancellationToken.None))
+            union.Add(e);
+        union.Count.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task recent_streams_is_isolated_per_tenant_on_conjoined_store()
+    {
+        ConfigureConjoinedStore();
+
+        var streamA = Guid.NewGuid();
+        var streamB = Guid.NewGuid();
+
+        await using (var a = theStore.LightweightSession("tenant-a"))
+        {
+            a.Events.StartStream<Order>(streamA, new OrderPlaced("Alice"));
+            await a.SaveChangesAsync();
+        }
+
+        await using (var b = theStore.LightweightSession("tenant-b"))
+        {
+            b.Events.StartStream<Order>(streamB, new OrderPlaced("Bob"));
+            await b.SaveChangesAsync();
+        }
+
+        var explorer = (IEventStore)theStore;
+
+        var tenantA = await explorer.GetRecentStreamsAsync(50, "tenant-a", CancellationToken.None);
+        tenantA.ShouldAllBe(s => s.TenantId == "tenant-a");
+        tenantA.ShouldContain(s => s.StreamId == streamA.ToString());
+        tenantA.ShouldNotContain(s => s.StreamId == streamB.ToString());
+
+        var tenantB = await explorer.GetRecentStreamsAsync(50, "tenant-b", CancellationToken.None);
+        tenantB.ShouldAllBe(s => s.TenantId == "tenant-b");
+        tenantB.ShouldContain(s => s.StreamId == streamB.ToString());
+        tenantB.ShouldNotContain(s => s.StreamId == streamA.ToString());
+    }
+
+    // #5021 / jasperfx#555 — the second pair of explorer read paths that #503 left untenanted.
+    // On a conjoined store the same tag value / the same event stream can exist under two tenants,
+    // so the tenant-less query resolves an ambiguous cross-tenant union; the tenant-scoped overloads
+    // must isolate each tenant's slice.
+    private void ConfigureConjoinedStoreWithTags()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.AddEventType<OrderPlaced>();
+            opts.Events.AddEventType<CustomerNotified>();
+            opts.Events.RegisterTagType<CustomerId>("customer");
+            opts.Policies.AllDocumentsAreMultiTenanted();
+        });
+    }
+
+    [Fact]
+    public async Task query_by_tags_is_isolated_per_tenant_on_conjoined_store()
+    {
+        ConfigureConjoinedStoreWithTags();
+
+        // The SAME tag value is attached to an event under each tenant — the exact cross-tenant
+        // ambiguity #5021 closes for the DCB tag query.
+        var customerId = new CustomerId(Guid.NewGuid());
+
+        await using (var a = theStore.LightweightSession("tenant-a"))
+        {
+            var e = a.Events.BuildEvent(new CustomerNotified("welcome-a"));
+            e.WithTag(customerId);
+            a.Events.Append(Guid.NewGuid(), e);
+            await a.SaveChangesAsync();
+        }
+
+        await using (var b = theStore.LightweightSession("tenant-b"))
+        {
+            var e = b.Events.BuildEvent(new CustomerNotified("welcome-b"));
+            e.WithTag(customerId);
+            b.Events.Append(Guid.NewGuid(), e);
+            await b.SaveChangesAsync();
+        }
+
+        var explorer = (IEventStore)theStore;
+        var tags = new Dictionary<string, string> { { "CustomerId", customerId.Value.ToString() } };
+
+        var tenantA = new List<EventRecord>();
+        await foreach (var e in explorer.QueryByTagsAsync(tags, "tenant-a", CancellationToken.None))
+            tenantA.Add(e);
+
+        var tenantB = new List<EventRecord>();
+        await foreach (var e in explorer.QueryByTagsAsync(tags, "tenant-b", CancellationToken.None))
+            tenantB.Add(e);
+
+        tenantA.Count.ShouldBe(1);
+        tenantA.ShouldAllBe(e => e.TenantId == "tenant-a");
+        tenantA[0].Data.GetProperty("Subject").GetString().ShouldBe("welcome-a");
+
+        tenantB.Count.ShouldBe(1);
+        tenantB.ShouldAllBe(e => e.TenantId == "tenant-b");
+        tenantB[0].Data.GetProperty("Subject").GetString().ShouldBe("welcome-b");
+
+        // The tenant-less overload is unchanged: it still matches the tag across every tenant, so it
+        // sees the union — the ambiguity the tenant-scoped read exists to resolve.
+        var union = new List<EventRecord>();
+        await foreach (var e in explorer.QueryByTagsAsync(tags, CancellationToken.None))
+            union.Add(e);
+        union.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task query_events_honours_event_query_tenant_id_on_conjoined_store()
+    {
+        ConfigureConjoinedStoreWithTags();
+
+        await using (var a = theStore.LightweightSession("tenant-a"))
+        {
+            a.Events.StartStream<Order>(Guid.NewGuid(), new OrderPlaced("Alice"));
+            a.Events.StartStream<Order>(Guid.NewGuid(), new OrderPlaced("Amy"));
+            await a.SaveChangesAsync();
+        }
+
+        await using (var b = theStore.LightweightSession("tenant-b"))
+        {
+            b.Events.StartStream<Order>(Guid.NewGuid(), new OrderPlaced("Bob"));
+            await b.SaveChangesAsync();
+        }
+
+        // The Event Explorer reads across tenants through an AllowAnyTenant session, then scopes each
+        // query with EventQuery.TenantId. QueryEventsAsync lives on IReadOnlyEventStore (session-level).
+        await using var session = theStore.QuerySession(new SessionOptions { AllowAnyTenant = true });
+        var readStore = (IReadOnlyEventStore)session.Events;
+
+        var tenantA = await readStore.QueryEventsAsync(
+            new EventQuery { TenantId = "tenant-a", PageSize = 100 }, CancellationToken.None);
+        tenantA.TotalCount.ShouldBe(2);
+        tenantA.Events.ShouldAllBe(e => e.TenantId == "tenant-a");
+
+        var tenantB = await readStore.QueryEventsAsync(
+            new EventQuery { TenantId = "tenant-b", PageSize = 100 }, CancellationToken.None);
+        tenantB.TotalCount.ShouldBe(1);
+        tenantB.Events.ShouldAllBe(e => e.TenantId == "tenant-b");
+
+        // A null TenantId is left untouched — the query keeps the session's own tenancy rather than
+        // silently unioning tenants. On this AllowAnyTenant session that is the default tenant, under
+        // which nothing was written, so the store-global-by-null semantics are NOT assumed here (that is
+        // the pre-existing QueryEventsAsync contract, unchanged by #5021).
+        var defaultTenant = await readStore.QueryEventsAsync(
+            new EventQuery { PageSize = 100 }, CancellationToken.None);
+        defaultTenant.TotalCount.ShouldBe(0);
     }
 }
