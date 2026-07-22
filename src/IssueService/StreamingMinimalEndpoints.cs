@@ -42,6 +42,14 @@ public static class StreamingMinimalEndpoints
                     ContentType = "application/vnd.marten.issue+json"
                 });
 
+        // EmitETag = false opt-out
+        app.MapGet("/minimal/issue/{id:guid}/no-etag",
+            (Guid id, IQuerySession session)
+                => new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == id))
+                {
+                    EmitETag = false
+                });
+
         // --- StreamMany<T> ---
 
         app.MapGet("/minimal/issues/open",
@@ -83,6 +91,23 @@ public static class StreamingMinimalEndpoints
             (IQuerySession session)
                 => new StreamMany<Issue, System.Collections.Generic.IEnumerable<Issue>>(
                     session, new OpenIssues()));
+
+        // --- StreamPagedByCursor<T> ---
+
+        app.MapGet("/minimal/issues/paged-cursor",
+            (IQuerySession session, int pageSize, string? cursor)
+                => new StreamPagedByCursor<Issue>(
+                    session.Query<Issue>().OrderBy(x => x.Description).ThenBy(x => x.Id),
+                    cursor,
+                    pageSize));
+
+        // Mixed sort directions: descending primary key, ascending tie-breaker
+        app.MapGet("/minimal/issues/paged-cursor-mixed",
+            (IQuerySession session, int pageSize, string? cursor)
+                => new StreamPagedByCursor<Issue>(
+                    session.Query<Issue>().OrderByDescending(x => x.Description).ThenBy(x => x.Id),
+                    cursor,
+                    pageSize));
 
         return app;
     }
