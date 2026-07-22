@@ -91,6 +91,15 @@ public async Task when_get_json_then_raw_json_should_be_returned_async()
 
 Marten has the ability to combine the `AsJson()` mechanics to the result of a `Select()` transform:
 
+::: tip
+When a `Select()` projection is a "simple" flat member-access transform, Marten pushes the
+whole reshaping down into a single `jsonb_build_object(...)` SQL expression instead of
+deserializing the full document on the client, which is what makes the raw JSON results
+below possible without an extra serialization round trip. See
+[Projection Operators](/documents/querying/linq/projections) for the details and its
+limitations.
+:::
+
 <!-- snippet: sample_asjson-plus-select-1 -->
 <a id='snippet-sample_asjson-plus-select-1'></a>
 ```cs

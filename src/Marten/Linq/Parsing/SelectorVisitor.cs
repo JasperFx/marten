@@ -124,11 +124,63 @@ public class SelectorVisitor: ExpressionVisitor
 
     public void ToSelectTransform(Expression selectExpression, ISerializer serializer)
     {
-        var visitor = new SelectParser(_serializer, _collection, selectExpression);
+        try
+        {
+            var visitor = new SelectParser(_serializer, _collection, selectExpression);
 
-        _statement.SelectClause =
-            typeof(SelectDataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
-                visitor.NewObject,
-                selectExpression.Type);
+            _statement.SelectClause =
+                typeof(SelectDataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
+                    visitor.NewObject,
+                    selectExpression.Type);
+        }
+        catch (SelectProjectionNotSimpleException)
+        {
+            // GH-5011: the Select() projection contains method calls, arithmetic, casts,
+            // or conditional expressions that can't be translated to a server-side
+            // jsonb_build_object() expression. Fall back to compiling the original
+            // Select() lambda and applying it against the fully deserialized source
+            // document on the client -- the same behavior Marten had before that
+            // optimization existed.
+            var parameter = ParameterFinder.FindIn(selectExpression);
+            if (parameter == null)
+            {
+                throw new Marten.Exceptions.BadLinqExpressionException(
+                    "Marten is not (yet) able to process this Select() transform");
+            }
+
+            var lambda = Expression.Lambda(selectExpression, parameter);
+            var compiled = lambda.Compile();
+
+            _statement.SelectClause =
+                typeof(LambdaSelectClause<,>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
+                    compiled,
+                    _collection.ElementType,
+                    selectExpression.Type);
+        }
+    }
+}
+
+/// <summary>
+/// Finds the first ParameterExpression referenced anywhere within an expression tree.
+/// Used by the GH-5011 client-side Select() fallback to recover the document parameter
+/// (e.g. the `x` in `x => new Dto(...)`) so the projection body can be re-wrapped into a
+/// compilable lambda after LinqOperator processing discarded the original
+/// LambdaExpression and kept only its body.
+/// </summary>
+internal sealed class ParameterFinder: ExpressionVisitor
+{
+    private ParameterExpression _found;
+
+    public static ParameterExpression FindIn(Expression expression)
+    {
+        var finder = new ParameterFinder();
+        finder.Visit(expression);
+        return finder._found;
+    }
+
+    protected override Expression VisitParameter(ParameterExpression node)
+    {
+        _found ??= node;
+        return base.VisitParameter(node);
     }
 }

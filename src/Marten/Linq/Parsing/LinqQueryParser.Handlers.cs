@@ -10,6 +10,7 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql.SqlGeneration;
 using System.Diagnostics.CodeAnalysis;
 
+using Marten.Exceptions;
 using Marten.Internal;
 
 namespace Marten.Linq.Parsing;
@@ -66,7 +67,7 @@ internal partial class LinqQueryParser
         return null;
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>()
+    public IQueryHandler<TResult> BuildHandler<TResult>(bool assertCanStreamRawJson = false)
     {
         if (!_collectionUsages.Any())
         {
@@ -75,6 +76,11 @@ internal partial class LinqQueryParser
         }
 
         var statements = BuildStatements();
+
+        if (assertCanStreamRawJson)
+        {
+            AssertCanStreamRawJson(statements.MainSelector);
+        }
 
         var handler = buildHandlerForCurrentStatement<TResult>(statements.Top, statements.MainSelector);
 
@@ -87,6 +93,24 @@ internal partial class LinqQueryParser
         }
 
         return handler;
+    }
+
+    /// <summary>
+    /// GH-5011: raw JSON streaming (StreamJsonArray/StreamOne/StreamMany/StreamJsonFirst/etc.)
+    /// copies the bytes of the underlying "data" column directly to the caller without ever
+    /// invoking the query's selector. That's only correct when the "data" column actually
+    /// holds JSON shaped like the requested result (the stored document itself, or a
+    /// server-computed jsonb_build_object() projection). Select() projections that fell back
+    /// to a client-side compiled transform select the *source* document's JSON instead, so
+    /// streaming them raw would silently return the wrong shape -- refuse clearly instead.
+    /// </summary>
+    public static void AssertCanStreamRawJson(SelectorStatement selector)
+    {
+        if (selector.SelectClause is IClientSideProjectionSelectClause)
+        {
+            throw new BadLinqExpressionException(
+                "This Select() projection cannot be streamed as raw JSON because it requires client-side evaluation (method calls, arithmetic, casts, or conditional expressions are not supported). Use ToListAsync() or another non-streaming method instead.");
+        }
     }
 
     private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>(Statement top, SelectorStatement selector)

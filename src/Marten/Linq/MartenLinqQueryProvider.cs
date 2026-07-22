@@ -107,7 +107,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
         {
             var parser = new LinqQueryParser(this, _session, expression, mode);
 
-            var handler = parser.BuildHandler<TResult>();
+            var handler = parser.BuildHandler<TResult>(assertCanStreamRawJson: true);
 
             await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
 
@@ -179,6 +179,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
         await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
 
         var statements = parser.BuildStatements();
+        LinqQueryParser.AssertCanStreamRawJson(statements.MainSelector);
 
         var command = statements.Top.BuildCommand(_session);
 
@@ -209,6 +210,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
     {
         var parser = new LinqQueryParser(this, _session, expression);
         var statements = parser.BuildStatements();
+        LinqQueryParser.AssertCanStreamRawJson(statements.MainSelector);
 
         await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
 
