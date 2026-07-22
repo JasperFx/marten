@@ -100,6 +100,23 @@ public static class StreamingMinimalEndpoints
                 => new StreamMany<Issue, System.Collections.Generic.IEnumerable<Issue>>(
                     session, new OpenIssues()));
 
+        // --- StreamPagedByCursor<T> ---
+
+        app.MapGet("/minimal/issues/paged-cursor",
+            (IQuerySession session, int pageSize, string? cursor)
+                => new StreamPagedByCursor<Issue>(
+                    session.Query<Issue>().OrderBy(x => x.Description).ThenBy(x => x.Id),
+                    cursor,
+                    pageSize));
+
+        // Mixed sort directions: descending primary key, ascending tie-breaker
+        app.MapGet("/minimal/issues/paged-cursor-mixed",
+            (IQuerySession session, int pageSize, string? cursor)
+                => new StreamPagedByCursor<Issue>(
+                    session.Query<Issue>().OrderByDescending(x => x.Description).ThenBy(x => x.Id),
+                    cursor,
+                    pageSize));
+
         return app;
     }
 }
