@@ -778,3 +778,89 @@ public async Task use_as_batch()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_plans.cs#L34-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_plan_in_batch_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Query Plan Cache for Ad Hoc Linq Queries <Badge type="tip" text="9.18" />
+
+::: info
+Not to be confused with the `IQueryPlan<T>` "Specification" pattern described above, or with the Postgres `EXPLAIN`
+output returned by [`ExplainAsync()`](/diagnostics#previewing-the-postgresql-query-plan). This is a distinct, opt-in
+performance feature for ordinary `IQueryable<T>` Linq queries.
+:::
+
+`ICompiledQuery` gives you the best raw performance by completely bypassing Linq expression parsing, but it comes at
+the cost of a fixed query shape -- every compiled query class represents exactly one filter/sort/paging combination.
+That is a poor fit for endpoints with _optional_ or _conditional_ filters, where the same handler builds up a
+different `Where()` chain depending on which query string parameters were supplied. Historically, every distinct
+combination of filters on that kind of endpoint paid the full cost of Linq expression parsing and SQL generation on
+every single call, because each combination is technically a different Linq expression tree.
+
+The query plan cache closes that gap. It is an opt-in, bounded cache that recognizes when two Linq queries share the
+same _structural shape_ -- the same sequence of `Where()`, `OrderBy()`/`OrderByDescending()`, `ThenBy()`/
+`ThenByDescending()`, `Skip()`, `Take()`, and `Select()` calls -- even though the actual filter values differ. On a
+cache hit, Marten skips Linq parsing and SQL generation entirely and just substitutes the new filter values into the
+previously-built database command.
+
+### Enabling the cache
+
+The cache is disabled by default. Turn it on for the whole `DocumentStore` with either of these equivalent options:
+
+```cs
+var opts = new StoreOptions();
+
+// Full control over the maximum number of cached shapes
+opts.Linq.QueryPlanCache = QueryPlanCache.PerShape(maxEntries: 1024);
+
+// Or the shorthand version, also with a default of 1024 entries
+opts.Linq.EnableQueryPlanCaching();
+```
+
+Once enabled, opt individual Linq queries into the cache by passing `QueryPlanCaching.Cached` to `ToListAsync()`:
+
+```cs
+IReadOnlyList<Invoice> lines = await session
+    .Query<Invoice>()
+    .Where(x => x.CustomerId == customerId)
+    .Where(x => status.HasValue ? x.Status == status.Value : true)
+    .OrderBy(x => x.CreatedAt)
+    .ToListAsync(cancellation, QueryPlanCaching.Cached);
+```
+
+Every call to that code with a different `customerId` and/or `status` reuses the same cached plan the second and
+subsequent times it's called, as long as which `Where()` clauses are present (not their values) stays the same.
+
+### How shape keys work
+
+Behind the scenes, Marten walks the Linq expression tree for the query and builds a structural "shape key":
+
+* Method calls, operators, and member names contribute to the key by their _name_ and _position_ in the tree, never
+  by value.
+* Anything that looks like a captured local variable, method parameter, or literal constant -- i.e., the actual
+  filter values -- is treated as a positional "slot" rather than part of the shape. Two queries with the identical
+  Linq structure but different slot values always produce the same shape key.
+* The key is scoped by both the source document type and the requested result type, so two structurally identical
+  queries against different document types never collide.
+
+Only a deliberately narrow, safe subset of Linq is recognized as cacheable: `Where`, `OrderBy`, `OrderByDescending`,
+`ThenBy`, `ThenByDescending`, `Skip`, `Take`, and `Select`, built from simple comparisons and member access. Anything
+outside that -- `Include()`, `Stats()`, raw/custom SQL, `StartsWith()`/`Contains()`, `GroupBy()`, `SelectMany()`, and
+so on -- is automatically recognized as unsupported for caching. Unsupported queries are not an error; they simply
+execute through Marten's normal, always-correct Linq pipeline exactly like they do today, with no caching applied.
+
+::: tip
+Correctness always wins over caching. If Marten can't fully account for every parameter that will end up in the
+generated SQL command for a shape -- for example, a conjoined multi-tenancy `tenant_id` parameter, which comes from
+the session rather than from the query expression -- that shape is simply never cached rather than risk ever
+replaying a stale or unrelated value.
+:::
+
+### Bounded cache size
+
+`QueryPlanCache.PerShape(maxEntries)` bounds the number of distinct shapes that will be cached at once. Once that
+limit is reached, the oldest cached shapes are evicted first to make room for new ones, so the cache can't grow
+without bound even for endpoints that produce a very large number of distinct filter combinations.
+
+### Current scope
+
+As of this writing, the query plan cache only applies to the `ToListAsync<TResult>(CancellationToken,
+QueryPlanCaching)` overload. Other terminal operators such as `CountAsync()`, `AnyAsync()`, and streaming queries do
+not yet participate in the cache.

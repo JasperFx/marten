@@ -7,6 +7,7 @@ using ImTools;
 using JasperFx.Core;
 using Marten.Events;
 using Marten.Events.Archiving;
+using Marten.Linq;
 using Marten.Linq.CreatedAt;
 using Marten.Linq.LastModified;
 using Marten.Linq.MatchesSql;
@@ -121,6 +122,23 @@ public class LinqParsing: IReadOnlyLinqParsing
     internal LinqParsing(StoreOptions options)
     {
         _options = options;
+    }
+
+    /// <summary>
+    ///     Opt-in cache that reuses compiled LINQ query plans across calls sharing the same
+    ///     structural shape (see https://github.com/JasperFx/marten/issues/5013). Disabled
+    ///     by default; enable with <see cref="EnableQueryPlanCaching" /> or by assigning
+    ///     <see cref="Marten.Linq.QueryPlanCache.PerShape" /> directly.
+    /// </summary>
+    public QueryPlanCache QueryPlanCache { get; set; } = QueryPlanCache.Disabled;
+
+    /// <summary>
+    ///     Enables the opt-in, bounded, per-shape LINQ query plan cache.
+    /// </summary>
+    /// <param name="maxEntries">The maximum number of distinct query shapes to cache.</param>
+    public void EnableQueryPlanCaching(int maxEntries = 1024)
+    {
+        QueryPlanCache = QueryPlanCache.PerShape(maxEntries);
     }
 
     /// <summary>
