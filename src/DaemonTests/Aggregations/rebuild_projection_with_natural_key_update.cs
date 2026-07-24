@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading;
@@ -33,6 +34,7 @@ public class NaturalKeyRebuildTests: DaemonContext
 
         [NaturalKey]
         public ProductCode Code { get; set; }
+        public required IEnumerable<ProductCode> KnownCodes { get; set; }
 
         [NaturalKeySource]
         public static Product Create(ProductRegistered e)
@@ -40,7 +42,8 @@ public class NaturalKeyRebuildTests: DaemonContext
             return new Product
             {
                 Id = e.ProductId,
-                Code = new ProductCode(e.ProductCode)
+                Code = new ProductCode(e.ProductCode),
+                KnownCodes = [new ProductCode(e.ProductCode)]
             };
         }
 
@@ -48,6 +51,7 @@ public class NaturalKeyRebuildTests: DaemonContext
         public void Apply(ProductCodeChanged1 e)
         {
             Code = new ProductCode(e.NewProductCode);
+            KnownCodes = KnownCodes.Where(c => c.Value != e.NewProductCode).Append(new ProductCode(e.NewProductCode));
         }
 
         [NaturalKeySource]
@@ -55,7 +59,8 @@ public class NaturalKeyRebuildTests: DaemonContext
         {
             return product with
             {
-                Code = new ProductCode(e.Data.NewProductCode)
+                Code = new ProductCode(e.Data.NewProductCode),
+                KnownCodes = product.KnownCodes.Where(c => c.Value != e.Data.NewProductCode).Append(new ProductCode(e.Data.NewProductCode))
             };
         }
     }
@@ -107,6 +112,8 @@ public class NaturalKeyRebuildTests: DaemonContext
         var product = await afterRebuildSession.Events.FetchLatest<Product, ProductCode>(new ProductCode(newCode));
         product.ShouldNotBeNull();
         product.Code.Value.ShouldBe(newCode);
+        product.KnownCodes.ShouldContain(new ProductCode(newCode));
+        product.KnownCodes.ShouldContain(new ProductCode(originalCode));
 
         var naturalKeyTableName = $"{schemaName}.mt_natural_key_product";
         var keyRows = await GetNaturalKeyRows(naturalKeyTableName, streamId);
@@ -151,6 +158,8 @@ public class NaturalKeyRebuildTests: DaemonContext
         var product = await afterRebuildSession.Events.FetchLatest<Product, ProductCode>(new ProductCode(newCode));
         product.ShouldNotBeNull();
         product.Code.Value.ShouldBe(newCode);
+        product.KnownCodes.ShouldContain(new ProductCode(newCode));
+        product.KnownCodes.ShouldContain(new ProductCode(originalCode));
 
         var naturalKeyTableName = $"{schemaName}.mt_natural_key_product";
         var keyRows = await GetNaturalKeyRows(naturalKeyTableName, streamId);
