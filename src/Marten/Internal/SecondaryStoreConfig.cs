@@ -88,8 +88,30 @@ internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
         // the proxy only needs a forwarding constructor.
         var storeType = SecondaryStoreProxyFactory.GetOrCreate(typeof(T));
         var store = (T)Activator.CreateInstance(storeType, options)!;
-        store.As<DocumentStore>().Subject = new Uri("marten://" + typeof(T).Name.ToLowerInvariant());
+        store.As<DocumentStore>().Subject = new Uri("marten://" + SanitizeForUri(typeof(T)));
 
         return store;
+    }
+
+    // #5039: a closed generic marker interface (e.g. IMartenStoreMarker<MyContext>) has a
+    // CLR type name containing a backtick and arity ("IMartenStoreMarker`1"), which is not a
+    // valid URI hostname and throws UriFormatException. Strip the arity and fold in the
+    // (sanitized) generic argument names so distinct closed generics still map to distinct URIs.
+    internal static string SanitizeForUri(Type type)
+    {
+        var name = type.Name;
+        var tick = name.IndexOf('`');
+        if (tick >= 0)
+        {
+            name = name.Substring(0, tick);
+        }
+
+        if (type.IsGenericType)
+        {
+            var arguments = type.GetGenericArguments().Select(SanitizeForUri);
+            name = name + "-" + string.Join("-", arguments);
+        }
+
+        return name.ToLowerInvariant();
     }
 }

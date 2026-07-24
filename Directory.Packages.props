@@ -128,14 +128,20 @@
          JasperFx 2.33.1: jasperfx#550/#551 (marten#5001) — ShardStateTracker.AssignedNodeNumber is
          stamped onto every published ShardState, so a distribution layer (Wolverine-managed
          subscription distribution) can drive the extended-progression running_on_node column. Marten's
-         WriteExtendedProgressionAsync already persists it; this bump makes the tracker seam available. -->
-    <PackageVersion Include="JasperFx" Version="2.34.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.34.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.34.0">
+         WriteExtendedProgressionAsync already persists it; this bump makes the tracker seam available.
+         JasperFx 2.35.0: jasperfx#561 — new backwards-compatible virtual overload on the aggregation
+         projection base, RaiseSideEffects(TOperations operations, TId id, IEventSlice<TDoc> slice).
+         AggregationRunner now always invokes the 3-arg overload with slice.Id, so a projection can
+         recover the slice identity even when slice.Snapshot is null (e.g. a deleted MultiStreamProjection
+         slice) to emit a follow-on event or publish a message. The old 2-arg override still works; the
+         default 3-arg implementation delegates to it. -->
+    <PackageVersion Include="JasperFx" Version="2.35.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.35.0" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.35.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.34.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.35.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
