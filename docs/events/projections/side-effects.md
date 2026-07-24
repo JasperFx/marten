@@ -94,6 +94,90 @@ public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TripProjectionWithEventMetadata.cs#L31-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_using_event_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Recovering the Slice Identity for Deleted Aggregates <Badge type="tip" text="9.19" />
+
+The `RaiseSideEffects()` override shown above receives the current `slice.Snapshot`, which is the most
+convenient way to read the aggregate identity. That works well right up until the aggregate is _deleted_ in
+the same batch that is raising side effects — at that point `slice.Snapshot` is `null` and there is no
+document to read the identity from. This bites hardest in a `MultiStreamProjection`, where the slice groups
+events drawn from many different streams: `slice.Events().First().StreamId` is one of the _member_ stream
+ids, not the grouped aggregate identity, so there was previously no reliable way to recover the key of a
+just-deleted slice in order to emit a follow-on event or publish a message.
+
+Starting with Marten 9.19 (JasperFx.Events 2.35.0) there is a second `RaiseSideEffects()` overload that adds
+a strongly-typed `id` parameter carrying the slice identity — and it is populated even when
+`slice.Snapshot == null`:
+
+<!-- snippet: sample_raise_side_effects_with_slice_id -->
+<a id='snippet-sample_raise_side_effects_with_slice_id'></a>
+```cs
+// A running count of the active members of a team, aggregated across many
+// separate per-member event streams by TeamId.
+public class TeamRoster
+{
+    public Guid Id { get; set; }
+    public int MemberCount { get; set; }
+}
+
+public record MemberJoinedTeam(Guid TeamId);
+public record MemberLeftTeam(Guid TeamId);
+public record TeamDisbanded(Guid TeamId);
+
+// The message we want to publish when a team is closed out
+public record NotifyTeamClosed(Guid TeamId);
+
+public partial class TeamRosterProjection: MultiStreamProjection<TeamRoster, Guid>
+{
+    public TeamRosterProjection()
+    {
+        // All three event types are grouped by TeamId, which becomes the
+        // identity of each slice/aggregate.
+        Identity<MemberJoinedTeam>(x => x.TeamId);
+        Identity<MemberLeftTeam>(x => x.TeamId);
+        Identity<TeamDisbanded>(x => x.TeamId);
+    }
+
+    public void Apply(TeamRoster roster, MemberJoinedTeam _) => roster.MemberCount++;
+    public void Apply(TeamRoster roster, MemberLeftTeam _) => roster.MemberCount--;
+
+    // When a team is disbanded the aggregate is deleted, so the snapshot handed to
+    // RaiseSideEffects below is null.
+    public bool ShouldDelete(TeamDisbanded _) => true;
+
+    // NEW in JasperFx.Events 2.35.0: the second parameter hands you the identity
+    // of the current slice even when its snapshot has been deleted in this batch.
+    public override ValueTask RaiseSideEffects(IDocumentOperations operations, Guid id,
+        IEventSlice<TeamRoster> slice)
+    {
+        if (slice.Snapshot == null)
+        {
+            // The aggregate was deleted (TeamDisbanded -> ShouldDelete(...) == true),
+            // so there is no snapshot to read the identity from. Before this overload,
+            // there was no reliable way to recover the team identity here -- the slice
+            // groups events from many different streams, so slice.Events().First().StreamId
+            // is a *member* stream id, not the TeamId. The id parameter is the slice
+            // identity (the TeamId) regardless of whether the snapshot still exists.
+            slice.PublishMessage(new NotifyTeamClosed(id));
+            return new ValueTask();
+        }
+
+        // Normal, non-deleted processing still has full access to the current snapshot
+        // (and, of course, to id)...
+
+        return new ValueTask();
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/raise_side_effects_with_slice_id.cs#L75-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_raise_side_effects_with_slice_id' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The two overloads are fully backwards compatible: the original two-argument
+`RaiseSideEffects(IDocumentOperations, IEventSlice<TDoc>)` still works exactly as before, and the default
+implementation of the new three-argument overload simply delegates to it. Override the new
+`RaiseSideEffects(IDocumentOperations operations, TId id, IEventSlice<TDoc> slice)` overload whenever you need
+the aggregate identity independently of the snapshot — most commonly to react to a deletion — and keep using
+the original overload for everything else.
+
 A couple important facts about this new functionality:
 
 - The `RaiseSideEffects()` method is only called during _continuous_ asynchronous projection execution, and will not
