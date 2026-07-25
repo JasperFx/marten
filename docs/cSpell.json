@@ -3,6 +3,7 @@
   "language": "en",
   "words": [
     "jasperfx",
+    "batchable",
     "TimescaleDB",
     "timescaledb",
     "hypertable",
