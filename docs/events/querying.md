@@ -258,6 +258,47 @@ public class fetching_stream_state: IntegrationContext
 
 Furthermore, `StreamState` contains metadata for when the stream was created, `StreamState.Created`, and when the stream was last updated, `StreamState.LastTimestamp`.
 
+## Stream Query Plans
+
+The stream fetches above are also available as reusable [query plans](/documents/querying/compiled-queries#query-plans-):
+`FetchStreamStatePlan` wraps `FetchStreamState()`/`FetchStreamStateAsync()` and `FetchStreamPlan` wraps `FetchStream()`/`FetchStreamAsync()`.
+Both plans accept either a `Guid` stream id or a `string` stream key, and `FetchStreamPlan` carries the optional
+`version`, `timestamp`, and `fromVersion` filters. Because the plans implement both `IQueryPlan<T>` and
+`IBatchQueryPlan<T>`, the same object works standalone with `IQuerySession.QueryByPlanAsync()` or combined with any
+other registered queries into a single database round trip within a batched query:
+
+<!-- snippet: sample_fetch_stream_plans_in_batch -->
+<a id='snippet-sample_fetch_stream_plans_in_batch'></a>
+```cs
+[Fact]
+public async Task use_both_plans_in_one_batch()
+{
+    var streamId = theSession.Events.StartStream<Quest>(new QuestStarted { Name = "Destroy the One Ring" },
+        new MembersJoined(1, "Hobbiton", "Frodo", "Sam")).Id;
+    await theSession.SaveChangesAsync();
+
+    // Start a batch query
+    var batch = theSession.CreateBatchQuery();
+
+    // Fetching the stream state and the raw events of the same stream
+    // in one database round trip
+    var stateFetcher = batch.QueryByPlan(new FetchStreamStatePlan(streamId));
+    var eventsFetcher = batch.QueryByPlan(new FetchStreamPlan(streamId));
+
+    // Execute the batch query
+    await batch.Execute();
+
+    var state = await stateFetcher;
+    var events = await eventsFetcher;
+
+    state.ShouldNotBeNull();
+    state.Version.ShouldBe(2);
+    events.Count.ShouldBe(2);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_query_plans.cs#L105-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_stream_plans_in_batch' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Fetch a Single Event
 
 You can fetch the information for a single event by id, including its version number within the stream, by using `IEventStore.LoadAsync()` as shown below:

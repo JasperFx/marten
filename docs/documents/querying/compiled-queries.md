@@ -733,7 +733,7 @@ public interface IBatchQueryPlan<T>
     Task<T> Fetch(IBatchedQuery query);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IQueryPlan.cs#L21-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ibatchqueryplan' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IQueryPlan.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ibatchqueryplan' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And because we expect this to be very common, there is convenience base class named `QueryListPlan<T>` for querying lists of `T` data that can be used for both querying directly against an `IQuerySession` and for batch querying. The usage within a batched query is shown below from the Marten tests:
@@ -777,4 +777,71 @@ public async Task use_as_batch()
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_plans.cs#L34-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_plan_in_batch_query' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Query Plans for Event Streams
+
+Marten ships two concrete query plans for the raw event stream fetches so that they can also be used as batchable
+specifications. `FetchStreamStatePlan` fetches the high level `StreamState` metadata about a single stream (yielding
+`null` when the stream does not exist), while `FetchStreamPlan` fetches the raw events of a single stream (yielding an
+empty list when the stream does not exist) with support for the optional `version`, `timestamp`, and `fromVersion`
+filters of `FetchStreamAsync()`. Both plans accept either a `Guid` stream id or a `string` stream key to cover both
+stream identity styles.
+
+Using `FetchStreamPlan` standalone against a session:
+
+<!-- snippet: sample_using_fetch_stream_plan -->
+<a id='snippet-sample_using_fetch_stream_plan'></a>
+```cs
+[Fact]
+public async Task fetch_stream_by_query_plan()
+{
+    var streamId = theSession.Events.StartStream<Quest>(new QuestStarted { Name = "Destroy the One Ring" },
+        new MembersJoined(1, "Hobbiton", "Frodo", "Sam"),
+        new MembersJoined(2, "Bree", "Aragorn")).Id;
+    await theSession.SaveChangesAsync();
+
+    var events = await theSession.QueryByPlanAsync(new FetchStreamPlan(streamId));
+
+    events.Count.ShouldBe(3);
+    events[0].Data.ShouldBeOfType<QuestStarted>();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_query_plans.cs#L51-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_fetch_stream_plan' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+And because both plans also implement `IBatchQueryPlan<T>`, they can be combined with any other registered queries
+within a [batched query](/documents/querying/batched-queries) to fetch a stream's state and its raw events in one
+database round trip:
+
+<!-- snippet: sample_fetch_stream_plans_in_batch -->
+<a id='snippet-sample_fetch_stream_plans_in_batch'></a>
+```cs
+[Fact]
+public async Task use_both_plans_in_one_batch()
+{
+    var streamId = theSession.Events.StartStream<Quest>(new QuestStarted { Name = "Destroy the One Ring" },
+        new MembersJoined(1, "Hobbiton", "Frodo", "Sam")).Id;
+    await theSession.SaveChangesAsync();
+
+    // Start a batch query
+    var batch = theSession.CreateBatchQuery();
+
+    // Fetching the stream state and the raw events of the same stream
+    // in one database round trip
+    var stateFetcher = batch.QueryByPlan(new FetchStreamStatePlan(streamId));
+    var eventsFetcher = batch.QueryByPlan(new FetchStreamPlan(streamId));
+
+    // Execute the batch query
+    await batch.Execute();
+
+    var state = await stateFetcher;
+    var events = await eventsFetcher;
+
+    state.ShouldNotBeNull();
+    state.Version.ShouldBe(2);
+    events.Count.ShouldBe(2);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_query_plans.cs#L105-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_stream_plans_in_batch' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
