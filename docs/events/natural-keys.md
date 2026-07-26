@@ -123,21 +123,56 @@ Events that do not affect the natural key (like `OrderItemAdded` in the example 
 
 The lookup table is written *inline* as events are appended, well before any projection has built the
 aggregate — that is what lets `FetchForWriting` by natural key work even when the snapshot lifecycle is
-`Async`. The key value therefore has to be derivable from the event alone, and a `[NaturalKeySource]`
-method must be one of:
+`Async`. The key value therefore has to be derivable from the event alone.
 
-- a static factory or evolve method on the aggregate taking the raw event type, such as
-  `public static Order Create(OrderCreated e)` or `public static Order Apply(OrderRenumbered e, Order current)`
-- an instance `Apply(TEvent)` method on the aggregate whose body sets only the natural key property
+Marten tries three strategies for a `[NaturalKeySource]` method, in descending order of trustworthiness:
+
+1. **A static method returning the natural key type**, taking either the raw event or `IEvent<TEvent>` —
+   for example `public static OrderNumber KeyFor(IEvent<OrderRenumbered> e) => new(e.Data.NewNumber)`.
+   This is a pure function of the event: nothing is fabricated and none of your aggregation code runs to
+   work the key out. Prefer it.
+2. **A property of the key's type carried on the event body**, when there is exactly one. An event that
+   carries both the old and the new key is ambiguous, so this strategy declines rather than guessing.
+3. **Invoking your method against a blank aggregate** — a static factory or evolve method such as
+   `public static Order Create(OrderCreated e)`, or an instance `Apply(TEvent)` whose body sets the key.
+   The key is read off whatever the method returned.
 
 ::: warning
 Do not write a `[NaturalKeySource]` method whose new key value depends on the *previous* aggregate state,
-and do not rely on any aggregate state other than the natural key inside one. Marten derives the key by
-calling your method with a blank aggregate instance, so anything else on it will be `null` or default.
+and do not rely on any aggregate state other than the natural key inside one. Under strategy 3 Marten
+derives the key by calling your method with a blank aggregate instance, so anything else on it will be
+`null` or default.
 
-Signatures taking `IEvent<T>` rather than the raw event type are not currently supported here, and are
-silently ignored rather than reported — see [JasperFx/jasperfx#569](https://github.com/JasperFx/jasperfx/issues/569).
+Strategy 3 is skipped entirely when the aggregate cannot be safely constructed — most commonly because it
+declares `required` members that a parameterless constructor cannot satisfy. Use strategy 1 or the
+explicit registration below for those types.
 :::
+
+If none of the three can bind a method, Marten throws an `InvalidProjectionException` when the projection
+is registered, naming the method and the reason. (Before Marten 9.20 / JasperFx.Events 2.36.0 an
+unbindable method was silently dropped, so the lookup table was simply never written for that event type
+and the first sign of trouble was a natural key lookup returning null at runtime — see
+[JasperFx/jasperfx#569](https://github.com/JasperFx/jasperfx/issues/569).)
+
+### Explicit Registration <Badge type="tip" text="9.20" />
+
+When attribute discovery cannot bind your method — or when you would simply rather be explicit — register
+the mapping directly with `NaturalKeyFor()` on the projection. An explicit registration replaces whatever
+discovery found for the same event type and clears the configuration-time error an unbindable method
+would otherwise raise:
+
+```cs
+opts.Projections.Snapshot<Order>(SnapshotLifecycle.Async, p =>
+    ((SingleStreamProjection<Order, Guid>)p).NaturalKeyFor(x => x
+        // Derive the key from the event body
+        .SetBy<OrderCreated>(e => new OrderNumber(e.Number))
+        // ...or from the whole event, when the key depends on metadata
+        // such as the stream key, timestamp, or headers
+        .SetByEvent<OrderRenumbered>(e => new OrderNumber(e.Data.NewNumber))));
+```
+
+The same `NaturalKeyFor()` method is available on a projection class you register with
+`Projections.Add(...)`; call it from the projection's constructor.
 
 ## Storage
 

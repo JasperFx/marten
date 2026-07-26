@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -15,20 +17,26 @@ using Xunit.Abstractions;
 namespace DaemonTests.Aggregations;
 
 /// <summary>
-/// #5041, from the repro in https://github.com/JasperFx/marten/pull/5042 (thanks @ytqsl).
+/// #5041, from the repro in https://github.com/JasperFx/marten/pull/5042 (thanks @ytqsl), closed out
+/// by #5052 on JasperFx.Events 2.36.0.
 ///
-/// Both of these hang on [NaturalKeySource] discovery in JasperFx.Events, not on anything Marten
-/// owns — see https://github.com/JasperFx/jasperfx/issues/569:
+/// Both halves of the original report hung on [NaturalKeySource] discovery in JasperFx.Events rather
+/// than on anything Marten owns — see https://github.com/JasperFx/jasperfx/issues/569:
 ///
-///   * a handler whose first parameter is IEvent&lt;T&gt; yields no usable extractor, so
-///     NaturalKeyDefinition.EventMappings never gains an entry for that event type and the
-///     mt_natural_key_X table is silently never written for it;
-///   * an instance Apply(TEvent) handler is invoked reflectively against a fabricated blank
+///   * a handler whose first parameter is IEvent&lt;T&gt; yielded no usable extractor, so
+///     NaturalKeyDefinition.EventMappings never gained an entry for that event type and the
+///     mt_natural_key_X table was silently never written for it;
+///   * an instance Apply(TEvent) handler was invoked reflectively against a fabricated blank
 ///     aggregate (Expression.New(TDoc), which also bypasses `required` member enforcement), so a
-///     handler body that touches any other state throws — out of NaturalKeyProjection.ApplyAsync
-///     and out of the caller's SaveChangesAsync.
+///     handler body that touched any other state threw — out of NaturalKeyProjection.ApplyAsync and
+///     out of the caller's SaveChangesAsync.
 ///
-/// Unskip both when the JasperFx.Events dependency picks up the fix.
+/// jasperfx#571 widened the extraction contract from the event DATA to the whole IEvent, which is what
+/// makes an IEvent&lt;T&gt; source bindable at all (see NaturalKeyProjection for Marten's two call
+/// sites), and made an unbindable source a loud configuration-time error instead of a mapping that
+/// silently never existed. The repro's own aggregate shape — an instance handler on a type with
+/// `required` members — is one of those unbindable cases BY DESIGN now, so it is pinned as such here,
+/// alongside the two supported ways to express the same rename.
 /// </summary>
 public class Bug_5041_natural_key_source_discovery: DaemonContext
 {
@@ -46,6 +54,11 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
 
     public sealed record ProductCodeChangedByInstanceMethod(Guid ProductId, string NewProductCode);
 
+    /// <summary>
+    /// The reporter's aggregate, verbatim. Every [NaturalKeySource] here other than Create needs a
+    /// prior aggregate to derive the key, and `required IEnumerable&lt;ProductCode&gt; KnownCodes` means
+    /// no blank one can be safely fabricated.
+    /// </summary>
     public sealed record Product
     {
         public Guid Id { get; set; }
@@ -88,30 +101,134 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
         }
     }
 
-    private static void ConfigureStore(StoreOptions opts)
+    /// <summary>
+    /// The same aggregate, with the key derived from the event ALONE — a static [NaturalKeySource]
+    /// returning the key type and taking IEvent&lt;T&gt;. This is the shape that could not bind before
+    /// jasperfx#571 and is now the highest-ranked strategy: nothing is fabricated and no user
+    /// aggregation code runs to work out the key.
+    /// </summary>
+    public sealed record KeyFromEventProduct
+    {
+        public Guid Id { get; set; }
+
+        [NaturalKey]
+        public ProductCode Code { get; set; }
+
+        public required IEnumerable<ProductCode> KnownCodes { get; set; }
+
+        [NaturalKeySource]
+        public static ProductCode KeyOnRegistration(IEvent<ProductRegistered> e)
+            => new(e.Data.ProductCode);
+
+        [NaturalKeySource]
+        public static ProductCode KeyOnRename(IEvent<ProductCodeChangedByEventWrapper> e)
+            => new(e.Data.NewProductCode);
+
+        public static KeyFromEventProduct Create(ProductRegistered e)
+        {
+            return new KeyFromEventProduct
+            {
+                Id = e.ProductId,
+                Code = new ProductCode(e.ProductCode),
+                KnownCodes = [new ProductCode(e.ProductCode)]
+            };
+        }
+
+        public static KeyFromEventProduct Apply(IEvent<ProductCodeChangedByEventWrapper> e,
+            KeyFromEventProduct product)
+        {
+            return product with
+            {
+                Code = new ProductCode(e.Data.NewProductCode),
+                KnownCodes = product.KnownCodes
+                    .Where(c => c.Value != e.Data.NewProductCode)
+                    .Append(new ProductCode(e.Data.NewProductCode))
+            };
+        }
+    }
+
+    private static void configureStore(StoreOptions opts, Action<ProjectionBase>? configureProjection = null)
     {
         opts.Connection(ConnectionSource.ConnectionString);
         opts.DatabaseSchemaName = schemaName;
         opts.Events.StreamIdentity = StreamIdentity.AsGuid;
         opts.Events.AppendMode = EventAppendMode.Quick;
-        opts.Projections.Snapshot<Product>(SnapshotLifecycle.Async);
+        opts.Projections.Snapshot<Product>(SnapshotLifecycle.Async, configureProjection!);
     }
 
-    [Fact(Skip = "Blocked on JasperFx/jasperfx#569 -- IEvent<T> [NaturalKeySource] handlers yield no extractor")]
+    // The original bug was that NOTHING happened: no mapping, no log, no error, and the user found out
+    // when the natural key lookup returned null at runtime. Silence is the regression to guard against.
+    [Fact]
+    public void an_unbindable_natural_key_source_fails_loudly_at_configuration_time()
+    {
+        var ex = Should.Throw<InvalidProjectionException>(() =>
+        {
+            StoreOptions(opts => configureStore(opts));
+        });
+
+        // Names the offending methods, the reason, and both supported ways out
+        ex.Message.ShouldContain(nameof(ProductCodeChangedByEventWrapper));
+        ex.Message.ShouldContain(nameof(ProductCodeChangedByInstanceMethod));
+        ex.Message.ShouldContain("required members");
+        ex.Message.ShouldContain("NaturalKeyFor");
+    }
+
+    // #5042's failing test. The key source takes IEvent<T>, which yielded no extractor at all before
+    // the contract widened from the event data to the event.
+    [Fact]
     public async Task natural_key_is_maintained_when_the_handler_takes_IEvent()
     {
-        await runRenameScenario(streamId => new ProductCodeChangedByEventWrapper(streamId, "PROD-999"));
+        StoreOptions(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = schemaName;
+            opts.Events.StreamIdentity = StreamIdentity.AsGuid;
+            opts.Events.AppendMode = EventAppendMode.Quick;
+            opts.Projections.Snapshot<KeyFromEventProduct>(SnapshotLifecycle.Async);
+        });
+
+        var streamId = await appendRenameAsync<KeyFromEventProduct>(
+            id => new ProductCodeChangedByEventWrapper(id, "PROD-999"));
+
+        var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.RebuildProjectionAsync<KeyFromEventProduct>(CancellationToken.None);
+
+        await using var query = theStore.LightweightSession();
+        var product = await query.Events.FetchLatest<KeyFromEventProduct, ProductCode>(new ProductCode("PROD-999"));
+        product.ShouldNotBeNull();
+        product.Id.ShouldBe(streamId);
+        product.Code.Value.ShouldBe("PROD-999");
+        product.KnownCodes.ShouldContain(new ProductCode("PROD-001"));
+        product.KnownCodes.ShouldContain(new ProductCode("PROD-999"));
     }
 
-    [Fact(Skip = "Blocked on JasperFx/jasperfx#569 -- instance [NaturalKeySource] handlers run against a blank aggregate")]
-    public async Task natural_key_is_maintained_when_the_handler_is_an_instance_method()
+    // The escape hatch for the reporter's own aggregate: NaturalKeyBuilder.SetBy/SetByEvent were dead
+    // code (internal constructor, nothing ever built one) until jasperfx#571 made them reachable. An
+    // explicit registration replaces whatever discovery found AND clears the configuration-time error.
+    [Fact]
+    public async Task natural_key_is_maintained_through_an_explicit_registration()
     {
-        await runRenameScenario(streamId => new ProductCodeChangedByInstanceMethod(streamId, "PROD-999"));
+        StoreOptions(opts => configureStore(opts, p =>
+            ((SingleStreamProjection<Product, Guid>)p).NaturalKeyFor(x => x
+                .SetBy<ProductRegistered>(e => new ProductCode(e.ProductCode))
+                .SetByEvent<ProductCodeChangedByEventWrapper>(e => new ProductCode(e.Data.NewProductCode))
+                .SetBy<ProductCodeChangedByInstanceMethod>(e => new ProductCode(e.NewProductCode)))));
+
+        var streamId = await appendRenameAsync<Product>(
+            id => new ProductCodeChangedByInstanceMethod(id, "PROD-999"));
+
+        var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.RebuildProjectionAsync<Product>(CancellationToken.None);
+
+        await using var query = theStore.LightweightSession();
+        var product = await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-999"));
+        product.ShouldNotBeNull();
+        product.Id.ShouldBe(streamId);
+        product.Code.Value.ShouldBe("PROD-999");
     }
 
-    private async Task runRenameScenario(Func<Guid, object> renameEvent)
+    private async Task<Guid> appendRenameAsync<T>(Func<Guid, object> renameEvent) where T : class
     {
-        StoreOptions(ConfigureStore);
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
@@ -120,7 +237,7 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Events.StartStream<Product>(streamId, new ProductRegistered(streamId, "PROD-001"));
+            session.Events.StartStream<T>(streamId, new ProductRegistered(streamId, "PROD-001"));
             await session.SaveChangesAsync();
         }
 
@@ -130,14 +247,6 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
             await session.SaveChangesAsync();
         }
 
-        var daemon = await theStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjectionAsync<Product>(CancellationToken.None);
-
-        await using var query = theStore.LightweightSession();
-        var product = await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-999"));
-        product.ShouldNotBeNull();
-        product.Code.Value.ShouldBe("PROD-999");
-        product.KnownCodes.ShouldContain(new ProductCode("PROD-001"));
-        product.KnownCodes.ShouldContain(new ProductCode("PROD-999"));
+        return streamId;
     }
 }
