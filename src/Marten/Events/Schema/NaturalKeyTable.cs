@@ -140,14 +140,24 @@ internal class NaturalKeyTable: Table, ISchemaObject
             writer.WriteLine(");");
         }
 
-        // Write FKs with idempotent guard to avoid "constraint already exists"
+        // Write FKs with idempotent guard to avoid "constraint already exists".
+        // #5044: pg_constraint.conname is only unique per relation, so the guard has to be anchored
+        // to THIS table. A bare `conname = '...'` lookup is database-wide, and every Marten store in
+        // the database derives this FK's name from the same aggregate type name — so a second store
+        // in a second schema saw the first store's constraint, skipped its own, and then read as
+        // permanent configuration drift (or, under AutoCreate.CreateOrUpdate, re-emitted the ADD on
+        // every single boot).
         foreach (var foreignKey in ForeignKeys)
         {
             writer.WriteLine();
             writer.WriteLine("DO $$ BEGIN");
-            writer.Write("IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = '");
-            writer.Write(foreignKey.Name);
-            writer.WriteLine("') THEN");
+            writer.WriteLine("IF NOT EXISTS (");
+            writer.WriteLine("  SELECT 1 FROM pg_constraint con");
+            writer.WriteLine("  JOIN pg_class rel ON rel.oid = con.conrelid");
+            writer.WriteLine("  JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace");
+            writer.WriteLine(
+                $"  WHERE con.conname = '{foreignKey.Name}' AND nsp.nspname = '{Identifier.Schema}' AND rel.relname = '{Identifier.Name}'");
+            writer.WriteLine(") THEN");
             writer.WriteLine(foreignKey.ToDDL(this));
             writer.WriteLine("END IF;");
             writer.WriteLine("END $$;");
