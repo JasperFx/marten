@@ -577,12 +577,43 @@ that just emits and update every time that Marten has to "skip" stale events.
 
 ## Extended Progression Tracking
 
-Extended progression tracking adds six monitoring columns (`heartbeat`,
+Extended progression tracking adds ten monitoring columns (`heartbeat`,
 `agent_status`, `pause_reason`, `running_on_node`, `warning_behind_threshold`,
-`critical_behind_threshold`) to `mt_event_progression`. The async daemon writes
+`critical_behind_threshold`, `failure_category`, `failure_event_sequence`,
+`failure_event_type`, `failure_event_tenant_id`) to `mt_event_progression`. The async daemon writes
 them from existing runtime state and the shard-state selector reads them back
 into `ShardState` so monitoring tooling such as CritterWatch can display
 per-shard health.
+
+### Why a shard is down <Badge type="tip" text="9.20" />
+
+The four `failure_*` columns record the *classified* reason a shard paused or stopped, so a consumer
+polling the database — which is exactly what a monitoring tool must fall back to when the node that
+was running the shard is down — sees the same reason an in-process `ShardState` observer does instead
+of only that the shard is `Paused`. They are read back onto `ShardState.Failure`:
+
+```cs
+var states = await store.Storage.Database.AllProjectionProgress();
+foreach (var state in states.Where(x => x.Failure != null))
+{
+    // ApplyEvent, EventSerialization, UnknownEventType, ProgressionOutOfOrder, or Other
+    Console.WriteLine($"{state.ShardName}: {state.Failure!.Category} on {state.Failure.Event}");
+}
+```
+
+`failure_category` stores the enum *name* rather than its ordinal, so reordering
+`ShardFailureCategory` in a future release can never silently re-label rows an older deployment wrote.
+The reason *text* has no column of its own — `ShardFailure.Detail` is exactly what `pause_reason` has
+always carried.
+
+Marten's own read-path exceptions declare their category, so a body that fails to deserialize reports
+`EventSerialization` with the offending event's sequence and type alias, and an event type alias with
+no registered .NET type reports `UnknownEventType`. The two are kept apart deliberately: bad data
+needs a serializer or data fix, while a missing registration is usually a deployment gap or a rollback
+past the event type's introduction.
+
+A shard that recovers clears its failure columns on the next successful start, so a supervisor built on
+them does not keep alerting on a failure that was fixed an hour ago.
 
 **Default: off**. The columns are useful for
 any stuck-shard diagnosis -- not just CritterWatch -- and the write-side cost is

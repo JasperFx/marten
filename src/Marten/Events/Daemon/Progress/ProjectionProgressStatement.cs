@@ -37,9 +37,14 @@ internal class ProjectionProgressStatement: Statement
 
     protected override void configure(ICommandBuilder builder)
     {
+        // #5048 / jasperfx#565: the failure_* columns trail the existing extended block so the ordinals
+        // ShardStateSelector walks stay stable.
+        const string extendedColumns =
+            "heartbeat, agent_status, pause_reason, running_on_node, warning_behind_threshold, critical_behind_threshold, failure_category, failure_event_sequence, failure_event_type, failure_event_tenant_id";
+
         if (_events.UseOptimizedProjectionRebuilds && _events.EnableExtendedProgressionTracking)
         {
-            builder.Append($"select name, last_seq_id, mode, rebuild_threshold, assigned_node, heartbeat, agent_status, pause_reason, running_on_node, warning_behind_threshold, critical_behind_threshold from {_events.DatabaseSchemaName}.mt_event_progression");
+            builder.Append($"select name, last_seq_id, mode, rebuild_threshold, assigned_node, {extendedColumns} from {_events.DatabaseSchemaName}.mt_event_progression");
         }
         else if (_events.UseOptimizedProjectionRebuilds)
         {
@@ -47,7 +52,7 @@ internal class ProjectionProgressStatement: Statement
         }
         else if (_events.EnableExtendedProgressionTracking)
         {
-            builder.Append($"select name, last_seq_id, heartbeat, agent_status, pause_reason, running_on_node, warning_behind_threshold, critical_behind_threshold from {_events.DatabaseSchemaName}.mt_event_progression");
+            builder.Append($"select name, last_seq_id, {extendedColumns} from {_events.DatabaseSchemaName}.mt_event_progression");
         }
         else
         {

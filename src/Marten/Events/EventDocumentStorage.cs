@@ -331,7 +331,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         {
             var dotnetTypeName = reader.GetFieldValue<string>(2);
 
-            mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
+            mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName, readSequence(reader));
         }
         // #4680: an upcaster mapping is the authoritative interpretation of the stored
         // event-type name (it was registered with that name as its SOURCE). Skip the
@@ -390,7 +390,8 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         {
             var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
 
-            mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
+            mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName,
+                await readSequenceAsync(reader, token).ConfigureAwait(false));
         }
         // #4680: see the sync Resolve overload above -- upcaster mappings are authoritative
         // for their source event-type name and the dotnet_type alt-mapping swap would shadow
@@ -435,18 +436,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         }
         catch (Exception e)
         {
-            // #4515: mt_events.seq_id shifted from ordinal 3 to ordinal 4 after
-            // bdata's insertion (EventsTable.SelectColumns now pins data, type,
-            // mt_dotnet_type, bdata, seq_id at 0..4).
-            long sequence;
-            try
-            {
-                sequence = await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false);
-            }
-            catch
-            {
-                sequence = -1;
-            }
+            var sequence = await readSequenceAsync(reader, token).ConfigureAwait(false);
             throw new EventDeserializationFailureException(sequence, mapping, e);
         }
 
@@ -459,11 +449,47 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
 
     public abstract Task ApplyReaderDataToEventAsync(DbDataReader reader, IEvent e, CancellationToken token);
 
-    private EventMapping eventMappingForDotNetTypeName(string dotnetTypeName, string eventTypeName)
+    /// <summary>
+    ///     #4515: mt_events.seq_id shifted from ordinal 3 to ordinal 4 after bdata's insertion
+    ///     (EventsTable.SelectColumns now pins data, type, mt_dotnet_type, bdata, seq_id at 0..4). Reading it
+    ///     is best-effort — this runs on failure paths where the reader may not have the column at all — so a
+    ///     miss degrades to <see cref="UnknownEventTypeException.UnknownSequence" /> rather than replacing the
+    ///     real failure with an indexing error.
+    /// </summary>
+    private static long readSequence(DbDataReader reader)
+    {
+        try
+        {
+            return reader.GetFieldValue<long>(4);
+        }
+        catch
+        {
+            return UnknownEventTypeException.UnknownSequence;
+        }
+    }
+
+    private static async Task<long> readSequenceAsync(DbDataReader reader, CancellationToken token)
+    {
+        try
+        {
+            return await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false);
+        }
+        catch
+        {
+            return UnknownEventTypeException.UnknownSequence;
+        }
+    }
+
+    /// <summary>
+    ///     #5048 / jasperfx#565: <paramref name="sequence" /> is threaded down from the row being read so the
+    ///     resulting <see cref="UnknownEventTypeException" /> can name the event that paused the shard, not
+    ///     just its unresolvable alias.
+    /// </summary>
+    private EventMapping eventMappingForDotNetTypeName(string dotnetTypeName, string eventTypeName, long sequence)
     {
         if (dotnetTypeName.IsEmpty())
         {
-            throw new UnknownEventTypeException(eventTypeName);
+            throw new UnknownEventTypeException(eventTypeName, sequence);
         }
 
         Type type;
@@ -473,7 +499,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         }
         catch (ArgumentNullException)
         {
-            throw new UnknownEventTypeException(dotnetTypeName);
+            throw new UnknownEventTypeException(dotnetTypeName, sequence);
         }
 
         return Events.EventMappingFor(type);

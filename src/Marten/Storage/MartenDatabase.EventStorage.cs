@@ -48,34 +48,14 @@ public partial class MartenDatabase : IEventDatabase
 
     /// <summary>
     ///     Persist the extended progression telemetry (heartbeat / agent_status / pause_reason /
-    ///     running_on_node) the async daemon publishes for a shard, via the
-    ///     <c>mt_mark_event_progression_extended</c> function. Driven by the JasperFx.Events
-    ///     <c>ExtendedProgressionWriter</c> observer on status transitions and throttled heartbeats
-    ///     (CritterWatch #750). The function updates only the telemetry columns on an existing row,
-    ///     so it never rolls back committed <c>last_seq_id</c>.
+    ///     running_on_node, plus the #5048 classified failure columns) the async daemon publishes for a
+    ///     shard. Driven by the JasperFx.Events <c>ExtendedProgressionWriter</c> observer on status
+    ///     transitions and throttled heartbeats (CritterWatch #750). Update-only, so it never rolls back
+    ///     committed <c>last_seq_id</c>.
     /// </summary>
-    public async Task WriteExtendedProgressionAsync(ShardState state, CancellationToken token = default)
+    public Task WriteExtendedProgressionAsync(ShardState state, CancellationToken token = default)
     {
-        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
-
-        await using var conn = CreateConnection();
-        try
-        {
-            await conn.OpenAsync(token).ConfigureAwait(false);
-            await conn.CreateCommand(
-                    $"select {Options.EventGraph.DatabaseSchemaName}.mt_mark_event_progression_extended(:name, :seq, :heartbeat, :status, :reason, :node)")
-                .With("name", state.ShardName, NpgsqlDbType.Varchar)
-                .With("seq", state.Sequence, NpgsqlDbType.Bigint)
-                .With("heartbeat", (object?)state.LastHeartbeat ?? DBNull.Value, NpgsqlDbType.TimestampTz)
-                .With("status", (object?)state.AgentStatus ?? DBNull.Value, NpgsqlDbType.Varchar)
-                .With("reason", (object?)state.PauseReason ?? DBNull.Value, NpgsqlDbType.Text)
-                .With("node", (object?)state.RunningOnNode ?? DBNull.Value, NpgsqlDbType.Integer)
-                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
-        }
-        finally
-        {
-            await conn.CloseAsync().ConfigureAwait(false);
-        }
+        return WriteExtendedProgressionAsync([state], token);
     }
 
     /// <summary>
@@ -84,22 +64,25 @@ public partial class MartenDatabase : IEventDatabase
     ///     shard's heartbeat on a database into one batch per flush interval and drives this overload,
     ///     because the per-shard single-row write does not scale under per-tenant agent fan-out
     ///     (agents = projections × tenants — jasperfx#553). Deliberately a plain UPDATE ... FROM unnest
-    ///     join instead of a new batched database function, so no schema object is added and deployments
-    ///     running <c>AutoCreate.None</c> pick the batching up without a migration. Semantics match
-    ///     <c>mt_mark_event_progression_extended</c> exactly: update-only telemetry decoration of
-    ///     existing progression rows — never INSERT, never touch <c>last_seq_id</c> / <c>last_updated</c>,
-    ///     shards without a progression row yet are skipped silently.
+    ///     join instead of a database function, so no schema object is added and deployments running
+    ///     <c>AutoCreate.None</c> pick it up without a migration. Semantics match the
+    ///     <c>mt_mark_event_progression_extended</c> function this replaced (the function is still
+    ///     installed for anything calling it directly): update-only telemetry decoration of existing
+    ///     progression rows — never INSERT, never touch <c>last_seq_id</c> / <c>last_updated</c>, shards
+    ///     without a progression row yet are skipped silently.
+    ///     <para>
+    ///     #5048 / jasperfx#565: the four <c>failure_*</c> columns follow a different rule from the rest.
+    ///     They are written when the state carries a <see cref="ShardState.Failure" />, CLEARED when a
+    ///     <see cref="ShardAction.Started" /> arrives without one (a recovered shard must stop reporting
+    ///     the reason it paused an hour ago), and otherwise LEFT ALONE. That last case is load-bearing:
+    ///     the <c>Stopped</c> publication that follows a pause carries no failure, and an unconditional
+    ///     write would erase the reason microseconds after recording it.
+    ///     </para>
     /// </summary>
     public async Task WriteExtendedProgressionAsync(IReadOnlyList<ShardState> states, CancellationToken token = default)
     {
         if (states.Count == 0)
         {
-            return;
-        }
-
-        if (states.Count == 1)
-        {
-            await WriteExtendedProgressionAsync(states[0], token).ConfigureAwait(false);
             return;
         }
 
@@ -110,14 +93,28 @@ public partial class MartenDatabase : IEventDatabase
         var statuses = new string?[states.Count];
         var reasons = new string?[states.Count];
         var nodes = new int?[states.Count];
+        var touchFailures = new bool[states.Count];
+        var failureCategories = new string?[states.Count];
+        var failureSequences = new long?[states.Count];
+        var failureEventTypes = new string?[states.Count];
+        var failureTenantIds = new string?[states.Count];
 
         for (var i = 0; i < states.Count; i++)
         {
-            names[i] = states[i].ShardName;
-            heartbeats[i] = states[i].LastHeartbeat;
-            statuses[i] = states[i].AgentStatus;
-            reasons[i] = states[i].PauseReason;
-            nodes[i] = states[i].RunningOnNode;
+            var state = states[i];
+
+            names[i] = state.ShardName;
+            heartbeats[i] = state.LastHeartbeat;
+            statuses[i] = state.AgentStatus;
+            reasons[i] = state.PauseReason;
+            nodes[i] = state.RunningOnNode;
+
+            var failure = state.Failure;
+            touchFailures[i] = failure != null || state.Action == ShardAction.Started;
+            failureCategories[i] = failure?.Category.ToString();
+            failureSequences[i] = failure?.Event?.Sequence;
+            failureEventTypes[i] = failure?.Event?.EventTypeName;
+            failureTenantIds[i] = failure?.Event?.TenantId;
         }
 
         await using var conn = CreateConnection();
@@ -129,9 +126,15 @@ public partial class MartenDatabase : IEventDatabase
                 set heartbeat = t.heartbeat,
                     agent_status = t.agent_status,
                     pause_reason = t.pause_reason,
-                    running_on_node = t.running_on_node
-                from unnest(:names, :heartbeats, :statuses, :reasons, :nodes)
-                    as t(name, heartbeat, agent_status, pause_reason, running_on_node)
+                    running_on_node = t.running_on_node,
+                    failure_category = case when t.touch_failure then t.failure_category else p.failure_category end,
+                    failure_event_sequence = case when t.touch_failure then t.failure_event_sequence else p.failure_event_sequence end,
+                    failure_event_type = case when t.touch_failure then t.failure_event_type else p.failure_event_type end,
+                    failure_event_tenant_id = case when t.touch_failure then t.failure_event_tenant_id else p.failure_event_tenant_id end
+                from unnest(:names, :heartbeats, :statuses, :reasons, :nodes, :touch_failures,
+                    :failure_categories, :failure_sequences, :failure_event_types, :failure_tenant_ids)
+                    as t(name, heartbeat, agent_status, pause_reason, running_on_node, touch_failure,
+                        failure_category, failure_event_sequence, failure_event_type, failure_event_tenant_id)
                 where p.name = t.name
                 """)
                 .With("names", names, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
@@ -139,6 +142,11 @@ public partial class MartenDatabase : IEventDatabase
                 .With("statuses", statuses, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
                 .With("reasons", reasons, NpgsqlDbType.Array | NpgsqlDbType.Text)
                 .With("nodes", nodes, NpgsqlDbType.Array | NpgsqlDbType.Integer)
+                .With("touch_failures", touchFailures, NpgsqlDbType.Array | NpgsqlDbType.Boolean)
+                .With("failure_categories", failureCategories, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
+                .With("failure_sequences", failureSequences, NpgsqlDbType.Array | NpgsqlDbType.Bigint)
+                .With("failure_event_types", failureEventTypes, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
+                .With("failure_tenant_ids", failureTenantIds, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
                 .ExecuteNonQueryAsync(token).ConfigureAwait(false);
         }
         finally
