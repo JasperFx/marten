@@ -139,6 +139,42 @@ behavior. The governors apply to continuous (running daemon) work only — proje
 by `MaxConcurrentRebuildsPerDatabase`, which derives its default from the Npgsql connection pool size. See
 [Capping Rebuild Concurrency](/events/projections/rebuilding#capping-rebuild-concurrency).
 
+## Graceful Shutdown and the Drain Timeout <Badge type="tip" text="9.20" />
+
+When a projection or subscription shard is stopped, the daemon does not simply cancel it. It first tries to
+*drain* the agent: let the in-flight page of events finish being applied, then flush the shard's progression row
+so the next start picks up exactly where this one left off. `StopAndDrainTimeout` bounds how long the daemon
+waits for that drain on **a single** shard:
+
+```cs
+// The default is 5 seconds
+opts.Projections.StopAndDrainTimeout = 30.Seconds();
+```
+
+The bound applies to every stop path: stopping one agent, stopping all agents (the `SIGTERM`/host shutdown
+path), and the internal stop-if-already-running replacement that happens when an agent is reassigned.
+
+**Why you would raise it.** If the drain is cut off before the progression flush lands, the shard restarts
+against a stale progression row and throws `ProgressionProgressOutOfOrderException` on its next start. Raise
+the timeout when in-flight batches legitimately take longer than five seconds — a large `BatchSize`, expensive
+projection code, heavy rebuild load, or a slow or contended database. This is most visible shutting down a host
+with a large agent universe: a [database-per-tenant](/configuration/multitenancy) deployment with thousands of
+(projection × tenant) shards all draining inside a Kubernetes termination grace window.
+
+::: tip
+A per-shard bound is only useful if the process lives long enough to spend it. Match a raised
+`StopAndDrainTimeout` with the host's own `HostOptions.ShutdownTimeout` and, on Kubernetes, the pod's
+`terminationGracePeriodSeconds`.
+:::
+
+**Why you would lower it.** A deployment that would rather cut a wedged shard loose quickly and take the
+progression replay hit — to keep node failover and reassignment latency low, for instance — can set it below
+the default.
+
+**Opting out.** `Timeout.InfiniteTimeSpan`, or any non-positive value, removes the separate bound so the drain
+is limited only by the daemon's own cancellation. Be aware that this means a genuinely wedged shard can hold up
+shutdown indefinitely.
+
 ## Daemon Logging
 
 The daemon logs through the standard .Net `ILogger` interface service registered in your application's underlying DI container. In the case of the daemon having to skip
