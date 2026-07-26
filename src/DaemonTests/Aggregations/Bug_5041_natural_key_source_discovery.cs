@@ -200,6 +200,12 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
         product.Code.Value.ShouldBe("PROD-999");
         product.KnownCodes.ShouldContain(new ProductCode("PROD-001"));
         product.KnownCodes.ShouldContain(new ProductCode("PROD-999"));
+
+        // #5041 item 2 on a source shape that could not bind at all before jasperfx#571
+        (await naturalKeysForStreamAsync("mt_natural_key_keyfromeventproduct", streamId))
+            .ShouldBe(["PROD-999"]);
+        (await query.Events.FetchLatest<KeyFromEventProduct, ProductCode>(new ProductCode("PROD-001")))
+            .ShouldBeNull();
     }
 
     // The escape hatch for the reporter's own aggregate: NaturalKeyBuilder.SetBy/SetByEvent were dead
@@ -225,6 +231,41 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
         product.ShouldNotBeNull();
         product.Id.ShouldBe(streamId);
         product.Code.Value.ShouldBe("PROD-999");
+
+        // #5041 item 2 through an explicitly registered extractor
+        (await naturalKeysForStreamAsync("mt_natural_key_product", streamId)).ShouldBe(["PROD-999"]);
+        (await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-001")))
+            .ShouldBeNull();
+    }
+
+    /// <summary>
+    /// #5041 item 2 — the retired key must not survive alongside the new one, squatting on its slot in
+    /// the lookup table's primary key. #5049 fixed and covered that, but only for a source shape that
+    /// discovery could always bind (a static handler taking the raw event). On the two paths this PR
+    /// newly enables the question could not even be ASKED before, because item 1 meant nothing was
+    /// written for those event types at all.
+    /// </summary>
+    private async Task<string[]> naturalKeysForStreamAsync(string table, Guid streamId)
+    {
+        await using var conn = theStore.Storage.Database.CreateConnection();
+        await conn.OpenAsync();
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            $"select natural_key_value from {schemaName}.{table} where stream_id = :id order by natural_key_value";
+        var parameter = cmd.CreateParameter();
+        parameter.ParameterName = "id";
+        parameter.Value = streamId;
+        cmd.Parameters.Add(parameter);
+
+        var values = new List<string>();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            values.Add(await reader.GetFieldValueAsync<string>(0));
+        }
+
+        return values.ToArray();
     }
 
     private async Task<Guid> appendRenameAsync<T>(Func<Guid, object> renameEvent) where T : class

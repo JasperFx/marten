@@ -138,14 +138,21 @@ Marten tries three strategies for a `[NaturalKeySource]` method, in descending o
    The key is read off whatever the method returned.
 
 ::: warning
-Do not write a `[NaturalKeySource]` method whose new key value depends on the *previous* aggregate state,
-and do not rely on any aggregate state other than the natural key inside one. Under strategy 3 Marten
-derives the key by calling your method with a blank aggregate instance, so anything else on it will be
-`null` or default.
+**A `[NaturalKeySource]` method never sees the current aggregate.** Do not write one whose new key value
+depends on the *previous* aggregate state, and do not read any aggregate state other than the natural key
+inside one. Under strategy 3 Marten calls your method with a *blank* aggregate, so everything else on it
+is `null` or default.
+
+This is a consequence of when the lookup table is written, not an oversight. The table is maintained
+inline at append time — that is the whole reason a natural key lookup works under an `Async` snapshot
+lifecycle, where the aggregate may not have been built yet, and it is why the key has to be a function of
+the event alone. A method that needs the prior state to work out the new key cannot be supported here;
+carry the value you need on the event instead.
 
 Strategy 3 is skipped entirely when the aggregate cannot be safely constructed — most commonly because it
-declares `required` members that a parameterless constructor cannot satisfy. Use strategy 1 or the
-explicit registration below for those types.
+declares `required` members that a parameterless constructor cannot satisfy. Marten will not hand your
+method an instance that C# itself would not have let you create. Use strategy 1 or the explicit
+registration below for those types.
 :::
 
 If none of the three can bind a method, Marten throws an `InvalidProjectionException` when the projection
