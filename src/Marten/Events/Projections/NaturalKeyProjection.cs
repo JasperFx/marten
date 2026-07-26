@@ -98,6 +98,27 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
         var streamCol = _isGuid ? "stream_id" : "stream_key";
         object streamIdValue = _isGuid ? (object)streamId : streamKey!;
 
+        // #5041: a stream has exactly one *current* natural key value, but the upsert below only
+        // ever inserts. When an event changes the key, the row carrying the previous value stays
+        // behind pointing at the same stream, so the table accumulates one dead row per rename and
+        // the retired key keeps occupying its slot in the primary key. Retire those rows first —
+        // scoped to this stream (and tenant, when conjoined) so a key legitimately owned by some
+        // other stream is never touched. Queued ahead of the upsert, and QueueSqlCommand preserves
+        // order within the batch, so a Create-then-rename inside a single batch still lands on the
+        // newest value.
+        if (_isConjoined)
+        {
+            operations.QueueSqlCommand(
+                $"DELETE FROM {_tableName} WHERE tenant_id = ? AND {streamCol} = ? AND natural_key_value <> ?",
+                tenantId, streamIdValue, innerValue);
+        }
+        else
+        {
+            operations.QueueSqlCommand(
+                $"DELETE FROM {_tableName} WHERE {streamCol} = ? AND natural_key_value <> ?",
+                streamIdValue, innerValue);
+        }
+
         // When UseArchivedStreamPartitioning is on, is_archived is part of the PK
         // and must be included in the ON CONFLICT clause
         if (_isConjoined && _useArchivedPartitioning)
