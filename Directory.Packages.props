@@ -134,14 +134,32 @@
          AggregationRunner now always invokes the 3-arg overload with slice.Id, so a projection can
          recover the slice identity even when slice.Snapshot is null (e.g. a deleted MultiStreamProjection
          slice) to emit a follow-on event or publish a message. The old 2-arg override still works; the
-         default 3-arg implementation delegates to it. -->
-    <PackageVersion Include="JasperFx" Version="2.35.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.35.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.35.0">
+         default 3-arg implementation delegates to it.
+         JasperFx 2.36.0: three daemon/projection changes Marten consumes directly.
+         jasperfx#564 (marten#5047) — DaemonSettings.StopAndDrainTimeout bounds how long a single
+         shard's graceful stop-and-drain may take before it is cancelled; the default of 5 seconds is
+         what was hardcoded before, so nothing changes unless configured.
+         jasperfx#565/#567 (marten#5048) — ShardFailure/ShardFailureCategory/EventFailureDetails and the
+         IEventFailureContext seam an exception implements to declare its own failure category and name
+         the event it broke on. ShardState.Failure rides along on the paused/stopped states, and
+         IEventDatabase.WriteExtendedProgressionAsync documents persisting (and clearing) it.
+         jasperfx#569/#571 (marten#5052) — NaturalKeyEventMapping.Extractor widens from
+         Func<object, object?> to Func<IEvent, object?> so an IEvent<T> [NaturalKeySource] handler is
+         bindable, and an unbindable one now fails loudly from AssembleAndAssertValidity().
+         JasperFx 2.36.1: jasperfx#572/#573 (found here) — ShardStateTracker now takes one lock across
+         recording a published state and capturing the listener list, and ShardStatusWatcher subscribes
+         and reads the current-state snapshot through it as a single atomic step. 2.36.0's #568 narrowed
+         the lost-wakeup window between those two paths but left it open, so a watcher could fall between
+         them and see the state on NEITHER — and once a high water agent reaches the head it has nothing
+         left to publish, so the wait could only end in a timeout no matter how generous. That surfaced
+         as HighWaterAgentTests.skips_multiple_gaps_and_keeps_advancing failing ~8 of 10 runs. -->
+    <PackageVersion Include="JasperFx" Version="2.36.1" />
+    <PackageVersion Include="JasperFx.Events" Version="2.36.1" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.36.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.35.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.36.1" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

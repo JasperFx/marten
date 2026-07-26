@@ -48,7 +48,7 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
                 {
                     if (mapping.EventType.IsAssignableFrom(@event.Data.GetType()))
                     {
-                        var rawValue = mapping.Extractor(@event.Data);
+                        var rawValue = mapping.Extractor(@event);
                         var innerValue = _naturalKey.Unwrap(rawValue);
                         if (innerValue != null)
                         {
@@ -81,7 +81,7 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
             {
                 if (mapping.EventType.IsAssignableFrom(@event.Data.GetType()))
                 {
-                    var rawValue = mapping.Extractor(@event.Data);
+                    var rawValue = mapping.Extractor(@event);
                     var innerValue = _naturalKey.Unwrap(rawValue);
                     if (innerValue != null)
                     {
