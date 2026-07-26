@@ -119,6 +119,26 @@ Every event type that sets or changes the natural key must be declared through t
 
 Events that do not affect the natural key (like `OrderItemAdded` in the example above) do not need any mapping.
 
+### Handler Signature Requirements
+
+The lookup table is written *inline* as events are appended, well before any projection has built the
+aggregate — that is what lets `FetchForWriting` by natural key work even when the snapshot lifecycle is
+`Async`. The key value therefore has to be derivable from the event alone, and a `[NaturalKeySource]`
+method must be one of:
+
+- a static factory or evolve method on the aggregate taking the raw event type, such as
+  `public static Order Create(OrderCreated e)` or `public static Order Apply(OrderRenumbered e, Order current)`
+- an instance `Apply(TEvent)` method on the aggregate whose body sets only the natural key property
+
+::: warning
+Do not write a `[NaturalKeySource]` method whose new key value depends on the *previous* aggregate state,
+and do not rely on any aggregate state other than the natural key inside one. Marten derives the key by
+calling your method with a blank aggregate instance, so anything else on it will be `null` or default.
+
+Signatures taking `IEvent<T>` rather than the raw event type are not currently supported here, and are
+silently ignored rather than reported — see [JasperFx/jasperfx#569](https://github.com/JasperFx/jasperfx/issues/569).
+:::
+
 ## Storage
 
 Marten automatically creates and manages a lookup table for each aggregate type that has a natural key configured. The table maps natural key values to stream ids and is:
@@ -168,6 +188,8 @@ var aggregate = await theSession.Events.FetchLatest<OrderAggregate, OrderNumber>
 ## Mutability
 
 Natural keys can change over the lifetime of a stream. When an event mapped with `[NaturalKeySource]` is appended, Marten updates the lookup table with the new value. The old key value is replaced, so lookups using the previous key will no longer resolve to that stream.
+
+The retired row is removed rather than left behind, so the previous value immediately becomes available for another stream to claim.
 
 ## Null and Default Keys
 

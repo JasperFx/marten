@@ -2,6 +2,7 @@
   "version": "0.1",
   "language": "en",
   "words": [
+    "jasperfx",
     "TimescaleDB",
     "timescaledb",
     "hypertable",
