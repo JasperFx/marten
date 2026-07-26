@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -478,4 +479,110 @@ public static class QueryableExtensions
         }
     }
 
+    /// <summary>
+    /// Resolve a <see cref="FetchStreamStatePlan"/> and write the resulting stream metadata to the
+    /// HttpContext response as JSON, or 404 when the stream does not exist.
+    /// <para>
+    /// The response body is a <see cref="StreamStateResponse"/> rather than Marten's
+    /// <c>StreamState</c> — see that type for why.
+    /// </para>
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="plan"></param>
+    /// <param name="context"></param>
+    /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
+    public static async Task WriteStreamState(
+        this IQuerySession session,
+        FetchStreamStatePlan plan,
+        HttpContext context,
+        string contentType = "application/json",
+        int onFoundStatus = 200
+    )
+    {
+        if (session == null) throw new ArgumentNullException(nameof(session));
+        if (plan == null) throw new ArgumentNullException(nameof(plan));
+        if (context == null) throw new ArgumentNullException(nameof(context));
+
+        var state = await plan.Fetch(session, context.RequestAborted).ConfigureAwait(false);
+
+        if (state == null)
+        {
+            context.Response.StatusCode = 404;
+            context.Response.ContentLength = 0;
+            return;
+        }
+
+        await writeJson(session, StreamStateResponse.From(state), context, contentType, onFoundStatus)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Resolve a <see cref="FetchStreamPlan"/> and write the resulting raw events to the HttpContext
+    /// response as a JSON array.
+    /// <para>
+    /// Marten's <c>FetchStream</c> yields an empty list both for a stream that does not exist and for
+    /// a filter that excludes every event, so the two cases cannot be told apart here.
+    /// <paramref name="onEmptyStatus"/> decides which answer the endpoint gives; it defaults to 404
+    /// to match the other single-resource results. Pass 200 to return an empty JSON array instead.
+    /// </para>
+    /// <para>
+    /// Each element is an <see cref="EventResponse"/> rather than Marten's <c>IEvent</c> — see that
+    /// type for why.
+    /// </para>
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="plan"></param>
+    /// <param name="context"></param>
+    /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
+    /// <param name="onEmptyStatus">Defaults to 404</param>
+    public static async Task WriteEvents(
+        this IQuerySession session,
+        FetchStreamPlan plan,
+        HttpContext context,
+        string contentType = "application/json",
+        int onFoundStatus = 200,
+        int onEmptyStatus = 404
+    )
+    {
+        if (session == null) throw new ArgumentNullException(nameof(session));
+        if (plan == null) throw new ArgumentNullException(nameof(plan));
+        if (context == null) throw new ArgumentNullException(nameof(context));
+
+        var events = await plan.Fetch(session, context.RequestAborted).ConfigureAwait(false);
+
+        if (events.Count == 0 && onEmptyStatus == 404)
+        {
+            context.Response.StatusCode = 404;
+            context.Response.ContentLength = 0;
+            return;
+        }
+
+        await writeJson(session, EventResponse.From(events), context, contentType,
+            events.Count == 0 ? onEmptyStatus : onFoundStatus).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Serialize <paramref name="value"/> with the store's configured serializer and write it to the
+    /// response, setting Content-Length. Buffers through a pooled <see cref="ArrayBufferWriter{T}"/>
+    /// so the JSON never round-trips through a .NET string.
+    /// </summary>
+    private static async Task writeJson(
+        IQuerySession session,
+        object value,
+        HttpContext context,
+        string contentType,
+        int statusCode)
+    {
+        var buffer = new ArrayBufferWriter<byte>();
+        session.DocumentStore.Options.Serializer().WriteTo(buffer, value);
+
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = contentType;
+        context.Response.ContentLength = buffer.WrittenCount;
+
+        await context.Response.Body.WriteAsync(buffer.WrittenMemory, context.RequestAborted)
+            .ConfigureAwait(false);
+    }
 }

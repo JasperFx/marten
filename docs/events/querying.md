@@ -299,6 +299,13 @@ public async Task use_both_plans_in_one_batch()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_query_plans.cs#L105-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_stream_plans_in_batch' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: tip
+Both plans also back an ASP.NET Core endpoint return value —
+[`StreamEventState` and `StreamEvents`](/documents/aspnetcore#typed-streaming-result-types-) write the
+same data straight to an HTTP response, and accept a pre-built plan so a handler can share one plan
+between a batched query and its HTTP result.
+:::
+
 ## Fetch a Single Event
 
 You can fetch the information for a single event by id, including its version number within the stream, by using `IEventStore.LoadAsync()` as shown below:
