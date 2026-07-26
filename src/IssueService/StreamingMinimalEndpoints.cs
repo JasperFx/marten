@@ -123,6 +123,51 @@ public static class StreamingMinimalEndpoints
                     cursor,
                     pageSize));
 
+        // --- StreamEventState ---
+
+        #region sample_minimal_api_stream_event_state
+
+        app.MapGet("/minimal/order/{id:guid}/state",
+            (Guid id, IQuerySession session)
+                => new StreamEventState(session, id));
+
+        #endregion
+
+        app.MapGet("/minimal/named-order/{id}/state",
+            (string id, IQuerySession session)
+                => new StreamEventState(session, id));
+
+        // --- StreamEvents ---
+
+        #region sample_minimal_api_stream_events
+
+        app.MapGet("/minimal/order/{id:guid}/events",
+            (Guid id, IQuerySession session)
+                => new StreamEvents(session, id));
+
+        #endregion
+
+        app.MapGet("/minimal/named-order/{id}/events",
+            (string id, IQuerySession session)
+                => new StreamEvents(session, id));
+
+        #region sample_minimal_api_stream_events_from_version
+
+        // Paging forward through a stream: running off the end is expected, not a 404
+        app.MapGet("/minimal/order/{id:guid}/events/from/{fromVersion:long}",
+            (Guid id, long fromVersion, IQuerySession session)
+                => new StreamEvents(session, id, fromVersion: fromVersion)
+                {
+                    OnEmptyStatus = StatusCodes.Status200OK
+                });
+
+        #endregion
+
+        // Version cap, and the plan-accepting constructor
+        app.MapGet("/minimal/order/{id:guid}/events/upto/{version:long}",
+            (Guid id, long version, IQuerySession session)
+                => new StreamEvents(session, new FetchStreamPlan(id, version)));
+
         return app;
     }
 }

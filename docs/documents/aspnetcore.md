@@ -233,7 +233,7 @@ bool found = await session.Events.StreamLatestJson<Order>(orderId, stream);
 ## Typed Streaming Result Types <Badge type="tip" text="8.x" />
 
 For Minimal API endpoints (and for frameworks like [Wolverine.Http](https://wolverinefx.net/guide/http/)
-that dispatch any `IResult` return value), `Marten.AspNetCore` ships five typed
+that dispatch any `IResult` return value), `Marten.AspNetCore` ships seven typed
 result wrappers that carry the streaming behavior above as endpoint return values
 while also contributing correct OpenAPI metadata:
 
@@ -244,13 +244,15 @@ while also contributing correct OpenAPI metadata:
 | `StreamAggregate<T>`     | `IDocumentSession` + stream id — event-sourced  | Single `T`                     | yes                    |
 | `StreamPaged<T>`         | `IQueryable<T>` — regular Marten document query | Paged JSON envelope            | no (empty page = 200)  |
 | `StreamPagedByCursor<T>` | `IQueryable<T>` (with `OrderBy`/`ThenBy`)       | { "items": T[], "nextCursor" } | no (empty array = 200) |
+| `StreamEventState`       | `IQuerySession` + stream id — event stream      | Single `StreamStateResponse`   | yes                    |
+| `StreamEvents`           | `IQuerySession` + stream id — event stream      | JSON array `EventResponse[]`   | yes (configurable)     |
 
 Each type implements both `IResult` (so ASP.NET Minimal API dispatches it via
 `ExecuteAsync`) and `IEndpointMetadataProvider` (so Swashbuckle, NSwag, and the
 built-in OpenAPI generator see the right response shape), while delegating the
-actual body write to `WriteSingle`/`WriteArray`/`WriteLatest`. Returning one
-from an endpoint is a concise, typed alternative to writing the HTTP handshake
-manually.
+actual body write to `WriteSingle`/`WriteArray`/`WriteLatest`/`WriteStreamState`/`WriteEvents`.
+Returning one from an endpoint is a concise, typed alternative to writing the HTTP
+handshake manually.
 
 ### `StreamOne<T>` — single document with 404 on miss
 
@@ -315,7 +317,122 @@ Returns `200 application/json` with the JSON of the latest projected aggregate
 state, or `404` if no stream exists. A constructor overload accepts `string`
 ids for stores configured with string-keyed streams.
 
-### StreamOne vs StreamAggregate
+### `StreamEventState` — event stream metadata <Badge type="tip" text="9.20" />
+
+Writes the high level metadata of a single event stream — Marten's `StreamState` — as JSON,
+or `404` when the stream does not exist:
+
+<!-- snippet: sample_minimal_api_stream_event_state -->
+<a id='snippet-sample_minimal_api_stream_event_state'></a>
+```cs
+app.MapGet("/minimal/order/{id:guid}/state",
+    (Guid id, IQuerySession session)
+        => new StreamEventState(session, id));
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/StreamingMinimalEndpoints.cs#L128-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_minimal_api_stream_event_state' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+A constructor overload accepts a `string` stream key for stores configured with string-keyed
+streams.
+
+The response body is a **`StreamStateResponse`**, not `StreamState` itself. `StreamState.AggregateType`
+is a `System.Type`, and System.Text.Json refuses to serialize those outright
+(`Serialization and deserialization of 'System.Type' instances is not supported`), so the
+aggregate type is projected down to its simple name in `AggregateTypeName`:
+
+```json
+{
+  "id": "0198e1b4-5b1c-7a1e-9a3f-2f2f5b6c7d8e",
+  "key": null,
+  "version": 2,
+  "aggregateTypeName": "Order",
+  "lastTimestamp": "2026-07-26T09:41:02.113Z",
+  "created": "2026-07-26T09:41:02.098Z",
+  "isArchived": false
+}
+```
+
+### `StreamEvents` — raw events of a stream <Badge type="tip" text="9.20" />
+
+Writes the raw events of a single event stream as a JSON array:
+
+<!-- snippet: sample_minimal_api_stream_events -->
+<a id='snippet-sample_minimal_api_stream_events'></a>
+```cs
+app.MapGet("/minimal/order/{id:guid}/events",
+    (Guid id, IQuerySession session)
+        => new StreamEvents(session, id));
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/StreamingMinimalEndpoints.cs#L142-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_minimal_api_stream_events' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`StreamEvents` carries the same optional `version`, `timestamp`, and `fromVersion` filters as
+`FetchStreamAsync()`, and there is a `string` stream key overload as well.
+
+Elements are **`EventResponse`**, not `IEvent` itself — `IEvent.EventType` is a `System.Type` and
+hits the same System.Text.Json wall as above. Use `eventTypeName`, Marten's stable event type
+alias, to discriminate event types on the client. The assembly qualified .NET type name
+(`DotNetTypeName`) is deliberately left off the wire:
+
+```json
+[
+  {
+    "id": "0198e1b4-5b1c-7a1e-9a3f-2f2f5b6c7d8e",
+    "version": 1,
+    "sequence": 41,
+    "streamId": "0198e1b4-5b1c-7a1e-9a3f-2f2f5b6c7d8e",
+    "streamKey": null,
+    "eventTypeName": "order_placed",
+    "timestamp": "2026-07-26T09:41:02.098Z",
+    "tenantId": "*DEFAULT*",
+    "isArchived": false,
+    "causationId": null,
+    "correlationId": null,
+    "headers": null,
+    "data": { "description": "Widget", "amount": 99.95 }
+  }
+]
+```
+
+#### Empty streams: 404 or an empty array?
+
+`FetchStream` yields an empty list both for a stream that does not exist _and_ for a filter that
+excludes every event, and the two cannot be told apart. `StreamEvents` therefore exposes an
+`OnEmptyStatus` that defaults to `404`, matching the other single-resource results. Set it to
+`200` when running off the end of a stream is expected rather than exceptional — paging forward
+with `fromVersion`, for example:
+
+<!-- snippet: sample_minimal_api_stream_events_from_version -->
+<a id='snippet-sample_minimal_api_stream_events_from_version'></a>
+```cs
+// Paging forward through a stream: running off the end is expected, not a 404
+app.MapGet("/minimal/order/{id:guid}/events/from/{fromVersion:long}",
+    (Guid id, long fromVersion, IQuerySession session)
+        => new StreamEvents(session, id, fromVersion: fromVersion)
+        {
+            OnEmptyStatus = StatusCodes.Status200OK
+        });
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/StreamingMinimalEndpoints.cs#L154-L164' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_minimal_api_stream_events_from_version' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+#### Sharing a query plan with a batched query
+
+Both results are backed by the [`FetchStreamStatePlan` / `FetchStreamPlan` query plans](/events/querying#stream-query-plans),
+and both accept a pre-built plan. That lets a handler build the plan once and either batch it with
+other queries into a single round trip or hand it straight back as an HTTP result:
+
+```csharp
+var plan = new FetchStreamPlan(orderId, version: 5);
+
+// ...batch it alongside other queries
+var fetcher = batch.QueryByPlan(plan);
+
+// ...or return it from an endpoint
+return new StreamEvents(session, plan);
+```
+
+### Choosing between the result types
 
 - **`StreamOne<T>`** is for regular Marten documents — plain objects persisted
   via `session.Store()` and queried with `session.Query<T>()`. The query hits
@@ -324,6 +441,12 @@ ids for stores configured with string-keyed streams.
   latest aggregate state by folding events from the event store (or reads a
   projected snapshot if one is configured). Use this when `T` is an
   event-sourced aggregate, not a stored document.
+- **`StreamEventState`** returns a stream's _metadata_ — version, timestamps,
+  archived flag — rather than any projected state. Reach for it when a client
+  needs to know where a stream is up to, not what it currently looks like.
+- **`StreamEvents`** returns the stream's _raw events_. Use it for audit trails,
+  event-log style UIs, and debugging endpoints, rather than as the read model for
+  ordinary consumers — those are better served by `StreamAggregate<T>`.
 
 ### ETag / Conditional Requests <Badge type="tip" text="9.18" />
 
