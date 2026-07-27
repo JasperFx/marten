@@ -100,6 +100,16 @@ public class ExplicitProjectionCoordinator: IProjectionCoordinator
             {
                 _logger.LogError(exception, "Error while trying to stop daemon agents in database {Name}", pair.Key);
             }
+
+            pair.Value.SafeDispose();
+        }
+
+        // marten#5056 (jasperfx#574): same posture as ProjectionCoordinatorBase.StopAsync. The daemons
+        // above were just disposed, so drop them from the cache — a repeated Pause/Stop has nothing to
+        // fan out over, and the external manager re-acquires fresh daemons through the accessors.
+        lock (_daemonLock)
+        {
+            _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
         }
     }
 

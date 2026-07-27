@@ -148,6 +148,17 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
         return _daemons.Enumerate().Select(x => x.Value).ToList();
     }
 
+    // marten#5056 (jasperfx#574): StopAsync just disposed every resolved daemon. Drop them from the
+    // cache so a repeated Pause/Stop has nothing to fan out over and a later ResumeAsync or daemon
+    // accessor builds fresh daemons instead of handing back disposed instances.
+    protected override void ClearResolvedDaemons()
+    {
+        lock (_daemonLock)
+        {
+            _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
+        }
+    }
+
     public override IProjectionDaemon DaemonForMainDatabase()
     {
         var database = (MartenDatabase)Store.Tenancy.Default.Database;
