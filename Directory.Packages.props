@@ -152,14 +152,20 @@
          the lost-wakeup window between those two paths but left it open, so a watcher could fall between
          them and see the state on NEITHER — and once a high water agent reaches the head it has nothing
          left to publish, so the wait could only end in a timeout no matter how generous. That surfaced
-         as HighWaterAgentTests.skips_multiple_gaps_and_keeps_advancing failing ~8 of 10 runs. -->
-    <PackageVersion Include="JasperFx" Version="2.36.1" />
-    <PackageVersion Include="JasperFx.Events" Version="2.36.1" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.36.1">
+         as HighWaterAgentTests.skips_multiple_gaps_and_keeps_advancing failing ~8 of 10 runs.
+         JasperFx 2.36.2: jasperfx#574/#575 (marten#5055/#5056) — the daemon stop path is now safe to
+         run after disposal: JasperFxAsyncDaemon.Dispose() is idempotent and StopAllAsync() no-ops on a
+         disposed daemon, ProjectionCoordinatorBase.PauseAsync logs ObjectDisposedException at Debug
+         instead of Error, and ProjectionCoordinatorBase.StopAsync calls the new abstract
+         ClearResolvedDaemons() seam after disposing daemons so subclass caches drop the disposed
+         instances (implemented here on ProjectionCoordinator + ExplicitProjectionCoordinator). -->
+    <PackageVersion Include="JasperFx" Version="2.36.2" />
+    <PackageVersion Include="JasperFx.Events" Version="2.36.2" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.36.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.36.1" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.36.2" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

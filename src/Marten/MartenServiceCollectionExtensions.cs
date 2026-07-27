@@ -516,7 +516,13 @@ public static class MartenServiceCollectionExtensions
             // ExternallyManaged (jasperfx#490) means an external system (e.g. Wolverine's managed
             // event-subscription distribution) executes the async projections — Marten must not
             // register its own coordination for either.
-            if (mode is DaemonMode.Solo or DaemonMode.HotCold)
+            // marten#5056: guard against a repeated AddAsyncDaemon() call registering a second
+            // IHostedService forwarding to the same coordinator singleton. The host would call
+            // StopAsync twice on it at shutdown, and the second pass used to fan StopAllAsync out
+            // over daemons the first pass had already disposed (the marten#5055 error-log storm).
+            if (mode is DaemonMode.Solo or DaemonMode.HotCold && !Services.Any(x =>
+                    x.ServiceType == typeof(Marten.Events.Daemon.Coordination.IProjectionCoordinator<T>) &&
+                    x.ImplementationType == typeof(ProjectionCoordinator<T>)))
             {
                 Services.AddSingleton<Marten.Events.Daemon.Coordination.IProjectionCoordinator<T>, ProjectionCoordinator<T>>();
                 Services.AddSingleton<IHostedService>(s => s.GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator<T>>());
@@ -763,7 +769,13 @@ public static class MartenServiceCollectionExtensions
             // ExternallyManaged (jasperfx#490) means an external system (e.g. Wolverine's managed
             // event-subscription distribution) executes the async projections — Marten must not
             // register its own coordination for either.
-            if (mode is DaemonMode.Solo or DaemonMode.HotCold)
+            // marten#5056: guard against a repeated AddAsyncDaemon() call registering a second
+            // IHostedService forwarding to the same coordinator singleton. The host would call
+            // StopAsync twice on it at shutdown, and the second pass used to fan StopAllAsync out
+            // over daemons the first pass had already disposed (the marten#5055 error-log storm).
+            if (mode is DaemonMode.Solo or DaemonMode.HotCold && !Services.Any(x =>
+                    x.ServiceType == typeof(Marten.Events.Daemon.Coordination.IProjectionCoordinator) &&
+                    x.ImplementationType == typeof(ProjectionCoordinator)))
             {
                 Services.AddSingleton<Marten.Events.Daemon.Coordination.IProjectionCoordinator, ProjectionCoordinator>();
                 Services.AddSingleton<IHostedService>(s => s.GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator>());
