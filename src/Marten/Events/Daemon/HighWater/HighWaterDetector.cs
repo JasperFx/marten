@@ -54,11 +54,29 @@ internal class HighWaterDetector: IHighWaterDetector
     // from Since (never from mt_event_progression.last_updated, which is arbitrarily old on an idle
     // store), Xmax fences the liveness probe to transactions that could have reserved the gap, and
     // ReservedCeiling bounds how far a proven-dead skip may advance — sequence numbers reserved AFTER
-    // the observation belong to newer transactions whose fate is not proven. Detector-scoped state:
-    // resets on restart, which only means a stuck gap waits one fresh threshold before skipping.
-    private sealed record StuckGapObservation(long Mark, DateTimeOffset Since, long Xmax, long ReservedCeiling);
+    // the observation belong to newer transactions whose fate is not proven. AllocationFence is the
+    // latest server time at which the reserved last_value was still at or below Mark (null when no
+    // such poll is in memory — e.g. the detector restarted while the gap already existed), letting
+    // the liveness probe rule out sessions that have provably executed nothing since before the
+    // gap's sequence numbers were even allocated. Detector-scoped state: resets on restart, which
+    // only means a stuck gap waits one fresh threshold before skipping.
+    private sealed record StuckGapObservation(long Mark, DateTimeOffset Since, long Xmax, long ReservedCeiling,
+        DateTimeOffset? AllocationFence);
 
     private StuckGapObservation? _stuckGap;
+
+    // #4953 follow-up: (server timestamp, reserved last_value) pairs from every statistics poll, so
+    // a stuck gap's AllocationFence can be looked up when it is first observed. Permanently-idle open
+    // transactions (Wolverine's advisory-lock listener sessions) otherwise satisfy the liveness
+    // probe's open-transaction clause forever and a genuinely dead gap never skips. Bounded and
+    // compacted: consecutive polls at the same last_value collapse to one entry keeping the LATEST
+    // timestamp (the fence wants the last moment the value was still that low). Guarded by its own
+    // lock — Detect (poll loop) and DetectInSafeZone (rebuild/catch-up) can run concurrently.
+    private readonly object _allocationHistoryLock = new();
+    private readonly List<AllocationObservation> _allocationHistory = new();
+    private const int AllocationHistoryCapacity = 128;
+
+    private sealed record AllocationObservation(DateTimeOffset Timestamp, long HighestSequence);
 
     public HighWaterDetector(MartenDatabase runner, EventGraph graph, ILogger logger)
     {
@@ -198,7 +216,8 @@ internal class HighWaterDetector: IHighWaterDetector
         }
 
         var liveness = await _runner
-            .Query(new GapLivenessProbe(_graph, observed.Since, observed.Xmax), token).ConfigureAwait(false);
+            .Query(new GapLivenessProbe(_graph, observed.Since, observed.Xmax, observed.AllocationFence), token)
+            .ConfigureAwait(false);
         if (liveness.IndicatesLiveReserver)
         {
             var cap = _settings.SkipStaleGapsDespiteLiveTransactionsAfter;
@@ -341,7 +360,8 @@ internal class HighWaterDetector: IHighWaterDetector
                 statistics.CurrentMark,
                 statistics.Timestamp,
                 (statistics as MartenHighWaterStatistics)?.CurrentXmax ?? 0,
-                statistics.HighestSequence);
+                statistics.HighestSequence,
+                findAllocationFence(statistics.CurrentMark));
         }
     }
 
@@ -607,6 +627,9 @@ select coalesce(
         // reserving transaction may still be alive is outstanding, not dead, and must not be skipped.
         // The lock/transaction/xip fencing is store-wide rather than per-tenant (a lock on any
         // mt_events partition blocks every tenant's skip), which errs on the conservative side.
+        // No allocation fence here: the vectorized poll reads committed max(seq_id) per tenant, not
+        // a reserved last_value, so there is no history to prove when the tenant's gap sequences
+        // were allocated — quiescent sessions are NOT ruled out on this path (conservative).
         if (_settings.UseTransactionEvidenceForGapSkipping
             && _tenantStaleSince.TryGetValue(statistics.TenantId!, out var observation))
         {
@@ -840,7 +863,71 @@ select coalesce(
 
     private async Task<HighWaterStatistics> loadCurrentStatistics(CancellationToken token)
     {
-        return await _runner.Query(_highWaterStatisticsDetector, token).ConfigureAwait(false);
+        var statistics = await _runner.Query(_highWaterStatisticsDetector, token).ConfigureAwait(false);
+        recordAllocationObservation(statistics);
+        return statistics;
+    }
+
+    // #4953 follow-up: feed the allocation history from every statistics poll — see _allocationHistory
+    private void recordAllocationObservation(HighWaterStatistics statistics)
+    {
+        // Under per-tenant event partitioning HighestSequence is the committed max(seq_id), NOT the
+        // reserved last_value (#4712) — "committed height <= mark at time T" says nothing about what
+        // was ALLOCATED by then, so no sound fence can be built from it.
+        if (_graph.UseTenantPartitionedEvents || statistics.Timestamp == default)
+        {
+            return;
+        }
+
+        lock (_allocationHistoryLock)
+        {
+            var count = _allocationHistory.Count;
+            if (count > 0)
+            {
+                var last = _allocationHistory[count - 1];
+                if (statistics.HighestSequence == last.HighestSequence)
+                {
+                    if (statistics.Timestamp > last.Timestamp)
+                    {
+                        _allocationHistory[count - 1] = last with { Timestamp = statistics.Timestamp };
+                    }
+
+                    return;
+                }
+
+                // Readings can complete out of order across concurrent callers; only ever append a
+                // strictly newer, strictly higher reading so the list stays monotone in both fields
+                if (statistics.HighestSequence < last.HighestSequence || statistics.Timestamp <= last.Timestamp)
+                {
+                    return;
+                }
+            }
+
+            _allocationHistory.Add(new AllocationObservation(statistics.Timestamp, statistics.HighestSequence));
+            if (_allocationHistory.Count > AllocationHistoryCapacity)
+            {
+                _allocationHistory.RemoveAt(0);
+            }
+        }
+    }
+
+    // The latest server time at which the reserved last_value was still at or below the stuck mark —
+    // every sequence number above the mark was allocated strictly after this moment. Null when no
+    // qualifying poll is in memory (detector started while the gap already existed).
+    private DateTimeOffset? findAllocationFence(long mark)
+    {
+        lock (_allocationHistoryLock)
+        {
+            for (var i = _allocationHistory.Count - 1; i >= 0; i--)
+            {
+                if (_allocationHistory[i].HighestSequence <= mark)
+                {
+                    return _allocationHistory[i].Timestamp;
+                }
+            }
+        }
+
+        return null;
     }
 
     private async Task<long> findCurrentMark(HighWaterStatistics statistics, DetectionType detectionType,
