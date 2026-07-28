@@ -6,7 +6,7 @@ OR REPLACE FUNCTION {databaseSchema}.mt_safe_unaccent(use_unaccent BOOLEAN, word
 AS $function$
 BEGIN
 IF use_unaccent THEN
-    RETURN unaccent(word);
+    RETURN public.unaccent(word);
 ELSE
     RETURN word;
 END IF;
