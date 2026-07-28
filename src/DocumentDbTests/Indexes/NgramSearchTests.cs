@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Npgsql;
 using Shouldly;
 using Xunit;
 
@@ -195,6 +197,59 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         result.Count.ShouldBe(2);
         result.ShouldContain(x => x.UserName == kierkegaard.UserName);
         result.ShouldContain(x => x.UserName == bjork.UserName);
+    }
+
+    [Fact]
+    public async Task ngram_search_uses_the_index_when_unaccent_is_enabled()
+    {
+        // Regression test for the NgramIndex / NgramSearch mismatch: NgramIndex used to
+        // always build its expression as mt_grams_vector(col) (implicit use_unaccent = false),
+        // while NgramSearch() always emitted mt_grams_vector(col, {UseNGramSearchWithUnaccent}).
+        // With UseNGramSearchWithUnaccent = true the query predicate and the indexed expression
+        // were different Postgres expressions, so the planner could never use the index.
+        var store = DocumentStore.For(_ =>
+        {
+            _.Connection(ConnectionSource.ConnectionString);
+            _.DatabaseSchemaName = "ngram_test_unaccent_index";
+            _.Schema.For<User>().NgramIndex(x => x.UserName);
+            _.Advanced.UseNGramSearchWithUnaccent = true;
+        });
+
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using var session = store.QuerySession();
+
+        var cmd = session.Query<User>()
+            .Where(x => x.UserName.NgramSearch("term"))
+            .ToCommand();
+
+        var plan = new List<string>();
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await using (var setup = conn.CreateCommand())
+        {
+            setup.CommandText = "SET enable_seqscan = off";
+            await setup.ExecuteNonQueryAsync();
+        }
+
+        await using (var explain = conn.CreateCommand())
+        {
+            explain.CommandText = "EXPLAIN " + cmd.CommandText;
+            foreach (NpgsqlParameter p in cmd.Parameters)
+            {
+                explain.Parameters.Add(new NpgsqlParameter(p.ParameterName, p.NpgsqlDbType) { Value = p.Value });
+            }
+
+            await using var reader = await explain.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                plan.Add(reader.GetString(0));
+            }
+        }
+
+        var planText = string.Join("\n", plan);
+        planText.ShouldContain("idx_ngram");
     }
 
     [Fact]
