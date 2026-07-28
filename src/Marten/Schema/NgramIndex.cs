@@ -53,7 +53,15 @@ public class NgramIndex: IndexDefinition
         set => _dataConfig = value ?? DefaultDataConfig;
     }
 
-    public override string[] Columns => [$"{_parent.DatabaseSchemaName}.mt_grams_vector( {_dataConfig})"];
+    public override string[] Columns
+    {
+        get
+        {
+            var useUnaccent = _parent.StoreOptions.Advanced.UseNGramSearchWithUnaccent.ToString().ToUpperInvariant();
+            return [$"{_parent.DatabaseSchemaName}.mt_grams_vector({_dataConfig},{useUnaccent})"];
+        }
+    }
+
     protected override string deriveIndexName()
     {
         var lowerValue = _indexName?.ToLowerInvariant();
