@@ -464,12 +464,30 @@ public class SideEffects2: IRevisioned
 
 public class RecordingMessageOutbox: IMessageOutbox
 {
-    public readonly List<RecordingMessageBatch> Batches = new();
+    private readonly List<RecordingMessageBatch> _batches = new();
+
+    // The daemon raises side effects for the slices in a batch concurrently, so both of the
+    // collections in this harness have to be synchronized -- an unguarded List.Add silently drops
+    // batches and messages, which is what made blue_green_side_effect_gate look flaky (#5065).
+    // The sibling copy in Composites/composite_rebuild_suppresses_side_effects.cs already locks.
+    public IReadOnlyList<RecordingMessageBatch> Batches
+    {
+        get
+        {
+            lock (_batches)
+            {
+                return _batches.ToList();
+            }
+        }
+    }
 
     public ValueTask<IMessageBatch> CreateBatch(DocumentSessionBase session)
     {
         var batch = new RecordingMessageBatch();
-        Batches.Add(batch);
+        lock (_batches)
+        {
+            _batches.Add(batch);
+        }
 
         return new ValueTask<IMessageBatch>(batch);
     }
@@ -479,7 +497,18 @@ public record TenantMessage(string tenantId, object message);
 
 public class RecordingMessageBatch: IMessageBatch
 {
-    public readonly List<TenantMessage> Messages = new();
+    private readonly List<TenantMessage> _messages = new();
+
+    public IReadOnlyList<TenantMessage> Messages
+    {
+        get
+        {
+            lock (_messages)
+            {
+                return _messages.ToList();
+            }
+        }
+    }
 
     public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
     {
@@ -498,7 +527,11 @@ public class RecordingMessageBatch: IMessageBatch
     public bool BeforeCommitWasCalled { get; set; }
     public ValueTask PublishAsync<T>(T message, string tenantId)
     {
-        Messages.Add(new TenantMessage(tenantId, message));
+        lock (_messages)
+        {
+            _messages.Add(new TenantMessage(tenantId, message));
+        }
+
         return new ValueTask();
     }
 }
