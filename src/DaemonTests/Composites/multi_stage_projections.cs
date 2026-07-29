@@ -313,6 +313,12 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
             boardSummary.Board.ShouldNotBeNull();
         }
 
+        // This block is pulled into docs/events/projections/read-aggregates.md, so it stays
+        // free of TestContext.Current.CancellationToken -- threading a test-only cancellation
+        // token here would publish it to users as if it were guidance (#5067). The pragma sits
+        // OUTSIDE the region markers on purpose: anything inside them lands in the docs.
+#pragma warning disable xUnit1051
+
         #region sample_querying_for_non_stale_projection_data
 
         // _compositeSession is an IDocumentSession
@@ -321,9 +327,11 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
             // is building the BoardSummary document to catch up to the point at which the
             // event store was at when you first tired to execute the LINQ query
             .QueryForNonStaleData<BoardSummary>(10.Seconds())
-            .ToListAsync(TestContext.Current.CancellationToken);
+            .ToListAsync();
 
         #endregion
+
+#pragma warning restore xUnit1051
 
         summaries.Count.ShouldBe(12);
 
