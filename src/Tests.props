@@ -10,13 +10,29 @@
         <OutputType>Exe</OutputType>
 
         <!-- xUnit1051: "pass TestContext.Current.CancellationToken to methods accepting a
-             CancellationToken". New in the v3 analyzers, and still suppressed by default
-             because there are ~5,650 candidate call sites across the DB-heavy suites (2,955
-             of them plain SaveChangesAsync()). The rule is being adopted per-project rather
-             than in one repo-wide sweep — a project that has been swept sets
+             CancellationToken". New in the v3 analyzers.
+
+             Suppressed by default, and DELIBERATELY LEFT THAT WAY for the remaining suites.
+             This is a settled decision, not unfinished work — please don't sweep the rest.
+
+             The rule is on in the 13 projects that already carry it (DaemonTests plus the 12
+             swept in #5084), where a hung test now gets cancelled and reported instead of
+             running until CI's own job timeout. Those projects set
              <ThreadTestCancellationToken>true</ThreadTestCancellationToken> BEFORE importing
-             this file, which turns the warning back on so new unthreaded calls can't creep
-             back in. See #5067. -->
+             this file, which keeps the warning enforced so unthreaded calls can't creep back.
+
+             The other suites stay suppressed because of the doc samples. Of the 7,930 flagged
+             sites across the solution, 400 sit inside `#region sample_*` blocks that
+             mdsnippets pulls into the VitePress docs, spread over ~82 files in
+             EventSourcingTests, DocumentDbTests, LinqTests, ValueTypeTests, CoreTests and
+             PatchingTests. Threading a test-only cancellation token there would publish
+             `await session.SaveChangesAsync(TestContext.Current.CancellationToken)` to users
+             as if it were guidance, and enforcing the rule around those blocks means
+             bracketing every one with a pragma pair placed outside the region markers
+             (a pragma inside a region is rendered into the docs). Clean sample code is worth
+             more than analyzer coverage in suites where the payoff is small.
+
+             See #5067 for the full per-project table. -->
         <NoWarn Condition="'$(ThreadTestCancellationToken)' != 'true'">$(NoWarn);xUnit1051</NoWarn>
 
         <!-- xunit.v3 supplies the entry point. Microsoft.NET.Test.Sdk will also emit a
