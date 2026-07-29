@@ -1,61 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using Marten.Services.Json;
 using Xunit;
-using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Marten.Testing.Harness
 {
     /// <summary>
     /// Allows targeting test at specified serializer type
     /// </summary>
+    /// <remarks>
+    /// See <see cref="SerializerTypeTargetedFact"/> for why the v2 discoverer this used to
+    /// carry is gone under xunit v3.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Method)]
-    [XunitTestCaseDiscoverer("Marten.Testing.Harness.SerializerTargetedTheoryDiscoverer", "Marten.Testing")]
     public sealed class SerializerTypeTargetedTheory: TheoryAttribute
     {
-        public SerializerType RunFor { get; set; }
-    }
+        private SerializerType _runFor;
 
-    public sealed class SerializerTargetedTheoryDiscoverer: TheoryDiscoverer
-    {
-        private readonly SerializerType serializerType;
-
-        static SerializerTargetedTheoryDiscoverer()
+        public SerializerType RunFor
         {
-        }
-
-        public SerializerTargetedTheoryDiscoverer(IMessageSink diagnosticMessageSink): base(diagnosticMessageSink)
-        {
-            serializerType = TestsSettings.SerializerType;
-        }
-
-        public override IEnumerable<IXunitTestCase> Discover(ITestFrameworkDiscoveryOptions discoveryOptions, ITestMethod testMethod,
-            IAttributeInfo theoryAttribute)
-        {
-            var runForSerializer = theoryAttribute.GetNamedArgument<SerializerType?>(nameof(SerializerTypeTargetedTheory.RunFor));
-
-            if (runForSerializer != null && runForSerializer != serializerType)
+            get => _runFor;
+            set
             {
-                yield return new TestCaseSkippedDueToSerializerSupport($"Test skipped as it cannot be run for {serializerType} ", DiagnosticMessageSink, discoveryOptions.MethodDisplayOrDefault(), discoveryOptions.MethodDisplayOptionsOrDefault(), testMethod);
-                yield break;
-            }
-
-            foreach (var xunitTestCase in CreateTestCasesForTheory(discoveryOptions, testMethod, theoryAttribute))
-            {
-                yield return xunitTestCase;
-            }
-        }
-
-        internal sealed class TestCaseSkippedDueToSerializerSupport: XunitTestCase
-        {
-            public TestCaseSkippedDueToSerializerSupport()
-            {
-            }
-
-            public TestCaseSkippedDueToSerializerSupport(string skipReason, IMessageSink diagnosticMessageSink, TestMethodDisplay defaultMethodDisplay, TestMethodDisplayOptions defaultMethodDisplayOptions, ITestMethod testMethod, object[] testMethodArguments = null) : base(diagnosticMessageSink, defaultMethodDisplay, defaultMethodDisplayOptions, testMethod, testMethodArguments)
-            {
-                SkipReason = skipReason;
+                _runFor = value;
+                if (value != TestsSettings.SerializerType)
+                {
+                    Skip = $"Test skipped as it cannot be run for {TestsSettings.SerializerType} ";
+                }
             }
         }
     }

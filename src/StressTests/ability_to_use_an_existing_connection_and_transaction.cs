@@ -10,7 +10,6 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 using IsolationLevel = System.Data.IsolationLevel;
 
 namespace StressTests;

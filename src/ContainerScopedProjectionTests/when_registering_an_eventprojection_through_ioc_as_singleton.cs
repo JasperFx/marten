@@ -20,7 +20,7 @@ public class when_registering_an_eventprojection_through_ioc_as_singleton: IAsyn
     private IProjectionSource<IDocumentOperations,IQuerySession> source;
     private ProjectionBase basics;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
@@ -59,9 +59,9 @@ public class when_registering_an_eventprojection_through_ioc_as_singleton: IAsyn
         basics = source.As<ProjectionBase>();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return _host.StopAsync();
+        return new ValueTask(_host.StopAsync());
     }
 
     [Fact]

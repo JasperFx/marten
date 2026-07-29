@@ -6,7 +6,6 @@ using DaemonTests.TestingSupport;
 using JasperFx.Events.Projections;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests;
 

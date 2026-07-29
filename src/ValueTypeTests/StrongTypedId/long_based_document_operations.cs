@@ -25,12 +25,12 @@ public class long_based_document_operations : IAsyncLifetime
         theSession = theStore.LightweightSession();
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Issue2));
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await theStore.DisposeAsync();
         theSession?.Dispose();
@@ -296,12 +296,12 @@ public class long_based_document_operations_with_non_nullable_id : IAsyncLifetim
         theSession = theStore.LightweightSession();
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Issue3));
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await theStore.DisposeAsync();
         theSession?.Dispose();

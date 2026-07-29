@@ -20,6 +20,9 @@ public class Bug_621_bulk_insert_with_optimistic_concurrency: BugIntegrationCont
             _.Schema.For<Target>().UseOptimisticConcurrency(true);
         });
 
+        // Shared "bugs" schema; see #5070.
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+
         await theStore.BulkInsertAsync(targets);
 
         using (var query = theStore.QuerySession())

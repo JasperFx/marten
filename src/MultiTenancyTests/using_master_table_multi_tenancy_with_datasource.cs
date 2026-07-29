@@ -112,7 +112,7 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
         return builder.ConnectionString;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -159,7 +159,7 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
         await _host.ClearAllTenantDatabaseRecordsAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _host.StopAsync();
         theStore.Dispose();
@@ -225,7 +225,7 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         return builder.ConnectionString;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -268,7 +268,7 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         await _host.ClearAllTenantDatabaseRecordsAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _host.StopAsync();
         theStore.Dispose();

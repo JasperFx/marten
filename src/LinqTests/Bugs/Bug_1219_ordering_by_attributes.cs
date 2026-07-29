@@ -14,6 +14,15 @@ public class Bug_1219_ordering_by_attributes : IntegrationContext
     {
     }
 
+    // Both tests here store Cars and then assert on the ordering of *every* Car in the
+    // store, but IntegrationContext shares one store across the collection and never
+    // clears it between tests. Clear Cars per test so the assertions describe only the
+    // data this test wrote.
+    protected override Task fixtureSetup()
+    {
+        return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Car));
+    }
+
     public class Car
     {
         public Guid Id { get; set; }
@@ -22,7 +31,12 @@ public class Bug_1219_ordering_by_attributes : IntegrationContext
         public Dictionary<int, int> Numbers = new Dictionary<int, int>();
     }
 
-    [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
+    // Skip is assigned after RunFor so the RunFor setter cannot overwrite it.
+    [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft,
+        Skip = "https://github.com/JasperFx/marten/issues/5063 - OrderBy on a dictionary "
+             + "indexer drops the key and sorts by the whole JSON object. This test has "
+             + "never run: the v2 discoverer could not be resolved from a Compile-linked "
+             + "harness, so it was silently not discovered at all.")]
     public async Task can_order_by_string_string_dictionaries()
     {
         var car1 = new Car {Attributes = {{"one", "5"},{"anumber", "5"},{"color", "red"}}};

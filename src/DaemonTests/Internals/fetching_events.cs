@@ -32,14 +32,14 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
         theRange = new EventRange(theShardName, 0, 100, Substitute.For<ISubscriptionAgent>());
     }
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
-        return theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        return new ValueTask(theStore.Advanced.Clean.DeleteAllEventDataAsync());
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     internal async Task executeAfterLoadingEvents(Action<IEventStoreOperations> loadEvents)

@@ -48,7 +48,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
     private string _schema = null!;
     private DocumentStore _store = null!;
 
-    public Task InitializeAsync() => freshStoreAsync();
+    public ValueTask InitializeAsync() => new ValueTask(freshStoreAsync());
 
     // Build a brand-new isolated store against a brand-new schema. Used by InitializeAsync and re-used
     // per attempt by the concurrent-race test so each retry starts from a clean slate.
@@ -89,10 +89,10 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
     private static bool IsKnownWeaselConcurrentReadTransient(Exception e) =>
         e is NullReferenceException && (e.StackTrace?.Contains("readExistingAsync") ?? false);
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

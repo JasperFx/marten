@@ -11,7 +11,6 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace CoreTests.Partitioning;
 
@@ -36,7 +35,7 @@ public class Bug_4706_partitioned_table_idempotent_migration: IAsyncLifetime
 
     public Bug_4706_partitioned_table_idempotent_migration(ITestOutputHelper output) => _output = output;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -44,7 +43,7 @@ public class Bug_4706_partitioned_table_idempotent_migration: IAsyncLifetime
         try { await conn.DropSchemaAsync(_schema); } catch { }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private DocumentStore BuildStore() => (DocumentStore)DocumentStore.For(opts =>
     {

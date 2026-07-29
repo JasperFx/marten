@@ -44,7 +44,7 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         _fixture = fixture;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Clean schemas before each test — both the master pool DB and each shard.
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -60,10 +60,10 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     private IDocumentStore CreateStore(Action<ShardedTenancyOptions>? customConfig = null, Action<StoreOptions>? storeConfig = null)

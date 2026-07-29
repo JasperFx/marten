@@ -18,7 +18,6 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace TenantPartitionedEventsTests.Sharded;
 
@@ -76,7 +75,7 @@ public class Bug_4751_composite_catchup_under_sharded: IAsyncLifetime
         _output = output;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -90,7 +89,7 @@ public class Bug_4751_composite_catchup_under_sharded: IAsyncLifetime
         }
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_store != null!) await _store.DisposeAsync();
     }

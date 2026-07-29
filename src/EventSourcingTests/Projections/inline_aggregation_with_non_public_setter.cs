@@ -29,7 +29,7 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
         });
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         streamId = theSession.Events
             .StartStream<QuestMonstersWithBaseClass>(slayed1, slayed2).Id;
@@ -37,9 +37,9 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
         await theSession.SaveChangesAsync();
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

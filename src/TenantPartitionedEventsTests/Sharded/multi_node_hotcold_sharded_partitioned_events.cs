@@ -21,7 +21,6 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoordinator;
 
 namespace TenantPartitionedEventsTests.Sharded;
@@ -89,7 +88,7 @@ public partial class multi_node_hotcold_sharded_partitioned_events: IAsyncLifeti
 
     private const int LockId = 48617;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -104,7 +103,7 @@ public partial class multi_node_hotcold_sharded_partitioned_events: IAsyncLifeti
         }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private void Configure(StoreOptions opts)
     {

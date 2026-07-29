@@ -17,6 +17,15 @@ public class advanced_sql_query: IntegrationContext
     {
     }
 
+    // Several tests here store DocWithMeta #1. It carries a revision, so re-storing it
+    // from a later test trips an optimistic concurrency check. IntegrationContext shares
+    // one store across the collection and does not clear between tests, so this only
+    // worked while these tests happened to run in a favourable order.
+    protected override Task fixtureSetup()
+    {
+        return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(DocWithMeta));
+    }
+
     [Fact]
     public async Task can_query_scalar()
     {

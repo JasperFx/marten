@@ -28,7 +28,7 @@ public class ShardedTenancyFixture : IAsyncLifetime
     public string[] DbNames { get; private set; } = null!;
     public Dictionary<string, string> ConnectionStrings { get; private set; } = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -98,7 +98,7 @@ public class ShardedTenancyFixture : IAsyncLifetime
         catch { }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 }
 
 [Collection("sharded-tenancy")]
@@ -112,7 +112,7 @@ public class sharded_tenancy_tests : IAsyncLifetime
         _fixture = fixture;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Clean schemas before each test
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -128,7 +128,7 @@ public class sharded_tenancy_tests : IAsyncLifetime
         }
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_store != null)
         {
@@ -482,7 +482,7 @@ public class Bug_4366_wait_for_non_stale_under_sharded_multitenancy: IAsyncLifet
         _fixture = fixture;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -497,10 +497,10 @@ public class Bug_4366_wait_for_non_stale_under_sharded_multitenancy: IAsyncLifet
         }
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

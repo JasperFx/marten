@@ -44,7 +44,7 @@ public class dynamic_spin_up_of_dynamic_tenants : IAsyncLifetime
         return builder.ConnectionString;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -115,7 +115,7 @@ public class dynamic_spin_up_of_dynamic_tenants : IAsyncLifetime
         await daemon3.WaitForShardToBeRunning("TripCustomName:All", 30.Seconds());
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _host.StopAsync();
         theStore.Dispose();

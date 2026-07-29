@@ -43,7 +43,7 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
 
 
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -80,7 +80,7 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _host.StopAsync();
         _host.Dispose();

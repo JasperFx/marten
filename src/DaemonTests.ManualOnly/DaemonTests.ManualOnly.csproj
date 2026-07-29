@@ -9,12 +9,12 @@
         <PackageReference Include="Lamar.Microsoft.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <PackageReference Include="Neovolve.Logging.Xunit" />
+        <PackageReference Include="Neovolve.Logging.Xunit.v3" />
         <PackageReference Include="xunit.runner.visualstudio">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.v3" />
 
     </ItemGroup>
     <ItemGroup>
@@ -23,4 +23,6 @@
         <ProjectReference Include="..\Marten.AspNetCore\Marten.AspNetCore.csproj"/>
         <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
+    <Import Project="../Tests.props" />
+
 </Project>

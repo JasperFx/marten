@@ -21,7 +21,6 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace TenantPartitionedEventsTests.Sharded;
 
@@ -67,7 +66,7 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
         _output = output;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -82,7 +81,7 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     public class Bug4679Trip
     {

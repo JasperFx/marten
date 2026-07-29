@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
@@ -31,7 +31,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.v3" />
         <PackageReference Include="NSubstitute" />
         <PackageReference Include="Shouldly" />
     </ItemGroup>
@@ -51,4 +51,6 @@
     <PropertyGroup>
         <NoWarn>xUnit1013</NoWarn>
     </PropertyGroup>
+    <Import Project="../Tests.props" />
+
 </Project>

@@ -6,6 +6,7 @@ using Marten.Testing.Harness;
 using Pgvector;
 using Shouldly;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
@@ -48,7 +49,7 @@ public class vector_projection_tests : IAsyncLifetime
     private DocumentStore _store = null!;
     private FakeEmbeddingProvider _embedder = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _embedder = new FakeEmbeddingProvider(dimensions: 3);
 
@@ -78,10 +79,10 @@ public class vector_projection_tests : IAsyncLifetime
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

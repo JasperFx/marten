@@ -11,7 +11,7 @@ public class using_database_per_tenant: IAsyncLifetime
 {
     private DocumentStore _theStore;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _theStore = DocumentStore.For(
             options =>
@@ -28,5 +28,5 @@ public class using_database_per_tenant: IAsyncLifetime
     }
 
 
-    public async Task DisposeAsync() => await _theStore.DisposeAsync();
+    public async ValueTask DisposeAsync() => await _theStore.DisposeAsync();
 }

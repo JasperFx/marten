@@ -12,7 +12,7 @@
     <ItemGroup>
         <PackageReference Include="coverlet.collector"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk"/>
-        <PackageReference Include="xunit"/>
+        <PackageReference Include="xunit.v3" />
         <PackageReference Include="xunit.runner.visualstudio"/>
     </ItemGroup>
 
@@ -24,5 +24,7 @@
       <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
       <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
+
+    <Import Project="../Tests.props" />
 
 </Project>

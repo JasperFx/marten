@@ -17,7 +17,6 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.Aggregations;
 

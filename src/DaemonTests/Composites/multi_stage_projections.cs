@@ -18,7 +18,6 @@ using Marten.Schema;
 using Marten.Storage;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.Composites;
 

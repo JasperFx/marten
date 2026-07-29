@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
@@ -14,7 +14,7 @@ namespace DocumentDbTests.SessionMechanics;
 
 public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsContext, IAsyncLifetime
 {
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -22,7 +22,7 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
             .ExecuteNonQueryAsync();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task call_listener_events_on_synchronous_session_saves()

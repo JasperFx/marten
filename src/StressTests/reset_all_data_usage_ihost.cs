@@ -6,7 +6,6 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.SessionMechanics;
 

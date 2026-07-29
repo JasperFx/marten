@@ -37,7 +37,7 @@ public sealed class ShardedPartitionedFixture : IAsyncLifetime
     public string[] DbNames { get; private set; } = null!;
     public Dictionary<string, string> ConnectionStrings { get; private set; } = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -112,5 +112,5 @@ public sealed class ShardedPartitionedFixture : IAsyncLifetime
         catch { }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 }

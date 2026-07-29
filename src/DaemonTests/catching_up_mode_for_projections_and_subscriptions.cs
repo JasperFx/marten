@@ -24,7 +24,7 @@ public class catching_up_mode_for_projections_and_subscriptions : OneOffConfigur
     private IReadOnlyList<ShardState> progress;
     private Guid streamId;
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         StoreOptions(opts =>
         {
@@ -51,9 +51,9 @@ public class catching_up_mode_for_projections_and_subscriptions : OneOffConfigur
         progress = await theStore.Advanced.AllProjectionProgress();
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

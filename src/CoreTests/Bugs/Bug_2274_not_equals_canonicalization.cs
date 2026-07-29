@@ -41,15 +41,15 @@ public class Bug_2274_not_equals_canonicalization : BugIntegrationContext, IAsyn
         await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
     }
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
-        return theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        return new ValueTask(theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync());
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 }
 

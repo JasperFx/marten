@@ -24,7 +24,7 @@ public class assign_tag_where_tests : OneOffConfigurationsContext, IAsyncLifetim
     private RegionId _eastRegion = null!;
     private RegionId _westRegion = null!;
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
         _eastRegion = new RegionId(Guid.NewGuid());
         _westRegion = new RegionId(Guid.NewGuid());
@@ -38,10 +38,10 @@ public class assign_tag_where_tests : OneOffConfigurationsContext, IAsyncLifetim
             opts.Events.RegisterTagType<RegionId>("region");
         });
 
-        return Task.CompletedTask;
+        return default;
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task assign_tag_where_by_event_type_name()

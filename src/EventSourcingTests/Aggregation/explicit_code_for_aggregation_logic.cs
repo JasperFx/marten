@@ -372,14 +372,14 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events: On
         StoreOptions(opts => opts.Projections.Add(new StartAndStopProjection(), ProjectionLifecycle.Inline));
     }
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
-        return theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        return new ValueTask(theStore.Advanced.Clean.CompletelyRemoveAllAsync());
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

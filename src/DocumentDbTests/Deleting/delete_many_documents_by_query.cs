@@ -11,6 +11,15 @@ namespace DocumentDbTests.Deleting;
 
 public class delete_many_documents_by_query : IntegrationContext
 {
+    // Several tests here bulk-insert 50 Targets and then assert on the *global* Target
+    // count. IntegrationContext shares one store across the whole "integration" collection
+    // and does not clear data between tests, so only whichever of them ran first could
+    // pass. Clear the table per test instead of depending on execution order.
+    protected override Task fixtureSetup()
+    {
+        return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+    }
+
     [Fact]
     public async Task can_delete_by_query()
     {

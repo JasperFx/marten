@@ -26,7 +26,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
     private IHost _appender;
     private IHost _processor;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await SchemaUtils.DropSchema(ConnectionSource.ConnectionString, "missing_events");
 
@@ -47,7 +47,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
 
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _appender.StopAsync();
         await _processor.StopAsync();

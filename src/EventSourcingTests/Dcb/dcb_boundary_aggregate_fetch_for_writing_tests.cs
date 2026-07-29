@@ -54,13 +54,13 @@ public class dcb_boundary_aggregate_fetch_for_writing_tests: OneOffConfiguration
         });
     }
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
         ConfigureStore();
-        return Task.CompletedTask;
+        return default;
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task fetch_for_writing_by_tags_works_for_pure_boundary_aggregate()
@@ -109,13 +109,13 @@ public class dcb_boundary_aggregate_default_stream_identity_tests: OneOffConfigu
         });
     }
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
         ConfigureStore();
-        return Task.CompletedTask;
+        return default;
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task fetch_for_writing_by_tags_works_with_default_guid_stream_identity()

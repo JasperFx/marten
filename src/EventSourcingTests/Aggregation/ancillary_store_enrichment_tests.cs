@@ -23,7 +23,7 @@ public class ancillary_store_enrichment_tests : IAsyncLifetime
     private IHost _host = null!;
     private IDocumentStore _primaryStore = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
@@ -48,7 +48,7 @@ public class ancillary_store_enrichment_tests : IAsyncLifetime
         _primaryStore = _host.Services.GetRequiredService<IDocumentStore>();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _host.StopAsync();
         _host.Dispose();

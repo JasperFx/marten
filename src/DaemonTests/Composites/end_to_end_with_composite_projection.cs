@@ -12,7 +12,6 @@ using Marten.Events;
 using Marten.Events.Projections;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.Composites;
 

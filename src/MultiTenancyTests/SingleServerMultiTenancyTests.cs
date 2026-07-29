@@ -19,7 +19,7 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
     private DefaultNpgsqlDataSourceFactory dataSourceFactory = new();
     private SingleServerMultiTenancy theTenancy;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await DropDatabaseIfExists("tenant1");
         await DropDatabaseIfExists("tenant2");
@@ -30,9 +30,9 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
         theTenancy = new SingleServerMultiTenancy(dataSourceFactory, ConnectionSource.ConnectionString, new StoreOptions());
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return default;
     }
 
     private async Task DropDatabaseIfExists(string databaseName)

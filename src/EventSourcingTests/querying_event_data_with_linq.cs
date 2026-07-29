@@ -23,15 +23,15 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
     private readonly MembersJoined joined2 = new MembersJoined { Members = new string[] { "Nynaeve", "Egwene" } };
     private readonly MembersDeparted departed2 = new MembersDeparted { Members = new[] { "Matt" } };
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     #region sample_query-against-event-data

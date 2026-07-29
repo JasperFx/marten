@@ -48,7 +48,7 @@ public class dcb_tag_append_under_partitioning : IAsyncLifetime
     private string _schema = null!;
     private DocumentStore _store = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Same own-store schema convention as Bug_4611 — Guid + ProcessId fits
         // under PG's 32-char comfort threshold for nested partition + sequence
@@ -80,10 +80,10 @@ public class dcb_tag_append_under_partitioning : IAsyncLifetime
         await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

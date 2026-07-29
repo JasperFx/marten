@@ -20,7 +20,6 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoordinator;
 
 namespace TenantPartitionedEventsTests.Sharded;
@@ -75,7 +74,7 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
         _output = output;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -90,7 +89,7 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
         }
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_store != null!)
         {

@@ -64,7 +64,7 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
         _fixture = fixture;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -85,14 +85,14 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         foreach (var store in _stores)
         {
             store.Dispose();
         }
 
-        return Task.CompletedTask;
+        return default;
     }
 
     /// <summary>

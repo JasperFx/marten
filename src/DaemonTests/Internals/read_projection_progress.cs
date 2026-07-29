@@ -18,16 +18,16 @@ namespace DaemonTests.Internals;
 // candidates match parsed Name + TenantId (null tenant = bare store-global only), newest version wins.
 public class read_projection_progress : OneOffConfigurationsContext, IAsyncLifetime
 {
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
         await theStore.EnsureStorageExistsAsync(typeof(IEvent));
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     private async Task seedProgression(params (ShardName name, long sequence)[] rows)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
@@ -7,7 +7,6 @@ using Marten;
 using Marten.Events.Projections;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.EventProjections;
 

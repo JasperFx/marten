@@ -8,7 +8,7 @@
         <PackageReference Include="FSharp.SystemTextJson" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="Vogen" />
-        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.v3" />
         <PackageReference Include="xunit.runner.visualstudio">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
@@ -56,4 +56,6 @@
     <ItemGroup>
       <Folder Include="Internal\Generated\DocumentStorage\" />
     </ItemGroup>
+    <Import Project="../Tests.props" />
+
 </Project>

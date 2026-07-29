@@ -86,13 +86,13 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
     }
     #endregion
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
         ConfigureStore();
-        return Task.CompletedTask;
+        return default;
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     private async Task AppendTaggedEvent(Guid streamId, object eventData, params object[] tags)
     {

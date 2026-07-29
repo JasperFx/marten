@@ -21,7 +21,6 @@ using Shouldly;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.MultiTenancy;
 
@@ -58,7 +57,7 @@ public class multi_tenancy_by_database: IAsyncLifetime
         return builder.ConnectionString;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -97,9 +96,9 @@ public class multi_tenancy_by_database: IAsyncLifetime
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return _host.StopAsync();
+        return new ValueTask(_host.StopAsync());
     }
 
     [Fact]

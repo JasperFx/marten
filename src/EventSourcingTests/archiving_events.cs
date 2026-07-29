@@ -26,12 +26,12 @@ namespace EventSourcingTests;
 
 public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
 {
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     #region sample_archive_stream_usage
 

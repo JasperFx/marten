@@ -21,7 +21,6 @@ using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
-using Xunit.Abstractions;
 using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoordinator;
 
 namespace TenantPartitionedEventsTests.Daemon;

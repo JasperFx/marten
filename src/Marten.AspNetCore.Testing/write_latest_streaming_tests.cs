@@ -95,14 +95,14 @@ public class write_latest_string_streaming_tests: IAsyncLifetime
         Store = theHost.Services.GetRequiredService<IDocumentStore>();
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await Store.Advanced.ResetAllData();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

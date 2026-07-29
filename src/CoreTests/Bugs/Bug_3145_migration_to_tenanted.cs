@@ -26,6 +26,13 @@ public class Bug_3145_migration_to_tenanted : BugIntegrationContext
 
         using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
+
+        // This test drives raw DDL and never touches theStore, so it cannot rely on the
+        // context having created the schema -- it only ever passed because some other test
+        // in the "bugs" schema happened to run first.
+        await conn.CreateCommand($"create schema if not exists {mapping.DatabaseSchemaName}")
+            .ExecuteNonQueryAsync();
+
         await table.CreateAsync(conn);
 
         mapping.TenancyStyle = TenancyStyle.Conjoined;

@@ -3,6 +3,7 @@ using Marten.Testing.Harness;
 using NetTopologySuite.Geometries;
 using Shouldly;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Marten.PostGIS.Tests;
 
@@ -11,7 +12,7 @@ public class spatial_query_tests : IAsyncLifetime
     private DocumentStore _store = null!;
     private static readonly GeometryFactory Wgs84 = new(new PrecisionModel(), 4326);
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _store = DocumentStore.For(opts =>
         {
@@ -28,10 +29,10 @@ public class spatial_query_tests : IAsyncLifetime
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

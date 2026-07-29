@@ -47,7 +47,7 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext, I
 
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         using var session = theStore.LightweightSession("Bug_1229");
         session.Store(_company);
@@ -57,9 +57,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext, I
         await session.SaveChangesAsync();
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

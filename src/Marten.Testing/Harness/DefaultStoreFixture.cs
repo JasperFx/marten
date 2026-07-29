@@ -28,7 +28,7 @@ namespace Marten.Testing.Harness
             return store;
         });
 
-        public Task InitializeAsync()
+        public ValueTask InitializeAsync()
         {
             Store = DocumentStore.For(opts =>
             {
@@ -37,19 +37,19 @@ namespace Marten.Testing.Harness
             });
 
             // Do this exactly once and no more.
-            return Store.Advanced.Clean.CompletelyRemoveAllAsync();
+            return new ValueTask(Store.Advanced.Clean.CompletelyRemoveAllAsync());
         }
 
         public DocumentStore Store { get; private set; }
 
-        public Task DisposeAsync()
+        public ValueTask DisposeAsync()
         {
             Store.Dispose();
             if (StringStreamIdentifiers.IsValueCreated)
             {
                 StringStreamIdentifiers.Value.Dispose();
             }
-            return Task.CompletedTask;
+            return default;
         }
     }
 }

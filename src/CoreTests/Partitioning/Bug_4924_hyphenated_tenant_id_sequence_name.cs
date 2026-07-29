@@ -12,7 +12,6 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace CoreTests.Partitioning;
 
@@ -59,7 +58,7 @@ public class Bug_4924_hyphenated_tenant_id_sequence_name: IAsyncLifetime
 
     public Bug_4924_hyphenated_tenant_id_sequence_name(ITestOutputHelper output) => _output = output;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -67,7 +66,7 @@ public class Bug_4924_hyphenated_tenant_id_sequence_name: IAsyncLifetime
         try { await conn.DropSchemaAsync(_schema); } catch { }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private DocumentStore BuildStore() => (DocumentStore)DocumentStore.For(opts =>
     {

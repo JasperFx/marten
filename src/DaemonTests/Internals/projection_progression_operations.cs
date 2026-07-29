@@ -16,16 +16,16 @@ namespace DaemonTests.Internals;
 
 public class projection_progression_operations : OneOffConfigurationsContext, IAsyncLifetime
 {
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
         await theStore.EnsureStorageExistsAsync(typeof(IEvent));
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

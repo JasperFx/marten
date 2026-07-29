@@ -53,6 +53,11 @@ public class compiled_query_by_string_fragments : IntegrationContext
     [Fact]
     public async Task can_use_ends_with()
     {
+        // The other tests in this class already do this. Without it these two assert on
+        // every User in the shared store, so they only passed when they happened to run
+        // first.
+        await theStore.Advanced.ResetAllData();
+
         var user1 = new User
         {
             UserName = "Sir Gawain"
@@ -85,6 +90,11 @@ public class compiled_query_by_string_fragments : IntegrationContext
     [Fact]
     public async Task can_use_string_contains()
     {
+        // The other tests in this class already do this. Without it these two assert on
+        // every User in the shared store, so they only passed when they happened to run
+        // first.
+        await theStore.Advanced.ResetAllData();
+
         var user1 = new User
         {
             UserName = "Sir Gawain"

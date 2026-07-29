@@ -18,16 +18,16 @@ public class quick_append_events_with_optimistic_or_exclusive_locks
 
 
 
-        public async Task InitializeAsync()
+        public override async ValueTask InitializeAsync()
         {
             await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
             StoreOptions(opts => opts.Events.AppendMode = EventAppendMode.Quick);
         }
 
-        public Task DisposeAsync()
+        public override ValueTask DisposeAsync()
         {
-            return Task.CompletedTask;
+            return base.DisposeAsync();
         }
 
         [Fact]

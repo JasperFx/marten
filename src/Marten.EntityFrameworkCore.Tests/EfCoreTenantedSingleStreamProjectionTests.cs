@@ -17,7 +17,7 @@ public abstract class EfCoreTenantedSingleStreamProjectionTestsBase: IAsyncLifet
 
     protected abstract ProjectionLifecycle Lifecycle { get; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         Store = DocumentStore.For(opts =>
         {
@@ -30,10 +30,10 @@ public abstract class EfCoreTenantedSingleStreamProjectionTestsBase: IAsyncLifet
         await Store.Advanced.Clean.CompletelyRemoveAllAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         Store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     protected virtual Task WaitForProjectionAsync() => Task.CompletedTask;

@@ -44,7 +44,7 @@ public class MartenManagedPartitioningFixture: StoreFixture, IAsyncLifetime
         Options.Projections.LiveStreamAggregation<SimpleAggregate>();
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -52,7 +52,7 @@ public class MartenManagedPartitioningFixture: StoreFixture, IAsyncLifetime
         try { await conn.DropSchemaAsync(Schema); } catch (Exception) { }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 }
 
 [CollectionDefinition("marten_managed_partitioning")]
@@ -67,7 +67,7 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
     {
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -78,7 +78,7 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
         ((MartenDatabase)theStore.Storage.Database).ResetSchemaExistenceChecks();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task can_build_storage_with_dynamic_tenants()
@@ -231,6 +231,13 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
 
         var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
         assertTableHasTenantPartitions(userTable, "a1", "a2", "a3", "b1", "b2");
+
+        // b1/b2 are unique to this test. The store is shared across the class and caches its
+        // managed-tenant set in memory, so dropping the schemas in InitializeAsync does not
+        // evict them -- they get re-created for the next test, which then sees partitions it
+        // never asked for. Every other test here works with a1/a2/a3, so only these two need
+        // clearing.
+        await theStore.Advanced.RemoveMartenManagedTenantsAsync(["b1", "b2"], CancellationToken.None);
     }
 
 

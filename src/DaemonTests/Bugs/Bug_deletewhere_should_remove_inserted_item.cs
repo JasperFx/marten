@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using JasperFx.Events.Projections;
 using Marten;
@@ -7,7 +7,6 @@ using Marten.Metadata;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.Bugs;
 

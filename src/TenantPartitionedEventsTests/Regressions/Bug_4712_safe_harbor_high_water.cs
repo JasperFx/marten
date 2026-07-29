@@ -14,7 +14,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace TenantPartitionedEventsTests.Regressions;
 

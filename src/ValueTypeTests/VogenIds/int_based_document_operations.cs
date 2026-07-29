@@ -24,12 +24,12 @@ public class int_based_document_operations : IAsyncLifetime
         theSession = theStore.LightweightSession();
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Order));
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await theStore.DisposeAsync();
         theSession?.Dispose();

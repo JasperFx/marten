@@ -926,7 +926,13 @@ public class full_text_index: OneOffConfigurationsContext
         {
             _.Connection(ConnectionSource.ConnectionString);
             _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-            _.DatabaseSchemaName = "fulltext";
+
+            // Point at the schema this test actually set the v3-style index up in. This used
+            // to say "fulltext", which is a different schema that nothing here touches, so
+            // the assertion below only passed when a sibling test had already populated it --
+            // and asserted nothing about the v3 index this test goes to the trouble of
+            // simulating.
+            _.DatabaseSchemaName = SchemaName;
 
             _.Schema.For<User>().FullTextIndex();
         });

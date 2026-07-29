@@ -61,7 +61,7 @@ public abstract class PartitionedFixtureBase: IAsyncLifetime
     /// </summary>
     protected abstract void ConfigureStore(StoreOptions opts);
 
-    public virtual async Task InitializeAsync()
+    public virtual async ValueTask InitializeAsync()
     {
         Store = DocumentStore.For(opts =>
         {
@@ -109,10 +109,10 @@ public abstract class PartitionedFixtureBase: IAsyncLifetime
         opts.Schema.For<TripCount>().Identity(x => x.Id).DocumentAlias("p2c_trip_count");
     }
 
-    public virtual Task DisposeAsync()
+    public virtual ValueTask DisposeAsync()
     {
         Store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     /// <summary>

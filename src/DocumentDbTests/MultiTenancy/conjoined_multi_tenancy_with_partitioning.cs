@@ -46,7 +46,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
         });
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         using (var session = theStore.LightweightSession("Red"))
         {
@@ -61,9 +61,9 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
         }
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]
