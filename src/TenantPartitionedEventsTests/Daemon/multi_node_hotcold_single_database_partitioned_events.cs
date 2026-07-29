@@ -113,8 +113,8 @@ public partial class multi_node_hotcold_single_database_partitioned_events
 
         using (var bootstrap = (DocumentStore)DocumentStore.For(Configure))
         {
-            await bootstrap.Advanced.Clean.CompletelyRemoveAllAsync();
-            await bootstrap.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+            await bootstrap.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+            await bootstrap.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
             await bootstrap.Advanced.AddMartenManagedTenantsAsync(
                 CancellationToken.None, tenants.Keys.ToArray());
 
@@ -127,7 +127,7 @@ public partial class multi_node_hotcold_single_database_partitioned_events
                     .Concat(Enumerable.Range(0, legs).Select(_ => (object)new HcLeg(1.0)))
                     .ToArray();
                 session.Events.StartStream<HcTrip>(id, events);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
         }
 
@@ -214,18 +214,18 @@ public partial class multi_node_hotcold_single_database_partitioned_events
             foreach (var (tenant, legs) in tenants)
             {
                 await using var query = verify.QuerySession(tenant);
-                var trip = await query.LoadAsync<HcTrip>(streams[tenant]);
+                var trip = await query.LoadAsync<HcTrip>(streams[tenant], TestContext.Current.CancellationToken);
                 trip.ShouldNotBeNull($"tenant {tenant}'s HcTrip projection doc must materialize");
                 trip!.Distance.ShouldBe(legs);
-                var tally = await query.LoadAsync<HcTally>(streams[tenant]);
+                var tally = await query.LoadAsync<HcTally>(streams[tenant], TestContext.Current.CancellationToken);
                 tally.ShouldNotBeNull($"tenant {tenant}'s HcTally projection doc must materialize");
                 tally!.Count.ShouldBe(legs);
             }
         }
         finally
         {
-            await nodeA.StopAsync();
-            await nodeB.StopAsync();
+            await nodeA.StopAsync(TestContext.Current.CancellationToken);
+            await nodeB.StopAsync(TestContext.Current.CancellationToken);
         }
     }
 

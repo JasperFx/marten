@@ -109,7 +109,7 @@ public class Bug_4761_per_tenant_progression_same_shard: IAsyncLifetime
         {
             session.Events.StartStream<ShardedDaemonCounter>(xStream,
                 new ShardedDaemonEvent("x-1"), new ShardedDaemonEvent("x-2"), new ShardedDaemonEvent("x-3"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var yStream = Guid.NewGuid();
@@ -117,7 +117,7 @@ public class Bug_4761_per_tenant_progression_same_shard: IAsyncLifetime
         {
             session.Events.StartStream<ShardedDaemonCounter>(yStream,
                 new ShardedDaemonEvent("y-1"), new ShardedDaemonEvent("y-2"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await _store.BuildProjectionDaemonAsync("tenant_x");
@@ -129,10 +129,10 @@ public class Bug_4761_per_tenant_progression_same_shard: IAsyncLifetime
         ShardedDaemonCounter? dx = null, dy = null;
         while (sw.Elapsed < 20.Seconds())
         {
-            await using (var q = _store.QuerySession("tenant_x")) dx = await q.LoadAsync<ShardedDaemonCounter>(xStream);
-            await using (var q = _store.QuerySession("tenant_y")) dy = await q.LoadAsync<ShardedDaemonCounter>(yStream);
+            await using (var q = _store.QuerySession("tenant_x")) dx = await q.LoadAsync<ShardedDaemonCounter>(xStream, TestContext.Current.CancellationToken);
+            await using (var q = _store.QuerySession("tenant_y")) dy = await q.LoadAsync<ShardedDaemonCounter>(yStream, TestContext.Current.CancellationToken);
             if (dx is { EventCount: 3 } && dy is { EventCount: 2 }) break;
-            await Task.Delay(250);
+            await Task.Delay(250, TestContext.Current.CancellationToken);
         }
         dx.ShouldNotBeNull(); dx!.EventCount.ShouldBe(3);
         dy.ShouldNotBeNull(); dy!.EventCount.ShouldBe(2);

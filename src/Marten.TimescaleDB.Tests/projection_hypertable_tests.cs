@@ -119,7 +119,7 @@ public class projection_hypertable_tests: IAsyncLifetime
                     new SensorReadingRecorded(Guid.NewGuid(), baseTime.AddHours(i), 10 + i));
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var rows = await ScalarAsync<long>("select count(*) from timescale_proj.sensor_metrics");

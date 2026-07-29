@@ -104,11 +104,11 @@ public class BinaryEventIntegrationTests: IAsyncLifetime
                 new PassengerPickedUp(tripId, "Bob", startedAt.AddMinutes(2)),
                 new PassengerPickedUp(tripId, "Carol", startedAt.AddMinutes(5)),
                 new TripEnded(tripId, startedAt.AddMinutes(30), 42.50m));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession();
-        var trip = await query.Events.AggregateStreamAsync<Trip>(tripId);
+        var trip = await query.Events.AggregateStreamAsync<Trip>(tripId, token: TestContext.Current.CancellationToken);
 
         trip.ShouldNotBeNull();
         trip.Id.ShouldBe(tripId);
@@ -134,11 +134,11 @@ public class BinaryEventIntegrationTests: IAsyncLifetime
                 new PassengerPickedUp(tripId, "Eli", DateTimeOffset.UtcNow),    // binary
                 new TripCommentAdded(tripId, "passenger on board", DateTimeOffset.UtcNow), // JSON
                 new TripEnded(tripId, DateTimeOffset.UtcNow, 19.00m));          // binary
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession();
-        var trip = await query.Events.AggregateStreamAsync<Trip>(tripId);
+        var trip = await query.Events.AggregateStreamAsync<Trip>(tripId, token: TestContext.Current.CancellationToken);
 
         trip.ShouldNotBeNull();
         trip.DriverName.ShouldBe("Dana");
@@ -161,11 +161,11 @@ public class BinaryEventIntegrationTests: IAsyncLifetime
             session.Events.StartStream<Trip>(tripId,
                 new TripStarted(tripId, "Frank", DateTimeOffset.UtcNow),
                 new PassengerPickedUp(tripId, "Gina", DateTimeOffset.UtcNow));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession();
-        var trip = await query.LoadAsync<Trip>(tripId);
+        var trip = await query.LoadAsync<Trip>(tripId, TestContext.Current.CancellationToken);
 
         trip.ShouldNotBeNull();
         trip.DriverName.ShouldBe("Frank");
@@ -182,7 +182,7 @@ public class BinaryEventIntegrationTests: IAsyncLifetime
         {
             session.Events.StartStream<Trip>(tripId,
                 new TripStarted(tripId, "Hana", DateTimeOffset.UtcNow));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _store.LightweightSession())
@@ -190,11 +190,11 @@ public class BinaryEventIntegrationTests: IAsyncLifetime
             session.Events.Append(tripId,
                 new PassengerPickedUp(tripId, "Ian", DateTimeOffset.UtcNow),
                 new TripEnded(tripId, DateTimeOffset.UtcNow, 12.00m));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession();
-        var trip = await query.LoadAsync<Trip>(tripId);
+        var trip = await query.LoadAsync<Trip>(tripId, TestContext.Current.CancellationToken);
 
         trip.ShouldNotBeNull();
         trip.DriverName.ShouldBe("Hana");
@@ -218,7 +218,7 @@ public class BinaryEventIntegrationTests: IAsyncLifetime
             session.Events.StartStream<Trip>(tripId,
                 new TripStarted(tripId, "Jordan", DateTimeOffset.UtcNow),
                 new PassengerPickedUp(tripId, "Kim", DateTimeOffset.UtcNow));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Read-modify-write — FetchForWriting hydrates the aggregate
@@ -226,18 +226,18 @@ public class BinaryEventIntegrationTests: IAsyncLifetime
         // append a new binary event on top.
         await using (var session = _store.LightweightSession())
         {
-            var stream = await session.Events.FetchForWriting<Trip>(tripId);
+            var stream = await session.Events.FetchForWriting<Trip>(tripId, TestContext.Current.CancellationToken);
 
             stream.Aggregate.ShouldNotBeNull();
             stream.Aggregate.DriverName.ShouldBe("Jordan");
             stream.Aggregate.Passengers.ShouldBe(new[] { "Kim" });
 
             stream.AppendOne(new TripEnded(tripId, DateTimeOffset.UtcNow, 27.75m));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession();
-        var trip = await query.Events.AggregateStreamAsync<Trip>(tripId);
+        var trip = await query.Events.AggregateStreamAsync<Trip>(tripId, token: TestContext.Current.CancellationToken);
         trip.ShouldNotBeNull();
         trip.IsCompleted.ShouldBeTrue();
         trip.FareAmount.ShouldBe(27.75m);

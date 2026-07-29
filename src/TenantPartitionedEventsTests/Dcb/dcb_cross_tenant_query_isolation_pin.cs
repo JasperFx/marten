@@ -110,7 +110,7 @@ public class dcb_cross_tenant_query_isolation_pin : IAsyncLifetime
             var evt = session.Events.BuildEvent(new DcbXtPayment("ALPHA-PAYMENT"));
             evt.WithTag(sharedCustomer);
             session.Events.Append(Guid.NewGuid(), evt);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _store.LightweightSession("beta"))
@@ -118,13 +118,13 @@ public class dcb_cross_tenant_query_isolation_pin : IAsyncLifetime
             var evt = session.Events.BuildEvent(new DcbXtPayment("BETA-PAYMENT"));
             evt.WithTag(sharedCustomer);
             session.Events.Append(Guid.NewGuid(), evt);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var query = new EventTagQuery().Or<DcbXtCustomerId>(sharedCustomer);
 
         await using var alphaQuery = _store.LightweightSession("alpha");
-        var events = await alphaQuery.Events.QueryByTagsAsync(query);
+        var events = await alphaQuery.Events.QueryByTagsAsync(query, TestContext.Current.CancellationToken);
 
         // Exactly one row — alpha's own event. The fix to EventStore.Dcb.cs:
         // adding `AND e.tenant_id = t.tenant_id` to the JOIN means alpha's

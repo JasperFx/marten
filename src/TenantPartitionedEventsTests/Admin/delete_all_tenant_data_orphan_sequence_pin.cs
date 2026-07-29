@@ -78,7 +78,7 @@ public class delete_all_tenant_data_orphan_sequence_pin : IAsyncLifetime
         {
             session.Events.StartStream(streamId,
                 new DelEvent("a"), new DelEvent("b"), new DelEvent("c"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var seqValueBefore = await ReadSequenceLastValueAsync(_schema, $"mt_events_sequence_{tenant}");
@@ -114,7 +114,7 @@ public class delete_all_tenant_data_orphan_sequence_pin : IAsyncLifetime
         {
             session.Events.StartStream(streamId,
                 new DelEvent("x"), new DelEvent("y"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var seqValueBefore = await ReadSequenceLastValueAsync(_schema, $"mt_events_sequence_{tenant}");
@@ -150,7 +150,7 @@ public class delete_all_tenant_data_orphan_sequence_pin : IAsyncLifetime
         await using (var session = _store.LightweightSession(drop))
         {
             session.Events.StartStream(Guid.NewGuid(), new DelEvent("x"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Seed the progression rows we want the cleanup to target. Names span the two grammars:

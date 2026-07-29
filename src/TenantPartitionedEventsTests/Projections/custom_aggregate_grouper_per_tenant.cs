@@ -109,7 +109,7 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
         {
             session.Events.StartStream(alphaCustomer, new CustomerRegistered(alphaCustomer, "Alpha Inc"));
             session.Events.Append(alphaCustomer, new CustomerLinkedToExternalAccount(alphaCustomer, sharedExternalId));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _store.LightweightSession("alpha"))
         {
@@ -118,7 +118,7 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
                 new ShippingLabelCreated(sharedExternalId),
                 new ShippingLabelCreated(sharedExternalId),
                 new ShippingLabelCreated(sharedExternalId));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // beta: register a DIFFERENT customer, link to the SAME external id,
@@ -127,7 +127,7 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
         {
             session.Events.StartStream(betaCustomer, new CustomerRegistered(betaCustomer, "Beta LLC"));
             session.Events.Append(betaCustomer, new CustomerLinkedToExternalAccount(betaCustomer, sharedExternalId));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _store.LightweightSession("beta"))
         {
@@ -138,20 +138,20 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
                 new ShippingLabelCreated(sharedExternalId),
                 new ShippingLabelCreated(sharedExternalId),
                 new ShippingLabelCreated(sharedExternalId));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Read each tenant's billing doc using a tenant-scoped query. The
         // billing metric is multi-tenanted (per AllDocumentsAreMultiTenanted),
         // so each tenant sees only its own row keyed by its own customer id.
         await using var alphaQuery = _store.QuerySession("alpha");
-        var alphaBilling = await alphaQuery.LoadAsync<CustomerBillingMetrics>(alphaCustomer);
+        var alphaBilling = await alphaQuery.LoadAsync<CustomerBillingMetrics>(alphaCustomer, TestContext.Current.CancellationToken);
         alphaBilling.ShouldNotBeNull("alpha's grouper must have routed alpha's labels to alpha's customer");
         alphaBilling!.ShippingLabels.ShouldBe(3,
             "alpha appended 3 labels — beta's 5 must not bleed in via shared external id");
 
         await using var betaQuery = _store.QuerySession("beta");
-        var betaBilling = await betaQuery.LoadAsync<CustomerBillingMetrics>(betaCustomer);
+        var betaBilling = await betaQuery.LoadAsync<CustomerBillingMetrics>(betaCustomer, TestContext.Current.CancellationToken);
         betaBilling.ShouldNotBeNull("beta's grouper must have routed beta's labels to beta's customer");
         betaBilling!.ShippingLabels.ShouldBe(5,
             "beta appended 5 labels — alpha's 3 must not bleed in via shared external id");
@@ -170,26 +170,26 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
         {
             session.Events.StartStream(alphaCustomer, new CustomerRegistered(alphaCustomer, "Alpha Inc"));
             session.Events.Append(alphaCustomer, new CustomerLinkedToExternalAccount(alphaCustomer, "EXT-A"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _store.LightweightSession("alpha"))
         {
             var labelStream = Guid.NewGuid();
             session.Events.StartStream(labelStream, new ShippingLabelCreated("EXT-A"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Pin from alpha's own session: doc exists.
         await using (var alphaQuery = _store.QuerySession("alpha"))
         {
-            (await alphaQuery.LoadAsync<CustomerBillingMetrics>(alphaCustomer)).ShouldNotBeNull();
+            (await alphaQuery.LoadAsync<CustomerBillingMetrics>(alphaCustomer, TestContext.Current.CancellationToken)).ShouldNotBeNull();
         }
 
         // Pin from beta's session: alpha's customer id finds nothing — the
         // billing doc is in alpha's tenant slot, beta's tenant slot is empty.
         await using (var betaQuery = _store.QuerySession("beta"))
         {
-            (await betaQuery.LoadAsync<CustomerBillingMetrics>(alphaCustomer))
+            (await betaQuery.LoadAsync<CustomerBillingMetrics>(alphaCustomer, TestContext.Current.CancellationToken))
                 .ShouldBeNull("alpha's billing doc must not be visible to beta — tenant slot isolation");
         }
     }

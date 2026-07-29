@@ -92,11 +92,11 @@ public class autocreate_matrix_under_partitioning
         await using (var session = store.LightweightSession("alpha"))
         {
             session.Events.StartStream(streamId, new AutoCreateProbeEvent("hello"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = store.QuerySession("alpha");
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(1, $"AutoCreate.{autoCreate} must support the standard append+read flow under partitioning");
     }
 
@@ -128,11 +128,11 @@ public class autocreate_matrix_under_partitioning
         await using (var session = store.LightweightSession("alpha"))
         {
             session.Events.StartStream(streamId, new AutoCreateProbeEvent("none-virgin"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = store.QuerySession("alpha");
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(1,
             "AutoCreate.None against a virgin schema must work end-to-end after #4641 — " +
             "the admin call's bypass scope now includes the events feature");
@@ -205,7 +205,7 @@ public class autocreate_matrix_under_partitioning
             await using (var session = store.LightweightSession("alpha"))
             {
                 session.Events.StartStream(streamId, new AutoCreateProbeEvent("trigger"));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
             (await CountQuickAppendFunctionAsync(allSchema)).ShouldBe(1L,
                 "the first SaveChangesAsync lazy-installs the events feature under permissive modes");
@@ -239,7 +239,7 @@ public class autocreate_matrix_under_partitioning
         // Primer: full DDL.
         using (var primer = BuildStore(schema, AutoCreate.All))
         {
-            await primer.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+            await primer.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
         }
 
         // Runtime: AutoCreate.None against the already-created schema.
@@ -250,11 +250,11 @@ public class autocreate_matrix_under_partitioning
         await using (var session = store.LightweightSession("alpha"))
         {
             session.Events.StartStream(streamId, new AutoCreateProbeEvent("primed"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = store.QuerySession("alpha");
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(1,
             "AutoCreate.None against a pre-existing schema must still let admin partition operations work");
     }

@@ -88,7 +88,7 @@ public class enable_unique_index_on_event_id_under_partitioning : IAsyncLifetime
         await using (var session = _store.LightweightSession("alpha"))
         {
             session.Events.StartStream(alphaStream, new Event<UniqEvent>(new UniqEvent("a")) { Id = sharedEventId });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Beta appends an event with the SAME id — should succeed because the
@@ -96,16 +96,16 @@ public class enable_unique_index_on_event_id_under_partitioning : IAsyncLifetime
         await using (var session = _store.LightweightSession("beta"))
         {
             session.Events.StartStream(betaStream, new Event<UniqEvent>(new UniqEvent("b")) { Id = sharedEventId });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Sanity: both events live in their respective partitions.
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand(
             $"select count(*) from {_schema}.mt_events where id = @id");
         cmd.Parameters.AddWithValue("id", sharedEventId);
-        var count = (long)(await cmd.ExecuteScalarAsync())!;
+        var count = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         count.ShouldBe(2L,
             "two events share the same id across two tenant partitions — the unique " +
             "index relaxes to per-tenant scope under partitioning");

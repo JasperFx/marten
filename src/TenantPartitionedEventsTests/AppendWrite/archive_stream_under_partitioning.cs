@@ -48,25 +48,25 @@ public class archive_stream_under_partitioning
         await using (var s = _fixture.Store.LightweightSession(alpha))
         {
             s.Events.StartStream<TripSnapshot>(sharedId, new TripStarted(sharedId), new TripLeg(1));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var s = _fixture.Store.LightweightSession(beta))
         {
             s.Events.StartStream<TripSnapshot>(sharedId, new TripStarted(sharedId), new TripLeg(2));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Archive only alpha's stream.
         await using (var s = _fixture.Store.LightweightSession(alpha))
         {
             s.Events.ArchiveStream(sharedId);
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Alpha's stream state shows archived; beta's same-id stream stays live.
         await using (var qa = _fixture.Store.QuerySession(alpha))
         {
-            var alphaState = await qa.Events.FetchStreamStateAsync(sharedId);
+            var alphaState = await qa.Events.FetchStreamStateAsync(sharedId, TestContext.Current.CancellationToken);
             alphaState.ShouldNotBeNull();
             alphaState!.IsArchived.ShouldBeTrue(
                 "alpha's stream was archived — its mt_streams row must have is_archived = true");
@@ -74,7 +74,7 @@ public class archive_stream_under_partitioning
 
         await using (var qb = _fixture.Store.QuerySession(beta))
         {
-            var betaState = await qb.Events.FetchStreamStateAsync(sharedId);
+            var betaState = await qb.Events.FetchStreamStateAsync(sharedId, TestContext.Current.CancellationToken);
             betaState.ShouldNotBeNull(
                 "beta's same-id stream must survive — archive is scoped by (tenant_id, stream_id)");
             betaState!.IsArchived.ShouldBeFalse(
@@ -95,13 +95,13 @@ public class archive_stream_under_partitioning
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.ArchiveStream(streamId);
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var s = _fixture.Store.LightweightSession(tenant))

@@ -57,7 +57,7 @@ public abstract class EfCoreTenantedSingleStreamProjectionTestsBase: IAsyncLifet
         await using var session = Store.LightweightSession("alpha");
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Alice", 100.00m, 3));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
@@ -65,8 +65,8 @@ public abstract class EfCoreTenantedSingleStreamProjectionTestsBase: IAsyncLifet
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT customer_name, tenant_id FROM ef_tenanted_orders WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
-        await using var reader = await cmd.ExecuteReaderAsync();
-        (await reader.ReadAsync()).ShouldBeTrue();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader.GetString(0).ShouldBe("Alice");
         reader.GetString(1).ShouldBe("alpha");
     }
@@ -81,14 +81,14 @@ public abstract class EfCoreTenantedSingleStreamProjectionTestsBase: IAsyncLifet
         {
             alphaSession.Events.StartStream(alphaOrderId,
                 new OrderPlaced(alphaOrderId, "AlphaCustomer", 50.00m, 1));
-            await alphaSession.SaveChangesAsync();
+            await alphaSession.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var betaSession = Store.LightweightSession("beta"))
         {
             betaSession.Events.StartStream(betaOrderId,
                 new OrderPlaced(betaOrderId, "BetaCustomer", 75.00m, 2));
-            await betaSession.SaveChangesAsync();
+            await betaSession.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await WaitForProjectionAsync();
@@ -99,8 +99,8 @@ public abstract class EfCoreTenantedSingleStreamProjectionTestsBase: IAsyncLifet
         await using var cmd1 = conn.CreateCommand();
         cmd1.CommandText = "SELECT customer_name, tenant_id FROM ef_tenanted_orders WHERE id = @id";
         cmd1.Parameters.AddWithValue("id", alphaOrderId);
-        await using var reader1 = await cmd1.ExecuteReaderAsync();
-        (await reader1.ReadAsync()).ShouldBeTrue();
+        await using var reader1 = await cmd1.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader1.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader1.GetString(0).ShouldBe("AlphaCustomer");
         reader1.GetString(1).ShouldBe("alpha");
         await reader1.CloseAsync();
@@ -109,8 +109,8 @@ public abstract class EfCoreTenantedSingleStreamProjectionTestsBase: IAsyncLifet
         await using var cmd2 = conn.CreateCommand();
         cmd2.CommandText = "SELECT customer_name, tenant_id FROM ef_tenanted_orders WHERE id = @id";
         cmd2.Parameters.AddWithValue("id", betaOrderId);
-        await using var reader2 = await cmd2.ExecuteReaderAsync();
-        (await reader2.ReadAsync()).ShouldBeTrue();
+        await using var reader2 = await cmd2.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader2.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader2.GetString(0).ShouldBe("BetaCustomer");
         reader2.GetString(1).ShouldBe("beta");
     }
@@ -123,12 +123,12 @@ public abstract class EfCoreTenantedSingleStreamProjectionTestsBase: IAsyncLifet
         await using var session = Store.LightweightSession("alpha");
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Carol", 200.00m, 5));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
         session.Events.Append(orderId, new OrderShipped(orderId));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
@@ -136,8 +136,8 @@ public abstract class EfCoreTenantedSingleStreamProjectionTestsBase: IAsyncLifet
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT customer_name, is_shipped, tenant_id FROM ef_tenanted_orders WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
-        await using var reader = await cmd.ExecuteReaderAsync();
-        (await reader.ReadAsync()).ShouldBeTrue();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader.GetString(0).ShouldBe("Carol");
         reader.GetBoolean(1).ShouldBeTrue();
         reader.GetString(2).ShouldBe("alpha");

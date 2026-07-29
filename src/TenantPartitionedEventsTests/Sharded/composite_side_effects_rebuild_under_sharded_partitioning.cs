@@ -173,7 +173,7 @@ public partial class composite_side_effects_rebuild_under_sharded_partitioning: 
                 session.Events.StartStream<CsTrip>(id, new TripStarted(id), new TripLeg(1.0), new TripLeg(2.5));
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await store.BuildProjectionDaemonAsync("tA");
@@ -197,8 +197,8 @@ public partial class composite_side_effects_rebuild_under_sharded_partitioning: 
         foreach (var tenant in new[] { "tA", "tB", "tC" })
         {
             await using var session = store.QuerySession(tenant);
-            (await session.Query<CsTrip>().CountAsync()).ShouldBe(streamsPerTenant);
-            (await session.Query<CsTripNotice>().CountAsync()).ShouldBe(streamsPerTenant);
+            (await session.Query<CsTrip>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(streamsPerTenant);
+            (await session.Query<CsTripNotice>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(streamsPerTenant);
         }
     }
 

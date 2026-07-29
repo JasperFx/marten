@@ -58,7 +58,7 @@ public class rebuild_single_stream_tenant_overloads
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Policies.AllDocumentsAreMultiTenanted();
         });
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
 
         // tenant A: 3 AEvents → ACount = 3 after rebuild
         // tenant B: 2 BEvents → BCount = 2 after rebuild (must NOT pick up A's events)
@@ -69,22 +69,22 @@ public class rebuild_single_stream_tenant_overloads
         {
             session.Events.StartStream<Bug4668Aggregate>(streamA,
                 new AEvent_4668(), new AEvent_4668(), new AEvent_4668());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = store.LightweightSession("tenantB"))
         {
             session.Events.StartStream<Bug4668Aggregate>(streamB,
                 new BEvent_4668(), new BEvent_4668());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Rebuild tenant A's projection by Guid + tenant id.
-        await store.Advanced.RebuildSingleStreamAsync<Bug4668Aggregate>(streamA, "tenantA");
+        await store.Advanced.RebuildSingleStreamAsync<Bug4668Aggregate>(streamA, "tenantA", TestContext.Current.CancellationToken);
 
         await using (var query = store.QuerySession("tenantA"))
         {
-            var docA = await query.LoadAsync<Bug4668Aggregate>(streamA);
+            var docA = await query.LoadAsync<Bug4668Aggregate>(streamA, TestContext.Current.CancellationToken);
             docA.ShouldNotBeNull("tenant A's projection must materialize for the rebuilt stream");
             docA.ACount.ShouldBe(3, "tenant A's AEvents must roll up into ACount");
             docA.BCount.ShouldBe(0, "tenant A's stream has no BEvents");
@@ -92,11 +92,11 @@ public class rebuild_single_stream_tenant_overloads
 
         // Now rebuild tenant B; the new overload must route the AggregateStream
         // read AND the upsert to tenant B's row, leaving tenant A's doc untouched.
-        await store.Advanced.RebuildSingleStreamAsync<Bug4668Aggregate>(streamB, "tenantB");
+        await store.Advanced.RebuildSingleStreamAsync<Bug4668Aggregate>(streamB, "tenantB", TestContext.Current.CancellationToken);
 
         await using (var query = store.QuerySession("tenantB"))
         {
-            var docB = await query.LoadAsync<Bug4668Aggregate>(streamB);
+            var docB = await query.LoadAsync<Bug4668Aggregate>(streamB, TestContext.Current.CancellationToken);
             docB.ShouldNotBeNull("tenant B's projection must materialize for the rebuilt stream");
             docB.ACount.ShouldBe(0, "tenant B's stream has no AEvents");
             docB.BCount.ShouldBe(2, "tenant B's BEvents must roll up into BCount");
@@ -107,7 +107,7 @@ public class rebuild_single_stream_tenant_overloads
         // the rebuild.
         await using (var query = store.QuerySession("tenantA"))
         {
-            var crossB = await query.LoadAsync<Bug4668Aggregate>(streamB);
+            var crossB = await query.LoadAsync<Bug4668Aggregate>(streamB, TestContext.Current.CancellationToken);
             crossB.ShouldBeNull("tenant B's projection must NOT bleed into tenant A's view");
         }
     }
@@ -123,7 +123,7 @@ public class rebuild_single_stream_tenant_overloads
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Policies.AllDocumentsAreMultiTenanted();
         });
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
 
         var keyA = "stream-A-" + Guid.NewGuid();
         var keyB = "stream-B-" + Guid.NewGuid();
@@ -132,31 +132,31 @@ public class rebuild_single_stream_tenant_overloads
         {
             session.Events.StartStream<Bug4668KeyedAggregate>(keyA,
                 new AEvent_4668(), new AEvent_4668(), new AEvent_4668(), new AEvent_4668());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = store.LightweightSession("tenantB"))
         {
             session.Events.StartStream<Bug4668KeyedAggregate>(keyB,
                 new BEvent_4668());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await store.Advanced.RebuildSingleStreamAsync<Bug4668KeyedAggregate>(keyA, "tenantA");
+        await store.Advanced.RebuildSingleStreamAsync<Bug4668KeyedAggregate>(keyA, "tenantA", TestContext.Current.CancellationToken);
 
         await using (var query = store.QuerySession("tenantA"))
         {
-            var docA = await query.LoadAsync<Bug4668KeyedAggregate>(keyA);
+            var docA = await query.LoadAsync<Bug4668KeyedAggregate>(keyA, TestContext.Current.CancellationToken);
             docA.ShouldNotBeNull();
             docA.ACount.ShouldBe(4);
             docA.BCount.ShouldBe(0);
         }
 
-        await store.Advanced.RebuildSingleStreamAsync<Bug4668KeyedAggregate>(keyB, "tenantB");
+        await store.Advanced.RebuildSingleStreamAsync<Bug4668KeyedAggregate>(keyB, "tenantB", TestContext.Current.CancellationToken);
 
         await using (var query = store.QuerySession("tenantB"))
         {
-            var docB = await query.LoadAsync<Bug4668KeyedAggregate>(keyB);
+            var docB = await query.LoadAsync<Bug4668KeyedAggregate>(keyB, TestContext.Current.CancellationToken);
             docB.ShouldNotBeNull();
             docB.ACount.ShouldBe(0);
             docB.BCount.ShouldBe(1);
@@ -183,12 +183,12 @@ public class rebuild_single_stream_tenant_overloads
 
                     opts.DatabaseSchemaName = "rebuild_4668_perdb_guid";
                 }).ApplyAllDatabaseChangesOnStartup();
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
 
         // Each tenant gets its own DB. Reset both so prior runs don't leak.
-        await store.Advanced.ResetAllData();
+        await store.Advanced.ResetAllData(TestContext.Current.CancellationToken);
 
         var streamA = Guid.NewGuid();
         var streamB = Guid.NewGuid();
@@ -197,37 +197,37 @@ public class rebuild_single_stream_tenant_overloads
         {
             session.Events.StartStream<Bug4668Aggregate>(streamA,
                 new AEvent_4668(), new AEvent_4668());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = store.LightweightSession("rebuild4668_g_tenantB"))
         {
             session.Events.StartStream<Bug4668Aggregate>(streamB,
                 new BEvent_4668(), new BEvent_4668(), new BEvent_4668());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await store.Advanced.RebuildSingleStreamAsync<Bug4668Aggregate>(
-            streamA, "rebuild4668_g_tenantA");
+            streamA, "rebuild4668_g_tenantA", TestContext.Current.CancellationToken);
 
         await using (var query = store.QuerySession("rebuild4668_g_tenantA"))
         {
-            var doc = await query.LoadAsync<Bug4668Aggregate>(streamA);
+            var doc = await query.LoadAsync<Bug4668Aggregate>(streamA, TestContext.Current.CancellationToken);
             doc.ShouldNotBeNull("rebuild must persist into tenant A's database");
             doc.ACount.ShouldBe(2);
         }
 
         await store.Advanced.RebuildSingleStreamAsync<Bug4668Aggregate>(
-            streamB, "rebuild4668_g_tenantB");
+            streamB, "rebuild4668_g_tenantB", TestContext.Current.CancellationToken);
 
         await using (var query = store.QuerySession("rebuild4668_g_tenantB"))
         {
-            var doc = await query.LoadAsync<Bug4668Aggregate>(streamB);
+            var doc = await query.LoadAsync<Bug4668Aggregate>(streamB, TestContext.Current.CancellationToken);
             doc.ShouldNotBeNull("rebuild must persist into tenant B's database");
             doc.BCount.ShouldBe(3);
         }
 
-        await host.StopAsync();
+        await host.StopAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -245,10 +245,10 @@ public class rebuild_single_stream_tenant_overloads
                     opts.Events.StreamIdentity = StreamIdentity.AsString;
                     opts.DatabaseSchemaName = "rebuild_4668_perdb_str";
                 }).ApplyAllDatabaseChangesOnStartup();
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
-        await store.Advanced.ResetAllData();
+        await store.Advanced.ResetAllData(TestContext.Current.CancellationToken);
 
         var keyA = "stream-A-" + Guid.NewGuid();
         var keyB = "stream-B-" + Guid.NewGuid();
@@ -257,37 +257,37 @@ public class rebuild_single_stream_tenant_overloads
         {
             session.Events.StartStream<Bug4668KeyedAggregate>(keyA,
                 new AEvent_4668(), new AEvent_4668(), new AEvent_4668());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = store.LightweightSession("rebuild4668_s_tenantB"))
         {
             session.Events.StartStream<Bug4668KeyedAggregate>(keyB,
                 new BEvent_4668(), new BEvent_4668());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await store.Advanced.RebuildSingleStreamAsync<Bug4668KeyedAggregate>(
-            keyA, "rebuild4668_s_tenantA");
+            keyA, "rebuild4668_s_tenantA", TestContext.Current.CancellationToken);
 
         await using (var query = store.QuerySession("rebuild4668_s_tenantA"))
         {
-            var doc = await query.LoadAsync<Bug4668KeyedAggregate>(keyA);
+            var doc = await query.LoadAsync<Bug4668KeyedAggregate>(keyA, TestContext.Current.CancellationToken);
             doc.ShouldNotBeNull("rebuild must persist into tenant A's database");
             doc.ACount.ShouldBe(3);
         }
 
         await store.Advanced.RebuildSingleStreamAsync<Bug4668KeyedAggregate>(
-            keyB, "rebuild4668_s_tenantB");
+            keyB, "rebuild4668_s_tenantB", TestContext.Current.CancellationToken);
 
         await using (var query = store.QuerySession("rebuild4668_s_tenantB"))
         {
-            var doc = await query.LoadAsync<Bug4668KeyedAggregate>(keyB);
+            var doc = await query.LoadAsync<Bug4668KeyedAggregate>(keyB, TestContext.Current.CancellationToken);
             doc.ShouldNotBeNull("rebuild must persist into tenant B's database");
             doc.BCount.ShouldBe(2);
         }
 
-        await host.StopAsync();
+        await host.StopAsync(TestContext.Current.CancellationToken);
     }
 }
 

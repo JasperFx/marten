@@ -197,11 +197,11 @@ public class EfCoreSchemaTests
 
         // Clean up any previous test schema
         await using var cleanupConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await cleanupConn.OpenAsync();
+        await cleanupConn.OpenAsync(TestContext.Current.CancellationToken);
         await using (var cmd = cleanupConn.CreateCommand())
         {
             cmd.CommandText = $"DROP SCHEMA IF EXISTS {testSchema} CASCADE";
-            await cmd.ExecuteNonQueryAsync();
+            await cmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
         await cleanupConn.CloseAsync();
 
@@ -224,7 +224,7 @@ public class EfCoreSchemaTests
 
             // Verify tables were created by querying the information schema
             await using var verifyConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            await verifyConn.OpenAsync();
+            await verifyConn.OpenAsync(TestContext.Current.CancellationToken);
             await using var verifyCmd = verifyConn.CreateCommand();
             verifyCmd.CommandText = @"
                 SELECT table_name FROM information_schema.tables
@@ -233,8 +233,8 @@ public class EfCoreSchemaTests
             verifyCmd.Parameters.AddWithValue("schema", SeparateSchemaDbContext.EfSchema);
 
             var tables = new System.Collections.Generic.List<string>();
-            await using var reader = await verifyCmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            await using var reader = await verifyCmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+            while (await reader.ReadAsync(TestContext.Current.CancellationToken))
             {
                 tables.Add(reader.GetString(0));
             }
@@ -246,12 +246,12 @@ public class EfCoreSchemaTests
         {
             // Clean up
             await using var finalConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            await finalConn.OpenAsync();
+            await finalConn.OpenAsync(TestContext.Current.CancellationToken);
             await using var finalCmd = finalConn.CreateCommand();
             finalCmd.CommandText = $"DROP SCHEMA IF EXISTS {testSchema} CASCADE";
-            await finalCmd.ExecuteNonQueryAsync();
+            await finalCmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             finalCmd.CommandText = $"DROP SCHEMA IF EXISTS {SeparateSchemaDbContext.EfSchema} CASCADE";
-            await finalCmd.ExecuteNonQueryAsync();
+            await finalCmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
     }
 

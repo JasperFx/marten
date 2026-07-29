@@ -45,7 +45,7 @@ public class Bug_2307_JObject_in_dictionary_duplicated_field: BugIntegrationCont
         await using (var session = theStore.LightweightSession())
         {
             session.Store(test1);
-            await session.SaveChangesAsync(default);
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = theStore.QuerySession())
@@ -53,7 +53,7 @@ public class Bug_2307_JObject_in_dictionary_duplicated_field: BugIntegrationCont
             var instanceFilesTask = await session.Query<TestReadModel>()
                 .Where(x => x.InstanceId == e.Id)
                 .Select(x => new { x.InstanceData, x.Status, x.InstanceId, })
-                .ToListAsync(default);
+                .ToListAsync(TestContext.Current.CancellationToken);
 
             instanceFilesTask.Count.ShouldBePositive();
             instanceFilesTask[0].InstanceData["Data"].ShouldBe("Pew Pew");

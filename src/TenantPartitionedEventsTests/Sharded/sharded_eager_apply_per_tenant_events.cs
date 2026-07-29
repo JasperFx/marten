@@ -103,7 +103,7 @@ public class sharded_eager_apply_per_tenant_events : IAsyncLifetime
         var databases = await _store.Options.Tenancy.BuildDatabases();
         foreach (var db in databases.OfType<IMartenDatabase>())
         {
-            await db.ApplyAllConfiguredChangesToDatabaseAsync();
+            await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
         }
 
         // Runtime tenant provisioning hits the partition-attach path against an
@@ -118,12 +118,12 @@ public class sharded_eager_apply_per_tenant_events : IAsyncLifetime
         // partition of relation mt_events found for row).
         await using var session = _store.LightweightSession("alpha");
         session.Events.StartStream(Guid.NewGuid(), new ShardedTestEvent { Value = "eager-apply-then-tenant" });
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Sanity: the partition lives in the assigned shard.
         await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
-        await conn.OpenAsync();
-        var tables = await conn.ExistingTablesAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
+        var tables = await conn.ExistingTablesAsync(ct: TestContext.Current.CancellationToken);
         tables.Any(t => t.Name == "mt_events_alpha").ShouldBeTrue(
             $"mt_events_alpha partition must exist after eager-apply + runtime tenant. Tables: {string.Join(", ", tables.Select(t => t.QualifiedName))}");
     }

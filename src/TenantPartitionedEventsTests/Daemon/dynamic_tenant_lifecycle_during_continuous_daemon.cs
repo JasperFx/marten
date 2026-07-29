@@ -101,8 +101,8 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
         // another node) are what the coordinator has to discover.
         using var store = (DocumentStore)DocumentStore.For(Configure);
 
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         // ---- Phase 0: two initial tenants with different heights, daemon host started AFTER seeding ----
         const string tenantA = "dynlife_a";
@@ -116,7 +116,7 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
             .ConfigureServices(services =>
             {
                 services.AddMarten(Configure).AddAsyncDaemon(DaemonMode.Solo);
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
         var daemon = node.Services.GetRequiredService<IProjectionCoordinator>().DaemonForMainDatabase();
 
         try
@@ -168,7 +168,7 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
             // And the projection itself materialized for the new tenant — without any restart.
             await using (var query = store.QuerySession(tenantC))
             {
-                var doc = await query.LoadAsync<DynCounter>(streamC);
+                var doc = await query.LoadAsync<DynCounter>(streamC, TestContext.Current.CancellationToken);
                 doc.ShouldNotBeNull();
                 doc.Count.ShouldBe(2);
             }
@@ -176,7 +176,7 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
             // The original tenants were untouched by the dynamic add.
             await using (var query = store.QuerySession(tenantA))
             {
-                (await query.LoadAsync<DynCounter>(streamA))!.Count.ShouldBe(4);
+                (await query.LoadAsync<DynCounter>(streamA, TestContext.Current.CancellationToken))!.Count.ShouldBe(4);
             }
 
             // ---- Phase 2: remove a tenant while the coordinator keeps running ----
@@ -200,7 +200,7 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
             // cycles: the reaped agent no longer advances a progression row, and StopAgentAsync's
             // syncTenantPolling drops B from the vectorized polled set so no HighWaterMark:B row is
             // ever re-persisted.
-            await Task.Delay(2.Seconds());
+            await Task.Delay(2.Seconds(), TestContext.Current.CancellationToken);
             var finalRows = await ProgressionRowsAsync();
             DumpRows("after removing tenant B", finalRows);
             finalRows.Any(r => r.Name == $"{DynLifeProjection.ProjectionName}:All:{tenantB}").ShouldBeFalse(
@@ -215,7 +215,7 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
         }
         finally
         {
-            await node.StopAsync();
+            await node.StopAsync(TestContext.Current.CancellationToken);
         }
     }
 

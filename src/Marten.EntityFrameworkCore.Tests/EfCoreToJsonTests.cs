@@ -163,13 +163,13 @@ public class EfCoreToJsonTests
 
         // Clean up any previous test schema
         await using var cleanupConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await cleanupConn.OpenAsync();
+        await cleanupConn.OpenAsync(TestContext.Current.CancellationToken);
         await using (var cmd = cleanupConn.CreateCommand())
         {
             cmd.CommandText = $"DROP SCHEMA IF EXISTS {testSchema} CASCADE";
-            await cmd.ExecuteNonQueryAsync();
+            await cmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             cmd.CommandText = $"DROP SCHEMA IF EXISTS {ToJsonDbContext.EfSchema} CASCADE";
-            await cmd.ExecuteNonQueryAsync();
+            await cmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
 
         await cleanupConn.CloseAsync();
@@ -193,7 +193,7 @@ public class EfCoreToJsonTests
 
             // Verify the table was created with JSON columns
             await using var verifyConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            await verifyConn.OpenAsync();
+            await verifyConn.OpenAsync(TestContext.Current.CancellationToken);
             await using var verifyCmd = verifyConn.CreateCommand();
             verifyCmd.CommandText = @"
                 SELECT column_name, data_type
@@ -203,8 +203,8 @@ public class EfCoreToJsonTests
             verifyCmd.Parameters.AddWithValue("schema", ToJsonDbContext.EfSchema);
 
             var columnMap = new System.Collections.Generic.Dictionary<string, string>();
-            await using var reader = await verifyCmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            await using var reader = await verifyCmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+            while (await reader.ReadAsync(TestContext.Current.CancellationToken))
             {
                 columnMap[reader.GetString(0)] = reader.GetString(1);
             }
@@ -221,12 +221,12 @@ public class EfCoreToJsonTests
         {
             // Clean up
             await using var finalConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            await finalConn.OpenAsync();
+            await finalConn.OpenAsync(TestContext.Current.CancellationToken);
             await using var finalCmd = finalConn.CreateCommand();
             finalCmd.CommandText = $"DROP SCHEMA IF EXISTS {testSchema} CASCADE";
-            await finalCmd.ExecuteNonQueryAsync();
+            await finalCmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             finalCmd.CommandText = $"DROP SCHEMA IF EXISTS {ToJsonDbContext.EfSchema} CASCADE";
-            await finalCmd.ExecuteNonQueryAsync();
+            await finalCmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
     }
 }

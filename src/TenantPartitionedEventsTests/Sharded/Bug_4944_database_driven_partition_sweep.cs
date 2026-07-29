@@ -190,14 +190,14 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
             session.Store(new Bug4944Beta { Id = Guid.NewGuid(), Name = "b" });
             session.Store(new Bug4944Gamma { Id = Guid.NewGuid(), Name = "g" });
             session.Events.StartStream(Guid.NewGuid(), new ShardedTestEvent { Value = "e" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var query = app.QuerySession(tenantId))
         {
-            (await query.Query<Bug4944Alpha>().CountAsync()).ShouldBe(1);
-            (await query.Query<Bug4944Beta>().CountAsync()).ShouldBe(1);
-            (await query.Query<Bug4944Gamma>().CountAsync()).ShouldBe(1);
+            (await query.Query<Bug4944Alpha>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+            (await query.Query<Bug4944Beta>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
+            (await query.Query<Bug4944Gamma>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         }
     }
 
@@ -275,16 +275,16 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
         foreach (var connStr in _fixture.ConnectionStrings.Values)
         {
             await using var conn = new NpgsqlConnection(connStr);
-            await conn.OpenAsync();
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
 
-            await conn.CreateCommand("create schema if not exists foreign_app").ExecuteNonQueryAsync();
+            await conn.CreateCommand("create schema if not exists foreign_app").ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             await conn.CreateCommand(
                     "create table foreign_app.their_ledger (tenant_id varchar not null, amount int) partition by list (tenant_id)")
-                .ExecuteNonQueryAsync();
+                .ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
 
             await conn.CreateCommand(
                     "create table public.other_app_ledger (category varchar not null, amount int) partition by list (category)")
-                .ExecuteNonQueryAsync();
+                .ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         }
 
         var app = BuildApplicationStore();

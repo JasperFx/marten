@@ -84,7 +84,7 @@ public class daemon_in_depth_under_partitioning
         // alpha's doc lands (3 events: 1 StartStream + 2 TripLeg(1.0) = 2.0 distance).
         await using (var session = _fixture.Store.QuerySession(alpha))
         {
-            var alphaDoc = await session.LoadAsync<TripDistance>(alphaStreamId);
+            var alphaDoc = await session.LoadAsync<TripDistance>(alphaStreamId, TestContext.Current.CancellationToken);
             alphaDoc.ShouldNotBeNull(
                 "alpha's projection doc must materialize after the per-tenant rebuild");
             alphaDoc.Distance.ShouldBe(2.0,
@@ -94,7 +94,7 @@ public class daemon_in_depth_under_partitioning
         // beta's doc must NOT exist — its events were never replayed.
         await using (var session = _fixture.Store.QuerySession(beta))
         {
-            var betaDoc = await session.LoadAsync<TripDistance>(betaStreamId);
+            var betaDoc = await session.LoadAsync<TripDistance>(betaStreamId, TestContext.Current.CancellationToken);
             betaDoc.ShouldBeNull(
                 "beta's events must stay unprojected — the rebuild was scoped to alpha");
         }
@@ -121,7 +121,7 @@ public class daemon_in_depth_under_partitioning
         // somehow materialize a tombstone or empty aggregate.
         await using (var session = _fixture.Store.QuerySession(emptyTenant))
         {
-            var anyDocs = await session.Query<TripDistance>().AnyAsync();
+            var anyDocs = await session.Query<TripDistance>().AnyAsync(TestContext.Current.CancellationToken);
             anyDocs.ShouldBeFalse(
                 "a no-event rebuild must materialize zero docs — not a placeholder or tombstone");
         }

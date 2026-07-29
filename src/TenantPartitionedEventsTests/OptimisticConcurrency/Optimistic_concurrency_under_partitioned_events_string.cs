@@ -60,20 +60,20 @@ public class Optimistic_concurrency_under_partitioned_events_string
         await using (var seed = _fixture.Store.LightweightSession(tenant))
         {
             seed.Events.StartStream<StringTripSnapshot>(streamId, new StringTripStarted(streamId), new StringTripLeg(1));
-            await seed.SaveChangesAsync();
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // The canonical aggregate-handler shape: load, decide, append.
         // Pre-#4614, the SaveChangesAsync below threw NotSupportedException —
         // this assertion is the headline regression-guard.
         await using var session = _fixture.Store.LightweightSession(tenant);
-        var stream = await session.Events.FetchForWriting<StringTripSnapshot>(streamId);
+        var stream = await session.Events.FetchForWriting<StringTripSnapshot>(streamId, TestContext.Current.CancellationToken);
         stream.AppendOne(new StringTripLeg(2));
         stream.AppendOne(new StringTripLeg(3));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(4); // TripStarted + 3 TripLegs
     }
 
@@ -90,13 +90,13 @@ public class Optimistic_concurrency_under_partitioned_events_string
 
         var streamId = NewStream();
         await using var session = _fixture.Store.LightweightSession(tenant);
-        var stream = await session.Events.FetchForWriting<StringTripSnapshot>(streamId);
+        var stream = await session.Events.FetchForWriting<StringTripSnapshot>(streamId, TestContext.Current.CancellationToken);
         stream.AppendOne(new StringTripStarted(streamId));
         stream.AppendOne(new StringTripLeg(5));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(2);
     }
 
@@ -116,20 +116,20 @@ public class Optimistic_concurrency_under_partitioned_events_string
         await using (var seed = _fixture.Store.LightweightSession(tenant))
         {
             seed.Events.StartStream<StringTripSnapshot>(streamId, new StringTripStarted(streamId));
-            await seed.SaveChangesAsync();
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Session A loads — sees version 1.
         await using var sessionA = _fixture.Store.LightweightSession(tenant);
-        var streamA = await sessionA.Events.FetchForWriting<StringTripSnapshot>(streamId);
+        var streamA = await sessionA.Events.FetchForWriting<StringTripSnapshot>(streamId, TestContext.Current.CancellationToken);
 
         // Session B writes a competing event behind A's back — bumps the stream
         // to version 2.
         await using (var sessionB = _fixture.Store.LightweightSession(tenant))
         {
-            var streamB = await sessionB.Events.FetchForWriting<StringTripSnapshot>(streamId);
+            var streamB = await sessionB.Events.FetchForWriting<StringTripSnapshot>(streamId, TestContext.Current.CancellationToken);
             streamB.AppendOne(new StringTripLeg(10));
-            await sessionB.SaveChangesAsync();
+            await sessionB.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Now A tries to commit — its ExpectedVersionOnServer is 1, but the
@@ -150,15 +150,15 @@ public class Optimistic_concurrency_under_partitioned_events_string
         await using (var seed = _fixture.Store.LightweightSession(tenant))
         {
             seed.Events.StartStream<StringTripSnapshot>(streamId, new StringTripStarted(streamId), new StringTripLeg(1));
-            await seed.SaveChangesAsync();
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var session = _fixture.Store.LightweightSession(tenant);
         await session.Events.AppendOptimistic(streamId, new StringTripLeg(2));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(3);
+        (await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken)).Count.ShouldBe(3);
     }
 
     [Fact]
@@ -192,13 +192,13 @@ public class Optimistic_concurrency_under_partitioned_events_string
         await using (var seed = _fixture.Store.LightweightSession(tenant))
         {
             seed.Events.StartStream<StringTripSnapshot>(streamId, new StringTripStarted(streamId));
-            await seed.SaveChangesAsync();
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _fixture.Store.LightweightSession(tenant))
         {
             await session.Events.AppendExclusive(streamId, new StringTripLeg(7));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // A follow-up plain append on the same tenant proves the prior session
@@ -206,11 +206,11 @@ public class Optimistic_concurrency_under_partitioned_events_string
         await using (var session = _fixture.Store.LightweightSession(tenant))
         {
             session.Events.Append(streamId, new StringTripLeg(8));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(3);
+        (await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken)).Count.ShouldBe(3);
     }
 
     [Fact]
@@ -229,25 +229,25 @@ public class Optimistic_concurrency_under_partitioned_events_string
         await using (var seedA = _fixture.Store.LightweightSession(tenantA))
         {
             seedA.Events.StartStream<StringTripSnapshot>(streamId, new StringTripStarted(streamId));
-            await seedA.SaveChangesAsync();
+            await seedA.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var seedB = _fixture.Store.LightweightSession(tenantB))
         {
             seedB.Events.StartStream<StringTripSnapshot>(streamId, new StringTripStarted(streamId));
-            await seedB.SaveChangesAsync();
+            await seedB.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Each tenant's FetchForWriting reads its own stream — both at version 1.
         // Both append concurrently — both succeed.
         await using var sessionA = _fixture.Store.LightweightSession(tenantA);
-        var streamA = await sessionA.Events.FetchForWriting<StringTripSnapshot>(streamId);
+        var streamA = await sessionA.Events.FetchForWriting<StringTripSnapshot>(streamId, TestContext.Current.CancellationToken);
         await using var sessionB = _fixture.Store.LightweightSession(tenantB);
-        var streamB = await sessionB.Events.FetchForWriting<StringTripSnapshot>(streamId);
+        var streamB = await sessionB.Events.FetchForWriting<StringTripSnapshot>(streamId, TestContext.Current.CancellationToken);
 
         streamA.AppendOne(new StringTripLeg(1));
         streamB.AppendOne(new StringTripLeg(2));
 
-        await sessionA.SaveChangesAsync();
-        await sessionB.SaveChangesAsync(); // would throw if version check leaked across tenants
+        await sessionA.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await sessionB.SaveChangesAsync(TestContext.Current.CancellationToken); // would throw if version check leaked across tenants
     }
 }

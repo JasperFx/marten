@@ -133,8 +133,8 @@ public partial class Bug_4679_catch_up_per_tenant_23505
 
             opts.Projections.Add<TripDistanceProjection>(ProjectionLifecycle.Async);
         });
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         // Two tenants minimum — the bug needs ≥2 to fire (first tenant's loop
         // iteration inserts the store-global progression row; second tenant's
@@ -157,7 +157,7 @@ public partial class Bug_4679_catch_up_per_tenant_23505
             session.Events.StartStream<TripDistance>(streamId,
                 new TripStarted(streamId),
                 new TripLeg(1.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Drive the buggy path via ForceAllMartenDaemonActivityToCatchUpAsync — matches
@@ -178,7 +178,7 @@ public partial class Bug_4679_catch_up_per_tenant_23505
         }).AddAsyncDaemon(DaemonMode.Solo);
 
         using var host = hostBuilder.Build();
-        await host.StartAsync();
+        await host.StartAsync(TestContext.Current.CancellationToken);
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
@@ -193,7 +193,7 @@ public partial class Bug_4679_catch_up_per_tenant_23505
         {
             thrown = e;
         }
-        await host.StopAsync();
+        await host.StopAsync(TestContext.Current.CancellationToken);
 
         // Headline: no 23505 anywhere in the exception chain. Drill into
         // AggregateException so the per-shard exceptions surface.
@@ -215,7 +215,7 @@ public partial class Bug_4679_catch_up_per_tenant_23505
         foreach (var (tenant, streamId) in lastTripPerTenant)
         {
             await using var query = store.QuerySession(tenant);
-            var doc = await query.LoadAsync<TripDistance>(streamId);
+            var doc = await query.LoadAsync<TripDistance>(streamId, TestContext.Current.CancellationToken);
             doc.ShouldNotBeNull($"tenant {tenant} stream {streamId} should have a projected doc after catch-up");
             doc.Distance.ShouldBe(1.0);
         }

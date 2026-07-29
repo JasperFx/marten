@@ -83,7 +83,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         });
         var healthCheck = new AsyncDaemonHealthCheck(theStore, new(100), _timeProvider, _stateTracker);
 
-        var result = await healthCheck.CheckHealthAsync(new());
+        var result = await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -98,11 +98,11 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         var agent = await StartDaemon();
         using var session = theStore.LightweightSession();
         session.Events.Append(Guid.NewGuid(), new FakeIrrellevantEvent());
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         await agent.Tracker.WaitForHighWaterMark(1);
         var healthCheck = new AsyncDaemonHealthCheck(theStore, new(100), _timeProvider, _stateTracker);
 
-        var result = await healthCheck.CheckHealthAsync(new());
+        var result = await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -120,12 +120,12 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         var eventCount = 100;
         for (var i = 0; i < eventCount; i++)
             session.Events.Append(stream, new FakeEvent());
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         await agent.Tracker.WaitForHighWaterMark(eventCount);
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream2:All", eventCount), 15.Seconds());
         var healthCheck = new AsyncDaemonHealthCheck(theStore, new(0), _timeProvider, _stateTracker);
 
-        var result = await healthCheck.CheckHealthAsync(new());
+        var result = await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
     }
@@ -150,13 +150,13 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
             session.Events.Append(stream1, new FakeEvent());
             session.Events.Append(stream2, new FakeEvent());
         }
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream3:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream4:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForHighWaterMark(eventCount);
         var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1), _timeProvider, _stateTracker);
 
-        var result = await healthCheck.CheckHealthAsync(new());
+        var result = await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -179,18 +179,18 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
             session.Events.Append(stream1, new FakeEvent());
             session.Events.Append(stream2, new FakeEvent());
         }
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream5:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream6:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForHighWaterMark(eventCount);
 
         using var treeCommand = new NpgsqlCommand($"update {theStore.Events.DatabaseSchemaName}.mt_event_progression set last_seq_id = 0 where name = 'FakeStream6:All'");
 
-        await theSession.ExecuteAsync(treeCommand);
+        await theSession.ExecuteAsync(treeCommand, TestContext.Current.CancellationToken);
 
         var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1), _timeProvider, _stateTracker);
 
-        var result = await healthCheck.CheckHealthAsync(new());
+        var result = await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
     }
@@ -213,18 +213,18 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
             session.Events.Append(stream1, new FakeEvent());
             session.Events.Append(stream2, new FakeEvent());
         }
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream5:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream6:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForHighWaterMark(eventCount);
 
         using var treeCommand = new NpgsqlCommand($"update {theStore.Events.DatabaseSchemaName}.mt_event_progression set last_seq_id = 0 where name = 'FakeStream6:All'");
 
-        await theSession.ExecuteAsync(treeCommand);
+        await theSession.ExecuteAsync(treeCommand, TestContext.Current.CancellationToken);
 
         var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1, TimeSpan.FromSeconds(30)), _timeProvider, _stateTracker);
 
-        var result = await healthCheck.CheckHealthAsync(new());
+        var result = await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -248,23 +248,23 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
             session.Events.Append(stream1, new FakeEvent());
             session.Events.Append(stream2, new FakeEvent());
         }
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream5:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream6:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForHighWaterMark(eventCount);
 
         using var treeCommand = new NpgsqlCommand($"update {theStore.Events.DatabaseSchemaName}.mt_event_progression set last_seq_id = 0 where name = 'FakeStream6:All'");
 
-        await theSession.ExecuteAsync(treeCommand);
+        await theSession.ExecuteAsync(treeCommand, TestContext.Current.CancellationToken);
 
         var maxSameLagTime = TimeSpan.FromSeconds(30);
         var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1, maxSameLagTime), _timeProvider, _stateTracker);
-        await healthCheck.CheckHealthAsync(new());
+        await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         // When
         var afterMaxSameLagTime = _now.Add(maxSameLagTime.Add(TimeSpan.FromMilliseconds(1)));
         _timeProvider.GetUtcNow().Returns(afterMaxSameLagTime);
-        var result = await healthCheck.CheckHealthAsync(new());
+        var result = await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         // Then
         result.Status.ShouldBe(HealthStatus.Unhealthy);
@@ -289,25 +289,25 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
             session.Events.Append(stream1, new FakeEvent());
             session.Events.Append(stream2, new FakeEvent());
         }
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream5:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream6:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForHighWaterMark(eventCount);
 
         await using var treeCommandSeqId0 = new NpgsqlCommand($"update {theStore.Events.DatabaseSchemaName}.mt_event_progression set last_seq_id = 0 where name = 'FakeStream6:All'");
-        await theSession.ExecuteAsync(treeCommandSeqId0);
+        await theSession.ExecuteAsync(treeCommandSeqId0, TestContext.Current.CancellationToken);
 
         var maxSameLagTime = TimeSpan.FromSeconds(30);
         var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1, maxSameLagTime), _timeProvider, _stateTracker);
-        await healthCheck.CheckHealthAsync(new());
+        await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         // When
         await using var treeCommandSeqId1 = new NpgsqlCommand($"update {theStore.Events.DatabaseSchemaName}.mt_event_progression set last_seq_id = 1 where name = 'FakeStream6:All'");
-        await theSession.ExecuteAsync(treeCommandSeqId1);
+        await theSession.ExecuteAsync(treeCommandSeqId1, TestContext.Current.CancellationToken);
 
         var afterMaxSameLagTime = _now.Add(maxSameLagTime.Add(TimeSpan.FromMilliseconds(1)));
         _timeProvider.GetUtcNow().Returns(afterMaxSameLagTime);
-        var result = await healthCheck.CheckHealthAsync(new());
+        var result = await healthCheck.CheckHealthAsync(new(), TestContext.Current.CancellationToken);
 
         // Then
         result.Status.ShouldBe(HealthStatus.Healthy);

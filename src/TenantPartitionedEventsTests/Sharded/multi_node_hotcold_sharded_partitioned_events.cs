@@ -181,7 +181,7 @@ public partial class multi_node_hotcold_sharded_partitioned_events: IAsyncLifeti
                     .Concat(Enumerable.Range(0, legs).Select(_ => (object)new ShLeg(1.0)))
                     .ToArray();
                 session.Events.StartStream<ShTrip>(id, events);
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
         }
 
@@ -277,18 +277,18 @@ public partial class multi_node_hotcold_sharded_partitioned_events: IAsyncLifeti
             foreach (var (tenant, legs) in tenantsByShard.Values.SelectMany(x => x))
             {
                 await using var query = bootstrap.QuerySession(tenant);
-                var trip = await query.LoadAsync<ShTrip>(streams[tenant]);
+                var trip = await query.LoadAsync<ShTrip>(streams[tenant], TestContext.Current.CancellationToken);
                 trip.ShouldNotBeNull($"tenant {tenant}'s ShTrip doc must materialize on its shard");
                 trip!.Distance.ShouldBe(legs);
-                var tally = await query.LoadAsync<ShTally>(streams[tenant]);
+                var tally = await query.LoadAsync<ShTally>(streams[tenant], TestContext.Current.CancellationToken);
                 tally.ShouldNotBeNull($"tenant {tenant}'s ShTally doc must materialize on its shard");
                 tally!.Count.ShouldBe(legs);
             }
         }
         finally
         {
-            await nodeA.StopAsync();
-            await nodeB.StopAsync();
+            await nodeA.StopAsync(TestContext.Current.CancellationToken);
+            await nodeB.StopAsync(TestContext.Current.CancellationToken);
         }
     }
 

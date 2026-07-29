@@ -52,7 +52,7 @@ public class vectorized_high_water_flag_off
             o.Events.AddEventType<Probe>();
         });
 
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         var detector = new HighWaterDetector(
             (MartenDatabase)store.Storage.Database, store.Options.EventGraph, NullLogger.Instance);
@@ -79,7 +79,7 @@ public class vectorized_high_water_flag_off
             // Per-tenant flag off → TenantPartitions stays null
             o.Events.AddEventType<Probe>();
         });
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         var source = (ICrossTenantRebuildSource)store.Storage.Database;
         var tenants = await source.FindRebuildTenantsAsync("AnyProjection", CancellationToken.None);

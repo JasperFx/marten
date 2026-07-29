@@ -15,6 +15,7 @@ using Weasel.Core;
 using Weasel.Core.MultiTenancy;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
+using Xunit;
 
 namespace MultiTenancyTests;
 
@@ -39,9 +40,9 @@ public class master_table_multi_tenancy_independent_auto_create_with_datasource
     public async Task can_still_create_own_tables()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
-        await conn.DropSchemaAsync("tenants");
+        await conn.DropSchemaAsync("tenants", TestContext.Current.CancellationToken);
 
         var tenant1ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant1");
         var tenant2ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant2");
@@ -81,7 +82,7 @@ public class master_table_multi_tenancy_independent_auto_create_with_datasource
                         x.RegisterDatabase("tenant3", tenant3ConnectionString);
                     });
                 });
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         await host.AddTenantDatabaseAsync("tenant4", tenant4ConnectionString);
     }
@@ -179,21 +180,21 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
         var targets3 = Target.GenerateRandomData(100).ToArray();
         var targets4 = Target.GenerateRandomData(50).ToArray();
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
 
-        await theStore.BulkInsertDocumentsAsync("tenant3", targets3);
-        await theStore.BulkInsertDocumentsAsync("tenant4", targets4);
+        await theStore.BulkInsertDocumentsAsync("tenant3", targets3, cancellation: TestContext.Current.CancellationToken);
+        await theStore.BulkInsertDocumentsAsync("tenant4", targets4, cancellation: TestContext.Current.CancellationToken);
 
         await using (var query3 = theStore.QuerySession("tenant3"))
         {
-            var ids = await query3.Query<Target>().Select(x => x.Id).ToListAsync();
+            var ids = await query3.Query<Target>().Select(x => x.Id).ToListAsync(TestContext.Current.CancellationToken);
 
             ids.OrderBy(x => x).ShouldHaveTheSameElementsAs(targets3.OrderBy(x => x.Id).Select(x => x.Id).ToList());
         }
 
         await using (var query4 = theStore.QuerySession("tenant4"))
         {
-            var ids = await query4.Query<Target>().Select(x => x.Id).ToListAsync();
+            var ids = await query4.Query<Target>().Select(x => x.Id).ToListAsync(TestContext.Current.CancellationToken);
 
             ids.OrderBy(x => x).ShouldHaveTheSameElementsAs(targets4.OrderBy(x => x.Id).Select(x => x.Id).ToList());
         }
@@ -290,7 +291,7 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         await _host.AddTenantDatabaseAsync("tenant4", tenant4ConnectionString);
 
         await using var session =
-            await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" });
+            await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" }, TestContext.Current.CancellationToken);
 
         session.Connection.Database.ShouldBe("tenant1");
     }
@@ -308,21 +309,21 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         var targets3 = Target.GenerateRandomData(100).ToArray();
         var targets4 = Target.GenerateRandomData(50).ToArray();
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
 
-        await theStore.BulkInsertDocumentsAsync("tenant3", targets3);
-        await theStore.BulkInsertDocumentsAsync("tenant4", targets4);
+        await theStore.BulkInsertDocumentsAsync("tenant3", targets3, cancellation: TestContext.Current.CancellationToken);
+        await theStore.BulkInsertDocumentsAsync("tenant4", targets4, cancellation: TestContext.Current.CancellationToken);
 
         await using (var query3 = theStore.QuerySession("tenant3"))
         {
-            var ids = await query3.Query<Target>().Select(x => x.Id).ToListAsync();
+            var ids = await query3.Query<Target>().Select(x => x.Id).ToListAsync(TestContext.Current.CancellationToken);
 
             ids.OrderBy(x => x).ShouldHaveTheSameElementsAs(targets3.OrderBy(x => x.Id).Select(x => x.Id).ToList());
         }
 
         await using (var query4 = theStore.QuerySession("tenant4"))
         {
-            var ids = await query4.Query<Target>().Select(x => x.Id).ToListAsync();
+            var ids = await query4.Query<Target>().Select(x => x.Id).ToListAsync(TestContext.Current.CancellationToken);
 
             ids.OrderBy(x => x).ShouldHaveTheSameElementsAs(targets4.OrderBy(x => x.Id).Select(x => x.Id).ToList());
         }
@@ -341,19 +342,19 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         var targets3 = Target.GenerateRandomData(100).ToArray();
         var targets4 = Target.GenerateRandomData(50).ToArray();
 
-        await theStore.BulkInsertDocumentsAsync("tenant3", targets3);
-        await theStore.BulkInsertDocumentsAsync("tenant4", targets4);
+        await theStore.BulkInsertDocumentsAsync("tenant3", targets3, cancellation: TestContext.Current.CancellationToken);
+        await theStore.BulkInsertDocumentsAsync("tenant4", targets4, cancellation: TestContext.Current.CancellationToken);
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
 
         await using (var query3 = theStore.QuerySession("tenant3"))
         {
-            (await query3.Query<Target>().AnyAsync()).ShouldBeFalse();
+            (await query3.Query<Target>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         }
 
         await using (var query4 = theStore.QuerySession("tenant4"))
         {
-            (await query4.Query<Target>().AnyAsync()).ShouldBeFalse();
+            (await query4.Query<Target>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         }
     }
 

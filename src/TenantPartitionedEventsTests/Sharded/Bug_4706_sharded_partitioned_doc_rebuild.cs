@@ -99,7 +99,7 @@ public class Bug_4706_sharded_partitioned_doc_rebuild: IAsyncLifetime
             var databases = await store.Options.Tenancy.BuildDatabases();
             foreach (var db in databases.OfType<IMartenDatabase>())
             {
-                await db.ApplyAllConfiguredChangesToDatabaseAsync();
+                await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
             }
 
             foreach (var (tenant, shard) in assignment)
@@ -111,7 +111,7 @@ public class Bug_4706_sharded_partitioned_doc_rebuild: IAsyncLifetime
             {
                 await using var session = store.LightweightSession(tenant);
                 session.Store(new Bug4706Doc { Id = Guid.NewGuid(), Name = "n-" + tenant });
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
         }
 

@@ -54,22 +54,22 @@ public class read_query_aggregation_guid
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId),
                 new TripLeg(1), new TripLeg(2));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var s = _fixture.Store.LightweightSession(beta))
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId),
                 new TripLeg(10), new TripLeg(20), new TripLeg(30));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var qa = _fixture.Store.QuerySession(alpha);
-        var alphaEvents = await qa.Events.FetchStreamAsync(streamId);
+        var alphaEvents = await qa.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         alphaEvents.Count.ShouldBe(3); // alpha's stream
         alphaEvents.Select(e => e.Version).ShouldBe(new long[] { 1, 2, 3 });
 
         await using var qb = _fixture.Store.QuerySession(beta);
-        var betaEvents = await qb.Events.FetchStreamAsync(streamId);
+        var betaEvents = await qb.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         betaEvents.Count.ShouldBe(4); // beta's stream
         betaEvents.Select(e => e.Version).ShouldBe(new long[] { 1, 2, 3, 4 });
     }
@@ -85,13 +85,13 @@ public class read_query_aggregation_guid
         await using (var s = _fixture.Store.LightweightSession(alpha))
         {
             s.Events.StartStream<TripSnapshot>(alphaStreamId, new TripStarted(alphaStreamId), new TripLeg(1));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Beta queries for alpha's stream id — empty: the read scopes by
         // (tenant_id, stream_id) and beta has no row for that id.
         await using var qb = _fixture.Store.QuerySession(beta);
-        var betaSeesAlpha = await qb.Events.FetchStreamAsync(alphaStreamId);
+        var betaSeesAlpha = await qb.Events.FetchStreamAsync(alphaStreamId, token: TestContext.Current.CancellationToken);
         betaSeesAlpha.ShouldBeEmpty();
     }
 
@@ -106,15 +106,15 @@ public class read_query_aggregation_guid
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId),
                 new TripLeg(1), new TripLeg(2), new TripLeg(3), new TripLeg(4));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        var twoEvents = await query.Events.FetchStreamAsync(streamId, version: 2);
+        var twoEvents = await query.Events.FetchStreamAsync(streamId, version: 2, token: TestContext.Current.CancellationToken);
         twoEvents.Count.ShouldBe(2);
         twoEvents.Last().Version.ShouldBe(2L);
 
-        var fromV3 = await query.Events.FetchStreamAsync(streamId, version: 0, fromVersion: 3);
+        var fromV3 = await query.Events.FetchStreamAsync(streamId, version: 0, fromVersion: 3, token: TestContext.Current.CancellationToken);
         fromV3.Count.ShouldBe(3); // versions 3, 4, 5
         fromV3.First().Version.ShouldBe(3L);
     }
@@ -137,23 +137,23 @@ public class read_query_aggregation_guid
         await using (var s = _fixture.Store.LightweightSession(alpha))
         {
             s.Events.StartStream<TripSnapshot>(sharedId, new TripStarted(sharedId), new TripLeg(1));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var s = _fixture.Store.LightweightSession(beta))
         {
             // Beta drives the same id further along — 5 events.
             s.Events.StartStream<TripSnapshot>(sharedId, new TripStarted(sharedId),
                 new TripLeg(1), new TripLeg(2), new TripLeg(3), new TripLeg(4));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var qa = _fixture.Store.QuerySession(alpha);
-        var alphaState = await qa.Events.FetchStreamStateAsync(sharedId);
+        var alphaState = await qa.Events.FetchStreamStateAsync(sharedId, TestContext.Current.CancellationToken);
         alphaState.ShouldNotBeNull();
         alphaState.Version.ShouldBe(2L); // alpha's stream has 2 events
 
         await using var qb = _fixture.Store.QuerySession(beta);
-        var betaState = await qb.Events.FetchStreamStateAsync(sharedId);
+        var betaState = await qb.Events.FetchStreamStateAsync(sharedId, TestContext.Current.CancellationToken);
         betaState.ShouldNotBeNull();
         betaState.Version.ShouldBe(5L); // beta's stream has 5 events
 
@@ -161,7 +161,7 @@ public class read_query_aggregation_guid
         var unrelated = PartitionedFixtureBase.NewTenant();
         await _fixture.Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, unrelated);
         await using var qu = _fixture.Store.QuerySession(unrelated);
-        var noState = await qu.Events.FetchStreamStateAsync(sharedId);
+        var noState = await qu.Events.FetchStreamStateAsync(sharedId, TestContext.Current.CancellationToken);
         noState.ShouldBeNull();
     }
 
@@ -182,28 +182,28 @@ public class read_query_aggregation_guid
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId),
                 new TripLeg(7), new TripLeg(11));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var s = _fixture.Store.LightweightSession(beta))
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId), new TripLeg(99));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var qa = _fixture.Store.QuerySession(alpha);
-        var alphaAgg = await qa.Events.AggregateStreamAsync<TripSnapshot>(streamId);
+        var alphaAgg = await qa.Events.AggregateStreamAsync<TripSnapshot>(streamId, token: TestContext.Current.CancellationToken);
         alphaAgg.ShouldNotBeNull();
         alphaAgg!.Distance.ShouldBe(18); // 7 + 11 — beta's 99 must NOT be folded in
         alphaAgg.LegCount.ShouldBe(2);
 
         // version bound = 2 (TripStarted + first TripLeg)
-        var alphaAtV2 = await qa.Events.AggregateStreamAsync<TripSnapshot>(streamId, version: 2);
+        var alphaAtV2 = await qa.Events.AggregateStreamAsync<TripSnapshot>(streamId, version: 2, token: TestContext.Current.CancellationToken);
         alphaAtV2.ShouldNotBeNull();
         alphaAtV2!.Distance.ShouldBe(7);
 
         // overshoot — stream has 3 events; ask for version 99 → no events at that
         // version → null aggregate.
-        var overshoot = await qa.Events.AggregateStreamAsync<TripSnapshot>(streamId, version: 99);
+        var overshoot = await qa.Events.AggregateStreamAsync<TripSnapshot>(streamId, version: 99, token: TestContext.Current.CancellationToken);
         overshoot.ShouldBeNull();
     }
 
@@ -214,7 +214,7 @@ public class read_query_aggregation_guid
         await _fixture.Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        var none = await query.Events.AggregateStreamAsync<TripSnapshot>(Guid.NewGuid());
+        var none = await query.Events.AggregateStreamAsync<TripSnapshot>(Guid.NewGuid(), token: TestContext.Current.CancellationToken);
         none.ShouldBeNull();
     }
 
@@ -234,19 +234,19 @@ public class read_query_aggregation_guid
         {
             s.Events.StartStream<TripSnapshot>(alphaStream, new TripStarted(alphaStream),
                 new TripLeg(1), new TripLeg(2));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var s = _fixture.Store.LightweightSession(beta))
         {
             s.Events.StartStream<TripSnapshot>(betaStream, new TripStarted(betaStream), new TripLeg(99));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var qa = _fixture.Store.QuerySession(alpha);
         var alphaAll = await qa.Events.QueryAllRawEvents()
             .Where(e => e.StreamId == alphaStream)
             .OrderBy(e => e.Sequence)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
         alphaAll.Count.ShouldBe(3); // alpha's 3 events
         alphaAll.Select(e => e.Version).ShouldBe(new long[] { 1, 2, 3 });
 
@@ -254,7 +254,7 @@ public class read_query_aggregation_guid
         // the shared store may have other tests' events floating around.
         var alphaSeesBetaStream = await qa.Events.QueryAllRawEvents()
             .Where(e => e.StreamId == betaStream)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
         alphaSeesBetaStream.ShouldBeEmpty(
             "tenant-isolation: alpha's session must not see beta's events");
     }
@@ -275,19 +275,19 @@ public class read_query_aggregation_guid
         {
             s.Events.StartStream<TripSnapshot>(alphaStream, new TripStarted(alphaStream),
                 new TripLeg(1), new TripLeg(2));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var s = _fixture.Store.LightweightSession(beta))
         {
             s.Events.StartStream<TripSnapshot>(betaStream, new TripStarted(betaStream), new TripLeg(3));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Alpha's session queries TripLeg only — sees its own 2 legs, not beta's 1.
         await using var qa = _fixture.Store.QuerySession(alpha);
         var alphaLegs = await qa.Events.QueryRawEventDataOnly<TripLeg>()
             .Where(e => e.Distance < 100) // filter to keep this test's data scope, sibling tests don't write this exact shape
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
         alphaLegs.Count(l => l.Distance == 1 || l.Distance == 2).ShouldBe(2);
         alphaLegs.Any(l => l.Distance == 3).ShouldBeFalse(
             "tenant filter must scope by tenant_id — beta's TripLeg(3) cannot leak into alpha's session");
@@ -311,9 +311,9 @@ public class read_query_aggregation_guid
         await using (var s = _fixture.Store.LightweightSession(beta))
         {
             s.Events.StartStream<TripSnapshot>(betaStream, new TripStarted(betaStream), new TripLeg(42));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
             // Re-read to capture the event id assigned by the bulk path.
-            var events = await s.Events.FetchStreamAsync(betaStream);
+            var events = await s.Events.FetchStreamAsync(betaStream, token: TestContext.Current.CancellationToken);
             betaEventId = events.Last().Id;
         }
 
@@ -321,7 +321,7 @@ public class read_query_aggregation_guid
         // This is "structural cross-tenant read" — surfaced as a known
         // limitation in the #4617 spec, not yet considered a bug.
         await using var qa = _fixture.Store.QuerySession(alpha);
-        var loaded = await qa.Events.LoadAsync(betaEventId);
+        var loaded = await qa.Events.LoadAsync(betaEventId, TestContext.Current.CancellationToken);
         loaded.ShouldNotBeNull(
             "LoadAsync currently has no tenant predicate — structural cross-tenant read. " +
             "If this changes (tenant-scoped LoadAsync), revisit the SingleEventQueryHandler comment");
@@ -341,19 +341,19 @@ public class read_query_aggregation_guid
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId),
                 new TripLeg(3), new TripLeg(4));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // FetchLatest lives on IEventStoreOperations (LightweightSession), not on
         // the read-only IQueryEventStore — same surface either way for an idempotent
         // read.
         await using var sa = _fixture.Store.LightweightSession(alpha);
-        var alphaLatest = await sa.Events.FetchLatest<TripSnapshot>(streamId);
+        var alphaLatest = await sa.Events.FetchLatest<TripSnapshot>(streamId, TestContext.Current.CancellationToken);
         alphaLatest.ShouldNotBeNull();
         alphaLatest!.Distance.ShouldBe(7); // 3 + 4
 
         await using var sb = _fixture.Store.LightweightSession(beta);
-        var betaLatest = await sb.Events.FetchLatest<TripSnapshot>(streamId);
+        var betaLatest = await sb.Events.FetchLatest<TripSnapshot>(streamId, TestContext.Current.CancellationToken);
         betaLatest.ShouldBeNull(
             "beta has no stream at this id — FetchLatest must return null, not leak alpha's aggregate");
     }
@@ -378,18 +378,18 @@ public class read_query_aggregation_guid
         await using (var s = _fixture.Store.LightweightSession(alpha))
         {
             s.Events.StartStream<TripSnapshot>(alphaStream, new TripStarted(alphaStream));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var s = _fixture.Store.LightweightSession(beta))
         {
             s.Events.StartStream<TripSnapshot>(betaStream, new TripStarted(betaStream));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var qa = _fixture.Store.QuerySession(alpha);
-        var alphaFirst = (await qa.Events.FetchStreamAsync(alphaStream)).Single();
+        var alphaFirst = (await qa.Events.FetchStreamAsync(alphaStream, token: TestContext.Current.CancellationToken)).Single();
         await using var qb = _fixture.Store.QuerySession(beta);
-        var betaFirst = (await qb.Events.FetchStreamAsync(betaStream)).Single();
+        var betaFirst = (await qb.Events.FetchStreamAsync(betaStream, token: TestContext.Current.CancellationToken)).Single();
 
         // Both first events have Version == 1 — per-stream version is independent.
         alphaFirst.Version.ShouldBe(1L);

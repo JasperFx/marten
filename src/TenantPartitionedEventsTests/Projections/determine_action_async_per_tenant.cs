@@ -96,13 +96,13 @@ public class determine_action_async_per_tenant : IAsyncLifetime
         {
             session.Events.StartStream(Guid.NewGuid(),
                 new DetermineIncrementEvent(), new DetermineIncrementEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _store.LightweightSession("beta"))
         {
             session.Events.StartStream(Guid.NewGuid(),
                 new DetermineIncrementEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Every captured tenant id is one of the writing tenants — never
@@ -136,24 +136,24 @@ public class determine_action_async_per_tenant : IAsyncLifetime
         await using (var session = _store.LightweightSession("alpha"))
         {
             session.Events.StartStream(sharedStream, new DetermineIncrementEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         // beta: start + increment twice → doc with Count = 2.
         await using (var session = _store.LightweightSession("beta"))
         {
             session.Events.StartStream(sharedStream,
                 new DetermineIncrementEvent(), new DetermineIncrementEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Confirm both docs exist with their counts.
         await using (var alphaQuery = _store.QuerySession("alpha"))
         {
-            (await alphaQuery.LoadAsync<DetermineCounter>(sharedStream))!.Count.ShouldBe(1);
+            (await alphaQuery.LoadAsync<DetermineCounter>(sharedStream, TestContext.Current.CancellationToken))!.Count.ShouldBe(1);
         }
         await using (var betaQuery = _store.QuerySession("beta"))
         {
-            (await betaQuery.LoadAsync<DetermineCounter>(sharedStream))!.Count.ShouldBe(2);
+            (await betaQuery.LoadAsync<DetermineCounter>(sharedStream, TestContext.Current.CancellationToken))!.Count.ShouldBe(2);
         }
 
         // alpha sends a DetermineResetEvent → projection returns Delete →
@@ -161,18 +161,18 @@ public class determine_action_async_per_tenant : IAsyncLifetime
         await using (var session = _store.LightweightSession("alpha"))
         {
             session.Events.Append(sharedStream, new DetermineResetEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Pin: alpha's doc is gone, beta's is untouched (Count still 2).
         await using (var alphaQuery = _store.QuerySession("alpha"))
         {
-            (await alphaQuery.LoadAsync<DetermineCounter>(sharedStream))
+            (await alphaQuery.LoadAsync<DetermineCounter>(sharedStream, TestContext.Current.CancellationToken))
                 .ShouldBeNull("alpha's reset → Delete should have removed alpha's doc");
         }
         await using (var betaQuery = _store.QuerySession("beta"))
         {
-            var betaDoc = await betaQuery.LoadAsync<DetermineCounter>(sharedStream);
+            var betaDoc = await betaQuery.LoadAsync<DetermineCounter>(sharedStream, TestContext.Current.CancellationToken);
             betaDoc.ShouldNotBeNull("beta's doc must NOT be deleted by alpha's reset (tenant isolation)");
             betaDoc!.Count.ShouldBe(2, "beta's count must be unchanged");
         }

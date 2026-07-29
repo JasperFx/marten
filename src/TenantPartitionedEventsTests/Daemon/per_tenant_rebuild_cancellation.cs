@@ -88,7 +88,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
                     Enumerable.Range(0, eventCount / 4).Select(_ => (object)new TallyEvent()).ToArray());
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Arm the gate BEFORE the rebuild starts: the first ApplyAsync signals Started
@@ -103,7 +103,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
             GatedPerEventProjection.ProjectionName, tenant, cts.Token);
 
         // Deterministically in-flight: the first apply has started and is parked on the gate.
-        (await Task.WhenAny(GatedPerEventProjection.Started.Task, Task.Delay(TimeSpan.FromSeconds(60))))
+        (await Task.WhenAny(GatedPerEventProjection.Started.Task, Task.Delay(TimeSpan.FromSeconds(60), TestContext.Current.CancellationToken)))
             .ShouldBe(GatedPerEventProjection.Started.Task, "rebuild never reached the projection");
 
         cts.Cancel();
@@ -138,7 +138,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
 
         await using (var query = _store.QuerySession(tenant))
         {
-            (await query.Query<TallyDoc>().CountAsync()).ShouldBe(eventCount,
+            (await query.Query<TallyDoc>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(eventCount,
                 "the follow-up rebuild must fully materialize the cell");
         }
     }
@@ -152,7 +152,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
         await using (var session = _store.LightweightSession(tenant))
         {
             session.Events.StartStream(Guid.NewGuid(), new TallyEvent(), new TallyEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         GatedPerEventProjection.Gate = null;
@@ -177,7 +177,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
             CancellationToken.None);
 
         await using var query = _store.QuerySession(tenant);
-        (await query.Query<TallyDoc>().CountAsync()).ShouldBe(2);
+        (await query.Query<TallyDoc>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
     private async Task<IReadOnlyList<long>> ReadCellProgressionsAsync(string tenantId)

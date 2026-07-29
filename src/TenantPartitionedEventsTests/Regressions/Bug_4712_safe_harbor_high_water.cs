@@ -70,8 +70,8 @@ public partial class Bug_4712_safe_harbor_high_water
             o.Projections.Add<Bug4712TripProjection>(ProjectionLifecycle.Async);
         });
 
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
         await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "t4712");
 
         long appended = 0;
@@ -85,7 +85,7 @@ public partial class Bug_4712_safe_harbor_high_water
                 appended += 4;
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var database = (MartenDatabase)store.Storage.Database;

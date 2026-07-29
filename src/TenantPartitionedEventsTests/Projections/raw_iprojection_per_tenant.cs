@@ -101,26 +101,26 @@ public class raw_iprojection_per_tenant : IAsyncLifetime
         {
             session.Events.StartStream(alphaStream,
                 new TenantTouchEvent("alpha-1"), new TenantTouchEvent("alpha-2"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var betaStream = Guid.NewGuid();
         await using (var session = _store.LightweightSession("beta"))
         {
             session.Events.StartStream(betaStream, new TenantTouchEvent("beta-1"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Each tenant's doc IS visible from its own session.
         await using (var alphaQuery = _store.QuerySession("alpha"))
         {
-            var alphaDoc = await alphaQuery.LoadAsync<TenantTouchDoc>(alphaStream);
+            var alphaDoc = await alphaQuery.LoadAsync<TenantTouchDoc>(alphaStream, TestContext.Current.CancellationToken);
             alphaDoc.ShouldNotBeNull();
             alphaDoc!.TouchCount.ShouldBe(2);
         }
         await using (var betaQuery = _store.QuerySession("beta"))
         {
-            var betaDoc = await betaQuery.LoadAsync<TenantTouchDoc>(betaStream);
+            var betaDoc = await betaQuery.LoadAsync<TenantTouchDoc>(betaStream, TestContext.Current.CancellationToken);
             betaDoc.ShouldNotBeNull();
             betaDoc!.TouchCount.ShouldBe(1);
         }
@@ -129,12 +129,12 @@ public class raw_iprojection_per_tenant : IAsyncLifetime
         // tenant's slot, not bleeding into the other.
         await using (var alphaQuery = _store.QuerySession("alpha"))
         {
-            (await alphaQuery.LoadAsync<TenantTouchDoc>(betaStream))
+            (await alphaQuery.LoadAsync<TenantTouchDoc>(betaStream, TestContext.Current.CancellationToken))
                 .ShouldBeNull("beta's doc must not be visible to alpha");
         }
         await using (var betaQuery = _store.QuerySession("beta"))
         {
-            (await betaQuery.LoadAsync<TenantTouchDoc>(alphaStream))
+            (await betaQuery.LoadAsync<TenantTouchDoc>(alphaStream, TestContext.Current.CancellationToken))
                 .ShouldBeNull("alpha's doc must not be visible to beta");
         }
     }
@@ -151,12 +151,12 @@ public class raw_iprojection_per_tenant : IAsyncLifetime
         await using (var session = _store.LightweightSession("alpha"))
         {
             session.Events.StartStream(Guid.NewGuid(), new TenantTouchEvent("alpha-call"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _store.LightweightSession("beta"))
         {
             session.Events.StartStream(Guid.NewGuid(), new TenantTouchEvent("beta-call"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // The capture list records the SET of tenant ids seen within each call

@@ -93,7 +93,7 @@ public class vector_projection_tests : IAsyncLifetime
         await using var session = _store.LightweightSession();
         session.Events.StartStream(productId,
             new ProductCreated(productId, "Widget", "A fantastic widget for all purposes"));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Query the projection table directly
         var results = await session.VectorProjectionSearchAsync(
@@ -116,7 +116,7 @@ public class vector_projection_tests : IAsyncLifetime
         {
             session.Events.StartStream(productId,
                 new ProductCreated(productId, "Widget", "Original description"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Update the product
@@ -124,7 +124,7 @@ public class vector_projection_tests : IAsyncLifetime
         {
             session.Events.Append(productId,
                 new ProductUpdated(productId, "Updated description"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Search should find the updated content
@@ -158,7 +158,7 @@ public class vector_projection_tests : IAsyncLifetime
             opts.Events.AddEventType<ProductCreated>();
         });
 
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
         await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         // First append — should call embedder
@@ -166,7 +166,7 @@ public class vector_projection_tests : IAsyncLifetime
         {
             session.Events.StartStream(productId,
                 new ProductCreated(productId, "Widget", "Same content"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var firstCallCount = callCount;
@@ -177,7 +177,7 @@ public class vector_projection_tests : IAsyncLifetime
         {
             session.Events.Append(productId,
                 new ProductCreated(productId, "Widget", "Same content"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         callCount.ShouldBe(firstCallCount); // No additional calls
@@ -194,7 +194,7 @@ public class vector_projection_tests : IAsyncLifetime
         {
             session.Events.StartStream(productId,
                 new ProductCreated(productId, "Widget", "To be deleted"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Delete
@@ -202,7 +202,7 @@ public class vector_projection_tests : IAsyncLifetime
         {
             session.Events.Append(productId,
                 new ProductDeleted(productId));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Search should find nothing
@@ -230,7 +230,7 @@ public class vector_projection_tests : IAsyncLifetime
             new ProductCreated(id2, "Blue Shoes", "Navy blue casual shoes"));
         session.Events.StartStream(id3,
             new ProductCreated(id3, "Garden Hose", "50ft expandable garden hose"));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Search — should return all 3 ordered by distance
         await using var querySession = _store.QuerySession();

@@ -109,7 +109,7 @@ public class Bug_4713_sharded_reapply_same_store: IAsyncLifetime
         var databases = await store.Options.Tenancy.BuildDatabases();
         foreach (var db in databases.OfType<IMartenDatabase>())
         {
-            await db.ApplyAllConfiguredChangesToDatabaseAsync();
+            await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
         }
 
         // Provision tenants — the additive path that (pre-9.1.5) permanently cleared
@@ -123,7 +123,7 @@ public class Bug_4713_sharded_reapply_same_store: IAsyncLifetime
         {
             await using var session = store.LightweightSession(tenant);
             session.Store(new Bug4713Doc { Id = Guid.NewGuid(), Name = "n-" + tenant });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Capture the partition layout each shard has AFTER provisioning. #4713 is specifically about

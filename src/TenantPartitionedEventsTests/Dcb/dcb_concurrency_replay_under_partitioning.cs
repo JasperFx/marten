@@ -110,7 +110,7 @@ public class dcb_concurrency_replay_under_partitioning
             var enrolled = seedSession.Events.BuildEvent(new DcbReplayStudentEnrolled("Seed", "Math"));
             enrolled.WithTag(seedStudentId, courseId);
             seedSession.Events.Append(seedStudentId.Value, enrolled);
-            await seedSession.SaveChangesAsync();
+            await seedSession.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Synchronize the fetch → save handoff so every racer captures the

@@ -451,9 +451,9 @@ public class CompiledQuerySourceGeneratorTests
             "VerifyAssembly",
             new[]
             {
-                Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText("[assembly: JasperFx.JasperFxAssembly]"),
-                Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(src),
-                Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(generated)
+                Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText("[assembly: JasperFx.JasperFxAssembly]", cancellationToken: TestContext.Current.CancellationToken),
+                Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(src, cancellationToken: TestContext.Current.CancellationToken),
+                Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(generated, cancellationToken: TestContext.Current.CancellationToken)
             },
             AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
@@ -462,7 +462,7 @@ public class CompiledQuerySourceGeneratorTests
                 Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary,
                 nullableContextOptions: Microsoft.CodeAnalysis.NullableContextOptions.Enable));
 
-        var diagnostics = compilation.GetDiagnostics()
+        var diagnostics = compilation.GetDiagnostics(TestContext.Current.CancellationToken)
             .Where(d => d.Severity == DiagnosticSeverity.Error)
             .ToArray();
         diagnostics.ShouldBeEmpty(string.Join("\n", diagnostics.Select(d => d.ToString())));

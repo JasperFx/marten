@@ -106,7 +106,7 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
         await using var session = Store.LightweightSession();
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Carol", 200.00m, 5));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
@@ -115,8 +115,8 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT customer_name, total_amount, item_count FROM ef_orders WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
-        await using var reader = await cmd.ExecuteReaderAsync();
-        (await reader.ReadAsync()).ShouldBeTrue();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader.GetString(0).ShouldBe("Carol");
         reader.GetDecimal(1).ShouldBe(200.00m);
         reader.GetInt32(2).ShouldBe(5);
@@ -130,7 +130,7 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Dave", 75.00m, 2),
             new OrderShipped(orderId));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
@@ -139,8 +139,8 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT customer_name, is_shipped FROM ef_orders WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
-        await using var reader = await cmd.ExecuteReaderAsync();
-        (await reader.ReadAsync()).ShouldBeTrue();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader.GetString(0).ShouldBe("Dave");
         reader.GetBoolean(1).ShouldBeTrue();
     }
@@ -153,12 +153,12 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
         await using var session = Store.LightweightSession();
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Eve", 120.00m, 3));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
         session.Events.Append(orderId, new OrderShipped(orderId));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
@@ -167,8 +167,8 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT customer_name, is_shipped FROM ef_orders WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
-        await using var reader = await cmd.ExecuteReaderAsync();
-        (await reader.ReadAsync()).ShouldBeTrue();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader.GetString(0).ShouldBe("Eve");
         reader.GetBoolean(1).ShouldBeTrue();
     }
@@ -180,7 +180,7 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
         await using var session = Store.LightweightSession();
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Frank", 300.00m, 10));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
@@ -189,8 +189,8 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT customer_name, status, total_amount FROM ef_order_summaries WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
-        await using var reader = await cmd.ExecuteReaderAsync();
-        (await reader.ReadAsync()).ShouldBeTrue();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader.GetString(0).ShouldBe("Frank");
         reader.GetString(1).ShouldBe("Placed");
         reader.GetDecimal(2).ShouldBe(300.00m);
@@ -244,9 +244,9 @@ public class EfCoreSingleStreamProjectionLiveTests: IAsyncLifetime
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Grace", 50.00m, 1),
             new OrderShipped(orderId));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var order = await session.Events.AggregateStreamAsync<Order>(orderId);
+        var order = await session.Events.AggregateStreamAsync<Order>(orderId, token: TestContext.Current.CancellationToken);
         order.ShouldNotBeNull();
         order.CustomerName.ShouldBe("Grace");
         order.IsShipped.ShouldBeTrue();
@@ -256,7 +256,7 @@ public class EfCoreSingleStreamProjectionLiveTests: IAsyncLifetime
     public async Task live_aggregation_returns_null_for_unknown_stream()
     {
         await using var session = _store.LightweightSession();
-        var order = await session.Events.AggregateStreamAsync<Order>(Guid.NewGuid());
+        var order = await session.Events.AggregateStreamAsync<Order>(Guid.NewGuid(), token: TestContext.Current.CancellationToken);
         order.ShouldBeNull();
     }
 
@@ -267,14 +267,14 @@ public class EfCoreSingleStreamProjectionLiveTests: IAsyncLifetime
         await using var session = _store.LightweightSession();
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Heidi", 90.00m, 4));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Live aggregation rebuilds on the fly
-        var order = await session.Events.AggregateStreamAsync<Order>(orderId);
+        var order = await session.Events.AggregateStreamAsync<Order>(orderId, token: TestContext.Current.CancellationToken);
         order.ShouldNotBeNull();
 
         // But the aggregate is NOT stored in the document table
-        var loaded = await session.LoadAsync<Order>(orderId);
+        var loaded = await session.LoadAsync<Order>(orderId, TestContext.Current.CancellationToken);
         loaded.ShouldBeNull();
     }
 }

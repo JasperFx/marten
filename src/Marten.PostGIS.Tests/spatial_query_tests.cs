@@ -39,11 +39,11 @@ public class spatial_query_tests : IAsyncLifetime
     public async Task postgis_extension_is_created()
     {
         await using var conn = _store.Storage.Database.CreateConnection();
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT 1 FROM pg_extension WHERE extname = 'postgis'";
-        var result = await cmd.ExecuteScalarAsync();
+        var result = await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken);
         result.ShouldNotBeNull();
     }
 
@@ -60,12 +60,12 @@ public class spatial_query_tests : IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             session.Store(store);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var q = _store.QuerySession())
         {
-            var loaded = await q.LoadAsync<StoreLocation>(store.Id);
+            var loaded = await q.LoadAsync<StoreLocation>(store.Id, TestContext.Current.CancellationToken);
             loaded.ShouldNotBeNull();
             loaded.Name.ShouldBe("Downtown Store");
             // NTS Point is serialized as GeoJSON in the JSONB data column
@@ -92,12 +92,12 @@ public class spatial_query_tests : IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             session.Store(area);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var q = _store.QuerySession())
         {
-            var loaded = await q.LoadAsync<ServiceArea>(area.Id);
+            var loaded = await q.LoadAsync<ServiceArea>(area.Id, TestContext.Current.CancellationToken);
             loaded.ShouldNotBeNull();
             loaded.Name.ShouldBe("Metro Area");
         }
@@ -120,7 +120,7 @@ public class spatial_query_tests : IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             foreach (var s in stores) session.Store(s);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Search from downtown Seattle
@@ -149,7 +149,7 @@ public class spatial_query_tests : IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             foreach (var s in stores) session.Store(s);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Search within ~50km of downtown Seattle using geometry (degrees)
@@ -198,7 +198,7 @@ public class spatial_query_tests : IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             foreach (var a in areas) session.Store(a);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Find which areas contain downtown Seattle

@@ -55,11 +55,11 @@ public class event_metadata_propagation_under_partitioning
         {
             s.Events.StartStream<TripSnapshot>(streamId,
                 new TripStarted(streamId), new TripLeg(1));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var q = _fixture.Store.QuerySession(tenant);
-        var events = await q.Events.FetchStreamAsync(streamId);
+        var events = await q.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(2);
 
         foreach (var e in events)
@@ -135,11 +135,11 @@ public class event_optional_metadata_propagation_under_partitioning : IAsyncLife
 
             s.Events.StartStream<MetaAggregate>(streamId,
                 new MetaEvent("a"), new MetaEvent("b"), new MetaEvent("c"));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var q = _store.QuerySession("alpha");
-        var events = await q.Events.FetchStreamAsync(streamId);
+        var events = await q.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(3);
 
         foreach (var e in events)

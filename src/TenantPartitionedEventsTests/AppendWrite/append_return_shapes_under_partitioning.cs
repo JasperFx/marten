@@ -41,16 +41,16 @@ public class append_return_shapes_under_partitioning
             // Both StartStream + Append using `params object[]` — the canonical
             // shape.
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId), new TripLeg(1));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.Append(streamId, new TripLeg(2), new TripLeg(3));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var q = _fixture.Store.QuerySession(tenant);
-        var events = await q.Events.FetchStreamAsync(streamId);
+        var events = await q.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(4);
     }
 
@@ -70,18 +70,18 @@ public class append_return_shapes_under_partitioning
             // IEnumerable<object> overload — the shape Wolverine-style bulk
             // emitters commonly use.
             s.Events.StartStream<TripSnapshot>(streamId, seedEvents);
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         IEnumerable<object> moreEvents = new object[] { new TripLeg(3) };
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.Append(streamId, moreEvents);
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var q = _fixture.Store.QuerySession(tenant);
-        var events = await q.Events.FetchStreamAsync(streamId);
+        var events = await q.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(4);
     }
 
@@ -97,17 +97,17 @@ public class append_return_shapes_under_partitioning
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.Append(streamId, new TripLeg(42));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var q = _fixture.Store.QuerySession(tenant);
-        var events = await q.Events.FetchStreamAsync(streamId);
+        var events = await q.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(2);
         events[1].Version.ShouldBe(2L);
     }

@@ -216,16 +216,16 @@ public class schema_groundwork_for_partitioned_events
         // works post-creation; this is the simpler-to-assert ordering.)
         await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         // Live table inspection by fetching directly via the connection — Weasel's
         // FetchExistingAsync returns the materialized table state including its
         // current partition list.
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var eventsTable = new Table(new PostgresqlObjectName(schema, "mt_events"));
-        var liveEvents = await eventsTable.FetchExistingAsync(conn);
+        var liveEvents = await eventsTable.FetchExistingAsync(conn, TestContext.Current.CancellationToken);
         liveEvents.ShouldNotBeNull("mt_events should exist after EnsureStorageExistsAsync");
 
         var liveEventsPartitioning = liveEvents.Partitioning.ShouldBeOfType<ListPartitioning>();
@@ -234,7 +234,7 @@ public class schema_groundwork_for_partitioned_events
             .ShouldBe(new[] { "alpha", "beta" });
 
         var streamsTable = new Table(new PostgresqlObjectName(schema, "mt_streams"));
-        var liveStreams = await streamsTable.FetchExistingAsync(conn);
+        var liveStreams = await streamsTable.FetchExistingAsync(conn, TestContext.Current.CancellationToken);
         liveStreams.ShouldNotBeNull("mt_streams should exist after EnsureStorageExistsAsync");
 
         var liveStreamsPartitioning = liveStreams.Partitioning.ShouldBeOfType<ListPartitioning>();

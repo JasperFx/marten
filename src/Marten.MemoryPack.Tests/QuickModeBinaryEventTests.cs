@@ -31,7 +31,7 @@ public class QuickModeBinaryEventTests
             opts.Events.UseMemoryPackSerializer();
         });
 
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
         await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var streamId = Guid.NewGuid();
@@ -42,11 +42,11 @@ public class QuickModeBinaryEventTests
                 new TripStarted(streamId, "Alice", DateTimeOffset.UtcNow),     // binary
                 new TripCommentAdded(streamId, "leaving", DateTimeOffset.UtcNow), // JSON
                 new TripEnded(streamId, DateTimeOffset.UtcNow, 33.00m));       // binary
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = store.QuerySession();
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
 
         events.Count.ShouldBe(3);
         events[0].Data.ShouldBeOfType<TripStarted>().DriverName.ShouldBe("Alice");
@@ -66,7 +66,7 @@ public class QuickModeBinaryEventTests
             opts.Events.UseMemoryPackSerializer();
         });
 
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
         await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var streamId = Guid.NewGuid();
@@ -77,11 +77,11 @@ public class QuickModeBinaryEventTests
                 new TripStarted(streamId, "Bob", DateTimeOffset.UtcNow),
                 new PassengerPickedUp(streamId, "Carol", DateTimeOffset.UtcNow),
                 new TripEnded(streamId, DateTimeOffset.UtcNow, 15.50m));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = store.QuerySession();
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
 
         events.Count.ShouldBe(3);
         events[0].Data.ShouldBeOfType<TripStarted>().DriverName.ShouldBe("Bob");
@@ -106,7 +106,7 @@ public class QuickModeBinaryEventTests
             opts.Events.UseMemoryPackSerializer();
         });
 
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
         await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var streamId = Guid.NewGuid();
@@ -115,11 +115,11 @@ public class QuickModeBinaryEventTests
             session.Events.StartStream(streamId,
                 new TripStarted(streamId, "Dana", DateTimeOffset.UtcNow),         // binary
                 new TripCommentAdded(streamId, "hello", DateTimeOffset.UtcNow));  // JSON
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var conn = store.Storage.Database.CreateConnection();
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = $"select type, bdata is null as bdata_is_null, data::text " +
                           $"from {schema}.mt_events where stream_id = $1 order by version";
@@ -128,8 +128,8 @@ public class QuickModeBinaryEventTests
         cmd.Parameters.Add(p);
 
         var rows = new System.Collections.Generic.List<(string type, bool bdataIsNull, string data)>();
-        await using var reader = await cmd.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        while (await reader.ReadAsync(TestContext.Current.CancellationToken))
         {
             rows.Add((reader.GetString(0), reader.GetBoolean(1), reader.GetString(2)));
         }

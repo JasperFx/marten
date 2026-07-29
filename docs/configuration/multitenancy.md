@@ -83,7 +83,7 @@ _host = await Host.CreateDefaultBuilder()
             .ApplyAllDatabaseChangesOnStartup();
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_static_database_multitenancy.cs#L51-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_multi_tenanted_databases' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_static_database_multitenancy.cs#L52-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_multi_tenanted_databases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Single Instance Multi-Tenancy
@@ -124,7 +124,7 @@ _host = await Host.CreateDefaultBuilder()
         }).ApplyAllDatabaseChangesOnStartup();
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L96-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L97-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_single_server_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning Rotating credentials (Entra ID / managed identity)
@@ -571,7 +571,7 @@ Assuming that we have a custom `ITenancy` model:
 // dispose all MartenDatabase objects
 public class MySpecialTenancy: ITenancy
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L29-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myspecialtenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L30-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myspecialtenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 We can utilize that by applying that model at configuration time:
@@ -587,7 +587,7 @@ var store = DocumentStore.For(opts =>
     opts.Tenancy = new MySpecialTenancy();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L81-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_custom_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L82-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_custom_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Administering Multiple Databases
@@ -616,7 +616,7 @@ var state = await database.FetchEventStoreStatistics();
 // Apply all outstanding database changes in just this database
 await database.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_static_database_multitenancy.cs#L251-L272' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_administering_multiple_databases' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_static_database_multitenancy.cs#L252-L273' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_administering_multiple_databases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 All remaining methods on `IDocumentStore.Advanced` apply to all databases.

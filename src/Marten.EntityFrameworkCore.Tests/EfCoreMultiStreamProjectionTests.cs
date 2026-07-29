@@ -106,7 +106,7 @@ public abstract class EfCoreMultiStreamProjectionTestsBase: IAsyncLifetime
             new CustomerOrderPlaced(Guid.NewGuid(), "Eve", 100.00m));
         session.Events.StartStream(stream2,
             new CustomerOrderPlaced(Guid.NewGuid(), "Eve", 50.00m));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
@@ -115,8 +115,8 @@ public abstract class EfCoreMultiStreamProjectionTestsBase: IAsyncLifetime
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT total_orders, total_spent FROM ef_customer_order_histories WHERE id = @id";
         cmd.Parameters.AddWithValue("id", "Eve");
-        await using var reader = await cmd.ExecuteReaderAsync();
-        (await reader.ReadAsync()).ShouldBeTrue();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader.GetInt32(0).ShouldBe(2);
         reader.GetDecimal(1).ShouldBe(150.00m);
     }
@@ -130,7 +130,7 @@ public abstract class EfCoreMultiStreamProjectionTestsBase: IAsyncLifetime
             new CustomerOrderPlaced(Guid.NewGuid(), "Alice", 80.00m));
         session.Events.StartStream(Guid.NewGuid().ToString(),
             new CustomerOrderPlaced(Guid.NewGuid(), "Bob", 120.00m));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
@@ -140,8 +140,8 @@ public abstract class EfCoreMultiStreamProjectionTestsBase: IAsyncLifetime
         await using var cmd1 = conn.CreateCommand();
         cmd1.CommandText = "SELECT total_orders, total_spent FROM ef_customer_order_histories WHERE id = @id";
         cmd1.Parameters.AddWithValue("id", "Alice");
-        await using var reader1 = await cmd1.ExecuteReaderAsync();
-        (await reader1.ReadAsync()).ShouldBeTrue();
+        await using var reader1 = await cmd1.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader1.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader1.GetInt32(0).ShouldBe(1);
         reader1.GetDecimal(1).ShouldBe(80.00m);
         await reader1.CloseAsync();
@@ -150,8 +150,8 @@ public abstract class EfCoreMultiStreamProjectionTestsBase: IAsyncLifetime
         await using var cmd2 = conn.CreateCommand();
         cmd2.CommandText = "SELECT total_orders, total_spent FROM ef_customer_order_histories WHERE id = @id";
         cmd2.Parameters.AddWithValue("id", "Bob");
-        await using var reader2 = await cmd2.ExecuteReaderAsync();
-        (await reader2.ReadAsync()).ShouldBeTrue();
+        await using var reader2 = await cmd2.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader2.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader2.GetInt32(0).ShouldBe(1);
         reader2.GetDecimal(1).ShouldBe(120.00m);
     }
@@ -164,14 +164,14 @@ public abstract class EfCoreMultiStreamProjectionTestsBase: IAsyncLifetime
         var stream1 = Guid.NewGuid().ToString();
         session.Events.StartStream(stream1,
             new CustomerOrderPlaced(Guid.NewGuid(), "Charlie", 60.00m));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
         var stream2 = Guid.NewGuid().ToString();
         session.Events.StartStream(stream2,
             new CustomerOrderPlaced(Guid.NewGuid(), "Charlie", 40.00m));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await WaitForProjectionAsync();
 
@@ -179,8 +179,8 @@ public abstract class EfCoreMultiStreamProjectionTestsBase: IAsyncLifetime
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT total_orders, total_spent FROM ef_customer_order_histories WHERE id = @id";
         cmd.Parameters.AddWithValue("id", "Charlie");
-        await using var reader = await cmd.ExecuteReaderAsync();
-        (await reader.ReadAsync()).ShouldBeTrue();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader.GetInt32(0).ShouldBe(2);
         reader.GetDecimal(1).ShouldBe(100.00m);
     }
@@ -234,10 +234,10 @@ public class EfCoreMultiStreamProjectionLiveTests: IAsyncLifetime
         var stream1 = Guid.NewGuid().ToString();
         session.Events.StartStream(stream1,
             new CustomerOrderPlaced(Guid.NewGuid(), "Dana", 70.00m));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Live multi-stream projections are not persisted
-        var history = await session.LoadAsync<CustomerOrderHistory>("Dana");
+        var history = await session.LoadAsync<CustomerOrderHistory>("Dana", TestContext.Current.CancellationToken);
         history.ShouldBeNull();
     }
 
@@ -250,10 +250,10 @@ public class EfCoreMultiStreamProjectionLiveTests: IAsyncLifetime
         var streamKey = Guid.NewGuid().ToString();
         session.Events.StartStream(streamKey,
             new CustomerOrderPlaced(Guid.NewGuid(), "Eve", 100.00m));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Events are stored successfully even with a Live multi-stream projection registered
-        var events = await session.Events.FetchStreamAsync(streamKey);
+        var events = await session.Events.FetchStreamAsync(streamKey, token: TestContext.Current.CancellationToken);
         events.ShouldNotBeEmpty();
     }
 }

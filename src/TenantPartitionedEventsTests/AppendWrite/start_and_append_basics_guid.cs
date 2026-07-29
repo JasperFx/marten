@@ -44,10 +44,10 @@ public class start_and_append_basics_guid
             new TripStarted(streamId),
             new TripLeg(1),
             new TripLeg(2));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(3);
 
         // Per-stream version is contiguous 1..N regardless of the per-tenant
@@ -77,24 +77,24 @@ public class start_and_append_basics_guid
         await using (var s = _fixture.Store.LightweightSession(alpha))
         {
             s.Events.StartStream<TripSnapshot>(alphaStream, new TripStarted(alphaStream), new TripLeg(10));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var s = _fixture.Store.LightweightSession(beta))
         {
             s.Events.StartStream<TripSnapshot>(betaStream, new TripStarted(betaStream), new TripLeg(20));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Each tenant's sequence is freshly minted on AddMartenManagedTenantsAsync —
         // so the first append for either tenant has seq_id = 1.
         await using var query = _fixture.Store.QuerySession(alpha);
-        var alphaEvents = await query.Events.FetchStreamAsync(alphaStream);
+        var alphaEvents = await query.Events.FetchStreamAsync(alphaStream, token: TestContext.Current.CancellationToken);
         alphaEvents[0].Sequence.ShouldBe(1L);
         alphaEvents[1].Sequence.ShouldBe(2L);
 
         await using var queryB = _fixture.Store.QuerySession(beta);
-        var betaEvents = await queryB.Events.FetchStreamAsync(betaStream);
+        var betaEvents = await queryB.Events.FetchStreamAsync(betaStream, token: TestContext.Current.CancellationToken);
         betaEvents[0].Sequence.ShouldBe(1L);
         betaEvents[1].Sequence.ShouldBe(2L);
 
@@ -114,7 +114,7 @@ public class start_and_append_basics_guid
         await using (var first = _fixture.Store.LightweightSession(tenant))
         {
             first.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId));
-            await first.SaveChangesAsync();
+            await first.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Same id, same tenant — the second StartStream lands in the same
@@ -148,22 +148,22 @@ public class start_and_append_basics_guid
         await using (var sa = _fixture.Store.LightweightSession(alpha))
         {
             sa.Events.StartStream<TripSnapshot>(sharedStreamId, new TripStarted(sharedStreamId), new TripLeg(1));
-            await sa.SaveChangesAsync();
+            await sa.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var sb = _fixture.Store.LightweightSession(beta))
         {
             sb.Events.StartStream<TripSnapshot>(sharedStreamId, new TripStarted(sharedStreamId), new TripLeg(2), new TripLeg(3));
-            await sb.SaveChangesAsync();
+            await sb.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Each tenant queries and sees ONLY its own stream's events.
         await using var qa = _fixture.Store.QuerySession(alpha);
-        var aEvents = await qa.Events.FetchStreamAsync(sharedStreamId);
+        var aEvents = await qa.Events.FetchStreamAsync(sharedStreamId, token: TestContext.Current.CancellationToken);
         aEvents.Count.ShouldBe(2);
 
         await using var qb = _fixture.Store.QuerySession(beta);
-        var bEvents = await qb.Events.FetchStreamAsync(sharedStreamId);
+        var bEvents = await qb.Events.FetchStreamAsync(sharedStreamId, token: TestContext.Current.CancellationToken);
         bEvents.Count.ShouldBe(3);
     }
 
@@ -177,18 +177,18 @@ public class start_and_append_basics_guid
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId), new TripLeg(5));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Plain append (no version) — events get versions 3, 4.
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.Append(streamId, new TripLeg(10), new TripLeg(20));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(4);
         events.Select(e => e.Version).ShouldBe(new long[] { 1, 2, 3, 4 });
     }
@@ -205,13 +205,13 @@ public class start_and_append_basics_guid
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.ArchiveStream(streamId);
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var s = _fixture.Store.LightweightSession(tenant))
@@ -240,12 +240,12 @@ public class start_and_append_basics_guid
             s.Events.StartStream<TripSnapshot>(streamA, new TripStarted(streamA), new TripLeg(1));
             s.Events.StartStream<TripSnapshot>(streamB, new TripStarted(streamB));
             s.Events.StartStream<TripSnapshot>(streamC, new TripStarted(streamC), new TripLeg(2), new TripLeg(3));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        (await query.Events.FetchStreamAsync(streamA)).Count.ShouldBe(2);
-        (await query.Events.FetchStreamAsync(streamB)).Count.ShouldBe(1);
-        (await query.Events.FetchStreamAsync(streamC)).Count.ShouldBe(3);
+        (await query.Events.FetchStreamAsync(streamA, token: TestContext.Current.CancellationToken)).Count.ShouldBe(2);
+        (await query.Events.FetchStreamAsync(streamB, token: TestContext.Current.CancellationToken)).Count.ShouldBe(1);
+        (await query.Events.FetchStreamAsync(streamC, token: TestContext.Current.CancellationToken)).Count.ShouldBe(3);
     }
 }

@@ -123,12 +123,12 @@ public class HotCold_leadership_election: DaemonContext
         await assertIsRunning(host1, 5.Seconds());
 
         var host2 = await StartAdditionalDaemonInHotColdMode();
-        await Task.Delay(500.Milliseconds());
+        await Task.Delay(500.Milliseconds(), TestContext.Current.CancellationToken);
 
         host1.Daemon().IsRunning.ShouldBeTrue();
         host2.Daemon().IsRunning.ShouldBeFalse();
 
-        await host1.StopAsync();
+        await host1.StopAsync(TestContext.Current.CancellationToken);
 
         await assertIsRunning(host2, 5.Seconds());
     }
@@ -147,7 +147,7 @@ public class HotCold_leadership_election: DaemonContext
         others[2] = await StartAdditionalDaemonInHotColdMode();
         others[3] = await StartAdditionalDaemonInHotColdMode();
 
-        await host.StopAsync();
+        await host.StopAsync(TestContext.Current.CancellationToken);
 
         var active = await findRunningDaemon(others);
 

@@ -75,11 +75,11 @@ public class timestamp_source_per_append_mode
             // Use the IEvent envelope to set Timestamp explicitly.
             var envelope = new Event<TickEvent>(new TickEvent("alpha")) { Timestamp = bogus };
             session.Events.StartStream(streamId, envelope);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = store.QuerySession("tq");
-        var fetched = await query.Events.FetchStreamAsync(streamId);
+        var fetched = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         var serverTs = fetched.Single().Timestamp;
 
         serverTs.Year.ShouldBeGreaterThan(2000,
@@ -103,11 +103,11 @@ public class timestamp_source_per_append_mode
         {
             var envelope = new Event<TickEvent>(new TickEvent("beta")) { Timestamp = caller };
             session.Events.StartStream(streamId, envelope);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = store.QuerySession("tqst");
-        var fetched = await query.Events.FetchStreamAsync(streamId);
+        var fetched = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         var roundTripped = fetched.Single().Timestamp;
 
         // Postgres timestamp-with-time-zone has microsecond precision; the

@@ -130,7 +130,7 @@ public class HighWaterHealthCheckTests: DaemonContext
         await appendEventsAsync(20);
         await seedHighWaterMarkAsync(1);
 
-        var result = await buildCheck().CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck().CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -146,7 +146,7 @@ public class HighWaterHealthCheckTests: DaemonContext
         await appendEventsAsync(20);
         await seedHighWaterMarkAsync(1);
 
-        var result = await buildCheck().CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck().CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -162,10 +162,10 @@ public class HighWaterHealthCheckTests: DaemonContext
             x.Projections.AsyncMode = DaemonMode.Solo;
         });
         await appendEventsAsync(20);
-        var highest = await theStore.Advanced.FetchEventStoreStatistics();
+        var highest = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
         await seedHighWaterMarkAsync(highest.EventSequenceNumber);
 
-        var result = await buildCheck().CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck().CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -182,7 +182,7 @@ public class HighWaterHealthCheckTests: DaemonContext
         await seedHighWaterMarkAsync(1);
 
         // first observation of the gap only starts the clock; not yet stale
-        var result = await buildCheck().CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck().CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -201,12 +201,12 @@ public class HighWaterHealthCheckTests: DaemonContext
         var check = buildCheck(30.Seconds());
 
         // first check records the stalled mark at _now
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
 
         // advance the clock past the threshold with the mark still stuck
         _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
 
-        var result = await check.CheckHealthAsync(new HealthCheckContext());
+        var result = await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
     }
@@ -225,14 +225,14 @@ public class HighWaterHealthCheckTests: DaemonContext
         var check = buildCheck(30.Seconds());
 
         // first check: gap observed, clock starts
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
 
         // the mark advances (agent alive) and time moves forward past the threshold
         await seedHighWaterMarkAsync(10);
         _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
 
         // the advance resets the clock, so it must not be reported stale
-        var result = await check.CheckHealthAsync(new HealthCheckContext());
+        var result = await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -254,7 +254,7 @@ public class HighWaterHealthCheckTests: DaemonContext
         await appendEventsAsync(20);
         await seedHighWaterHeartbeatAsync(1, _now.AddSeconds(-5)); // mark stuck at 1, but heartbeat is 5s old
 
-        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -271,10 +271,10 @@ public class HighWaterHealthCheckTests: DaemonContext
             x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
-        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
         await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90)); // caught up, heartbeat 90s old
 
-        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
     }
@@ -291,7 +291,7 @@ public class HighWaterHealthCheckTests: DaemonContext
             x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
-        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
         await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
 
         var daemon = Substitute.For<IProjectionDaemon>();
@@ -300,11 +300,11 @@ public class HighWaterHealthCheckTests: DaemonContext
         var check = buildCheck(30.Seconds(), autoRestart: true, coordinator: coordinator);
 
         // First stale cycle: restart the loop, still report Unhealthy so an alert fires.
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Unhealthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Unhealthy);
         await daemon.Received(1).RestartHighWaterAgentAsync(Arg.Any<CancellationToken>());
 
         // Second cycle inside the same staleness window: still Unhealthy, but NOT restarted again (capped).
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Unhealthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Unhealthy);
         await daemon.Received(1).RestartHighWaterAgentAsync(Arg.Any<CancellationToken>());
     }
 
@@ -318,13 +318,13 @@ public class HighWaterHealthCheckTests: DaemonContext
             x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
-        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
         await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
 
         var daemon = Substitute.For<IProjectionDaemon>();
         var coordinator = new FakeCoordinator(daemon);
 
-        var result = await buildCheck(30.Seconds(), coordinator: coordinator).CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck(30.Seconds(), coordinator: coordinator).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
         await daemon.DidNotReceive().RestartHighWaterAgentAsync(Arg.Any<CancellationToken>());
@@ -347,11 +347,11 @@ public class HighWaterHealthCheckTests: DaemonContext
 
         var check = buildCheck(30.Seconds(), databaseFilter: _ => false);
 
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
 
         // still Healthy well past the staleness threshold, because the database is never probed
         _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
     }
 
     [Fact]
@@ -368,10 +368,10 @@ public class HighWaterHealthCheckTests: DaemonContext
 
         var check = buildCheck(30.Seconds(), databaseFilter: _ => true);
 
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
 
         _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Unhealthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Unhealthy);
     }
 
     // ---- ExternallyManaged gate (marten#4991) --------------------------------------------
@@ -388,10 +388,10 @@ public class HighWaterHealthCheckTests: DaemonContext
             x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
-        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
         await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
 
-        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -407,11 +407,11 @@ public class HighWaterHealthCheckTests: DaemonContext
             x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
-        var stats = await theStore.Advanced.FetchEventStoreStatistics();
+        var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
         await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
 
         var result = await buildCheck(30.Seconds(), includeExternallyManaged: true)
-            .CheckHealthAsync(new HealthCheckContext());
+            .CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
     }
@@ -431,10 +431,10 @@ public class HighWaterHealthCheckTests: DaemonContext
 
         var check = buildCheck(30.Seconds(), includeExternallyManaged: true);
 
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
 
         _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
     }
 
     // ---- per-tenant high water (marten#4991) ---------------------------------------------
@@ -454,7 +454,7 @@ public class HighWaterHealthCheckTests: DaemonContext
         await appendEventsAsync(20);
         await seedProgressionRowAsync("HighWaterMark:acme", 5, _now.AddSeconds(-90));
 
-        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Unhealthy);
     }
@@ -471,7 +471,7 @@ public class HighWaterHealthCheckTests: DaemonContext
         await appendEventsAsync(20);
         await seedProgressionRowAsync("HighWaterMark:acme", 5, _now.AddSeconds(-5));
 
-        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext());
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
@@ -492,10 +492,10 @@ public class HighWaterHealthCheckTests: DaemonContext
 
         var check = buildCheck(30.Seconds());
 
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
 
         _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
-        (await check.CheckHealthAsync(new HealthCheckContext())).Status.ShouldBe(HealthStatus.Healthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
     }
 
     // Minimal IProjectionCoordinator that hands back a single daemon — avoids mocking a ValueTask-returning

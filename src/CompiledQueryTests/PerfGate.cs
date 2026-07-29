@@ -65,12 +65,12 @@ public class PerfGate: OneOffConfigurationsContext
         try
         {
             using var codegenStore = SeparateStore();
-            await codegenStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await codegenStore.BulkInsertDocumentsAsync(seed);
+            await codegenStore.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+            await codegenStore.BulkInsertDocumentsAsync(seed, cancellation: TestContext.Current.CancellationToken);
 
             await using var codegenSession = codegenStore.QuerySession();
             var sw = Stopwatch.StartNew();
-            var result = await codegenSession.QueryAsync(new UserByUserNameShape { UserName = "cold_b" });
+            var result = await codegenSession.QueryAsync(new UserByUserNameShape { UserName = "cold_b" }, TestContext.Current.CancellationToken);
             sw.Stop();
             codegenColdMs = sw.ElapsedMilliseconds;
             result.ShouldNotBeNull();
@@ -85,12 +85,12 @@ public class PerfGate: OneOffConfigurationsContext
         long sourceGenColdMs;
         {
             using var sourceGenStore = SeparateStore();
-            await sourceGenStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await sourceGenStore.BulkInsertDocumentsAsync(seed);
+            await sourceGenStore.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+            await sourceGenStore.BulkInsertDocumentsAsync(seed, cancellation: TestContext.Current.CancellationToken);
 
             await using var sourceGenSession = sourceGenStore.QuerySession();
             var sw = Stopwatch.StartNew();
-            var result = await sourceGenSession.QueryAsync(new UserByUserNameShape { UserName = "cold_b" });
+            var result = await sourceGenSession.QueryAsync(new UserByUserNameShape { UserName = "cold_b" }, TestContext.Current.CancellationToken);
             sw.Stop();
             sourceGenColdMs = sw.ElapsedMilliseconds;
             result.ShouldNotBeNull();
@@ -125,17 +125,17 @@ public class PerfGate: OneOffConfigurationsContext
         try
         {
             using var codegenStore = SeparateStore();
-            await codegenStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await codegenStore.BulkInsertDocumentsAsync(seed);
+            await codegenStore.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+            await codegenStore.BulkInsertDocumentsAsync(seed, cancellation: TestContext.Current.CancellationToken);
 
             await using var session = codegenStore.QuerySession();
             // Prime — codegen emits its Roslyn assembly on first call.
-            _ = await session.QueryAsync(new UserByUserNameShape { UserName = "hot_a" });
+            _ = await session.QueryAsync(new UserByUserNameShape { UserName = "hot_a" }, TestContext.Current.CancellationToken);
 
             var sw = Stopwatch.StartNew();
             for (var i = 0; i < InvocationCount; i++)
             {
-                _ = await session.QueryAsync(new UserByUserNameShape { UserName = "hot_b" });
+                _ = await session.QueryAsync(new UserByUserNameShape { UserName = "hot_b" }, TestContext.Current.CancellationToken);
             }
             sw.Stop();
             codegenSteadyMs = sw.ElapsedMilliseconds;
@@ -148,17 +148,17 @@ public class PerfGate: OneOffConfigurationsContext
         long sourceGenSteadyMs;
         {
             using var sourceGenStore = SeparateStore();
-            await sourceGenStore.Advanced.Clean.CompletelyRemoveAllAsync();
-            await sourceGenStore.BulkInsertDocumentsAsync(seed);
+            await sourceGenStore.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+            await sourceGenStore.BulkInsertDocumentsAsync(seed, cancellation: TestContext.Current.CancellationToken);
 
             await using var session = sourceGenStore.QuerySession();
             // Prime — source-gen registers the per-store source on first call.
-            _ = await session.QueryAsync(new UserByUserNameShape { UserName = "hot_a" });
+            _ = await session.QueryAsync(new UserByUserNameShape { UserName = "hot_a" }, TestContext.Current.CancellationToken);
 
             var sw = Stopwatch.StartNew();
             for (var i = 0; i < InvocationCount; i++)
             {
-                _ = await session.QueryAsync(new UserByUserNameShape { UserName = "hot_b" });
+                _ = await session.QueryAsync(new UserByUserNameShape { UserName = "hot_b" }, TestContext.Current.CancellationToken);
             }
             sw.Stop();
             sourceGenSteadyMs = sw.ElapsedMilliseconds;

@@ -93,11 +93,11 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
         foreach (var db in TenantDatabases)
         {
             await using var conn = new NpgsqlConnection(_tenantConnStrs[db]);
-            await conn.OpenAsync();
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
 
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = "SELECT 1 FROM pg_extension WHERE extname = 'vector'";
-            var result = await cmd.ExecuteScalarAsync();
+            var result = await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken);
 
             result.ShouldNotBeNull(
                 $"pgvector extension was NOT created in database '{db}'. " +
@@ -111,9 +111,9 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
         foreach (var db in TenantDatabases)
         {
             await using var conn = new NpgsqlConnection(_tenantConnStrs[db]);
-            await conn.OpenAsync();
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
 
-            var tables = await conn.ExistingTablesAsync();
+            var tables = await conn.ExistingTablesAsync(ct: TestContext.Current.CancellationToken);
             tables.Any(t => t.Name.Contains("mt_doc_productwithvector"))
                 .ShouldBeTrue($"Document table not found in database '{db}'");
         }
@@ -130,7 +130,7 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
                 Id = Guid.NewGuid(), Name = "T1 Product",
                 Embedding = new float[] { 1, 0, 0 }
             });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Store in tenant2
@@ -141,13 +141,13 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
                 Id = Guid.NewGuid(), Name = "T2 Product",
                 Embedding = new float[] { 0, 1, 0 }
             });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Query tenant1
         await using (var q = _store.QuerySession(TenantDatabases[0]))
         {
-            var results = await q.Query<ProductWithVector>().ToListAsync();
+            var results = await q.Query<ProductWithVector>().ToListAsync(TestContext.Current.CancellationToken);
             results.Count.ShouldBe(1);
             results[0].Name.ShouldBe("T1 Product");
         }
@@ -155,7 +155,7 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
         // Query tenant2
         await using (var q = _store.QuerySession(TenantDatabases[1]))
         {
-            var results = await q.Query<ProductWithVector>().ToListAsync();
+            var results = await q.Query<ProductWithVector>().ToListAsync(TestContext.Current.CancellationToken);
             results.Count.ShouldBe(1);
             results[0].Name.ShouldBe("T2 Product");
         }
@@ -163,7 +163,7 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
         // Tenant3 should be empty
         await using (var q = _store.QuerySession(TenantDatabases[2]))
         {
-            var results = await q.Query<ProductWithVector>().ToListAsync();
+            var results = await q.Query<ProductWithVector>().ToListAsync(TestContext.Current.CancellationToken);
             results.Count.ShouldBe(0);
         }
     }
@@ -184,7 +184,7 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
                 Id = Guid.NewGuid(), Name = "T1-Far",
                 Embedding = new float[] { 0, 0, 1 }
             });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _store.LightweightSession(TenantDatabases[1]))
@@ -194,7 +194,7 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
                 Id = Guid.NewGuid(), Name = "T2-Near",
                 Embedding = new float[] { 0.95f, 0.05f, 0 }
             });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var queryVector = new Vector(new float[] { 1, 0, 0 });
