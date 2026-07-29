@@ -156,6 +156,15 @@ There is a lot more capabilities than what we're showing here, so head on over t
 
 Please check [Event Store quick start](/events/quickstart.md). Apart from the quick start, we also have an [EventStore intro](https://github.com/JasperFx/marten/blob/master/src/samples/EventSourcingIntro) .NET 6 sample project in the GitHub repository for your ready reference.
 
+## Sample Applications
+
+Larger, end to end applications built on the Critter Stack live in
+[CritterStackSamples](https://github.com/JasperFx/CritterStackSamples), which covers a range of
+styles — modular monoliths, microservices, CQRS minimal APIs and event sourced domains.
+
+The Helpdesk sample that previously lived in this repository under `src/samples/Helpdesk` has been
+retired in favour of the maintained samples there.
+
 ## Creating a standalone store
 
 In some scenarios you may wish to create a document store outside of the generic host infrastructure. The easiest way do this is to use `DocumentStore.For`, either configuring `StoreOptions` or passing a plain connection string.

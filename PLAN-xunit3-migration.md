@@ -337,7 +337,10 @@ time** (the DB-backed suites collide on the shared `marten_testing` database):
 5. ValueTypeTests, ModularConfigTests, StressTests, Marten.SourceGenerator.Tests
 6. Extensions: Marten.NodaTime.Testing, Marten.AspNetCore.Testing, Marten.PostGIS.Tests,
    Marten.PgVector.Tests, Marten.MemoryPack.Tests, Marten.EntityFrameworkCore.Tests
-7. Deferred: `src/samples/Helpdesk/Helpdesk.Api.Tests` (Ogooreck), `src/samples/DocSamples`
+7. ~~Deferred: `src/samples/Helpdesk/Helpdesk.Api.Tests` (Ogooreck)~~ — the Helpdesk sample was
+   **retired** instead; it had not compiled against current Marten for some time. Maintained
+   samples live at [CritterStackSamples](https://github.com/JasperFx/CritterStackSamples).
+   `src/samples/DocSamples` converted with the rest.
 
 ### Phase 4 — build + CI
 
