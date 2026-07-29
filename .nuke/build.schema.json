@@ -47,7 +47,6 @@
         "Test",
         "TestAspnetcore",
         "TestBaseLib",
-        "TestCli",
         "TestCore",
         "TestDocumentDb",
         "TestEventSourcing",

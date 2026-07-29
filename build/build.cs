@@ -34,7 +34,6 @@ class Build : NukeBuild
         .DependsOn(TestDocumentDb)
         .DependsOn(TestEventSourcing)
         .DependsOn(TestModularConfig)
-        .DependsOn(TestCli)
         .DependsOn(TestLinq)
         .DependsOn(TestMultiTenancy)
         .DependsOn(TestTenantPartitionedEvents)
@@ -194,18 +193,6 @@ class Build : NukeBuild
         {
             DotNetTest(c => c
                 .SetProjectFile("src/CoreTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
-
-    Target TestCli => _ => _
-        .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.CommandLine.Tests")
                 .SetConfiguration(Configuration)
                 .EnableNoBuild()
                 .EnableNoRestore()

@@ -210,6 +210,46 @@ accept the (correct) skips and lose that STJ coverage, or drop the now-evidently
 `RunFor` annotations, since the tests demonstrably pass under both serializers. Not
 decided here.
 
+**F5 — v2 was silently *dropping* tests, not just failing to skip them.** F4 understated
+this. There were two distinct v2 defects, depending on how a project consumed the harness:
+
+- Projects that **`Compile`-link** `SerializerTypeTargetedFact.cs` (DocumentDbTests,
+  LinqTests, CoreTests, EventSourcingTests) got the attribute type in their *own* assembly,
+  while `[XunitTestCaseDiscoverer(..., "Marten.Testing")]` pointed the discoverer at a
+  different assembly. v2 could not resolve it and **silently discovered no test at all**.
+  Confirmed by diffing `--list-tests`: DocumentDbTests discovers **1082 → 1086** tests
+  under v3, and the 4 additions are exactly its 4 `SerializerTypeTargetedFact` methods.
+  Expect the same for LinqTests' 9.
+- Projects that only **`ProjectReference`** Marten.Testing (PatchingTests) resolved the
+  discoverer, but it read `GetNamedArgument<SerializerType?>` against a non-nullable enum
+  property, always saw null, and never skipped — so those tests ran under *both*
+  serializers.
+
+Net effect: **13 tests (4 DocumentDbTests + 9 LinqTests) have never run in CI**, and 3
+more ran under a serializer they were annotated not to support. v3 restores all of them.
+
+Restoring them is not free: they change execution order and add data to the shared
+`integration` store, which is what surfaced the `delete_many_documents_by_query`
+order-dependency below. Expect a similar tail in LinqTests.
+
+**F6 — DaemonTests' `TestFramework` attribute has been dead since a project rename.** It
+declared `TestFramework("Marten.AsyncDaemon.TestSetup", "Marten.AsyncDaemon")`, but the type
+is `Marten.AsyncDaemon.Testing.TestSetup` in assembly `DaemonTests` — both the type name and
+the assembly name are wrong, so xunit v2 could never load it. Consequence:
+`SerializerFactory.DefaultSerializerType` (which defaults to **SystemTextJson**) was never
+overridden there, so **DaemonTests has always run under SystemTextJson regardless of
+`DEFAULT_SERIALIZER`**, including in the Newtonsoft CI leg.
+
+Replacing it with a working `[ModuleInitializer]` flipped the suite to Newtonsoft and broke
+2 tests (`Bug_5041_natural_key_source_discovery`, which cannot round-trip an
+`Enumerable.AppendPrepend1Iterator` property through Newtonsoft). A framework migration must
+not silently change which serializer a suite runs under, so `src/DaemonTests/TestSetup.cs`
+was **deleted** rather than repaired — that preserves v2 behaviour exactly. The other three
+projects' attributes were verified correct and did get working module initializers.
+
+**Open decision:** whether DaemonTests *should* honour `DEFAULT_SERIALIZER`. Turning it on
+is a one-file change, but it requires fixing the 2 Bug_5041 failures first.
+
 ### Phase 1 — harness + shared infrastructure (the hard part)
 
 Order matters; everything downstream depends on this landing first.
@@ -256,7 +296,7 @@ time** (the DB-backed suites collide on the shared `marten_testing` database):
 2. DocumentDbTests, LinqTests, PatchingTests, CompiledQueryTests
 3. EventSourcingTests, DaemonTests, DaemonTests.ManualOnly (+ Neovolve v3 swap)
 4. TenantPartitionedEventsTests, MultiTenancyTests, MultiHostTests, ContainerScopedProjectionTests
-5. ValueTypeTests, ModularConfigTests, StressTests, Marten.CommandLine.Tests, Marten.SourceGenerator.Tests
+5. ValueTypeTests, ModularConfigTests, StressTests, Marten.SourceGenerator.Tests
 6. Extensions: Marten.NodaTime.Testing, Marten.AspNetCore.Testing, Marten.PostGIS.Tests,
    Marten.PgVector.Tests, Marten.MemoryPack.Tests, Marten.EntityFrameworkCore.Tests
 7. Deferred: `src/samples/Helpdesk/Helpdesk.Api.Tests` (Ogooreck), `src/samples/DocSamples`

@@ -35,7 +35,6 @@ src/
   PatchingTests/           - Partial document updates
   ValueTypeTests/          - Strongly-typed ID support
   DaemonTests/             - Async projection daemon
-  Marten.CommandLine.Tests/- CLI tool tests
   CommandLineRunner/       - CLI for codegen and DB management
   TestingSupport/          - Shared test infrastructure
 build/                     - Nuke build automation
@@ -80,7 +79,6 @@ docker-compose up -d
 ./build.sh test-multi-tenancy     # MultiTenancyTests
 ./build.sh test-patching          # PatchingTests
 ./build.sh test-value-types       # ValueTypeTests
-./build.sh test-cli               # Marten.CommandLine.Tests
 ./build.sh test-base-lib          # Marten.Testing
 ./build.sh test-code-gen          # Code generation round-trip
 ./build.sh test-extensions        # NodaTime + AspNetCore

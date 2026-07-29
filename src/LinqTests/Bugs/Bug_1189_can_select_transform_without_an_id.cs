@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -26,8 +27,12 @@ public class Bug_1189_can_select_transform_without_an_id : IntegrationContext
         var targets = Target.GenerateRandomData(100).ToArray();
         await theStore.BulkInsertAsync(targets);
 
-        var view = theSession.Query<Target>().Select(x => new TargetView {Color = x.Color, Number = x.Number})
-            .FirstOrDefault();
+        // Was FirstOrDefault(); Marten 9.0 made data access async-only. This test was
+        // invisible to the v2 runner (see the SerializerTypeTargetedFact notes), so it was
+        // never updated when that change landed.
+        var view = await theSession.Query<Target>()
+            .Select(x => new TargetView { Color = x.Color, Number = x.Number })
+            .FirstOrDefaultAsync();
 
         view.ShouldNotBeNull();
     }

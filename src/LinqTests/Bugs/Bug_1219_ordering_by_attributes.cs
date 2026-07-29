@@ -14,6 +14,15 @@ public class Bug_1219_ordering_by_attributes : IntegrationContext
     {
     }
 
+    // Both tests here store Cars and then assert on the ordering of *every* Car in the
+    // store, but IntegrationContext shares one store across the collection and never
+    // clears it between tests. Clear Cars per test so the assertions describe only the
+    // data this test wrote.
+    protected override Task fixtureSetup()
+    {
+        return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Car));
+    }
+
     public class Car
     {
         public Guid Id { get; set; }
