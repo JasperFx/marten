@@ -45,7 +45,12 @@ public class JsonNetSerializer: ISerializer
         // ISO 8601 formatting of DateTime's is mandatory
         DateFormatHandling = DateFormatHandling.IsoDateFormat,
         MetadataPropertyHandling = MetadataPropertyHandling.ReadAhead,
-        ContractResolver = new JsonNetContractResolver()
+        ContractResolver = new JsonNetContractResolver(),
+
+        // TypeNameHandling.Auto would otherwise record a lazy LINQ iterator's concrete type,
+        // which cannot be reconstructed -- the document writes cleanly and then fails every
+        // read. See #5076.
+        Converters = { JsonNetLazyEnumerableConverter.Instance }
     };
 
     #endregion
@@ -56,7 +61,12 @@ public class JsonNetSerializer: ISerializer
     {
         TypeNameHandling = TypeNameHandling.Objects,
         DateFormatHandling = DateFormatHandling.IsoDateFormat,
-        ContractResolver = new JsonNetContractResolver()
+        ContractResolver = new JsonNetContractResolver(),
+
+        // Objects mode stamps $type onto everything, so a lazy LINQ sequence reaching this
+        // path -- PatchOperation writes polymorphic patch values through it -- hits the same
+        // unreadable-$type problem as the document serializer. See #5076.
+        Converters = { JsonNetLazyEnumerableConverter.Instance }
     };
 
     private readonly Lazy<JsonSerializer> _withTypes;
