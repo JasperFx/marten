@@ -17,6 +17,11 @@ using Xunit;
 
 namespace DocumentDbTests.MultiTenancy;
 
+// Shares the mixed-tenancy store below with conjoined_multi_tenancy_with_partitioning. Both build
+// their own DocumentStore on a fixed schema, wipe it and assert on global counts, so they must not
+// run concurrently -- xunit v3 puts un-attributed classes in separate collections and runs them in
+// parallel, which had them seeing each other's rows (2 users became 4).
+[Collection("mixed_multi_tenancy")]
 public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<MultiTenancyFixture>, IAsyncLifetime
 {
     #region sample_delete_all_data_by_tenant
@@ -245,7 +250,7 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
 
         using var store = DocumentStore.For(opts =>
         {
-            opts.DatabaseSchemaName = "mixed_multi_tenants";
+            opts.DatabaseSchemaName = "mixed_multi_tenants_conjoined";
             opts.Connection(ConnectionSource.ConnectionString);
             opts.Schema.For<Target>().MultiTenanted(); // tenanted
             opts.Schema.For<User>(); // non-tenanted

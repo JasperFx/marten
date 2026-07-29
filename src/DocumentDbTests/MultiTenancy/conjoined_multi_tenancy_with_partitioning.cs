@@ -17,6 +17,8 @@ using Xunit;
 
 namespace DocumentDbTests.MultiTenancy;
 
+// See the note on conjoined_multi_tenancy: these two must not run concurrently.
+[Collection("mixed_multi_tenancy")]
 public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly Target[] _greens = Target.GenerateRandomData(100).ToArray();
