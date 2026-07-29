@@ -282,3 +282,14 @@ dotnet_diagnostic.MA0095.severity = none
 dotnet_diagnostic.MA0096.severity = none
 dotnet_diagnostic.MA0097.severity = none
 dotnet_diagnostic.MA0098.severity = none
+
+# xUnit1051 ("pass TestContext.Current.CancellationToken") is enforced in the swept test
+# projects -- see the ThreadTestCancellationToken switch in Tests.props and #5067. This one
+# file is exempted because it hosts sample_querying_for_non_stale_projection_data, which
+# mdsnippets renders into docs/events/projections/read-aggregates.md: threading a test-only
+# cancellation token there would publish it to users as if it were guidance. Exempting the
+# file here rather than bracketing the region with a #pragma pair keeps the suppression out
+# of the source next to the sample. The trade-off is that the rest of this file is no longer
+# covered by the rule.
+[DaemonTests/Composites/multi_stage_projections.cs]
+dotnet_diagnostic.xUnit1051.severity = none

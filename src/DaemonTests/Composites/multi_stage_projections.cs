@@ -313,12 +313,9 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
             boardSummary.Board.ShouldNotBeNull();
         }
 
-        // This block is pulled into docs/events/projections/read-aggregates.md, so it stays
-        // free of TestContext.Current.CancellationToken -- threading a test-only cancellation
-        // token here would publish it to users as if it were guidance (#5067). The pragma sits
-        // OUTSIDE the region markers on purpose: anything inside them lands in the docs.
-#pragma warning disable xUnit1051
-
+        // Keep this block free of TestContext.Current.CancellationToken: it is rendered into
+        // docs/events/projections/read-aggregates.md. xUnit1051 is switched off for this file
+        // in src/.editorconfig rather than with a pragma here (#5067).
         #region sample_querying_for_non_stale_projection_data
 
         // _compositeSession is an IDocumentSession
@@ -330,8 +327,6 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
             .ToListAsync();
 
         #endregion
-
-#pragma warning restore xUnit1051
 
         summaries.Count.ShouldBe(12);
 

@@ -33,7 +33,7 @@ var summaries = await _compositeSession
     .QueryForNonStaleData<BoardSummary>(10.Seconds())
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L322-L332' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_non_stale_projection_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L319-L329' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_non_stale_projection_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To be clear though, if you need the latest version of a single stream projection, we recommend always
