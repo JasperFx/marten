@@ -243,7 +243,28 @@ Compile-linked suites — v3 simply discovers the previously-invisible tests and
 skips them. PatchingTests is the only place where coverage genuinely drops (3 tests), and
 only because v2 was running them against a serializer they are annotated not to support.
 
-**CI impact.** The Newtonsoft leg gains 13 tests. The SystemTextJson leg loses 3.
+**CI impact.** The Newtonsoft leg gains 13 tests. The SystemTextJson leg initially lost 3 —
+now resolved, see below.
+
+**Resolved: the 3 PatchingTests `RunFor` annotations were redundant and are removed.** All
+three (`can_append_with_sub_types_in_collection`,
+`can_append_if_not_exists_with_sub_types_in_collection`,
+`can_insert_if_not_exists_with_sub_types_in_collection`) call
+`opts.UseNewtonsoftForSerialization()` inside their own `StoreOptions`, so they pin their
+store to Newtonsoft irrespective of the ambient `DEFAULT_SERIALIZER`. The annotation added
+nothing, which is exactly why they ran and passed under SystemTextJson in the v2 baseline.
+They are plain `[Fact]` now, so the SystemTextJson leg keeps running them.
+
+The other 13 annotations are **kept**. None of those tests configure a serializer of their
+own, so they genuinely depend on the ambient one, and since they have never executed there
+is no evidence about how they behave under SystemTextJson. This is the DocumentDb / Linq /
+Patching / strongly-typed-id serializer split that the split exists for.
+
+Net CI effect after this: Newtonsoft leg **+13**, SystemTextJson leg **±0**.
+
+**Resolved: DaemonTests keeps running under SystemTextJson.** The serializer split does not
+matter for the daemon suite, so the dead `TestSetup.cs` stays deleted (see F6) and no
+behaviour changes. The 2 `Bug_5041` Newtonsoft round-trip failures are therefore moot here.
 
 Restoring them is not free: they change execution order and add data to the shared
 `integration` store, which is what surfaced the `delete_many_documents_by_query`

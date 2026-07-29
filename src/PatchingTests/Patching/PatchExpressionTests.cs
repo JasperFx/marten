@@ -497,7 +497,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         public List<Item> Items { get; set; } = new List<Item>();
     }
 
-    [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
+    [Fact]
     public async Task can_append_with_sub_types_in_collection()
     {
         StoreOptions(opts =>
@@ -528,7 +528,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         }
     }
 
-    [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
+    [Fact]
     public async Task can_append_if_not_exists_with_sub_types_in_collection()
     {
         StoreOptions(opts =>
@@ -559,7 +559,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         }
     }
 
-    [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
+    [Fact]
     public async Task can_insert_if_not_exists_with_sub_types_in_collection()
     {
         StoreOptions(opts =>
