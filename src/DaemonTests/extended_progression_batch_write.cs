@@ -123,7 +123,7 @@ public class extended_progression_batch_write: DaemonContext
         await database.WriteExtendedProgressionAsync([
             telemetry("BatchTelemetryStream:All", "Running", node: 3),
             telemetry("OtherBatchTelemetry:All", "Paused", "boom", node: 7)
-        ]);
+        ], TestContext.Current.CancellationToken);
 
         var first = await readRowAsync("BatchTelemetryStream:All");
         first.status.ShouldBe("Running");
@@ -150,7 +150,7 @@ public class extended_progression_batch_write: DaemonContext
             // A shard that has never committed progression: no row to decorate, must be skipped
             // silently, exactly like the single-state function
             telemetry("NoSuchProjection:All:98123456", "Running")
-        ]);
+        ], TestContext.Current.CancellationToken);
 
         var updated = await readRowAsync("BatchTelemetryStream:All");
         updated.status.ShouldBe("Running");
@@ -168,11 +168,11 @@ public class extended_progression_batch_write: DaemonContext
 
         var database = (MartenDatabase)theStore.Storage.Database;
 
-        await database.WriteExtendedProgressionAsync(Array.Empty<ShardState>());
+        await database.WriteExtendedProgressionAsync(Array.Empty<ShardState>(), TestContext.Current.CancellationToken);
 
         await database.WriteExtendedProgressionAsync([
             telemetry("BatchTelemetryStream:All", "Stopped")
-        ]);
+        ], TestContext.Current.CancellationToken);
 
         var row = await readRowAsync("BatchTelemetryStream:All");
         row.status.ShouldBe("Stopped");

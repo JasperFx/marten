@@ -40,8 +40,8 @@ public class Bug_4428_rich_storage_side_effect_events: OneOffConfigurationsConte
             opts.Projections.Add<Bug4428CounterProjection>(ProjectionLifecycle.Async);
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -55,7 +55,7 @@ public class Bug_4428_rich_storage_side_effect_events: OneOffConfigurationsConte
             new Bug4428Incremented(),
             new Bug4428Incremented(),
             new Bug4428Incremented());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
@@ -71,7 +71,7 @@ public class Bug_4428_rich_storage_side_effect_events: OneOffConfigurationsConte
         // test isn't trying to exercise.
         var rawEvents = await theSession.Events.QueryAllRawEvents()
             .Where(x => x.StreamId == streamId)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
         rawEvents.OfType<IEvent<Bug4428BonusAwarded>>().Count().ShouldBe(1);
     }
 }

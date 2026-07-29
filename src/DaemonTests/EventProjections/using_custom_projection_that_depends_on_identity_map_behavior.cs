@@ -38,7 +38,7 @@ public class using_custom_projection_that_depends_on_identity_map_behavior: Daem
                 }));
         session.Events.Append(Guid.NewGuid(), new SomeOtherEntityWithNestedIdentifierPublished(guid));
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var agent = await StartDaemon();
 

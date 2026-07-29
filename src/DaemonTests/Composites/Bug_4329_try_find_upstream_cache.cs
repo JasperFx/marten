@@ -139,13 +139,13 @@ public class Bug_4329_try_find_upstream_cache: BugIntegrationContext
         theSession.Events.StartStream<Order>(orderId,
             new OrderPlaced(customerId, 99.95m),
             new OrderShipped("UPS"));
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var notification = await theSession.LoadAsync<OrderShippingNotification>(orderId);
+        var notification = await theSession.LoadAsync<OrderShippingNotification>(orderId, TestContext.Current.CancellationToken);
         notification.ShouldNotBeNull();
         notification.CustomerId.ShouldBe(customerId);
         notification.OrderTotal.ShouldBe(99.95m);

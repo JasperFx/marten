@@ -28,7 +28,7 @@ public class pausing_and_resuming_the_daemon
 
                     opts.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async);
                 }).AddAsyncDaemon(DaemonMode.Solo);
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         await host.PauseAllDaemonsAsync();
 
@@ -37,11 +37,11 @@ public class pausing_and_resuming_the_daemon
         await using var session = host.DocumentStore().LightweightSession();
         var id = session.Events.StartStream<TestingSupport.TripProjection>(new TripStarted()).Id;
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await host.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
-        var trip = await session.LoadAsync<Trip>(id);
+        var trip = await session.LoadAsync<Trip>(id, TestContext.Current.CancellationToken);
         trip.ShouldNotBeNull();
     }
 }

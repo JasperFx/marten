@@ -80,7 +80,7 @@ public class HighWaterDetectorTests: DaemonContext
     public async Task second_run_detect_same_gap_when_stale(bool useAdvancedTracking)
     {
         StoreOptions(opts => opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking);
-        await theStore.EnsureStorageExistsAsync(typeof(IEvent));
+        await theStore.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
@@ -105,7 +105,7 @@ public class HighWaterDetectorTests: DaemonContext
             opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking;
             opts.Projections.StaleSequenceThreshold = 500.Milliseconds();
         });
-        await theStore.EnsureStorageExistsAsync(typeof(IEvent));
+        await theStore.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
@@ -127,7 +127,7 @@ public class HighWaterDetectorTests: DaemonContext
         var held = await theDetector.DetectInSafeZone(CancellationToken.None);
         held.CurrentMark.ShouldBe(NumberOfEvents - 101);
 
-        await Task.Delay(700);
+        await Task.Delay(700, TestContext.Current.CancellationToken);
 
         var statistics2 = await theDetector.DetectInSafeZone(CancellationToken.None);
 
@@ -145,7 +145,7 @@ public class HighWaterDetectorTests: DaemonContext
             opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking;
             opts.Projections.StaleSequenceThreshold = 500.Milliseconds();
         });
-        await theStore.EnsureStorageExistsAsync(typeof(IEvent));
+        await theStore.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();
@@ -160,7 +160,7 @@ public class HighWaterDetectorTests: DaemonContext
 
         statistics2.CurrentMark.ShouldBe(statistics.CurrentMark);
 
-        await Task.Delay(700);
+        await Task.Delay(700, TestContext.Current.CancellationToken);
 
         // Stuck past the threshold with no live transaction that could fill the tail: advance to the
         // reserved ceiling recorded when the gap was first observed — the whole dead tail, no magic -32
@@ -175,7 +175,7 @@ public class HighWaterDetectorTests: DaemonContext
         var statistics4 = await theDetector.DetectInSafeZone(CancellationToken.None);
         statistics4.CurrentMark.ShouldBe(statistics.CurrentMark + 20);
 
-        await Task.Delay(700);
+        await Task.Delay(700, TestContext.Current.CancellationToken);
 
         var statistics5 = await theDetector.DetectInSafeZone(CancellationToken.None);
         statistics5.CurrentMark.ShouldBe(statistics.CurrentMark + 40);

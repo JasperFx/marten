@@ -122,17 +122,17 @@ public class MultiStreamDataTeardownOnRebuildTests
                 commonId,
                 new SomethingHappened() { Id = commonId }
             );
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var implementationA = await session.LoadAsync<ImplementationA>($"a-{commonId}");
-            var implementationB = await session.LoadAsync<ImplementationB>($"b-{commonId}");
+            var implementationA = await session.LoadAsync<ImplementationA>($"a-{commonId}", TestContext.Current.CancellationToken);
+            var implementationB = await session.LoadAsync<ImplementationB>($"b-{commonId}", TestContext.Current.CancellationToken);
 
             implementationA.ShouldNotBeNull();
             implementationB.ShouldNotBeNull();
 
             await daemon.RebuildProjectionAsync<ImplementationAProjection>(CancellationToken.None);
 
-            var implementationBAfterRebuildOfA = await session.LoadAsync<ImplementationB>($"b-{commonId}");
+            var implementationBAfterRebuildOfA = await session.LoadAsync<ImplementationB>($"b-{commonId}", TestContext.Current.CancellationToken);
 
             implementationBAfterRebuildOfA.ShouldNotBeNull();
         }
@@ -170,17 +170,17 @@ public class MultiStreamDataTeardownOnRebuildTests
                 commonId,
                 new SomethingHappened() { Id = commonId }
             );
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var implementationA = await session.LoadAsync<ImplementationA2>($"a2-{commonId}");
-            var implementationB = await session.LoadAsync<ImplementationB2>($"b2-{commonId}");
+            var implementationA = await session.LoadAsync<ImplementationA2>($"a2-{commonId}", TestContext.Current.CancellationToken);
+            var implementationB = await session.LoadAsync<ImplementationB2>($"b2-{commonId}", TestContext.Current.CancellationToken);
 
             implementationA.ShouldNotBeNull();
             implementationB.ShouldNotBeNull();
 
             await daemon.RebuildProjectionAsync<ImplementationA2Projection>(CancellationToken.None);
 
-            var implementationBAfterRebuildOfA = await session.LoadAsync<ImplementationB2>($"b2-{commonId}");
+            var implementationBAfterRebuildOfA = await session.LoadAsync<ImplementationB2>($"b2-{commonId}", TestContext.Current.CancellationToken);
 
             implementationBAfterRebuildOfA.ShouldNotBeNull();
         }

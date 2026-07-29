@@ -189,7 +189,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
 
             // Well past the stale threshold — must STILL hold, because the reserving transaction
             // is provably alive (RowExclusiveLock on mt_events + open transaction evidence)
-            await Task.Delay(700);
+            await Task.Delay(700, TestContext.Current.CancellationToken);
             var second = await detector.DetectInSafeZone(CancellationToken.None);
             _output.WriteLine($"After threshold with live reserver: CurrentMark={second.CurrentMark}");
             second.CurrentMark.ShouldBe(8);
@@ -223,7 +223,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
         {
             seq.ShouldBe(9);
             await appendEvents(3); // 10..12 committed
-            await tx.RollbackAsync(); // seq 9 is now a permanently dead hole
+            await tx.RollbackAsync(TestContext.Current.CancellationToken); // seq 9 is now a permanently dead hole
 
             var detector = buildDetector();
 
@@ -231,7 +231,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             var first = await detector.DetectInSafeZone(CancellationToken.None);
             first.CurrentMark.ShouldBe(8);
 
-            await Task.Delay(700);
+            await Task.Delay(700, TestContext.Current.CancellationToken);
 
             // Threshold elapsed + no live reserver = provably dead: skip, and record the skip
             var second = await detector.DetectInSafeZone(CancellationToken.None);
@@ -289,13 +289,13 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             first.CurrentMark.ShouldBe(8);
 
             // Still holding while the reserving transaction lives, even past the threshold
-            await Task.Delay(700);
+            await Task.Delay(700, TestContext.Current.CancellationToken);
             var second = await detector.DetectInSafeZone(CancellationToken.None);
             second.CurrentMark.ShouldBe(8);
 
             // Kill the whole tail: every reservation is now provably dead
-            await tx.RollbackAsync();
-            await Task.Delay(700);
+            await tx.RollbackAsync(TestContext.Current.CancellationToken);
+            await Task.Delay(700, TestContext.Current.CancellationToken);
 
             var third = await detector.DetectInSafeZone(CancellationToken.None);
             _output.WriteLine($"After tail death: CurrentMark={third.CurrentMark} (ceiling {lastValue})");
@@ -330,7 +330,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
                 session.Events.StartStream(Guid.NewGuid(), new Bug4953GapEvent(viewId, i + 1));
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var (conn, tx, seq) = await startOutstandingAppend(); // seq 9 in flight
@@ -345,7 +345,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
                     session.Events.StartStream(Guid.NewGuid(), new Bug4953GapEvent(viewId, 10 + i));
                 }
 
-                await session.SaveChangesAsync(); // seqs 10..12 committed
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken); // seqs 10..12 committed
             }
 
             using var daemon = await StartDaemon();
@@ -355,7 +355,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             {
                 await Task.Delay(2000);
                 await tx.CommitAsync();
-            });
+            }, TestContext.Current.CancellationToken);
 
             await daemon.RebuildProjectionAsync<Bug4953GapView>(CancellationToken.None);
             await release;
@@ -364,7 +364,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
 
             var persisted = await scalar($"select count(*) from {Schema}.mt_events");
             await using var query = theStore.QuerySession();
-            var views = await query.Query<Bug4953GapView>().ToListAsync();
+            var views = await query.Query<Bug4953GapView>().ToListAsync(TestContext.Current.CancellationToken);
             var projectedSequences = views.SelectMany(x => x.Sequences).OrderBy(x => x).ToArray();
 
             _output.WriteLine($"persisted={persisted}, projected=[{string.Join(",", projectedSequences)}]");
@@ -422,9 +422,9 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
                 await using var session = theStore.LightweightSession();
                 session.Events.StartStream(Guid.NewGuid(), new Bug4953GapEvent(viewId, 0));
                 await session.SaveChangesAsync();
-            });
+            }, TestContext.Current.CancellationToken);
 
-            await Task.Delay(300);
+            await Task.Delay(300, TestContext.Current.CancellationToken);
 
             // meanwhile 60 later events commit normally
             for (var i = 0; i < 20; i++)
@@ -433,7 +433,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
                 session.Events.StartStream(Guid.NewGuid(), new Bug4953GapEvent(viewId, i + 1));
                 session.Events.StartStream(Guid.NewGuid(), new Bug4953GapEvent(viewId, 100 + i));
                 session.Events.StartStream(Guid.NewGuid(), new Bug4953GapEvent(viewId, 200 + i));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             await slowAppend;
@@ -442,7 +442,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
 
             var persisted = await scalar($"select count(*) from {Schema}.mt_events");
             await using var query = theStore.QuerySession();
-            var views = await query.Query<Bug4953GapView>().ToListAsync();
+            var views = await query.Query<Bug4953GapView>().ToListAsync(TestContext.Current.CancellationToken);
             var projected = views.SelectMany(x => x.Sequences).Count();
 
             _output.WriteLine($"persisted={persisted}, projected={projected}");

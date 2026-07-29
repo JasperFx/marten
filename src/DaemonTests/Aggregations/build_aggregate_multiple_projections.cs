@@ -110,14 +110,14 @@ public partial class build_aggregate_multiple_projections: DaemonContext
         await using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream(carStreamId, new CarNamed() { Value = "car-name-1" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         //Create truck stream - Transaction 2
         await using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream(truckStreamId, new TruckNamed() { Value = "truck-name-1" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         //Send TruckNamed Event - Transaction 3
@@ -125,14 +125,14 @@ public partial class build_aggregate_multiple_projections: DaemonContext
         {
             session.Events.Append(truckStreamId, new TruckNamed() { Value = "truck-name-2" });
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         //Send CarNamed Event - Transaction 4
         await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(carStreamId, new CarNamed() { Value = "car-name-2" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         //Wait for shards and highwater agent to catchup on the events
@@ -144,8 +144,8 @@ public partial class build_aggregate_multiple_projections: DaemonContext
         //Assert results are latest
         await using (var session = theStore.QuerySession())
         {
-            var carName = (await session.Query<CarView>().FirstOrDefaultAsync())?.Name;
-            var truckName = (await session.Query<TruckView>().FirstOrDefaultAsync())?.Name;
+            var carName = (await session.Query<CarView>().FirstOrDefaultAsync(TestContext.Current.CancellationToken))?.Name;
+            var truckName = (await session.Query<TruckView>().FirstOrDefaultAsync(TestContext.Current.CancellationToken))?.Name;
 
             carName.ShouldBe("car-name-2");
             truckName.ShouldBe("truck-name-2");
@@ -174,7 +174,7 @@ public partial class build_aggregate_multiple_projections: DaemonContext
             }
 
             session.Events.StartStream(Guid.NewGuid(), events);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // create some gaps
@@ -195,7 +195,7 @@ public partial class build_aggregate_multiple_projections: DaemonContext
 
         try
         {
-            await daemon.RebuildProjectionAsync<CarProjection>(default);
+            await daemon.RebuildProjectionAsync<CarProjection>(TestContext.Current.CancellationToken);
         }
         catch (Exception ex)
         {
@@ -213,7 +213,7 @@ public partial class build_aggregate_multiple_projections: DaemonContext
             var waterMark = await GetHighWaterMark();
             var maxSeqId = await GetMaxSeqId();
 
-            var cars = await session.Query<CarView>().ToListAsync();
+            var cars = await session.Query<CarView>().ToListAsync(TestContext.Current.CancellationToken);
 
             waterMark.ShouldBe(maxSeqId);
             cars[cars.Count - 1].Name.ShouldBe("car-name-999");
@@ -242,7 +242,7 @@ public partial class build_aggregate_multiple_projections: DaemonContext
             }
 
             session.Events.StartStream(Guid.NewGuid(), events);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // create some gaps
@@ -261,7 +261,7 @@ public partial class build_aggregate_multiple_projections: DaemonContext
 
         try
         {
-            await daemon.RebuildProjectionAsync<CarProjection>(default);
+            await daemon.RebuildProjectionAsync<CarProjection>(TestContext.Current.CancellationToken);
         }
         catch (Exception ex)
         {
@@ -279,7 +279,7 @@ public partial class build_aggregate_multiple_projections: DaemonContext
             var waterMark = await GetHighWaterMark();
             var maxSeqId = await GetMaxSeqId();
 
-            var cars = await session.Query<CarView>().ToListAsync();
+            var cars = await session.Query<CarView>().ToListAsync(TestContext.Current.CancellationToken);
 
             waterMark.ShouldBe(maxSeqId);
             cars[cars.Count - 1].Name.ShouldBe("car-name-999");

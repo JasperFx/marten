@@ -23,7 +23,7 @@ public class converting_projection_from_inline_to_async : OneOffConfigurationsCo
         var id1 = theSession.Events.StartStream<SimpleAggregate>(new MTAEvent(), new MTBEvent()).Id;
         var id2 = theSession.Events.StartStream<SimpleAggregate>(new MTBEvent(), new MTCEvent()).Id;
         var id3 = theSession.Events.StartStream<SimpleAggregate>(new MTCEvent(), new MTDEvent()).Id;
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var store2 = SeparateStore(opts =>
         {
@@ -49,13 +49,13 @@ public class converting_projection_from_inline_to_async : OneOffConfigurationsCo
         session.Events.Append(id1, new MTEEvent(), new MTEEvent());
         session.Events.Append(id2, new MTEEvent(), new MTEEvent());
         session.Events.Append(id3, new MTEEvent(), new MTEEvent());
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(10.Seconds());
 
-        var aggregate1 = await session.LoadAsync<SimpleAggregate>(id1);
-        var aggregate2 = await session.LoadAsync<SimpleAggregate>(id2);
-        var aggregate3 = await session.LoadAsync<SimpleAggregate>(id3);
+        var aggregate1 = await session.LoadAsync<SimpleAggregate>(id1, TestContext.Current.CancellationToken);
+        var aggregate2 = await session.LoadAsync<SimpleAggregate>(id2, TestContext.Current.CancellationToken);
+        var aggregate3 = await session.LoadAsync<SimpleAggregate>(id3, TestContext.Current.CancellationToken);
 
         aggregate1.ShouldBe(new SimpleAggregate
         {

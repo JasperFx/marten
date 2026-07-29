@@ -42,7 +42,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             scenario.DocumentShouldNotExist<User>(id2);
             scenario.DocumentShouldExist<User>(id3);
 
-        });
+        }, TestContext.Current.CancellationToken);
     }
     [Fact]
     public async Task happy_path_test_with_inline_projection_multi_tenanted()
@@ -76,7 +76,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             scenario.DocumentShouldNotExist<User>(id2);
             scenario.DocumentShouldExist<User>(id3);
 
-        });
+        }, TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -88,16 +88,16 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
         });
 
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
         var id = Guid.NewGuid();
 
         await theStore.Advanced.EventProjectionScenario(scenario =>
         {
             scenario.Append(id, new CreateUser { UserId = id, UserName = "Kareem" });
             scenario.DocumentShouldNotExist<User>(id);
-        });
+        }, TestContext.Current.CancellationToken);
 
-        var user = await theSession.Events.AggregateStreamAsync<LiveUser>(id);
+        var user = await theSession.Events.AggregateStreamAsync<LiveUser>(id, token: TestContext.Current.CancellationToken);
         user.ShouldNotBeNull();
         user.UserName.ShouldBe("Kareem");
     }
@@ -177,7 +177,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
         });
 
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         await theStore.Advanced.EventProjectionScenario(scenario =>
         {
@@ -199,7 +199,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
             scenario.DocumentShouldNotExist<User>(id2);
             scenario.DocumentShouldExist<User>(id3);
 
-        });
+        }, TestContext.Current.CancellationToken);
     }
 
     [Fact]

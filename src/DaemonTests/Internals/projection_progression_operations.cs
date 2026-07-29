@@ -40,12 +40,12 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
         theSession.QueueOperation(operation1);
         theSession.QueueOperation(operation2);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var progress1 = await theStore.Advanced.ProjectionProgressFor(new ShardName("one"));
+        var progress1 = await theStore.Advanced.ProjectionProgressFor(new ShardName("one"), token: TestContext.Current.CancellationToken);
         progress1.ShouldBe(12);
 
-        var progress2 = await theStore.Advanced.ProjectionProgressFor(new ShardName("two"));
+        var progress2 = await theStore.Advanced.ProjectionProgressFor(new ShardName("two"), token: TestContext.Current.CancellationToken);
         progress2.ShouldBe(25);
     }
 
@@ -56,15 +56,15 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
             new EventRange( new ShardName("three"), 12));
 
         theSession.QueueOperation(insertProjectionProgress);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var updateProjectionProgress =
             new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50, Substitute.For<ISubscriptionAgent>()));
 
         theSession.QueueOperation(updateProjectionProgress);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("three"));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("three"), token: TestContext.Current.CancellationToken);
         progress.ShouldBe(50);
     }
 
@@ -73,7 +73,7 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
     {
         var target = Target.Random();
         theSession.Store(target);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var insertProjectionProgress = new InsertProjectionProgress(theStore.Events,
             new EventRange( new ShardName("three"), 12));
@@ -81,16 +81,16 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
 
         theSession.QueueOperation(insertProjectionProgress);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var updateProjectionProgress =
             new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50, Substitute.For<ISubscriptionAgent>()));
 
         theSession.QueueOperation(updateProjectionProgress);
         theSession.Delete(target);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("three"));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("three"), token: TestContext.Current.CancellationToken);
         progress.ShouldBe(50);
     }
 
@@ -101,7 +101,7 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
             new EventRange(new ShardName("four"), 12));
 
         theSession.QueueOperation(insertProjectionProgress);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var updateProjectionProgress = new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("four"), 5, 50, Substitute.For<ISubscriptionAgent>()));
 
@@ -114,7 +114,7 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
         ex.Message.ShouldContain("four");
 
         // Just verifying that the real progress didn't change
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("four"));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("four"), token: TestContext.Current.CancellationToken);
         progress.ShouldBe(12);
     }
 
@@ -130,9 +130,9 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
         theSession.QueueOperation(operation1);
         theSession.QueueOperation(operation2);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var progressions = await theStore.Advanced.AllProjectionProgress();
+        var progressions = await theStore.Advanced.AllProjectionProgress(token: TestContext.Current.CancellationToken);
 
         progressions.Any(x => x.ShardName == "five:All").ShouldBeTrue();
         progressions.Any(x => x.ShardName == "six:All").ShouldBeTrue();
@@ -141,7 +141,7 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
     [Fact]
     public async Task fetch_progress_does_not_exist_returns_0()
     {
-        var progress1 = await theStore.Advanced.ProjectionProgressFor(new ShardName("none"));
+        var progress1 = await theStore.Advanced.ProjectionProgressFor(new ShardName("none"), token: TestContext.Current.CancellationToken);
         progress1.ShouldBe(0);
     }
 

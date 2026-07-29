@@ -284,34 +284,40 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
         await daemon.WaitForNonStaleData(30.Seconds());
 
         // All the Boards exist
-        (await _compositeSession.Query<Board>().CountAsync()).ShouldBe(12);
+        (await _compositeSession.Query<Board>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(12);
 
         // Built up ProviderShifts
-        (await _compositeSession.Query<ProviderShift>().CountAsync()).ShouldBeGreaterThan(0);
+        (await _compositeSession.Query<ProviderShift>().CountAsync(TestContext.Current.CancellationToken)).ShouldBeGreaterThan(0);
 
         await startAppointments();
         await daemon.WaitForNonStaleData(30.Seconds());
 
         // Got appointments
-        (await _compositeSession.Query<Appointment>().CountAsync()).ShouldBeGreaterThan(0);
+        (await _compositeSession.Query<Appointment>().CountAsync(TestContext.Current.CancellationToken)).ShouldBeGreaterThan(0);
 
         // Verify the custom IProjection counted appointment requests by specialty
-        var appointmentMetrics = await _compositeSession.Query<AppointmentMetrics>().ToListAsync();
+        var appointmentMetrics = await _compositeSession.Query<AppointmentMetrics>().ToListAsync(TestContext.Current.CancellationToken);
         appointmentMetrics.Count.ShouldBeGreaterThan(0);
         appointmentMetrics.ShouldAllBe(m => m.Count > 0);
 
         // Got details from the 2nd stage projection!
-        (await _compositeSession.Query<AppointmentDetails>().CountAsync()).ShouldBeGreaterThan(0);
-        (await _compositeSession.Query<AppointmentByExternalIdentifier>().CountAsync()).ShouldBeGreaterThan(0);
+        (await _compositeSession.Query<AppointmentDetails>().CountAsync(TestContext.Current.CancellationToken)).ShouldBeGreaterThan(0);
+        (await _compositeSession.Query<AppointmentByExternalIdentifier>().CountAsync(TestContext.Current.CancellationToken)).ShouldBeGreaterThan(0);
 
-        (await _compositeSession.Query<AppointmentDetails>().Where(x => x.RoutingReasonDescription != null).AnyAsync()).ShouldBeTrue();
+        (await _compositeSession.Query<AppointmentDetails>().Where(x => x.RoutingReasonDescription != null).AnyAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
 
         // See the downstream BoardSummary too!
-        (await _compositeSession.Query<BoardSummary>().CountAsync()).ShouldBeGreaterThan(0);
-        foreach (var boardSummary in await _compositeSession.Query<BoardSummary>().ToListAsync())
+        (await _compositeSession.Query<BoardSummary>().CountAsync(TestContext.Current.CancellationToken)).ShouldBeGreaterThan(0);
+        foreach (var boardSummary in await _compositeSession.Query<BoardSummary>().ToListAsync(TestContext.Current.CancellationToken))
         {
             boardSummary.Board.ShouldNotBeNull();
         }
+
+        // This block is pulled into docs/events/projections/read-aggregates.md, so it stays
+        // free of TestContext.Current.CancellationToken -- threading a test-only cancellation
+        // token here would publish it to users as if it were guidance (#5067). The pragma sits
+        // OUTSIDE the region markers on purpose: anything inside them lands in the docs.
+#pragma warning disable xUnit1051
 
         #region sample_querying_for_non_stale_projection_data
 
@@ -324,6 +330,8 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
             .ToListAsync();
 
         #endregion
+
+#pragma warning restore xUnit1051
 
         summaries.Count.ShouldBe(12);
 
@@ -338,15 +346,15 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
 
         await daemon.StartAllAsync();
         // Now, let's cancel an appointment and see that AppointmentDetails is also deleted
-        var appointmentId = (await _compositeSession.Query<Appointment>().FirstAsync()).Id;
+        var appointmentId = (await _compositeSession.Query<Appointment>().FirstAsync(TestContext.Current.CancellationToken)).Id;
 
         _compositeSession.Events.Append(appointmentId, new AppointmentCancelled());
-        await _compositeSession.SaveChangesAsync();
+        await _compositeSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await theStore.WaitForNonStaleProjectionDataAsync(5.Seconds());
 
-        (await _compositeSession.LoadAsync<Appointment>(appointmentId)).ShouldBeNull();
-        (await _compositeSession.LoadAsync<AppointmentDetails>(appointmentId)).ShouldBeNull();
+        (await _compositeSession.LoadAsync<Appointment>(appointmentId, TestContext.Current.CancellationToken)).ShouldBeNull();
+        (await _compositeSession.LoadAsync<AppointmentDetails>(appointmentId, TestContext.Current.CancellationToken)).ShouldBeNull();
 
 
 
@@ -402,8 +410,8 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
 
         // The downstream lookup-by-id projection should be fully populated, even
         // though the upstream cache is squeezed to 1 entry.
-        (await _compositeSession.Query<Appointment>().CountAsync()).ShouldBeGreaterThan(0);
-        (await _compositeSession.Query<AppointmentByExternalIdentifier>().CountAsync()).ShouldBeGreaterThan(0);
+        (await _compositeSession.Query<Appointment>().CountAsync(TestContext.Current.CancellationToken)).ShouldBeGreaterThan(0);
+        (await _compositeSession.Query<AppointmentByExternalIdentifier>().CountAsync(TestContext.Current.CancellationToken)).ShouldBeGreaterThan(0);
     }
 
     private static void verifyDescription(EventStoreUsage usage)

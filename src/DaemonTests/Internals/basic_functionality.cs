@@ -97,21 +97,21 @@ public class basic_functionality: DaemonContext
 
         await daemon.StopAllAsync();
 
-        var highest = (await theStore.Advanced.AllProjectionProgress()).First().Sequence;
+        var highest = (await theStore.Advanced.AllProjectionProgress(token: TestContext.Current.CancellationToken)).First().Sequence;
 
         using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         await conn.CreateCommand(
                 $"update {theStore.Options.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq")
             .With("seq", highest + 100)
-            .ExecuteNonQueryAsync();
+            .ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
 
         await conn.CloseAsync();
 
         await theStore.Advanced.TryCorrectProgressInDatabaseAsync(CancellationToken.None);
 
-        var stats = await theStore.Advanced.AllProjectionProgress();
+        var stats = await theStore.Advanced.AllProjectionProgress(token: TestContext.Current.CancellationToken);
         foreach (var shardState in stats)
         {
             shardState.Sequence.ShouldBe(highest);
@@ -247,7 +247,7 @@ public class basic_functionality: DaemonContext
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
-        var statistics = await theStore.Advanced.FetchEventStoreStatistics();
+        var statistics = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
 
         statistics.EventCount.ShouldBe(NumberOfEvents);
         statistics.StreamCount.ShouldBe(NumberOfStreams);
@@ -260,7 +260,7 @@ public class basic_functionality: DaemonContext
         NumberOfStreams = 100;
         await PublishMultiThreaded(10);
 
-        var statistics = await theStore.Advanced.FetchEventStoreStatistics();
+        var statistics = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
 
         statistics.EventCount.ShouldBe(NumberOfEvents);
         statistics.StreamCount.ShouldBe(NumberOfStreams);

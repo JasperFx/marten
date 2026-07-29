@@ -10,12 +10,14 @@
         <OutputType>Exe</OutputType>
 
         <!-- xUnit1051: "pass TestContext.Current.CancellationToken to methods accepting a
-             CancellationToken". New in the v3 analyzers. There are ~5,650 candidate call
-             sites across the DB-heavy suites (2,955 of them plain SaveChangesAsync()), so
-             this is suppressed for the migration rather than swept. Threading real
-             cancellation tokens through the daemon/DB tests is a worthwhile follow-up, but
-             it is a behavioural change and must not ride along with a framework swap. -->
-        <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+             CancellationToken". New in the v3 analyzers, and still suppressed by default
+             because there are ~5,650 candidate call sites across the DB-heavy suites (2,955
+             of them plain SaveChangesAsync()). The rule is being adopted per-project rather
+             than in one repo-wide sweep — a project that has been swept sets
+             <ThreadTestCancellationToken>true</ThreadTestCancellationToken> BEFORE importing
+             this file, which turns the warning back on so new unthreaded calls can't creep
+             back in. See #5067. -->
+        <NoWarn Condition="'$(ThreadTestCancellationToken)' != 'true'">$(NoWarn);xUnit1051</NoWarn>
 
         <!-- xunit.v3 supplies the entry point. Microsoft.NET.Test.Sdk will also emit a
              Microsoft Testing Platform entry point for anything flagged IsTestProject,

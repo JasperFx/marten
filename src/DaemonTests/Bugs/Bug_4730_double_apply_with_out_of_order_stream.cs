@@ -41,8 +41,8 @@ public class Bug_4730_double_apply_with_out_of_order_stream: OneOffConfiguration
                 ProjectionLifecycle.Async);
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var streamOutOfOrder = Guid.NewGuid();
         var streamControl = Guid.NewGuid();
@@ -60,7 +60,7 @@ public class Bug_4730_double_apply_with_out_of_order_stream: OneOffConfiguration
             new Created4730(streamControl, t0),
             new Updated4730(streamControl, delta, t1));
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -77,7 +77,7 @@ public class Bug_4730_double_apply_with_out_of_order_stream: OneOffConfiguration
         }
 
         await using var query = theStore.QuerySession();
-        var control = await query.LoadAsync<AccountReadModel4730>(streamControl);
+        var control = await query.LoadAsync<AccountReadModel4730>(streamControl, TestContext.Current.CancellationToken);
 
         _output.WriteLine($"cacheLimit={cacheLimitPerTenant} control TotalDelta actual={control?.TotalDelta} expected={delta}");
 

@@ -69,7 +69,7 @@ public class Bug_5055_5056_coordinator_double_stop: DaemonContext
                     session.Events.Append(Guid.NewGuid(), new Bug5055Event());
                 }
 
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             var daemon = coordinator.DaemonForMainDatabase();

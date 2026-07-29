@@ -39,19 +39,19 @@ namespace DaemonTests.Bugs
 
             await using var session = theStore.LightweightSession(tenantId);
             session.Insert(new User { Id = userId, FirstName = "Tester", LastName = "McTestFace" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             await insertUserWithSameIdInOtherTenant(theStore, userId);
 
             session.Events.Append(ticketId, new TicketCreated(ticketId, "Test Projections"),
                 new TicketAssigned(ticketId, userId));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             using var daemon = await theStore.BuildProjectionDaemonAsync();
             await daemon.StartAllAsync();
             await daemon.WaitForNonStaleData(1.Minutes());
 
-            var projection = await session.LoadAsync<Ticket>(ticketId);
+            var projection = await session.LoadAsync<Ticket>(ticketId, TestContext.Current.CancellationToken);
             projection.User.ShouldNotBeNull();
             projection.User.FirstName.ShouldBe("Tester");
         }

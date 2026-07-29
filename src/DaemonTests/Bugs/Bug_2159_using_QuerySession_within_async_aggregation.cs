@@ -27,19 +27,19 @@ public class Bug_2159_using_QuerySession_within_async_aggregation : BugIntegrati
         var user = new User { UserName = "Blue"};
 
         theSession.Store(user);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         theSession.Events.StartStream(streamId, new UserCreated());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 
         theSession.Events.Append(streamId, new UserUpdated{UserId = user.Id});
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.RebuildProjectionAsync<UserAggregate>(CancellationToken.None);
 
-        var aggregate = await theSession.LoadAsync<MyAggregate>(streamId);
+        var aggregate = await theSession.LoadAsync<MyAggregate>(streamId, TestContext.Current.CancellationToken);
         aggregate.UpdatedBy.ShouldBe("Blue");
 
     }

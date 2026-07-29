@@ -149,23 +149,23 @@ public class multi_tenancy_by_database: IAsyncLifetime
 
         await using var session1 = theStore.LightweightSession("tenant1");
         session1.Events.Append(id, new MTAEvent(), new MTBEvent(), new MTBEvent());
-        await session1.SaveChangesAsync();
+        await session1.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await using var session3 = theStore.LightweightSession("tenant3");
         session3.Events.Append(id, new MTAEvent(), new MTAEvent(), new MTBEvent(), new MTBEvent());
-        await session3.SaveChangesAsync();
+        await session3.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await using var session4 = theStore.LightweightSession("tenant4");
         session4.Events.Append(id, new MTAEvent(), new MTBEvent(), new MTBEvent(), new MTBEvent());
-        await session4.SaveChangesAsync();
+        await session4.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await (await theStore.Storage.FindOrCreateDatabase("tenant1")).Tracker.WaitForShardState("AllGood:All", 3);
         await (await theStore.Storage.FindOrCreateDatabase("tenant3")).Tracker.WaitForShardState("AllGood:All", 4);
         await (await theStore.Storage.FindOrCreateDatabase("tenant4")).Tracker.WaitForShardState("AllGood:All", 4);
 
-        (await session1.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate { Id = id, ACount = 1, BCount = 2 });
-        (await session3.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate { Id = id, ACount = 2, BCount = 2 });
-        (await session4.LoadAsync<MyAggregate>(id)).ShouldBe(new MyAggregate { Id = id, ACount = 1, BCount = 3 });
+        (await session1.LoadAsync<MyAggregate>(id, TestContext.Current.CancellationToken)).ShouldBe(new MyAggregate { Id = id, ACount = 1, BCount = 2 });
+        (await session3.LoadAsync<MyAggregate>(id, TestContext.Current.CancellationToken)).ShouldBe(new MyAggregate { Id = id, ACount = 2, BCount = 2 });
+        (await session4.LoadAsync<MyAggregate>(id, TestContext.Current.CancellationToken)).ShouldBe(new MyAggregate { Id = id, ACount = 1, BCount = 3 });
     }
 }
 

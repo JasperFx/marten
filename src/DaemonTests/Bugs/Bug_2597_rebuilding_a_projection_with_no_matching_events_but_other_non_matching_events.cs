@@ -27,7 +27,7 @@ public class Bug_2597_rebuilding_a_projection_with_no_matching_events_but_other_
             session.Events.Append(Guid.NewGuid(), new MTBEvent(), new MTCEvent(), new MTDEvent());
             session.Events.Append(Guid.NewGuid(), new MTBEvent(), new MTCEvent(), new MTDEvent());
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();

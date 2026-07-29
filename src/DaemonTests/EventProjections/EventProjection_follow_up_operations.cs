@@ -37,7 +37,7 @@ public partial class EventProjection_follow_up_operations: DaemonContext
 
         session.Events.Append(guid, new SomeOtherEntityWithNestedIdentifierPublished(guid));
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var agent = await StartDaemon();
 

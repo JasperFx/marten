@@ -71,9 +71,9 @@ public class composite_single_pass_rebuild : DaemonContext
         // Every member's documents are correct after the single-pass rebuild —
         // the headline document-level correctness signal that couldn't live in
         // JasperFx.Events (no concrete event store there).
-        var trips = await theSession.Query<Trip>().ToListAsync();
-        var days = await theSession.Query<Day>().ToListAsync();
-        var metrics = await theSession.Query<TripMetrics>().ToListAsync();
+        var trips = await theSession.Query<Trip>().ToListAsync(TestContext.Current.CancellationToken);
+        var days = await theSession.Query<Day>().ToListAsync(TestContext.Current.CancellationToken);
+        var metrics = await theSession.Query<TripMetrics>().ToListAsync(TestContext.Current.CancellationToken);
 
         trips.Count.ShouldBe(NumberOfStreams,
             "the TripProjection stage wrote one document per stream");
@@ -86,7 +86,7 @@ public class composite_single_pass_rebuild : DaemonContext
         // shard {Name}:All — CompositeReplayExecutor calls
         // controller.MarkSuccessAsync(ceiling) per page and the composite shard
         // owns the row, not any of the members.
-        var progressions = await theStore.Advanced.AllProjectionProgress();
+        var progressions = await theStore.Advanced.AllProjectionProgress(token: TestContext.Current.CancellationToken);
         var compositeProgression = progressions.SingleOrDefault(x => x.ShardName == "TripsRebuild:All");
         compositeProgression.ShouldNotBeNull(
             "Composite single shard must have a progression row at the end of the rebuild");

@@ -30,7 +30,7 @@ public class wait_for_non_stale_data_error_cases : OneOffConfigurationsContext
         theSession.Events.StartStream<LetterCounts>(new AEvent(), new ThrowError(false), new CEvent(), new DEvent());
         theSession.Events.StartStream<LetterCounts>(new AEvent(), new BEvent(), new CEvent(), new DEvent());
         theSession.Events.StartStream<LetterCounts>(new AEvent(), new BEvent(), new ThrowError(true), new DEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
 
@@ -59,7 +59,7 @@ public class wait_for_non_stale_data_error_cases : OneOffConfigurationsContext
 
         var failOnSaveId = Guid.NewGuid();
         theSession.Events.StartStream<FailsOnSave>(new FailsOnSaveEventA());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
 
@@ -74,7 +74,7 @@ public class wait_for_non_stale_data_error_cases : OneOffConfigurationsContext
         aggregated.InnerExceptions[1].ShouldBeOfType<MartenCommandException>();
 
 
-        var failOnSave = await theSession.LoadAsync<FailsOnSave>(failOnSaveId);
+        var failOnSave = await theSession.LoadAsync<FailsOnSave>(failOnSaveId, TestContext.Current.CancellationToken);
         failOnSave.ShouldBeNull();
     }
 }

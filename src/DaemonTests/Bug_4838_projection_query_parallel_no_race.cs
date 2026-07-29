@@ -57,15 +57,15 @@ public class Bug_4838_projection_query_parallel_no_race: BugIntegrationContext
         {
             setup.Store(new Bug4838Question { Id = questionId, ProjectId = projectId });
             setup.Store(new Bug4838Block { Id = blockId, ProjectId = projectId });
-            await setup.SaveChangesAsync();
+            await setup.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Contrast case: a plain lightweight session DOES capture versions from the
         // very same queries, proving the assertions below detect the shared-state write.
         await using (var regular = (DocumentSessionBase)theStore.LightweightSession())
         {
-            await regular.Query<Bug4838Question>().Where(x => x.ProjectId == projectId).ToListAsync();
-            await regular.Query<Bug4838Block>().Where(x => x.ProjectId == projectId).ToListAsync();
+            await regular.Query<Bug4838Question>().Where(x => x.ProjectId == projectId).ToListAsync(TestContext.Current.CancellationToken);
+            await regular.Query<Bug4838Block>().Where(x => x.ProjectId == projectId).ToListAsync(TestContext.Current.CancellationToken);
 
             regular.Versions.RevisionFor<Bug4838Question, Guid>(questionId).ShouldNotBeNull();
             regular.Versions.VersionFor<Bug4838Block, Guid>(blockId).ShouldNotBeNull();
@@ -81,7 +81,7 @@ public class Bug_4838_projection_query_parallel_no_race: BugIntegrationContext
         {
             // Every public read entry point named by #4838: LINQ...
             var questions = await projectionSession.Query<Bug4838Question>()
-                .Where(x => x.ProjectId == projectId).ToListAsync();
+                .Where(x => x.ProjectId == projectId).ToListAsync(TestContext.Current.CancellationToken);
             questions.Single().Id.ShouldBe(questionId);
 
             // ...raw SQL...
@@ -95,7 +95,7 @@ public class Bug_4838_projection_query_parallel_no_race: BugIntegrationContext
                 .Where(x => x.ProjectId == projectId).ToList();
             var batchedBlocks = batchQuery.Query<Bug4838Block>()
                 .Where(x => x.ProjectId == projectId).ToList();
-            await batchQuery.Execute();
+            await batchQuery.Execute(TestContext.Current.CancellationToken);
             (await batchedQuestions).Single().Id.ShouldBe(questionId);
             (await batchedBlocks).Single().Id.ShouldBe(blockId);
 
@@ -158,7 +158,7 @@ public class Bug_4838_projection_query_parallel_no_race: BugIntegrationContext
                 }
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var streamIds = new Guid[streamCount];
@@ -175,7 +175,7 @@ public class Bug_4838_projection_query_parallel_no_race: BugIntegrationContext
                         .ToArray());
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();

@@ -23,15 +23,15 @@ public partial class EventProjectionWithCreate_follow_up_operations: DaemonConte
         await using var session = theStore.IdentitySession();
 
         session.Events.StartStream(entityId, new EntityCreated(entityId, "Some name"));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         session.Events.Append(entityId, new EntityNameUpdated(entityId, "New name"));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var agent = await StartDaemon();
 
         await agent.RebuildProjectionAsync(nameof(EntityProjection), CancellationToken.None);
 
-        var shoppingCartRebuilt = await session.LoadAsync<Entity>(entityId);
+        var shoppingCartRebuilt = await session.LoadAsync<Entity>(entityId, TestContext.Current.CancellationToken);
 
         shoppingCartRebuilt!.Id.ShouldBe(entityId);
         shoppingCartRebuilt.Name.ShouldBe("New name");
@@ -49,15 +49,15 @@ public partial class EventProjectionWithCreate_follow_up_operations: DaemonConte
         await using var session = theStore.IdentitySession();
 
         session.Events.StartStream(entityId, new EntityCreated(entityId, "Some name"));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         session.Events.Append(entityId, new EntityNameUpdated(entityId, "New name"));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var daemon = await StartDaemon();
 
         await daemon.Tracker.WaitForShardState($"{nameof(EntityProjection)}:All", 2);
 
-        var entity = await session.LoadAsync<Entity>(entityId);
+        var entity = await session.LoadAsync<Entity>(entityId, TestContext.Current.CancellationToken);
 
         entity.ShouldNotBeNull();
 

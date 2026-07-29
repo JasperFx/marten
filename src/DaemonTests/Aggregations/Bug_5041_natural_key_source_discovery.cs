@@ -204,7 +204,7 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
         await daemon.RebuildProjectionAsync<KeyFromEventProduct>(CancellationToken.None);
 
         await using var query = theStore.LightweightSession();
-        var product = await query.Events.FetchLatest<KeyFromEventProduct, ProductCode>(new ProductCode("PROD-999"));
+        var product = await query.Events.FetchLatest<KeyFromEventProduct, ProductCode>(new ProductCode("PROD-999"), TestContext.Current.CancellationToken);
         product.ShouldNotBeNull();
         product.Id.ShouldBe(streamId);
         product.Code.Value.ShouldBe("PROD-999");
@@ -214,7 +214,7 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
         // #5041 item 2 on a source shape that could not bind at all before jasperfx#571
         (await naturalKeysForStreamAsync("mt_natural_key_keyfromeventproduct", streamId))
             .ShouldBe(["PROD-999"]);
-        (await query.Events.FetchLatest<KeyFromEventProduct, ProductCode>(new ProductCode("PROD-001")))
+        (await query.Events.FetchLatest<KeyFromEventProduct, ProductCode>(new ProductCode("PROD-001"), TestContext.Current.CancellationToken))
             .ShouldBeNull();
     }
 
@@ -237,14 +237,14 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
         await daemon.RebuildProjectionAsync<Product>(CancellationToken.None);
 
         await using var query = theStore.LightweightSession();
-        var product = await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-999"));
+        var product = await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-999"), TestContext.Current.CancellationToken);
         product.ShouldNotBeNull();
         product.Id.ShouldBe(streamId);
         product.Code.Value.ShouldBe("PROD-999");
 
         // #5041 item 2 through an explicitly registered extractor
         (await naturalKeysForStreamAsync("mt_natural_key_product", streamId)).ShouldBe(["PROD-999"]);
-        (await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-001")))
+        (await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-001"), TestContext.Current.CancellationToken))
             .ShouldBeNull();
     }
 

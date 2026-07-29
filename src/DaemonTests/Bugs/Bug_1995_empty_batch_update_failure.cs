@@ -30,10 +30,10 @@ public class Bug_1995_empty_batch_update_failure : BugIntegrationContext
             theSession.Events.StartStream(id, new IssueCreated { Id = id });
         }
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjectionAsync<IssueAggregateProjection>(default);
+        await daemon.RebuildProjectionAsync<IssueAggregateProjection>(TestContext.Current.CancellationToken);
     }
 }
 

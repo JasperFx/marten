@@ -25,11 +25,11 @@ public class Bug_4744_skip_ahead_min_query_joins_streams: OneOffConfigurationsCo
     [Fact]
     public async Task skip_ahead_probe_joins_streams_when_filtering_on_aggregate_type()
     {
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<Letters>(streamId, new MTAEvent(), new MTBEvent(), new MTCEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var filters = new ISqlFragment[]
         {

@@ -37,28 +37,28 @@ public class Feature_4284_composite_projection_with_services
                     })
                     .ApplyAllDatabaseChangesOnStartup();
             })
-            .StartAsync();
+            .StartAsync(TestContext.Current.CancellationToken);
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
 
         await using var session = store.LightweightSession();
         var streamId = session.Events.StartStream<CompositeProduct>(
             new CompositeProductRegistered("Ankle Socks", "Socks")).Id;
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
         await daemon.WaitForNonStaleData(10.Seconds());
         await daemon.StopAllAsync();
 
-        var product = await session.LoadAsync<CompositeProduct>(streamId);
+        var product = await session.LoadAsync<CompositeProduct>(streamId, TestContext.Current.CancellationToken);
         product.ShouldNotBeNull();
         product.Name.ShouldBe("Ankle Socks");
         product.Category.ShouldBe("Socks");
         product.Price.ShouldBe(12.5);
 
-        var metric = await session.LoadAsync<CompositeProductMetric>(streamId);
+        var metric = await session.LoadAsync<CompositeProductMetric>(streamId, TestContext.Current.CancellationToken);
         metric.ShouldNotBeNull();
         metric.Price.ShouldBe(12.5);
     }

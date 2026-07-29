@@ -35,7 +35,7 @@ public class Bug_3764_fanout_and_transactions : BugIntegrationContext
 
         session.Events.Append(trip.Id, tripStarted);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var duration = random.Next(1, 20);
 
@@ -48,22 +48,22 @@ public class Bug_3764_fanout_and_transactions : BugIntegrationContext
             session.Events.Append(trip.Id, travel);
         }
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var tripEnded = new TripEnded{Day = startDay + duration};
 
         session.Events.Append(trip.Id, tripEnded);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Load as Inline
-        var days = await session.Query<Day>().ToListAsync();
+        var days = await session.Query<Day>().ToListAsync(TestContext.Current.CancellationToken);
 
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.RebuildProjectionAsync<Day>(CancellationToken.None);
 
-        var expected = await session.Query<Day>().ToListAsync();
+        var expected = await session.Query<Day>().ToListAsync(TestContext.Current.CancellationToken);
 
         days.OrderBy(x => x.Id).ShouldBe(expected.OrderBy(x => x.Id));
 

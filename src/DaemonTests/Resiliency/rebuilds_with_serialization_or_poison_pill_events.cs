@@ -89,7 +89,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 
         var deadLetters = await theSession.Query<DeadLetterEvent>()
             .Where(x => x.ShardName == "All" && x.ProjectionName == "Trip")
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         var badEventCount = Streams.SelectMany(x => x.Events).OfType<FailingEvent>().Count();
         deadLetters.Count.ShouldBe(badEventCount);
@@ -147,7 +147,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
         var deadLetters = await theSession
             .Query<DeadLetterEvent>()
             .Where(x => x.ProjectionName == "Trip")
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         var badEventCount = Streams.SelectMany(x => x.Events).OfType<FailingEvent>().Count();
         deadLetters.Count.ShouldBe(badEventCount);

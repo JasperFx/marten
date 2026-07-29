@@ -67,13 +67,13 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         theSession.Events.StartStream(Guid.NewGuid(), events3);
         theSession.Events.StartStream(Guid.NewGuid(), events4);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
 
         theSubscription.EventsEncountered.Count.ShouldBe(16);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1), token: TestContext.Current.CancellationToken);
         progress.ShouldBe(16);
     }
 
@@ -112,7 +112,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         theSession.Events.StartStream(Guid.NewGuid(), events3);
         theSession.Events.StartStream(Guid.NewGuid(), events4);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
 
@@ -126,7 +126,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
 
         using var daemon2 = await secondStore.BuildProjectionDaemonAsync();
         await daemon2.StartAllAsync();
-        await Task.Delay(2000); // yeah, I know
+        await Task.Delay(2000, TestContext.Current.CancellationToken); // yeah, I know
         await secondStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
 
         secondSubscription.EventsEncountered.Count.ShouldBe(8);
@@ -164,7 +164,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         theSession.Events.StartStream(Guid.NewGuid(), events3);
         theSession.Events.StartStream(Guid.NewGuid(), events4);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
 
@@ -176,7 +176,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
 
         theSubscription.EventsEncountered.Count.ShouldBe(16);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1), token: TestContext.Current.CancellationToken);
         progress.ShouldBe(16);
     }
 
@@ -212,7 +212,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         theSession.Events.StartStream(Guid.NewGuid(), events3);
         theSession.Events.StartStream(Guid.NewGuid(), events4);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
 
@@ -224,7 +224,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
 
         theSubscription.EventsEncountered.Count.ShouldBe(8);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1), token: TestContext.Current.CancellationToken);
         progress.ShouldBe(16);
     }
 
@@ -260,7 +260,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         theSession.Events.StartStream(Guid.NewGuid(), events3);
         theSession.Events.StartStream(Guid.NewGuid(), events4);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
 
@@ -302,7 +302,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         theSession.Events.StartStream(Guid.NewGuid(), events3);
         theSession.Events.StartStream(Guid.NewGuid(), events4);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
 
@@ -311,7 +311,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
             .All(x => x.Data is EventSourcingTests.Aggregation.BEvent or EventSourcingTests.Aggregation.EEvent)
             .ShouldBeTrue();
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1), token: TestContext.Current.CancellationToken);
         progress.ShouldBe(16);
     }
 }
@@ -360,13 +360,13 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         theSession.Events.StartStream(Guid.NewGuid(), events3);
         theSession.Events.StartStream(Guid.NewGuid(), events4);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
 
         SimpleSubscription.EventsEncountered[1].Count.ShouldBe(16);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Simple", "All", 1));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Simple", "All", 1), token: TestContext.Current.CancellationToken);
         progress.ShouldBe(16);
     }
 
@@ -386,7 +386,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Singleton,
                     o => o.Name = "Simple2");
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
 
@@ -422,16 +422,16 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         session.Events.StartStream(Guid.NewGuid(), events3);
         session.Events.StartStream(Guid.NewGuid(), events4);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
 
         SimpleSubscription.EventsEncountered[1].Count.ShouldBeGreaterThanOrEqualTo(16);
 
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1));
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
-        await store.Advanced.Clean.DeleteAllEventDataAsync();
+        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -450,7 +450,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Singleton,
                     o => o.Name = "Simple2");
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var store = (DocumentStore)host.Services.GetRequiredService<ICustomStore>();
 
@@ -486,16 +486,16 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         session.Events.StartStream(Guid.NewGuid(), events3);
         session.Events.StartStream(Guid.NewGuid(), events4);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
 
         SimpleSubscription.EventsEncountered[1].Count.ShouldBeGreaterThanOrEqualTo(16);
 
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1));
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
-        await store.Advanced.Clean.DeleteAllEventDataAsync();
+        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
     }
 
     private async Task rewindState()
@@ -523,7 +523,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Scoped,
                     o => o.Name = "Simple2");
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
 
@@ -559,16 +559,16 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         session.Events.StartStream(Guid.NewGuid(), events3);
         session.Events.StartStream(Guid.NewGuid(), events4);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
 
         SimpleSubscription.EventsEncountered.Sum(x => x.Count).ShouldBeGreaterThanOrEqualTo(16);
 
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1));
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
-        await store.Advanced.Clean.DeleteAllEventDataAsync();
+        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -585,7 +585,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Scoped,
                     o => o.Name = "Simple2");
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var capabilities = host.Services.GetServices<IEventStore>().ToArray();
         capabilities.Length.ShouldBe(1);
@@ -611,7 +611,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Scoped,
                     o => o.Name = "Simple2");
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var store = (DocumentStore)host.Services.GetRequiredService<ICustomStore>();
 
@@ -647,16 +647,16 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         session.Events.StartStream(Guid.NewGuid(), events3);
         session.Events.StartStream(Guid.NewGuid(), events4);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
 
         SimpleSubscription.EventsEncountered.Sum(x => x.Count).ShouldBeGreaterThanOrEqualTo(16);
 
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1));
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
-        await store.Advanced.Clean.DeleteAllEventDataAsync();
+        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

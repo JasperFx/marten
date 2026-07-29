@@ -69,12 +69,12 @@ public class catching_up_mode_for_projections_and_subscriptions : OneOffConfigur
     public async Task have_the_expected_documents_from_EventProjection()
     {
         // EventProjection ran
-        (await theSession.Query<ADoc>().CountAsync()).ShouldBe(6);
+        (await theSession.Query<ADoc>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(6);
 
-        var sequences = (await theSession.Events.QueryAllRawEvents().ToListAsync())
+        var sequences = (await theSession.Events.QueryAllRawEvents().ToListAsync(TestContext.Current.CancellationToken))
             .OfType<IEvent<AEvent>>().Select(x => x.Sequence).ToArray();
 
-        var actuals = await theSession.Query<ADoc>().Select(x => x.Id).ToListAsync();
+        var actuals = await theSession.Query<ADoc>().Select(x => x.Id).ToListAsync(TestContext.Current.CancellationToken);
 
         actuals.ShouldBe(sequences);
     }
@@ -83,8 +83,8 @@ public class catching_up_mode_for_projections_and_subscriptions : OneOffConfigur
     public async Task aggregation_projection_can_catch_up()
     {
         // Aggregation too
-        (await theSession.Query<EventSourcingTests.Aggregation.LetterCounts>().CountAsync()).ShouldBe(5);
-        var counts = await theSession.LoadAsync<EventSourcingTests.Aggregation.LetterCounts>(streamId);
+        (await theSession.Query<EventSourcingTests.Aggregation.LetterCounts>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(5);
+        var counts = await theSession.LoadAsync<EventSourcingTests.Aggregation.LetterCounts>(streamId, TestContext.Current.CancellationToken);
         counts.ACount.ShouldBe(2);
         counts.BCount.ShouldBe(5);
         counts.CCount.ShouldBe(2);

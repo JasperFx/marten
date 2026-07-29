@@ -47,7 +47,7 @@ public class Bug_4667_projection_load_async_parallel_no_race: BugIntegrationCont
             {
                 session.Store(new Bug4667Customer { Id = id, Name = $"customer-{id:N}" });
             }
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var streamIds = new Guid[streamCount];
@@ -63,7 +63,7 @@ public class Bug_4667_projection_load_async_parallel_no_race: BugIntegrationCont
                         .Select(j => (object)new Bug4667ItemPicked(customerId, j))
                         .ToArray());
             }
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
