@@ -12,6 +12,9 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <NoWarn>$(NoWarn);xUnit1031</NoWarn>
+        <!-- xunit v3: test projects are stand-alone executables. xunit.v3 supplies the
+             generated entry point, so no Program/Main is declared here. -->
+        <OutputType>Exe</OutputType>
     </PropertyGroup>
 
     <ItemGroup>
@@ -24,7 +27,7 @@
              match resolves the NU1107 conflict; the test project is not an
              analyzer, so the broader-compat constraint doesn't apply here. -->
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="5.0.0" />
-        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.v3" />
         <PackageReference Include="xunit.runner.visualstudio">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

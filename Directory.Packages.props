@@ -273,7 +273,12 @@
     <PackageVersion Include="Weasel.Postgresql" Version="9.17.0" />
     <PackageVersion Include="Weasel.Storage" Version="9.17.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
+    <!-- xunit v3 migration in progress: projects are moved from `xunit` (v2) to
+         `xunit.v3` one at a time, so both package ids are declared here until the
+         last v2 project is converted. xunit.runner.visualstudio 3.x supports both,
+         so VSTest execution (Nuke DotNetTest + the GitHub workflows) is unchanged. -->
     <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
   <!-- EF Core packages - requires net9.0+ due to Npgsql 9.x compatibility -->
