@@ -93,12 +93,36 @@ Default test connection: `Host=localhost;Port=5432;Database=marten_testing;Usern
 
 Base classes in `src/Marten.Testing/Harness/`:
 
-- **`IntegrationContext`** (`IntegrationContext.cs:49`) - Standard integration tests. Shared `DocumentStore`, deletes all data between tests. Uses `[Collection("integration")]`.
+- **`IntegrationContext`** (`IntegrationContext.cs:49`) - Standard integration tests. Shared `DocumentStore`, **data is NOT cleared between tests**. Uses `[Collection("integration")]`.
 - **`DestructiveIntegrationContext`** - Wipes entire public schema between tests.
 - **`OneOffConfigurationsContext`** - Creates isolated `DocumentStore` with custom schema per test.
-- **`BugIntegrationContext`** - Like `OneOffConfigurationsContext`, for bug regression tests.
+- **`BugIntegrationContext`** - Like `OneOffConfigurationsContext`, but pins every bug test to one shared `bugs` schema.
 - **`StoreFixture` / `StoreContext<T>`** - Share `DocumentStore` across tests via collection fixtures.
 - **`SessionTypesAttribute`** (`IntegrationContext.cs:36`) - Theory data source for testing across None/IdentityOnly/DirtyTracking session modes.
+
+### Clearing data between tests
+
+**`IntegrationContext` does not clear the store between tests.** `DefaultStoreFixture` calls
+`CompletelyRemoveAllAsync()` exactly once, when the fixture is created — never per test. The same is
+true of `OneOffConfigurationsContext` within its collection.
+
+That is deliberate: resetting everywhere would cost more than it is worth. The consequence is that a
+test asserting on a *global* count or ordering — `Query<Target>().CountAsync()` with no filter, say —
+only passes while it happens to run before its siblings, and any change to test ordering turns that
+into a failure. Several tests had to be fixed for exactly this reason; see
+[#5070](https://github.com/JasperFx/marten/issues/5070).
+
+If your assertions depend on a document type holding only what your test wrote, clear it explicitly:
+
+```csharp
+await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
+```
+
+Name the types you actually depend on rather than reaching for `ResetAllData()`.
+
+Note `BugIntegrationContext` pins **every** bug test across **every** suite to the single `bugs`
+schema, and CI runs several test projects sequentially against one database, so a global count there
+can pick up rows written by an entirely different project.
 
 ## Environment Variables
 
