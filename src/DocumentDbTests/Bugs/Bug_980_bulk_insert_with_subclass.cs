@@ -20,6 +20,10 @@ public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
                 .AddSubClass<SuperUser>();
         });
 
+        // Both tests here write AdminUser/SuperUser into the shared "bugs" schema and assert
+        // exact counts, so whichever runs second sees the other's rows. See #5070.
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(User));
+
         var users = new User[]
         {
             new AdminUser { UserName = "foo" },
@@ -43,6 +47,10 @@ public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
                 .AddSubClass<AdminUser>()
                 .AddSubClass<SuperUser>();
         });
+
+        // Both tests here write AdminUser/SuperUser into the shared "bugs" schema and assert
+        // exact counts, so whichever runs second sees the other's rows. See #5070.
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(User));
 
         var users = new SuperUser[]
         {
