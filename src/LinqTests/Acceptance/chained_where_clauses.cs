@@ -1,4 +1,6 @@
-﻿using System.Linq;
+using System.Collections.Generic;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -8,6 +10,10 @@ namespace LinqTests.Acceptance;
 
 public class chained_where_clauses : IntegrationContext
 {
+    // Every test here stores Targets matching Number == 1 && String == "Foo" and then asserts
+    // the query returns exactly its own, so whichever runs second sees the other's rows too.
+    protected override IEnumerable<Type> ClearedBeforeEachTest => [typeof(Target)];
+
     [Fact]
     public async Task two_where_clauses()
     {

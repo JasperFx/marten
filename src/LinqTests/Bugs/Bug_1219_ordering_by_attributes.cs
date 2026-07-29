@@ -18,10 +18,7 @@ public class Bug_1219_ordering_by_attributes : IntegrationContext
     // store, but IntegrationContext shares one store across the collection and never
     // clears it between tests. Clear Cars per test so the assertions describe only the
     // data this test wrote.
-    protected override Task fixtureSetup()
-    {
-        return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Car));
-    }
+    protected override IEnumerable<Type> ClearedBeforeEachTest => [typeof(Car)];
 
     public class Car
     {

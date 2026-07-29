@@ -176,8 +176,40 @@ namespace Marten.Testing.Harness
 
         public async ValueTask InitializeAsync()
         {
+            foreach (var documentType in ClearedBeforeEachTest)
+            {
+                await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(documentType);
+            }
+
             await fixtureSetup();
         }
+
+        /// <summary>
+        /// Document types to delete before each test in this class.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The store here is shared across the whole "integration" collection and is deliberately
+        /// <em>not</em> cleared between tests -- doing that everywhere would cost more than it is
+        /// worth. The consequence is that a test asserting on a global count or ordering, e.g.
+        /// <c>Query&lt;Target&gt;().CountAsync()</c> with no filter, only passes while it happens to
+        /// run before its siblings. Several tests were fixed for exactly that reason; see #5070.
+        /// </para>
+        /// <para>
+        /// So opt in explicitly. Name only the types the assertions actually depend on rather than
+        /// resetting everything:
+        /// </para>
+        /// <code>
+        /// protected override IEnumerable&lt;Type&gt; ClearedBeforeEachTest => [typeof(Target)];
+        /// </code>
+        /// <para>
+        /// Contexts deriving from <see cref="OneOffConfigurationsContext"/> (including
+        /// <see cref="BugIntegrationContext"/>) build their store lazily from the test's own
+        /// <c>StoreOptions(...)</c> call, so there is nothing to clear this early. Those clear
+        /// inline, after configuring the store.
+        /// </para>
+        /// </remarks>
+        protected virtual IEnumerable<Type> ClearedBeforeEachTest => [];
 
         protected virtual Task fixtureSetup()
         {

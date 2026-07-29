@@ -112,13 +112,23 @@ only passes while it happens to run before its siblings, and any change to test 
 into a failure. Several tests had to be fixed for exactly this reason; see
 [#5070](https://github.com/JasperFx/marten/issues/5070).
 
-If your assertions depend on a document type holding only what your test wrote, clear it explicitly:
+If your assertions depend on a document type holding only what your test wrote, say so explicitly.
+On `IntegrationContext` and `StoreContext<T>`, declare the types — they are cleared before each test
+in that class:
+
+```csharp
+protected override IEnumerable<Type> ClearedBeforeEachTest => [typeof(Target)];
+```
+
+`OneOffConfigurationsContext` and `BugIntegrationContext` build their store lazily from the test's own
+`StoreOptions(...)` call, so there is nothing to clear that early. Those clear inline, after
+configuring the store:
 
 ```csharp
 await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
 ```
 
-Name the types you actually depend on rather than reaching for `ResetAllData()`.
+Either way, name the types you actually depend on rather than reaching for `ResetAllData()`.
 
 Note `BugIntegrationContext` pins **every** bug test across **every** suite to the single `bugs`
 schema, and CI runs several test projects sequentially against one database, so a global count there
