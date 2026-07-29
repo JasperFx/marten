@@ -23,7 +23,6 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 // 9.0: JFx.Events 2.0 introduced its own IProjectionCoordinator interface;
 // alias to the Marten-specific one this test fixture/sample actually uses.
 using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoordinator;
@@ -444,16 +443,16 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 }
 

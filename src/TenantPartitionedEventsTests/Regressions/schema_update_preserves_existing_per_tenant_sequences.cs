@@ -34,7 +34,7 @@ public class schema_update_preserves_existing_per_tenant_sequences : IAsyncLifet
     private string _schema = null!;
     private DocumentStore _store = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _schema = $"tp_seqpreserve_{Guid.NewGuid():N}".Substring(0, 32);
 
@@ -59,10 +59,10 @@ public class schema_update_preserves_existing_per_tenant_sequences : IAsyncLifet
         await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

@@ -17,15 +17,15 @@ namespace EventSourcingTests.Projections;
 
 public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 {
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(User));
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     protected void UseProjection<T>() where T : EventProjection, new()

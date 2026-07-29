@@ -36,7 +36,7 @@ public class conjoined_to_partitioned_migration: IAsyncLifetime
     private DocumentStore _source = null!;
     private DocumentStore _target = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _source = DocumentStore.For(opts =>
         {
@@ -67,11 +67,11 @@ public class conjoined_to_partitioned_migration: IAsyncLifetime
         await _target.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _source?.Dispose();
         _target?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     /// <summary>

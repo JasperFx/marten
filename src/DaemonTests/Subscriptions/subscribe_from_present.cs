@@ -11,7 +11,6 @@ using Microsoft.Extensions.Time.Testing;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.Subscriptions;
 
@@ -28,7 +27,7 @@ public class subscribe_from_present : IAsyncLifetime
         _output = output;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await SchemaUtils.DropSchema(ConnectionSource.ConnectionString, "subscriptions_start");
 
@@ -54,7 +53,7 @@ public class subscribe_from_present : IAsyncLifetime
         await store.Advanced.Clean.DeleteAllEventDataAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _host.StopAsync();
         _host.Dispose();

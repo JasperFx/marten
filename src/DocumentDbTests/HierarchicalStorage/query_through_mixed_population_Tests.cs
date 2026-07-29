@@ -10,14 +10,14 @@ namespace DocumentDbTests.HierarchicalStorage;
 
 public class query_through_mixed_population_Tests: end_to_end_document_hierarchy_usage_Tests, IAsyncLifetime
 {
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
-        return loadData();
+        return new ValueTask(loadData());
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

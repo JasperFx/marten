@@ -53,7 +53,7 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
         return builder.ConnectionString;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -98,7 +98,7 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
 
     public record DummyEvent;
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _host.StopAsync();
         _store.Dispose();

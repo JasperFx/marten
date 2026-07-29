@@ -43,8 +43,8 @@ public partial class HsTicketSummaryProjection: SingleStreamProjection<HsTicketS
 [Collection("OneOffs")]
 public class hstore_auto_discover_tag_types_from_projections: OneOffConfigurationsContext, IAsyncLifetime
 {
-    public Task InitializeAsync() => Task.CompletedTask;
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask InitializeAsync() => default;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public void tag_type_is_auto_registered_from_single_stream_projection_in_hstore_mode()

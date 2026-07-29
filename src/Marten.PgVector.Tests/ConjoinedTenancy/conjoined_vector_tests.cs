@@ -5,6 +5,7 @@ using Marten.Testing.Harness;
 using Pgvector;
 using Shouldly;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Marten.PgVector.Tests.ConjoinedTenancy;
 
@@ -13,7 +14,7 @@ public class conjoined_vector_tests : IAsyncLifetime
 {
     private DocumentStore _store = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _store = DocumentStore.For(opts =>
         {
@@ -34,10 +35,10 @@ public class conjoined_vector_tests : IAsyncLifetime
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

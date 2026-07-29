@@ -20,7 +20,6 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace TenantPartitionedEventsTests.Sharded;
 
@@ -53,7 +52,7 @@ public partial class composite_side_effects_rebuild_under_sharded_partitioning: 
         _output = output;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -68,7 +67,7 @@ public partial class composite_side_effects_rebuild_under_sharded_partitioning: 
         }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     public record TripStarted(Guid Id);
     public record TripLeg(double Distance);

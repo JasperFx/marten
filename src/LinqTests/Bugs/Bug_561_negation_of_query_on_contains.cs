@@ -58,7 +58,7 @@ public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegra
         StoreOptions(opts => opts.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         var doc1 = new DocWithArrays { Strings = ["a", "b", "c"] };
         var doc2 = new DocWithArrays { Strings = ["c", "d", "e"] };
@@ -70,9 +70,9 @@ public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegra
         await theSession.SaveChangesAsync();
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

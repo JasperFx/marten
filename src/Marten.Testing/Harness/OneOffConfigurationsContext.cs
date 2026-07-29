@@ -16,7 +16,7 @@ namespace Marten.Testing.Harness
     /// all custom StoreOptions configuration
     /// </summary>
     [Collection("OneOffs")]
-    public abstract class OneOffConfigurationsContext: IDisposable
+    public abstract class OneOffConfigurationsContext: IDisposable, IAsyncLifetime
     {
         protected string _schemaName;
         private DocumentStore _store;
@@ -136,6 +136,22 @@ namespace Marten.Testing.Harness
             {
                 disposable.Dispose();
             }
+        }
+
+        /// <remarks>
+        /// This base implements IAsyncLifetime deliberately. Under xunit v2 a derived class
+        /// that added IAsyncLifetime still got this class's Dispose() called by the runner.
+        /// Under v3, IAsyncLifetime inherits IAsyncDisposable and the runner calls only the
+        /// async path — so a derived DisposeAsync that did not chain here would silently
+        /// skip disposing _disposables. Declaring the pair virtual on the base forces
+        /// derived overrides through base.DisposeAsync().
+        /// </remarks>
+        public virtual ValueTask InitializeAsync() => default;
+
+        public virtual ValueTask DisposeAsync()
+        {
+            Dispose();
+            return default;
         }
     }
 }

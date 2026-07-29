@@ -8,7 +8,6 @@ using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests;
 

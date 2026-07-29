@@ -35,13 +35,13 @@ public class dcb_quick_append_tests: OneOffConfigurationsContext, IAsyncLifetime
         });
     }
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
         ConfigureStore();
-        return Task.CompletedTask;
+        return default;
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task can_query_events_by_single_tag_with_quick_append()

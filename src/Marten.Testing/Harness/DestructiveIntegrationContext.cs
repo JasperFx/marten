@@ -19,7 +19,7 @@ namespace Marten.Testing.Harness
             return theStore.Advanced.Clean.CompletelyRemoveAllAsync();
         }
 
-        public override async Task DisposeAsync()
+        public override async ValueTask DisposeAsync()
         {
             await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
             await base.DisposeAsync();

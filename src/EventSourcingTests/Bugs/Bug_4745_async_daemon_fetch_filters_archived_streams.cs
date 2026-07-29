@@ -86,12 +86,12 @@ public class Bug_4745_include_archived_events_with_archived_stream_partitioning:
         StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = true);
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task event_loader_fetches_events_from_archived_stream_when_including_archived_events()

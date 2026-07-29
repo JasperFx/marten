@@ -14,7 +14,6 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.Bugs;
 

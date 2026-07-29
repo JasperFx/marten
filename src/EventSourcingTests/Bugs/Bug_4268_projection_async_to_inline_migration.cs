@@ -11,7 +11,6 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Weasel.Core;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 

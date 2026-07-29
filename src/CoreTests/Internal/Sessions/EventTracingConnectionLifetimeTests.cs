@@ -54,14 +54,14 @@ namespace CoreTests.Internal.Sessions
         private const string AttributeExceptionMessage = "exception.message";
         private const string AttributeExceptionStacktrace = "exception.stacktrace";
 
-        public Task InitializeAsync()
+        public ValueTask InitializeAsync()
         {
             _batch = _batchBuilder.Compile();
             _dataReader = _dataTable.CreateDataReader();
-            return Task.CompletedTask;
+            return default;
         }
 
-        public async Task DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             await _batch.DisposeAsync();
             await _dataReader.DisposeAsync();

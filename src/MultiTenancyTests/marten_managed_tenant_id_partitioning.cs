@@ -44,7 +44,7 @@ public class MartenManagedPartitioningFixture: StoreFixture, IAsyncLifetime
         Options.Projections.LiveStreamAggregation<SimpleAggregate>();
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -52,7 +52,7 @@ public class MartenManagedPartitioningFixture: StoreFixture, IAsyncLifetime
         try { await conn.DropSchemaAsync(Schema); } catch (Exception) { }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 }
 
 [CollectionDefinition("marten_managed_partitioning")]
@@ -67,7 +67,7 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
     {
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -78,7 +78,7 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
         ((MartenDatabase)theStore.Storage.Database).ResetSchemaExistenceChecks();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task can_build_storage_with_dynamic_tenants()

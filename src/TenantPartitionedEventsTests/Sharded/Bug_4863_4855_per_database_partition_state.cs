@@ -12,7 +12,6 @@ using Shouldly;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace TenantPartitionedEventsTests.Sharded;
 
@@ -47,7 +46,7 @@ public sealed class PerDbPartitionStateFixture: IAsyncLifetime
 
     public Dictionary<string, string> ConnectionStrings { get; private set; } = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -67,7 +66,7 @@ public sealed class PerDbPartitionStateFixture: IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 }
 
 /// <summary>
@@ -108,7 +107,7 @@ public class Bug_4863_4855_per_database_partition_state: IAsyncLifetime
         _output = output;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -129,7 +128,7 @@ public class Bug_4863_4855_per_database_partition_state: IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private DocumentStore BuildStore(Action<StoreOptions>? extra = null) => (DocumentStore)DocumentStore.For(opts =>
     {

@@ -9,7 +9,6 @@ using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.EventProjections;
 

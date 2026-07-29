@@ -14,6 +14,13 @@
         <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <IsPackable>false</IsPackable>
+        <!-- The F# SDK's implicit FSharp.Core reference tracks the SDK (10.x) and was
+             winning over the version pinned in Directory.Packages.props, so this assembly
+             carried a reference to FSharp.Core 10.0.0.0 while 9.0.0.0 was what actually
+             got deployed. Nothing loaded this assembly's attributes under the old test
+             host, so the mismatch stayed latent; it surfaces as a FileNotFoundException
+             once anything reflects over the assembly. Take the pinned package instead. -->
+        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     </PropertyGroup>
 
     <ItemGroup>
@@ -25,7 +32,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Update="FSharp.Core" />
+        <PackageReference Include="FSharp.Core" />
     </ItemGroup>
 
 </Project>

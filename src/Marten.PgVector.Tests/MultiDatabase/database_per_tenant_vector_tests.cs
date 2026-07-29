@@ -8,6 +8,7 @@ using Shouldly;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Marten.PgVector.Tests.MultiDatabase;
 
@@ -24,7 +25,7 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
     private DocumentStore _store = null!;
     private readonly Dictionary<string, string> _tenantConnStrs = new();
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Create the per-tenant databases if they don't exist and drop any stale schema
         await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
@@ -58,10 +59,10 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     private static async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)

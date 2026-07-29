@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,7 +47,7 @@ public class hilo_tests : OneOffConfigurationsContext, IAsyncLifetime
     private HiloSequence theSequence;
     private Tenant theTenant;
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
         theTenant = theStore.Tenancy.Default;
@@ -55,10 +55,10 @@ public class hilo_tests : OneOffConfigurationsContext, IAsyncLifetime
         theSequence = theTenant.Database.Sequences.SequenceFor(typeof(Foo)).As<HiloSequence>();
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

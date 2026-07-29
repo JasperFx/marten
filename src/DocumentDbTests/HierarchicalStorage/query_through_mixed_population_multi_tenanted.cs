@@ -23,16 +23,16 @@ public class query_through_mixed_population_multi_tenanted: OneOffConfigurations
 
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await using var session = theStore.LightweightSession("tenant_1");
         session.Store(new User(), new AdminUser());
         await session.SaveChangesAsync();
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

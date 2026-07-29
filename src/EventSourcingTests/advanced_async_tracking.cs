@@ -57,15 +57,15 @@ public class advanced_async_tracking : OneOffConfigurationsContext, IAsyncLifeti
         await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         await theStore.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
         theDetector = new HighWaterDetector((MartenDatabase)theStore.Storage.Database, theStore.Options.EventGraph, NullLogger.Instance);
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

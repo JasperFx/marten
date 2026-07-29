@@ -45,7 +45,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
     {
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         StoreOptions(_ =>
         {
@@ -60,9 +60,9 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
         await session.SaveChangesAsync();
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     public async Task sample_config()

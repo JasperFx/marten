@@ -41,7 +41,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
 
     private DocumentStore _store = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _store = DocumentStore.For(opts =>
         {
@@ -66,10 +66,10 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
         await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

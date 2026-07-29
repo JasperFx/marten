@@ -28,7 +28,7 @@ public class marking_events_as_skipped_as_string_identified : OneOffConfiguratio
         });
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         theSession.Events.StartStream(theStreamId,  new AEvent(), new BEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
@@ -47,9 +47,9 @@ public class marking_events_as_skipped_as_string_identified : OneOffConfiguratio
         await theStore.Storage.Database.MarkEventsAsSkipped(sequences);
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

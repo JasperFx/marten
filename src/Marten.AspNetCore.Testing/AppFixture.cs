@@ -15,7 +15,7 @@ public class AppFixture: IAsyncLifetime
 #endregion
     public IAlbaHost Host { get; private set; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // This is bootstrapping the actual application using
         // its implied Program.Main() set up
@@ -41,7 +41,7 @@ public class AppFixture: IAsyncLifetime
 #endregion
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
         {
             await Host.DisposeAsync();
         }

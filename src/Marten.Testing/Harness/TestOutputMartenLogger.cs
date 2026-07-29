@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace Marten.Testing.Harness
 {
@@ -138,6 +138,18 @@ namespace Marten.Testing.Harness
 
         private class NoopTestOutputHelper : ITestOutputHelper
         {
+            // xunit v3 added Output to ITestOutputHelper (the accumulated text for the
+            // running test). This sink discards everything, so it stays empty.
+            public string Output => string.Empty;
+
+            public void Write(string message)
+            {
+            }
+
+            public void Write(string format, params object[] args)
+            {
+            }
+
             public void WriteLine(string message)
             {
             }

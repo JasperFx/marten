@@ -25,7 +25,7 @@ public class hstore_assign_tag_where_tests: OneOffConfigurationsContext, IAsyncL
     private RegionId _eastRegion = null!;
     private RegionId _westRegion = null!;
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
         _eastRegion = new RegionId(Guid.NewGuid());
         _westRegion = new RegionId(Guid.NewGuid());
@@ -41,10 +41,10 @@ public class hstore_assign_tag_where_tests: OneOffConfigurationsContext, IAsyncL
             opts.Events.RegisterTagType<StudentId>("student");
         });
 
-        return Task.CompletedTask;
+        return default;
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task assign_tag_where_by_event_type_name()

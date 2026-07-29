@@ -36,14 +36,14 @@ public class Bug_4779_partition_document_by_date: IAsyncLifetime
 {
     private readonly string _schema = "bug4779_p" + Environment.ProcessId;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
         try { await conn.DropSchemaAsync(_schema); } catch { }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private DocumentStore BuildManagedStore() => (DocumentStore)DocumentStore.For(opts =>
     {

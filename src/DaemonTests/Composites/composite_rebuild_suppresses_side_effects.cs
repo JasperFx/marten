@@ -13,7 +13,6 @@ using Marten.Internal.Sessions;
 using Marten.Services;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.Composites;
 

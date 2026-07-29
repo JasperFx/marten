@@ -23,15 +23,15 @@ public class ScenarioAggregateAndRepository:
     {
     }
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
-        return theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        return new ValueTask(theStore.Advanced.Clean.DeleteAllEventDataAsync());
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

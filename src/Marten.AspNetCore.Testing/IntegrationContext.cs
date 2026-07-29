@@ -17,7 +17,7 @@ public abstract class IntegrationContext : IAsyncLifetime
     public IAlbaHost Host { get; }
     public IDocumentStore Store { get; }
      
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Using Marten, wipe out all data and reset the state
         await Store.Advanced.ResetAllData();
@@ -26,9 +26,9 @@ public abstract class IntegrationContext : IAsyncLifetime
     // This is required because of the IAsyncLifetime 
     // interface. Note that I do *not* tear down database
     // state after the test. That's purposeful
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return default;
     }
 }
 #endregion

@@ -7,7 +7,7 @@ namespace LinqTests.Acceptance.Support;
 
 public class DefaultQueryFixture: TargetSchemaFixture, IAsyncLifetime
 {
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         Store = await ProvisionStoreAsync("linq_querying");
 
@@ -54,7 +54,7 @@ public class DefaultQueryFixture: TargetSchemaFixture, IAsyncLifetime
         });
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
 
     }

@@ -57,7 +57,7 @@ public class EfCoreEventProjectionTests: IAsyncLifetime
 {
     private DocumentStore _store = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _store = DocumentStore.For(opts =>
         {
@@ -71,10 +71,10 @@ public class EfCoreEventProjectionTests: IAsyncLifetime
         await _store.Advanced.Clean.CompletelyRemoveAllAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

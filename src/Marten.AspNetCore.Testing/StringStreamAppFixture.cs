@@ -12,7 +12,7 @@ public class StringStreamAppFixture: IAsyncLifetime
     private string SchemaName { get; } = "sch" + Guid.NewGuid().ToString().Replace("-", string.Empty);
     public IAlbaHost Host { get; private set; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         Host = await AlbaHost.For<Program>(b =>
         {
@@ -29,7 +29,7 @@ public class StringStreamAppFixture: IAsyncLifetime
         });
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await Host.DisposeAsync();
     }

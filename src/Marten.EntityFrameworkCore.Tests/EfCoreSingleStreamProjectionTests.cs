@@ -62,7 +62,7 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
 
     protected abstract ProjectionLifecycle Lifecycle { get; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         Store = DocumentStore.For(opts =>
         {
@@ -75,10 +75,10 @@ public abstract class EfCoreSingleStreamProjectionTestsBase: IAsyncLifetime
         await Store.Advanced.Clean.CompletelyRemoveAllAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         Store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     /// <summary>
@@ -218,7 +218,7 @@ public class EfCoreSingleStreamProjectionLiveTests: IAsyncLifetime
 {
     private DocumentStore _store = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _store = DocumentStore.For(opts =>
         {
@@ -230,10 +230,10 @@ public class EfCoreSingleStreamProjectionLiveTests: IAsyncLifetime
         await _store.Advanced.Clean.CompletelyRemoveAllAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

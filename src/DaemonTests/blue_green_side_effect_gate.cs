@@ -13,7 +13,6 @@ using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests;
 
@@ -39,14 +38,14 @@ public class blue_green_side_effect_gate : IAsyncLifetime
         _output = output;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Fresh schema so the two versioned stores below share events + progression but start clean.
         using var store = SeparateStore(_ => { });
         await store.Advanced.Clean.CompletelyRemoveAllAsync();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private DocumentStore SeparateStore(Action<StoreOptions> configure)
         => DocumentStore.For(opts =>

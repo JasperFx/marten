@@ -91,7 +91,7 @@ public class using_per_database_multitenancy: IAsyncLifetime
         #endregion
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         #region sample_using_single_server_multi_tenancy
 
@@ -125,7 +125,7 @@ public class using_per_database_multitenancy: IAsyncLifetime
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _host.StopAsync();
         theStore.Dispose();

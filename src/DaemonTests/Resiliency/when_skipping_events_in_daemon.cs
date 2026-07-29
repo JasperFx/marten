@@ -19,7 +19,6 @@ using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.Resiliency;
 

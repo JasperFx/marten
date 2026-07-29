@@ -25,7 +25,7 @@ public class Bug_5044_natural_key_foreign_key_guard: IAsyncLifetime
     private readonly string _schemaOne = $"nk5044_one_{Guid.NewGuid():N}".Substring(0, 26);
     private readonly string _schemaTwo = $"nk5044_two_{Guid.NewGuid():N}".Substring(0, 26);
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -42,7 +42,7 @@ public class Bug_5044_natural_key_foreign_key_guard: IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private static DocumentStore StoreFor(string schema)
     {

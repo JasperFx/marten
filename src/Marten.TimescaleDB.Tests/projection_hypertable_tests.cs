@@ -3,6 +3,7 @@ using Marten.Testing.Harness;
 using Marten.TimescaleDB;
 using Shouldly;
 using Xunit;
+using System.Threading.Tasks;
 
 namespace Marten.TimescaleDB.Tests;
 
@@ -11,7 +12,7 @@ public class projection_hypertable_tests: IAsyncLifetime
 {
     private DocumentStore _store = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _store = DocumentStore.For(opts =>
         {
@@ -39,10 +40,10 @@ public class projection_hypertable_tests: IAsyncLifetime
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     private async Task<T?> ScalarAsync<T>(string sql)

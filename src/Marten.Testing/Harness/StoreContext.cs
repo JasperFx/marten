@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Marten.Testing.Harness
 {
-    public abstract class StoreContext<T> : IDisposable where T : StoreFixture
+    public abstract class StoreContext<T> : IDisposable, IAsyncLifetime where T : StoreFixture
     {
         protected StoreContext(T fixture)
         {
@@ -20,6 +20,19 @@ namespace Marten.Testing.Harness
             {
                 disposable.Dispose();
             }
+        }
+
+        /// <remarks>
+        /// See OneOffConfigurationsContext for why this base owns the async lifetime pair:
+        /// under xunit v3 a derived IAsyncLifetime suppresses the runner's Dispose() call,
+        /// so the async teardown has to chain here.
+        /// </remarks>
+        public virtual ValueTask InitializeAsync() => default;
+
+        public virtual ValueTask DisposeAsync()
+        {
+            Dispose();
+            return default;
         }
 
         /// <summary>

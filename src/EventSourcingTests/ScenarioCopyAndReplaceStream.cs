@@ -14,15 +14,15 @@ public class ScenarioCopyAndReplaceStream : StoreContext<StringIdentifiedStreams
 
     }
 
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
-        return theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        return new ValueTask(theStore.Advanced.Clean.DeleteAllDocumentsAsync());
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

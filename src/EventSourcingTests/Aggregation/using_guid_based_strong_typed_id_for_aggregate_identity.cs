@@ -17,7 +17,6 @@ using Microsoft.Extensions.Logging;
 using Shouldly;
 using StronglyTypedIds;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Aggregation;
 

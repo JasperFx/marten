@@ -7,7 +7,6 @@ using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 using Marten;
 
 namespace DocumentDbTests.Bugs;

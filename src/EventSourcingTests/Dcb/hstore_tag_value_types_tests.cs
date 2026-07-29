@@ -38,7 +38,7 @@ public record OrderEventForTagPermutations(string Note);
 [Collection("OneOffs")]
 public class hstore_tag_value_types_tests: OneOffConfigurationsContext, IAsyncLifetime
 {
-    public Task InitializeAsync()
+    public override ValueTask InitializeAsync()
     {
         StoreOptions(opts =>
         {
@@ -51,10 +51,10 @@ public class hstore_tag_value_types_tests: OneOffConfigurationsContext, IAsyncLi
             opts.Events.RegisterTagType<LongTagId>("long_tag");
             opts.Events.RegisterTagType<ShortTagId>("short_tag");
         });
-        return Task.CompletedTask;
+        return default;
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public override ValueTask DisposeAsync() => base.DisposeAsync();
 
     [Fact]
     public async Task string_tag_round_trips()

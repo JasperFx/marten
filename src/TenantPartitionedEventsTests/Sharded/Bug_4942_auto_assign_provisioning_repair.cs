@@ -49,7 +49,7 @@ public class Bug_4942_auto_assign_provisioning_repair : IAsyncLifetime
         _fixture = fixture;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -64,14 +64,14 @@ public class Bug_4942_auto_assign_provisioning_repair : IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         foreach (var store in _stores)
         {
             store.Dispose();
         }
 
-        return Task.CompletedTask;
+        return default;
     }
 
     private IDocumentStore BuildStore()

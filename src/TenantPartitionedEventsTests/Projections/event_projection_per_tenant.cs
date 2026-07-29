@@ -39,7 +39,7 @@ public class event_projection_per_tenant : IAsyncLifetime
     private string _schema = null!;
     private DocumentStore _store = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _schema = $"tp_evproj_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
 
@@ -65,10 +65,10 @@ public class event_projection_per_tenant : IAsyncLifetime
         await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store?.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     [Fact]

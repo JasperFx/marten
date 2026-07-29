@@ -21,7 +21,7 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: O
             .ShouldBeTrue();
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         var table = new Table(new PostgresqlObjectName("other", "external_table"));
         table.AddColumn("id", "integer").AsPrimaryKey();
@@ -48,10 +48,10 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: O
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(ClassWithExternalForeignKey));
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         Dispose();
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
     [Fact]

@@ -35,7 +35,7 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
     {
     }
 
-    public async Task InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
         using (var session = theStore.LightweightSession("Red"))
         {
@@ -50,9 +50,9 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
         }
     }
 
-    public Task DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return base.DisposeAsync();
     }
 
 

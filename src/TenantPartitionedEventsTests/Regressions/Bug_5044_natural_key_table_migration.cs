@@ -46,7 +46,7 @@ public class Bug_5044_natural_key_table_migration: IAsyncLifetime
 
     private string _schema = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _schema = $"tp_nk5044_{Guid.NewGuid():N}".Substring(0, 28);
 
@@ -62,7 +62,7 @@ public class Bug_5044_natural_key_table_migration: IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private DocumentStore BuildStore()
     {

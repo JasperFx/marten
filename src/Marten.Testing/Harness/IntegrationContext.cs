@@ -174,7 +174,7 @@ namespace Marten.Testing.Harness
             }
         }
 
-        public async Task InitializeAsync()
+        public async ValueTask InitializeAsync()
         {
             await fixtureSetup();
         }
@@ -184,10 +184,10 @@ namespace Marten.Testing.Harness
             return Task.CompletedTask;
         }
 
-        public virtual Task DisposeAsync()
+        public virtual ValueTask DisposeAsync()
         {
             Dispose();
-            return Task.CompletedTask;
+            return default;
         }
     }
 }

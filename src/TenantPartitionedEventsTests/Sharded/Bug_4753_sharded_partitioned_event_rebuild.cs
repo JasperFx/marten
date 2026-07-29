@@ -12,7 +12,6 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace TenantPartitionedEventsTests.Sharded;
 
@@ -44,7 +43,7 @@ public class Bug_4753_sharded_partitioned_event_rebuild: IAsyncLifetime
         _output = output;
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -58,7 +57,7 @@ public class Bug_4753_sharded_partitioned_event_rebuild: IAsyncLifetime
         }
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => default;
 
     private DocumentStore BuildStore() => (DocumentStore)DocumentStore.For(opts =>
     {

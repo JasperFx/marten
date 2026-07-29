@@ -15,7 +15,6 @@ using Npgsql;
 using NSubstitute;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 using static Marten.Events.Daemon.HighWaterHealthCheckExtensions;
 
 namespace DaemonTests.ManualOnly.HealthChecks;

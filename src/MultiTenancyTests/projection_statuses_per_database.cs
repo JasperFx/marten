@@ -62,7 +62,7 @@ public class projection_statuses_per_database: IAsyncLifetime
 
     private IDocumentStore _store = null!;
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
@@ -94,10 +94,10 @@ public class projection_statuses_per_database: IAsyncLifetime
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         _store.Dispose();
-        return Task.CompletedTask;
+        return default;
     }
 
     private async Task AppendAsync(string tenantId, int count)
