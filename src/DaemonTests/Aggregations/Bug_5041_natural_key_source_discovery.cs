@@ -65,6 +65,10 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
         [NaturalKey]
         public ProductCode Code { get; set; }
 
+        // Materialised deliberately: a lazy LINQ iterator assigned here is written by
+        // Newtonsoft's TypeNameHandling.Auto as  = the iterator's concrete type, which
+        // cannot be reconstructed, so the document writes fine and then fails every read.
+        // See #5076.
         public required IEnumerable<ProductCode> KnownCodes { get; set; }
 
         [NaturalKeySource]
@@ -87,6 +91,7 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
                 KnownCodes = product.KnownCodes
                     .Where(c => c.Value != e.Data.NewProductCode)
                     .Append(new ProductCode(e.Data.NewProductCode))
+                    .ToArray()
             };
         }
 
@@ -96,7 +101,8 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
             Code = new ProductCode(e.NewProductCode);
             KnownCodes = KnownCodes
                 .Where(c => c.Value != e.NewProductCode)
-                .Append(new ProductCode(e.NewProductCode));
+                .Append(new ProductCode(e.NewProductCode))
+                .ToArray();
         }
     }
 
@@ -113,6 +119,10 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
         [NaturalKey]
         public ProductCode Code { get; set; }
 
+        // Materialised deliberately: a lazy LINQ iterator assigned here is written by
+        // Newtonsoft's TypeNameHandling.Auto as  = the iterator's concrete type, which
+        // cannot be reconstructed, so the document writes fine and then fails every read.
+        // See #5076.
         public required IEnumerable<ProductCode> KnownCodes { get; set; }
 
         [NaturalKeySource]
@@ -142,6 +152,7 @@ public class Bug_5041_natural_key_source_discovery: DaemonContext
                 KnownCodes = product.KnownCodes
                     .Where(c => c.Value != e.Data.NewProductCode)
                     .Append(new ProductCode(e.Data.NewProductCode))
+                    .ToArray()
             };
         }
     }
