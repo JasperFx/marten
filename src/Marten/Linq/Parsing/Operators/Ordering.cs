@@ -1,7 +1,10 @@
 #nullable enable
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
+using Marten.Linq.Members.Dictionaries;
 
 namespace Marten.Linq.Parsing.Operators;
 
@@ -67,9 +70,50 @@ public class Ordering
 
         var member = MemberName.IsNotEmpty()
             ? collection.MemberFor(MemberName)
-            : collection.MemberFor(Expression, "Invalid OrderBy() expression");
+            : MemberForExpression(collection);
 
         return member.BuildOrderingExpression(this, CasingRule);
+    }
+
+    /// <summary>
+    /// Resolve the member being ordered by. A dictionary indexer (<c>x.Attributes["key"]</c>)
+    /// is a get_Item method call rather than a member access, so MemberFinder drops it and the
+    /// generic lookup lands on the dictionary itself — which orders by the whole JSON object
+    /// and silently ignores the key. Resolve it the same way the Where() path does. See #5063.
+    /// </summary>
+    private IQueryableMember MemberForExpression(IQueryableMemberCollection collection)
+    {
+        // The operator hands us the raw OrderBy argument, i.e. a quoted lambda. Unwrap to the
+        // body, then past any boxing conversion, to see whether it is an indexer access.
+        var expression = Expression;
+        while (true)
+        {
+            switch (expression)
+            {
+                case UnaryExpression { NodeType: ExpressionType.Quote or ExpressionType.Convert } unary:
+                    expression = unary.Operand;
+                    continue;
+                case LambdaExpression lambda:
+                    expression = lambda.Body;
+                    continue;
+            }
+
+            break;
+        }
+
+        if (expression is MethodCallExpression { Method.Name: "get_Item" } call
+            && call.Object != null
+            && call.Arguments.Count == 1
+            && call.Method.DeclaringType.Closes(typeof(IDictionary<,>))
+            && collection.MemberFor(call.Object) is IDictionaryMember dictionary)
+        {
+            return dictionary.MemberForKey(call.Arguments[0].Value());
+        }
+
+        // Deliberately the original expression, not the unwrapped one: the unwrapping above
+        // exists only to spot an indexer, and BadLinqExpressionException quotes whatever it
+        // is handed. Passing the body would drop the "x => " from the message.
+        return collection.MemberFor(Expression, "Invalid OrderBy() expression");
     }
 
     private string BuildNgramRankExpression(IQueryableMemberCollection collection)
