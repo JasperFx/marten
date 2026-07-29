@@ -1,4 +1,6 @@
-﻿using System.Linq;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Marten;
@@ -15,10 +17,7 @@ public class delete_many_documents_by_query : IntegrationContext
     // count. IntegrationContext shares one store across the whole "integration" collection
     // and does not clear data between tests, so only whichever of them ran first could
     // pass. Clear the table per test instead of depending on execution order.
-    protected override Task fixtureSetup()
-    {
-        return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
-    }
+    protected override IEnumerable<Type> ClearedBeforeEachTest => [typeof(Target)];
 
     [Fact]
     public async Task can_delete_by_query()

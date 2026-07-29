@@ -23,10 +23,7 @@ public class AggregationContext : IntegrationContext
 
     }
 
-    protected override Task fixtureSetup()
-    {
-        return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(MyAggregate));
-    }
+    protected override IEnumerable<Type> ClearedBeforeEachTest => [typeof(MyAggregate)];
 
     public void UsingDefinition<T>() where T : SingleStreamProjection<MyAggregate, Guid>, new()
     {

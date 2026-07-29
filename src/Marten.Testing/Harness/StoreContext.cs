@@ -27,7 +27,19 @@ namespace Marten.Testing.Harness
         /// under xunit v3 a derived IAsyncLifetime suppresses the runner's Dispose() call,
         /// so the async teardown has to chain here.
         /// </remarks>
-        public virtual ValueTask InitializeAsync() => default;
+        /// <summary>
+        /// Document types to delete before each test in this class. See
+        /// <see cref="IntegrationContext.ClearedBeforeEachTest"/> for why this is opt-in.
+        /// </summary>
+        protected virtual IEnumerable<Type> ClearedBeforeEachTest => [];
+
+        public virtual async ValueTask InitializeAsync()
+        {
+            foreach (var documentType in ClearedBeforeEachTest)
+            {
+                await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(documentType);
+            }
+        }
 
         public virtual ValueTask DisposeAsync()
         {

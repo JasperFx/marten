@@ -34,10 +34,7 @@ public class Bug_5063_ordering_by_dictionary_indexer: IntegrationContext
         public Dictionary<string, int> Readings { get; set; } = new();
     }
 
-    protected override Task fixtureSetup()
-    {
-        return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Machine));
-    }
+    protected override IEnumerable<Type> ClearedBeforeEachTest => [typeof(Machine)];
 
     private async Task seed()
     {
