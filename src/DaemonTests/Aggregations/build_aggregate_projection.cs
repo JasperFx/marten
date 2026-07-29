@@ -37,8 +37,8 @@ public class build_aggregate_projection: DaemonContext
             opts.DatabaseSchemaName = "simple_multi_tenancy";
         });
 
-        await store.Advanced.Clean.DeleteAllDocumentsAsync();
-        await store.Advanced.Clean.DeleteAllEventDataAsync();
+        await store.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         using var session = store.LightweightSession();
         session.ForTenant("blue").Events.StartStream<SimpleEntity>("one", new MTAEvent(), new MTBEvent());
@@ -49,7 +49,7 @@ public class build_aggregate_projection: DaemonContext
         session.ForTenant("red").Events.StartStream<SimpleEntity>("two", new MTBEvent(), new MTBEvent(), new MTBEvent());
         session.ForTenant("red").Events.StartStream<SimpleEntity>("five", new MTBEvent(), new MTBEvent(), new MTBEvent());
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -58,7 +58,7 @@ public class build_aggregate_projection: DaemonContext
         var blues = await session
             .Query<SimpleEntity>()
             .Where(x => x.TenantIsOneOf("blue"))
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         blues.Select(x => x.Id).OrderBy(x => x).ShouldBe(["one", "three", "two"]);
         var blueOne = blues.Single(x => x.Id == "one");
@@ -67,7 +67,7 @@ public class build_aggregate_projection: DaemonContext
         blueOne.B.ShouldBe(1);
 
         var redOne = await session.Query<SimpleEntity>().Where(x => x.TenantIsOneOf("red") && x.Id == "one")
-            .SingleAsync();
+            .SingleAsync(TestContext.Current.CancellationToken);
 
         redOne.A.ShouldBe(2);
         redOne.B.ShouldBe(1);
@@ -257,13 +257,13 @@ public class build_aggregate_projection: DaemonContext
         // This should be gone after a rebuild
         var trip = new Trip();
         theSession.Store(trip);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await agent.RebuildProjectionAsync("TripCustomName", CancellationToken.None);
 
         await using var query = theStore.QuerySession();
         // Demonstrates that the Trip documents were deleted first
-        (await query.LoadAsync<Trip>(trip.Id)).ShouldBeNull();
+        (await query.LoadAsync<Trip>(trip.Id, TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
     [Fact]
@@ -349,11 +349,11 @@ public class build_aggregate_projection: DaemonContext
         {
             if (stream.Events.OfType<TripAborted>().Any())
             {
-                (await theSession.LoadAsync<Trip>(stream.StreamId)).ShouldBeNull();
+                (await theSession.LoadAsync<Trip>(stream.StreamId, TestContext.Current.CancellationToken)).ShouldBeNull();
             }
             else
             {
-                (await theSession.LoadAsync<Trip>(stream.StreamId)).ShouldNotBeNull();
+                (await theSession.LoadAsync<Trip>(stream.StreamId, TestContext.Current.CancellationToken)).ShouldNotBeNull();
             }
         }
     }
@@ -378,7 +378,7 @@ public class build_aggregate_projection: DaemonContext
 
         await waiter;
 
-        var days = await theSession.Query<Trip>().ToListAsync();
+        var days = await theSession.Query<Trip>().ToListAsync(TestContext.Current.CancellationToken);
 
         var notCriticalBreakdownStream = days[0].Id;
         var criticalBreakdownStream = days[1].Id;
@@ -386,7 +386,7 @@ public class build_aggregate_projection: DaemonContext
         theSession.Events.Append(notCriticalBreakdownStream, new Breakdown { IsCritical = false });
         theSession.Events.Append(criticalBreakdownStream, new Breakdown { IsCritical = true });
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var waiter2 = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents + 2), 300.Seconds());
 
@@ -395,8 +395,8 @@ public class build_aggregate_projection: DaemonContext
 
         await using var query = theStore.QuerySession();
 
-        (await query.LoadAsync<Trip>(notCriticalBreakdownStream)).ShouldNotBeNull();
-        (await query.LoadAsync<Trip>(criticalBreakdownStream)).ShouldBeNull();
+        (await query.LoadAsync<Trip>(notCriticalBreakdownStream, TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        (await query.LoadAsync<Trip>(criticalBreakdownStream, TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
 
@@ -423,7 +423,7 @@ public class build_aggregate_projection: DaemonContext
         {
             session.Events.Append(shortTrip.StreamId, shortTrip.Events.ToArray());
             session.Events.Append(longTrip.StreamId, longTrip.Events.ToArray());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await waiter1;
@@ -434,7 +434,7 @@ public class build_aggregate_projection: DaemonContext
         // This should trigger a delete
         theSession.Events.Append(longTrip.StreamId, new VacationOver());
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var totalNumberOfEvents = initialCount + 2;
         var waiter2 = agent.Tracker.WaitForShardState(new ShardState("Trip:All", totalNumberOfEvents), 30.Seconds());
@@ -445,7 +445,7 @@ public class build_aggregate_projection: DaemonContext
         await using var query = theStore.QuerySession();
 
         // (await query.LoadAsync<Trip>(shortTrip.StreamId)).ShouldNotBeNull();
-        (await query.LoadAsync<Trip>(longTrip.StreamId)).ShouldBeNull();
+        (await query.LoadAsync<Trip>(longTrip.StreamId, TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
     [Fact]
@@ -465,9 +465,9 @@ public class build_aggregate_projection: DaemonContext
             session.Events.Append(id, new ContactEdited(id, "x"));
             session.Events.Append(Guid.NewGuid(), new RandomOtherEvent(Guid.NewGuid()));
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var contact = await session.LoadAsync<Contact>(id);
+            var contact = await session.LoadAsync<Contact>(id, TestContext.Current.CancellationToken);
             Assert.Equal("x", contact.Name);
         }
 
@@ -476,7 +476,7 @@ public class build_aggregate_projection: DaemonContext
         await daemon.RebuildProjectionAsync("Contact", CancellationToken.None);
 
         await using var session2 = theStore.LightweightSession("a");
-        var c = await session2.LoadAsync<Contact>(id);
+        var c = await session2.LoadAsync<Contact>(id, TestContext.Current.CancellationToken);
         Assert.Equal("x", c.Name);
     }
 
@@ -496,9 +496,9 @@ public class build_aggregate_projection: DaemonContext
             session.Events.StartStream(id, new FooCreated(id, "Foo"));
             session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var foo = await session.LoadAsync<Foo>(id);
+            var foo = await session.LoadAsync<Foo>(id, TestContext.Current.CancellationToken);
             Assert.Equal("Foo", foo.Name);
         }
 
@@ -507,7 +507,7 @@ public class build_aggregate_projection: DaemonContext
         await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
 
         await using var session2 = theStore.LightweightSession("a");
-        var c = await session2.LoadAsync<Foo>(id);
+        var c = await session2.LoadAsync<Foo>(id, TestContext.Current.CancellationToken);
         Assert.Equal("Foo", c.Name);
     }
 
@@ -527,9 +527,9 @@ public class build_aggregate_projection: DaemonContext
             session.Events.StartStream(id, new FooCreated2(id, "Foo"));
             session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-            var foo = await session.LoadAsync<Foo>(id);
+            var foo = await session.LoadAsync<Foo>(id, TestContext.Current.CancellationToken);
             Assert.Equal("Foo", foo.Name);
         }
 
@@ -538,7 +538,7 @@ public class build_aggregate_projection: DaemonContext
         await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
 
         await using var session2 = theStore.LightweightSession("a");
-        var c = await session2.LoadAsync<Foo>(id);
+        var c = await session2.LoadAsync<Foo>(id, TestContext.Current.CancellationToken);
         Assert.Equal("Foo", c.Name);
     }
 

@@ -128,7 +128,7 @@ public class blue_green_side_effect_gate : IAsyncLifetime
 
         // V3's documents are nonetheless correct over the FULL history (the warm-up applied [1..N]).
         await using var query = green.QuerySession();
-        (await query.Query<GateTrip>().CountAsync()).ShouldBe(N + M);
+        (await query.Query<GateTrip>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(N + M);
     }
 
     [Fact]

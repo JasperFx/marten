@@ -38,13 +38,13 @@ public partial class Bug_3080_WaitForNonStaleData_should_work_dammit
         var updated2 = new MyAggregateUpdated(id, "Updated 2");
 
         session.Events.StartStream<MyAggregate>(id, created, updated1, updated2);
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Append a few more
         var updated3 = new MyAggregateUpdated(id, "Updated 3");
         var updated4 = new MyAggregateUpdated(id, "Updated 4");
         session.Events.Append(id, updated3, updated4);
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 
         // Wait for table projection

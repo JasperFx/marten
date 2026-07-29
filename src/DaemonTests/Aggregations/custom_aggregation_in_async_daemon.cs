@@ -34,8 +34,8 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
             opts.Logger(new TestOutputMartenLogger(_output));
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
@@ -49,21 +49,21 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync(logger:new TestLogger<IProjection>(_output));
         await daemon.StartAllAsync();
 
         await  daemon.Tracker.WaitForShardState("Custom:All", 11);
 
-        var agg1 = await theSession.LoadAsync<CustomAggregate>(1);
+        var agg1 = await theSession.LoadAsync<CustomAggregate>(1, TestContext.Current.CancellationToken);
         agg1
             .ShouldBe(new CustomAggregate{Id = 1, ACount = 4, BCount = 1, CCount = 1, DCount = 1});
 
-        (await theSession.LoadAsync<CustomAggregate>(2))
+        (await theSession.LoadAsync<CustomAggregate>(2, TestContext.Current.CancellationToken))
             .ShouldBe(new CustomAggregate{Id = 2, ACount = 2, BCount = 0, CCount = 0, DCount = 0});
 
-        (await theSession.LoadAsync<CustomAggregate>(3))
+        (await theSession.LoadAsync<CustomAggregate>(3, TestContext.Current.CancellationToken))
             .ShouldBe(new CustomAggregate{Id = 3, ACount = 0, BCount = 1, CCount = 0, DCount = 1});
 
     }
@@ -78,8 +78,8 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
             opts.Logger(new TestOutputMartenLogger(_output));
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
@@ -93,21 +93,21 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync(logger:new TestLogger<IProjection>(_output));
         await daemon.StartAllAsync();
 
         await  daemon.Tracker.WaitForShardState("Custom:All", 11);
 
-        var agg1 = await theSession.LoadAsync<CustomAggregate>(1);
+        var agg1 = await theSession.LoadAsync<CustomAggregate>(1, TestContext.Current.CancellationToken);
         agg1
             .ShouldBe(new CustomAggregate{Id = 1, ACount = 4, BCount = 1, CCount = 1, DCount = 1});
 
-        (await theSession.LoadAsync<CustomAggregate>(2))
+        (await theSession.LoadAsync<CustomAggregate>(2, TestContext.Current.CancellationToken))
             .ShouldBe(new CustomAggregate{Id = 2, ACount = 2, BCount = 0, CCount = 0, DCount = 0});
 
-        (await theSession.LoadAsync<CustomAggregate>(3))
+        (await theSession.LoadAsync<CustomAggregate>(3, TestContext.Current.CancellationToken))
             .ShouldBe(new CustomAggregate{Id = 3, ACount = 0, BCount = 1, CCount = 0, DCount = 1});
 
     }

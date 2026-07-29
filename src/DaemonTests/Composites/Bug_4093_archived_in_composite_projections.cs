@@ -58,7 +58,7 @@ public class Bug_4093_archived_in_composite_projections : DaemonContext
             // Baz stream with only its own events — Baz should have a doc, stream should NOT be archived
             session.Events.StartStream<Bug4093BazDoc>(bazStreamId, new Bug4093BazStarted());
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
@@ -68,14 +68,14 @@ public class Bug_4093_archived_in_composite_projections : DaemonContext
         await using var query = theStore.QuerySession();
 
         // Foo's doc exists and its stream is archived.
-        var foo = await query.LoadAsync<Bug4093FooDoc>(fooStreamId);
+        var foo = await query.LoadAsync<Bug4093FooDoc>(fooStreamId, TestContext.Current.CancellationToken);
         foo.ShouldNotBeNull();
 
         // Baz's doc exists for its own stream; it should NOT have a doc for the Foo stream.
-        var baz = await query.LoadAsync<Bug4093BazDoc>(bazStreamId);
+        var baz = await query.LoadAsync<Bug4093BazDoc>(bazStreamId, TestContext.Current.CancellationToken);
         baz.ShouldNotBeNull();
 
-        var phantomBaz = await query.LoadAsync<Bug4093BazDoc>(fooStreamId);
+        var phantomBaz = await query.LoadAsync<Bug4093BazDoc>(fooStreamId, TestContext.Current.CancellationToken);
         phantomBaz.ShouldBeNull(
             "Baz does not own the Foo stream; it must not have a doc under that id");
     }

@@ -101,7 +101,7 @@ public class end_to_end_with_composite_projection : DaemonContext
         // so that's all good!
         await CheckAllExpectedAggregatesAgainstActuals();
 
-        var days = await theSession.Query<Day>().ToListAsync();
+        var days = await theSession.Query<Day>().ToListAsync(TestContext.Current.CancellationToken);
         var expected = Streams.SelectMany(x => x.Events).OfType<IDayEvent>().Select(x => x.Day)
             .Distinct().ToArray();
 
@@ -112,22 +112,22 @@ public class end_to_end_with_composite_projection : DaemonContext
         }
 
         // Verify the custom IProjection was executed within the composite
-        var tripMetrics = await theSession.Query<TripMetrics>().ToListAsync();
+        var tripMetrics = await theSession.Query<TripMetrics>().ToListAsync(TestContext.Current.CancellationToken);
         tripMetrics.Count.ShouldBeGreaterThan(0);
         tripMetrics.Any(m => m.TotalStarted > 0).ShouldBeTrue();
 
 
         // Persist all of the progressions of the constituent parts
-        var progressions = await theStore.Advanced.AllProjectionProgress();
+        var progressions = await theStore.Advanced.AllProjectionProgress(token: TestContext.Current.CancellationToken);
         progressions.Single(x => x.ShardName == "Trips:All").Sequence.ShouldBe(NumberOfEvents);
         progressions.Single(x => x.ShardName == "Trip:All").Sequence.ShouldBe(NumberOfEvents);
         progressions.Single(x => x.ShardName == "Day:All").Sequence.ShouldBe(NumberOfEvents);
 
-        var trips = await theSession.Query<Trip>().ToListAsync();
+        var trips = await theSession.Query<Trip>().ToListAsync(TestContext.Current.CancellationToken);
 
         var persisted = trips[0];
-        var latest = await theSession.Events.FetchLatest<Trip>(persisted.Id);
-        var stream = await theSession.Events.FetchForWriting<Trip>(persisted.Id);
+        var latest = await theSession.Events.FetchLatest<Trip>(persisted.Id, TestContext.Current.CancellationToken);
+        var stream = await theSession.Events.FetchForWriting<Trip>(persisted.Id, TestContext.Current.CancellationToken);
 
         latest.ShouldBe(persisted);
         stream.Aggregate.ShouldBe(persisted);

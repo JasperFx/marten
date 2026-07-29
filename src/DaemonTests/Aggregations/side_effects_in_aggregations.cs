@@ -36,8 +36,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
             opts.Logger(new TestOutputMartenLogger(_output));
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -45,31 +45,31 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<SideEffects1>(streamId, new MTAEvent(),
             new MTAEvent(), new MTAEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var version1 = await theSession.LoadAsync<SideEffects1>(streamId);
+        var version1 = await theSession.LoadAsync<SideEffects1>(streamId, TestContext.Current.CancellationToken);
         version1.A.ShouldBe(3);
         version1.B.ShouldBe(0);
 
         theSession.Events.Append(streamId, new MTAEvent(), new MTAEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 
         // Prove the BEevent side effect happened as expected
-        var state = await theSession.Events.FetchStreamStateAsync(streamId);
+        var state = await theSession.Events.FetchStreamStateAsync(streamId, TestContext.Current.CancellationToken);
         var tries = 0;
         while (state.Version != 6 && tries < 10)
         {
-            await Task.Delay(250.Milliseconds());
-            state = await theSession.Events.FetchStreamStateAsync(streamId);
+            await Task.Delay(250.Milliseconds(), TestContext.Current.CancellationToken);
+            state = await theSession.Events.FetchStreamStateAsync(streamId, TestContext.Current.CancellationToken);
             tries++;
         }
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var version2 = await theSession.LoadAsync<SideEffects1>(streamId);
+        var version2 = await theSession.LoadAsync<SideEffects1>(streamId, TestContext.Current.CancellationToken);
         version2.A.ShouldBe(5);
 
         // This proves that the aggregate was updated the new new event
@@ -94,8 +94,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
             opts.Events.MessageOutbox = outbox;
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -103,17 +103,17 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<SideEffects1>(streamId, new MTAEvent(),
             new MTAEvent(), new MTAEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
         theSession.Events.Append(streamId, new MTEEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
         // Should be deleted by now
-        var version1 = await theSession.LoadAsync<SideEffects1>(streamId);
+        var version1 = await theSession.LoadAsync<SideEffects1>(streamId, TestContext.Current.CancellationToken);
         version1.ShouldBeNull();
 
         outbox
@@ -133,8 +133,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
             opts.Logger(new TestOutputMartenLogger(_output));
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -142,15 +142,15 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<SideEffects1>(streamId, new MTAEvent(),
             new MTAEvent(), new MTAEvent(), new MTAEvent(), new MTAEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Prove the BEevent side effect happened as expected
-        var state = await theSession.Events.FetchStreamStateAsync(streamId);
+        var state = await theSession.Events.FetchStreamStateAsync(streamId, TestContext.Current.CancellationToken);
         var tries = 0;
         while (state.Version != 6 && tries < 10)
         {
-            await Task.Delay(500.Milliseconds());
-            state = await theSession.Events.FetchStreamStateAsync(streamId);
+            await Task.Delay(500.Milliseconds(), TestContext.Current.CancellationToken);
+            state = await theSession.Events.FetchStreamStateAsync(streamId, TestContext.Current.CancellationToken);
             tries++;
         }
 
@@ -158,7 +158,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var version2 = await theSession.LoadAsync<SideEffects1>(streamId);
+        var version2 = await theSession.LoadAsync<SideEffects1>(streamId, TestContext.Current.CancellationToken);
         version2.A.ShouldBe(5);
 
         // This proves that the aggregate was updated the new new event
@@ -179,8 +179,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -188,15 +188,15 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         var streamKey = Guid.NewGuid().ToString();
         theSession.Events.StartStream<SideEffects2>(streamKey, new MTAEvent(),
             new MTAEvent(), new MTAEvent(), new MTAEvent(), new MTAEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Prove the BEevent side effect happened as expected
-        var state = await theSession.Events.FetchStreamStateAsync(streamKey);
+        var state = await theSession.Events.FetchStreamStateAsync(streamKey, TestContext.Current.CancellationToken);
         var tries = 0;
         while (state.Version != 6 && tries < 10)
         {
-            await Task.Delay(250.Milliseconds());
-            state = await theSession.Events.FetchStreamStateAsync(streamKey);
+            await Task.Delay(250.Milliseconds(), TestContext.Current.CancellationToken);
+            state = await theSession.Events.FetchStreamStateAsync(streamKey, TestContext.Current.CancellationToken);
             tries++;
         }
 
@@ -204,7 +204,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var version2 = await theSession.LoadAsync<SideEffects2>(streamKey);
+        var version2 = await theSession.LoadAsync<SideEffects2>(streamKey, TestContext.Current.CancellationToken);
         version2.A.ShouldBe(5);
 
         // This proves that the aggregate was updated the new new event
@@ -225,8 +225,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
             opts.Logger(new TestOutputMartenLogger(_output));
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -234,31 +234,31 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         var streamKey = Guid.NewGuid().ToString();
         theSession.Events.StartStream<SideEffects2>(streamKey, new MTAEvent(),
             new MTAEvent(), new MTAEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var version1 = await theSession.LoadAsync<SideEffects2>(streamKey);
+        var version1 = await theSession.LoadAsync<SideEffects2>(streamKey, TestContext.Current.CancellationToken);
         version1.A.ShouldBe(3);
         version1.B.ShouldBe(0);
 
         theSession.Events.Append(streamKey, new MTAEvent(), new MTAEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
 
         // Prove the BEevent side effect happened as expected
-        var state = await theSession.Events.FetchStreamStateAsync(streamKey);
+        var state = await theSession.Events.FetchStreamStateAsync(streamKey, TestContext.Current.CancellationToken);
         var tries = 0;
         while (state.Version != 6 && tries < 10)
         {
-            await Task.Delay(250.Milliseconds());
-            state = await theSession.Events.FetchStreamStateAsync(streamKey);
+            await Task.Delay(250.Milliseconds(), TestContext.Current.CancellationToken);
+            state = await theSession.Events.FetchStreamStateAsync(streamKey, TestContext.Current.CancellationToken);
             tries++;
         }
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var version2 = await theSession.LoadAsync<SideEffects2>(streamKey);
+        var version2 = await theSession.LoadAsync<SideEffects2>(streamKey, TestContext.Current.CancellationToken);
         version2.A.ShouldBe(5);
 
         // This proves that the aggregate was updated the new new event
@@ -282,8 +282,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
             opts.Events.AppendMode = EventAppendMode.Quick;
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -291,21 +291,21 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         var streamKey = Guid.NewGuid().ToString();
         theSession.Events.StartStream<SideEffects2>(streamKey, new MTAEvent(),
             new MTAEvent(), new MTAEvent(), new MTAEvent(), new MTAEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Prove the BEevent side effect happened as expected
-        var state = await theSession.Events.FetchStreamStateAsync(streamKey);
+        var state = await theSession.Events.FetchStreamStateAsync(streamKey, TestContext.Current.CancellationToken);
         var tries = 0;
         while (state.Version != 6 && tries < 10)
         {
-            await Task.Delay(250.Milliseconds());
-            state = await theSession.Events.FetchStreamStateAsync(streamKey);
+            await Task.Delay(250.Milliseconds(), TestContext.Current.CancellationToken);
+            state = await theSession.Events.FetchStreamStateAsync(streamKey, TestContext.Current.CancellationToken);
             tries++;
         }
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var version1 = await theSession.LoadAsync<SideEffects2>(streamKey);
+        var version1 = await theSession.LoadAsync<SideEffects2>(streamKey, TestContext.Current.CancellationToken);
         version1.A.ShouldBe(5);
         version1.B.ShouldBe(1);
 
@@ -314,7 +314,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         await daemon.RebuildProjectionAsync<Projection2>(5.Seconds(), CancellationToken.None);
 
         // No changes!
-        var version2 = await theSession.LoadAsync<SideEffects2>(streamKey);
+        var version2 = await theSession.LoadAsync<SideEffects2>(streamKey, TestContext.Current.CancellationToken);
         version2.A.ShouldBe(5);
         version2.B.ShouldBe(1);
     }
@@ -330,8 +330,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
             opts.Events.MessageOutbox = outbox;
         });
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -343,7 +343,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         theSession.Events.StartStream<SideEffects1>(stream1, new MTAEvent(), new MTAEvent());
         theSession.Events.StartStream<SideEffects1>(stream2, new MTAEvent(), new MTAEvent());
         theSession.Events.StartStream<SideEffects1>(stream3, new MTAEvent(), new MTAEvent(), new MTBEvent());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(120.Seconds());
 

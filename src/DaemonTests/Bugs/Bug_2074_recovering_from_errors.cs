@@ -36,7 +36,7 @@ public class Bug_2074_recovering_from_errors
 
         var documentStore = provider.GetRequiredService<IDocumentStore>();
 
-        await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await documentStore.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
 
         var logger = provider.GetRequiredService<ILogger<IProjectionDaemon>>();
         using var daemon = await documentStore.BuildProjectionDaemonAsync(logger: logger);
@@ -49,7 +49,7 @@ public class Bug_2074_recovering_from_errors
         await using (var session = documentStore.LightweightSession())
         {
             session.Events.Append(id, events);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await waiter;

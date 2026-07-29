@@ -37,17 +37,17 @@ public class using_patches_in_async_mode : OneOffConfigurationsContext
             theSession.Events.StartStream<SimpleAggregate>(new StartAggregate(), new MTAEvent(), new MTAEvent(), new MTBEvent());
         }
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
         await daemon.WaitForNonStaleData(20.Seconds());
 
-        var aggregate1 = await theSession.LoadAsync<SimpleAggregate>(id1);
+        var aggregate1 = await theSession.LoadAsync<SimpleAggregate>(id1, TestContext.Current.CancellationToken);
         aggregate1.ACount.ShouldBe(2);
         aggregate1.BCount.ShouldBe(1);
 
-        var aggregate2 = await theSession.LoadAsync<SimpleAggregate>(id2);
+        var aggregate2 = await theSession.LoadAsync<SimpleAggregate>(id2, TestContext.Current.CancellationToken);
         aggregate2.CCount.ShouldBe(2);
 
 

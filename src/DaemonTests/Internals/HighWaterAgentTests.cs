@@ -95,10 +95,10 @@ public class HighWaterAgentTests: DaemonContext
 
         using (var conn = theStore.Storage.Database.CreateConnection())
         {
-            await conn.OpenAsync();
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
 
             // 32 is a magic number, that's the page size of the PostgreSQL sequence size
-            await conn.CreateCommand($"SELECT setval('daemon.mt_events_sequence', {NumberOfEvents + 37});").ExecuteNonQueryAsync();
+            await conn.CreateCommand($"SELECT setval('daemon.mt_events_sequence', {NumberOfEvents + 37});").ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             await conn.CloseAsync();
         }
 

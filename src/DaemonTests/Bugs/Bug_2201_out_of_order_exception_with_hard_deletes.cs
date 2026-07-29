@@ -29,7 +29,7 @@ public partial class Bug_2201_out_of_order_exception_with_hard_deletes: BugInteg
             options.Projections.Add<TicketProjection>(ProjectionLifecycle.Async);
         });
 
-        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -43,14 +43,14 @@ public partial class Bug_2201_out_of_order_exception_with_hard_deletes: BugInteg
             session.Events.Append(ticketId, new TicketCreated(ticketId, $"Ticket #{i}"));
         }
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         await daemon.WaitForNonStaleData(5.Seconds());
 
         session.Events.Append(ticketId, new TicketDeleted(ticketId));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var ticket = await session.LoadAsync<Ticket>(ticketId);
+        var ticket = await session.LoadAsync<Ticket>(ticketId, TestContext.Current.CancellationToken);
         ticket.ShouldBeNull();
     }
 

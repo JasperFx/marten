@@ -102,7 +102,7 @@ public class when_skipping_events_in_daemon : DaemonContext
         var names = await theSession.Query<NamedDocument>()
             .OrderBy(x => x.Name)
             .Select(x => x.Name)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         var expected = theNames
             .OrderBy(x => x)
@@ -117,7 +117,7 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         await PublishTheEvents();
 
-        var jNames = await theSession.LoadAsync<NamesByLetter>("J");
+        var jNames = await theSession.LoadAsync<NamesByLetter>("J", TestContext.Current.CancellationToken);
 
         jNames.Names.OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Jack", "Jane", "Jeremy", "Jill");
@@ -136,7 +136,7 @@ public class when_skipping_events_in_daemon : DaemonContext
         // session to pipe Marten logging to the xUnit.Net output
         theSession.Logger = new TestOutputMartenLogger(_output);
         #endregion
-        var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync();
+        var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync(TestContext.Current.CancellationToken);
 
         skipped.Where(x => x.ProjectionName == "NamedDocuments" && x.ShardName == "All")
             .Select(x => x.EventSequence).OrderBy(x => x)
@@ -244,7 +244,7 @@ public class when_skipping_events_in_daemon_with_advanced_tracking : DaemonConte
         var names = await theSession.Query<NamedDocument>()
             .OrderBy(x => x.Name)
             .Select(x => x.Name)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         var expected = theNames
             .OrderBy(x => x)
@@ -259,7 +259,7 @@ public class when_skipping_events_in_daemon_with_advanced_tracking : DaemonConte
     {
         await PublishTheEvents();
 
-        var jNames = await theSession.LoadAsync<NamesByLetter>("J");
+        var jNames = await theSession.LoadAsync<NamesByLetter>("J", TestContext.Current.CancellationToken);
 
         jNames.Names.OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Jack", "Jane", "Jeremy", "Jill");
@@ -274,7 +274,7 @@ public class when_skipping_events_in_daemon_with_advanced_tracking : DaemonConte
         await daemon.StopAllAsync();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
-        var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync();
+        var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync(TestContext.Current.CancellationToken);
 
         skipped.Where(x => x.ProjectionName == "CollateNames" && x.ShardName == "All")
             .Select(x => x.EventSequence).OrderBy(x => x)

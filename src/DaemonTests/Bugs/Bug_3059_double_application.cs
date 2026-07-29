@@ -28,8 +28,8 @@ public class Bug_3059_double_application
     {
         using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
-            await conn.OpenAsync();
-            await conn.DropSchemaAsync("bug3059");
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
+            await conn.DropSchemaAsync("bug3059", TestContext.Current.CancellationToken);
             await conn.CloseAsync();
         }
 
@@ -46,7 +46,7 @@ public class Bug_3059_double_application
                     opts.Projections.Snapshot<IncidentDetailsSnapshotAsyncProjection>(SnapshotLifecycle.Async);
                 })
                 .AddAsyncDaemon(DaemonMode.Solo);
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
 
@@ -74,7 +74,7 @@ public class Bug_3059_double_application
 
         using (var session = store.LightweightSession())
         {
-            var document = await session.LoadAsync<IncidentDetailsSnapshotAsyncProjection>(logIncident.IncidentId);
+            var document = await session.LoadAsync<IncidentDetailsSnapshotAsyncProjection>(logIncident.IncidentId, TestContext.Current.CancellationToken);
 
             document.Aggregated.Category.ShouldBe(IncidentCategory.Database);
         }

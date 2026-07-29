@@ -64,12 +64,12 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
         {
             session.Events.StartStream<MyAggregate>(streamId, new MTAEvent(), new MTAEvent(), new MTBEvent(), new MTBEvent(),
                 new MTCEvent(), new MTDEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             // Rig up a bad, unknown event type
             session.QueueSqlCommand(
                 "update missing_events.mt_events set mt_dotnet_type = 'wrong, wrong' where version = 1");
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         _processor = await Host.CreateDefaultBuilder()
@@ -82,7 +82,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
                     opts.DatabaseSchemaName = "missing_events";
                     opts.Projections.Add(new WeirdCustomAggregation(), ProjectionLifecycle.Async);
                 }).AddAsyncDaemon(DaemonMode.Solo);
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var daemon = _processor.Services.GetRequiredService<IProjectionCoordinator>().DaemonForMainDatabase();
         await daemon.WaitForShardToBeRunning("Weird:All", 10.Seconds());
@@ -90,7 +90,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
 
         await using (var session = _processor.DocumentStore().LightweightSession())
         {
-            var aggregate = await session.LoadAsync<MyAggregate>(streamId);
+            var aggregate = await session.LoadAsync<MyAggregate>(streamId, TestContext.Current.CancellationToken);
             aggregate.ShouldNotBeNull();
             aggregate.BCount.ShouldBe(2);
             aggregate.CCount.ShouldBe(1);

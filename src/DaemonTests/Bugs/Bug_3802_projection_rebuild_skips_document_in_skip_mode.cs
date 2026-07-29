@@ -36,7 +36,7 @@ public class Bug_3802_projection_rebuild_skips_document_in_quick_mode: BugIntegr
         theSession.Events.StartStream<Company>(
             new CompanyCreated("JasperFx", "sales@jasperfx.com"));
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Let the daemon run so the async CompanyProjection can catch up
         using (var daemon = await theStore.BuildProjectionDaemonAsync())
@@ -46,9 +46,9 @@ public class Bug_3802_projection_rebuild_skips_document_in_quick_mode: BugIntegr
         }
 
         // Just making sure we have everything as expected
-        var allCompanies = await theSession.Query<Company>().ToListAsync();
+        var allCompanies = await theSession.Query<Company>().ToListAsync(TestContext.Current.CancellationToken);
         allCompanies.Count.ShouldBe(3);
-        var allCompanyEmails = await theSession.Query<CompanyUniqueEmail>().ToListAsync();
+        var allCompanyEmails = await theSession.Query<CompanyUniqueEmail>().ToListAsync(TestContext.Current.CancellationToken);
         allCompanyEmails.Count.ShouldBe(3);
 
         // Now comes the fun - rebuilding the projection
@@ -61,7 +61,7 @@ public class Bug_3802_projection_rebuild_skips_document_in_quick_mode: BugIntegr
         }
 
         // Count should be 3 again - but is it?
-        var allCompanyEmailsAfterRebuild = await theSession.Query<CompanyUniqueEmail>().ToListAsync();
+        var allCompanyEmailsAfterRebuild = await theSession.Query<CompanyUniqueEmail>().ToListAsync(TestContext.Current.CancellationToken);
         allCompanyEmailsAfterRebuild.Count.ShouldBe(3);
     }
 }

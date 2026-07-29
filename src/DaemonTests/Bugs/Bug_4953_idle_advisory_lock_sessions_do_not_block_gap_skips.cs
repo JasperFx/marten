@@ -132,7 +132,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             {
                 seq.ShouldBe(9);
                 await appendEvents(3); // 10..12 committed
-                await tx.RollbackAsync();
+                await tx.RollbackAsync(TestContext.Current.CancellationToken);
             }
             finally
             {
@@ -143,7 +143,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             var first = await detector.DetectInSafeZone(CancellationToken.None);
             first.CurrentMark.ShouldBe(8);
 
-            await Task.Delay(700);
+            await Task.Delay(700, TestContext.Current.CancellationToken);
 
             // Threshold elapsed, and the ONLY open transaction from before the gap is the advisory
             // lock listener, which has provably executed nothing since before seq 9 was allocated.
@@ -192,20 +192,20 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
                 var first = await detector.DetectInSafeZone(CancellationToken.None);
                 first.CurrentMark.ShouldBe(8);
 
-                await Task.Delay(700);
+                await Task.Delay(700, TestContext.Current.CancellationToken);
                 var second = await detector.DetectInSafeZone(CancellationToken.None);
                 _output.WriteLine($"Past threshold with live reserver: CurrentMark={second.CurrentMark}");
                 second.CurrentMark.ShouldBe(8);
 
                 // The reserver dies — NOW the gap is provably dead and the skip proceeds
-                await tx.RollbackAsync();
+                await tx.RollbackAsync(TestContext.Current.CancellationToken);
             }
             finally
             {
                 await conn.DisposeAsync();
             }
 
-            await Task.Delay(200);
+            await Task.Delay(200, TestContext.Current.CancellationToken);
             var third = await detector.DetectInSafeZone(CancellationToken.None);
             _output.WriteLine($"After reserver death: CurrentMark={third.CurrentMark}");
             third.CurrentMark.ShouldBe(12);
@@ -241,7 +241,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             {
                 seq.ShouldBe(9);
                 await appendEvents(3); // 10..12 committed
-                await tx.RollbackAsync();
+                await tx.RollbackAsync(TestContext.Current.CancellationToken);
             }
             finally
             {
@@ -252,7 +252,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             var first = await detector.DetectInSafeZone(CancellationToken.None);
             first.CurrentMark.ShouldBe(8);
 
-            await Task.Delay(700);
+            await Task.Delay(700, TestContext.Current.CancellationToken);
             var second = await detector.DetectInSafeZone(CancellationToken.None);
             _output.WriteLine($"Past threshold, fenceless: CurrentMark={second.CurrentMark}");
             second.CurrentMark.ShouldBe(8);

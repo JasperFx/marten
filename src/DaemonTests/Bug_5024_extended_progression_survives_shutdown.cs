@@ -93,7 +93,7 @@ public class Bug_5024_extended_progression_survives_shutdown: DaemonContext
                     session.Events.Append(Guid.NewGuid(), new Bug5024Event());
                 }
 
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             await daemon.Tracker.WaitForShardState(new ShardState(Shard, 10), 30.Seconds());
@@ -111,7 +111,7 @@ public class Bug_5024_extended_progression_survives_shutdown: DaemonContext
                 AgentStatus = "Deliberate",
                 LastHeartbeat = DateTimeOffset.UtcNow
             };
-            await database.WriteExtendedProgressionAsync(deliberate);
+            await database.WriteExtendedProgressionAsync(deliberate, TestContext.Current.CancellationToken);
 
             // Symptom 1: the deliberate value survives — a fire-and-forgotten "Stopped" heartbeat would have
             // overwritten agent_status back to the terminal state here.

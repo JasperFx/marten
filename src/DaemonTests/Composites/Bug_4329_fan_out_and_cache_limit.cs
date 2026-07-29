@@ -152,13 +152,13 @@ public class Bug_4329_fan_out_and_cache_limit: BugIntegrationContext
         var orderId = Guid.NewGuid();
         theSession.Events.StartStream<OrderSummary>(orderId, new OrderPlacedWithLineItems(productIds));
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var summary = await theSession.LoadAsync<OrderSummary>(orderId);
+        var summary = await theSession.LoadAsync<OrderSummary>(orderId, TestContext.Current.CancellationToken);
         summary.ShouldNotBeNull();
         summary.Lines.Count.ShouldBe(5);
         summary.Lines.Select(x => x.Sku).OrderBy(x => x).ShouldBe(skus.OrderBy(x => x));
@@ -198,13 +198,13 @@ public class Bug_4329_fan_out_and_cache_limit: BugIntegrationContext
         var orderId = Guid.NewGuid();
         theSession.Events.StartStream<OrderSummary>(orderId, new OrderPlacedWithLineItems(productIds));
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        var summary = await theSession.LoadAsync<OrderSummary>(orderId);
+        var summary = await theSession.LoadAsync<OrderSummary>(orderId, TestContext.Current.CancellationToken);
         summary.ShouldNotBeNull();
         summary.Lines.Count.ShouldBe(productCount);
     }

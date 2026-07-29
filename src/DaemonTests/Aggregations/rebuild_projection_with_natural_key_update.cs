@@ -69,8 +69,8 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
     {
         StoreOptions(ConfigureStore);
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var streamId = Guid.NewGuid();
         var originalCode = "PROD-001";
@@ -79,14 +79,14 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
         await using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream<Product>(streamId, new ProductRegistered(streamId, originalCode));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
 
         await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(streamId, new ProductCodeChanged(streamId, newCode));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
@@ -94,7 +94,7 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
 
         await using (var session = theStore.LightweightSession())
         {
-            var product = await session.Events.FetchLatest<Product, ProductCode>(new ProductCode(newCode));
+            var product = await session.Events.FetchLatest<Product, ProductCode>(new ProductCode(newCode), TestContext.Current.CancellationToken);
             product.ShouldNotBeNull();
             product.Code.Value.ShouldBe(newCode);
         }
@@ -105,15 +105,15 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
     {
         StoreOptions(ConfigureStore);
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var streamId = Guid.NewGuid();
 
         await using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream<Product>(streamId, new ProductRegistered(streamId, "PROD-001"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         (await naturalKeysForStream(streamId)).ShouldBe(["PROD-001"]);
@@ -121,7 +121,7 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
         await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(streamId, new ProductCodeChanged(streamId, "PROD-999"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Before #5041 the retired PROD-001 row survived alongside PROD-999, permanently
@@ -134,8 +134,8 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
     {
         StoreOptions(ConfigureStore);
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var streamId = Guid.NewGuid();
 
@@ -143,7 +143,7 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
         {
             session.Events.StartStream<Product>(streamId, new ProductRegistered(streamId, "PROD-001"));
             session.Events.Append(streamId, new ProductCodeChanged(streamId, "PROD-999"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
@@ -154,7 +154,7 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
         (await naturalKeysForStream(streamId)).ShouldBe(["PROD-999"]);
 
         await using var query = theStore.LightweightSession();
-        var product = await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-999"));
+        var product = await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-999"), TestContext.Current.CancellationToken);
         product.ShouldNotBeNull();
         product.Code.Value.ShouldBe("PROD-999");
     }
@@ -164,8 +164,8 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
     {
         StoreOptions(ConfigureStore);
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         var first = Guid.NewGuid();
         var second = Guid.NewGuid();
@@ -174,13 +174,13 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
         {
             session.Events.StartStream<Product>(first, new ProductRegistered(first, "PROD-001"));
             session.Events.Append(first, new ProductCodeChanged(first, "PROD-999"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream<Product>(second, new ProductRegistered(second, "PROD-001"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         (await naturalKeysForStream(first)).ShouldBe(["PROD-999"]);
@@ -191,7 +191,7 @@ public class Bug_4966_natural_key_update_on_projection_rebuild: DaemonContext
         await daemon.RebuildProjectionAsync<Product>(CancellationToken.None);
 
         await using var query = theStore.LightweightSession();
-        var reused = await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-001"));
+        var reused = await query.Events.FetchLatest<Product, ProductCode>(new ProductCode("PROD-001"), TestContext.Current.CancellationToken);
         reused.ShouldNotBeNull();
         reused.Id.ShouldBe(second);
     }

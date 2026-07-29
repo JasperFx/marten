@@ -46,7 +46,7 @@ public class Bug_DeleteWhere_Operations_Should_Respect_Tenancy : BugIntegrationC
         session.Events.StartStream(createNormal);
         session.Events.StartStream(createHard);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var createdProjections = await session.LoadManyAsync<DeletableProjection>(createNormal.Id, createHard.Id);
         Assert.Equal(2, createdProjections.Count);
@@ -54,19 +54,19 @@ public class Bug_DeleteWhere_Operations_Should_Respect_Tenancy : BugIntegrationC
         session.Events.StartStream(deleteNormal);
         session.Events.StartStream(deleteHard);
 
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var normalDeleteInline = await session.LoadAsync<DeletableProjection>(createNormal.Id);
-        var hardDeleteInline = await session.LoadAsync<DeletableProjection>(createHard.Id);
+        var normalDeleteInline = await session.LoadAsync<DeletableProjection>(createNormal.Id, TestContext.Current.CancellationToken);
+        var hardDeleteInline = await session.LoadAsync<DeletableProjection>(createHard.Id, TestContext.Current.CancellationToken);
         Assert.Null(normalDeleteInline);
         Assert.Null(hardDeleteInline);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjectionAsync<DeletableEventProjection>(default);
+        await daemon.RebuildProjectionAsync<DeletableEventProjection>(TestContext.Current.CancellationToken);
 
-        var normalDeleteRebuilt = await session.LoadAsync<DeletableProjection>(createNormal.Id);
-        var hardDeleteRebuilt = await session.LoadAsync<DeletableProjection>(createHard.Id);
+        var normalDeleteRebuilt = await session.LoadAsync<DeletableProjection>(createNormal.Id, TestContext.Current.CancellationToken);
+        var hardDeleteRebuilt = await session.LoadAsync<DeletableProjection>(createHard.Id, TestContext.Current.CancellationToken);
         Assert.Null(normalDeleteRebuilt);
         Assert.Null(hardDeleteRebuilt);
     }

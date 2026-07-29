@@ -21,7 +21,7 @@ public class end_to_end_with_flat_table_projections : DaemonContext
         var streamId = Guid.NewGuid();
         theSession.Events.Append(streamId, new EventSourcingTests.Projections.Flattened.ValuesSet { A = 10, B = 10, C = 10, D = 10 });
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var valuesSubtracted = new EventSourcingTests.Projections.Flattened.ValuesSubtracted
         {
@@ -35,7 +35,7 @@ public class end_to_end_with_flat_table_projections : DaemonContext
 
         theSession.Events.Append(streamId, valuesSubtracted, valuesSubtracted2);
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
 

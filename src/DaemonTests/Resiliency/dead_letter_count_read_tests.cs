@@ -49,7 +49,7 @@ public class dead_letter_count_read_tests : DaemonContext
 
         var events = theNames.Select(name => new NameEvent { Name = name }).OfType<object>().ToArray();
         theSession.Events.StartStream(Guid.NewGuid(), events);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.Tracker.WaitForHighWaterMark(theNames.Length);
         await waiter1;
@@ -61,16 +61,16 @@ public class dead_letter_count_read_tests : DaemonContext
         var database = (IEventDatabase)theStore.Tenancy.Default.Database;
 
         // Bulk: one row per (ProjectionName, ShardKey)
-        var counts = await database.FetchDeadLetterCountsAsync();
+        var counts = await database.FetchDeadLetterCountsAsync(TestContext.Current.CancellationToken);
 
         counts.Single(x => x.ProjectionName == "NamedDocuments" && x.ShardKey == "All").Count.ShouldBe(6);
         counts.Single(x => x.ProjectionName == "CollateNames" && x.ShardKey == "All").Count.ShouldBe(4);
 
         // Per-shard
-        (await database.CountDeadLetterEventsAsync(new ShardName("NamedDocuments"))).ShouldBe(6);
-        (await database.CountDeadLetterEventsAsync(new ShardName("CollateNames"))).ShouldBe(4);
+        (await database.CountDeadLetterEventsAsync(new ShardName("NamedDocuments"), TestContext.Current.CancellationToken)).ShouldBe(6);
+        (await database.CountDeadLetterEventsAsync(new ShardName("CollateNames"), TestContext.Current.CancellationToken)).ShouldBe(4);
 
         // A shard with no dead letters returns 0
-        (await database.CountDeadLetterEventsAsync(new ShardName("DoesNotExist"))).ShouldBe(0);
+        (await database.CountDeadLetterEventsAsync(new ShardName("DoesNotExist"), TestContext.Current.CancellationToken)).ShouldBe(0);
     }
 }

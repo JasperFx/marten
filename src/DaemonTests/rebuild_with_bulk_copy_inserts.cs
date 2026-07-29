@@ -86,7 +86,7 @@ public class rebuild_with_bulk_copy_inserts: OneOffConfigurationsContext
 
         // ...and yet every row landed, written by the COPY flush inside the batch transaction.
         await using var query = theStore.QuerySession();
-        var loaded = await query.Query<BulkCopyDoc>().ToListAsync();
+        var loaded = await query.Query<BulkCopyDoc>().ToListAsync(TestContext.Current.CancellationToken);
         loaded.Count.ShouldBe(docs.Length);
         loaded.Select(x => x.Id).OrderBy(x => x).ShouldBe(docs.Select(x => x.Id).OrderBy(x => x));
     }
@@ -126,7 +126,7 @@ public class rebuild_with_bulk_copy_inserts: OneOffConfigurationsContext
         await batch.DisposeAsync();
 
         await using var query = theStore.QuerySession();
-        var loaded = await query.Query<BulkCopyDoc>().ToListAsync();
+        var loaded = await query.Query<BulkCopyDoc>().ToListAsync(TestContext.Current.CancellationToken);
         loaded.Count.ShouldBe(2);
     }
 
@@ -155,7 +155,7 @@ public class rebuild_with_bulk_copy_inserts: OneOffConfigurationsContext
         await batch.DisposeAsync();
 
         await using var query = theStore.QuerySession();
-        (await query.Query<BulkCopyDoc>().CountAsync()).ShouldBe(2);
+        (await query.Query<BulkCopyDoc>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
     [Fact]
@@ -237,13 +237,13 @@ public class rebuild_with_bulk_copy_inserts: OneOffConfigurationsContext
 
         await using (var blueQuery = theStore.QuerySession("blue"))
         {
-            var docs = await blueQuery.Query<BulkCopyDoc>().ToListAsync();
+            var docs = await blueQuery.Query<BulkCopyDoc>().ToListAsync(TestContext.Current.CancellationToken);
             docs.Single().Id.ShouldBe(blueDoc.Id);
         }
 
         await using (var greenQuery = theStore.QuerySession("green"))
         {
-            var docs = await greenQuery.Query<BulkCopyDoc>().ToListAsync();
+            var docs = await greenQuery.Query<BulkCopyDoc>().ToListAsync(TestContext.Current.CancellationToken);
             docs.Single().Id.ShouldBe(greenDoc.Id);
         }
     }
@@ -329,11 +329,11 @@ public class rebuild_with_bulk_copy_inserts: OneOffConfigurationsContext
         // And the tenant_id column itself is correct row by row
         var table = theStore.Options.Storage.MappingFor(typeof(BulkCopyDoc)).TableName.QualifiedName;
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
         var mismatches = (long)(await conn
             .CreateCommand(
                 $"select count(*) from {table} where (data ->> 'Name' like 'blue%' and tenant_id != 'blue') or (data ->> 'Name' like 'green%' and tenant_id != 'green')")
-            .ExecuteScalarAsync())!;
+            .ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         mismatches.ShouldBe(0);
     }
 
@@ -358,7 +358,7 @@ public class rebuild_with_bulk_copy_inserts: OneOffConfigurationsContext
             var removed = new ItemAdded(Guid.NewGuid(), "removed", 3);
             session.Events.Append(streamId, removed, new ItemRemoved(removed.Id));
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using (var daemon = await theStore.BuildProjectionDaemonAsync())
@@ -367,7 +367,7 @@ public class rebuild_with_bulk_copy_inserts: OneOffConfigurationsContext
         }
 
         await using var query = theStore.QuerySession();
-        var docs = await query.Query<BulkCopyDoc>().ToListAsync();
+        var docs = await query.Query<BulkCopyDoc>().ToListAsync(TestContext.Current.CancellationToken);
         docs.Count.ShouldBe(2);
         docs.Select(x => x.Name).OrderBy(x => x).ShouldBe(new[] { "keep-1", "keep-2" });
     }

@@ -38,13 +38,13 @@ public class using_for_tenant_with_side_effects_and_subscriptions : OneOffConfig
 
         using var session = theStore.LightweightSession("green");
         session.Events.StartStream([new MTAEvent(), new MTBEvent(), new MTCEvent()]);
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
         await daemon.WaitForNonStaleData(5.Seconds());
 
-        var events = await theSession.Events.QueryAllRawEvents().Where(x => x.AnyTenant()).ToListAsync();
+        var events = await theSession.Events.QueryAllRawEvents().Where(x => x.AnyTenant()).ToListAsync(TestContext.Current.CancellationToken);
         events.Count.ShouldBe(6);
     }
 
@@ -61,13 +61,13 @@ public class using_for_tenant_with_side_effects_and_subscriptions : OneOffConfig
 
         using var session = theStore.LightweightSession("green");
         session.Events.StartStream([new MTAEvent(), new MTBEvent(), new MTCEvent()]);
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
         await daemon.WaitForNonStaleData(5.Seconds());
 
-        var events = await theSession.Events.QueryAllRawEvents().Where(x => x.AnyTenant()).ToListAsync();
+        var events = await theSession.Events.QueryAllRawEvents().Where(x => x.AnyTenant()).ToListAsync(TestContext.Current.CancellationToken);
         events.Count.ShouldBe(6);
     }
 }

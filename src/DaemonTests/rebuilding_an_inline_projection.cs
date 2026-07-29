@@ -25,7 +25,7 @@ public class rebuilding_an_inline_projection : DaemonContext
         var agent = await StartDaemon();
         await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
 
-        var progress = await theStore.Advanced.AllProjectionProgress();
+        var progress = await theStore.Advanced.AllProjectionProgress(token: TestContext.Current.CancellationToken);
         progress.Any(x => x.ShardName.StartsWith("Distance")).ShouldBeFalse();
 
 

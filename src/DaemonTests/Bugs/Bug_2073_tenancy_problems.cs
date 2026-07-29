@@ -52,17 +52,17 @@ public class Bug_2073_tenancy_problems
             });
         });
 
-        using var host = await builder.StartAsync();
+        using var host = await builder.StartAsync(TestContext.Current.CancellationToken);
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
         var daemon = (ProjectionDaemon)(await store.BuildProjectionDaemonAsync());
         await daemon.StartAllAsync();
 
         await using (var session = store.LightweightSession("tenant1"))
         {
             session.Events.Append(Guid.NewGuid().ToString(), new CreateDoc("a", "owner", "content"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await daemon.Tracker.WaitForShardState("Document:All", 1);

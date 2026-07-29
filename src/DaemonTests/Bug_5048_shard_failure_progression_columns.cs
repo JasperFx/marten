@@ -133,7 +133,7 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
         var database = (MartenDatabase)theStore.Storage.Database;
 
         await database.WriteExtendedProgressionAsync(
-            paused(ShardFailureCategory.EventSerialization, 4815, "failure_telemetry_event", "tenant-a"));
+            paused(ShardFailureCategory.EventSerialization, 4815, "failure_telemetry_event", "tenant-a"), TestContext.Current.CancellationToken);
 
         var row = await readFailureAsync();
 
@@ -152,12 +152,12 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
         var database = (MartenDatabase)theStore.Storage.Database;
 
         await database.WriteExtendedProgressionAsync(
-            paused(ShardFailureCategory.ApplyEvent, 99, "failure_telemetry_event"));
+            paused(ShardFailureCategory.ApplyEvent, 99, "failure_telemetry_event"), TestContext.Current.CancellationToken);
         (await readFailureAsync()).category.ShouldNotBeNull();
 
         // A restart supersedes whatever paused the agent last. Without this, every supervisor built on
         // these columns alerts forever on a failure the operator already fixed.
-        await database.WriteExtendedProgressionAsync(withoutFailure(ShardAction.Started, "Running"));
+        await database.WriteExtendedProgressionAsync(withoutFailure(ShardAction.Started, "Running"), TestContext.Current.CancellationToken);
 
         var row = await readFailureAsync();
         row.category.ShouldBeNull();
@@ -173,13 +173,13 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
         var database = (MartenDatabase)theStore.Storage.Database;
 
         await database.WriteExtendedProgressionAsync(
-            paused(ShardFailureCategory.EventSerialization, 4815, "failure_telemetry_event"));
+            paused(ShardFailureCategory.EventSerialization, 4815, "failure_telemetry_event"), TestContext.Current.CancellationToken);
 
         // This is the load-bearing case: SubscriptionAgent publishes a plain Stopped state (no Failure)
         // right behind the Paused one, and a heartbeat can arrive with no failure at all. An
         // unconditional write would erase the reason microseconds after recording it.
-        await database.WriteExtendedProgressionAsync(withoutFailure(ShardAction.Stopped, "Stopped"));
-        await database.WriteExtendedProgressionAsync(withoutFailure(ShardAction.Updated, "Running"));
+        await database.WriteExtendedProgressionAsync(withoutFailure(ShardAction.Stopped, "Stopped"), TestContext.Current.CancellationToken);
+        await database.WriteExtendedProgressionAsync(withoutFailure(ShardAction.Updated, "Running"), TestContext.Current.CancellationToken);
 
         var row = await readFailureAsync();
         row.category.ShouldBe(nameof(ShardFailureCategory.EventSerialization));
@@ -193,10 +193,10 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
         var database = (MartenDatabase)theStore.Storage.Database;
 
         await database.WriteExtendedProgressionAsync(
-            paused(ShardFailureCategory.UnknownEventType, 1623, "trip_started", "tenant-b"));
+            paused(ShardFailureCategory.UnknownEventType, 1623, "trip_started", "tenant-b"), TestContext.Current.CancellationToken);
 
         // A poller must get the same shape as a live ShardState observer, not just "it's Paused"
-        var states = await database.AllProjectionProgress();
+        var states = await database.AllProjectionProgress(TestContext.Current.CancellationToken);
         var state = states.Single(x => x.ShardName == TheShard);
 
         state.Failure.ShouldNotBeNull();
@@ -217,9 +217,9 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
         await seedProgressionRowAsync();
         var database = (MartenDatabase)theStore.Storage.Database;
 
-        await database.WriteExtendedProgressionAsync(withoutFailure(ShardAction.Started, "Running"));
+        await database.WriteExtendedProgressionAsync(withoutFailure(ShardAction.Started, "Running"), TestContext.Current.CancellationToken);
 
-        var states = await database.AllProjectionProgress();
+        var states = await database.AllProjectionProgress(TestContext.Current.CancellationToken);
         states.Single(x => x.ShardName == TheShard).Failure.ShouldBeNull();
     }
 
@@ -243,13 +243,13 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
         await using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream(streamId, new FailureTelemetryEvent(), new CorruptibleEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         long corruptedSequence;
         await using (var session = theStore.QuerySession())
         {
-            var events = await session.Events.FetchStreamAsync(streamId);
+            var events = await session.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
             corruptedSequence = events.Single(x => x.EventType == typeof(CorruptibleEvent)).Sequence;
         }
 
@@ -295,19 +295,19 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
             {
                 Action = ShardAction.Paused, AgentStatus = "Paused", LastHeartbeat = DateTimeOffset.UtcNow
             }
-        ]);
+        ], TestContext.Current.CancellationToken);
 
         await using var session = theStore.QuerySession();
         var rows = Convert.ToInt64(await session.Connection
             .CreateCommand($"select count(*) from {theStore.Events.DatabaseSchemaName}.mt_event_progression")
-            .ExecuteScalarAsync());
+            .ExecuteScalarAsync(TestContext.Current.CancellationToken));
         rows.ShouldBe(1);
 
         var sequence = Convert.ToInt64(await session.Connection
             .CreateCommand(
                 $"select last_seq_id from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = :name")
             .With("name", TheShard)
-            .ExecuteScalarAsync());
+            .ExecuteScalarAsync(TestContext.Current.CancellationToken));
         sequence.ShouldBe(10); // committed progress untouched
     }
 }

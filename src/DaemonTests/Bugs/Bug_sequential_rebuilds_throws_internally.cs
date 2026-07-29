@@ -33,7 +33,7 @@ public partial class Bug_sequential_rebuilds_throws_internally: BugIntegrationCo
         theSession.Events.StartStream(stream,
             new CreatedEvent(Guid.NewGuid(), Guid.NewGuid().ToString()));
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var events = new List<UpdatedEvent>();
 
@@ -43,16 +43,16 @@ public partial class Bug_sequential_rebuilds_throws_internally: BugIntegrationCo
         }
 
         theSession.Events.Append(stream, events);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var logger = _output.BuildLogger();
         using var daemon1 = await theStore.BuildProjectionDaemonAsync(logger: logger);
 
-        await daemon1.RebuildProjectionAsync("Bug_sequential_rebuilds_throws_internally.RandomProjection", default);
+        await daemon1.RebuildProjectionAsync("Bug_sequential_rebuilds_throws_internally.RandomProjection", TestContext.Current.CancellationToken);
 
         await daemon1.StopAllAsync();
 
-        await daemon1.RebuildProjectionAsync("Bug_sequential_rebuilds_throws_internally.RandomProjection", default);
+        await daemon1.RebuildProjectionAsync("Bug_sequential_rebuilds_throws_internally.RandomProjection", TestContext.Current.CancellationToken);
 
         await daemon1.StopAllAsync();
 

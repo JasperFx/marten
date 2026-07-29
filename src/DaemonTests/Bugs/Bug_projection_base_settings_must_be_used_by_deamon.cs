@@ -35,9 +35,9 @@ public class Bug_projection_base_settings_must_be_used_by_deamon : BugIntegratio
 
         var aggId = Guid.NewGuid();
         theSession.Events.Append(aggId, new EventA(), new EventB());
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
         theSession.Events.ArchiveStream(aggId);
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var deamon = await theStore.BuildProjectionDaemonAsync();
         await deamon.StartAllAsync();

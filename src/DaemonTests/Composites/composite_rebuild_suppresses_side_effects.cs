@@ -47,8 +47,8 @@ public class composite_rebuild_suppresses_side_effects: DaemonContext
             });
         }, true);
 
-        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -61,13 +61,13 @@ public class composite_rebuild_suppresses_side_effects: DaemonContext
             theSession.Events.StartStream<CsCounter>(id, new CsLeg(), new CsLeg(), new CsLeg());
         }
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
         // Both stages materialized
-        (await theSession.Query<CsCounter>().CountAsync()).ShouldBe(10);
-        (await theSession.Query<CsNotice>().CountAsync()).ShouldBe(10);
+        (await theSession.Query<CsCounter>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(10);
+        (await theSession.Query<CsNotice>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(10);
 
         // The stage-2 member published a CsNoticed message per stream during continuous operation
         var publishedDuringContinuous = outbox.PublishedMessages.OfType<CsNoticed>().Count();
@@ -81,8 +81,8 @@ public class composite_rebuild_suppresses_side_effects: DaemonContext
         await daemon.RebuildProjectionAsync("SideEffectComposite", 60.Seconds(), CancellationToken.None);
 
         // The rebuild re-derived the read models...
-        (await theSession.Query<CsCounter>().CountAsync()).ShouldBe(10);
-        (await theSession.Query<CsNotice>().CountAsync()).ShouldBe(10);
+        (await theSession.Query<CsCounter>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(10);
+        (await theSession.Query<CsNotice>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(10);
 
         // ...but published NO additional side-effect messages. Before the #4729 fix the composite
         // members ran in Continuous mode during the rebuild and re-published all 10 CsNoticed messages.

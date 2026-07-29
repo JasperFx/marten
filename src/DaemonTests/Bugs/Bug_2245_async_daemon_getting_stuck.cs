@@ -37,7 +37,7 @@ public partial class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         // prove async daemon works on happy path
         theSession.Events.StartStream(Guid.NewGuid().ToString(),
             new CreatedEvent(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()));
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(10.Seconds());
 
@@ -50,7 +50,7 @@ public partial class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
             theSession.Events.StartStream(Guid.NewGuid().ToString(),
                 new UpdatedEvent(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()));
 
-            await theSession.SaveChangesAsync();
+            await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         catch (ApplyEventException e)
         {
@@ -68,7 +68,7 @@ public partial class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
 
         newSession.Events.StartStream(Guid.NewGuid().ToString(),
             new CreatedEvent(Guid.NewGuid().ToString(), Guid.NewGuid().ToString()));
-        await newSession.SaveChangesAsync();
+        await newSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await daemon.WaitForNonStaleData(10.Seconds());
     }

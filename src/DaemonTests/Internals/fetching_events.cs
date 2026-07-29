@@ -74,7 +74,7 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
             e.Append(stream, new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent());
         });
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         theRange.Events.Count.ShouldBe(4);
         var @event = theRange.Events[0];
@@ -94,7 +94,7 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
             e.Append(stream, new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent());
         });
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         theRange.Events.Count.ShouldBe(4);
         var @event = theRange.Events[0];

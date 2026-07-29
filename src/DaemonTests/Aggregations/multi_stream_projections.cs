@@ -35,7 +35,7 @@ public partial class multi_stream_projections: DaemonContext
     {
         StoreOptions(x => x.Projections.Add(new DayProjection(), ProjectionLifecycle.Async));
 
-        await theStore.EnsureStorageExistsAsync(typeof(Day));
+        await theStore.EnsureStorageExistsAsync(typeof(Day), TestContext.Current.CancellationToken);
 
         using var agent = await StartDaemon();
 
@@ -46,9 +46,9 @@ public partial class multi_stream_projections: DaemonContext
 
         await agent.Tracker.WaitForShardState("Day:All", NumberOfEvents, 30.Seconds());
 
-        var days = await theSession.Query<Day>().ToListAsync();
+        var days = await theSession.Query<Day>().ToListAsync(TestContext.Current.CancellationToken);
 
-        var allEvents = await theSession.Events.QueryAllRawEvents().ToListAsync();
+        var allEvents = await theSession.Events.QueryAllRawEvents().ToListAsync(TestContext.Current.CancellationToken);
         var dayEvents = allEvents.Select(x => x.Data).OfType<IDayEvent>();
         var groups = dayEvents.GroupBy(x => x.Day).ToList();
 
@@ -92,18 +92,18 @@ public partial class multi_stream_projections: DaemonContext
         await using var session = theStore.LightweightSession();
 
         session.Events.StartStream(commonId, new Happened() { Id = commonId }, new Happened() { Id = commonId });
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         session.Events.StartStream(new Happened() { Id = commonId }, new Happened() { Id = commonId });
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var projection = await session.LoadAsync<Projection>(commonId);
+        var projection = await session.LoadAsync<Projection>(commonId, TestContext.Current.CancellationToken);
         var eventSequenceList = new List<long> { 1, 2, 3, 4 };
         projection.ShouldNotBeNull();
         projection.EventSequenceList.ShouldHaveTheSameElementsAs(eventSequenceList);
 
         await daemon.RebuildProjectionAsync<Projector>(CancellationToken.None);
-        projection = await session.LoadAsync<Projection>(commonId);
+        projection = await session.LoadAsync<Projection>(commonId, TestContext.Current.CancellationToken);
         projection.ShouldNotBeNull();
         projection.EventSequenceList.ShouldHaveTheSameElementsAs(eventSequenceList);
     }
@@ -158,7 +158,7 @@ public partial class multi_stream_projections: DaemonContext
             session.Events.Append(user2, new UserCreated { UserId = user2 });
             session.Events.Append(user3, new UserCreated { UserId = user3 });
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await StartDaemon();
@@ -170,7 +170,7 @@ public partial class multi_stream_projections: DaemonContext
         await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(issue1, new IssueCreated { UserId = user1, IssueId = issue1 });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // We need to ensure that the events are not processed in a single slice to hit the IsNew issue on multiple
@@ -180,7 +180,7 @@ public partial class multi_stream_projections: DaemonContext
         await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(issue2, new IssueCreated { UserId = user1, IssueId = issue2 });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await daemon.Tracker.WaitForShardState("UserIssue:All", 5, 15.Seconds());
@@ -188,14 +188,14 @@ public partial class multi_stream_projections: DaemonContext
         await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(issue3, new IssueCreated { UserId = user1, IssueId = issue3 });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await daemon.Tracker.WaitForShardState("UserIssue:All", 6, 15.Seconds());
 
         await using (var session = theStore.QuerySession())
         {
-            var doc = await session.LoadAsync<UserIssues>(user1);
+            var doc = await session.LoadAsync<UserIssues>(user1, TestContext.Current.CancellationToken);
             doc.Issues.Count.ShouldBe(3);
         }
     }

@@ -54,14 +54,14 @@ public class Bug_4981_projection_progress_last_updated_advances: DaemonContext
                 session.Events.Append(Guid.NewGuid(), new Bug4981Event());
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await agent.Tracker.WaitForShardState(new ShardState(shard, 50), 30.Seconds());
         var firstUpdated = await lastUpdatedForAsync(shard);
 
         // ensure a measurable clock gap so the second write's transaction_timestamp() differs
-        await Task.Delay(1.Seconds());
+        await Task.Delay(1.Seconds(), TestContext.Current.CancellationToken);
 
         await using (var session = theStore.LightweightSession())
         {
@@ -70,7 +70,7 @@ public class Bug_4981_projection_progress_last_updated_advances: DaemonContext
                 session.Events.Append(Guid.NewGuid(), new Bug4981Event());
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await agent.Tracker.WaitForShardState(new ShardState(shard, 100), 30.Seconds());
