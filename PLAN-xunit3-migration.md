@@ -228,6 +228,23 @@ this. There were two distinct v2 defects, depending on how a project consumed th
 Net effect: **13 tests (4 DocumentDbTests + 9 LinqTests) have never run in CI**, and 3
 more ran under a serializer they were annotated not to support. v3 restores all of them.
 
+Confirmed by running both legs against the v2 baseline (net10.0, same commit):
+
+| Suite | leg | baseline | v3 |
+|---|---|---|---|
+| DocumentDbTests | Newtonsoft | 1082 / 1081 pass | 1086 / 1085 pass |
+| DocumentDbTests | SystemTextJson | 1082 / 1081 pass / 1 skip | 1086 / 1081 pass / **5** skip |
+| LinqTests | Newtonsoft | 1409 / 1409 pass | 1418 / 1417 pass / 1 fail |
+| LinqTests | SystemTextJson | 1409 / 1409 pass / 0 skip | 1418 / 1409 pass / **9** skip |
+| PatchingTests | SystemTextJson | 123 / **122** pass / 1 skip | 123 / **119** pass / 4 skip |
+
+Read across: under SystemTextJson the *passed* counts are unchanged for the two
+Compile-linked suites — v3 simply discovers the previously-invisible tests and correctly
+skips them. PatchingTests is the only place where coverage genuinely drops (3 tests), and
+only because v2 was running them against a serializer they are annotated not to support.
+
+**CI impact.** The Newtonsoft leg gains 13 tests. The SystemTextJson leg loses 3.
+
 Restoring them is not free: they change execution order and add data to the shared
 `integration` store, which is what surfaced the `delete_many_documents_by_query`
 order-dependency below. Expect a similar tail in LinqTests.
