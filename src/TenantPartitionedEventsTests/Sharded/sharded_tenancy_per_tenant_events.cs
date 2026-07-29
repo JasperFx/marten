@@ -119,7 +119,7 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         // never created. With the fix, it succeeds.
         await using var session = _store.LightweightSession("alpha");
         session.Events.StartStream(Guid.NewGuid(), new ShardedTestEvent { Value = "first" });
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     // #4611 — With UseTenantPartitionedEvents, StartStream actions are routed through the bulk
@@ -143,12 +143,12 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         await using (var session = _store.LightweightSession("india"))
         {
             session.Events.StartStream<ShardedAggregate>(streamId, new ShardedTestEvent { Value = "first" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var query = _store.QuerySession("india"))
         {
-            (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(1);
+            (await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken)).Count.ShouldBe(1);
         }
 
         // End-state assertion that #4611 specifically broke: the mt_streams row must
@@ -166,12 +166,12 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         await using (var session = _store.LightweightSession("india"))
         {
             session.Events.Append(streamId, new ShardedTestEvent { Value = "second" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var query = _store.QuerySession("india"))
         {
-            (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(2);
+            (await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken)).Count.ShouldBe(2);
         }
     }
 
@@ -264,16 +264,16 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         await using (var session = _store.LightweightSession("charlie"))
         {
             session.Events.StartStream(Guid.NewGuid(), new ShardedTestEvent { Value = "for-partition-check" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // The original report observed that AddTenantToShardAsync created the document
         // LIST partitions but not the event partition. This pins both ends — event
         // partition + sequence — for the runtime-provisioning path.
         await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
-        var tables = await conn.ExistingTablesAsync();
+        var tables = await conn.ExistingTablesAsync(ct: TestContext.Current.CancellationToken);
         tables.Any(t => t.Name == "mt_events_charlie").ShouldBeTrue(
             $"mt_events_charlie partition must exist in shard '{dbId}'. Tables: {string.Join(", ", tables.Select(t => t.QualifiedName))}");
     }
@@ -311,7 +311,7 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         // And the append actually works — the full surface this enables.
         await using var session = _store.LightweightSession("echo");
         session.Events.StartStream(Guid.NewGuid(), new ShardedTestEvent { Value = "via-dynamic-source" });
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]

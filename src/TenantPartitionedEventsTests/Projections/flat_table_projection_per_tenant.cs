@@ -93,12 +93,12 @@ public class flat_table_projection_per_tenant : IAsyncLifetime
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText =
             "select count(*) from information_schema.tables where table_schema = @s and table_name = 'ft_counters'";
         cmd.Parameters.AddWithValue("s", _schema);
-        var count = (long)(await cmd.ExecuteScalarAsync())!;
+        var count = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         count.ShouldBe(1L, "FlatTableProjection's ft_counters table must exist after schema apply");
     }
 
@@ -117,12 +117,12 @@ public class flat_table_projection_per_tenant : IAsyncLifetime
         {
             session.Events.StartStream(alphaCounter, new FtCounterIncremented(alphaCounter, 10));
             session.Events.Append(alphaCounter, new FtCounterIncremented(alphaCounter, 5));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _store.LightweightSession("beta"))
         {
             session.Events.StartStream(betaCounter, new FtCounterIncremented(betaCounter, 100));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var alphaTotal = await ReadTotalAsync(alphaCounter);
@@ -156,7 +156,7 @@ public class flat_table_projection_per_tenant : IAsyncLifetime
         await using (var session = _store.LightweightSession("alpha"))
         {
             session.Events.StartStream(sharedCounterId, new FtCounterIncremented(sharedCounterId, 10));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         var afterAlpha = await ReadTotalAsync(sharedCounterId);
         afterAlpha.ShouldBe(10, "alpha's initial 10 lands in the row");
@@ -166,7 +166,7 @@ public class flat_table_projection_per_tenant : IAsyncLifetime
         await using (var session = _store.LightweightSession("beta"))
         {
             session.Events.StartStream(sharedCounterId, new FtCounterIncremented(sharedCounterId, 100));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         var afterBeta = await ReadTotalAsync(sharedCounterId);
 

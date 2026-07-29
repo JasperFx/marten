@@ -47,12 +47,12 @@ public class vector_column_tests : IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             session.Store(product);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var query = _store.QuerySession())
         {
-            var loaded = await query.LoadAsync<ProductWithVector>(product.Id);
+            var loaded = await query.LoadAsync<ProductWithVector>(product.Id, TestContext.Current.CancellationToken);
             loaded.ShouldNotBeNull();
             loaded.Name.ShouldBe("Widget");
             loaded.Embedding.ShouldNotBeNull();
@@ -73,7 +73,7 @@ public class vector_column_tests : IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             foreach (var p in products) session.Store(p);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Search for vectors near [1, 0, 0] — should return "A" and "Near A" first
@@ -92,11 +92,11 @@ public class vector_column_tests : IAsyncLifetime
     public async Task vector_extension_is_created()
     {
         await using var conn = _store.Storage.Database.CreateConnection();
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT 1 FROM pg_extension WHERE extname = 'vector'";
-        var result = await cmd.ExecuteScalarAsync();
+        var result = await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken);
         result.ShouldNotBeNull();
     }
 }

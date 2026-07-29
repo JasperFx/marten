@@ -150,7 +150,7 @@ public class conjoined_to_partitioned_migration: IAsyncLifetime
         await using (var session = _source.LightweightSession(archivedTenant))
         {
             session.Events.ArchiveStream(streams[archivedTenant]);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var migration = new ConjoinedToPartitionedMigration(_source, _target)
@@ -159,7 +159,7 @@ public class conjoined_to_partitioned_migration: IAsyncLifetime
         };
 
         // Phase 1 — the dry-run inventory matches the seeded reality and moves nothing.
-        var plan = await migration.BuildPlanAsync();
+        var plan = await migration.BuildPlanAsync(TestContext.Current.CancellationToken);
         plan.Tenants.Count.ShouldBe(3);
         plan.TotalEvents.ShouldBe(12); // 3 tenants x (1 Started + 3 Progressed)
         foreach (var item in plan.Tenants)
@@ -177,7 +177,7 @@ public class conjoined_to_partitioned_migration: IAsyncLifetime
         }
 
         // Phase 2 — execute.
-        var result = await migration.ExecuteAsync();
+        var result = await migration.ExecuteAsync(TestContext.Current.CancellationToken);
         result.MigratedTenants.Count.ShouldBe(3);
         result.SkippedTenants.ShouldBeEmpty();
         result.EventsCopied.ShouldBe(12);
@@ -236,7 +236,7 @@ public class conjoined_to_partitioned_migration: IAsyncLifetime
                 session.Events.Append(streams[tenant], new Progressed(99));
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             var after = await seqIdsAsync(_targetSchema, tenant);
             after.Count.ShouldBe(5);
@@ -246,7 +246,7 @@ public class conjoined_to_partitioned_migration: IAsyncLifetime
         // Reading the migrated stream back through the TARGET store yields the same events in order.
         await using (var query = _target.QuerySession(tenants[1]))
         {
-            var fetched = await query.Events.FetchStreamAsync(streams[tenants[1]]);
+            var fetched = await query.Events.FetchStreamAsync(streams[tenants[1]], token: TestContext.Current.CancellationToken);
             fetched.Count.ShouldBe(5); // 4 migrated + 1 live append
             fetched[0].Data.ShouldBeOfType<Started>().Id.ShouldBe(streams[tenants[1]]);
             fetched.Take(4).Select(x => x.Version).ShouldBe(new long[] { 1, 2, 3, 4 });
@@ -256,7 +256,7 @@ public class conjoined_to_partitioned_migration: IAsyncLifetime
         var secondRun = await new ConjoinedToPartitionedMigration(_source, _target)
         {
             TenantIds = tenants
-        }.ExecuteAsync();
+        }.ExecuteAsync(TestContext.Current.CancellationToken);
 
         secondRun.MigratedTenants.ShouldBeEmpty();
         secondRun.SkippedTenants.Count.ShouldBe(3);
@@ -276,7 +276,7 @@ public class conjoined_to_partitioned_migration: IAsyncLifetime
         var result = await new ConjoinedToPartitionedMigration(_source, _target)
         {
             TenantIds = new[] { wanted }
-        }.ExecuteAsync();
+        }.ExecuteAsync(TestContext.Current.CancellationToken);
 
         result.MigratedTenants.ShouldBe(new[] { wanted });
         (await seqIdsAsync(_targetSchema, wanted)).Count.ShouldBe(2);

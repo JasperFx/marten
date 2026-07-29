@@ -53,19 +53,19 @@ public class inline_single_stream_projection_per_tenant
         {
             session.Events.StartStream<TripCount>(streamId, new TripStarted(streamId),
                 new TripLeg(1), new TripLeg(2), new TripLeg(3));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Alpha sees the projected TripCount(Count=3).
         await using var qa = _fixture.Store.QuerySession(alpha);
-        var alphaDoc = await qa.LoadAsync<TripCount>(streamId);
+        var alphaDoc = await qa.LoadAsync<TripCount>(streamId, TestContext.Current.CancellationToken);
         alphaDoc.ShouldNotBeNull();
         alphaDoc!.Count.ShouldBe(3);
 
         // Beta's session has no doc at this id (multi-tenanted policy +
         // partitioned doc table → tenant-scoped read returns null).
         await using var qb = _fixture.Store.QuerySession(beta);
-        var betaDoc = await qb.LoadAsync<TripCount>(streamId);
+        var betaDoc = await qb.LoadAsync<TripCount>(streamId, TestContext.Current.CancellationToken);
         betaDoc.ShouldBeNull();
     }
 
@@ -85,22 +85,22 @@ public class inline_single_stream_projection_per_tenant
         {
             session.Events.StartStream<TripCount>(sharedId, new TripStarted(sharedId),
                 new TripLeg(1), new TripLeg(2));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _fixture.Store.LightweightSession(beta))
         {
             session.Events.StartStream<TripCount>(sharedId, new TripStarted(sharedId),
                 new TripLeg(1), new TripLeg(2), new TripLeg(3), new TripLeg(4));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var qa = _fixture.Store.QuerySession(alpha);
-        var alphaDoc = await qa.LoadAsync<TripCount>(sharedId);
+        var alphaDoc = await qa.LoadAsync<TripCount>(sharedId, TestContext.Current.CancellationToken);
         alphaDoc.ShouldNotBeNull();
         alphaDoc!.Count.ShouldBe(2);
 
         await using var qb = _fixture.Store.QuerySession(beta);
-        var betaDoc = await qb.LoadAsync<TripCount>(sharedId);
+        var betaDoc = await qb.LoadAsync<TripCount>(sharedId, TestContext.Current.CancellationToken);
         betaDoc.ShouldNotBeNull();
         betaDoc!.Count.ShouldBe(4);
     }
@@ -115,21 +115,21 @@ public class inline_single_stream_projection_per_tenant
         await using (var session = _fixture.Store.LightweightSession(tenant))
         {
             session.Events.StartStream<TripCount>(streamId, new TripStarted(streamId), new TripLeg(1));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _fixture.Store.LightweightSession(tenant))
         {
             session.Events.Append(streamId, new TripLeg(2), new TripLeg(3));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _fixture.Store.LightweightSession(tenant))
         {
             session.Events.Append(streamId, new TripLeg(4));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _fixture.Store.QuerySession(tenant);
-        var doc = await query.LoadAsync<TripCount>(streamId);
+        var doc = await query.LoadAsync<TripCount>(streamId, TestContext.Current.CancellationToken);
         doc.ShouldNotBeNull();
         // Inline materialization runs in each SaveChanges' session — Count
         // ends up at 4 (= TripLeg events appended; the initial TripStarted
@@ -148,10 +148,10 @@ public class inline_single_stream_projection_per_tenant
         // shape so a future change that auto-partitions doc tables is reviewed
         // intentionally.
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var tripCountTable = new Table(new PostgresqlObjectName(_fixture.SchemaName, "mt_doc_p2c_trip_count"));
-        var live = await tripCountTable.FetchExistingAsync(conn);
+        var live = await tripCountTable.FetchExistingAsync(conn, TestContext.Current.CancellationToken);
         live.ShouldNotBeNull("p2c_trip_count document table must exist after fixture init");
 
         live.Partitioning.ShouldBeNull(

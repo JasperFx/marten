@@ -72,8 +72,8 @@ public partial class per_tenant_agent_start_routes_high_water
             // Nested type name + tenant suffix overflows PG's 64-byte identifier limit; shorten it.
             opts.Schema.For<TenantTripDistance>().Identity(x => x.Id).DocumentAlias("pt_agent_trip");
         });
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         var tenants = new[] { $"t_{Guid.NewGuid():N}"[..12], $"t_{Guid.NewGuid():N}"[..12] };
         await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenants);
@@ -86,7 +86,7 @@ public partial class per_tenant_agent_start_routes_high_water
             streamByTenant[tenant] = streamId;
             await using var session = store.LightweightSession(tenant);
             session.Events.StartStream<TenantTripDistance>(streamId, new TripStarted(streamId), new TripLeg(1.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await store.BuildProjectionDaemonAsync();

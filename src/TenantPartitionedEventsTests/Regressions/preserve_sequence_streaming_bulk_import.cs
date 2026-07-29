@@ -99,7 +99,7 @@ public class preserve_sequence_streaming_bulk_import
         };
 
         await _fixture.Store.BulkInsertEventStreamAsync(tenant, headers, Stream(events),
-            BulkEventSequenceMode.PreserveSourceSequence, batchSize: 2);
+            BulkEventSequenceMode.PreserveSourceSequence, batchSize: 2, TestContext.Current.CancellationToken);
 
         // (a) The seq_ids are EXACTLY the source values — never renumbered, gaps intact.
         (await SeqIdsForTenantAsync(tenant)).ShouldBe(new long[] { 3, 7, 12, 40, 41 });
@@ -112,7 +112,7 @@ public class preserve_sequence_streaming_bulk_import
         await using (var session = _fixture.Store.LightweightSession(tenant))
         {
             session.Events.Append(streamX, new TripLeg(4.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var afterAppend = await SeqIdsForTenantAsync(tenant);

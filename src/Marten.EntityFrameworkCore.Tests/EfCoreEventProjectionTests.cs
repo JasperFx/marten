@@ -84,25 +84,25 @@ public class EfCoreEventProjectionTests: IAsyncLifetime
         await using var session = _store.LightweightSession();
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Alice", 99.99m, 3));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Verify Marten document
-        var order = await session.LoadAsync<Order>(orderId);
+        var order = await session.LoadAsync<Order>(orderId, TestContext.Current.CancellationToken);
         order.ShouldNotBeNull();
         order.CustomerName.ShouldBe("Alice");
         order.TotalAmount.ShouldBe(99.99m);
 
         // Verify EF Core entity
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var setSchema = conn.CreateCommand();
         setSchema.CommandText = "SET search_path TO efcore_tests";
-        await setSchema.ExecuteNonQueryAsync();
+        await setSchema.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT customer_name, status FROM ef_order_summaries WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
-        await using var reader = await cmd.ExecuteReaderAsync();
-        (await reader.ReadAsync()).ShouldBeTrue();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+        (await reader.ReadAsync(TestContext.Current.CancellationToken)).ShouldBeTrue();
         reader.GetString(0).ShouldBe("Alice");
         reader.GetString(1).ShouldBe("Placed");
     }
@@ -115,18 +115,18 @@ public class EfCoreEventProjectionTests: IAsyncLifetime
         session.Events.StartStream(orderId,
             new OrderPlaced(orderId, "Bob", 50.00m, 1),
             new OrderShipped(orderId));
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Verify EF Core entity was updated
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var setSchema = conn.CreateCommand();
         setSchema.CommandText = "SET search_path TO efcore_tests";
-        await setSchema.ExecuteNonQueryAsync();
+        await setSchema.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "SELECT status FROM ef_order_summaries WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
-        var status = (string?)await cmd.ExecuteScalarAsync();
+        var status = (string?)await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken);
         status.ShouldBe("Shipped");
     }
 }

@@ -180,7 +180,7 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
                 new Bug4679TripStarted(streamId),
                 new Bug4679TripLeg(1.0),
                 new Bug4679TripLeg(2.5));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Drive the buggy path directly against the shard that carries 3 tenants. This is exactly
@@ -276,7 +276,7 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
                 new Bug4679TripStarted(streamId),
                 new Bug4679TripLeg(1.0),
                 new Bug4679TripLeg(2.5));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await store.BuildProjectionDaemonAsync("tA");

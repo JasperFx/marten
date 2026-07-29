@@ -22,6 +22,7 @@ using Shouldly;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
+using Xunit;
 
 namespace MultiTenancyTests;
 
@@ -122,11 +123,11 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
     public async Task creates_all_shard_databases()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         foreach (var name in _dbNames)
         {
-            (await conn.DatabaseExists(name)).ShouldBeTrue();
+            (await conn.DatabaseExists(name, TestContext.Current.CancellationToken)).ShouldBeTrue();
         }
     }
 
@@ -141,9 +142,9 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
             var database = (IMartenDatabase)db;
 
             await using var conn = database.CreateConnection();
-            await conn.OpenAsync();
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
 
-            var tables = await conn.ExistingTablesAsync();
+            var tables = await conn.ExistingTablesAsync(ct: TestContext.Current.CancellationToken);
 
             tables.Any(x => x.QualifiedName == "public.mt_doc_user").ShouldBeTrue();
             for (var i = 1; i < NumberOfPartitions; i++)
@@ -171,23 +172,23 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
     [Fact]
     public async Task can_bulk_insert_and_query_per_tenant()
     {
-        await _store.Advanced.Clean.DeleteAllDocumentsAsync();
+        await _store.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
 
         var alphaTargets = Target.GenerateRandomData(40).ToArray();
         var gammaTargets = Target.GenerateRandomData(25).ToArray();
 
-        await _store.BulkInsertDocumentsAsync(TenantAlpha, alphaTargets);
-        await _store.BulkInsertDocumentsAsync(TenantGamma, gammaTargets);
+        await _store.BulkInsertDocumentsAsync(TenantAlpha, alphaTargets, cancellation: TestContext.Current.CancellationToken);
+        await _store.BulkInsertDocumentsAsync(TenantGamma, gammaTargets, cancellation: TestContext.Current.CancellationToken);
 
         await using (var queryAlpha = _store.QuerySession(TenantAlpha))
         {
-            var count = await queryAlpha.Query<Target>().CountAsync();
+            var count = await queryAlpha.Query<Target>().CountAsync(TestContext.Current.CancellationToken);
             count.ShouldBe(alphaTargets.Length);
         }
 
         await using (var queryGamma = _store.QuerySession(TenantGamma))
         {
-            var count = await queryGamma.Query<Target>().CountAsync();
+            var count = await queryGamma.Query<Target>().CountAsync(TestContext.Current.CancellationToken);
             count.ShouldBe(gammaTargets.Length);
         }
     }
@@ -198,19 +199,19 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
         var alphaTargets = Target.GenerateRandomData(10).ToArray();
         var betaTargets = Target.GenerateRandomData(10).ToArray();
 
-        await _store.BulkInsertDocumentsAsync(TenantAlpha, alphaTargets);
-        await _store.BulkInsertDocumentsAsync(TenantBeta, betaTargets);
+        await _store.BulkInsertDocumentsAsync(TenantAlpha, alphaTargets, cancellation: TestContext.Current.CancellationToken);
+        await _store.BulkInsertDocumentsAsync(TenantBeta, betaTargets, cancellation: TestContext.Current.CancellationToken);
 
-        await _store.Advanced.Clean.DeleteAllDocumentsAsync();
+        await _store.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
 
         await using (var q1 = _store.QuerySession(TenantAlpha))
         {
-            (await q1.Query<Target>().AnyAsync()).ShouldBeFalse();
+            (await q1.Query<Target>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         }
 
         await using (var q2 = _store.QuerySession(TenantBeta))
         {
-            (await q2.Query<Target>().AnyAsync()).ShouldBeFalse();
+            (await q2.Query<Target>().AnyAsync(TestContext.Current.CancellationToken)).ShouldBeFalse();
         }
     }
 
@@ -247,11 +248,11 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
         var tenant2 = FindTenantIdForDatabase(_dbNames[1]);
         var tenant3 = FindTenantIdForDatabase(_dbNames[2]);
 
-        await _store.Advanced.Clean.DeleteAllDocumentsAsync();
+        await _store.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
 
-        await _store.BulkInsertDocumentsAsync(tenant1, Target.GenerateRandomData(5).ToArray());
-        await _store.BulkInsertDocumentsAsync(tenant2, Target.GenerateRandomData(5).ToArray());
-        await _store.BulkInsertDocumentsAsync(tenant3, Target.GenerateRandomData(5).ToArray());
+        await _store.BulkInsertDocumentsAsync(tenant1, Target.GenerateRandomData(5).ToArray(), cancellation: TestContext.Current.CancellationToken);
+        await _store.BulkInsertDocumentsAsync(tenant2, Target.GenerateRandomData(5).ToArray(), cancellation: TestContext.Current.CancellationToken);
+        await _store.BulkInsertDocumentsAsync(tenant3, Target.GenerateRandomData(5).ToArray(), cancellation: TestContext.Current.CancellationToken);
 
         await using var s1 = _store.QuerySession(tenant1);
         await using var s2 = _store.QuerySession(tenant2);

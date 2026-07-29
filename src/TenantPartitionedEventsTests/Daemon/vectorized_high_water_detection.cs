@@ -177,11 +177,11 @@ public class vectorized_high_water_detection
 
         await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
-            await conn.OpenAsync();
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
             // last_value → 1 (is_called=false): what the sharded/global-sequence/bulk path leaves behind.
             await using var reset = new NpgsqlCommand(
                 $"select setval('{_fixture.SchemaName}.mt_events_sequence_{tenant}', 1, false)", conn);
-            await reset.ExecuteScalarAsync();
+            await reset.ExecuteScalarAsync(TestContext.Current.CancellationToken);
         }
 
         var detector = new HighWaterDetector(

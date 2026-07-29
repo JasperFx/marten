@@ -126,7 +126,7 @@ public class sharded_progress_reading_4797: IAsyncLifetime
         {
             session.Events.StartStream<Progress4797Doc>(aStream,
                 new Progress4797Event("a-1"), new Progress4797Event("a-2"), new Progress4797Event("a-3"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var bStream = Guid.NewGuid();
@@ -134,7 +134,7 @@ public class sharded_progress_reading_4797: IAsyncLifetime
         {
             session.Events.StartStream<Progress4797Doc>(bStream,
                 new Progress4797Event("b-1"), new Progress4797Event("b-2"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // One daemon per shard (BuildProjectionDaemonAsync needs an explicit
@@ -161,13 +161,13 @@ public class sharded_progress_reading_4797: IAsyncLifetime
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (sw.Elapsed < 30.Seconds())
         {
-            all = await _store.Advanced.AllProjectionProgress();
+            all = await _store.Advanced.AllProjectionProgress(token: TestContext.Current.CancellationToken);
             if (SeqFor(all, "t4797_a") >= 3 && SeqFor(all, "t4797_b") >= 2)
             {
                 break;
             }
 
-            await Task.Delay(250);
+            await Task.Delay(250, TestContext.Current.CancellationToken);
         }
 
         // Per-tenant projection rows from BOTH shard databases show up in one read,
@@ -179,7 +179,7 @@ public class sharded_progress_reading_4797: IAsyncLifetime
 
         // The tenant-scoped overload keeps its documented "database containing this
         // tenant id" semantics: it reads ONLY that tenant's shard database.
-        var onlyShardA = await _store.Advanced.AllProjectionProgress("t4797_a");
+        var onlyShardA = await _store.Advanced.AllProjectionProgress("t4797_a", TestContext.Current.CancellationToken);
         SeqFor(onlyShardA, "t4797_a").ShouldBe(3);
         SeqFor(onlyShardA, "t4797_b").ShouldBe(0,
             "tenant b lives on a different shard database, so its rows must not appear");
@@ -189,20 +189,20 @@ public class sharded_progress_reading_4797: IAsyncLifetime
         // so the cross-shard read returns that tenant's exact progression.
         var tenantAShard = ShardName.Compose(
             Progress4797Projection.ProjectionName, "All", "t4797_a", 1);
-        (await _store.Advanced.ProjectionProgressFor(tenantAShard)).ShouldBe(3);
+        (await _store.Advanced.ProjectionProgressFor(tenantAShard, token: TestContext.Current.CancellationToken)).ShouldBe(3);
 
         var tenantBShard = ShardName.Compose(
             Progress4797Projection.ProjectionName, "All", "t4797_b", 1);
-        (await _store.Advanced.ProjectionProgressFor(tenantBShard)).ShouldBe(2);
+        (await _store.Advanced.ProjectionProgressFor(tenantBShard, token: TestContext.Current.CancellationToken)).ShouldBe(2);
 
         // And the issue's literal repro: the store-global HighWaterMark identity exists
         // per shard database; the null-tenant read returns the highest one instead of
         // throwing. Shard A saw 3 events on its per-tenant sequence, so the max is >= 3.
-        var highWater = await _store.Advanced.ProjectionProgressFor(new ShardName(ShardState.HighWaterMark));
+        var highWater = await _store.Advanced.ProjectionProgressFor(new ShardName(ShardState.HighWaterMark), token: TestContext.Current.CancellationToken);
         highWater.ShouldBeGreaterThanOrEqualTo(3);
 
         // A shard identity that exists nowhere reports 0, not an exception.
-        (await _store.Advanced.ProjectionProgressFor(new ShardName("NoSuchProjection"))).ShouldBe(0);
+        (await _store.Advanced.ProjectionProgressFor(new ShardName("NoSuchProjection"), token: TestContext.Current.CancellationToken)).ShouldBe(0);
     }
 }
 

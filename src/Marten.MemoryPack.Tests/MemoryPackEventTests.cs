@@ -55,11 +55,11 @@ public class MemoryPackEventTests: IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             session.Events.StartStream(streamId, started);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession();
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
 
         events.Count.ShouldBe(1);
         var loaded = events[0].Data.ShouldBeOfType<TripStarted>();
@@ -80,11 +80,11 @@ public class MemoryPackEventTests: IAsyncLifetime
                 new TripStarted(streamId, "Bob", startedAt),
                 new PassengerPickedUp(streamId, "Carol", startedAt.AddMinutes(5)),
                 new TripEnded(streamId, startedAt.AddMinutes(30), 24.50m));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession();
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
 
         events.Count.ShouldBe(3);
         events[0].Data.ShouldBeOfType<TripStarted>().DriverName.ShouldBe("Bob");
@@ -107,11 +107,11 @@ public class MemoryPackEventTests: IAsyncLifetime
                 new TripCommentAdded(streamId, "looking good", DateTimeOffset.UtcNow), // JSON
                 new PassengerPickedUp(streamId, "Eli", DateTimeOffset.UtcNow), // binary
                 new TripCommentAdded(streamId, "passenger boarded", DateTimeOffset.UtcNow)); // JSON
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession();
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
 
         events.Count.ShouldBe(4);
         events[0].Data.ShouldBeOfType<TripStarted>().DriverName.ShouldBe("Dana");
@@ -130,13 +130,13 @@ public class MemoryPackEventTests: IAsyncLifetime
             session.Events.StartStream(streamId,
                 new TripStarted(streamId, "Frank", DateTimeOffset.UtcNow), // binary
                 new TripCommentAdded(streamId, "hello", DateTimeOffset.UtcNow)); // JSON
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Pull the raw column values to verify the on-disk shape — the
         // discriminator is bdata IS NULL.
         await using var conn = _store.Storage.Database.CreateConnection();
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = "select type, bdata is null as bdata_is_null, data::text " +
                           "from memorypack_events.mt_events where stream_id = $1 order by version";
@@ -144,9 +144,9 @@ public class MemoryPackEventTests: IAsyncLifetime
         p.Value = streamId;
         cmd.Parameters.Add(p);
 
-        await using var reader = await cmd.ExecuteReaderAsync();
+        await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
         var rows = new System.Collections.Generic.List<(string type, bool bdataIsNull, string data)>();
-        while (await reader.ReadAsync())
+        while (await reader.ReadAsync(TestContext.Current.CancellationToken))
         {
             rows.Add((reader.GetString(0), reader.GetBoolean(1), reader.GetString(2)));
         }
@@ -178,13 +178,13 @@ public class MemoryPackEventTests: IAsyncLifetime
         {
             session.Events.StartStream(streamId,
                 new TripCommentAdded(streamId, "pre-upgrade comment", DateTimeOffset.UtcNow));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // The row is in mt_events with bdata = NULL. Read it back — the
         // per-row dispatch should fall through to mapping.ReadEventData.
         await using var query = _store.QuerySession();
-        var events = await query.Events.FetchStreamAsync(streamId);
+        var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
 
         events.Count.ShouldBe(1);
         events[0].Data.ShouldBeOfType<TripCommentAdded>()
@@ -232,14 +232,14 @@ public class binary_serialization_upgrade_tests
         }))
         {
             // Clean slate — drop any leftover state from a prior test run.
-            await storeBeforeBinary.Advanced.Clean.CompletelyRemoveAllAsync();
+            await storeBeforeBinary.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
             await storeBeforeBinary.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
             await using var session = storeBeforeBinary.LightweightSession();
             session.Events.StartStream(streamId,
                 new TripCommentAdded(streamId, "from json-only store v1", DateTimeOffset.UtcNow),
                 new TripCommentAdded(streamId, "from json-only store v2", DateTimeOffset.UtcNow));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // ----- Phase 2 ---------------------------------------------------
@@ -266,7 +266,7 @@ public class binary_serialization_upgrade_tests
                 session.Events.Append(streamId,
                     new TripStarted(streamId, "Alice", DateTimeOffset.UtcNow),
                     new TripEnded(streamId, DateTimeOffset.UtcNow, 42.50m));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // Read back the whole stream — must replay all four events
@@ -274,7 +274,7 @@ public class binary_serialization_upgrade_tests
             // the per-row dispatch on bdata IS NULL.
             await using (var query = storeWithBinary.QuerySession())
             {
-                var events = await query.Events.FetchStreamAsync(streamId);
+                var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
 
                 events.Count.ShouldBe(4);
 
@@ -301,12 +301,12 @@ public class binary_serialization_upgrade_tests
             {
                 session.Events.Append(streamId,
                     new TripCommentAdded(streamId, "post-upgrade JSON", DateTimeOffset.UtcNow));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             await using (var query = storeWithBinary.QuerySession())
             {
-                var events = await query.Events.FetchStreamAsync(streamId);
+                var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
                 events.Count.ShouldBe(5);
                 events[4].Data.ShouldBeOfType<TripCommentAdded>()
                     .Comment.ShouldBe("post-upgrade JSON");
@@ -317,7 +317,7 @@ public class binary_serialization_upgrade_tests
             // the read path keys off of.
             await using (var conn = storeWithBinary.Storage.Database.CreateConnection())
             {
-                await conn.OpenAsync();
+                await conn.OpenAsync(TestContext.Current.CancellationToken);
                 await using var cmd = conn.CreateCommand();
                 cmd.CommandText = $"select type, bdata is null as bdata_is_null " +
                                   $"from {Schema}.mt_events where stream_id = $1 order by version";
@@ -326,8 +326,8 @@ public class binary_serialization_upgrade_tests
                 cmd.Parameters.Add(p);
 
                 var rows = new System.Collections.Generic.List<(string type, bool bdataIsNull)>();
-                await using var reader = await cmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+                while (await reader.ReadAsync(TestContext.Current.CancellationToken))
                 {
                     rows.Add((reader.GetString(0), reader.GetBoolean(1)));
                 }

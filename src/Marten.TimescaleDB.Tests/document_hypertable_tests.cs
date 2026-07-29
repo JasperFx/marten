@@ -96,13 +96,13 @@ public class document_hypertable_tests: IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             session.Store(new AuditEntry { Id = id, CreatedAt = createdAt, Action = "created", Severity = 1 });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Load by id (composite PK, but created_at is immutable so exactly one row per id)
         await using (var session = _store.QuerySession())
         {
-            var loaded = await session.LoadAsync<AuditEntry>(id);
+            var loaded = await session.LoadAsync<AuditEntry>(id, TestContext.Current.CancellationToken);
             loaded.ShouldNotBeNull();
             loaded.Action.ShouldBe("created");
         }
@@ -110,16 +110,16 @@ public class document_hypertable_tests: IAsyncLifetime
         // Update (created_at unchanged)
         await using (var session = _store.LightweightSession())
         {
-            var loaded = await session.LoadAsync<AuditEntry>(id);
+            var loaded = await session.LoadAsync<AuditEntry>(id, TestContext.Current.CancellationToken);
             loaded!.Action = "updated";
             loaded.Severity = 5;
             session.Store(loaded);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _store.QuerySession())
         {
-            var loaded = await session.LoadAsync<AuditEntry>(id);
+            var loaded = await session.LoadAsync<AuditEntry>(id, TestContext.Current.CancellationToken);
             loaded!.Action.ShouldBe("updated");
             loaded.Severity.ShouldBe(5);
         }
@@ -132,12 +132,12 @@ public class document_hypertable_tests: IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             session.Delete<AuditEntry>(id);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _store.QuerySession())
         {
-            (await session.LoadAsync<AuditEntry>(id)).ShouldBeNull();
+            (await session.LoadAsync<AuditEntry>(id, TestContext.Current.CancellationToken)).ShouldBeNull();
         }
     }
 
@@ -157,11 +157,11 @@ public class document_hypertable_tests: IAsyncLifetime
                 });
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession();
-        var high = await query.Query<AuditEntry>().CountAsync(x => x.Severity >= 5);
+        var high = await query.Query<AuditEntry>().CountAsync(x => x.Severity >= 5, TestContext.Current.CancellationToken);
         high.ShouldBe(5);
     }
 }

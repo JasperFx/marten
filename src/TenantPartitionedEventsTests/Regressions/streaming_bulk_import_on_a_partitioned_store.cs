@@ -75,10 +75,10 @@ public class streaming_bulk_import_on_a_partitioned_store
             EventFor(streamX, 3, new TripLeg(3.0))
         };
 
-        await _fixture.Store.BulkInsertEventStreamAsync(tenant, headers, Stream(events), batchSize: 2);
+        await _fixture.Store.BulkInsertEventStreamAsync(tenant, headers, Stream(events), batchSize: 2, TestContext.Current.CancellationToken);
 
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         // (a) Cross-stream order preserved: reading back by seq_id yields the interleaving.
         var order = new List<Guid>();
@@ -87,8 +87,8 @@ public class streaming_bulk_import_on_a_partitioned_store
                          conn))
         {
             cmd.Parameters.AddWithValue("t", tenant);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            await using var reader = await cmd.ExecuteReaderAsync(TestContext.Current.CancellationToken);
+            while (await reader.ReadAsync(TestContext.Current.CancellationToken))
             {
                 order.Add(reader.GetGuid(0));
             }
@@ -102,7 +102,7 @@ public class streaming_bulk_import_on_a_partitioned_store
                          $"select max(seq_id) from {_fixture.SchemaName}.mt_events where tenant_id = @t", conn))
         {
             cmd.Parameters.AddWithValue("t", tenant);
-            maxSeq = (long)(await cmd.ExecuteScalarAsync())!;
+            maxSeq = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         }
 
         maxSeq.ShouldBe(5);
@@ -113,21 +113,21 @@ public class streaming_bulk_import_on_a_partitioned_store
         await using (var cmd = new NpgsqlCommand(
                          $"select last_value from {_fixture.SchemaName}.mt_events_sequence_{tenant}", conn))
         {
-            ((long)(await cmd.ExecuteScalarAsync())!).ShouldBeGreaterThanOrEqualTo(maxSeq);
+            ((long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!).ShouldBeGreaterThanOrEqualTo(maxSeq);
         }
 
         // (c) A live append directly after the import continues above the imported events.
         await using (var session = _fixture.Store.LightweightSession(tenant))
         {
             session.Events.Append(streamX, new TripLeg(4.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var cmd = new NpgsqlCommand(
                          $"select max(seq_id) from {_fixture.SchemaName}.mt_events where tenant_id = @t", conn))
         {
             cmd.Parameters.AddWithValue("t", tenant);
-            ((long)(await cmd.ExecuteScalarAsync())!).ShouldBeGreaterThan(maxSeq);
+            ((long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!).ShouldBeGreaterThan(maxSeq);
         }
     }
 }

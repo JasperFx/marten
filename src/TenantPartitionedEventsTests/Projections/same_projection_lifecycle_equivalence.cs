@@ -93,19 +93,19 @@ public class same_projection_lifecycle_equivalence : IAsyncLifetime
                 new TripLegV2(7.5),
                 new TripLegV2(2.5),
                 new TripLegV2(1.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var query = _store.QuerySession(tenant);
 
         // Inline-materialized doc: read directly from the projected document
         // table (no folding at read time).
-        var inlineDoc = await query.LoadAsync<TripSummary>(streamId);
+        var inlineDoc = await query.LoadAsync<TripSummary>(streamId, TestContext.Current.CancellationToken);
         inlineDoc.ShouldNotBeNull(
             "Inline projection must have written the doc during SaveChangesAsync");
 
         // Live aggregate: read the stream and fold via Apply() at query time.
-        var liveAgg = await query.Events.AggregateStreamAsync<TripSummary>(streamId);
+        var liveAgg = await query.Events.AggregateStreamAsync<TripSummary>(streamId, token: TestContext.Current.CancellationToken);
         liveAgg.ShouldNotBeNull(
             "Live aggregation must rebuild the same aggregate from the events");
 

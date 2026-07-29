@@ -87,7 +87,7 @@ public class projected_doc_tables_partitioning_invariant
         await using (var session = store.LightweightSession("alpha"))
         {
             session.Events.StartStream(streamId, new DpiIncrementEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // mt_events parent IS LIST-partitioned by tenant_id.
@@ -131,7 +131,7 @@ public class projected_doc_tables_partitioning_invariant
         await using (var session = store.LightweightSession("alpha"))
         {
             session.Events.StartStream(streamId, new DpiIncrementEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // mt_events parent IS LIST-partitioned (unchanged).

@@ -122,7 +122,7 @@ public class Bug_4867_per_tenant_high_water_advancement
         // Once the tenant has been observably stuck past StaleSequenceThreshold, the detector skips
         // the gap to the tenant's safe-harbor sequence — the per-tenant mirror of DetectInSafeZone.
         var threshold = _fixture.Store.Options.Projections.StaleSequenceThreshold;
-        await Task.Delay(threshold.Add(1500.Milliseconds()));
+        await Task.Delay(threshold.Add(1500.Milliseconds()), TestContext.Current.CancellationToken);
 
         var skipped = await detectAsync(detector, tenant);
         skipped.CurrentMark.ShouldBe(10,
@@ -213,8 +213,8 @@ public partial class Bug_4867_second_batch_projects_under_continuous_daemon
     {
         var schema = $"bug4867_a_p{Environment.ProcessId}";
         using var store = buildStore(schema);
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         const string tenant = "t4867_solo";
         await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
@@ -225,7 +225,7 @@ public partial class Bug_4867_second_batch_projects_under_continuous_daemon
         {
             session.Events.StartStream<Bug4867Trip>(streamId,
                 new Bug4867Started(streamId), new Bug4867Leg(1.0), new Bug4867Leg(2.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await store.BuildProjectionDaemonAsync();
@@ -242,7 +242,7 @@ public partial class Bug_4867_second_batch_projects_under_continuous_daemon
         await using (var session = store.LightweightSession(tenant))
         {
             session.Events.Append(streamId, new Bug4867Leg(5.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // THE #4867 regression: before the fix the tenant's mark stayed frozen at 3 forever and this
@@ -267,8 +267,8 @@ public partial class Bug_4867_second_batch_projects_under_continuous_daemon
     {
         var schema = $"bug4867_b_p{Environment.ProcessId}";
         using var store = buildStore(schema);
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         // Active tenant (taller per-tenant sequence) + lagging tenant (shorter). The lagging tenant's
         // own appends never move the store-global max(seq_id) — its advancement must ride the shared
@@ -284,14 +284,14 @@ public partial class Bug_4867_second_batch_projects_under_continuous_daemon
             session.Events.StartStream<Bug4867Trip>(activeStream,
                 new Bug4867Started(activeStream), new Bug4867Leg(1.0), new Bug4867Leg(1.0),
                 new Bug4867Leg(1.0), new Bug4867Leg(1.0)); // 5 events → seq 1..5, distance 4.0
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = store.LightweightSession(lagging))
         {
             session.Events.StartStream<Bug4867Trip>(laggingStream,
                 new Bug4867Started(laggingStream), new Bug4867Leg(1.0)); // 2 events → seq 1..2, distance 1.0
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await store.BuildProjectionDaemonAsync();
@@ -309,13 +309,13 @@ public partial class Bug_4867_second_batch_projects_under_continuous_daemon
         await using (var session = store.LightweightSession(lagging))
         {
             session.Events.Append(laggingStream, new Bug4867Leg(10.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = store.LightweightSession(active))
         {
             session.Events.Append(activeStream, new Bug4867Leg(20.0), new Bug4867Leg(20.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         (await waitForAsync(30.Seconds(), async () =>

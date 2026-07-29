@@ -171,7 +171,7 @@ public class Bug_4863_4855_per_database_partition_state: IAsyncLifetime
 
             await using var seed = node1.LightweightSession("t4863_one");
             seed.Store(new Doc4863A { Id = Guid.NewGuid(), Name = "seeded" });
-            await seed.SaveChangesAsync();
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Node 2 is a FRESH store instance that additionally registers Doc4863B, whose
@@ -184,7 +184,7 @@ public class Bug_4863_4855_per_database_partition_state: IAsyncLifetime
 
         // Before the fix: mt_doc_bug4863_b is created partitioned-by-tenant with ZERO
         // partitions and this fails with 23514 "no partition of relation found for row".
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // And the lazily-created table must hydrate partitions for EVERY tenant resident
         // on the shard (from the shard's own registry), not just the writing tenant.
@@ -206,7 +206,7 @@ public class Bug_4863_4855_per_database_partition_state: IAsyncLifetime
             await using var session = store.LightweightSession(tenant);
             session.Events.StartStream(Guid.NewGuid(), new Evt4863(tenant));
             session.Store(new Doc4863A { Id = Guid.NewGuid(), Name = tenant });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // First touch of shard B — before the fix the lazily-created tables on shard B
@@ -217,7 +217,7 @@ public class Bug_4863_4855_per_database_partition_state: IAsyncLifetime
         {
             sessionB.Events.StartStream(Guid.NewGuid(), new Evt4863("t4855_b1"));
             sessionB.Store(new Doc4863A { Id = Guid.NewGuid(), Name = "t4855_b1" });
-            await sessionB.SaveChangesAsync();
+            await sessionB.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var shardBStreams = await ListPartitions(PerDbPartitionStateFixture.ShardB, DocSchema, "mt_streams");
@@ -248,14 +248,14 @@ public class Bug_4863_4855_per_database_partition_state: IAsyncLifetime
         {
             sa.Events.StartStream(Guid.NewGuid(), new Evt4863("a1"));
             sa.Store(new Doc4863A { Id = Guid.NewGuid(), Name = "a1" });
-            await sa.SaveChangesAsync();
+            await sa.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var sb = store.LightweightSession("t4855_b1"))
         {
             sb.Events.StartStream(Guid.NewGuid(), new Evt4863("b1"));
             sb.Store(new Doc4863A { Id = Guid.NewGuid(), Name = "b1" });
-            await sb.SaveChangesAsync();
+            await sb.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
     }
 

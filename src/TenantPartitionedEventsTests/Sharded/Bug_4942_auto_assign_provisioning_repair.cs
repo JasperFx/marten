@@ -172,12 +172,12 @@ public class Bug_4942_auto_assign_provisioning_repair : IAsyncLifetime
         {
             session.Store(new Bug4942Doc { Id = Guid.NewGuid(), Name = "healed" });
             session.Events.StartStream(Guid.NewGuid(), new ShardedTestEvent { Value = "healed" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var query = store2.QuerySession(tenantId))
         {
-            (await query.Query<Bug4942Doc>().CountAsync()).ShouldBe(1);
+            (await query.Query<Bug4942Doc>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(1);
         }
     }
 
@@ -231,7 +231,7 @@ public class Bug_4942_auto_assign_provisioning_repair : IAsyncLifetime
         var databases = await store.Options.Tenancy.BuildDatabases();
         foreach (var db in databases.OfType<IMartenDatabase>())
         {
-            await db.ApplyAllConfiguredChangesToDatabaseAsync();
+            await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
         }
 
         var dbId = await store.Advanced.AddTenantToShardAsync(tenantId, CancellationToken.None);

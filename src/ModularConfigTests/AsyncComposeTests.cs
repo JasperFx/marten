@@ -4,6 +4,7 @@ using Marten;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
+using Xunit;
 
 namespace ModularConfigTests;
 
@@ -32,7 +33,7 @@ public class AsyncComposeTests
         ConfigurationFixture.AddBaselineMarten(builder.Services, schemaName);
 
         using var host = builder.Build();
-        await host.StartAsync();
+        await host.StartAsync(TestContext.Current.CancellationToken);
 
         try
         {
@@ -44,7 +45,7 @@ public class AsyncComposeTests
         }
         finally
         {
-            await host.StopAsync();
+            await host.StopAsync(TestContext.Current.CancellationToken);
         }
     }
 

@@ -102,20 +102,20 @@ public class add_global_projection_under_partitioning : IAsyncLifetime
         {
             alpha.Events.StartStream<GlobalCounter>(globalId,
                 new GlobalTickEvent("first"), new GlobalTickEvent("second"));
-            await alpha.SaveChangesAsync();
+            await alpha.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var beta = _store.LightweightSession("beta"))
         {
             beta.Events.Append(globalId, new GlobalTickEvent("third"));
-            await beta.SaveChangesAsync();
+            await beta.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // The inline global projection doc is single-tenanted, so it reads the
         // same from any tenant's session — and reflects BOTH tenants' appends
         await using (var reader = _store.QuerySession("beta"))
         {
-            var counter = await reader.LoadAsync<GlobalCounter>(globalId);
+            var counter = await reader.LoadAsync<GlobalCounter>(globalId, TestContext.Current.CancellationToken);
             counter.ShouldNotBeNull();
             counter.TickCount.ShouldBe(3);
         }
@@ -123,16 +123,16 @@ public class add_global_projection_under_partitioning : IAsyncLifetime
         // The storage-level shape: the default tenant slot is registered with the
         // reserved suffix and all three events live in its partition
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var suffix = (string?)await conn.CreateCommand(
                 $"select partition_suffix from {_schema}.mt_tenant_partitions where partition_value = '{StorageConstants.DefaultTenantId}'")
-            .ExecuteScalarAsync();
+            .ExecuteScalarAsync(TestContext.Current.CancellationToken);
         suffix.ShouldBe("__default__");
 
         var eventCount = (long)(await conn.CreateCommand(
                 $"select count(*) from {_schema}.mt_events___default__")
-            .ExecuteScalarAsync())!;
+            .ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         eventCount.ShouldBe(3);
     }
 

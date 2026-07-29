@@ -1,6 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <!-- Swept for xUnit1051 (#5067): every call taking a CancellationToken is handed
+             TestContext.Current.CancellationToken, so a hung test is cancelled and reported
+             instead of running until CI's own timeout. Keeping the rule ON guards the sweep.
+             Must be set before Tests.props is imported. -->
+        <ThreadTestCancellationToken>true</ThreadTestCancellationToken>
+    </PropertyGroup>
+
+    <PropertyGroup>
         <IsPackable>false</IsPackable>
         <!-- This is the iteration-4 PoC harness for #4405. It deliberately
              opts INTO the source-generated compiled-query path:

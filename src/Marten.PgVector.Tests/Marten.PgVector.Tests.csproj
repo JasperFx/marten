@@ -1,4 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!-- Swept for xUnit1051 (#5067): every call taking a CancellationToken is handed
+             TestContext.Current.CancellationToken, so a hung test is cancelled and reported
+             instead of running until CI's own timeout. Keeping the rule ON guards the sweep.
+             Must be set before Tests.props is imported. -->
+        <ThreadTestCancellationToken>true</ThreadTestCancellationToken>
+    </PropertyGroup>
     <PropertyGroup>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>

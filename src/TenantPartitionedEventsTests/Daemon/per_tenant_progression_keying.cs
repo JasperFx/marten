@@ -62,7 +62,7 @@ public class per_tenant_progression_keying
                 new EventRange(alphaName, floor: 0, ceiling: 17, agent: null!)));
             session.QueueOperation(new InsertProjectionProgress(_fixture.Store.Options.EventGraph,
                 new EventRange(betaName, floor: 0, ceiling: 42, agent: null!)));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // The PK is single-column (name); the two ShardName identities are
@@ -92,7 +92,7 @@ public class per_tenant_progression_keying
         {
             session.QueueOperation(new InsertProjectionProgress(_fixture.Store.Options.EventGraph,
                 new EventRange(globalName, floor: 0, ceiling: 99, agent: null!)));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var rows = await _fixture.ReadProgressionRowsAsync(_fixture.SchemaName, projection);
@@ -118,7 +118,7 @@ public class per_tenant_progression_keying
                 new EventRange(alphaName, floor: 0, ceiling: 10, agent: null!)));
             session.QueueOperation(new InsertProjectionProgress(_fixture.Store.Options.EventGraph,
                 new EventRange(betaName, floor: 0, ceiling: 20, agent: null!)));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Bump only alpha's row from 10 → 25. Because the `name` column carries
@@ -128,7 +128,7 @@ public class per_tenant_progression_keying
         {
             session.QueueOperation(new UpdateProjectionProgress(_fixture.Store.Options.EventGraph,
                 new EventRange(alphaName, floor: 10, ceiling: 25, agent: null!)));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var rows = await _fixture.ReadProgressionRowsAsync(_fixture.SchemaName, projection);
@@ -154,7 +154,7 @@ public class per_tenant_progression_keying
                 new EventRange(alphaName, floor: 0, ceiling: 10, agent: null!)));
             session.QueueOperation(new InsertProjectionProgress(_fixture.Store.Options.EventGraph,
                 new EventRange(betaName, floor: 0, ceiling: 20, agent: null!)));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = (Marten.Internal.Sessions.DocumentSessionBase)_fixture.Store.LightweightSession(alpha))
@@ -163,7 +163,7 @@ public class per_tenant_progression_keying
             // single-arg DeleteProjectionProgress already scopes correctly
             // because the name column carries the tenant suffix.
             session.QueueOperation(new DeleteProjectionProgress(_fixture.Store.Options.EventGraph, alphaName.Identity));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var rows = await _fixture.ReadProgressionRowsAsync(_fixture.SchemaName, projection);

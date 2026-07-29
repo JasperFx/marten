@@ -96,7 +96,7 @@ public class Bug_4753_sharded_partitioned_event_rebuild: IAsyncLifetime
             var databases = await store.Options.Tenancy.BuildDatabases();
             foreach (var db in databases.OfType<IMartenDatabase>())
             {
-                await db.ApplyAllConfiguredChangesToDatabaseAsync();
+                await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
             }
 
             foreach (var (tenant, shard) in assignment)
@@ -108,7 +108,7 @@ public class Bug_4753_sharded_partitioned_event_rebuild: IAsyncLifetime
             {
                 await using var session = store.LightweightSession(tenant);
                 session.Events.StartStream(Guid.NewGuid(), new Bug4753ShardedEvent("e-" + tenant));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
         }
 

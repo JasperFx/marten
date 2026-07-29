@@ -139,8 +139,8 @@ public partial class Bug_4665_catch_up_uses_global_high_water
 
             opts.Projections.Add<TripDistanceProjection>(ProjectionLifecycle.Async);
         });
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         // Five tenants. Each gets its own mt_events_sequence_{suffix}; appends
         // across tenants therefore interleave in mt_events.seq_id and produce
@@ -166,7 +166,7 @@ public partial class Bug_4665_catch_up_uses_global_high_water
                 session.Events.StartStream<TripDistance>(streamId,
                     new TripStarted(streamId),
                     new TripLeg(1.0));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
         }
 
@@ -190,13 +190,13 @@ public partial class Bug_4665_catch_up_uses_global_high_water
         // event UNDER the global advance unprojected.
         await using (var bumpConn = new Npgsql.NpgsqlConnection(ConnectionSource.ConnectionString))
         {
-            await bumpConn.OpenAsync();
+            await bumpConn.OpenAsync(TestContext.Current.CancellationToken);
             await using var bumpCmd = bumpConn.CreateCommand();
             // Setval to 10,000 so the GLOBAL sequence reads far above the
             // actual per-tenant sequence high values (160 events across 5
             // tenants, max per-tenant ~32).
             bumpCmd.CommandText = $"select setval('{SchemaName}.mt_events_sequence', 10000);";
-            await bumpCmd.ExecuteNonQueryAsync();
+            await bumpCmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
             await bumpConn.CloseAsync();
         }
 
@@ -223,7 +223,7 @@ public partial class Bug_4665_catch_up_uses_global_high_water
         foreach (var (tenant, streamId) in lastTripPerTenant)
         {
             await using var query = store.QuerySession(tenant);
-            var doc = await query.LoadAsync<TripDistance>(streamId);
+            var doc = await query.LoadAsync<TripDistance>(streamId, TestContext.Current.CancellationToken);
             if (doc is null || doc.Distance < 1.0)
             {
                 stale.Add($"  tenant={tenant} streamId={streamId} doc={(doc is null ? "<null>" : $"Distance={doc.Distance}")}");

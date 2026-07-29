@@ -112,11 +112,11 @@ public class Bug_5044_natural_key_table_migration: IAsyncLifetime
             await using (var session = store.LightweightSession(TenantA))
             {
                 session.Events.StartStream<CaseStream>(streamId, new CaseOpened(streamId, "CASE-001"));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             await using var query = store.LightweightSession(TenantA);
-            var found = await query.Events.FetchLatest<CaseStream, CaseNumber>(new CaseNumber("CASE-001"));
+            var found = await query.Events.FetchLatest<CaseStream, CaseNumber>(new CaseNumber("CASE-001"), TestContext.Current.CancellationToken);
             found.ShouldNotBeNull();
             found.Id.ShouldBe(streamId);
         }
@@ -134,7 +134,7 @@ public class Bug_5044_natural_key_table_migration: IAsyncLifetime
         await using (var store = BuildStore())
         {
             // The cloned foreign key rows must not read back as configuration drift.
-            await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+            await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync(TestContext.Current.CancellationToken);
         }
     }
 }

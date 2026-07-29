@@ -119,8 +119,8 @@ public partial class Bug_4705_versioned_composite_per_tenant
         var schema = SchemaFor(version);
 
         using var store = (DocumentStore)DocumentStore.For(o => configure(o, version));
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         // #4705 reporter seeds a SINGLE tenant. That matters under per-tenant partitioning: each
         // tenant's events use a per-tenant sequence starting at 1, so seq_id is only globally unique
@@ -141,7 +141,7 @@ public partial class Bug_4705_versioned_composite_per_tenant
                 appended += 4;
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await store.BuildProjectionDaemonAsync();
@@ -158,7 +158,7 @@ public partial class Bug_4705_versioned_composite_per_tenant
             composite = rows.Where(r => r.Name.StartsWith("bug4705-composite")).Select(r => r.Seq).DefaultIfEmpty(0).Min();
             standalone = rows.Where(r => r.Name.StartsWith("Bug4705Standalone")).Select(r => r.Seq).DefaultIfEmpty(0).Max();
             if (highWater > 0 && composite >= highWater && standalone >= highWater) break;
-            await Task.Delay(500);
+            await Task.Delay(500, TestContext.Current.CancellationToken);
         }
 
         await daemon.StopAllAsync();

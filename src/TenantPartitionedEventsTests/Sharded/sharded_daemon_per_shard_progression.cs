@@ -125,7 +125,7 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
                 new ShardedDaemonEvent("a-1"),
                 new ShardedDaemonEvent("a-2"),
                 new ShardedDaemonEvent("a-3"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var bStream = Guid.NewGuid();
@@ -134,7 +134,7 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
             session.Events.StartStream<ShardedDaemonCounter>(bStream,
                 new ShardedDaemonEvent("b-1"),
                 new ShardedDaemonEvent("b-2"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Drive ONE daemon per shard — under sharded tenancy each shard is its
@@ -157,13 +157,13 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
         while (sw.Elapsed < 20.Seconds())
         {
             await using (var query = _store.QuerySession("tenant_on_a"))
-                docA = await query.LoadAsync<ShardedDaemonCounter>(aStream);
+                docA = await query.LoadAsync<ShardedDaemonCounter>(aStream, TestContext.Current.CancellationToken);
             await using (var query = _store.QuerySession("tenant_on_b"))
-                docB = await query.LoadAsync<ShardedDaemonCounter>(bStream);
+                docB = await query.LoadAsync<ShardedDaemonCounter>(bStream, TestContext.Current.CancellationToken);
 
             if (docA is { EventCount: 3 } && docB is { EventCount: 2 }) break;
 
-            await Task.Delay(250);
+            await Task.Delay(250, TestContext.Current.CancellationToken);
         }
 
         docA.ShouldNotBeNull("tenant_on_a's projection must materialize on shard A");
@@ -208,14 +208,14 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
         {
             session.Events.StartStream<ShardedDaemonCounter>(aStream,
                 new ShardedDaemonEvent("a"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         var cStream = Guid.NewGuid();
         await using (var session = _store.LightweightSession("progress_c"))
         {
             session.Events.StartStream<ShardedDaemonCounter>(cStream,
                 new ShardedDaemonEvent("c"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemonA = await _store.BuildProjectionDaemonAsync("progress_a");
@@ -248,7 +248,7 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
                 break;
             }
 
-            await Task.Delay(250);
+            await Task.Delay(250, TestContext.Current.CancellationToken);
         }
 
         rowsOnA.Count.ShouldBeGreaterThan(0,

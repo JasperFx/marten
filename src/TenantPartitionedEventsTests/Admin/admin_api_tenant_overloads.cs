@@ -104,7 +104,7 @@ public class admin_api_tenant_overloads
                 new EventRange(betaName, 0, 42, agent: null!)));
             session.QueueOperation(new InsertProjectionProgress(_fixture.Store.Options.EventGraph,
                 new EventRange(globalName, 0, 99, agent: null!)));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var db = (MartenDatabase)_fixture.Store.Storage.Database;
@@ -142,7 +142,7 @@ public class admin_api_tenant_overloads
         {
             session.QueueOperation(new InsertProjectionProgress(_fixture.Store.Options.EventGraph,
                 new EventRange(perTenantName, 0, 123, agent: null!)));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var es = (IEventStore)_fixture.Store;
@@ -181,7 +181,7 @@ public class admin_api_tenant_overloads
                 new EventRange(alphaName, 0, 10, agent: null!)));
             session.QueueOperation(new InsertProjectionProgress(_fixture.Store.Options.EventGraph,
                 new EventRange(betaName, 0, 20, agent: null!)));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var es = (IEventStore<IDocumentOperations, IQuerySession>)_fixture.Store;
@@ -221,7 +221,7 @@ public class admin_api_tenant_overloads
                 new EventRange(betaName, 0, 20, agent: null!)));
             session.QueueOperation(new InsertProjectionProgress(_fixture.Store.Options.EventGraph,
                 new EventRange(globalName, 0, 5, agent: null!)));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var es = (IEventStore<IDocumentOperations, IQuerySession>)_fixture.Store;

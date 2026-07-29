@@ -87,32 +87,32 @@ public class Bug_4611_mandatory_stream_type_under_partitioning : IAsyncLifetime
         await using (var session = _store.LightweightSession("alpha"))
         {
             session.Events.StartStream<MandatoryAggregate>(streamId, new MandatoryEvent("first"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var query = _store.QuerySession("alpha"))
         {
-            (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(1);
+            (await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken)).Count.ShouldBe(1);
         }
 
         await using (var session = _store.LightweightSession("alpha"))
         {
             session.Events.Append(streamId, new MandatoryEvent("second"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var query = _store.QuerySession("alpha"))
         {
-            (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(2);
+            (await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken)).Count.ShouldBe(2);
         }
 
         // The end state pin: mt_streams row exists with type = aggregate type alias.
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand($"select type from {_schema}.mt_streams where id = @id and tenant_id = @tid");
         cmd.Parameters.AddWithValue("id", streamId);
         cmd.Parameters.AddWithValue("tid", "alpha");
-        var typeName = (string?)await cmd.ExecuteScalarAsync();
+        var typeName = (string?)await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken);
         typeName.ShouldNotBeNull("mt_streams row must exist (not tombstoned) — the headline #4611 regression");
         typeName.ShouldBe(_store.Events.AggregateAliasFor(typeof(MandatoryAggregate)));
     }

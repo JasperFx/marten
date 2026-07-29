@@ -152,14 +152,14 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             session.Events.StartStream<ShardedDaemonCounter>(stream1,
                 new ShardedDaemonEvent("t1-1"), new ShardedDaemonEvent("t1-2"),
                 new ShardedDaemonEvent("t1-3"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var node = await new HostBuilder()
             .ConfigureServices(services =>
             {
                 services.AddMarten(Configure).AddAsyncDaemon(DaemonMode.HotCold);
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         try
         {
@@ -188,7 +188,7 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             {
                 session.Events.StartStream<ShardedDaemonCounter>(stream2,
                     new ShardedDaemonEvent("t2-1"), new ShardedDaemonEvent("t2-2"));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // Pin 2 — FLIPPED (was the pre-#491 negative pin + explicit StartAgentAsync): the
@@ -221,13 +221,13 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             while (sw.Elapsed < 20.Seconds())
             {
                 await using var query = _store.QuerySession(tenant2);
-                doc2 = await query.LoadAsync<ShardedDaemonCounter>(stream2);
+                doc2 = await query.LoadAsync<ShardedDaemonCounter>(stream2, TestContext.Current.CancellationToken);
                 if (doc2 is { EventCount: 2 })
                 {
                     break;
                 }
 
-                await Task.Delay(250);
+                await Task.Delay(250, TestContext.Current.CancellationToken);
             }
 
             doc2.ShouldNotBeNull("tenant 2's projection doc must materialize on shard A");
@@ -237,7 +237,7 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             SeqOf(rows, $"{ShardedDaemonProjection.ProjectionName}:All:{tenant1}").ShouldBe(3);
             await using (var query = _store.QuerySession(tenant1))
             {
-                (await query.LoadAsync<ShardedDaemonCounter>(stream1))!.EventCount.ShouldBe(3);
+                (await query.LoadAsync<ShardedDaemonCounter>(stream1, TestContext.Current.CancellationToken))!.EventCount.ShouldBe(3);
             }
 
             // ---- Phase 2 (#4868 / #4880): REMOVE tenant 2 while the coordinator keeps running ----
@@ -283,7 +283,7 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             await using (var session = _store.LightweightSession(tenant1))
             {
                 session.Events.Append(stream1, new ShardedDaemonEvent("t1-4"));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             var survivorRows = await WaitForProgressionAsync(shardConnStr, r =>
@@ -311,7 +311,7 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
                 session.Events.StartStream<ShardedDaemonCounter>(reStream2,
                     new ShardedDaemonEvent("t2b-1"), new ShardedDaemonEvent("t2b-2"),
                     new ShardedDaemonEvent("t2b-3"));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             // The running coordinator re-discovers the re-added tenant on its next leadership cycle:
@@ -327,11 +327,11 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
             // projection doc is gone and only the 3 newly-appended events are projected.
             await using (var query = _store.QuerySession(tenant2))
             {
-                var reDoc = await query.LoadAsync<ShardedDaemonCounter>(reStream2);
+                var reDoc = await query.LoadAsync<ShardedDaemonCounter>(reStream2, TestContext.Current.CancellationToken);
                 reDoc.ShouldNotBeNull("the re-added tenant's projection doc must materialize on shard A");
                 reDoc!.EventCount.ShouldBe(3);
 
-                (await query.LoadAsync<ShardedDaemonCounter>(stream2))
+                (await query.LoadAsync<ShardedDaemonCounter>(stream2, TestContext.Current.CancellationToken))
                     .ShouldBeNull("the pre-removal projection doc must not survive a destructive remove + re-add");
             }
 
@@ -342,7 +342,7 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
         }
         finally
         {
-            await node.StopAsync();
+            await node.StopAsync(TestContext.Current.CancellationToken);
         }
     }
 

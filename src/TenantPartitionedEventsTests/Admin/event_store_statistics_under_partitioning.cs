@@ -52,7 +52,7 @@ public class event_store_statistics_under_partitioning
         {
             session.Events.StartStream<TripSnapshot>(streamId,
                 new TripStarted(streamId), new TripLeg(1), new TripLeg(2), new TripLeg(3));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var statsAfter = await db.FetchEventStoreStatistics(token: CancellationToken.None);

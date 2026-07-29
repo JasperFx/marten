@@ -88,11 +88,11 @@ public class blue_green_projection_deployments
                 new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent(),
                 new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.CEvent(),
                 new EventSourcingTests.Aggregation.DEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             await blueDaemon.WaitForNonStaleData(5.Seconds());
 
-            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId, TestContext.Current.CancellationToken)).ShouldBeEquivalentTo(
                 new EventSourcingTests.Aggregation.MyAggregate
                 {
                     ACount = 2,
@@ -107,7 +107,7 @@ public class blue_green_projection_deployments
         await greenDaemon.WaitForNonStaleData(5.Seconds());
         using (var session = greenStore.LightweightSession())
         {
-            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId, TestContext.Current.CancellationToken)).ShouldBeEquivalentTo(
                 new EventSourcingTests.Aggregation.MyAggregate
                 {
                     // The "green" version doubles the counts as a cheap way
@@ -134,7 +134,7 @@ public class blue_green_projection_deployments
                     opts.Projections.Add<BlueProjection>(ProjectionLifecycle.Async);
                     opts.DatabaseSchemaName = "bluegreen";
                 }).AddAsyncDaemon(DaemonMode.HotCold);
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var blueStore = blueHost.Services.GetRequiredService<IDocumentStore>();
 
@@ -147,7 +147,7 @@ public class blue_green_projection_deployments
                     opts.Projections.Add<GreenProjection>(ProjectionLifecycle.Async);
                     opts.DatabaseSchemaName = "bluegreen";
                 }).AddAsyncDaemon(DaemonMode.HotCold);
-            }).StartAsync();
+            }).StartAsync(TestContext.Current.CancellationToken);
 
         var greenStore = greenHost.Services.GetRequiredService<IDocumentStore>();
 
@@ -163,11 +163,11 @@ public class blue_green_projection_deployments
                 new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent(),
                 new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.CEvent(),
                 new EventSourcingTests.Aggregation.DEvent());
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
             await blueDaemon.WaitForNonStaleData(5.Seconds());
 
-            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId, TestContext.Current.CancellationToken)).ShouldBeEquivalentTo(
                 new EventSourcingTests.Aggregation.MyAggregate
                 {
                     ACount = 2,
@@ -182,7 +182,7 @@ public class blue_green_projection_deployments
         await greenDaemon.WaitForNonStaleData(5.Seconds());
         using (var session = greenStore.LightweightSession())
         {
-            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId, TestContext.Current.CancellationToken)).ShouldBeEquivalentTo(
                 new EventSourcingTests.Aggregation.MyAggregate
                 {
                     // The "green" version doubles the counts as a cheap way

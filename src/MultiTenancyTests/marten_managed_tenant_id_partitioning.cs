@@ -120,7 +120,7 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
         }
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync(TestContext.Current.CancellationToken);
 
         await theStore.Advanced.RemoveMartenManagedTenantsAsync(["a2"], CancellationToken.None);
 
@@ -135,7 +135,7 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
     public async Task delete_all_tenant_data_will_drop_partitions()
     {
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await theStore.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         var statuses = await theStore
             .Advanced
@@ -149,7 +149,7 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
         }
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync(TestContext.Current.CancellationToken);
 
         await theStore.Advanced.DeleteAllTenantDataAsync("a2", CancellationToken.None);
 
@@ -166,9 +166,9 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
     public async Task should_not_build_storage_for_live_aggregations()
     {
         var streamId = theSession.Events.StartStream<SimpleAggregate>(new RandomEvent(), new BEvent()).Id;
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var aggregate = theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        var aggregate = theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId, token: TestContext.Current.CancellationToken);
         aggregate.ShouldNotBeNull();
 
         await theStore

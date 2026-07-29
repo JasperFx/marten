@@ -92,8 +92,8 @@ public partial class Bug_4717_per_tenant_progression
             });
         });
 
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
 
         // Two tenants with DIFFERENT event heights — independent per-tenant sequences.
         var streamsPerTenant = new Dictionary<string, int> { ["t4717_a"] = 5, ["t4717_b"] = 3 };
@@ -110,7 +110,7 @@ public partial class Bug_4717_per_tenant_progression
                     new Bug4717Started(id), new Bug4717Leg(1.0), new Bug4717Leg(2.0), new Bug4717Leg(3.0));
             }
 
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using var daemon = await store.BuildProjectionDaemonAsync();
@@ -126,7 +126,7 @@ public partial class Bug_4717_per_tenant_progression
             var allReady = projections.All(p => streamsPerTenant.Keys.All(t =>
                 rows.Any(r => isPerTenantRow(r.Name, p, t) && r.Seq >= expectedSeq[t])));
             if (allReady) break;
-            await Task.Delay(500);
+            await Task.Delay(500, TestContext.Current.CancellationToken);
         }
 
         await daemon.StopAllAsync();

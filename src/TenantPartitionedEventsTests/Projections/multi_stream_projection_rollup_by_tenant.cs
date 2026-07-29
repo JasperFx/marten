@@ -106,7 +106,7 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
                 new AccountOpened(acct),
                 new TransactionPosted(acct, 100m),
                 new TransactionPosted(acct, 50m));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _store.LightweightSession(beta))
         {
@@ -116,7 +116,7 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
                 new TransactionPosted(acct, 7m),
                 new TransactionPosted(acct, 3m),
                 new TransactionPosted(acct, 10m));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Per-tenant rebuild explicitly walks each tenant's events from
@@ -134,8 +134,8 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
         // DefaultTenantId as the group's TenantId) — read from a default-tenant
         // session keyed by the doc identity (= tenant id string).
         await using var query = _store.QuerySession();
-        var alphaRollup = await query.LoadAsync<TenantRollup>(alpha);
-        var betaRollup = await query.LoadAsync<TenantRollup>(beta);
+        var alphaRollup = await query.LoadAsync<TenantRollup>(alpha, TestContext.Current.CancellationToken);
+        var betaRollup = await query.LoadAsync<TenantRollup>(beta, TestContext.Current.CancellationToken);
 
         alphaRollup.ShouldNotBeNull("alpha must have a rollup doc keyed by its tenant id");
         alphaRollup!.Total.ShouldBe(150m, "alpha's 100 + 50 = 150 — no beta arithmetic leak");
@@ -164,7 +164,7 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
                 new TransactionPosted(alphaAcct, 1m),
                 new TransactionPosted(alphaAcct, 1m),
                 new TransactionPosted(alphaAcct, 1m));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var betaAcct = Guid.NewGuid();
@@ -174,7 +174,7 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
             session.Events.Append(betaAcct,
                 new TransactionPosted(betaAcct, 1m),
                 new TransactionPosted(betaAcct, 1m));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         using (var daemon = await _store.BuildProjectionDaemonAsync())
@@ -184,8 +184,8 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
         }
 
         await using var query = _store.QuerySession();
-        var alphaRollup = await query.LoadAsync<TenantRollup>(alpha);
-        var betaRollup = await query.LoadAsync<TenantRollup>(beta);
+        var alphaRollup = await query.LoadAsync<TenantRollup>(alpha, TestContext.Current.CancellationToken);
+        var betaRollup = await query.LoadAsync<TenantRollup>(beta, TestContext.Current.CancellationToken);
 
         alphaRollup.ShouldNotBeNull();
         alphaRollup!.TransactionCount.ShouldBe(3,

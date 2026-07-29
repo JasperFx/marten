@@ -135,7 +135,7 @@ public class sharded_one_database_per_shard : IAsyncLifetime
         await using (var session = _store.LightweightSession("disabletest_b"))
         {
             session.Events.StartStream(streamId, new ShardedTestEvent { Value = "before-disable" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Disable tenant A. The shared MartenDatabase must NOT be disposed.
@@ -146,12 +146,12 @@ public class sharded_one_database_per_shard : IAsyncLifetime
         await using (var session = _store.LightweightSession("disabletest_b"))
         {
             session.Events.Append(streamId, new ShardedTestEvent { Value = "after-disable" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var query = _store.QuerySession("disabletest_b"))
         {
-            var events = await query.Events.FetchStreamAsync(streamId);
+            var events = await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
             events.Count.ShouldBe(2,
                 "tenant B's appends must survive a co-located tenant A Disable — the shared " +
                 "MartenDatabase is reference-counted, not disposed on the first tenant's Disable");

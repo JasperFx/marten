@@ -80,8 +80,8 @@ public class CorrectnessGate: IntegrationContext
     [Fact]
     public async Task shape_1_simple_where_matches_reference_linq()
     {
-        var compiled = await theSession.QueryAsync(new UserByUserNameShape { UserName = "bravo_b" });
-        var reference = await theSession.Query<User>().FirstOrDefaultAsync(x => x.UserName == "bravo_b");
+        var compiled = await theSession.QueryAsync(new UserByUserNameShape { UserName = "bravo_b" }, TestContext.Current.CancellationToken);
+        var reference = await theSession.Query<User>().FirstOrDefaultAsync(x => x.UserName == "bravo_b", TestContext.Current.CancellationToken);
 
         compiled.ShouldNotBeNull();
         compiled.Id.ShouldBe(reference!.Id);
@@ -91,7 +91,7 @@ public class CorrectnessGate: IntegrationContext
     [Fact]
     public async Task shape_1_returns_null_when_no_match()
     {
-        var compiled = await theSession.QueryAsync(new UserByUserNameShape { UserName = "does_not_exist" });
+        var compiled = await theSession.QueryAsync(new UserByUserNameShape { UserName = "does_not_exist" }, TestContext.Current.CancellationToken);
         compiled.ShouldBeNull();
     }
 
@@ -99,13 +99,13 @@ public class CorrectnessGate: IntegrationContext
     public async Task shape_2_where_orderby_skip_take_matches_reference_linq()
     {
         var query = new UsersByFirstNamePageShape { FirstNamePrefix = "Bravo", Skip = 1, Take = 2 };
-        var compiled = (await theSession.QueryAsync(query)).ToList();
+        var compiled = (await theSession.QueryAsync(query, TestContext.Current.CancellationToken)).ToList();
 
         var reference = await theSession.Query<User>()
             .Where(x => x.FirstName!.StartsWith("Bravo"))
             .OrderBy(x => x.LastName).ThenBy(x => x.FirstName)
             .Skip(1).Take(2)
-            .ToListAsync();
+            .ToListAsync(TestContext.Current.CancellationToken);
 
         compiled.Select(x => x.UserName).ShouldBe(reference.Select(x => x.UserName));
         compiled.Count.ShouldBe(2);
@@ -120,9 +120,9 @@ public class CorrectnessGate: IntegrationContext
         // exercises the BindParameter switch dispatching the same memberName
         // ("Skip") to different runtime values across calls.
         var page1 = (await theSession.QueryAsync(new UsersByFirstNamePageShape
-            { FirstNamePrefix = "Bravo", Skip = 0, Take = 1 })).ToList();
+            { FirstNamePrefix = "Bravo", Skip = 0, Take = 1 }, TestContext.Current.CancellationToken)).ToList();
         var page2 = (await theSession.QueryAsync(new UsersByFirstNamePageShape
-            { FirstNamePrefix = "Bravo", Skip = 1, Take = 1 })).ToList();
+            { FirstNamePrefix = "Bravo", Skip = 1, Take = 1 }, TestContext.Current.CancellationToken)).ToList();
 
         page1.Single().UserName.ShouldBe("bravo_a");
         page2.Single().UserName.ShouldBe("bravo_b");
@@ -132,7 +132,7 @@ public class CorrectnessGate: IntegrationContext
     public async Task shape_3_where_plus_include_loads_assignee()
     {
         var query = new IssueWithAssigneeShape { Title = "Alpha bug" };
-        var compiled = await theSession.QueryAsync(query);
+        var compiled = await theSession.QueryAsync(query, TestContext.Current.CancellationToken);
 
         compiled.ShouldNotBeNull();
         compiled.Id.ShouldBe(_alphaIssue.Id);
@@ -151,10 +151,10 @@ public class CorrectnessGate: IntegrationContext
         // separate invocations of the SAME type with different parameters
         // produce distinct, correct includes.
         var alphaQuery = new IssueWithAssigneeShape { Title = "Alpha bug" };
-        await theSession.QueryAsync(alphaQuery);
+        await theSession.QueryAsync(alphaQuery, TestContext.Current.CancellationToken);
 
         var bravoQuery = new IssueWithAssigneeShape { Title = "Bravo bug" };
-        await theSession.QueryAsync(bravoQuery);
+        await theSession.QueryAsync(bravoQuery, TestContext.Current.CancellationToken);
 
         alphaQuery.Assignees.Single().Id.ShouldBe(_alpha_a.Id);
         bravoQuery.Assignees.Single().Id.ShouldBe(_bravo_c.Id);

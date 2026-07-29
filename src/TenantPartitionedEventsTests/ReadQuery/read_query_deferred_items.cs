@@ -51,24 +51,24 @@ public class read_query_deferred_items
         {
             session.Events.StartStream<TripSnapshot>(sharedStreamId,
                 new TripStarted(sharedStreamId), new TripLeg(3), new TripLeg(4));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _fixture.Store.LightweightSession(beta))
         {
             session.Events.StartStream<TripSnapshot>(sharedStreamId,
                 new TripStarted(sharedStreamId), new TripLeg(10), new TripLeg(20), new TripLeg(30));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var qa = _fixture.Store.QuerySession(alpha);
-        var alphaSnap = await qa.Events.AggregateStreamToLastKnownAsync<TripSnapshot>(sharedStreamId);
+        var alphaSnap = await qa.Events.AggregateStreamToLastKnownAsync<TripSnapshot>(sharedStreamId, token: TestContext.Current.CancellationToken);
         alphaSnap.ShouldNotBeNull();
         alphaSnap!.Distance.ShouldBe(7,
             "alpha's last-known snapshot reflects ONLY alpha's events (3 + 4 = 7) — beta's must not leak");
         alphaSnap.LegCount.ShouldBe(2);
 
         await using var qb = _fixture.Store.QuerySession(beta);
-        var betaSnap = await qb.Events.AggregateStreamToLastKnownAsync<TripSnapshot>(sharedStreamId);
+        var betaSnap = await qb.Events.AggregateStreamToLastKnownAsync<TripSnapshot>(sharedStreamId, token: TestContext.Current.CancellationToken);
         betaSnap.ShouldNotBeNull();
         betaSnap!.Distance.ShouldBe(60,
             "beta's last-known snapshot reflects ONLY beta's events (10 + 20 + 30 = 60) — alpha's must not leak");
@@ -78,7 +78,7 @@ public class read_query_deferred_items
         // call internally calls FetchStreamAsync (tenant-scoped) which returns
         // empty, so the loop never produces an aggregate.
         await using var qg = _fixture.Store.QuerySession(ghost);
-        var ghostSnap = await qg.Events.AggregateStreamToLastKnownAsync<TripSnapshot>(sharedStreamId);
+        var ghostSnap = await qg.Events.AggregateStreamToLastKnownAsync<TripSnapshot>(sharedStreamId, token: TestContext.Current.CancellationToken);
         ghostSnap.ShouldBeNull(
             "ghost tenant has no events at this stream id — must return null, not leak alpha's or beta's snapshot");
     }
@@ -103,7 +103,7 @@ public class read_query_deferred_items
             {
                 session.Events.Append(alphaStream, new TripLeg(1));
             }
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         var betaStream = Guid.NewGuid();
         await using (var session = _fixture.Store.LightweightSession(beta))
@@ -113,7 +113,7 @@ public class read_query_deferred_items
             {
                 session.Events.Append(betaStream, new TripLeg(99));
             }
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Alpha's session pages 5 at a time — scope the query to alpha's

@@ -45,17 +45,17 @@ public class bulk_insert_draws_from_the_tenants_own_sequence
             new TripStarted(streamId), new TripLeg(1.0), new TripLeg(2.0));
         action.TenantId = tenant;
 
-        await _fixture.Store.BulkInsertEventsAsync(tenant, new[] { action });
+        await _fixture.Store.BulkInsertEventsAsync(tenant, new[] { action }, cancellation: TestContext.Current.CancellationToken);
 
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         long maxSeq;
         await using (var cmd = new NpgsqlCommand(
                          $"select max(seq_id) from {_fixture.SchemaName}.mt_events where tenant_id = @t", conn))
         {
             cmd.Parameters.AddWithValue("t", tenant);
-            maxSeq = (long)(await cmd.ExecuteScalarAsync())!;
+            maxSeq = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         }
 
         maxSeq.ShouldBe(3);
@@ -64,7 +64,7 @@ public class bulk_insert_draws_from_the_tenants_own_sequence
         await using (var cmd = new NpgsqlCommand(
                          $"select last_value from {_fixture.SchemaName}.mt_events_sequence_{tenant}", conn))
         {
-            ((long)(await cmd.ExecuteScalarAsync())!).ShouldBe(maxSeq,
+            ((long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!).ShouldBe(maxSeq,
                 "the bulk import must draw seq_ids from the tenant's own sequence — leaving it behind " +
                 "makes the tenant's first live append re-issue an already-used seq_id");
         }
@@ -74,14 +74,14 @@ public class bulk_insert_draws_from_the_tenants_own_sequence
         await using (var session = _fixture.Store.LightweightSession(tenant))
         {
             session.Events.Append(streamId, new TripLeg(3.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var cmd = new NpgsqlCommand(
                          $"select max(seq_id) from {_fixture.SchemaName}.mt_events where tenant_id = @t", conn))
         {
             cmd.Parameters.AddWithValue("t", tenant);
-            ((long)(await cmd.ExecuteScalarAsync())!).ShouldBe(maxSeq + 1);
+            ((long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!).ShouldBe(maxSeq + 1);
         }
     }
 }

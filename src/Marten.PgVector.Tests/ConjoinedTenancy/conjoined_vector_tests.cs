@@ -53,7 +53,7 @@ public class conjoined_vector_tests : IAsyncLifetime
                 Name = "Tenant A Widget",
                 Embedding = new float[] { 1, 0, 0 }
             });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Store vectors for tenant B
@@ -65,13 +65,13 @@ public class conjoined_vector_tests : IAsyncLifetime
                 Name = "Tenant B Widget",
                 Embedding = new float[] { 0, 1, 0 }
             });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Query tenant A — should only see tenant A's data
         await using (var q = _store.QuerySession("tenant_a"))
         {
-            var results = await q.Query<ProductWithVector>().ToListAsync();
+            var results = await q.Query<ProductWithVector>().ToListAsync(TestContext.Current.CancellationToken);
             results.Count.ShouldBe(1);
             results[0].Name.ShouldBe("Tenant A Widget");
         }
@@ -79,7 +79,7 @@ public class conjoined_vector_tests : IAsyncLifetime
         // Query tenant B — should only see tenant B's data
         await using (var q = _store.QuerySession("tenant_b"))
         {
-            var results = await q.Query<ProductWithVector>().ToListAsync();
+            var results = await q.Query<ProductWithVector>().ToListAsync(TestContext.Current.CancellationToken);
             results.Count.ShouldBe(1);
             results[0].Name.ShouldBe("Tenant B Widget");
         }
@@ -101,7 +101,7 @@ public class conjoined_vector_tests : IAsyncLifetime
                 Id = Guid.NewGuid(), Name = "A-Far",
                 Embedding = new float[] { 0, 0, 1 }
             });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _store.LightweightSession("search_b"))
@@ -111,7 +111,7 @@ public class conjoined_vector_tests : IAsyncLifetime
                 Id = Guid.NewGuid(), Name = "B-Close",
                 Embedding = new float[] { 0.95f, 0.05f, 0 }
             });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Search tenant A for vectors near [1, 0, 0]

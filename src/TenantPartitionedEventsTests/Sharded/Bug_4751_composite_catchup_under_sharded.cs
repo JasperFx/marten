@@ -136,7 +136,7 @@ public class Bug_4751_composite_catchup_under_sharded: IAsyncLifetime
             {
                 session.Events.StartStream<CmpTrip>(Guid.NewGuid(), new CmpLeg(1.0), new CmpLeg(2.5));
             }
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Normal async catch-up (NOT RebuildProjectionAsync): start the daemon and wait for non-stale.
@@ -146,8 +146,8 @@ public class Bug_4751_composite_catchup_under_sharded: IAsyncLifetime
 
         // After the catch-up helper returns, BOTH composite stages must be materialized for the tenant.
         await using var query = _store.QuerySession("tenant_a");
-        var stage1 = await query.Query<CmpTrip>().CountAsync();
-        var stage2 = await query.Query<CmpTripCount>().CountAsync();
+        var stage1 = await query.Query<CmpTrip>().CountAsync(TestContext.Current.CancellationToken);
+        var stage2 = await query.Query<CmpTripCount>().CountAsync(TestContext.Current.CancellationToken);
         _output.WriteLine($"stage1 (CmpTrip) = {stage1}, stage2 (CmpTripCount) = {stage2}, expected {streams}");
 
         stage1.ShouldBe(streams, "stage-1 of the composite must be caught up by the async daemon");

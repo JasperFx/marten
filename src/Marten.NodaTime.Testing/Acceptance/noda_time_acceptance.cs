@@ -103,10 +103,10 @@ public class noda_time_acceptance: OneOffConfigurationsContext
 
         await using var session = theStore.LightweightSession();
         session.Insert(testDoc);
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await using var query = theStore.QuerySession();
-        var docFromDb = (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.Id == testDoc.Id));
+        var docFromDb = (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.Id == testDoc.Id, TestContext.Current.CancellationToken));
 
         docFromDb.ShouldNotBeNull();
         docFromDb.Equals(testDoc).ShouldBeTrue();
@@ -129,7 +129,7 @@ public class noda_time_acceptance: OneOffConfigurationsContext
                 .Duplicate(x => x.NullableLocalDate);
         }, true);
 
-        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
 
         var dateTime = DateTime.UtcNow;
         var localDateTime = LocalDateTime.FromDateTime(dateTime);
@@ -138,52 +138,52 @@ public class noda_time_acceptance: OneOffConfigurationsContext
 
         await using var session = theStore.LightweightSession();
         session.Insert(testDoc);
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         await using var query = theStore.QuerySession();
         var results = new List<TargetWithDates>
         {
             // LocalDate
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate == localDateTime.Date)),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate < localDateTime.Date.PlusDays(1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate <= localDateTime.Date.PlusDays(1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate > localDateTime.Date.PlusDays(-1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate >= localDateTime.Date.PlusDays(-1))),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate == localDateTime.Date, TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate < localDateTime.Date.PlusDays(1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate <= localDateTime.Date.PlusDays(1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate > localDateTime.Date.PlusDays(-1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDate >= localDateTime.Date.PlusDays(-1), TestContext.Current.CancellationToken)),
 
             //// Nullable LocalDate
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate == localDateTime.Date)),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate < localDateTime.Date.PlusDays(1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate <= localDateTime.Date.PlusDays(1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate > localDateTime.Date.PlusDays(-1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate >= localDateTime.Date.PlusDays(-1))),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate == localDateTime.Date, TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate < localDateTime.Date.PlusDays(1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate <= localDateTime.Date.PlusDays(1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate > localDateTime.Date.PlusDays(-1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDate >= localDateTime.Date.PlusDays(-1), TestContext.Current.CancellationToken)),
 
             //// LocalDateTime
             //query.Query<TargetWithDates>().FirstOrDefault(d => d.LocalDateTime == localDateTime),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDateTime < localDateTime.PlusSeconds(1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDateTime <= localDateTime.PlusSeconds(1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDateTime > localDateTime.PlusSeconds(-1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDateTime >= localDateTime.PlusSeconds(-1))),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDateTime < localDateTime.PlusSeconds(1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDateTime <= localDateTime.PlusSeconds(1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDateTime > localDateTime.PlusSeconds(-1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.LocalDateTime >= localDateTime.PlusSeconds(-1), TestContext.Current.CancellationToken)),
 
             //// Nullable LocalDateTime
             //query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableLocalDateTime == localDateTime),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDateTime < localDateTime.PlusSeconds(1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDateTime <= localDateTime.PlusSeconds(1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDateTime > localDateTime.PlusSeconds(-1))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDateTime >= localDateTime.PlusSeconds(-1))),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDateTime < localDateTime.PlusSeconds(1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDateTime <= localDateTime.PlusSeconds(1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDateTime > localDateTime.PlusSeconds(-1), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableLocalDateTime >= localDateTime.PlusSeconds(-1), TestContext.Current.CancellationToken)),
 
             //// Instant UTC
             //query.Query<TargetWithDates>().FirstOrDefault(d => d.InstantUTC == instantUTC),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.InstantUTC < instantUTC.PlusTicks(1000))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.InstantUTC <= instantUTC.PlusTicks(1000))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.InstantUTC > instantUTC.PlusTicks(-1000))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.InstantUTC >= instantUTC.PlusTicks(-1000))),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.InstantUTC < instantUTC.PlusTicks(1000), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.InstantUTC <= instantUTC.PlusTicks(1000), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.InstantUTC > instantUTC.PlusTicks(-1000), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.InstantUTC >= instantUTC.PlusTicks(-1000), TestContext.Current.CancellationToken)),
 
             // Nullable Instant UTC
             //query.Query<TargetWithDates>().FirstOrDefault(d => d.NullableInstantUTC == instantUTC),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableInstantUTC < instantUTC.PlusTicks(1000))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableInstantUTC <= instantUTC.PlusTicks(1000))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableInstantUTC > instantUTC.PlusTicks(-1000))),
-            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableInstantUTC >= instantUTC.PlusTicks(-1000)))
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableInstantUTC < instantUTC.PlusTicks(1000), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableInstantUTC <= instantUTC.PlusTicks(1000), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableInstantUTC > instantUTC.PlusTicks(-1000), TestContext.Current.CancellationToken)),
+            (await query.Query<TargetWithDates>().FirstOrDefaultAsync(d => d.NullableInstantUTC >= instantUTC.PlusTicks(-1000), TestContext.Current.CancellationToken))
 
         };
 
@@ -216,11 +216,11 @@ public class noda_time_acceptance: OneOffConfigurationsContext
 
         await using var session = theStore.LightweightSession();
         session.Events.Append(streamId, @event);
-        await session.SaveChangesAsync();
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var streamState = await session.Events.FetchStreamStateAsync(streamId);
-        var streamState2 = await session.Events.FetchStreamStateAsync(streamId);
-        var streamState3 = await session.Events.FetchStreamAsync(streamId, timestamp: startDate);
+        var streamState = await session.Events.FetchStreamStateAsync(streamId, TestContext.Current.CancellationToken);
+        var streamState2 = await session.Events.FetchStreamStateAsync(streamId, TestContext.Current.CancellationToken);
+        var streamState3 = await session.Events.FetchStreamAsync(streamId, timestamp: startDate, token: TestContext.Current.CancellationToken);
     }
 
     [Theory]
@@ -289,19 +289,19 @@ public class noda_time_acceptance: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(testDoc);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var query = theStore.QuerySession())
         {
             var result = await query
                 .Query<TargetWithDates>()
-                .SingleAsync(c => c.Id == testDoc.Id);
+                .SingleAsync(c => c.Id == testDoc.Id, TestContext.Current.CancellationToken);
 
             var resultWithSelect = await query.Query<TargetWithDates>()
                 .Where(c => c.Id == testDoc.Id)
                 .Select(c => new { c.Id, c.InstantUTC, c.NullableInstantUTC, c.NullInstantUTC })
-                .SingleAsync();
+                .SingleAsync(TestContext.Current.CancellationToken);
 
             result.ShouldNotBeNull();
             result.Id.ShouldBe(testDoc.Id);
@@ -336,12 +336,12 @@ public class noda_time_acceptance: OneOffConfigurationsContext
                 .Duplicate(x => x.InstantUTC);
         }, true);
 
-        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
 
         // This will apply schema changes, creating indexes on NodaTime fields.
         // Previously this would fail with "functions in index expression must be marked IMMUTABLE"
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync(TestContext.Current.CancellationToken);
     }
 
     private class CustomJsonSerializer: ISerializer

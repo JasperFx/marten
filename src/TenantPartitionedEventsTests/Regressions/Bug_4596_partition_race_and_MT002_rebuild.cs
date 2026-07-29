@@ -150,7 +150,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         // registered for the racey tenant id, regardless of which task won
         // the partition-creation race.
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         // mt_events partition for tenant id: lives at `mt_events_{suffix}`
         // where suffix == tenantId for string-keyed tenants. Probe
@@ -160,7 +160,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         {
             cmd.Parameters.AddWithValue("s", _schema);
             cmd.Parameters.AddWithValue("n", $"mt_events_{raceyTenant}");
-            var partitionCount = (long)(await cmd.ExecuteScalarAsync())!;
+            var partitionCount = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
             partitionCount.ShouldBe(1L,
                 "exactly one mt_events partition for the racey tenant must exist after the race resolves");
         }
@@ -171,7 +171,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         {
             cmd.Parameters.AddWithValue("s", _schema);
             cmd.Parameters.AddWithValue("n", $"mt_events_sequence_{raceyTenant}");
-            var seqCount = (long)(await cmd.ExecuteScalarAsync())!;
+            var seqCount = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
             seqCount.ShouldBe(1L,
                 "exactly one per-tenant sequence for the racey tenant must exist after the race resolves");
         }
@@ -184,7 +184,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         {
             session.Events.StartStream<Bug4596TripStarted>(
                 Guid.NewGuid(), new Bug4596TripStarted("post-race append"));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -205,7 +205,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
                 Guid.NewGuid(),
                 new Bug4596TripStarted("alpha-only"),
                 new Bug4596TripLeg(7.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Headline behavioral asymmetry pin: APPEND for an unregistered
@@ -217,7 +217,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         {
             session.Events.StartStream<Bug4596TripStarted>(
                 Guid.NewGuid(), new Bug4596TripStarted("should-fail"));
-            try { await session.SaveChangesAsync(); }
+            try { await session.SaveChangesAsync(TestContext.Current.CancellationToken); }
             catch (Exception ex) { appendException = ex; }
         }
 
@@ -249,11 +249,11 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
             // (SELECT … WHERE tenant_id = 'typo_tenant'). MT002 is impossible
             // here — it's a quick-append-only RAISE.
             await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-            await conn.OpenAsync();
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
             await using var cmd = conn.CreateCommand(
                 $"select count(*) from {_schema}.mt_events where tenant_id = :t");
             cmd.Parameters.AddWithValue("t", "typo_tenant");
-            var unregisteredCount = (long)(await cmd.ExecuteScalarAsync())!;
+            var unregisteredCount = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
             unregisteredCount.ShouldBe(0L,
                 "unregistered tenant has zero events visible to the rebuild loader — MT002 never enters the picture");
         }

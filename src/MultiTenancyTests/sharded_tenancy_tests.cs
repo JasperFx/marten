@@ -251,7 +251,7 @@ public class sharded_tenancy_tests : IAsyncLifetime
         var databases = await _store.Options.Tenancy.BuildDatabases();
         foreach (var db in databases.OfType<IMartenDatabase>())
         {
-            await db.ApplyAllConfiguredChangesToDatabaseAsync();
+            await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
         }
 
         // Assign a tenant
@@ -264,9 +264,9 @@ public class sharded_tenancy_tests : IAsyncLifetime
 
         // Check that PG partitions were created
         await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
 
-        var tables = await conn.ExistingTablesAsync();
+        var tables = await conn.ExistingTablesAsync(ct: TestContext.Current.CancellationToken);
         // Should have a partition like mt_doc_target_partition_test_tenant
         tables.Any(t => t.Name.Contains("partition_test_tenant")).ShouldBeTrue(
             $"Expected partition for 'partition_test_tenant' in {dbId}. Tables: {string.Join(", ", tables.Select(t => t.QualifiedName))}");
@@ -330,7 +330,7 @@ public class sharded_tenancy_tests : IAsyncLifetime
         var databases = await _store.Options.Tenancy.BuildDatabases();
         foreach (var db in databases.OfType<IMartenDatabase>())
         {
-            await db.ApplyAllConfiguredChangesToDatabaseAsync();
+            await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
         }
 
         // Add specific tenants
@@ -342,26 +342,26 @@ public class sharded_tenancy_tests : IAsyncLifetime
         await using (var session = _store.LightweightSession("alpha"))
         {
             session.Store(new Target { Id = Guid.NewGuid(), String = "alpha_data" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _store.LightweightSession("beta"))
         {
             session.Store(new Target { Id = Guid.NewGuid(), String = "beta_data" });
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Read back — isolation check
         await using (var q1 = _store.QuerySession("alpha"))
         {
-            var results = await q1.Query<Target>().ToListAsync();
+            var results = await q1.Query<Target>().ToListAsync(TestContext.Current.CancellationToken);
             results.Count.ShouldBe(1);
             results[0].String.ShouldBe("alpha_data");
         }
 
         await using (var q2 = _store.QuerySession("beta"))
         {
-            var results = await q2.Query<Target>().ToListAsync();
+            var results = await q2.Query<Target>().ToListAsync(TestContext.Current.CancellationToken);
             results.Count.ShouldBe(1);
             results[0].String.ShouldBe("beta_data");
         }
@@ -375,7 +375,7 @@ public class sharded_tenancy_tests : IAsyncLifetime
         var databases = await _store.Options.Tenancy.BuildDatabases();
         foreach (var db in databases.OfType<IMartenDatabase>())
         {
-            await db.ApplyAllConfiguredChangesToDatabaseAsync();
+            await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
         }
 
         var sharded = (ShardedTenancy)_store.Options.Tenancy;
@@ -390,26 +390,26 @@ public class sharded_tenancy_tests : IAsyncLifetime
             streamA = session.Events.StartStream<ShardedTestEvent>(
                 new ShardedTestEvent { Value = "a1" },
                 new ShardedTestEvent { Value = "a2" }).Id;
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _store.LightweightSession("ev_beta"))
         {
             streamB = session.Events.StartStream<ShardedTestEvent>(
                 new ShardedTestEvent { Value = "b1" }).Id;
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Query events per tenant
         await using (var q1 = _store.QuerySession("ev_alpha"))
         {
-            var events = await q1.Events.FetchStreamAsync(streamA);
+            var events = await q1.Events.FetchStreamAsync(streamA, token: TestContext.Current.CancellationToken);
             events.Count.ShouldBe(2);
         }
 
         await using (var q2 = _store.QuerySession("ev_beta"))
         {
-            var events = await q2.Events.FetchStreamAsync(streamB);
+            var events = await q2.Events.FetchStreamAsync(streamB, token: TestContext.Current.CancellationToken);
             events.Count.ShouldBe(1);
         }
     }
@@ -531,7 +531,7 @@ public class Bug_4366_wait_for_non_stale_under_sharded_multitenancy: IAsyncLifet
         var databases = await _store.Options.Tenancy.BuildDatabases();
         foreach (var db in databases.OfType<IMartenDatabase>())
         {
-            await db.ApplyAllConfiguredChangesToDatabaseAsync();
+            await db.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
         }
 
         // Pre-fix: throws InvalidOperationException because Storage.Database is null

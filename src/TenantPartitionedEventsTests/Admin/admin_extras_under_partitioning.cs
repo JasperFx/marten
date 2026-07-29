@@ -127,7 +127,7 @@ public class admin_extras_under_partitioning : IAsyncLifetime
         sequencesAfterRegistration.ShouldBe(3L);
 
         // Idempotency: re-applying changes shouldn't change the count.
-        await _store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync();
+        await _store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
 
         var sequencesAfterReapply = await CountTenantSequencesAsync(_schema);
         sequencesAfterReapply.ShouldBe(3L,

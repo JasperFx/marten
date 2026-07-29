@@ -64,10 +64,10 @@ public class seq_id_gap_after_failed_batch
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.StartStream<TripSnapshot>(firstStream, new TripStarted(firstStream));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
             var seeded = await s.Events.QueryAllRawEvents()
                 .Where(e => e.StreamId == firstStream)
-                .ToListAsync();
+                .ToListAsync(TestContext.Current.CancellationToken);
             lastSeqBeforeBurn = seeded.Max(e => e.Sequence);
         }
 
@@ -75,10 +75,10 @@ public class seq_id_gap_after_failed_batch
         //    models the gap a partial / failed batch would produce.
         await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
-            await conn.OpenAsync();
+            await conn.OpenAsync(TestContext.Current.CancellationToken);
             await using var cmd = conn.CreateCommand(
                 $"select nextval('{_fixture.SchemaName}.mt_events_sequence_{tenant}')");
-            await cmd.ExecuteScalarAsync();
+            await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken);
         }
 
         // 3) Successful append — its first seq_id must SKIP the burned value.
@@ -87,10 +87,10 @@ public class seq_id_gap_after_failed_batch
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.StartStream<TripSnapshot>(nextStream, new TripStarted(nextStream));
-            await s.SaveChangesAsync();
+            await s.SaveChangesAsync(TestContext.Current.CancellationToken);
             var events = await s.Events.QueryAllRawEvents()
                 .Where(e => e.StreamId == nextStream)
-                .ToListAsync();
+                .ToListAsync(TestContext.Current.CancellationToken);
             nextStreamFirstSeq = events.Single().Sequence;
         }
 

@@ -105,7 +105,7 @@ public class dcb_tag_append_under_partitioning : IAsyncLifetime
             var evt = session.Events.BuildEvent(new DcbOrderPlaced("widget"));
             evt.WithTag(orderRef);
             session.Events.Append(Guid.NewGuid(), evt);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Direct schema-level probe: the tag row exists for alpha. PK on this
@@ -113,12 +113,12 @@ public class dcb_tag_append_under_partitioning : IAsyncLifetime
         // (value, tenant_id) projection reads the recorded row independent of
         // seq_id.
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand(
             $"select count(*) from {_schema}.mt_event_tag_dcb_order_ref where value = :v and tenant_id = :t");
         cmd.Parameters.AddWithValue("v", orderRef.Value);
         cmd.Parameters.AddWithValue("t", "alpha");
-        var count = (long)(await cmd.ExecuteScalarAsync())!;
+        var count = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         count.ShouldBe(1L,
             "the DCB tag row must land in mt_event_tag_* alongside the partitioned mt_events row");
     }
@@ -152,14 +152,14 @@ public class dcb_tag_append_under_partitioning : IAsyncLifetime
             var evt = session.Events.BuildEvent(new DcbOrderPlaced("alpha-widget"));
             evt.WithTag(orderRef);
             session.Events.Append(Guid.NewGuid(), evt);
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var query = new EventTagQuery().Or<DcbOrderRef>(orderRef);
 
         await using (var queryA = _store.LightweightSession("alpha"))
         {
-            var events = await queryA.Events.QueryByTagsAsync(query);
+            var events = await queryA.Events.QueryByTagsAsync(query, TestContext.Current.CancellationToken);
             events.Count.ShouldBe(1,
                 "alpha must see its own tagged event via the partitioned mt_events + mt_event_tag_* JOIN");
             events[0].Data.ShouldBeOfType<DcbOrderPlaced>().Product.ShouldBe("alpha-widget");

@@ -12,6 +12,7 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
+using Xunit;
 
 namespace MultiTenancyTests;
 
@@ -146,7 +147,7 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
 
         foreach (var database in await theStore.Storage.AllDatabases())
         {
-            await database.AssertDatabaseMatchesConfigurationAsync();
+            await database.AssertDatabaseMatchesConfigurationAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -169,8 +170,8 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
         // Each IEventDatabase can serve the store-neutral read abstractions
         foreach (var database in databases)
         {
-            (await database.AllProjectionProgress()).ShouldNotBeNull();
-            (await database.FetchDeadLetterCountsAsync()).ShouldNotBeNull();
+            (await database.AllProjectionProgress(TestContext.Current.CancellationToken)).ShouldNotBeNull();
+            (await database.FetchDeadLetterCountsAsync(TestContext.Current.CancellationToken)).ShouldNotBeNull();
         }
     }
 }

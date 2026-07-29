@@ -86,17 +86,17 @@ public class event_projection_per_tenant : IAsyncLifetime
         {
             session.Events.StartStream(alphaStream,
                 new LegEvent(1.0), new LegEvent(2.0), new LegEvent(3.0));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using var qa = _store.QuerySession(alpha);
-        var alphaLogs = await qa.Query<LegLog>().ToListAsync();
+        var alphaLogs = await qa.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken);
         alphaLogs.Count.ShouldBe(3,
             "EventProjection.Create emits one LegLog per LegEvent — alpha appended 3, so alpha's session sees 3");
         alphaLogs.Select(l => l.Distance).OrderBy(d => d).ShouldBe(new[] { 1.0, 2.0, 3.0 });
 
         await using var qb = _store.QuerySession(beta);
-        var betaLogs = await qb.Query<LegLog>().ToListAsync();
+        var betaLogs = await qb.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken);
         betaLogs.ShouldBeEmpty(
             "beta appended no events — its tenant slot must be empty (no cross-tenant doc leak)");
     }
@@ -119,22 +119,22 @@ public class event_projection_per_tenant : IAsyncLifetime
         await using (var session = _store.LightweightSession(alpha))
         {
             session.Events.StartStream(alphaStream, new LegEvent(10), new LegEvent(20));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         await using (var session = _store.LightweightSession(beta))
         {
             session.Events.StartStream(betaStream, new LegEvent(7), new LegEvent(13));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Pre-state: inline already materialized both tenants.
         await using (var qa = _store.QuerySession(alpha))
         {
-            (await qa.Query<LegLog>().ToListAsync()).Count.ShouldBe(2);
+            (await qa.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(2);
         }
         await using (var qb = _store.QuerySession(beta))
         {
-            (await qb.Query<LegLog>().ToListAsync()).Count.ShouldBe(2);
+            (await qb.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(2);
         }
 
         // Wipe alpha's docs + progression — Phase 2c teardown. Beta untouched.
@@ -145,12 +145,12 @@ public class event_projection_per_tenant : IAsyncLifetime
 
         await using (var qa = _store.QuerySession(alpha))
         {
-            (await qa.Query<LegLog>().ToListAsync())
+            (await qa.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken))
                 .ShouldBeEmpty("alpha's docs must be wiped by the tenant-scoped teardown");
         }
         await using (var qb = _store.QuerySession(beta))
         {
-            (await qb.Query<LegLog>().ToListAsync()).Count.ShouldBe(2,
+            (await qb.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(2,
                 "beta's docs must survive — the teardown is tenant-scoped to alpha");
         }
 
@@ -164,14 +164,14 @@ public class event_projection_per_tenant : IAsyncLifetime
 
         await using (var qa = _store.QuerySession(alpha))
         {
-            var alphaLogs = await qa.Query<LegLog>().ToListAsync();
+            var alphaLogs = await qa.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken);
             alphaLogs.Count.ShouldBe(2,
                 "alpha was rebuilt — its 2 LegEvents must materialize 2 LegLog docs");
             alphaLogs.Select(l => l.Distance).OrderBy(d => d).ShouldBe(new[] { 10.0, 20.0 });
         }
         await using (var qb = _store.QuerySession(beta))
         {
-            (await qb.Query<LegLog>().ToListAsync()).Count.ShouldBe(2,
+            (await qb.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(2,
                 "beta's docs must STILL be 2 — the per-tenant rebuild for alpha did not touch beta");
         }
     }

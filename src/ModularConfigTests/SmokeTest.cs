@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using ModularConfigTests.SatelliteA;
 using ModularConfigTests.SatelliteB;
 using Shouldly;
+using Xunit;
 
 namespace ModularConfigTests;
 
@@ -46,7 +47,7 @@ public class SmokeTest
         ConfigurationFixture.AddBaselineMarten(builder.Services, schemaName);
 
         using var host = builder.Build();
-        await host.StartAsync();
+        await host.StartAsync(TestContext.Current.CancellationToken);
 
         try
         {
@@ -72,12 +73,12 @@ public class SmokeTest
             {
                 session.Events.StartStream<Order>(orderId, new OrderPlaced(orderId, 100m));
                 session.Events.Append(orderId, new OrderShipped(orderId));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             await using (var query = store.QuerySession())
             {
-                var order = await query.LoadAsync<Order>(orderId);
+                var order = await query.LoadAsync<Order>(orderId, TestContext.Current.CancellationToken);
                 order.ShouldNotBeNull();
                 order!.Amount.ShouldBe(100m);
                 order.IsShipped.ShouldBeTrue();
@@ -96,12 +97,12 @@ public class SmokeTest
                 session.Events.StartStream(streamA, new DailyOpened(day));
                 session.Events.StartStream(streamB, new DailyOpened(day));
                 session.Events.Append(streamA, new DailyClosed(day));
-                await session.SaveChangesAsync();
+                await session.SaveChangesAsync(TestContext.Current.CancellationToken);
             }
 
             await using (var query = store.QuerySession())
             {
-                var daily = await query.LoadAsync<Daily>(day);
+                var daily = await query.LoadAsync<Daily>(day, TestContext.Current.CancellationToken);
                 daily.ShouldNotBeNull();
                 daily!.OpenCount.ShouldBe(2);
                 daily.CloseCount.ShouldBe(1);
@@ -109,7 +110,7 @@ public class SmokeTest
         }
         finally
         {
-            await host.StopAsync();
+            await host.StopAsync(TestContext.Current.CancellationToken);
         }
     }
 }

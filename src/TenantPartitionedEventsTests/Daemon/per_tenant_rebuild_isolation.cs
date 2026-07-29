@@ -63,14 +63,14 @@ public class per_tenant_rebuild_isolation
         {
             session.Events.StartStream<TripDistance>(alphaStreamId,
                 new TripStarted(alphaStreamId), new TripLeg(10), new TripLeg(20));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var session = _fixture.Store.LightweightSession(beta))
         {
             session.Events.StartStream<TripDistance>(betaStreamId,
                 new TripStarted(betaStreamId), new TripLeg(7), new TripLeg(13));
-            await session.SaveChangesAsync();
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Drive the projection forward on both tenants. Use per-tenant
@@ -96,11 +96,11 @@ public class per_tenant_rebuild_isolation
         TripDistance betaBefore;
         await using (var session = _fixture.Store.QuerySession(alpha))
         {
-            alphaBefore = await session.LoadAsync<TripDistance>(alphaStreamId);
+            alphaBefore = await session.LoadAsync<TripDistance>(alphaStreamId, TestContext.Current.CancellationToken);
         }
         await using (var session = _fixture.Store.QuerySession(beta))
         {
-            betaBefore = await session.LoadAsync<TripDistance>(betaStreamId);
+            betaBefore = await session.LoadAsync<TripDistance>(betaStreamId, TestContext.Current.CancellationToken);
         }
         alphaBefore.ShouldNotBeNull("alpha's projection should have materialised before the per-tenant reset");
         alphaBefore.Distance.ShouldBe(30, "alpha starts at 10 + 20 = 30 miles");
@@ -127,12 +127,12 @@ public class per_tenant_rebuild_isolation
         // Alpha's doc should be GONE; beta's must be byte-identical.
         await using (var session = _fixture.Store.QuerySession(alpha))
         {
-            (await session.LoadAsync<TripDistance>(alphaStreamId))
+            (await session.LoadAsync<TripDistance>(alphaStreamId, TestContext.Current.CancellationToken))
                 .ShouldBeNull("alpha's projected doc must be wiped by the tenant-scoped teardown");
         }
         await using (var session = _fixture.Store.QuerySession(beta))
         {
-            var betaAfter = await session.LoadAsync<TripDistance>(betaStreamId);
+            var betaAfter = await session.LoadAsync<TripDistance>(betaStreamId, TestContext.Current.CancellationToken);
             betaAfter.ShouldNotBeNull("beta's doc must survive — its tenant slot was never named");
             betaAfter!.Distance.ShouldBe(betaBefore.Distance,
                 "beta's projection state must be byte-identical pre/post the per-tenant teardown");
