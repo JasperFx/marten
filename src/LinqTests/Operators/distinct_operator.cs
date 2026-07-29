@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services.Json;
 using Marten.Testing.Documents;
@@ -29,7 +29,7 @@ public class distinct_operator : IntegrationContext
     }
 
     #region sample_get_distinct_numbers
-    [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
+    [Fact]
     public async Task get_distinct_numbers()
     {
         theSession.Store(new Target {Number = 1, Decimal = 1.0M});

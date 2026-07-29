@@ -21,7 +21,7 @@ public class Bug_1189_can_select_transform_without_an_id : IntegrationContext
     }
 
 
-    [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
+    [Fact]
     public async Task can_select()
     {
         var targets = Target.GenerateRandomData(100).ToArray();
