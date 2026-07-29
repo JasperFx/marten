@@ -47,6 +47,10 @@ public class identity_map_mechanics: IntegrationContext
     [Fact]
     public async Task when_querying_and_modifying_multiple_documents_should_track_and_persist()
     {
+        // Its _dirty sibling already does this. Both seed the same three "James" users and
+        // then assert on the full query result, so whichever runs second sees six.
+        await theStore.Advanced.ResetAllData();
+
         var user1 = new User { FirstName = "James", LastName = "Worthy 1" };
         var user2 = new User { FirstName = "James", LastName = "Worthy 2" };
         var user3 = new User { FirstName = "James", LastName = "Worthy 3" };

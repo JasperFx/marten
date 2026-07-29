@@ -231,6 +231,13 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
 
         var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
         assertTableHasTenantPartitions(userTable, "a1", "a2", "a3", "b1", "b2");
+
+        // b1/b2 are unique to this test. The store is shared across the class and caches its
+        // managed-tenant set in memory, so dropping the schemas in InitializeAsync does not
+        // evict them -- they get re-created for the next test, which then sees partitions it
+        // never asked for. Every other test here works with a1/a2/a3, so only these two need
+        // clearing.
+        await theStore.Advanced.RemoveMartenManagedTenantsAsync(["b1", "b2"], CancellationToken.None);
     }
 
 
