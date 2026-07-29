@@ -17,6 +17,9 @@ public class persist_and_query_via_dynamic: IntegrationContext
     }
     #endregion
 
+    // #5068: confirmed to fail under System.Text.Json, which deserializes to JsonElement --
+    // it has no dynamic member access, so 'temperature' cannot resolve. Inherent to the
+    // serializer, so the targeting is correct.
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task CanPersistAndQueryDynamic()
     {

@@ -503,7 +503,7 @@ public class select_many : IntegrationContext
         dict.ContainsKey(user2.Id).ShouldBeTrue();
     }
 
-    [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
+    [Fact]
     public async Task select_many_with_select_transformation()
     {
         var targets = Target.GenerateRandomData(100).ToArray();

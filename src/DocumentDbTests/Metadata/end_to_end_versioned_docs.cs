@@ -45,6 +45,11 @@ public class end_to_end_versioned_docs: IntegrationContext
         doc.Version.ShouldBe(session.VersionFor(doc).Value);
     }
 
+    // #5068: confirmed to fail when the suite runs with DEFAULT_SERIALIZER=SystemTextJson.
+    // NOTE the cause is NOT serialization: doc1.Version round-trips correctly, it is
+    // session.VersionFor(doc) that comes back null after LoadAsync. The sibling tests in
+    // this class call VersionFor happily under either serializer. Left targeted so the
+    // suite stays green; tracked as #5075.
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task overwrite_behavior()
     {
@@ -96,6 +101,11 @@ public class end_to_end_versioned_docs: IntegrationContext
         }
     }
 
+    // #5068: confirmed to fail when the suite runs with DEFAULT_SERIALIZER=SystemTextJson.
+    // NOTE the cause is NOT serialization: doc1.Version round-trips correctly, it is
+    // session.VersionFor(doc) that comes back null after LoadAsync. The sibling tests in
+    // this class call VersionFor happily under either serializer. Left targeted so the
+    // suite stays green; tracked as #5075.
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task overwrite_behavior_with_props()
     {
@@ -147,6 +157,11 @@ public class end_to_end_versioned_docs: IntegrationContext
         }
     }
 
+    // #5068: confirmed to fail when the suite runs with DEFAULT_SERIALIZER=SystemTextJson.
+    // NOTE the cause is NOT serialization: doc1.Version round-trips correctly, it is
+    // session.VersionFor(doc) that comes back null after LoadAsync. The sibling tests in
+    // this class call VersionFor happily under either serializer. Left targeted so the
+    // suite stays green; tracked as #5075.
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task overwrite_behavior_async()
     {

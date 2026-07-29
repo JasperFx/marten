@@ -207,6 +207,7 @@ public class select_clause_usage: IntegrationContext
     }
 
     #region sample_other_type_projection
+    // #5068: confirmed to fail under System.Text.Json.
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task use_select_with_multiple_fields_to_other_type()
     {
@@ -237,6 +238,7 @@ public class select_clause_usage: IntegrationContext
     }
 
 
+    // #5068: confirmed to fail under System.Text.Json.
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task use_select_with_multiple_fields_to_other_type_using_constructor()
     {
@@ -260,6 +262,7 @@ public class select_clause_usage: IntegrationContext
         });
     }
 
+    // #5068: confirmed to fail under System.Text.Json.
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task use_select_with_multiple_fields_to_other_type_using_constructor_and_properties()
     {
@@ -336,6 +339,7 @@ public class select_clause_usage: IntegrationContext
     #endregion
 
 
+    // #5068: confirmed to fail under System.Text.Json.
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task transform_with_deep_properties_to_anonymous_type()
     {
@@ -354,6 +358,7 @@ public class select_clause_usage: IntegrationContext
         actual.InnerNumber.ShouldBe(target.Inner.Number);
     }
 
+    // #5068: confirmed to fail under System.Text.Json.
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task transform_with_deep_properties_to_type_using_constructor()
     {
