@@ -83,6 +83,12 @@ public static class HighWaterHealthCheckExtensions
     ///     nodes (e.g. Wolverine-managed), scope this to the databases whose async agents run on
     ///     the local node so the probe does not fan out to (or auto-restart agents on) databases
     ///     this node does not host. Defaults to <c>null</c> (every database — today's behavior).
+    ///     <para>
+    ///         This predicate is captured at registration time, so it cannot resolve services. When
+    ///         ownership is runtime state that has to be re-read on each probe — Wolverine-managed
+    ///         daemon distribution being the usual case — use the overload taking a
+    ///         <c>Func&lt;IServiceProvider, IMartenDatabase, bool&gt;</c> instead (marten#5061).
+    ///     </para>
     /// </param>
     /// <param name="includeExternallyManaged">
     ///     marten#4991: by default the check only runs under <see cref="DaemonMode.Solo" /> /
@@ -103,9 +109,64 @@ public static class HighWaterHealthCheckExtensions
         bool includeExternallyManaged = false
     )
     {
-        builder.Services.AddSingleton(new HighWaterHealthCheckSettings(
+        return builder.registerHighWaterHealthCheck(new HighWaterHealthCheckSettings(
             staleThreshold ?? TimeSpan.FromSeconds(30), minimumGap, autoRestart, databaseFilter,
             includeExternallyManaged));
+    }
+
+    /// <summary>
+    ///     marten#5061: same check, but with a <paramref name="databaseFilter" /> that is handed the
+    ///     <see cref="IServiceProvider" /> and re-evaluated on <em>every</em> probe. Use this
+    ///     overload when "the databases this node owns" is runtime state rather than something known
+    ///     at registration time — the common case under Wolverine-managed daemon distribution, where
+    ///     agent assignments move between nodes over the process's lifetime:
+    ///     <code>
+    ///     Services.AddHealthChecks().AddMartenHighWaterHealthCheck(
+    ///         (services, database) => services.GetRequiredService&lt;IWolverineRuntime&gt;()
+    ///             .Agents.AllLocallyOwnedDatabaseIds()
+    ///             .Any(id =&gt; id.Name.EqualsIgnoreCase(database.Identifier)),
+    ///         staleThreshold: TimeSpan.FromSeconds(30),
+    ///         includeExternallyManaged: true);
+    ///     </code>
+    ///     The <see cref="IServiceProvider" /> passed in is the one the health check itself was
+    ///     resolved from, so scoped services are legal.
+    /// </summary>
+    /// <param name="builder"><see cref="IHealthChecksBuilder" /></param>
+    /// <param name="databaseFilter">
+    ///     Provider-aware predicate, invoked once per database per probe. Return <c>true</c> for the
+    ///     databases this node should assert on.
+    /// </param>
+    /// <param name="staleThreshold">See the other overload. Defaults to 30 seconds.</param>
+    /// <param name="minimumGap">See the other overload. Defaults to 1.</param>
+    /// <param name="autoRestart">See the other overload. Defaults to <c>false</c>.</param>
+    /// <param name="includeExternallyManaged">
+    ///     See the other overload. Usually <c>true</c> when this overload is what you need, since
+    ///     runtime-assigned ownership implies <see cref="DaemonMode.ExternallyManaged" />. Defaults
+    ///     to <c>false</c>.
+    /// </param>
+    public static IHealthChecksBuilder AddMartenHighWaterHealthCheck(
+        this IHealthChecksBuilder builder,
+        Func<IServiceProvider, IMartenDatabase, bool> databaseFilter,
+        TimeSpan? staleThreshold = null,
+        long minimumGap = 1,
+        bool autoRestart = false,
+        bool includeExternallyManaged = false
+    )
+    {
+        ArgumentNullException.ThrowIfNull(databaseFilter);
+
+        return builder.registerHighWaterHealthCheck(new HighWaterHealthCheckSettings(
+            staleThreshold ?? TimeSpan.FromSeconds(30), minimumGap, autoRestart, DatabaseFilter: null,
+            includeExternallyManaged, databaseFilter));
+    }
+
+    private static IHealthChecksBuilder registerHighWaterHealthCheck(this IHealthChecksBuilder builder,
+        HighWaterHealthCheckSettings settings)
+    {
+        // marten#5061: registered as a factory rather than a bare instance so an application that
+        // needs to reach further into DI than ScopedDatabaseFilter allows still has a supported
+        // override point (Replace a Singleton factory, not a Singleton instance).
+        builder.Services.Replace(ServiceDescriptor.Singleton(_ => settings));
         builder.Services.TryAddSingleton(TimeProvider.System);
         builder.Services.TryAddSingleton<HighWaterStateTracker>();
         return builder.AddCheck<HighWaterHealthCheck>(
@@ -117,12 +178,18 @@ public static class HighWaterHealthCheckExtensions
     /// <summary>
     ///     DI-injected settings for <see cref="HighWaterHealthCheck" />.
     /// </summary>
+    /// <param name="ScopedDatabaseFilter">
+    ///     marten#5061: provider-aware alternative to <paramref name="DatabaseFilter" />, resolved
+    ///     against the health check's own <see cref="IServiceProvider" /> on every probe. When both
+    ///     are set a database must satisfy both.
+    /// </param>
     public record HighWaterHealthCheckSettings(
         TimeSpan StaleThreshold,
         long MinimumGap,
         bool AutoRestart = false,
         Func<IMartenDatabase, bool>? DatabaseFilter = null,
-        bool IncludeExternallyManaged = false);
+        bool IncludeExternallyManaged = false,
+        Func<IServiceProvider, IMartenDatabase, bool>? ScopedDatabaseFilter = null);
 
     /// <summary>
     ///     Tracks the fallback gap heuristic's "first observed a stuck mark" reading (keyed per
@@ -155,6 +222,7 @@ public static class HighWaterHealthCheckExtensions
         private readonly long _minimumGap;
         private readonly bool _autoRestart;
         private readonly Func<IMartenDatabase, bool>? _databaseFilter;
+        private readonly Func<IServiceProvider, IMartenDatabase, bool>? _scopedDatabaseFilter;
         private readonly bool _includeExternallyManaged;
         private readonly HighWaterStateTracker _tracker;
         private readonly IServiceProvider _services;
@@ -168,6 +236,7 @@ public static class HighWaterHealthCheckExtensions
             _minimumGap = settings.MinimumGap;
             _autoRestart = settings.AutoRestart;
             _databaseFilter = settings.DatabaseFilter;
+            _scopedDatabaseFilter = settings.ScopedDatabaseFilter;
             _includeExternallyManaged = settings.IncludeExternallyManaged;
             _tracker = tracker;
             _services = services;
@@ -227,10 +296,19 @@ public static class HighWaterHealthCheckExtensions
 
                 // marten#4991: scope to the databases this node owns so the probe does not fan out
                 // to (or auto-restart) databases the local node does not host the daemon for.
+                // marten#5061: ScopedDatabaseFilter is evaluated here, per probe, against the
+                // provider the check was resolved from — that is the only way to express ownership
+                // that is runtime state (Wolverine reassigns agents over a node's lifetime) rather
+                // than something fixed at registration. When both filters are set, both must pass.
                 IEnumerable<IMartenDatabase> scoped = databases;
                 if (_databaseFilter != null)
                 {
-                    scoped = databases.Where(_databaseFilter);
+                    scoped = scoped.Where(_databaseFilter);
+                }
+
+                if (_scopedDatabaseFilter != null)
+                {
+                    scoped = scoped.Where(database => _scopedDatabaseFilter(_services, database));
                 }
 
                 foreach (var database in scoped)
