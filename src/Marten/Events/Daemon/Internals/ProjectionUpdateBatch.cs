@@ -346,6 +346,15 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             {
                 stream.PrepareEvents(0, ((IMartenSession)_session).Options.EventGraph, new Queue<long>(), _session);
 
+                // #5062: an Append side effect that ended up with no events has nothing to
+                // write, and calling mt_quick_append_events with empty arrays is a wasted
+                // round trip at best. A StartStream still needs its mt_streams row, so only
+                // the append shape is skipped.
+                if (stream.ActionType != StreamActionType.Start && !stream.Events.Any())
+                {
+                    continue;
+                }
+
                 var op = stream.ActionType == StreamActionType.Start ? eventStorage.InsertStream(stream) : eventStorage.QuickAppendEvents(stream);
                 applyOperation(op);
             }
