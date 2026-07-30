@@ -43,7 +43,9 @@ public class HighWaterHealthCheckTests: DaemonContext
 
     private HighWaterHealthCheck buildCheck(TimeSpan? staleThreshold = null, long minimumGap = 1,
         bool autoRestart = false, IProjectionCoordinator? coordinator = null,
-        Func<IMartenDatabase, bool>? databaseFilter = null, bool includeExternallyManaged = false)
+        Func<IMartenDatabase, bool>? databaseFilter = null, bool includeExternallyManaged = false,
+        Func<IServiceProvider, IMartenDatabase, bool>? scopedDatabaseFilter = null,
+        Action<ServiceCollection>? configure = null)
     {
         var services = new ServiceCollection();
         if (coordinator != null)
@@ -51,9 +53,11 @@ public class HighWaterHealthCheckTests: DaemonContext
             services.AddSingleton(coordinator);
         }
 
+        configure?.Invoke(services);
+
         return new(theStore,
             new HighWaterHealthCheckSettings(staleThreshold ?? 30.Seconds(), minimumGap, autoRestart, databaseFilter,
-                includeExternallyManaged), _timeProvider,
+                includeExternallyManaged, scopedDatabaseFilter), _timeProvider,
             _tracker, services.BuildServiceProvider());
     }
 
@@ -372,6 +376,100 @@ public class HighWaterHealthCheckTests: DaemonContext
 
         _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
         (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Unhealthy);
+    }
+
+    // ---- provider-aware database scoping (marten#5061) -----------------------------------
+
+    // Stands in for the runtime-owned ownership state that the plain databaseFilter closure cannot
+    // reach: on the reporter's system this is IWolverineRuntime.Agents.AllLocallyOwnedDatabaseIds(),
+    // which changes as Wolverine rebalances agents over the node's lifetime.
+    private sealed class FakeOwnershipRegistry
+    {
+        public bool OwnsEverything { get; set; }
+    }
+
+    [Fact]
+    public async Task scoped_database_filter_excluding_the_database_reports_healthy_despite_stuck_mark()
+    {
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+        });
+        await appendEventsAsync(20);
+        await seedHighWaterMarkAsync(1);
+
+        var check = buildCheck(30.Seconds(),
+            scopedDatabaseFilter: (services, _) =>
+                services.GetRequiredService<FakeOwnershipRegistry>().OwnsEverything,
+            configure: services => services.AddSingleton(new FakeOwnershipRegistry { OwnsEverything = false }));
+
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status
+            .ShouldBe(HealthStatus.Healthy);
+
+        _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status
+            .ShouldBe(HealthStatus.Healthy);
+    }
+
+    [Fact]
+    public async Task scoped_database_filter_is_re_evaluated_on_every_probe()
+    {
+        // The whole point of marten#5061: ownership is runtime state. A node that does not own the
+        // database at probe 1 but does at probe 2 must start asserting on it without re-registration.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+        });
+        await appendEventsAsync(20);
+        await seedHighWaterMarkAsync(1);
+
+        var ownership = new FakeOwnershipRegistry { OwnsEverything = false };
+        var check = buildCheck(30.Seconds(),
+            scopedDatabaseFilter: (services, _) =>
+                services.GetRequiredService<FakeOwnershipRegistry>().OwnsEverything,
+            configure: services => services.AddSingleton(ownership));
+
+        // Not owned yet, and well past the staleness threshold: not our problem.
+        _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status
+            .ShouldBe(HealthStatus.Healthy);
+
+        // The agent gets assigned here. First probe under ownership establishes the stuck-mark
+        // reading; the gap heuristic then needs a full staleness window at the same mark.
+        ownership.OwnsEverything = true;
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status
+            .ShouldBe(HealthStatus.Healthy);
+
+        _timeProvider.GetUtcNow().Returns(_now.AddSeconds(120));
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status
+            .ShouldBe(HealthStatus.Unhealthy);
+    }
+
+    [Fact]
+    public void scoped_overload_registers_the_settings_through_a_factory_carrying_the_filter()
+    {
+        _builder = new();
+        _builder.AddMartenHighWaterHealthCheck(
+            (_, database) => database.Identifier == "owned",
+            staleThreshold: 30.Seconds(),
+            includeExternallyManaged: true);
+
+        var services = _builder.Services.BuildServiceProvider();
+        var settings = services.GetRequiredService<HighWaterHealthCheckSettings>();
+
+        settings.DatabaseFilter.ShouldBeNull();
+        settings.ScopedDatabaseFilter.ShouldNotBeNull();
+        settings.IncludeExternallyManaged.ShouldBeTrue();
+
+        // The registration must be a factory, not a pre-built instance — that is what makes
+        // overriding the settings a supported extension point (marten#5061 suggestion 3).
+        _builder.Services.ShouldContain(x =>
+            x.ServiceType == typeof(HighWaterHealthCheckSettings) && x.ImplementationFactory != null);
+
+        services.GetServices<HealthCheckRegistration>()
+            .ShouldContain(reg => reg.Name == nameof(HighWaterHealthCheck));
     }
 
     // ---- ExternallyManaged gate (marten#4991) --------------------------------------------

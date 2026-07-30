@@ -119,6 +119,34 @@ Services.AddHealthChecks().AddMartenHighWaterHealthCheck(
     includeExternallyManaged: true);
 ```
 
+#### When ownership is runtime state
+
+That `databaseFilter` closure is captured at registration time, so it can only read what the
+application already has in hand — an ambient collection the app keeps up to date, a config value, a
+static. It cannot resolve services.
+
+Under **Wolverine-managed daemon distribution** that is not enough: which databases a node owns is
+decided by Wolverine's agent assignments and moves over the node's lifetime (rollouts, node loss,
+leadership changes), and the authoritative answer has to be read on *each* probe. Use the overload
+whose filter takes the `IServiceProvider` — it is invoked once per database per probe
+(see [marten#5061](https://github.com/JasperFx/marten/issues/5061)):
+
+```cs
+Services.AddHealthChecks().AddMartenHighWaterHealthCheck(
+    // Re-evaluated on every probe, against the provider the health check itself was resolved
+    // from — so scoped services are legal too.
+    (services, database) => services.GetRequiredService<IWolverineRuntime>()
+        .Agents.AllLocallyOwnedDatabaseIds()
+        .Any(id => id.Name.EqualsIgnoreCase(database.Identifier)),
+
+    staleThreshold: TimeSpan.FromSeconds(30),
+    includeExternallyManaged: true);
+```
+
+Both overloads register the settings through a factory, so replacing
+`HighWaterHealthCheckSettings` in the container is also a supported way to override the filter if
+you need to reach further into DI than the predicate allows.
+
 Under `UseTenantPartitionedEvents` the high-water mark is tracked **per tenant** as
 `HighWaterMark:<tenant>` progression rows rather than a single store-global `HighWaterMark`. The
 check evaluates those per-tenant rows too, using the liveness heartbeat (the sequence-gap
