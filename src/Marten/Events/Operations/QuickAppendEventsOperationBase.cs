@@ -322,6 +322,23 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         {
             if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
+                // #5062: nothing to post-process for an append with no events -- but the row
+                // still has to be consumed above so the reader stays aligned for the rest of
+                // the page. Bail before touching field 0: on a database whose
+                // mt_quick_append_events predates the COALESCE fix, the empty case comes back
+                // as ARRAY[NULL] and GetFieldValueAsync<long[]> throws InvalidCastException,
+                // which would then replace whatever exception actually made the caller fail.
+                // #5062: nothing to post-process for an append with no events -- but the row
+                // still has to be consumed above so the reader stays aligned for the rest of
+                // the page. Bail before touching field 0: on a database whose
+                // mt_quick_append_events predates the COALESCE fix, the empty case comes back
+                // as ARRAY[NULL] and GetFieldValueAsync<long[]> throws InvalidCastException,
+                // which would then replace whatever exception actually made the caller fail.
+                if (Stream.Events.Count == 0)
+                {
+                    return;
+                }
+
                 var values = await reader.GetFieldValueAsync<long[]>(0, token).ConfigureAwait(false);
 
                 var finalVersion = values[0];

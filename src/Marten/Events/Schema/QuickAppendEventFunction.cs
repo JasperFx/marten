@@ -229,7 +229,13 @@ BEGIN{sequenceResolveUpFront}{expectedVersionCheck}
 	end if;
 
 	index := 1;
-	return_value := ARRAY[event_version + array_length(event_ids, 1)];
+	-- #5062: array_length('{{}}', 1) is NULL in PostgreSQL, not 0, so a call with an
+	-- empty event array used to return ARRAY[NULL] -- a bigint[] whose only element
+	-- is NULL, which Npgsql cannot read into long[] ('Cannot read a non-nullable
+	-- collection of elements because the returned array contains nulls'). COALESCE
+	-- makes the empty case mean what it says: zero events appended, so the final
+	-- version is the stream's current version.
+	return_value := ARRAY[event_version + COALESCE(array_length(event_ids, 1), 0)];
 
 	foreach event_id in ARRAY event_ids
 	loop
