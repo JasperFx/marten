@@ -18,6 +18,16 @@ namespace Marten.Events.Daemon.HighWater;
 internal class MartenHighWaterStatistics: HighWaterStatistics
 {
     public long CurrentXmax { get; set; }
+
+    /// <summary>
+    /// #5091: the highest sequence number the event sequence has actually HANDED OUT, as opposed to
+    /// <see cref="HighWaterStatistics.HighestSequence" />, which is the reserved ceiling. Postgres
+    /// reports <c>last_value = 1, is_called = false</c> for a sequence nothing has drawn from yet, so
+    /// the reserved ceiling never reads below 1 and a gap stuck at mark 0 could never be fenced. Null
+    /// when no sound reading exists — under per-tenant event partitioning the store-global sequence is
+    /// not the one being drawn from, so nothing can be concluded about allocation from it.
+    /// </summary>
+    public long? AllocatedSequenceHigh { get; set; }
 }
 
 internal class HighWaterStatisticsDetector: ISingleQueryHandler<HighWaterStatistics>
@@ -35,6 +45,18 @@ internal class HighWaterStatisticsDetector: ISingleQueryHandler<HighWaterStatist
             ? $"(select coalesce(max(seq_id), 0) from {graph.DatabaseSchemaName}.mt_events)"
             : $"(select last_value from {graph.DatabaseSchemaName}.mt_events_sequence)";
 
+        // #5091: the highest ALLOCATED sequence number, for the #4953 allocation fence. `last_value`
+        // is the reserved ceiling and reads 1 on a sequence nothing has drawn from yet (is_called =
+        // false), so a fence built from it could never be established for a gap stuck at mark 0 —
+        // exactly the shape in #5090. `is_called` distinguishes "1 has been handed out" from "1 is
+        // the next value to hand out", which makes a pristine sequence report an allocated high of 0.
+        // Under per-tenant partitioning the store-global sequence is not the one tenants draw from,
+        // so there is no sound allocation reading at all — NULL, and no fence (same posture the
+        // detector already takes for that case).
+        var allocatedHighSql = graph.UseTenantPartitionedEvents
+            ? "null::bigint"
+            : $"(select case when is_called then last_value else last_value - 1 end from {graph.DatabaseSchemaName}.mt_events_sequence)";
+
         // #4953: a single statement so every reading comes from ONE snapshot (see GapDetector for the
         // multi-statement snapshot-skew hazard this rules out). The LEFT JOIN from a one-row VALUES
         // clause preserves the #4712 guarantee that exactly one row always comes back with a real
@@ -49,7 +71,8 @@ select
   transaction_timestamp() as ""timestamp"",
   pg_snapshot_xmax(pg_current_snapshot())::text::bigint as current_xmax,
   p.last_seq_id,
-  p.last_updated
+  p.last_updated,
+  {allocatedHighSql} as allocated_high
 from (values (1)) as one(x)
 left join {graph.DatabaseSchemaName}.mt_event_progression p
   on p.name = '{HighWaterShardIdentity.StoreGlobal}'
@@ -79,6 +102,11 @@ left join {graph.DatabaseSchemaName}.mt_event_progression p
             statistics.LastMark = statistics.SafeStartMark =
                 await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false);
             statistics.LastUpdated = await reader.GetFieldValueAsync<DateTimeOffset>(4, token).ConfigureAwait(false);
+        }
+
+        if (!await reader.IsDBNullAsync(5, token).ConfigureAwait(false))
+        {
+            statistics.AllocatedSequenceHigh = await reader.GetFieldValueAsync<long>(5, token).ConfigureAwait(false);
         }
 
         return statistics;

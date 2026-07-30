@@ -157,14 +157,21 @@
          disposed daemon, ProjectionCoordinatorBase.PauseAsync logs ObjectDisposedException at Debug
          instead of Error, and ProjectionCoordinatorBase.StopAsync calls the new abstract
          ClearResolvedDaemons() seam after disposing daemons so subclass caches drop the disposed
-         instances (implemented here on ProjectionCoordinator + ExplicitProjectionCoordinator). -->
-    <PackageVersion Include="JasperFx" Version="2.36.2" />
-    <PackageVersion Include="JasperFx.Events" Version="2.36.2" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.36.2">
+         instances (implemented here on ProjectionCoordinator + ExplicitProjectionCoordinator).
+         JasperFx 2.36.3: jasperfx#592/#593 (marten#5090) — ProjectionCoordinatorBase.StartAsync now
+         cancels AND drains any existing leadership loop instead of disposing the old
+         CancellationTokenSource without cancelling it. Disposing a CTS does not cancel it and _runner
+         was overwritten, so a ResumeAsync not preceded by PauseAsync orphaned a live executeAsync for
+         the rest of the process — one that re-attained the leadership lock right after StopAsync
+         released it, and that won an advisory-lock handle after the lock had been disposed. Pairs
+         with Weasel 9.20.1 (weasel#396), which is what makes that stranded handle impossible. -->
+    <PackageVersion Include="JasperFx" Version="2.36.3" />
+    <PackageVersion Include="JasperFx.Events" Version="2.36.3" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.36.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.36.2" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.36.3" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -215,7 +222,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.17.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.20.2" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -264,9 +271,26 @@
          9.16.4 (weasel#356/#359): db-apply bounds its connection usage over many databases and extends the
          pool-release/retry to SqlServer, MySql and Oracle.
          9.17.0 (weasel#360): archive/tombstone/progression seams added to Weasel.Storage.Events. Additive for
-         Marten — bumped to stay current on the Weasel line (compile-verified). -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.17.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.17.0" />
+         Marten — bumped to stay current on the Weasel line (compile-verified).
+         9.20.1 (weasel#396/#397, marten#5090): AdvisoryLock can no longer strand a handle acquired after
+         DisposeAsync drained. TryAttainLockAsync checked _disposed only at method entry and then stored the
+         winning handle unconditionally, so an acquire in flight during disposal put its handle where nothing
+         would ever dispose it — with the default transaction-scoped leadership lock that is a backend left
+         'idle in transaction' on pg_try_advisory_xact_lock until the process exits, which the #4953 gap
+         detection then reads as a live pre-gap reserver and never advances past. The store now happens under
+         the same lock the drain latches under, a displaced handle (lock lost in monitored mode, re-attained)
+         is disposed rather than overwritten, and HasLock/ReleaseLockAsync move under that lock too.
+         9.20.2 (weasel#399/#400, found here): REQUIRED to move off 9.17.0. Weasel 9.18.0's computed-column
+         delta detection (weasel#373) routed every column through TableColumn.MatchesForDelta, where a bare
+         Equals(actual) binds to the protected NON-virtual Equals(TableColumn) overload and silently bypasses
+         subclass overrides of Equals(object). That override is exactly how RevisionColumn declares an
+         existing bigint mt_version acceptable for an integer-desired column instead of emitting a lossy
+         narrowing cast (#4614/#4742), so on 9.18.0–9.20.1 the column landed in Columns.Different, the table
+         was classified Update, and AssertDatabaseMatchesConfigurationAsync threw with an EMPTY change set —
+         Bug_4614_revision_column_int_for_IRevisioned's assert-check test fails on every version in that
+         range. 9.18/9.19/9.20 are otherwise additive for Marten and ride along (compile-verified). -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.20.2" />
+    <PackageVersion Include="Weasel.Storage" Version="9.20.2" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

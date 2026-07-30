@@ -55,8 +55,9 @@ internal class HighWaterDetector: IHighWaterDetector
     // store), Xmax fences the liveness probe to transactions that could have reserved the gap, and
     // ReservedCeiling bounds how far a proven-dead skip may advance — sequence numbers reserved AFTER
     // the observation belong to newer transactions whose fate is not proven. AllocationFence is the
-    // latest server time at which the reserved last_value was still at or below Mark (null when no
-    // such poll is in memory — e.g. the detector restarted while the gap already existed), letting
+    // latest server time at which the highest ALLOCATED sequence number was still at or below Mark
+    // (#5091; null when no such poll is in memory — e.g. the detector restarted while the gap already
+    // existed, or the store is tenant-partitioned and has no store-global allocation reading), letting
     // the liveness probe rule out sessions that have provably executed nothing since before the
     // gap's sequence numbers were even allocated. Detector-scoped state: resets on restart, which
     // only means a stuck gap waits one fresh threshold before skipping.
@@ -65,18 +66,26 @@ internal class HighWaterDetector: IHighWaterDetector
 
     private StuckGapObservation? _stuckGap;
 
-    // #4953 follow-up: (server timestamp, reserved last_value) pairs from every statistics poll, so
-    // a stuck gap's AllocationFence can be looked up when it is first observed. Permanently-idle open
-    // transactions (Wolverine's advisory-lock listener sessions) otherwise satisfy the liveness
-    // probe's open-transaction clause forever and a genuinely dead gap never skips. Bounded and
-    // compacted: consecutive polls at the same last_value collapse to one entry keeping the LATEST
-    // timestamp (the fence wants the last moment the value was still that low). Guarded by its own
-    // lock — Detect (poll loop) and DetectInSafeZone (rebuild/catch-up) can run concurrently.
+    // #4953 follow-up: (server timestamp, highest ALLOCATED sequence number) pairs from every
+    // statistics poll, so a stuck gap's AllocationFence can be looked up when it is first observed.
+    // Permanently-idle open transactions (Wolverine's advisory-lock listener sessions, a stranded
+    // coordinator lock) otherwise satisfy the liveness probe's open-transaction clause forever and a
+    // genuinely dead gap never skips. Bounded and compacted: consecutive polls at the same value
+    // collapse to one entry keeping the LATEST timestamp (the fence wants the last moment the value
+    // was still that low). Guarded by its own lock — Detect (poll loop) and DetectInSafeZone
+    // (rebuild/catch-up) can run concurrently.
+    //
+    // #5091: this tracks the highest ALLOCATED value, not the reserved ceiling (last_value). Postgres
+    // reports last_value = 1 / is_called = false for a sequence nothing has drawn from, so a history
+    // of reserved ceilings never contains a reading at or below a mark of 0 and a gap stuck there
+    // could never be fenced — the case in #5090. The allocated high reads 0 for a pristine sequence,
+    // which is the reading that makes mark 0 fenceable, and it is still a sound fence: everything
+    // above it was handed out strictly after the poll that observed it.
     private readonly object _allocationHistoryLock = new();
     private readonly List<AllocationObservation> _allocationHistory = new();
     private const int AllocationHistoryCapacity = 128;
 
-    private sealed record AllocationObservation(DateTimeOffset Timestamp, long HighestSequence);
+    private sealed record AllocationObservation(DateTimeOffset Timestamp, long AllocatedHigh);
 
     public HighWaterDetector(MartenDatabase runner, EventGraph graph, ILogger logger)
     {
@@ -871,10 +880,13 @@ select coalesce(
     // #4953 follow-up: feed the allocation history from every statistics poll — see _allocationHistory
     private void recordAllocationObservation(HighWaterStatistics statistics)
     {
-        // Under per-tenant event partitioning HighestSequence is the committed max(seq_id), NOT the
-        // reserved last_value (#4712) — "committed height <= mark at time T" says nothing about what
-        // was ALLOCATED by then, so no sound fence can be built from it.
-        if (_graph.UseTenantPartitionedEvents || statistics.Timestamp == default)
+        // #5091: the reading has to be the highest ALLOCATED sequence number. Under per-tenant event
+        // partitioning there is none to be had — tenants draw from their own sequences, and
+        // HighestSequence is the committed max(seq_id) (#4712), where "committed height <= mark at
+        // time T" says nothing about what was ALLOCATED by then. AllocatedSequenceHigh is null in
+        // exactly those cases, so no sound fence is built from them.
+        if (statistics is not MartenHighWaterStatistics marten || marten.AllocatedSequenceHigh is not { } allocatedHigh
+            || statistics.Timestamp == default)
         {
             return;
         }
@@ -885,7 +897,7 @@ select coalesce(
             if (count > 0)
             {
                 var last = _allocationHistory[count - 1];
-                if (statistics.HighestSequence == last.HighestSequence)
+                if (allocatedHigh == last.AllocatedHigh)
                 {
                     if (statistics.Timestamp > last.Timestamp)
                     {
@@ -897,13 +909,13 @@ select coalesce(
 
                 // Readings can complete out of order across concurrent callers; only ever append a
                 // strictly newer, strictly higher reading so the list stays monotone in both fields
-                if (statistics.HighestSequence < last.HighestSequence || statistics.Timestamp <= last.Timestamp)
+                if (allocatedHigh < last.AllocatedHigh || statistics.Timestamp <= last.Timestamp)
                 {
                     return;
                 }
             }
 
-            _allocationHistory.Add(new AllocationObservation(statistics.Timestamp, statistics.HighestSequence));
+            _allocationHistory.Add(new AllocationObservation(statistics.Timestamp, allocatedHigh));
             if (_allocationHistory.Count > AllocationHistoryCapacity)
             {
                 _allocationHistory.RemoveAt(0);
@@ -911,16 +923,18 @@ select coalesce(
         }
     }
 
-    // The latest server time at which the reserved last_value was still at or below the stuck mark —
-    // every sequence number above the mark was allocated strictly after this moment. Null when no
-    // qualifying poll is in memory (detector started while the gap already existed).
+    // The latest server time at which the highest ALLOCATED sequence number was still at or below the
+    // stuck mark — every sequence number above the mark was therefore handed out strictly after this
+    // moment. Null when no qualifying poll is in memory (detector started while the gap already
+    // existed). #5091: reading allocation rather than the reserved ceiling is what lets a gap stuck at
+    // mark 0 be fenced at all, since a pristine sequence reserves 1 while having allocated nothing.
     private DateTimeOffset? findAllocationFence(long mark)
     {
         lock (_allocationHistoryLock)
         {
             for (var i = _allocationHistory.Count - 1; i >= 0; i--)
             {
-                if (_allocationHistory[i].HighestSequence <= mark)
+                if (_allocationHistory[i].AllocatedHigh <= mark)
                 {
                     return _allocationHistory[i].Timestamp;
                 }
