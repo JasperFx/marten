@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
@@ -109,6 +110,18 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
                         database.Identifier);
                 }
             }
+
+            // #5093: roll every configured rolling-window RANGE partition forward and retire the aged ones.
+            // The migration above already provisions the leading edge — with a partition manager attached the
+            // delta is additive — but migration never removes data, so the retention drop has to be driven
+            // separately. Gated on the same opt-in as the migration itself: applying changes on startup is
+            // how a host says "Marten owns this schema", and dropping partitions is emphatically a schema
+            // change. It runs BEFORE the assert below on purpose — once the clock crosses a period boundary
+            // the database is legitimately missing the new leading-edge partition, and asserting first would
+            // fail a deployment over a difference this pass is about to close.
+            await RollingPartitions
+                .ApplyAsync(databases.OfType<PostgresqlDatabase>(), _logger, rollForward: true, dropAged: true,
+                    cancellationToken).ConfigureAwait(false);
         }
 
         if (Store.Options.ShouldAssertDatabaseMatchesConfigurationOnStartup)
