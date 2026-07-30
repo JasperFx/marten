@@ -205,10 +205,74 @@ Weasel compare the declared bounds against the database by instant, so the parti
 deployments and across servers configured with different time zones.
 :::
 
-More commonly for time-series data, teams roll partitions forward with a scheduler or
-[pg_partman](https://github.com/pgpartman/pg_partman) rather than declaring every partition up front. Use
-the externally managed variant so Marten creates the partitioned parent table but leaves the individual
-partitions alone:
+#### Rolling Time Windows <Badge type="tip" text="9.22" />
+
+Declaring every partition up front only works while the set of partitions is fixed. Real time-series
+storage needs the partition set to *move*: provision next month, drop last year. Rather than hand-writing
+that DDL, describe the window and let Marten own it:
+
+<!-- snippet: sample_partitioning_document_by_rolling_range -->
+<a id='snippet-sample_partitioning_document_by_rolling_range'></a>
+```cs
+opts.Schema.For<MetricsSample>()
+    .Duplicate(x => x.BucketEnd)
+    // Keep 12 months of history, provision 3 months ahead. Marten creates the partitions at the
+    // leading edge and drops the aged ones at the trailing edge -- no application-authored DDL.
+    .PartitionOn(x => x.BucketEnd,
+        x => x.ByRollingRange(PartitionPeriod.Month, periodsAhead: 3, periodsBehind: 12));
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/rolling_range_partitioning.cs#L36-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_partitioning_document_by_rolling_range' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The window — periods retained behind, the current period, periods provisioned ahead — is a pure function
+of the policy and the clock, which is what makes this safe: a window that has rolled forward differs from
+the database by exactly one new partition at the leading edge and one aged partition at the trailing edge.
+Marten's schema migration only ever *adds* the new one, so rolling forward never triggers a destructive
+table rebuild the way a moved list of declared ranges would. Partitions are named `m202607`, `d20260730`,
+`y2026` and so on after the period they cover, and a `DEFAULT` overflow partition is always created, so a
+row written outside the provisioned window is stored rather than rejected.
+
+`PartitionPeriod` supports `Hour`, `Day`, `Week`, `Month`, and `Year`.
+
+Marten runs the maintenance pass — roll forward, then drop everything below the retention floor — at
+startup, alongside the [schema changes it already applies](/schema/migrations):
+
+```cs
+builder.Services.AddMarten(opts =>
+{
+    // ... the ByRollingRange() configuration above
+}).ApplyAllDatabaseChangesOnStartup();
+```
+
+Dropping an aged partition is a `DROP TABLE` of one child table. That is the whole point: retention reclaim
+stays O(1) instead of being a mass `DELETE` that bloats the table and forces vacuum churn. Only partitions
+the policy itself named are ever dropped, so a hand-created partition, or one left over from a different
+period size, is left strictly alone.
+
+If a process is long-lived enough to outrun the number of periods you provision ahead — an hourly window
+especially — run the pass yourself on whatever cadence the period size demands:
+
+<!-- snippet: sample_applying_rolling_partitions -->
+<a id='snippet-sample_applying_rolling_partitions'></a>
+```cs
+// Roll every rolling-window table forward to its current window and drop the partitions that have
+// aged past their retention floor. Idempotent, and safe to run from several nodes at once.
+await store.Advanced.ApplyRollingPartitionsAsync(token);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/rolling_range_partitioning.cs#L50-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_applying_rolling_partitions' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: warning
+`ApplyRollingPartitionsAsync()` deletes data by design: everything in the aged partitions goes with them.
+Use `Advanced.RollPartitionsForwardAsync()` for the purely additive half if you want to provision without
+making a retention decision, and `Advanced.DropAgedRollingPartitionsAsync()` for retention alone.
+:::
+
+#### Externally Managed Range Partitions
+
+If something outside Marten genuinely owns the partitions — [pg_partman](https://github.com/pgpartman/pg_partman),
+or a migration tool of your own — use the externally managed variant so Marten creates the partitioned
+parent table but leaves the individual partitions alone:
 
 <!-- snippet: sample_partitioning_document_by_date_externally_managed -->
 <a id='snippet-sample_partitioning_document_by_date_externally_managed'></a>

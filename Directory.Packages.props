@@ -288,9 +288,17 @@
          narrowing cast (#4614/#4742), so on 9.18.0–9.20.1 the column landed in Columns.Different, the table
          was classified Update, and AssertDatabaseMatchesConfigurationAsync threw with an EMPTY change set —
          Bug_4614_revision_column_int_for_IRevisioned's assert-check test fails on every version in that
-         range. 9.18/9.19/9.20 are otherwise additive for Marten and ride along (compile-verified). -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.20.2" />
-    <PackageVersion Include="Weasel.Storage" Version="9.20.2" />
+         range. 9.18/9.19/9.20 are otherwise additive for Marten and ride along (compile-verified).
+         9.21.0 (weasel#401, marten#5093): ManagedRangePartitions — the RANGE analogue of
+         ManagedListPartitions. A RollingWindowPolicy (period size, periods ahead, periods retained)
+         attached through RangePartitioning.UsePartitionManager makes the partition set a pure function
+         of the clock, so RangePartitioning.CreateDelta turns purely ADDITIVE instead of resolving a
+         rolled-forward window to PartitionDelta.Rebuild. That is what lets Marten own a time-series
+         document table's partitions end to end (PartitioningExpression.ByRollingRange) rather than
+         pushing users onto ByExternallyManagedRangePartitions, which also opts them out of Weasel's
+         ordering and dependency management (see JasperFx/CritterWatch#886). -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.21.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.21.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

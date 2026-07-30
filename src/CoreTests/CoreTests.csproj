@@ -26,6 +26,9 @@
         <PackageReference Include="Jil" />
         <PackageReference Include="Microsoft.FeatureManagement" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <!-- #5093: the rolling range partition tests roll the window forward by moving the clock,
+             not by waiting for a calendar month. -->
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
         <PackageReference Include="Npgsql.DependencyInjection" />
         <PackageReference Include="xunit.runner.visualstudio">
             <PrivateAssets>all</PrivateAssets>

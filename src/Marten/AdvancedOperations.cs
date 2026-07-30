@@ -404,6 +404,61 @@ public class AdvancedOperations
     }
 
     /// <summary>
+    ///     Roll every document table configured with <c>PartitionOn(x =&gt; x.Timestamp, x =&gt; x.ByRollingRange(...))</c>
+    ///     forward to its current window and drop the partitions that have aged past the policy's retention
+    ///     floor. Idempotent and safe to run concurrently from several nodes.
+    ///     <para>
+    ///         Marten already runs this at startup when the host applies database changes on startup. Call it
+    ///         yourself on whatever cadence the period size demands (an hourly window needs a much tighter
+    ///         cadence than a monthly one) if the process is long-lived enough to outrun the number of periods
+    ///         provisioned ahead. Rows outside the provisioned window are never rejected in the meantime —
+    ///         a managed rolling range always carries a DEFAULT overflow partition.
+    ///     </para>
+    ///     <para>
+    ///         Dropping an aged partition destroys the rows in it. That is the point: it is what makes
+    ///         time-based retention an O(1) <c>DROP TABLE</c> instead of a mass <c>DELETE</c>. Use
+    ///         <see cref="RollPartitionsForwardAsync" /> for the purely additive half.
+    ///     </para>
+    /// </summary>
+    /// <seealso href="https://github.com/JasperFx/marten/issues/5093" />
+    public async Task<TablePartitionStatus[]> ApplyRollingPartitionsAsync(CancellationToken token)
+    {
+        var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
+        return await RollingPartitions
+            .ApplyAsync(databases.OfType<PostgresqlDatabase>(), rollingPartitionLogger(), rollForward: true,
+                dropAged: true, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     The purely additive half of <see cref="ApplyRollingPartitionsAsync" />: create the partitions of the
+    ///     current rolling window that do not exist yet, plus the DEFAULT overflow partition. Nothing is ever
+    ///     dropped, so this is safe to run without making a retention decision.
+    /// </summary>
+    public async Task<TablePartitionStatus[]> RollPartitionsForwardAsync(CancellationToken token)
+    {
+        var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
+        return await RollingPartitions
+            .ApplyAsync(databases.OfType<PostgresqlDatabase>(), rollingPartitionLogger(), rollForward: true,
+                dropAged: false, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     The retention half of <see cref="ApplyRollingPartitionsAsync" />: drop every rolling-range partition
+    ///     older than its policy's retention floor. Only partitions the policy itself named are considered, so
+    ///     a hand-created partition, or one left over from a different period size, is left strictly alone.
+    /// </summary>
+    public async Task<TablePartitionStatus[]> DropAgedRollingPartitionsAsync(CancellationToken token)
+    {
+        var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
+        return await RollingPartitions
+            .ApplyAsync(databases.OfType<PostgresqlDatabase>(), rollingPartitionLogger(), rollForward: false,
+                dropAged: true, token).ConfigureAwait(false);
+    }
+
+    private ILogger rollingPartitionLogger() =>
+        _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+
+    /// <summary>
     ///     "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
     ///     tables *if* Marten-managed partitioning is applied to this store. This assumes a 1-1
     ///     relationship between tenant ids and table partitions
