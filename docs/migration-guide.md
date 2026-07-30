@@ -1,5 +1,52 @@
 # Migration Guide
 
+## Key Changes in 9.21.0
+
+### Optional function update — `mt_quick_append_events` <Badge type="tip" text="no action required" />
+
+Marten 9.21 changes one line in the `mt_quick_append_events` PostgreSQL function. **This is not a
+required migration.** You do not have to patch anything, schedule anything, or coordinate a
+deployment window. If you do nothing at all, 9.21 is correct against the function you already have
+deployed.
+
+The change fixes [#5062](https://github.com/JasperFx/marten/issues/5062): called with an *empty*
+event array, the function returned an array whose single element was `NULL`, because
+`array_length('{}', 1)` is `NULL` in PostgreSQL rather than `0`:
+
+```sql
+-- before
+return_value := ARRAY[event_version + array_length(event_ids, 1)];
+-- after
+return_value := ARRAY[event_version + COALESCE(array_length(event_ids, 1), 0)];
+```
+
+Npgsql could not read that value into `long[]`, and the resulting `InvalidCastException` was thrown
+from the batch's post-processing loop — where it displaced whatever exception had actually made the
+append fail, leaving callers with an unrelated, non-retryable error.
+
+#### Why you can ignore it
+
+Marten 9.21 also fixes this on the client side, and that fix is the one that matters for existing
+deployments: the append operation no longer reads the returned array at all when the batch carries
+no events, and the one code path that could call the function with an empty array no longer does.
+Those changes ship in the assembly, so **the masking behavior is gone the moment you upgrade the
+NuGet package** — regardless of which version of the function your database holds.
+
+#### What you will see, and when
+
+* **Default (`AutoCreate.CreateOrUpdate` or `All`)** — the function is refreshed the next time
+  Marten ensures event storage exists. Nothing to do; it is a `CREATE OR REPLACE FUNCTION` with no
+  lock on your event data.
+* **`AutoCreate.None` with `db-patch` / `db-apply` pipelines** — your next patch will contain one
+  extra `CREATE OR REPLACE FUNCTION … mt_quick_append_events` statement. Apply it whenever it suits
+  your normal cadence. It is idempotent, and Weasel will stop reporting the delta once applied.
+
+If you would rather not carry a pending delta, generate and apply the patch at your convenience:
+
+```bash
+dotnet run -- db-patch ./schema-9.21.sql --drop ./schema-9.21.drop.sql
+```
+
 ## Key Changes in 9.4.0
 
 ### Required schema migration — DCB tag-version side table <Badge type="warning" text="action required" />
