@@ -99,6 +99,23 @@ Some monitoring tools erroneously report this query as "load", however this quer
 If this monitoring is undesirable for your scenario, you can opt-out by setting `options.Events.UseMonitoredAdvisoryLock` to false when configuring Marten.
 :::
 
+By default the `HotCold` leadership lock is transaction-scoped (`pg_try_advisory_xact_lock`), which
+means the session holding it keeps a transaction open for as long as it is the leader. Set
+`options.Events.UseAdvisoryLockTransaction` to false to use a session-scoped lock instead, which holds
+no open transaction.
+
+::: warning
+Prefer `UseAdvisoryLockTransaction = false` when a **single process starts more than one
+daemon-hosting `IHost` over its lifetime** — the usual shape of an xUnit integration suite that boots
+and tears down a host per test class. Should any leadership lock session outlive its host, a
+transaction-scoped lock leaves that session `idle in transaction` for the rest of the process, and the
+daemon's high-water gap detection has to treat any transaction older than a sequence gap as a
+potential in-flight append it must not skip past. One such session is enough to pin the high water
+mark for every later daemon in that process, which surfaces as `WaitForNonStaleProjectionDataAsync`
+timing out and a repeating `Daemon high water detection is holding before the sequence gap` log. A
+session-scoped lock cannot cause that, because it holds no transaction to be seen.
+:::
+
 ## Projection Distribution
 
 If your Marten store is only using a single database, Marten will distribute projections by projection type. If your store is using
