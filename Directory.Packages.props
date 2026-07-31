@@ -296,9 +296,16 @@
          rolled-forward window to PartitionDelta.Rebuild. That is what lets Marten own a time-series
          document table's partitions end to end (PartitioningExpression.ByRollingRange) rather than
          pushing users onto ByExternallyManagedRangePartitions, which also opts them out of Weasel's
-         ordering and dependency management (see JasperFx/CritterWatch#886). -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.21.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.21.0" />
+         ordering and dependency management (see JasperFx/CritterWatch#886).
+         9.21.1 (weasel#416): partition bound VALUES are now escaped. FormatSqlValue doubles an embedded
+         single quote, and no longer returns an already-quote-wrapped string verbatim — that short-circuit
+         existed for idempotency but meant a quote-wrapped value skipped escaping entirely. Marten reaches
+         this with a raw tenant id as the partition value on every provisioning path
+         (ShardedTenancy.createPartitionsForTenant, AddMartenManagedTenantsAsync), and Marten's own
+         DatabaseScopedTenantPartitions.Partitions() override only covered the schema-apply delta, not the
+         runtime resolveBuckets path. REQUIRED alongside the tenant-id identifier escaping in this commit. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.21.1" />
+    <PackageVersion Include="Weasel.Storage" Version="9.21.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
