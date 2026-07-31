@@ -164,14 +164,21 @@
          was overwritten, so a ResumeAsync not preceded by PauseAsync orphaned a live executeAsync for
          the rest of the process — one that re-attained the leadership lock right after StopAsync
          released it, and that won an advisory-lock handle after the lock had been disposed. Pairs
-         with Weasel 9.20.1 (weasel#396), which is what makes that stranded handle impossible. -->
-    <PackageVersion Include="JasperFx" Version="2.36.3" />
-    <PackageVersion Include="JasperFx.Events" Version="2.36.3" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.36.3">
+         with Weasel 9.20.1 (weasel#396), which is what makes that stranded handle impossible.
+         JasperFx 2.37.0: jasperfx#590 — OptionsDescription no longer loses an entire diagnostic
+         description to one throwing property getter; set-only properties and indexers are skipped, and
+         a getter that throws is recorded as OptionsValue.Unreadable (exception TYPE only, never the
+         message, since descriptions ship to monitoring consoles). Also carries the jasperfx#594 patch
+         half (a timed-out blue/green side-effect gate re-reads progression and succeeds when the replay
+         had already reached the mark, plus a configurable DaemonSettings.SideEffectGateTimeout),
+         jasperfx#595 (BatchingChannel could deliver its trailing batch twice on shutdown) and #597. -->
+    <PackageVersion Include="JasperFx" Version="2.37.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.37.0" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.37.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.36.3" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.37.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -222,7 +229,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.20.2" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.23.0" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -303,9 +310,14 @@
          this with a raw tenant id as the partition value on every provisioning path
          (ShardedTenancy.createPartitionsForTenant, AddMartenManagedTenantsAsync), and Marten's own
          DatabaseScopedTenantPartitions.Partitions() override only covered the schema-apply delta, not the
-         runtime resolveBuckets path. REQUIRED alongside the tenant-id identifier escaping in this commit. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.21.1" />
-    <PackageVersion Include="Weasel.Storage" Version="9.21.1" />
+         runtime resolveBuckets path. REQUIRED alongside the tenant-id identifier escaping in this commit.
+         9.22.0: carries the JasperFx 2.37.0 floor (weasel#417) so this matrix stays coherent rather
+         than resolving transitively.
+         9.23.0 (weasel#416): AssertValidIdentifier now rejects a quote or semicolon outright. This is
+         the belt to 9.21.1's braces — 9.21.1 made partition bound VALUES escape correctly, and this
+         closes the identifier side of the same surface. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.23.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.23.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
