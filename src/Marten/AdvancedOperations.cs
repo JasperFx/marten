@@ -689,6 +689,51 @@ public class AdvancedOperations
     }
 
     /// <summary>
+    /// Characters that can break a tenant id out of the SQL context it is written into when that tenant
+    /// id is used as a partition suffix or partition bound value. A double quote terminates a quoted
+    /// identifier, a single quote terminates a string literal, a backslash is an escape introducer in
+    /// <c>E''</c> strings, and control characters (notably NUL and newline) let a trailing <c>--</c>
+    /// comment be closed. Hyphens, dots and the rest of a GUID are deliberately NOT rejected.
+    /// </summary>
+    private static bool IsUnsafeForDdl(char c) => c is '"' or '\'' or '\\' || char.IsControl(c);
+
+    /// <summary>
+    /// Guard a tenant id that is about to be used to build DDL — as a LIST partition suffix, a partition
+    /// bound literal, or a per-tenant sequence name.
+    ///
+    /// <para>
+    /// The <c>DefaultTenancy</c> provisioning path has always run every partition suffix through
+    /// <see cref="AssertValidPostgresqlIdentifiers"/>, but the sharded path (<c>ShardedTenancy</c>) derives
+    /// the suffix from the tenant id verbatim and validated nothing. That asymmetry was a SQL injection:
+    /// a tenant id containing a double quote closed the per-tenant sequence identifier and the remainder
+    /// executed as additional statements. <see cref="AssertValidPostgresqlIdentifiers"/> cannot simply be
+    /// reused there, because its <c>^[A-Za-z0-9_]+$</c> rule rejects a plain GUID — sharded tenancy has
+    /// always accepted hyphenated tenant ids and the <c>QuickAppendEventFunction</c> resolves the sequence
+    /// from the raw stored suffix, so normalizing is not an option either (see
+    /// <see cref="Events.Schema.PerTenantEventSequences.QuotedSequenceName"/>).
+    /// </para>
+    ///
+    /// <para>
+    /// So this is a narrow denylist rather than an allowlist: it rejects only the characters that can
+    /// escape a quoted identifier or a string literal, and leaves every character a realistic tenant id
+    /// actually uses. Escaping at the sink is the primary fix; this is the defence in depth that also
+    /// keeps a hostile value out of the partition-bound DDL that Weasel builds.
+    /// </para>
+    /// </summary>
+    internal static void AssertTenantIdSafeForDdl(string tenantId)
+    {
+        if (tenantId == null) throw new ArgumentNullException(nameof(tenantId));
+
+        if (!tenantId.Any(IsUnsafeForDdl)) return;
+
+        throw new ArgumentException(
+            $"Tenant id '{tenantId}' contains characters that are not allowed in a tenant id used to build "
+            + "PostgreSQL DDL (double quote, single quote, backslash, or a control character). This tenant "
+            + "id would be written into partition and sequence names for this tenant.",
+            nameof(tenantId));
+    }
+
+    /// <summary>
     /// The maximum length of a PostgreSQL object identifier in bytes (NAMEDATALEN - 1). Identifiers
     /// longer than this are silently truncated by Postgres, which can collide partition tables.
     /// </summary>

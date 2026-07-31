@@ -337,6 +337,27 @@ internal class BulkEventAppender
     /// suffix resolved from the tenants partition table exactly like the quick-append function does —
     /// so the sequence's position stays consistent with the imported events and live appends continue
     /// seamlessly after an import. Otherwise the store-global <c>mt_events_sequence</c>.
+    ///
+    /// <para>
+    /// Returns a <b>quoted</b> identifier, built by the same
+    /// <see cref="Events.Schema.PerTenantEventSequences.QuotedSequenceName"/> helper the create/drop DDL
+    /// uses. This used to hand-roll an unquoted name, which was wrong two ways.
+    /// </para>
+    ///
+    /// <para>
+    /// Security: the suffix is read straight back out of the tenants table, where sharded provisioning
+    /// stores the tenant id verbatim. A hostile tenant id persisted at provisioning time therefore
+    /// re-emerged here and broke out of the <c>nextval('…')</c> string literal — a stored injection fired
+    /// by a later, unrelated bulk import rather than by the call that planted it.
+    /// </para>
+    ///
+    /// <para>
+    /// Functionally: <c>regclassin</c> is lenient, so <c>nextval('schema.mt_events_sequence_tenant-a')</c>
+    /// did resolve despite the hyphen. But <see cref="advanceSequencePastAsync"/> also interpolates this
+    /// name into a <em>bare</em> identifier position (<c>select last_value from …</c>), where a hyphenated
+    /// or GUID suffix raised <c>42601 syntax error at or near "-"</c>. So <c>PreserveSourceSequence</c>
+    /// bulk imports failed outright for the hyphenated tenant ids that sharded tenancy has always allowed.
+    /// </para>
     /// </summary>
     private async Task<string> resolveSequenceNameAsync(
         NpgsqlConnection conn,
@@ -346,7 +367,7 @@ internal class BulkEventAppender
     {
         if (!_events.UseTenantPartitionedEvents || tenantId == null)
         {
-            return $"{schema}.mt_events_sequence";
+            return $"\"{Events.Schema.PerTenantEventSequences.EscapeIdentifierPart(schema)}\".\"mt_events_sequence\"";
         }
 
         var tenantsTable = _events.Options.TenantPartitions!.TenantsTableName;
@@ -362,8 +383,17 @@ internal class BulkEventAppender
                 "(or the sharded AddTenantToShardAsync) before bulk-importing its events.");
         }
 
-        return $"{schema}.mt_events_sequence_{suffix}";
+        return Events.Schema.PerTenantEventSequences.QuotedSequenceName(schema, suffix);
     }
+
+    /// <summary>
+    /// Embed an already-quoted sequence identifier inside a single-quoted SQL literal, as
+    /// <c>nextval</c>/<c>setval</c> require. The identifier is a quoted name rather than a bare one, so it
+    /// can legitimately contain characters — including a single quote from a tenant id — that would
+    /// otherwise terminate the literal; double them the way any string literal must.
+    /// </summary>
+    private static string AsRegClassLiteral(string quotedSequenceName)
+        => quotedSequenceName.Replace("'", "''");
 
     private async Task<Queue<long>> fetchSequences(
         NpgsqlConnection conn,
@@ -385,7 +415,7 @@ internal class BulkEventAppender
         int count,
         CancellationToken cancellation)
     {
-        var sql = $"select nextval('{sequenceName}') from generate_series(1,{count})";
+        var sql = $"select nextval('{AsRegClassLiteral(sequenceName)}') from generate_series(1,{count})";
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
         await using var reader = await cmd.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
@@ -803,7 +833,7 @@ ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progre
     {
         await using var cmd = conn.CreateCommand();
         cmd.CommandText =
-            $"select setval('{sequenceName}', greatest((select last_value from {sequenceName}), @seq), true)";
+            $"select setval('{AsRegClassLiteral(sequenceName)}', greatest((select last_value from {sequenceName}), @seq), true)";
         cmd.Parameters.AddWithValue("seq", seq);
         await cmd.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
     }

@@ -65,9 +65,25 @@ internal class PerTenantEventSequences: ISchemaObject
     /// the append function can never find, trading a schema-apply failure for a
     /// <c>42P01 relation does not exist</c> on the first append.
     /// </para>
+    ///
+    /// <para>
+    /// Quoting alone is <b>not</b> enough. An embedded double quote in the suffix closes the identifier
+    /// early and the rest of the value runs as additional statements — Npgsql permits multi-statement
+    /// command text, so <c>tenant"; drop table ...; --</c> executed. The sharded tenancy path derives the
+    /// suffix from a caller-supplied tenant id verbatim and never validated it, so this was reachable
+    /// straight from <c>Advanced.AddTenantToShardAsync</c>. Double every embedded quote, which is exactly
+    /// what Postgres' own <c>quote_ident</c>/<c>%I</c> does — so the escaped name still denotes the same
+    /// object the append function resolves from the raw stored suffix.
+    /// </para>
     /// </summary>
     internal static string QuotedSequenceName(string eventSchema, string partitionSuffix)
-        => $"\"{eventSchema}\".\"mt_events_sequence_{partitionSuffix}\"";
+        => $"\"{EscapeIdentifierPart(eventSchema)}\".\"mt_events_sequence_{EscapeIdentifierPart(partitionSuffix)}\"";
+
+    /// <summary>
+    /// Escape a value bound for the inside of a double-quoted PostgreSQL identifier by doubling any embedded
+    /// double quote — the only character that is special there. Mirrors <c>quote_ident</c>/<c>%I</c>.
+    /// </summary>
+    internal static string EscapeIdentifierPart(string part) => part.Replace("\"", "\"\"");
 
     /// <summary>
     /// The partition suffix of every tenant currently registered on the shared partition manager.

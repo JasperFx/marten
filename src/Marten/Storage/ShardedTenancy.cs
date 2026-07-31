@@ -364,6 +364,7 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
     public async ValueTask AssignTenantAsync(string tenantId, string databaseId, CancellationToken ct)
     {
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+        AdvancedOperations.AssertTenantIdSafeForDdl(tenantId);
         await maybeApplyChanges().ConfigureAwait(false);
         await maybeSeedDatabases().ConfigureAwait(false);
 
@@ -789,6 +790,12 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
     private async Task<MartenDatabase> findOrAssignTenantDatabaseAsync(string tenantId)
     {
+        // The single choke point for auto-provisioning: GetTenant, GetTenantAsync and FindOrCreateDatabase
+        // all land here on a cache miss, so merely resolving an unknown tenant id provisions it and runs
+        // partition + sequence DDL built from that id. Validate before any of that happens. Guarding here
+        // rather than in the three callers keeps it off the cached hot path.
+        AdvancedOperations.AssertTenantIdSafeForDdl(tenantId);
+
         await maybeApplyChanges().ConfigureAwait(false);
         await maybeSeedDatabases().ConfigureAwait(false);
 
@@ -955,6 +962,13 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
     private async Task createPartitionsForTenant(MartenDatabase database, string tenantId, CancellationToken ct)
     {
         if (_options.TenantPartitions == null) return;
+
+        // Backstop. Every current caller validates earlier, but this is the method that actually turns a
+        // tenant id into DDL — both the partition bound Weasel writes and the per-tenant sequence name —
+        // so the guard lives here too and a future caller cannot bypass it. Deliberately NOT applied to
+        // the removal path: a store that already holds a poisoned suffix from an earlier version must
+        // still be able to drop that tenant to remediate.
+        AdvancedOperations.AssertTenantIdSafeForDdl(tenantId);
 
         var partitions = _options.TenantPartitions.Partitions;
         var dict = new Dictionary<string, string> { { tenantId, tenantId } };
