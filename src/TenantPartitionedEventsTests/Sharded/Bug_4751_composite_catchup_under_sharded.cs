@@ -63,48 +63,27 @@ public partial class CmpTripCountProjection: SingleStreamProjection<CmpTripCount
 /// </para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class Bug_4751_composite_catchup_under_sharded: IAsyncLifetime
+public class Bug_4751_composite_catchup_under_sharded: ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private readonly ITestOutputHelper _output;
     private DocumentStore _store = null!;
 
-    public Bug_4751_composite_catchup_under_sharded(ShardedPartitionedFixture fixture, ITestOutputHelper output)
+    public Bug_4751_composite_catchup_under_sharded(ShardedPartitionedFixture fixture, ITestOutputHelper output): base(fixture)
     {
-        _fixture = fixture;
         _output = output;
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_store != null!) await _store.DisposeAsync();
     }
 
     [Fact]
     public async Task composite_reaches_non_stale_via_normal_daemon_catchup()
     {
-        _store = (DocumentStore)DocumentStore.For(opts =>
+        _store = TrackStore((DocumentStore)DocumentStore.For(opts =>
         {
             opts.MultiTenantedWithShardedDatabases(x =>
             {
                 x.ConnectionString = ConnectionSource.ConnectionString;
                 x.SchemaName = "sharded";
                 x.PartitionSchemaName = "tenants";
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
                 {
                     x.AddDatabase(dbName, connStr);
                 }
@@ -124,9 +103,9 @@ public class Bug_4751_composite_catchup_under_sharded: IAsyncLifetime
 
             opts.Schema.For<CmpTrip>().DocumentAlias("cmp_trip");
             opts.Schema.For<CmpTripCount>().DocumentAlias("cmp_trip_count");
-        });
+        }));
 
-        var shard = _fixture.DbNames[0];
+        var shard = Fixture.DbNames[0];
         await _store.Advanced.AddTenantToShardAsync("tenant_a", shard, CancellationToken.None);
 
         const int streams = 10;

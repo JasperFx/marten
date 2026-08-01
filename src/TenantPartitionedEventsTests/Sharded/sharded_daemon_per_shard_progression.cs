@@ -51,41 +51,18 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// </para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class sharded_daemon_per_shard_progression : IAsyncLifetime
+public class sharded_daemon_per_shard_progression : ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private IDocumentStore _store = null!;
 
-    public sharded_daemon_per_shard_progression(ShardedPartitionedFixture fixture)
+    public sharded_daemon_per_shard_progression(ShardedPartitionedFixture fixture): base(fixture)
     {
-        _fixture = fixture;
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
     }
 
     [Fact]
     public async Task daemon_catches_up_tenants_on_separate_shards_independently()
     {
-        _store = DocumentStore.For(opts =>
+        _store = TrackStore(DocumentStore.For(opts =>
         {
             opts.MultiTenantedWithShardedDatabases(x =>
             {
@@ -93,7 +70,7 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
                 x.SchemaName = "sharded";
                 x.PartitionSchemaName = "tenants";
 
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
                 {
                     x.AddDatabase(dbName, connStr);
                 }
@@ -109,12 +86,12 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
             opts.Projections.Add<ShardedDaemonProjection>(ProjectionLifecycle.Async);
 
             opts.Schema.For<ShardedDaemonCounter>().DocumentAlias("p2c_sdc");
-        });
+        }));
 
         // Assign each tenant to a DIFFERENT shard to exercise the cross-shard
         // daemon catch-up path explicitly.
-        var shardA = _fixture.DbNames[0];
-        var shardB = _fixture.DbNames[1];
+        var shardA = Fixture.DbNames[0];
+        var shardB = Fixture.DbNames[1];
         await _store.Advanced.AddTenantToShardAsync("tenant_on_a", shardA, CancellationToken.None);
         await _store.Advanced.AddTenantToShardAsync("tenant_on_b", shardB, CancellationToken.None);
 
@@ -175,7 +152,7 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
     [Fact]
     public async Task progression_row_for_each_tenant_lives_on_its_own_shard()
     {
-        _store = DocumentStore.For(opts =>
+        _store = TrackStore(DocumentStore.For(opts =>
         {
             opts.MultiTenantedWithShardedDatabases(x =>
             {
@@ -183,7 +160,7 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
                 x.SchemaName = "sharded";
                 x.PartitionSchemaName = "tenants";
 
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
                 {
                     x.AddDatabase(dbName, connStr);
                 }
@@ -196,10 +173,10 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
             opts.Events.AddEventType<ShardedDaemonEvent>();
             opts.Projections.Add<ShardedDaemonProjection>(ProjectionLifecycle.Async);
             opts.Schema.For<ShardedDaemonCounter>().DocumentAlias("p2c_sdc");
-        });
+        }));
 
-        var shardA = _fixture.DbNames[0];
-        var shardB = _fixture.DbNames[2];
+        var shardA = Fixture.DbNames[0];
+        var shardB = Fixture.DbNames[2];
         await _store.Advanced.AddTenantToShardAsync("progress_a", shardA, CancellationToken.None);
         await _store.Advanced.AddTenantToShardAsync("progress_c", shardB, CancellationToken.None);
 
@@ -230,8 +207,8 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
         // row name is the projection name (or composed with tenant id when
         // per-tenant tracking is on); the row's last_seq_id must be > 0
         // because at least one event flowed.
-        var shardAConnStr = _fixture.ConnectionStrings[shardA];
-        var shardBConnStr = _fixture.ConnectionStrings[shardB];
+        var shardAConnStr = Fixture.ConnectionStrings[shardA];
+        var shardBConnStr = Fixture.ConnectionStrings[shardB];
 
         // Poll for the per-tenant progression rows. WaitForNonStaleData can return before a per-tenant
         // agent has committed on a partitioned store (its caught-up check counts store-global shards,

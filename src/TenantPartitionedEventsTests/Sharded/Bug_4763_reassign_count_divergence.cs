@@ -26,48 +26,27 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// (0 active tenants). It fails because A's count remains 1.</para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class Bug_4763_reassign_count_divergence: IAsyncLifetime
+public class Bug_4763_reassign_count_divergence: ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private readonly ITestOutputHelper _output;
     private DocumentStore _store = null!;
 
-    public Bug_4763_reassign_count_divergence(ShardedPartitionedFixture fixture, ITestOutputHelper output)
+    public Bug_4763_reassign_count_divergence(ShardedPartitionedFixture fixture, ITestOutputHelper output): base(fixture)
     {
-        _fixture = fixture;
         _output = output;
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_store != null!) await _store.DisposeAsync();
     }
 
     [Fact]
     public async Task reassigning_a_tenant_decrements_the_source_shard_count()
     {
-        _store = (DocumentStore)DocumentStore.For(opts =>
+        _store = TrackStore((DocumentStore)DocumentStore.For(opts =>
         {
             opts.MultiTenantedWithShardedDatabases(x =>
             {
                 x.ConnectionString = ConnectionSource.ConnectionString;
                 x.SchemaName = "sharded";
                 x.PartitionSchemaName = "tenants";
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
                 {
                     x.AddDatabase(dbName, connStr);
                 }
@@ -79,10 +58,10 @@ public class Bug_4763_reassign_count_divergence: IAsyncLifetime
             opts.Events.UseTenantPartitionedEvents = true;
             opts.Events.AddEventType<ShardedDaemonEvent>();
             opts.Schema.For<ShardedDaemonCounter>().DocumentAlias("p4763_sdc");
-        });
+        }));
 
-        var shardA = _fixture.DbNames[0];
-        var shardB = _fixture.DbNames[1];
+        var shardA = Fixture.DbNames[0];
+        var shardB = Fixture.DbNames[1];
 
         // Assign the tenant to A, then move it to B.
         await _store.Advanced.AddTenantToShardAsync("mover", shardA, CancellationToken.None);

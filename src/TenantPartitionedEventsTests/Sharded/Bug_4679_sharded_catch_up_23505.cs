@@ -55,33 +55,14 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// </para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
+public partial class Bug_4679_sharded_catch_up_23505: ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private readonly ITestOutputHelper _output;
 
-    public Bug_4679_sharded_catch_up_23505(ShardedPartitionedFixture fixture, ITestOutputHelper output)
+    public Bug_4679_sharded_catch_up_23505(ShardedPartitionedFixture fixture, ITestOutputHelper output): base(fixture)
     {
-        _fixture = fixture;
         _output = output;
     }
-
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync() => default;
 
     public class Bug4679Trip
     {
@@ -130,7 +111,7 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
             x.SchemaName = "sharded";
             x.PartitionSchemaName = "tenants";
 
-            foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+            foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
             {
                 x.AddDatabase(dbName, connStr);
             }
@@ -159,14 +140,14 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
         var tenants = new[] { "tA", "tB", "tC", "tD", "tE" };
         var shardAssignment = new Dictionary<string, string>
         {
-            ["tA"] = _fixture.DbNames[0],
-            ["tB"] = _fixture.DbNames[0],
-            ["tC"] = _fixture.DbNames[0],
-            ["tD"] = _fixture.DbNames[1],
-            ["tE"] = _fixture.DbNames[2],
+            ["tA"] = Fixture.DbNames[0],
+            ["tB"] = Fixture.DbNames[0],
+            ["tC"] = Fixture.DbNames[0],
+            ["tD"] = Fixture.DbNames[1],
+            ["tE"] = Fixture.DbNames[2],
         };
 
-        await using var store = (DocumentStore)DocumentStore.For(configure);
+        var store = TrackStore((DocumentStore)DocumentStore.For(configure));
         foreach (var tenant in tenants)
         {
             await store.Advanced.AddTenantToShardAsync(tenant, shardAssignment[tenant], CancellationToken.None);
@@ -210,7 +191,7 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
         // TENANT-SCOPED (…:All:{tenant}); there is NO bare store-global …:All row (which is what
         // the user reports colliding). This is the guard that would flip red if the per-tenant
         // catch-up ever started writing store-global progression names.
-        var names = await progressionNamesAsync(_fixture.ConnectionStrings[shardAssignment["tA"]]);
+        var names = await progressionNamesAsync(Fixture.ConnectionStrings[shardAssignment["tA"]]);
         names.ShouldContain("Bug4679ShardedTrip:All:tA");
         names.ShouldContain("Bug4679ShardedTrip:All:tB");
         names.ShouldNotContain("Bug4679ShardedTrip:All");
@@ -225,7 +206,7 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
             x.SchemaName = "sharded";
             x.PartitionSchemaName = "tenants";
 
-            foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+            foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
             {
                 x.AddDatabase(dbName, connStr);
             }
@@ -255,14 +236,14 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
         var tenants = new[] { "tA", "tB", "tC", "tD", "tE" };
         var shardAssignment = new Dictionary<string, string>
         {
-            ["tA"] = _fixture.DbNames[0],
-            ["tB"] = _fixture.DbNames[0],
-            ["tC"] = _fixture.DbNames[0],
-            ["tD"] = _fixture.DbNames[1],
-            ["tE"] = _fixture.DbNames[2],
+            ["tA"] = Fixture.DbNames[0],
+            ["tB"] = Fixture.DbNames[0],
+            ["tC"] = Fixture.DbNames[0],
+            ["tD"] = Fixture.DbNames[1],
+            ["tE"] = Fixture.DbNames[2],
         };
 
-        await using var store = (DocumentStore)DocumentStore.For(configureComposite);
+        var store = TrackStore((DocumentStore)DocumentStore.For(configureComposite));
         foreach (var tenant in tenants)
         {
             await store.Advanced.AddTenantToShardAsync(tenant, shardAssignment[tenant], CancellationToken.None);
@@ -294,7 +275,7 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
             _output.WriteLine(e.ToString());
         }
 
-        var names = await progressionNamesAsync(_fixture.ConnectionStrings[shardAssignment["tA"]]);
+        var names = await progressionNamesAsync(Fixture.ConnectionStrings[shardAssignment["tA"]]);
         _output.WriteLine("=== mt_event_progression rows on shard_a ===");
         foreach (var n in names) _output.WriteLine(n);
 

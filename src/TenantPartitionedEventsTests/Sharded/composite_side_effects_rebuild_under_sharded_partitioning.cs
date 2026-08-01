@@ -40,34 +40,15 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// rebuild completes (no deadlock) and every tenant's documents on the multi-tenant shard materialize.
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public partial class composite_side_effects_rebuild_under_sharded_partitioning: IAsyncLifetime
+public partial class composite_side_effects_rebuild_under_sharded_partitioning: ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private readonly ITestOutputHelper _output;
     private readonly RecordingOutbox _outbox = new();
 
-    public composite_side_effects_rebuild_under_sharded_partitioning(ShardedPartitionedFixture fixture, ITestOutputHelper output)
+    public composite_side_effects_rebuild_under_sharded_partitioning(ShardedPartitionedFixture fixture, ITestOutputHelper output): base(fixture)
     {
-        _fixture = fixture;
         _output = output;
     }
-
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync() => default;
 
     public record TripStarted(Guid Id);
     public record TripLeg(double Distance);
@@ -116,7 +97,7 @@ public partial class composite_side_effects_rebuild_under_sharded_partitioning: 
             x.SchemaName = "sharded";
             x.PartitionSchemaName = "tenants";
 
-            foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+            foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
             {
                 x.AddDatabase(dbName, connStr);
             }
@@ -148,14 +129,14 @@ public partial class composite_side_effects_rebuild_under_sharded_partitioning: 
         var tenants = new[] { "tA", "tB", "tC", "tD", "tE" };
         var shardAssignment = new Dictionary<string, string>
         {
-            ["tA"] = _fixture.DbNames[0],
-            ["tB"] = _fixture.DbNames[0],
-            ["tC"] = _fixture.DbNames[0],
-            ["tD"] = _fixture.DbNames[1],
-            ["tE"] = _fixture.DbNames[2],
+            ["tA"] = Fixture.DbNames[0],
+            ["tB"] = Fixture.DbNames[0],
+            ["tC"] = Fixture.DbNames[0],
+            ["tD"] = Fixture.DbNames[1],
+            ["tE"] = Fixture.DbNames[2],
         };
 
-        await using var store = (DocumentStore)DocumentStore.For(configure);
+        var store = TrackStore((DocumentStore)DocumentStore.For(configure));
         foreach (var tenant in tenants)
         {
             await store.Advanced.AddTenantToShardAsync(tenant, shardAssignment[tenant], CancellationToken.None);

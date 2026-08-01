@@ -34,41 +34,17 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// auto-assign override so CritterWatch can provision store-agnostically.
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class sharded_tenancy_per_tenant_events : IAsyncLifetime
+public class sharded_tenancy_per_tenant_events : ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private IDocumentStore _store = null!;
 
-    public sharded_tenancy_per_tenant_events(ShardedPartitionedFixture fixture)
+    public sharded_tenancy_per_tenant_events(ShardedPartitionedFixture fixture): base(fixture)
     {
-        _fixture = fixture;
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        // Clean schemas before each test — both the master pool DB and each shard.
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
     }
 
     private IDocumentStore CreateStore(Action<ShardedTenancyOptions>? customConfig = null, Action<StoreOptions>? storeConfig = null)
     {
-        _store = DocumentStore.For(opts =>
+        _store = TrackStore(DocumentStore.For(opts =>
         {
             opts.MultiTenantedWithShardedDatabases(x =>
             {
@@ -76,7 +52,7 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
                 x.SchemaName = "sharded";
                 x.PartitionSchemaName = "tenants";
 
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
                 {
                     x.AddDatabase(dbName, connStr);
                 }
@@ -97,7 +73,7 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
             opts.Events.AddEventType<ShardedTestEvent>();
 
             storeConfig?.Invoke(opts);
-        });
+        }));
 
         return _store;
     }
@@ -156,7 +132,7 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         // in mt_events but the post-process guard tombstoned the StartStream, so the
         // mt_streams row never landed — that's why a later Append threw NonExistentStream.
         await assertStreamRowExistsWithType(
-            _fixture.ConnectionStrings[dbId!],
+            Fixture.ConnectionStrings[dbId!],
             streamId,
             tenantId: "india",
             // EventGraph.AggregateAliasFor for a non-generic type = type.Name.ToTableAlias()
@@ -239,9 +215,9 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         // not other shards). That placement is what the fix has to get right — calling
         // EnsureSequencesAsync against `Tenancy.Default.Database` would create the
         // sequence in the wrong place and the assigned shard would still fail on append.
-        await assertSequenceExists(_fixture.ConnectionStrings[dbId], expected: "mt_events_sequence_bravo");
+        await assertSequenceExists(Fixture.ConnectionStrings[dbId], expected: "mt_events_sequence_bravo");
 
-        foreach (var (otherDbName, otherConnStr) in _fixture.ConnectionStrings)
+        foreach (var (otherDbName, otherConnStr) in Fixture.ConnectionStrings)
         {
             if (otherDbName == dbId) continue;
             await assertSequenceDoesNotExist(otherConnStr, "mt_events_sequence_bravo",
@@ -270,7 +246,7 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         // The original report observed that AddTenantToShardAsync created the document
         // LIST partitions but not the event partition. This pins both ends — event
         // partition + sequence — for the runtime-provisioning path.
-        await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
+        await using var conn = new NpgsqlConnection(Fixture.ConnectionStrings[dbId]);
         await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var tables = await conn.ExistingTablesAsync(ct: TestContext.Current.CancellationToken);
@@ -288,9 +264,9 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         // Explicit-target overload — different ShardedTenancy entry (AssignTenantAsync)
         // but must converge on the same createPartitionsForTenant path so the fix covers
         // it too.
-        await _store.Advanced.AddTenantToShardAsync("delta", _fixture.DbNames[1], CancellationToken.None);
+        await _store.Advanced.AddTenantToShardAsync("delta", Fixture.DbNames[1], CancellationToken.None);
 
-        await assertSequenceExists(_fixture.ConnectionStrings[_fixture.DbNames[1]],
+        await assertSequenceExists(Fixture.ConnectionStrings[Fixture.DbNames[1]],
             expected: "mt_events_sequence_delta");
     }
 
@@ -305,8 +281,8 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         var source = (IDynamicTenantSource<string>)_store.Options.Tenancy;
         var dbId = await source.AddTenantAsync("echo", CancellationToken.None);
 
-        dbId.ShouldBeOneOf(_fixture.DbNames);
-        await assertSequenceExists(_fixture.ConnectionStrings[dbId], expected: "mt_events_sequence_echo");
+        dbId.ShouldBeOneOf(Fixture.DbNames);
+        await assertSequenceExists(Fixture.ConnectionStrings[dbId], expected: "mt_events_sequence_echo");
 
         // And the append actually works — the full surface this enables.
         await using var session = _store.LightweightSession("echo");
@@ -320,12 +296,12 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
         CreateStore();
 
         var source = (IDynamicTenantSource<string>)_store.Options.Tenancy;
-        await source.AddTenantAsync("foxtrot", _fixture.DbNames[2]);
+        await source.AddTenantAsync("foxtrot", Fixture.DbNames[2]);
 
         var sharded = (ShardedTenancy)_store.Options.Tenancy;
         (await sharded.FindDatabaseForTenantAsync("foxtrot", CancellationToken.None))
-            .ShouldBe(_fixture.DbNames[2]);
-        await assertSequenceExists(_fixture.ConnectionStrings[_fixture.DbNames[2]],
+            .ShouldBe(Fixture.DbNames[2]);
+        await assertSequenceExists(Fixture.ConnectionStrings[Fixture.DbNames[2]],
             expected: "mt_events_sequence_foxtrot");
     }
 
@@ -345,7 +321,7 @@ public class sharded_tenancy_per_tenant_events : IAsyncLifetime
                 x.ConnectionString = ConnectionSource.ConnectionString;
                 x.SchemaName = "sharded";
                 x.PartitionSchemaName = "tenants";
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
                 {
                     x.AddDatabase(dbName, connStr);
                 }

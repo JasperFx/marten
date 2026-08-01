@@ -41,48 +41,27 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// </para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class Bug_4761_per_tenant_progression_same_shard: IAsyncLifetime
+public class Bug_4761_per_tenant_progression_same_shard: ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private readonly ITestOutputHelper _output;
     private DocumentStore _store = null!;
 
-    public Bug_4761_per_tenant_progression_same_shard(ShardedPartitionedFixture fixture, ITestOutputHelper output)
+    public Bug_4761_per_tenant_progression_same_shard(ShardedPartitionedFixture fixture, ITestOutputHelper output): base(fixture)
     {
-        _fixture = fixture;
         _output = output;
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_store != null!) await _store.DisposeAsync();
     }
 
     [Fact]
     public async Task per_tenant_progression_rows_exist_when_two_tenants_share_a_shard()
     {
-        _store = (DocumentStore)DocumentStore.For(opts =>
+        _store = TrackStore((DocumentStore)DocumentStore.For(opts =>
         {
             opts.MultiTenantedWithShardedDatabases(x =>
             {
                 x.ConnectionString = ConnectionSource.ConnectionString;
                 x.SchemaName = "sharded";
                 x.PartitionSchemaName = "tenants";
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
                 {
                     x.AddDatabase(dbName, connStr);
                 }
@@ -96,11 +75,11 @@ public class Bug_4761_per_tenant_progression_same_shard: IAsyncLifetime
 
             opts.Projections.Add<ShardedDaemonProjection>(ProjectionLifecycle.Async);
             opts.Schema.For<ShardedDaemonCounter>().DocumentAlias("p4761_sdc");
-        });
+        }));
 
         // Both tenants on the SAME shard, with DIFFERENT event counts so their per-tenant
         // sequences diverge (x: 3, y: 2) and their seq_id ranges overlap.
-        var shard = _fixture.DbNames[0];
+        var shard = Fixture.DbNames[0];
         await _store.Advanced.AddTenantToShardAsync("tenant_x", shard, CancellationToken.None);
         await _store.Advanced.AddTenantToShardAsync("tenant_y", shard, CancellationToken.None);
 

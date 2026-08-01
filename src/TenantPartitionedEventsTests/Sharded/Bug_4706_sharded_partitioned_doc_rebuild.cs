@@ -30,41 +30,23 @@ public class Bug4706Doc
 /// is fine. A single-DB managed-ByList store is idempotent; this exercises the sharded path.
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class Bug_4706_sharded_partitioned_doc_rebuild: IAsyncLifetime
+public class Bug_4706_sharded_partitioned_doc_rebuild: ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private readonly ITestOutputHelper _output;
 
-    public Bug_4706_sharded_partitioned_doc_rebuild(ShardedPartitionedFixture fixture, ITestOutputHelper output)
+    public Bug_4706_sharded_partitioned_doc_rebuild(ShardedPartitionedFixture fixture, ITestOutputHelper output): base(fixture)
     {
-        _fixture = fixture;
         _output = output;
     }
 
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync() => default;
-
-    private DocumentStore BuildStore() => (DocumentStore)DocumentStore.For(opts =>
+    private DocumentStore BuildStore() => TrackStore((DocumentStore)DocumentStore.For(opts =>
     {
         opts.MultiTenantedWithShardedDatabases(x =>
         {
             x.ConnectionString = ConnectionSource.ConnectionString;
             x.SchemaName = "sharded";
             x.PartitionSchemaName = "tenants";
-            foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+            foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
             {
                 x.AddDatabase(dbName, connStr);
             }
@@ -78,24 +60,24 @@ public class Bug_4706_sharded_partitioned_doc_rebuild: IAsyncLifetime
             .MultiTenantedWithPartitioning(x => x.ByList())
             .Index(x => x.Name)
             .StartIndexesByTenantId();
-    });
+    }));
 
     [Fact]
     public async Task reapply_over_existing_tenant_data_is_idempotent()
     {
         var assignment = new Dictionary<string, string>
         {
-            ["tA"] = _fixture.DbNames[0],
-            ["tB"] = _fixture.DbNames[1],
-            ["tC"] = _fixture.DbNames[2],
+            ["tA"] = Fixture.DbNames[0],
+            ["tB"] = Fixture.DbNames[1],
+            ["tC"] = Fixture.DbNames[2],
         };
 
         // First deploy: production eager-apply shape — create the parent partitioned
         // schema on every shard up front (per database, sequentially), THEN provision
         // tenants (which adds each tenant's partition to its shard via the additive
         // path), THEN write data.
-        await using (var store = BuildStore())
         {
+            var store = BuildStore();
             var databases = await store.Options.Tenancy.BuildDatabases();
             foreach (var db in databases.OfType<IMartenDatabase>())
             {
@@ -118,8 +100,8 @@ public class Bug_4706_sharded_partitioned_doc_rebuild: IAsyncLifetime
         // Second deploy (nothing changed): re-apply across all shards via the store-wide
         // path (Parallel.ForEachAsync over databases — the #4706 trigger). Must be
         // idempotent: no destructive rebuild of the per-tenant partitioned tables, no 23514.
-        await using (var store = BuildStore())
         {
+            var store = BuildStore();
             var ex = await Record.ExceptionAsync(() =>
                 store.Storage.ApplyAllConfiguredChangesToDatabaseAsync());
 

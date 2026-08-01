@@ -54,28 +54,20 @@ public class Bug4944Gamma
 /// INCOMPLETE registration — a test that provisions from a fully-registered store proves nothing.
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
+public class Bug_4944_database_driven_partition_sweep : ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
-    private readonly List<IDocumentStore> _stores = new();
-
-    public Bug_4944_database_driven_partition_sweep(ShardedPartitionedFixture fixture)
+    public Bug_4944_database_driven_partition_sweep(ShardedPartitionedFixture fixture): base(fixture)
     {
-        _fixture = fixture;
     }
 
-    public async ValueTask InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
+        await base.InitializeAsync();
 
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
+        foreach (var connStr in Fixture.ConnectionStrings.Values)
         {
             await using var tenantConn = new NpgsqlConnection(connStr);
             await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
 
             // The fixture's cleaner only knows how to drop mt_* objects; these tests plant
             // non-Marten partitioned tables to prove the sweep does NOT touch them.
@@ -83,16 +75,6 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
             await tenantConn.CreateCommand("drop table if exists public.other_app_ledger cascade")
                 .ExecuteNonQueryAsync();
         }
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        foreach (var store in _stores)
-        {
-            store.Dispose();
-        }
-
-        return default;
     }
 
     /// <summary>
@@ -120,34 +102,14 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
 
     private IDocumentStore buildStore(Action<StoreOptions> configure)
     {
-        var store = DocumentStore.For(opts =>
+        return BuildShardedStore(opts =>
         {
-            opts.MultiTenantedWithShardedDatabases(x =>
-            {
-                x.ConnectionString = ConnectionSource.ConnectionString;
-                x.SchemaName = "sharded";
-                x.PartitionSchemaName = "tenants";
-
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
-                {
-                    x.AddDatabase(dbName, connStr);
-                }
-
-                x.UseSmallestDatabaseAssignment();
-            });
-
             opts.AutoCreateSchemaObjects = AutoCreate.All;
 
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Events.UseTenantPartitionedEvents = true;
             opts.Events.AddEventType<ShardedTestEvent>();
 
             configure(opts);
         });
-
-        _stores.Add(store);
-        return store;
     }
 
     /// <summary>
@@ -272,7 +234,7 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
     {
         var tenantId = "t4944_delta";
 
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
+        foreach (var connStr in Fixture.ConnectionStrings.Values)
         {
             await using var conn = new NpgsqlConnection(connStr);
             await conn.OpenAsync(TestContext.Current.CancellationToken);
@@ -307,7 +269,7 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
 
     private async Task assertPartitionExists(string dbId, string partitionTableName)
     {
-        await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
+        await using var conn = new NpgsqlConnection(Fixture.ConnectionStrings[dbId]);
         await conn.OpenAsync();
         var tables = await conn.ExistingTablesAsync();
         tables.Any(t => t.Schema == "public" && t.Name == partitionTableName).ShouldBeTrue(
@@ -316,7 +278,7 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
 
     private async Task assertPartitionMissing(string dbId, string partitionTableName)
     {
-        await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
+        await using var conn = new NpgsqlConnection(Fixture.ConnectionStrings[dbId]);
         await conn.OpenAsync();
         var tables = await conn.ExistingTablesAsync();
         tables.Any(t => t.Schema == "public" && t.Name == partitionTableName).ShouldBeFalse(
@@ -329,7 +291,7 @@ public class Bug_4944_database_driven_partition_sweep : IAsyncLifetime
     /// </summary>
     private async Task assertNoPartitionsOf(string dbId, string schema, string tableName)
     {
-        await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
+        await using var conn = new NpgsqlConnection(Fixture.ConnectionStrings[dbId]);
         await conn.OpenAsync();
 
         var count = (long)(await conn.CreateCommand(
