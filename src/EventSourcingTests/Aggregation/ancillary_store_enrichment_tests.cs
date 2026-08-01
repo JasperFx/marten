@@ -18,40 +18,27 @@ namespace EventSourcingTests.Aggregation;
 // Marker interface for the ancillary store that holds reference products
 public interface IProductStore : IDocumentStore;
 
-public class ancillary_store_enrichment_tests : IAsyncLifetime
+public class ancillary_store_enrichment_tests : HostedStoreContext
 {
     private IHost _host = null!;
     private IDocumentStore _primaryStore = null!;
 
-    public async ValueTask InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
-        _host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        _host = await StartHostAsync(
+            opts => opts.Projections.Add<OrderProjection>(ProjectionLifecycle.Async),
+            configureMarten: marten => marten.ApplyAllDatabaseChangesOnStartup(),
+            configureServices: services =>
             {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "ancillary_enrich_primary";
-                    opts.Projections.Add<OrderProjection>(ProjectionLifecycle.Async);
-                })
-                .ApplyAllDatabaseChangesOnStartup();
-
                 services.AddMartenStore<IProductStore>(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "ancillary_enrich_products";
-                })
-                .ApplyAllDatabaseChangesOnStartup();
-            })
-            .StartAsync();
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = $"{SchemaName}_products";
+                    })
+                    .ApplyAllDatabaseChangesOnStartup();
+            });
 
         _primaryStore = _host.Services.GetRequiredService<IDocumentStore>();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _host.StopAsync();
-        _host.Dispose();
     }
 
     [Fact]

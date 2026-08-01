@@ -14,23 +14,16 @@ using Xunit;
 
 namespace EventSourcingTests;
 
-public class propagate_logger_to_projections
+public class propagate_logger_to_projections: HostedStoreContext
 {
     [Fact]
     public async Task loggers_exist_on_projections()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(m =>
-                {
-                    m.Connection(ConnectionSource.ConnectionString);
-                    m.DatabaseSchemaName = "system_part";
-
-                    m.Projections.Add<SampleEventProjection>(ProjectionLifecycle.Inline);
-                    m.Projections.Add<TestOrderingEventProjection>(ProjectionLifecycle.Inline);
-                });
-            }).StartAsync();
+        var host = await StartHostAsync(m =>
+        {
+            m.Projections.Add<SampleEventProjection>(ProjectionLifecycle.Inline);
+            m.Projections.Add<TestOrderingEventProjection>(ProjectionLifecycle.Inline);
+        });
 
         var store = host.DocumentStore();
         var projections = store.Options.As<StoreOptions>().Projections.All;

@@ -20,25 +20,18 @@ using Xunit;
 
 namespace EventSourcingTests;
 
-public class generating_event_store_descriptors
+public class generating_event_store_descriptors: HostedStoreContext
 {
     [Fact]
     public async Task find_default_capability_with_events_and_projections()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "capabilities";
-
-                    opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
-                    opts.Projections.Add<LapMultiStreamProjection>(ProjectionLifecycle.Inline);
-                    opts.Projections.LiveStreamAggregation<QuestParty>();
-                    opts.Projections.Add<MyAggregateProjection>(ProjectionLifecycle.Inline);
-                });
-            }).StartAsync();
+        var host = await StartHostAsync(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
+            opts.Projections.Add<LapMultiStreamProjection>(ProjectionLifecycle.Inline);
+            opts.Projections.LiveStreamAggregation<QuestParty>();
+            opts.Projections.Add<MyAggregateProjection>(ProjectionLifecycle.Inline);
+        });
 
         var capabilities = host.Services.GetServices<IEventStore>().ToArray();
         capabilities.Length.ShouldBe(1);
@@ -54,19 +47,12 @@ public class generating_event_store_descriptors
     [Fact]
     public async Task subscription_descriptors_carry_implementation_and_aggregate_types()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "descriptor_enrichment";
-
-                    opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
-                    opts.Projections.Add<LapMultiStreamProjection>(ProjectionLifecycle.Inline);
-                    opts.Projections.Add<MyAggregateProjection>(ProjectionLifecycle.Inline);
-                });
-            }).StartAsync();
+        var host = await StartHostAsync(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
+            opts.Projections.Add<LapMultiStreamProjection>(ProjectionLifecycle.Inline);
+            opts.Projections.Add<MyAggregateProjection>(ProjectionLifecycle.Inline);
+        });
 
         var capability = host.Services.GetRequiredService<IEventStore>();
         var usage = await capability.TryCreateUsage(CancellationToken.None);
@@ -96,15 +82,7 @@ public class generating_event_store_descriptors
     [Fact]
     public async Task max_event_sequence_matches_highest_persisted_seq_id()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "max_seq_usage";
-                });
-            }).StartAsync();
+        var host = await StartHostAsync(_ => { });
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
 

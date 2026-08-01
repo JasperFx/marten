@@ -38,7 +38,7 @@ namespace EventSourcingTests.Bugs;
 // The mitigation degrades ForceAll under ExternallyManaged to a read-only wait-for-non-stale that never
 // starts, stops, or drives an agent — so it can neither throw on the missing coordinator nor race the
 // externally-owned agents into an out-of-order progression write. This test pins that Marten-side contract.
-public class Bug_4904_force_catch_up_under_externally_managed
+public class Bug_4904_force_catch_up_under_externally_managed: HostedStoreContext
 {
     public class LetterCounts
     {
@@ -63,17 +63,9 @@ public class Bug_4904_force_catch_up_under_externally_managed
     [Fact(Timeout = 30000)]
     public async Task force_catch_up_under_externally_managed_does_not_resolve_a_coordinator()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(s =>
-            {
-                s.AddMarten(m =>
-                {
-                    m.Connection(ConnectionSource.ConnectionString);
-                    m.DatabaseSchemaName = "bug4904_externally_managed";
-                    m.Projections.Add<LetterCountsProjection>(ProjectionLifecycle.Async);
-                }).AddAsyncDaemon(DaemonMode.ExternallyManaged);
-            })
-            .StartAsync();
+        var host = await StartHostAsync(
+            m => m.Projections.Add<LetterCountsProjection>(ProjectionLifecycle.Async),
+            DaemonMode.ExternallyManaged);
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.CompletelyRemoveAllAsync();

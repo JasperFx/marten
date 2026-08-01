@@ -11,27 +11,19 @@ using Xunit;
 
 namespace EventSourcingTests;
 
-public class determining_the_event_store_identity
+public class determining_the_event_store_identity: HostedStoreContext
 {
     [Fact]
     public async Task use_correct_identities()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(_ => { }, configureServices: services =>
+        {
+            services.AddMartenStore<IThingStore>(m =>
             {
-                services.AddMarten(m =>
-                {
-                    m.Connection(ConnectionSource.ConnectionString);
-                    m.DatabaseSchemaName = "es_identity";
-                });
-
-                services.AddMartenStore<IThingStore>(m =>
-                {
-                    m.Connection(ConnectionSource.ConnectionString);
-                    m.DatabaseSchemaName = "things";
-                });
-
-            }).StartAsync();
+                m.Connection(ConnectionSource.ConnectionString);
+                m.DatabaseSchemaName = $"{SchemaName}_things";
+            });
+        });
 
         var stores = host.Services.GetServices<IEventStore>().ToArray();
         stores.Single(x => x.GetType() == typeof(DocumentStore)).As<IEventStore>().Identity.ShouldBe(new EventStoreIdentity("main", "marten"));
