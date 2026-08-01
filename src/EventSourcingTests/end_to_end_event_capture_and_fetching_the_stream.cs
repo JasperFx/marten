@@ -5,6 +5,7 @@ using JasperFx.Core;
 using EventSourcingTests.Projections;
 using EventSourcingTests.Utils;
 using JasperFx;
+using JasperFx.Events;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -15,26 +16,40 @@ using Xunit;
 
 namespace EventSourcingTests;
 
+// Every test runs across all three EventAppendMode values on top of the
+// original tenancy matrix. This absorbed the old Quick-mode whole-file fork in
+// QuickAppend/quick_append_event_capture_and_fetching_the_stream.cs.
 public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurationsContext
 {
     private static readonly string[] SameTenants = { "tenant", "tenant" };
     private static readonly string[] DifferentTenants = { "tenant", "differentTenant" };
     private static readonly string[] DefaultTenant = { StorageConstants.DefaultTenantId };
 
-    public static TheoryData<TenancyStyle, string[]> SessionParams = new TheoryData<TenancyStyle, string[]>
+    public static TheoryData<TenancyStyle, string[], EventAppendMode> SessionParams = buildSessionParams();
+
+    private static TheoryData<TenancyStyle, string[], EventAppendMode> buildSessionParams()
     {
-        { TenancyStyle.Conjoined, SameTenants },
-        { TenancyStyle.Conjoined, DifferentTenants },
-        { TenancyStyle.Single, DefaultTenant },
-        { TenancyStyle.Single, DifferentTenants },
-        { TenancyStyle.Single, SameTenants },
-    };
+        var data = new TheoryData<TenancyStyle, string[], EventAppendMode>();
+        foreach (var appendMode in new[]
+                 {
+                     EventAppendMode.Rich, EventAppendMode.Quick, EventAppendMode.QuickWithServerTimestamps
+                 })
+        {
+            data.Add(TenancyStyle.Conjoined, SameTenants, appendMode);
+            data.Add(TenancyStyle.Conjoined, DifferentTenants, appendMode);
+            data.Add(TenancyStyle.Single, DefaultTenant, appendMode);
+            data.Add(TenancyStyle.Single, DifferentTenants, appendMode);
+            data.Add(TenancyStyle.Single, SameTenants, appendMode);
+        }
+
+        return data;
+    }
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle, string[] tenants)
+    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle, string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         await When.CalledForEachAsync(tenants, async (tenantId, _) =>
         {
@@ -65,9 +80,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public Task capture_events_to_a_new_stream_and_fetch_the_events_back_async(TenancyStyle tenancyStyle,
-        string[] tenants)
+        string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         return When.CalledForEachAsync(tenants, async (tenantId, _) =>
         {
@@ -98,9 +113,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public Task capture_events_to_a_new_stream_and_fetch_the_events_back_async_with_linq(TenancyStyle tenancyStyle,
-        string[] tenants)
+        string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         return When.CalledForEachAsync(tenants, async (tenantId, _) =>
         {
@@ -132,9 +147,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public async Task live_aggregate_equals_inlined_aggregate_without_hidden_contracts(TenancyStyle tenancyStyle,
-        string[] tenants)
+        string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
         var questId = Guid.NewGuid();
 
         await When.CalledForEachAsync(tenants, async (tenantId, index) =>
@@ -168,9 +183,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public async Task query_before_saving(TenancyStyle tenancyStyle, string[] tenants)
+    public async Task query_before_saving(TenancyStyle tenancyStyle, string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
         var questId = Guid.NewGuid();
 
         await When.CalledForEachAsync(tenants, async (tenantId, index) =>
@@ -201,9 +216,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public Task aggregate_stream_async_has_the_id(TenancyStyle tenancyStyle, string[] tenants)
+    public Task aggregate_stream_async_has_the_id(TenancyStyle tenancyStyle, string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
         var questId = Guid.NewGuid();
 
         return When.CalledForEachAsync(tenants, async (tenantId, index) =>
@@ -235,9 +250,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided(
-        TenancyStyle tenancyStyle, string[] tenants)
+        TenancyStyle tenancyStyle, string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
@@ -268,11 +283,11 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public async Task capture_events_to_a_non_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
-        string[] tenants)
+        string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
-        When.CalledForEachAsync(tenants, async (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             using (var session = store.LightweightSession(tenantId))
             {
@@ -299,9 +314,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public async Task capture_events_to_an_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
-        string[] tenants)
+        string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         var id = Guid.NewGuid();
 
@@ -344,9 +359,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema(
-        TenancyStyle tenancyStyle, string[] tenants)
+        TenancyStyle tenancyStyle, string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
@@ -373,9 +388,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [MemberData(nameof(SessionParams))]
     public async Task
         capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided_in_another_database_schema(
-            TenancyStyle tenancyStyle, string[] tenants)
+            TenancyStyle tenancyStyle, string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
@@ -404,9 +419,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public async Task capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema(
-        TenancyStyle tenancyStyle, string[] tenants)
+        TenancyStyle tenancyStyle, string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
@@ -435,9 +450,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public async Task capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema(
-        TenancyStyle tenancyStyle, string[] tenants)
+        TenancyStyle tenancyStyle, string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         var id = Guid.NewGuid();
 
@@ -483,9 +498,9 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     [Theory]
     [MemberData(nameof(SessionParams))]
     public async Task assert_on_max_event_id_on_event_stream_append(
-        TenancyStyle tenancyStyle, string[] tenants)
+        TenancyStyle tenancyStyle, string[] tenants, EventAppendMode appendMode)
     {
-        var store = InitStore(tenancyStyle);
+        var store = InitStore(tenancyStyle, appendMode);
 
         var id = Guid.NewGuid();
 
@@ -517,11 +532,11 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
         );
     }
 
-    private DocumentStore InitStore(TenancyStyle tenancyStyle, bool cleanSchema = true,
-        bool useAppendEventForUpdateLock = false)
+    private DocumentStore InitStore(TenancyStyle tenancyStyle, EventAppendMode appendMode, bool cleanSchema = true)
     {
         var store = StoreOptions(opts =>
         {
+            opts.Events.AppendMode = appendMode;
             opts.Events.TenancyStyle = tenancyStyle;
 
             if (tenancyStyle == TenancyStyle.Conjoined)

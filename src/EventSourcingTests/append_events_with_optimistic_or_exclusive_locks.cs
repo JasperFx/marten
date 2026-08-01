@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx.Events;
+using Marten;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Services;
@@ -11,254 +13,365 @@ using Xunit;
 
 namespace EventSourcingTests;
 
-public class append_events_with_optimistic_or_exclusive_locks
+/// <summary>
+/// AppendOptimistic/AppendExclusive behavior across every EventAppendMode and
+/// both stream identity styles. Replaces the old default-mode-only classes here
+/// plus their Quick-mode fork in
+/// QuickAppend/quick_append_events_with_optimistic_or_exclusive_locks.cs.
+/// </summary>
+public class AppendLocksFixture: MultiStoreFixture
 {
-    public class append_events_optimistic_or_exclusive_with_guid_identity: OneOffConfigurationsContext
+    public static readonly IReadOnlyDictionary<string, (EventAppendMode Mode, StreamIdentity Identity)> Cases =
+        new Dictionary<string, (EventAppendMode, StreamIdentity)>
+        {
+            { "rich_guid", (EventAppendMode.Rich, StreamIdentity.AsGuid) },
+            { "quick_guid", (EventAppendMode.Quick, StreamIdentity.AsGuid) },
+            { "qwst_guid", (EventAppendMode.QuickWithServerTimestamps, StreamIdentity.AsGuid) },
+            { "rich_string", (EventAppendMode.Rich, StreamIdentity.AsString) },
+            { "quick_string", (EventAppendMode.Quick, StreamIdentity.AsString) },
+            { "qwst_string", (EventAppendMode.QuickWithServerTimestamps, StreamIdentity.AsString) }
+        };
+
+    public AppendLocksFixture(): base("eslocks")
     {
-
-
-
-        [Fact]
-        public async Task append_optimistic_sad_path_because_the_stream_does_not_already_exist()
+        foreach (var pair in Cases)
         {
-            var streamId = Guid.NewGuid();
-            var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
+            var (mode, identity) = pair.Value;
+            Profile(pair.Key, opts =>
             {
-                await theSession.Events.AppendOptimistic(streamId, new AEvent(), new BEvent());
+                opts.Events.AppendMode = mode;
+                opts.Events.StreamIdentity = identity;
             });
-
-            ex.Id.ShouldBe(streamId);
-        }
-
-        [Fact]
-        public async Task append_optimistic_happy_path()
-        {
-            var streamId = Guid.NewGuid();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
-
-            await theSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
-
-            var state = await theSession.Events.FetchStreamStateAsync(streamId);
-            state.Version.ShouldBe(4);
-        }
-
-        [Fact]
-        public async Task append_optimistic_sad_path_with_concurrency_issue()
-        {
-            var streamId = Guid.NewGuid();
-            await using var session1 = theStore.LightweightSession(new SessionOptions { Timeout = 1 });
-
-            session1.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await session1.SaveChangesAsync();
-
-            // Fetch the expected version
-            await session1.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
-
-            await using (var session = theStore.LightweightSession(new SessionOptions{Timeout = 1}))
-            {
-                session.Events.Append(streamId, new DEvent());
-                await session.SaveChangesAsync();
-            }
-
-            // Should fail a concurrency check
-            await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(async () =>
-            {
-                await session1.SaveChangesAsync();
-            });
-        }
-
-        [Fact]
-        public async Task append_exclusive_sad_path_because_the_stream_does_not_already_exist()
-        {
-            var streamId = Guid.NewGuid();
-            var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
-            {
-                await theSession.Events.AppendExclusive(streamId, new AEvent(), new BEvent());
-            });
-
-            ex.Id.ShouldBe(streamId);
-        }
-
-        [Fact]
-        public async Task append_exclusive_happy_path()
-        {
-            var streamId = Guid.NewGuid();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
-
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
-
-            var state = await theSession.Events.FetchStreamStateAsync(streamId);
-            state.Version.ShouldBe(4);
-        }
-
-        [Fact]
-        public async Task append_exclusive_sad_path_with_concurrency_issue()
-        {
-            var streamId = Guid.NewGuid();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
-
-            // Fetch the expected version
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
-
-            await using (var session = theStore.LightweightSession())
-            {
-                session.Events.Append(streamId, new DEvent());
-                var ex = await Should.ThrowAsync<MartenCommandException>(async () =>
-                {
-                    await session.SaveChangesAsync();
-                });
-
-                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage);
-            }
-        }
-
-        [Fact]
-        public async Task append_exclusive_sad_path_with_concurrency_issue_2()
-        {
-            var streamId = Guid.NewGuid();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
-
-            // Fetch the expected version
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
-
-            await using (var session = theStore.LightweightSession(new SessionOptions{Timeout = 1}))
-            {
-                await Should.ThrowAsync<StreamLockedException>(async () =>
-                {
-                    await session.Events.AppendExclusive(streamId, new DEvent());
-                });
-            }
         }
     }
 
-
-    public class append_events_optimistic_or_exclusive_with_string_identity: OneOffConfigurationsContext
+    public static IEnumerable<object[]> ProfilesFor(StreamIdentity identity)
     {
-        public append_events_optimistic_or_exclusive_with_string_identity()
+        foreach (var pair in Cases)
         {
-            StoreOptions(x => x.Events.StreamIdentity = StreamIdentity.AsString);
-        }
-
-        [Fact]
-        public async Task append_optimistic_sad_path_because_the_stream_does_not_already_exist()
-        {
-            var streamId = Guid.NewGuid().ToString();
-            var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
+            if (pair.Value.Identity == identity)
             {
-                await theSession.Events.AppendOptimistic(streamId, new AEvent(), new BEvent());
-            });
+                yield return new object[] { pair.Key };
+            }
+        }
+    }
+}
 
-            ex.Id.ShouldBe(streamId);
+public class append_events_optimistic_or_exclusive_with_guid_identity: IClassFixture<AppendLocksFixture>
+{
+    private readonly AppendLocksFixture _fixture;
+
+    public append_events_optimistic_or_exclusive_with_guid_identity(AppendLocksFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public static IEnumerable<object[]> Profiles()
+    {
+        return AppendLocksFixture.ProfilesFor(StreamIdentity.AsGuid);
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_optimistic_sad_path_because_the_stream_does_not_already_exist(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var session = store.LightweightSession();
+
+        var streamId = Guid.NewGuid();
+        var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
+        {
+            await session.Events.AppendOptimistic(streamId, new AEvent(), new BEvent());
+        });
+
+        ex.Id.ShouldBe(streamId);
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_optimistic_happy_path(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var session = store.LightweightSession();
+
+        var streamId = Guid.NewGuid();
+        session.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await session.SaveChangesAsync();
+
+        await session.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
+        await session.SaveChangesAsync();
+
+        var state = await session.Events.FetchStreamStateAsync(streamId);
+        state.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_optimistic_sad_path_with_concurrency_issue(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+
+        var streamId = Guid.NewGuid();
+        await using var session1 = store.LightweightSession(new SessionOptions { Timeout = 1 });
+
+        session1.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await session1.SaveChangesAsync();
+
+        // Fetch the expected version
+        await session1.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
+
+        await using (var session = store.LightweightSession(new SessionOptions { Timeout = 1 }))
+        {
+            session.Events.Append(streamId, new DEvent());
+            await session.SaveChangesAsync();
         }
 
-        [Fact]
-        public async Task append_optimistic_happy_path()
+        // Should fail a concurrency check
+        await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(async () =>
         {
-            var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            await session1.SaveChangesAsync();
+        });
+    }
 
-            await theSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_exclusive_sad_path_because_the_stream_does_not_already_exist(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var session = store.LightweightSession();
 
-            var state = await theSession.Events.FetchStreamStateAsync(streamId);
-            state.Version.ShouldBe(4);
-        }
-
-        [Fact]
-        public async Task append_optimistic_sad_path_with_concurrency_issue()
+        var streamId = Guid.NewGuid();
+        var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
         {
-            var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            await session.Events.AppendExclusive(streamId, new AEvent(), new BEvent());
+        });
 
-            // Fetch the expected version
-            await theSession.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
+        ex.Id.ShouldBe(streamId);
+    }
 
-            await using (var session = theStore.LightweightSession())
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_exclusive_happy_path(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var session = store.LightweightSession();
+
+        var streamId = Guid.NewGuid();
+        session.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await session.SaveChangesAsync();
+
+        await session.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+        await session.SaveChangesAsync();
+
+        var state = await session.Events.FetchStreamStateAsync(streamId);
+        state.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_exclusive_sad_path_with_concurrency_issue(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var lockingSession = store.LightweightSession();
+
+        var streamId = Guid.NewGuid();
+        lockingSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await lockingSession.SaveChangesAsync();
+
+        // Fetch the expected version
+        await lockingSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+
+        await using (var session = store.LightweightSession(new SessionOptions { Timeout = 1 }))
+        {
+            session.Events.Append(streamId, new DEvent());
+            var ex = await Should.ThrowAsync<MartenCommandException>(async () =>
             {
-                session.Events.Append(streamId, new DEvent());
                 await session.SaveChangesAsync();
-            }
-
-            // Should fail a concurrency check
-            await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(async () =>
-            {
-                await theSession.SaveChangesAsync();
-            });
-        }
-
-        [Fact]
-        public async Task append_exclusive_sad_path_because_the_stream_does_not_already_exist()
-        {
-            var streamId = Guid.NewGuid().ToString();
-            var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
-            {
-                await theSession.Events.AppendExclusive(streamId, new AEvent(), new BEvent());
             });
 
-            ex.Id.ShouldBe(streamId);
+            ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage);
         }
+    }
 
-        [Fact]
-        public async Task append_exclusive_happy_path()
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_exclusive_sad_path_with_concurrency_issue_2(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var lockingSession = store.LightweightSession();
+
+        var streamId = Guid.NewGuid();
+        lockingSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await lockingSession.SaveChangesAsync();
+
+        // Fetch the expected version
+        await lockingSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+
+        await using (var session = store.LightweightSession(new SessionOptions { Timeout = 1 }))
         {
-            var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
-
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
-
-            var state = await theSession.Events.FetchStreamStateAsync(streamId);
-            state.Version.ShouldBe(4);
-        }
-
-        [Fact]
-        public async Task append_exclusive_sad_path_with_concurrency_issue()
-        {
-            var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
-
-            // Fetch the expected version
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
-
-            await using (var session = theStore.LightweightSession(new SessionOptions{Timeout = 1}))
+            await Should.ThrowAsync<StreamLockedException>(async () =>
             {
-                session.Events.Append(streamId, new DEvent());
-                var ex = await Should.ThrowAsync<MartenCommandException>(async () =>
-                {
-                    await session.SaveChangesAsync();
-                });
+                await session.Events.AppendExclusive(streamId, new DEvent());
+            });
+        }
+    }
+}
 
-                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage);
-            }
+public class append_events_optimistic_or_exclusive_with_string_identity: IClassFixture<AppendLocksFixture>
+{
+    private readonly AppendLocksFixture _fixture;
+
+    public append_events_optimistic_or_exclusive_with_string_identity(AppendLocksFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public static IEnumerable<object[]> Profiles()
+    {
+        return AppendLocksFixture.ProfilesFor(StreamIdentity.AsString);
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_optimistic_sad_path_because_the_stream_does_not_already_exist(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var session = store.LightweightSession();
+
+        var streamId = Guid.NewGuid().ToString();
+        var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
+        {
+            await session.Events.AppendOptimistic(streamId, new AEvent(), new BEvent());
+        });
+
+        ex.Id.ShouldBe(streamId);
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_optimistic_happy_path(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var session = store.LightweightSession();
+
+        var streamId = Guid.NewGuid().ToString();
+        session.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await session.SaveChangesAsync();
+
+        await session.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
+        await session.SaveChangesAsync();
+
+        var state = await session.Events.FetchStreamStateAsync(streamId);
+        state.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_optimistic_sad_path_with_concurrency_issue(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var session1 = store.LightweightSession();
+
+        var streamId = Guid.NewGuid().ToString();
+        session1.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await session1.SaveChangesAsync();
+
+        // Fetch the expected version
+        await session1.Events.AppendOptimistic(streamId, new CEvent(), new BEvent());
+
+        await using (var session = store.LightweightSession())
+        {
+            session.Events.Append(streamId, new DEvent());
+            await session.SaveChangesAsync();
         }
 
-        [Fact]
-        public async Task append_exclusive_sad_path_with_concurrency_issue_2()
+        // Should fail a concurrency check
+        await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(async () =>
         {
-            var streamId = Guid.NewGuid().ToString();
-            theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
-            await theSession.SaveChangesAsync();
+            await session1.SaveChangesAsync();
+        });
+    }
 
-            // Fetch the expected version
-            await theSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_exclusive_sad_path_because_the_stream_does_not_already_exist(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var session = store.LightweightSession();
 
-            await using (var session = theStore.LightweightSession(new SessionOptions{Timeout = 1}))
+        var streamId = Guid.NewGuid().ToString();
+        var ex = await Should.ThrowAsync<NonExistentStreamException>(async () =>
+        {
+            await session.Events.AppendExclusive(streamId, new AEvent(), new BEvent());
+        });
+
+        ex.Id.ShouldBe(streamId);
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_exclusive_happy_path(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var session = store.LightweightSession();
+
+        var streamId = Guid.NewGuid().ToString();
+        session.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await session.SaveChangesAsync();
+
+        await session.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+        await session.SaveChangesAsync();
+
+        var state = await session.Events.FetchStreamStateAsync(streamId);
+        state.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_exclusive_sad_path_with_concurrency_issue(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var lockingSession = store.LightweightSession();
+
+        var streamId = Guid.NewGuid().ToString();
+        lockingSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await lockingSession.SaveChangesAsync();
+
+        // Fetch the expected version
+        await lockingSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+
+        await using (var session = store.LightweightSession(new SessionOptions { Timeout = 1 }))
+        {
+            session.Events.Append(streamId, new DEvent());
+            var ex = await Should.ThrowAsync<MartenCommandException>(async () =>
             {
-                await Should.ThrowAsync<StreamLockedException>(async () =>
-                {
-                    await session.Events.AppendExclusive(streamId, new DEvent());
-                });
-            }
+                await session.SaveChangesAsync();
+            });
+
+            ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(Profiles))]
+    public async Task append_exclusive_sad_path_with_concurrency_issue_2(string profile)
+    {
+        var store = _fixture.StoreFor(profile);
+        await using var lockingSession = store.LightweightSession();
+
+        var streamId = Guid.NewGuid().ToString();
+        lockingSession.Events.StartStream(streamId, new AEvent(), new BEvent());
+        await lockingSession.SaveChangesAsync();
+
+        // Fetch the expected version
+        await lockingSession.Events.AppendExclusive(streamId, new CEvent(), new BEvent());
+
+        await using (var session = store.LightweightSession(new SessionOptions { Timeout = 1 }))
+        {
+            await Should.ThrowAsync<StreamLockedException>(async () =>
+            {
+                await session.Events.AppendExclusive(streamId, new DEvent());
+            });
         }
     }
 }

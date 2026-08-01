@@ -23,7 +23,7 @@ namespace Marten.Testing.Harness
 
             using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
             conn.Open();
-            conn.CreateCommand("drop schema if exists string_events cascade");
+            conn.CreateCommand("drop schema if exists string_events cascade").ExecuteNonQuery();
 
             return store;
         });
