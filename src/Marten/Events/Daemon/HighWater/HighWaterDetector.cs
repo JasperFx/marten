@@ -168,6 +168,62 @@ internal class HighWaterDetector: IHighWaterDetector
         }
     }
 
+    // #5057 follow-up: durable "how long has this gap been stuck" evidence for the
+    // SkipStaleGapsDespiteLiveTransactionsAfter cap, so the cap survives detector restarts. The
+    // stall onset is the timestamp of the EARLIEST committed event above the pinned mark — its
+    // sequence number was allocated strictly after the gap's (sequence allocation is monotone), so
+    // its append postdates the gap's birth — clamped no earlier than the mark's last advance,
+    // because the mark can legitimately advance past older committed rows. Returns null when
+    // nothing is committed above the mark: then there is no evidence the gap predates the running
+    // detector's own observation and no durable floor may be claimed. All arithmetic happens in one
+    // server-side statement against transaction_timestamp(). The one soft spot: Rich appends carry
+    // a client-written mt_events.timestamp (QuickAppend writes transaction_timestamp()), so a
+    // behind-clock client can stretch the evidence by its skew — bounded, unlike idle time, and
+    // only reachable once committed rows above a real gap exist.
+    internal class StuckAgeEvidenceHandler: ISingleQueryHandler<TimeSpan?>
+    {
+        private readonly EventGraph _graph;
+        private readonly long _mark;
+        private readonly DateTimeOffset? _lastAdvance;
+
+        public StuckAgeEvidenceHandler(EventGraph graph, long mark, DateTimeOffset? lastAdvance)
+        {
+            _graph = graph;
+            _mark = mark;
+            _lastAdvance = lastAdvance;
+        }
+
+        public NpgsqlCommand BuildCommand()
+        {
+            var sql = $@"
+select case when fa.ts is null then null
+            else transaction_timestamp() - greatest(fa.ts, :last_advance) end
+from (select (select e.timestamp
+              from {_graph.DatabaseSchemaName}.mt_events e
+              where e.seq_id > :mark
+              order by e.seq_id
+              limit 1) as ts) fa
+".Trim();
+
+            var command = new NpgsqlCommand(sql);
+            command.AddNamedParameter("mark", _mark);
+            // No last advance recorded ⇒ -infinity ⇒ the evidence timestamp stands unclamped
+            command.AddNamedParameter("last_advance", _lastAdvance ?? DateTimeOffset.MinValue);
+            return command;
+        }
+
+        public async Task<TimeSpan?> HandleAsync(DbDataReader reader, CancellationToken token)
+        {
+            if (!await reader.ReadAsync(token).ConfigureAwait(false)
+                || await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
+            {
+                return null;
+            }
+
+            return await reader.GetFieldValueAsync<TimeSpan>(0, token).ConfigureAwait(false);
+        }
+    }
+
     public string DatabaseIdentity { get; }
 
     public async Task<HighWaterStatistics> DetectInSafeZone(CancellationToken token)
@@ -229,14 +285,38 @@ internal class HighWaterDetector: IHighWaterDetector
             .ConfigureAwait(false);
         if (liveness.IndicatesLiveReserver)
         {
+            // #5057 follow-up: the cap bounds how long the GAP has been stuck, not how long THIS
+            // detector instance has watched it — _stuckGap resets with the detector (daemon
+            // restart, managed-distribution agent churn), so resume cycles shorter than the cap
+            // could otherwise postpone the override forever. The durable signal is NOT
+            // mt_event_progression.last_updated on its own: that records the last ADVANCE, and it
+            // ages just as much on a caught-up idle store, where it would fire the cap against a
+            // seconds-old live append. The onset is instead grounded in evidence the gap existed —
+            // see StuckAgeEvidenceHandler. No committed event above the mark means no durable
+            // evidence, and the in-memory clock governs alone, which correctly holds for a store
+            // whose first append after an idle stretch is still in flight. The stale threshold
+            // above stays on the in-memory clock so a fresh detector always gives a just-appeared
+            // gap one settle window, and a null cap still never knowingly skips.
             var cap = _settings.SkipStaleGapsDespiteLiveTransactionsAfter;
-            if (cap == null || age < cap.Value)
+            var stuckAge = age;
+            if (cap != null)
             {
-                if (age > _settings.StaleSequenceThreshold * 5)
+                var durable = await _runner
+                    .Query(new StuckAgeEvidenceHandler(_graph, statistics.LastMark, statistics.LastUpdated), token)
+                    .ConfigureAwait(false);
+                if (durable.HasValue && durable.Value > stuckAge)
+                {
+                    stuckAge = durable.Value;
+                }
+            }
+
+            if (cap == null || stuckAge < cap.Value)
+            {
+                if (stuckAge > _settings.StaleSequenceThreshold * 5)
                 {
                     _logger.LogWarning(
                         "Daemon high water detection has held before the sequence gap above {Mark} for {Age} because a transaction that may still fill it appears to be alive ({Liveness}). Projections will not advance until it commits, aborts, or the SkipStaleGapsDespiteLiveTransactionsAfter cap expires",
-                        observed.Mark, age, liveness);
+                        observed.Mark, stuckAge, liveness);
                 }
                 else
                 {
@@ -250,7 +330,7 @@ internal class HighWaterDetector: IHighWaterDetector
 
             _logger.LogWarning(
                 "Daemon high water detection is skipping the sequence gap above {Mark} DESPITE evidence of a live transaction ({Liveness}) because the gap has been stuck for {Age}, past the configured SkipStaleGapsDespiteLiveTransactionsAfter cap of {Cap}. Events committed later inside the skipped range will NOT be projected",
-                observed.Mark, liveness, age, cap);
+                observed.Mark, liveness, stuckAge, cap);
         }
 
         // Proven dead (or cap expired): walk past the gap, but never beyond the reserved ceiling
@@ -639,6 +719,14 @@ select coalesce(
         // No allocation fence here: the vectorized poll reads committed max(seq_id) per tenant, not
         // a reserved last_value, so there is no history to prove when the tenant's gap sequences
         // were allocated — quiescent sessions are NOT ruled out on this path (conservative).
+        // The store-global cap check floors its stuck age with durable gap evidence (the earliest
+        // committed event above the pinned mark, clamped by the mark's last advance — see
+        // StuckAgeEvidenceHandler) so the cap survives detector restarts. That floor is inert here:
+        // the per-tenant progression row (HighWaterMark:{tenant}) is re-marked by JasperFx's
+        // TenantedHighWaterCoordinator on EVERY vectorized poll — held mark included — so its
+        // last_updated is a poll heartbeat that clamps any evidence onset to roughly now. So this
+        // cap stays on the detector-scoped clock, and detector churn faster than the cap can still
+        // postpone it — bounded only once a detector lives past threshold + cap.
         if (_settings.UseTransactionEvidenceForGapSkipping
             && _tenantStaleSince.TryGetValue(statistics.TenantId!, out var observation))
         {

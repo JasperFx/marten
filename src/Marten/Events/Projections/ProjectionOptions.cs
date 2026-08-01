@@ -65,8 +65,13 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     ///     #4953: escape hatch for the transaction-evidence hold above. When set, a stale sequence gap is
     ///     skipped once it has been stuck this long even if evidence says a transaction that could fill it
     ///     is still alive — trading potential event loss for guaranteed projection progress (e.g. against
-    ///     leaked idle-in-transaction sessions). Null (the default) never knowingly skips past a live
-    ///     appender; PostgreSQL's own idle_in_transaction_session_timeout is the recommended backstop.
+    ///     leaked idle-in-transaction sessions). The stuck age is durable across daemon restarts: it is
+    ///     measured from the later of the mark's last advance and the earliest committed event above the
+    ///     pinned mark (proof the gap already existed by then), so agent churn cannot keep resetting the
+    ///     clock. When nothing is committed above the mark yet — e.g. the store's first append after an
+    ///     idle stretch is still in flight — only the running detector's own observation time counts and
+    ///     the daemon holds. Null (the default) never knowingly skips past a live appender; PostgreSQL's
+    ///     own idle_in_transaction_session_timeout is the recommended backstop.
     /// </summary>
     public TimeSpan? SkipStaleGapsDespiteLiveTransactionsAfter { get; set; }
 
