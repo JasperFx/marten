@@ -116,6 +116,9 @@
         <Compile Include="..\Marten.Testing\Harness\StoreContext.cs">
             <Link>Harness\StoreContext.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\Harness\TenantDatabases.cs">
+            <Link>Harness\TenantDatabases.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Harness\StoreFixture.cs">
             <Link>Harness\StoreFixture.cs</Link>
         </Compile>

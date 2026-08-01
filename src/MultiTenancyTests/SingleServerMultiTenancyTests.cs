@@ -13,7 +13,7 @@ using Weasel.Postgresql.Connections;
 
 namespace MultiTenancyTests;
 
-[CollectionDefinition("multi-tenancy", DisableParallelization = true)]
+[Collection("multi-tenancy")]
 public class SingleServerMultiTenancyTests: IAsyncLifetime
 {
     private DefaultNpgsqlDataSourceFactory dataSourceFactory = new();

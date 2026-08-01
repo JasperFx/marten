@@ -67,8 +67,8 @@ public class projection_statuses_per_database: IAsyncLifetime
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
         await conn.DropSchemaAsync(MasterSchema);
-        var tenantA = await CreateDatabaseIfNotExists(conn, TenantA);
-        var tenantB = await CreateDatabaseIfNotExists(conn, TenantB);
+        var tenantA = await TenantDatabases.CreateIfNotExistsAsync(conn, TenantA);
+        var tenantB = await TenantDatabases.CreateIfNotExistsAsync(conn, TenantB);
         await conn.CloseAsync();
 
         // Each run starts from sequence 0 so the assertions below are exact.
@@ -169,27 +169,6 @@ public class projection_statuses_per_database: IAsyncLifetime
 
     private static long HeadFor(System.Collections.Generic.IReadOnlyList<ProjectionStatus> statuses)
         => statuses.Single(x => x.ProjectionName == nameof(WidgetTally)).Shards.Single().EventStoreSequence;
-
-    private static async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
-    {
-        var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
-        if (!await conn.DatabaseExists(databaseName))
-        {
-            try
-            {
-                await new DatabaseSpecification().BuildDatabase(conn, databaseName);
-            }
-            catch (PostgresException e) when (e.SqlState is PostgresErrorCodes.DuplicateDatabase
-                                                  or PostgresErrorCodes.UniqueViolation)
-            {
-                // The test assembly runs once per target framework, concurrently; the check-then-create above
-                // is not atomic, so the loser of that race sees the database it wanted already there.
-            }
-        }
-
-        builder.Database = databaseName;
-        return builder.ConnectionString;
-    }
 
     private static async Task DropSchemaAsync(string connectionString)
     {
