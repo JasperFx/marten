@@ -35,57 +35,19 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// </para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class sharded_eager_apply_per_tenant_events : IAsyncLifetime
+public class sharded_eager_apply_per_tenant_events : ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private IDocumentStore _store = null!;
 
-    public sharded_eager_apply_per_tenant_events(ShardedPartitionedFixture fixture)
+    public sharded_eager_apply_per_tenant_events(ShardedPartitionedFixture fixture): base(fixture)
     {
-        _fixture = fixture;
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
     }
 
     private IDocumentStore CreateStore()
     {
-        _store = DocumentStore.For(opts =>
+        _store = BuildShardedStore(opts =>
         {
-            opts.MultiTenantedWithShardedDatabases(x =>
-            {
-                x.ConnectionString = ConnectionSource.ConnectionString;
-                x.SchemaName = "sharded";
-                x.PartitionSchemaName = "tenants";
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
-                {
-                    x.AddDatabase(dbName, connStr);
-                }
-                x.UseSmallestDatabaseAssignment();
-            });
-
             opts.AutoCreateSchemaObjects = AutoCreate.All;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Events.UseTenantPartitionedEvents = true;
             opts.Events.AddEventType<ShardedTestEvent>();
         });
 
@@ -121,7 +83,7 @@ public class sharded_eager_apply_per_tenant_events : IAsyncLifetime
         await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Sanity: the partition lives in the assigned shard.
-        await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
+        await using var conn = new NpgsqlConnection(Fixture.ConnectionStrings[dbId]);
         await conn.OpenAsync(TestContext.Current.CancellationToken);
         var tables = await conn.ExistingTablesAsync(ct: TestContext.Current.CancellationToken);
         tables.Any(t => t.Name == "mt_events_alpha").ShouldBeTrue(

@@ -43,41 +43,23 @@ public class Bug4713Doc
 /// </para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class Bug_4713_sharded_reapply_same_store: IAsyncLifetime
+public class Bug_4713_sharded_reapply_same_store: ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private readonly ITestOutputHelper _output;
 
-    public Bug_4713_sharded_reapply_same_store(ShardedPartitionedFixture fixture, ITestOutputHelper output)
+    public Bug_4713_sharded_reapply_same_store(ShardedPartitionedFixture fixture, ITestOutputHelper output): base(fixture)
     {
-        _fixture = fixture;
         _output = output;
     }
 
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync() => default;
-
-    private DocumentStore BuildStore() => (DocumentStore)DocumentStore.For(opts =>
+    private DocumentStore BuildStore() => TrackStore((DocumentStore)DocumentStore.For(opts =>
     {
         opts.MultiTenantedWithShardedDatabases(x =>
         {
             x.ConnectionString = ConnectionSource.ConnectionString;
             x.SchemaName = "sharded";
             x.PartitionSchemaName = "tenants";
-            foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+            foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
             {
                 x.AddDatabase(dbName, connStr);
             }
@@ -91,20 +73,20 @@ public class Bug_4713_sharded_reapply_same_store: IAsyncLifetime
             .MultiTenantedWithPartitioning(x => x.ByList())
             .Index(x => x.Name)
             .StartIndexesByTenantId();
-    });
+    }));
 
     [Fact]
     public async Task reapply_on_same_store_after_provisioning_is_idempotent()
     {
         var assignment = new Dictionary<string, string>
         {
-            ["tA"] = _fixture.DbNames[0],
-            ["tB"] = _fixture.DbNames[1],
-            ["tC"] = _fixture.DbNames[2],
+            ["tA"] = Fixture.DbNames[0],
+            ["tB"] = Fixture.DbNames[1],
+            ["tC"] = Fixture.DbNames[2],
         };
 
         // ONE store instance for the whole test — this is the distinguishing factor from #4706.
-        await using var store = BuildStore();
+        var store = BuildStore();
 
         var databases = await store.Options.Tenancy.BuildDatabases();
         foreach (var db in databases.OfType<IMartenDatabase>())
@@ -128,11 +110,11 @@ public class Bug_4713_sharded_reapply_same_store: IAsyncLifetime
 
         // Capture the partition layout each shard has AFTER provisioning. #4713 is specifically about
         // re-apply IDEMPOTENCY, so this is the baseline a no-op re-apply must preserve.
-        var shards = _fixture.ConnectionStrings.Keys.ToList();
+        var shards = Fixture.ConnectionStrings.Keys.ToList();
         var before = new Dictionary<string, List<string>>();
         foreach (var shard in shards)
         {
-            before[shard] = await partitionsOf(_fixture.ConnectionStrings[shard], "mt_doc_bug4713doc");
+            before[shard] = await partitionsOf(Fixture.ConnectionStrings[shard], "mt_doc_bug4713doc");
             _output.WriteLine($"[before][{shard}] {string.Join(", ", before[shard])}");
         }
 
@@ -156,7 +138,7 @@ public class Bug_4713_sharded_reapply_same_store: IAsyncLifetime
         // #4713 fix restores (flag stays set → ListPartitioning.CreateDelta → None on every shard).
         foreach (var shard in shards)
         {
-            var after = await partitionsOf(_fixture.ConnectionStrings[shard], "mt_doc_bug4713doc");
+            var after = await partitionsOf(Fixture.ConnectionStrings[shard], "mt_doc_bug4713doc");
             _output.WriteLine($"[after][{shard}] {string.Join(", ", after)}");
             after.ShouldBe(before[shard],
                 $"re-applying the schema must not change shard {shard}'s per-tenant partitions (#4713)");

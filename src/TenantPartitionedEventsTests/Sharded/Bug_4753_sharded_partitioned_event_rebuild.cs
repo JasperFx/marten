@@ -32,41 +32,23 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// </para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class Bug_4753_sharded_partitioned_event_rebuild: IAsyncLifetime
+public class Bug_4753_sharded_partitioned_event_rebuild: ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private readonly ITestOutputHelper _output;
 
-    public Bug_4753_sharded_partitioned_event_rebuild(ShardedPartitionedFixture fixture, ITestOutputHelper output)
+    public Bug_4753_sharded_partitioned_event_rebuild(ShardedPartitionedFixture fixture, ITestOutputHelper output): base(fixture)
     {
-        _fixture = fixture;
         _output = output;
     }
 
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync() => default;
-
-    private DocumentStore BuildStore() => (DocumentStore)DocumentStore.For(opts =>
+    private DocumentStore BuildStore() => TrackStore((DocumentStore)DocumentStore.For(opts =>
     {
         opts.MultiTenantedWithShardedDatabases(x =>
         {
             x.ConnectionString = ConnectionSource.ConnectionString;
             x.SchemaName = "sharded";
             x.PartitionSchemaName = "tenants";
-            foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+            foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
             {
                 x.AddDatabase(dbName, connStr);
             }
@@ -76,23 +58,23 @@ public class Bug_4753_sharded_partitioned_event_rebuild: IAsyncLifetime
         opts.Events.TenancyStyle = TenancyStyle.Conjoined;
         opts.Events.UseTenantPartitionedEvents = true;
         opts.Events.AddEventType<Bug4753ShardedEvent>();
-    });
+    }));
 
     [Fact]
     public async Task reapply_over_existing_tenant_partitioned_events_is_idempotent()
     {
         var assignment = new Dictionary<string, string>
         {
-            ["tA"] = _fixture.DbNames[0],
-            ["tB"] = _fixture.DbNames[1],
-            ["tC"] = _fixture.DbNames[2],
+            ["tA"] = Fixture.DbNames[0],
+            ["tB"] = Fixture.DbNames[1],
+            ["tC"] = Fixture.DbNames[2],
         };
 
         // First deploy: create the parent partitioned schema on every shard, provision tenants
         // (additive per-tenant partitions on mt_streams / mt_events), then APPEND EVENTS so the
         // partitioned event tables actually hold rows.
-        await using (var store = BuildStore())
         {
+            var store = BuildStore();
             var databases = await store.Options.Tenancy.BuildDatabases();
             foreach (var db in databases.OfType<IMartenDatabase>())
             {
@@ -116,8 +98,8 @@ public class Bug_4753_sharded_partitioned_event_rebuild: IAsyncLifetime
         // path. Pre-fix this destructively rebuilds the partitioned mt_streams / mt_events on each shard
         // and the INSERT…SELECT of the existing events fails with 23514. With IgnorePartitionsInMigration
         // set on the event tables it is a no-op.
-        await using (var store = BuildStore())
         {
+            var store = BuildStore();
             var ex = await Record.ExceptionAsync(() =>
                 store.Storage.ApplyAllConfiguredChangesToDatabaseAsync());
 

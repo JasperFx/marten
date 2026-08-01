@@ -28,41 +28,18 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// its sessions continue to read/write through that database.
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class sharded_one_database_per_shard : IAsyncLifetime
+public class sharded_one_database_per_shard : ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
     private IDocumentStore _store = null!;
 
-    public sharded_one_database_per_shard(ShardedPartitionedFixture fixture)
+    public sharded_one_database_per_shard(ShardedPartitionedFixture fixture): base(fixture)
     {
-        _fixture = fixture;
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
     }
 
     [Fact]
     public async Task two_tenants_on_the_same_shard_share_one_MartenDatabase_instance()
     {
-        _store = DocumentStore.For(opts =>
+        _store = TrackStore(DocumentStore.For(opts =>
         {
             opts.MultiTenantedWithShardedDatabases(x =>
             {
@@ -70,7 +47,7 @@ public class sharded_one_database_per_shard : IAsyncLifetime
                 x.SchemaName = "sharded";
                 x.PartitionSchemaName = "tenants";
 
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
                 {
                     x.AddDatabase(dbName, connStr);
                 }
@@ -81,12 +58,12 @@ public class sharded_one_database_per_shard : IAsyncLifetime
             opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
             opts.Events.UseTenantPartitionedEvents = true;
             opts.Events.AddEventType<ShardedTestEvent>();
-        });
+        }));
 
         // Explicitly assign two tenants to the SAME shard so we can pin the
         // one-MartenDatabase-per-shard invariant without depending on the
         // hash-distribution choice an auto-assigner would make.
-        var sharedShard = _fixture.DbNames[0];
+        var sharedShard = Fixture.DbNames[0];
         await _store.Advanced.AddTenantToShardAsync("alpha", sharedShard, CancellationToken.None);
         await _store.Advanced.AddTenantToShardAsync("beta", sharedShard, CancellationToken.None);
 
@@ -104,7 +81,7 @@ public class sharded_one_database_per_shard : IAsyncLifetime
     [Fact]
     public async Task disabling_tenant_A_on_shared_shard_does_not_break_tenant_B_appends()
     {
-        _store = DocumentStore.For(opts =>
+        _store = TrackStore(DocumentStore.For(opts =>
         {
             opts.MultiTenantedWithShardedDatabases(x =>
             {
@@ -112,7 +89,7 @@ public class sharded_one_database_per_shard : IAsyncLifetime
                 x.SchemaName = "sharded";
                 x.PartitionSchemaName = "tenants";
 
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                foreach (var (dbName, connStr) in Fixture.ConnectionStrings)
                 {
                     x.AddDatabase(dbName, connStr);
                 }
@@ -123,10 +100,10 @@ public class sharded_one_database_per_shard : IAsyncLifetime
             opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
             opts.Events.UseTenantPartitionedEvents = true;
             opts.Events.AddEventType<ShardedTestEvent>();
-        });
+        }));
 
         // Both tenants on the same shard.
-        var sharedShard = _fixture.DbNames[1];
+        var sharedShard = Fixture.DbNames[1];
         await _store.Advanced.AddTenantToShardAsync("disabletest_a", sharedShard, CancellationToken.None);
         await _store.Advanced.AddTenantToShardAsync("disabletest_b", sharedShard, CancellationToken.None);
 

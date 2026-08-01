@@ -39,72 +39,23 @@ public class Bug4942Doc
 /// most one batch of IF NOT EXISTS catalog checks per tenant per process.
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
-public class Bug_4942_auto_assign_provisioning_repair : IAsyncLifetime
+public class Bug_4942_auto_assign_provisioning_repair : ShardedPartitionedContext
 {
-    private readonly ShardedPartitionedFixture _fixture;
-    private readonly List<IDocumentStore> _stores = new();
-
-    public Bug_4942_auto_assign_provisioning_repair(ShardedPartitionedFixture fixture)
+    public Bug_4942_auto_assign_provisioning_repair(ShardedPartitionedFixture fixture): base(fixture)
     {
-        _fixture = fixture;
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("sharded"); } catch { }
-
-        foreach (var connStr in _fixture.ConnectionStrings.Values)
-        {
-            await using var tenantConn = new NpgsqlConnection(connStr);
-            await tenantConn.OpenAsync();
-            try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
-        }
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        foreach (var store in _stores)
-        {
-            store.Dispose();
-        }
-
-        return default;
     }
 
     private IDocumentStore BuildStore()
     {
-        var store = DocumentStore.For(opts =>
+        return BuildShardedStore(opts =>
         {
-            opts.MultiTenantedWithShardedDatabases(x =>
-            {
-                x.ConnectionString = ConnectionSource.ConnectionString;
-                x.SchemaName = "sharded";
-                x.PartitionSchemaName = "tenants";
-
-                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
-                {
-                    x.AddDatabase(dbName, connStr);
-                }
-
-                x.UseSmallestDatabaseAssignment();
-            });
-
             opts.AutoCreateSchemaObjects = AutoCreate.All;
 
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Events.UseTenantPartitionedEvents = true;
             opts.Events.AddEventType<ShardedTestEvent>();
 
             opts.Schema.For<Bug4942Doc>()
                 .MultiTenantedWithPartitioning(x => x.ByList());
         });
-
-        _stores.Add(store);
-        return store;
     }
 
     /// <summary>
@@ -133,7 +84,6 @@ public class Bug_4942_auto_assign_provisioning_repair : IAsyncLifetime
         await assertSequenceState(dbId, tenantId, shouldExist: true, "after initial provisioning");
 
         store.Dispose();
-        _stores.Remove(store);
 
         await damageTenantAsync(dbId, tenantId);
         return dbId;
@@ -141,7 +91,7 @@ public class Bug_4942_auto_assign_provisioning_repair : IAsyncLifetime
 
     private async Task damageTenantAsync(string dbId, string tenantId)
     {
-        await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
+        await using var conn = new NpgsqlConnection(Fixture.ConnectionStrings[dbId]);
         await conn.OpenAsync();
         await conn.CreateCommand($"drop table if exists public.mt_doc_bug4942doc_{tenantId}")
             .ExecuteNonQueryAsync();
@@ -252,7 +202,7 @@ public class Bug_4942_auto_assign_provisioning_repair : IAsyncLifetime
 
     private async Task assertDocPartitionExists(string dbId, string tenantId)
     {
-        await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
+        await using var conn = new NpgsqlConnection(Fixture.ConnectionStrings[dbId]);
         await conn.OpenAsync();
         var tables = await conn.ExistingTablesAsync();
         tables.Any(t => t.Name == $"mt_doc_bug4942doc_{tenantId}").ShouldBeTrue(
@@ -261,7 +211,7 @@ public class Bug_4942_auto_assign_provisioning_repair : IAsyncLifetime
 
     private async Task assertSequenceState(string dbId, string tenantId, bool shouldExist, string because)
     {
-        await using var conn = new NpgsqlConnection(_fixture.ConnectionStrings[dbId]);
+        await using var conn = new NpgsqlConnection(Fixture.ConnectionStrings[dbId]);
         await conn.OpenAsync();
         var count = (long)(await conn.CreateCommand(
                 "select count(*) from pg_sequences where schemaname = 'public' and sequencename = :n")
