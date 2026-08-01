@@ -9,37 +9,15 @@ using Vogen;
 
 namespace ValueTypeTests.VogenIds;
 
-public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposable
+public class duplicated_value_type_field_operations : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-    private IDocumentSession theSession;
-
     public duplicated_value_type_field_operations()
     {
-        theStore = DocumentStore.For(opts =>
+        StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "duplicated_value_type_field2";
-
             opts.RegisterValueType<DuplicateValueType>();
             opts.Schema.For<DuplicateValueTypeDoc>().Duplicate(x => x.DuplicateValueType);
         });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public void Dispose()
-    {
-        theStore?.Dispose();
-        theSession?.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (theStore != null)
-        {
-            await theStore.DisposeAsync();
-        }
     }
 
     [Fact]

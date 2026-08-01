@@ -10,33 +10,8 @@ using Vogen;
 
 namespace ValueTypeTests.StrongTypedId;
 
-public class long_based_document_operations : IAsyncLifetime
+public class long_based_document_operations : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-
-    public long_based_document_operations()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed3";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Issue2));
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await theStore.DisposeAsync();
-        theSession?.Dispose();
-    }
-
-    private IDocumentSession theSession;
 
     [Fact]
     public void store_document_will_assign_the_identity()
@@ -281,33 +256,8 @@ public class Issue3
     public string Name { get; set; }
 }
 
-public class long_based_document_operations_with_non_nullable_id : IAsyncLifetime
+public class long_based_document_operations_with_non_nullable_id : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-
-    public long_based_document_operations_with_non_nullable_id()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed22";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Issue3));
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await theStore.DisposeAsync();
-        theSession?.Dispose();
-    }
-
-    private IDocumentSession theSession;
 
     [Fact]
     public void store_document_will_assign_the_identity()

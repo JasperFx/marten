@@ -7,36 +7,8 @@ using Shouldly;
 
 namespace ValueTypeTests.StrongTypedId;
 
-public class check_exists_with_strong_typed_ids: IDisposable, IAsyncDisposable
+public class check_exists_with_strong_typed_ids: OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-    private IDocumentSession theSession;
-
-    public check_exists_with_strong_typed_ids()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed_exists";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public void Dispose()
-    {
-        theStore?.Dispose();
-        theSession?.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (theStore != null)
-        {
-            await theStore.DisposeAsync();
-        }
-    }
-
     [Fact]
     public async Task check_exists_with_guid_strong_typed_id_hit()
     {
