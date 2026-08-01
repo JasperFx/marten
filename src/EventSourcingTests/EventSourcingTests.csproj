@@ -81,6 +81,9 @@
         <Compile Include="..\Marten.Testing\Harness\IntegrationContext.cs">
             <Link>Harness\IntegrationContext.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\Harness\MultiStoreFixture.cs">
+            <Link>Harness\MultiStoreFixture.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Harness\OneOffConfigurationsContext.cs">
             <Link>Harness\OneOffConfigurationsContext.cs</Link>
         </Compile>
