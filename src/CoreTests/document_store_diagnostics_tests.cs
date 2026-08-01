@@ -39,12 +39,12 @@ public class DiagCat: DiagAnimal { }
 /// <see cref="DocumentMappingDescriptor"/> enrichment (SubClasses + structured Partitioning) that
 /// feeds the CritterWatch Document Database Explorer.
 /// </summary>
-public class document_store_diagnostics_tests
+public class document_store_diagnostics_tests: HostedStoreContext
 {
     [Fact]
     public async Task diagnostics_is_registered_in_the_container()
     {
-        using var host = await BuildHost("doc_diag_di", opts => opts.Schema.For<DiagWidget>());
+        var host = await BuildHost("di", opts => opts.Schema.For<DiagWidget>());
 
         host.Services.GetService<IDocumentStoreDiagnostics>().ShouldNotBeNull();
     }
@@ -52,7 +52,7 @@ public class document_store_diagnostics_tests
     [Fact]
     public async Task document_types_lists_registered_mappings()
     {
-        using var host = await BuildHost("doc_diag_types", opts =>
+        var host = await BuildHost("types", opts =>
         {
             opts.Schema.For<DiagWidget>();
             opts.Schema.For<User>();
@@ -63,7 +63,7 @@ public class document_store_diagnostics_tests
 
         var widget = types.Single(t => t.Alias == "diagwidget");
         widget.TypeName.ShouldContain(nameof(DiagWidget));
-        widget.SchemaName.ShouldBe("doc_diag_types");
+        widget.SchemaName.ShouldBe($"{SchemaName}_types");
 
         types.Select(t => t.Alias).ShouldContain("user");
     }
@@ -71,7 +71,7 @@ public class document_store_diagnostics_tests
     [Fact]
     public async Task query_documents_pages_and_reports_the_total()
     {
-        using var host = await BuildHost("doc_diag_paging", opts => opts.Schema.For<DiagWidget>());
+        var host = await BuildHost("paging", opts => opts.Schema.For<DiagWidget>());
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
         await using (var session = store.LightweightSession())
@@ -111,7 +111,7 @@ public class document_store_diagnostics_tests
     [Fact]
     public async Task query_documents_can_filter_by_id()
     {
-        using var host = await BuildHost("doc_diag_byid", opts => opts.Schema.For<DiagWidget>());
+        var host = await BuildHost("byid", opts => opts.Schema.For<DiagWidget>());
 
         var target = new DiagWidget { Id = Guid.NewGuid(), Name = "the-one" };
         var store = host.Services.GetRequiredService<IDocumentStore>();
@@ -134,7 +134,7 @@ public class document_store_diagnostics_tests
     [Fact]
     public async Task query_documents_for_an_unknown_type_returns_an_empty_page()
     {
-        using var host = await BuildHost("doc_diag_unknown", opts => opts.Schema.For<DiagWidget>());
+        var host = await BuildHost("unknown", opts => opts.Schema.For<DiagWidget>());
 
         var diagnostics = host.Services.GetRequiredService<IDocumentStoreDiagnostics>();
 
@@ -148,7 +148,7 @@ public class document_store_diagnostics_tests
     [Fact]
     public async Task load_document_json_returns_the_document_or_null()
     {
-        using var host = await BuildHost("doc_diag_load", opts => opts.Schema.For<DiagWidget>());
+        var host = await BuildHost("load", opts => opts.Schema.For<DiagWidget>());
 
         var target = new DiagWidget { Id = Guid.NewGuid(), Name = "loadable" };
         var store = host.Services.GetRequiredService<IDocumentStore>();
@@ -172,7 +172,7 @@ public class document_store_diagnostics_tests
     [Fact]
     public async Task mapping_descriptor_carries_subclasses_for_a_hierarchy()
     {
-        using var host = await BuildHost("doc_diag_subclasses", opts =>
+        var host = await BuildHost("subclasses", opts =>
             opts.Schema.For<DiagAnimal>()
                 .AddSubClass<DiagDog>()
                 .AddSubClass<DiagCat>());
@@ -189,7 +189,7 @@ public class document_store_diagnostics_tests
     [Fact]
     public async Task mapping_descriptor_carries_structured_partitioning()
     {
-        using var host = await BuildHost("doc_diag_partitioning", opts =>
+        var host = await BuildHost("partitioning", opts =>
             opts.Schema.For<Target>().PartitionOn(x => x.Number, x =>
             {
                 x.ByRange()
@@ -210,7 +210,7 @@ public class document_store_diagnostics_tests
     [Fact]
     public async Task mapping_descriptor_has_no_partitioning_when_not_partitioned()
     {
-        using var host = await BuildHost("doc_diag_no_partitioning", opts => opts.Schema.For<DiagWidget>());
+        var host = await BuildHost("no_partitioning", opts => opts.Schema.For<DiagWidget>());
 
         var usage = await GetUsageAsync(host);
         var descriptor = usage.Documents.Single(d => d.Alias == "diagwidget");
@@ -219,27 +219,22 @@ public class document_store_diagnostics_tests
         descriptor.Partitioning.ShouldBeNull();
     }
 
-    private static async Task<IHost> BuildHost(string schema, Action<StoreOptions> configure)
+    private async Task<IHost> BuildHost(string suffix, Action<StoreOptions> configure)
     {
         // Start from a clean schema so the data-bearing tests get a deterministic row count
         // regardless of prior runs against the same database (e.g. the net9 + net10 matrix).
+        var schema = $"{SchemaName}_{suffix}";
         await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync();
             await conn.DropSchemaAsync(schema);
         }
 
-        return await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = schema;
-                    configure(opts);
-                });
-            })
-            .StartAsync();
+        return await StartHostAsync(opts =>
+        {
+            opts.DatabaseSchemaName = schema;
+            configure(opts);
+        });
     }
 
     private static async Task<DocumentStoreUsage> GetUsageAsync(IHost host)

@@ -6,30 +6,21 @@ using Xunit;
 
 namespace CoreTests;
 
-public class migrate_from_guid_to_int_based_revisions
+public class migrate_from_guid_to_int_based_revisions: OneOffConfigurationsContext
 {
     [Fact]
     public async Task automatic_conversion_of_guid_version_to_integer()
     {
-        using var store1 = DocumentStore.For(opts =>
+        var store1 = StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "migrations";
-
             opts.Schema.For<MigratedDoc>().UseOptimisticConcurrency(true);
         });
 
-        await store1.Advanced.Clean.CompletelyRemoveAllAsync();
-
         await store1.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        using var store2 = DocumentStore.For(opts =>
+        var store2 = SeparateStore(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "migrations";
-
             opts.Schema.For<MigratedDoc>().UseNumericRevisions(true);
-
         });
 
         await store2.Storage.ApplyAllConfiguredChangesToDatabaseAsync();

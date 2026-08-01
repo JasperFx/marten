@@ -16,7 +16,7 @@ namespace CoreTests.Bugs;
 /// contains a backtick + arity (e.g. <c>IMartenStoreMarker`1</c>), which is not a valid URI
 /// hostname when composing the <c>marten://</c> subject in <c>SecondaryStoreConfig.Build</c>.
 /// </summary>
-public class Bug_5039_generic_secondary_store_marker
+public class Bug_5039_generic_secondary_store_marker: HostedStoreContext
 {
     public sealed class MyContext;
     public sealed class OtherContext;
@@ -44,23 +44,16 @@ public class Bug_5039_generic_secondary_store_marker
     [Fact]
     public async Task can_register_and_resolve_generic_marker_store()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services =>
             {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "bug5039_primary";
-                });
-
                 // This threw UriFormatException before the fix
                 services.AddMartenStore<IMartenStoreMarker<MyContext>>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "bug5039_ancillary";
+                    opts.DatabaseSchemaName = $"{SchemaName}_ancillary";
                 });
-            })
-            .StartAsync();
+            });
 
         var store = host.Services.GetRequiredService<IMartenStoreMarker<MyContext>>();
         store.ShouldNotBeNull();

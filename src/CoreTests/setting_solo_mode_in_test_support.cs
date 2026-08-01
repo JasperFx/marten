@@ -11,35 +11,33 @@ using Xunit;
 
 namespace CoreTests;
 
-public class setting_solo_mode_in_test_support
+public class setting_solo_mode_in_test_support: HostedStoreContext
 {
     [Fact]
     public async Task override_every_store_to_use_a_solo_async_daemon()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        // Mostly just to prove we can mix and match daemon registrations
+        var host = await StartHostAsync(_ => { }, DaemonMode.HotCold,
+            configureServices: services =>
             {
-                // Mostly just to prove we can mix and match
-                services.AddMarten(ConnectionSource.ConnectionString).AddAsyncDaemon(DaemonMode.HotCold);
-
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "first_store";
+                    opts.DatabaseSchemaName = $"{SchemaName}_first";
                 }).AddAsyncDaemon(DaemonMode.HotCold);
 
-                services.AddMartenStore<ISecondStore>(services =>
+                services.AddMartenStore<ISecondStore>(s =>
                 {
                     var opts = new StoreOptions();
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "second_store";
+                    opts.DatabaseSchemaName = $"{SchemaName}_second";
 
                     return opts;
                 }).AddAsyncDaemon(DaemonMode.HotCold);
 
                 // Forget what the application says, let's make all the daemons run in solo mode!
                 services.MartenDaemonModeIsSolo();
-            }).StartAsync();
+            });
 
         // 9.0: JFx.Events 2.0 introduced its own IProjectionCoordinator(<T>); qualify
         // with the full Marten namespace path to disambiguate the resolution this test

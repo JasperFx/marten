@@ -14,7 +14,7 @@ namespace CoreTests.Bugs;
 /// Regression test for #4187: document tables from ancillary stores should never
 /// be created in the main store's database.
 /// </summary>
-public class Bug_4187_ancillary_store_isolation
+public class Bug_4187_ancillary_store_isolation: HostedStoreContext
 {
     // Types only used in the primary store
     public class PrimaryDoc
@@ -36,27 +36,19 @@ public class Bug_4187_ancillary_store_isolation
     [Fact]
     public async Task ancillary_store_types_should_not_appear_in_primary_store_schema()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(opts =>
             {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "primary_4187";
-                    opts.RegisterDocumentType<PrimaryDoc>();
-                    // Explicitly do NOT register AncillaryDoc
-                })
-                .ApplyAllDatabaseChangesOnStartup();
-
-                services.AddMartenStore<IAncillaryStore>(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "ancillary_4187";
-                    opts.RegisterDocumentType<AncillaryDoc>();
-                    // Explicitly do NOT register PrimaryDoc
-                });
-            })
-            .StartAsync();
+                opts.RegisterDocumentType<PrimaryDoc>();
+                // Explicitly do NOT register AncillaryDoc
+            },
+            configureServices: services => services.AddMartenStore<IAncillaryStore>(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.DatabaseSchemaName = $"{SchemaName}_ancillary";
+                opts.RegisterDocumentType<AncillaryDoc>();
+                // Explicitly do NOT register PrimaryDoc
+            }),
+            configureMarten: marten => marten.ApplyAllDatabaseChangesOnStartup());
 
         var primaryStore = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
         var ancillaryStore = (DocumentStore)host.Services.GetRequiredService<IAncillaryStore>();
@@ -86,25 +78,15 @@ public class Bug_4187_ancillary_store_isolation
     [Fact]
     public async Task ancillary_store_ddl_should_not_contain_primary_store_types()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(
+            opts => opts.RegisterDocumentType<PrimaryDoc>(),
+            configureServices: services => services.AddMartenStore<IAncillaryStore>(opts =>
             {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "primary_4187b";
-                    opts.RegisterDocumentType<PrimaryDoc>();
-                })
-                .ApplyAllDatabaseChangesOnStartup();
-
-                services.AddMartenStore<IAncillaryStore>(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "ancillary_4187b";
-                    opts.RegisterDocumentType<AncillaryDoc>();
-                });
-            })
-            .StartAsync();
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.DatabaseSchemaName = $"{SchemaName}_ancillary_b";
+                opts.RegisterDocumentType<AncillaryDoc>();
+            }),
+            configureMarten: marten => marten.ApplyAllDatabaseChangesOnStartup());
 
         var primaryStore = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
         var ancillaryStore = (DocumentStore)host.Services.GetRequiredService<IAncillaryStore>();
