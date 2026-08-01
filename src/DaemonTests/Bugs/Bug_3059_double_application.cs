@@ -21,7 +21,7 @@ using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoor
 
 namespace DaemonTests.Bugs;
 
-public class Bug_3059_double_application
+public class Bug_3059_double_application: HostedStoreContext
 {
     [Fact]
     public async Task work_correctly()
@@ -29,24 +29,16 @@ public class Bug_3059_double_application
         using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync(TestContext.Current.CancellationToken);
-            await conn.DropSchemaAsync("bug3059", TestContext.Current.CancellationToken);
+            await conn.DropSchemaAsync(SchemaName, TestContext.Current.CancellationToken);
             await conn.CloseAsync();
         }
 
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(opts =>
             {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DisableNpgsqlLogging = true;
-                    opts.DatabaseSchemaName = "bug3059";
-
-                    opts.Projections.LiveStreamAggregation<Incident>();
-                    opts.Projections.Snapshot<IncidentDetailsSnapshotAsyncProjection>(SnapshotLifecycle.Async);
-                })
-                .AddAsyncDaemon(DaemonMode.Solo);
-            }).StartAsync(TestContext.Current.CancellationToken);
+                opts.Projections.LiveStreamAggregation<Incident>();
+                opts.Projections.Snapshot<IncidentDetailsSnapshotAsyncProjection>(SnapshotLifecycle.Async);
+            },
+            DaemonMode.Solo);
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
 

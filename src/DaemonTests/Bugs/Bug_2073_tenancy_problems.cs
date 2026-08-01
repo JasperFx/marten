@@ -20,26 +20,13 @@ using Xunit;
 
 namespace DaemonTests.Bugs;
 
-public class Bug_2073_tenancy_problems
+public class Bug_2073_tenancy_problems: HostedStoreContext
 {
     [Fact]
     public async Task do_not_throw_tenancy_errors()
     {
-        var builder = new HostBuilder();
-        builder.ConfigureServices(services =>
-        {
-            services.AddLogging(logging =>
+        var host = await StartHostAsync(options =>
             {
-                logging.AddConsole();
-                logging.SetMinimumLevel(LogLevel.Debug);
-            });
-
-            services.AddMarten(options =>
-            {
-                options.Connection(ConnectionSource.ConnectionString);
-                options.DisableNpgsqlLogging = true;
-                options.DatabaseSchemaName = "bug2073";
-
                 // Multi tenancy
                 options.Policies.AllDocumentsAreMultiTenanted();
                 options.Advanced.DefaultTenantUsageEnabled = false;
@@ -49,10 +36,12 @@ public class Bug_2073_tenancy_problems
 
                 // Add projections
                 options.Projections.Add<DocumentProjection>(ProjectionLifecycle.Async);
-            });
-        });
-
-        using var host = await builder.StartAsync(TestContext.Current.CancellationToken);
+            },
+            configureServices: services => services.AddLogging(logging =>
+            {
+                logging.AddConsole();
+                logging.SetMinimumLevel(LogLevel.Debug);
+            }));
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
