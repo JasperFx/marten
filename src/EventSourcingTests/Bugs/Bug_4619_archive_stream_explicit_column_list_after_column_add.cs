@@ -36,23 +36,13 @@ namespace EventSourcingTests.Bugs;
 /// is robust to physical-order drift.
 /// </para>
 /// </summary>
-public class Bug_4619_archive_stream_explicit_column_list_after_column_add
+public class Bug_4619_archive_stream_explicit_column_list_after_column_add: BugIntegrationContext
 {
     [Fact]
     public async Task archive_stream_succeeds_after_a_post_creation_column_add()
     {
-        var schema = $"bug4619_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
-
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        var store = StoreOptions(opts =>
         {
-            await conn.OpenAsync();
-            try { await conn.DropSchemaAsync(schema); } catch { }
-        }
-
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = schema;
             opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
             // UseArchivedStreamPartitioning routes archives through the bulk
             // function variant (writeWithPartitioning) — the broken positional
@@ -85,8 +75,8 @@ public class Bug_4619_archive_stream_explicit_column_list_after_column_add
         await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync();
-            await conn.CreateCommand($"alter table {schema}.mt_events drop column bdata").ExecuteNonQueryAsync();
-            await conn.CreateCommand($"alter table {schema}.mt_events add column bdata bytea null").ExecuteNonQueryAsync();
+            await conn.CreateCommand($"alter table {SchemaName}.mt_events drop column bdata").ExecuteNonQueryAsync();
+            await conn.CreateCommand($"alter table {SchemaName}.mt_events add column bdata bytea null").ExecuteNonQueryAsync();
         }
 
         // Archive — the positional INSERT inside mt_archive_stream would
