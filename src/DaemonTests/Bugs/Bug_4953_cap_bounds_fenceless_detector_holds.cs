@@ -326,6 +326,87 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
     }
 
     [Fact]
+    public async Task conjoined_tenancy_routes_store_global_and_the_cap_still_bounds_detector_churn()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.StaleSequenceThreshold = 250.Milliseconds();
+            opts.Projections.SkipStaleGapsDespiteLiveTransactionsAfter = 600.Milliseconds();
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Policies.AllDocumentsAreMultiTenanted();
+        });
+        theStore.EnsureStorageExists(typeof(IEvent));
+
+        var listener = await startIdleAdvisoryLockSession(4953007);
+        try
+        {
+            await appendEvents(8, "greenacres");
+            await execute($"select {Schema}.mt_mark_event_progression('HighWaterMark', 8)");
+
+            // A tenant append reserves from the SHARED sequence and rolls back — the burned number is
+            // a hole in the one store-wide sequence, exactly the shape an optimistic-concurrency
+            // loser leaves under conjoined tenancy
+            var (conn, tx, seq) = await startOutstandingAppend();
+            try
+            {
+                seq.ShouldBe(9);
+                await appendEvents(3, "greenacres"); // 10..12 committed
+                await tx.RollbackAsync(TestContext.Current.CancellationToken);
+            }
+            finally
+            {
+                await conn.DisposeAsync();
+            }
+
+            await Task.Delay(700, TestContext.Current.CancellationToken);
+
+            // Conjoined tenancy shares one event sequence and one HighWaterMark row: the vectorized
+            // per-tenant path is gated on UseTenantPartitionedEvents, NOT on TenancyStyle, so a
+            // conjoined store's daemon detects through the same store-global path as a single-tenant
+            // store — the per-tenant API collapses to the store-global reading
+            var probe = buildDetector();
+            probe.SupportsTenantPartitioning.ShouldBeFalse();
+            var vector = await probe.DetectInSafeZoneForTenantsAsync(["greenacres"], CancellationToken.None);
+            vector.TenantCount.ShouldBe(0);
+            vector.Global.ShouldNotBeNull();
+            vector.Global.CurrentMark.ShouldBe(8); // first sighting for this detector: settle hold
+
+            // Same churn shape as detector_churn_does_not_postpone_the_cap_forever, on the conjoined
+            // store: no single detector lives long enough to accumulate the cap in memory, so only
+            // the durable pinned age can bound the stall
+            for (var cycle = 0; cycle < 4; cycle++)
+            {
+                var detector = buildDetector();
+
+                var first = await detector.DetectInSafeZone(CancellationToken.None);
+                first.CurrentMark.ShouldBe(8);
+
+                await Task.Delay(300, TestContext.Current.CancellationToken);
+
+                var second = await detector.DetectInSafeZone(CancellationToken.None);
+                _output.WriteLine($"Cycle {cycle}: CurrentMark={second.CurrentMark}");
+                if (second.CurrentMark > 8)
+                {
+                    second.CurrentMark.ShouldBe(12);
+                    second.IncludesSkipping.ShouldBeTrue();
+
+                    var persisted = await scalar(
+                        $"select coalesce(max(last_seq_id), 0) from {Schema}.mt_event_progression where name = 'HighWaterMark'");
+                    persisted.ShouldBe(12);
+                    return;
+                }
+            }
+
+            throw new ShouldAssertException(
+                "The conjoined-tenancy store's high water mark never skipped the dead gap despite the cap having long expired");
+        }
+        finally
+        {
+            await listener.DisposeAsync();
+        }
+    }
+
+    [Fact]
     public async Task running_daemon_resumed_after_the_gap_formed_skips_within_the_cap()
     {
         StoreOptions(opts =>
