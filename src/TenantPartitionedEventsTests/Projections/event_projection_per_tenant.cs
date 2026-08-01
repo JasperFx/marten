@@ -13,6 +13,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -34,41 +35,16 @@ namespace TenantPartitionedEventsTests.Projections;
 /// future fixture refactor cannot drift the assertions.
 /// </para>
 /// </summary>
-public class event_projection_per_tenant : IAsyncLifetime
+public class event_projection_per_tenant : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_evproj";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_evproj_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        opts.Events.AddEventType<LegEvent>();
+        opts.Schema.For<LegLog>().Identity(x => x.Id).DocumentAlias("p2c_leg_log");
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<LegEvent>();
-            opts.Schema.For<LegLog>().Identity(x => x.Id).DocumentAlias("p2c_leg_log");
-
-            opts.Projections.Add<LegLoggerProjection>(ProjectionLifecycle.Inline);
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        opts.Projections.Add<LegLoggerProjection>(ProjectionLifecycle.Inline);
     }
 
     [Fact]
@@ -79,23 +55,23 @@ public class event_projection_per_tenant : IAsyncLifetime
         // in alpha's session; beta (no events appended) sees no docs.
         var alpha = "alpha_" + Guid.NewGuid().ToString("N")[..8];
         var beta = "beta_" + Guid.NewGuid().ToString("N")[..8];
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, alpha, beta);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, alpha, beta);
 
         var alphaStream = Guid.NewGuid();
-        await using (var session = _store.LightweightSession(alpha))
+        await using (var session = Store.LightweightSession(alpha))
         {
             session.Events.StartStream(alphaStream,
                 new LegEvent(1.0), new LegEvent(2.0), new LegEvent(3.0));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using var qa = _store.QuerySession(alpha);
+        await using var qa = Store.QuerySession(alpha);
         var alphaLogs = await qa.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken);
         alphaLogs.Count.ShouldBe(3,
             "EventProjection.Create emits one LegLog per LegEvent — alpha appended 3, so alpha's session sees 3");
         alphaLogs.Select(l => l.Distance).OrderBy(d => d).ShouldBe(new[] { 1.0, 2.0, 3.0 });
 
-        await using var qb = _store.QuerySession(beta);
+        await using var qb = Store.QuerySession(beta);
         var betaLogs = await qb.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken);
         betaLogs.ShouldBeEmpty(
             "beta appended no events — its tenant slot must be empty (no cross-tenant doc leak)");
@@ -111,44 +87,44 @@ public class event_projection_per_tenant : IAsyncLifetime
         // byte-identical (never touched by the per-tenant rebuild).
         var alpha = "alpha_" + Guid.NewGuid().ToString("N")[..8];
         var beta = "beta_" + Guid.NewGuid().ToString("N")[..8];
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, alpha, beta);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, alpha, beta);
 
         var alphaStream = Guid.NewGuid();
         var betaStream = Guid.NewGuid();
 
-        await using (var session = _store.LightweightSession(alpha))
+        await using (var session = Store.LightweightSession(alpha))
         {
             session.Events.StartStream(alphaStream, new LegEvent(10), new LegEvent(20));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
-        await using (var session = _store.LightweightSession(beta))
+        await using (var session = Store.LightweightSession(beta))
         {
             session.Events.StartStream(betaStream, new LegEvent(7), new LegEvent(13));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Pre-state: inline already materialized both tenants.
-        await using (var qa = _store.QuerySession(alpha))
+        await using (var qa = Store.QuerySession(alpha))
         {
             (await qa.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(2);
         }
-        await using (var qb = _store.QuerySession(beta))
+        await using (var qb = Store.QuerySession(beta))
         {
             (await qb.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(2);
         }
 
         // Wipe alpha's docs + progression — Phase 2c teardown. Beta untouched.
-        var es = (IEventStore<IDocumentOperations, IQuerySession>)_store;
+        var es = (IEventStore<IDocumentOperations, IQuerySession>)Store;
         await es.DeleteProjectionProgressAsync(
-            (IEventDatabase)_store.Storage.Database,
+            (IEventDatabase)Store.Storage.Database,
             LegLoggerProjection.ProjectionName, tenantId: alpha, CancellationToken.None);
 
-        await using (var qa = _store.QuerySession(alpha))
+        await using (var qa = Store.QuerySession(alpha))
         {
             (await qa.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken))
                 .ShouldBeEmpty("alpha's docs must be wiped by the tenant-scoped teardown");
         }
-        await using (var qb = _store.QuerySession(beta))
+        await using (var qb = Store.QuerySession(beta))
         {
             (await qb.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(2,
                 "beta's docs must survive — the teardown is tenant-scoped to alpha");
@@ -156,20 +132,20 @@ public class event_projection_per_tenant : IAsyncLifetime
 
         // Rebuild ONLY alpha. The per-tenant overload routes the rebuild to a
         // tenant-scoped shard; beta is not touched.
-        using (var daemon = await _store.BuildProjectionDaemonAsync())
+        using (var daemon = await Store.BuildProjectionDaemonAsync())
         {
             await daemon.RebuildProjectionAsync(
                 LegLoggerProjection.ProjectionName, alpha, CancellationToken.None);
         }
 
-        await using (var qa = _store.QuerySession(alpha))
+        await using (var qa = Store.QuerySession(alpha))
         {
             var alphaLogs = await qa.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken);
             alphaLogs.Count.ShouldBe(2,
                 "alpha was rebuilt — its 2 LegEvents must materialize 2 LegLog docs");
             alphaLogs.Select(l => l.Distance).OrderBy(d => d).ShouldBe(new[] { 10.0, 20.0 });
         }
-        await using (var qb = _store.QuerySession(beta))
+        await using (var qb = Store.QuerySession(beta))
         {
             (await qb.Query<LegLog>().ToListAsync(TestContext.Current.CancellationToken)).Count.ShouldBe(2,
                 "beta's docs must STILL be 2 — the per-tenant rebuild for alpha did not touch beta");

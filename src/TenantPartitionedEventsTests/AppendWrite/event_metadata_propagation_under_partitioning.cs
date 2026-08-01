@@ -79,55 +79,34 @@ public class event_metadata_propagation_under_partitioning
 /// values propagate onto every event the bulk function inserts — and that they
 /// stay paired with the right tenant_id in the partition.
 /// </summary>
-public class event_optional_metadata_propagation_under_partitioning : IAsyncLifetime
+public class event_optional_metadata_propagation_under_partitioning : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_meta";
 
-    public async ValueTask InitializeAsync()
+    protected override bool EnsureStorageOnInitialize => false;
+
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_meta_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        // Opt in to the four opt-in metadata columns.
+        opts.Events.MetadataConfig.CausationIdEnabled = true;
+        opts.Events.MetadataConfig.CorrelationIdEnabled = true;
+        opts.Events.MetadataConfig.HeadersEnabled = true;
+        opts.Events.MetadataConfig.UserNameEnabled = true;
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            // Opt in to the four opt-in metadata columns.
-            opts.Events.MetadataConfig.CausationIdEnabled = true;
-            opts.Events.MetadataConfig.CorrelationIdEnabled = true;
-            opts.Events.MetadataConfig.HeadersEnabled = true;
-            opts.Events.MetadataConfig.UserNameEnabled = true;
-
-            opts.Events.AddEventType<MetaEvent>();
-        });
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        opts.Events.AddEventType<MetaEvent>();
     }
 
     [Fact]
     public async Task session_metadata_propagates_to_each_event_in_the_tenants_partition()
     {
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
 
         var correlation = "corr-" + Guid.NewGuid().ToString("N")[..10];
         var causation = "caus-" + Guid.NewGuid().ToString("N")[..10];
         var userName = "user-" + Guid.NewGuid().ToString("N")[..8];
 
         var streamId = Guid.NewGuid();
-        await using (var s = _store.LightweightSession("alpha"))
+        await using (var s = Store.LightweightSession("alpha"))
         {
             s.CorrelationId = correlation;
             s.CausationId = causation;
@@ -138,7 +117,7 @@ public class event_optional_metadata_propagation_under_partitioning : IAsyncLife
             await s.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using var q = _store.QuerySession("alpha");
+        await using var q = Store.QuerySession("alpha");
         var events = await q.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken);
         events.Count.ShouldBe(3);
 

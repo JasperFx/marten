@@ -12,6 +12,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -43,41 +44,16 @@ namespace TenantPartitionedEventsTests.Daemon;
 /// in the schema) to be meaningful.
 /// </para>
 /// </summary>
-public class dead_letter_under_partitioning : IAsyncLifetime
+public class dead_letter_under_partitioning : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_dlq";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_dlq_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
-
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            // Touch the events feature so MartenManagedTenantListPartitions
-            // runs its applyPartitioning sweep over every doc mapping at
-            // schema-feature build time.
-            opts.Events.AddEventType<DlqProbeEvent>();
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        // Touch the events feature so MartenManagedTenantListPartitions
+        // runs its applyPartitioning sweep over every doc mapping at
+        // schema-feature build time.
+        opts.Events.AddEventType<DlqProbeEvent>();
     }
 
     [Fact]
@@ -88,7 +64,7 @@ public class dead_letter_under_partitioning : IAsyncLifetime
         // that auto-multi-tenants every mapping (or removes the explicit
         // carve-out in MartenManagedTenantListPartitions / StoreOptions) is a
         // deliberate contract change.
-        _store.StorageFeatures.MappingFor(typeof(DeadLetterEvent)).TenancyStyle
+        Store.StorageFeatures.MappingFor(typeof(DeadLetterEvent)).TenancyStyle
             .ShouldBe(TenancyStyle.Single,
                 "DeadLetterEvent is store-global by design — daemon diagnostics aren't a tenant boundary");
     }
@@ -100,8 +76,8 @@ public class dead_letter_under_partitioning : IAsyncLifetime
         // Events.DatabaseSchemaName (not the default doc schema). Pin the
         // schema placement so a future refactor that moves it doesn't silently
         // strand existing dead-letter rows.
-        var mapping = _store.StorageFeatures.MappingFor(typeof(DeadLetterEvent));
-        mapping.DatabaseSchemaName.ShouldBe(_store.Options.Events.DatabaseSchemaName);
+        var mapping = Store.StorageFeatures.MappingFor(typeof(DeadLetterEvent));
+        mapping.DatabaseSchemaName.ShouldBe(Store.Options.Events.DatabaseSchemaName);
     }
 
     [Fact]
@@ -115,12 +91,12 @@ public class dead_letter_under_partitioning : IAsyncLifetime
         // dead-letter consumer, and (b) silo dead-letter rows per tenant when
         // the contract is store-global. Pin by querying the live partition
         // map for the dead-letter table — it must NOT be registered.
-        var dlqTable = _store.Options.TenantPartitions?.Partitions;
+        var dlqTable = Store.Options.TenantPartitions?.Partitions;
         if (dlqTable == null) return; // no partition manager active — nothing to pin
 
         // Pull the underlying partitioned-table set; the dead-letter table
         // must not appear there.
-        var allPartitionedTableNames = _store.Storage.AllObjects()
+        var allPartitionedTableNames = Store.Storage.AllObjects()
             .OfType<Weasel.Postgresql.Tables.Table>()
             .Where(t => t.Partitioning is Weasel.Postgresql.Tables.Partitioning.ListPartitioning)
             .Select(t => t.Identifier.Name)

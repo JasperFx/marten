@@ -9,6 +9,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -26,53 +27,26 @@ namespace TenantPartitionedEventsTests.Regressions;
 /// back before damage was done; with idempotent partition DDL (weasel#326) that accidental guard is
 /// gone, so the delta itself must be additive-only.
 /// </summary>
-public class schema_update_preserves_existing_per_tenant_sequences : IAsyncLifetime
+public class schema_update_preserves_existing_per_tenant_sequences : PartitionedStoreContext
 {
     private const string TenantA = "tenant_a";
     private const string TenantB = "tenant_b";
 
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_seqpreserve";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_seqpreserve_{Guid.NewGuid():N}".Substring(0, 32);
-
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
-        {
-            await conn.OpenAsync();
-            try { await conn.DropSchemaAsync(_schema); } catch { }
-        }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<SeqPreserveEvent>();
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        opts.Events.AddEventType<SeqPreserveEvent>();
     }
 
     [Fact]
     public async Task adding_a_missing_sequence_does_not_reset_existing_ones()
     {
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, TenantA);
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, TenantB);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, TenantA);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, TenantB);
 
         // Advance tenant A's event sequence by appending real events.
-        await using (var session = _store.LightweightSession(TenantA))
+        await using (var session = Store.LightweightSession(TenantA))
         {
             session.Events.StartStream(Guid.NewGuid(), new SeqPreserveEvent(1), new SeqPreserveEvent(2));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -82,41 +56,41 @@ public class schema_update_preserves_existing_per_tenant_sequences : IAsyncLifet
         await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var valueBefore = (long)(await conn
-            .CreateCommand($"select last_value from \"{_schema}\".\"mt_events_sequence_{TenantA}\"")
+            .CreateCommand($"select last_value from \"{Schema}\".\"mt_events_sequence_{TenantA}\"")
             .ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         valueBefore.ShouldBeGreaterThanOrEqualTo(2);
 
         // Simulate the canary scenario: a tenant is registered on the shared partition list but its
         // sequence is missing in this database (mid-provisioning / a racing applier's stale snapshot),
         // so the next schema apply computes an Update delta for the per-tenant sequences.
-        await conn.CreateCommand($"drop sequence \"{_schema}\".\"mt_events_sequence_{TenantB}\"")
+        await conn.CreateCommand($"drop sequence \"{Schema}\".\"mt_events_sequence_{TenantB}\"")
             .ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
 
-        await _store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
+        await Store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
 
         // The missing sequence is (re)created...
         var tenantBExists = await conn
             .CreateCommand(
                 "select count(*) from information_schema.sequences " +
-                $"where sequence_schema = '{_schema}' and sequence_name = 'mt_events_sequence_{TenantB}'")
+                $"where sequence_schema = '{Schema}' and sequence_name = 'mt_events_sequence_{TenantB}'")
             .ExecuteScalarAsync(TestContext.Current.CancellationToken);
         tenantBExists.ShouldBe(1L);
 
         // ...and tenant A's sequence kept its value: the update was additive-only, no drop+recreate.
         var valueAfter = (long)(await conn
-            .CreateCommand($"select last_value from \"{_schema}\".\"mt_events_sequence_{TenantA}\"")
+            .CreateCommand($"select last_value from \"{Schema}\".\"mt_events_sequence_{TenantA}\"")
             .ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         valueAfter.ShouldBe(valueBefore);
 
         // And the next append continues from where the sequence left off instead of colliding at 1.
-        await using (var session = _store.LightweightSession(TenantA))
+        await using (var session = Store.LightweightSession(TenantA))
         {
             session.Events.StartStream(Guid.NewGuid(), new SeqPreserveEvent(3));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         var valueAfterAppend = (long)(await conn
-            .CreateCommand($"select last_value from \"{_schema}\".\"mt_events_sequence_{TenantA}\"")
+            .CreateCommand($"select last_value from \"{Schema}\".\"mt_events_sequence_{TenantA}\"")
             .ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         valueAfterAppend.ShouldBeGreaterThan(valueBefore);
     }

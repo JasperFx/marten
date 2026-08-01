@@ -15,6 +15,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -42,48 +43,28 @@ namespace TenantPartitionedEventsTests.Projections;
 /// projection registration.
 /// </para>
 /// </summary>
-public class raw_iprojection_per_tenant : IAsyncLifetime
+public class raw_iprojection_per_tenant : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_rawproj";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_rawproj_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        opts.Events.AddEventType<TenantTouchEvent>();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
+        // Inline so the projection runs in the same session that's writing
+        // the events — the tightest pin we can make for "the IDocumentOperations
+        // passed in is tenant-scoped".
+        opts.Projections.Add(new TenantTouchProjection(), ProjectionLifecycle.Inline);
+    }
 
+    public override async ValueTask InitializeAsync()
+    {
         // Reset cross-test capture before each store stands up so assertions
         // on TenantIdsSeen don't pick up sibling test data.
         TenantTouchProjection.TenantIdsSeen.Clear();
         TenantTouchProjection.BatchTenantIds.Clear();
 
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<TenantTouchEvent>();
-
-            // Inline so the projection runs in the same session that's writing
-            // the events — the tightest pin we can make for "the IDocumentOperations
-            // passed in is tenant-scoped".
-            opts.Projections.Add(new TenantTouchProjection(), ProjectionLifecycle.Inline);
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        await base.InitializeAsync();
     }
 
     [Fact]
@@ -94,10 +75,10 @@ public class raw_iprojection_per_tenant : IAsyncLifetime
         // must be readable from that tenant's QuerySession and INVISIBLE from
         // the sibling tenant's session — proves IDocumentOperations.Store is
         // tenant-scoped under partitioning.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         var alphaStream = Guid.NewGuid();
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.StartStream(alphaStream,
                 new TenantTouchEvent("alpha-1"), new TenantTouchEvent("alpha-2"));
@@ -105,20 +86,20 @@ public class raw_iprojection_per_tenant : IAsyncLifetime
         }
 
         var betaStream = Guid.NewGuid();
-        await using (var session = _store.LightweightSession("beta"))
+        await using (var session = Store.LightweightSession("beta"))
         {
             session.Events.StartStream(betaStream, new TenantTouchEvent("beta-1"));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Each tenant's doc IS visible from its own session.
-        await using (var alphaQuery = _store.QuerySession("alpha"))
+        await using (var alphaQuery = Store.QuerySession("alpha"))
         {
             var alphaDoc = await alphaQuery.LoadAsync<TenantTouchDoc>(alphaStream, TestContext.Current.CancellationToken);
             alphaDoc.ShouldNotBeNull();
             alphaDoc!.TouchCount.ShouldBe(2);
         }
-        await using (var betaQuery = _store.QuerySession("beta"))
+        await using (var betaQuery = Store.QuerySession("beta"))
         {
             var betaDoc = await betaQuery.LoadAsync<TenantTouchDoc>(betaStream, TestContext.Current.CancellationToken);
             betaDoc.ShouldNotBeNull();
@@ -127,12 +108,12 @@ public class raw_iprojection_per_tenant : IAsyncLifetime
 
         // Cross-tenant load returns null — proves the doc is in the writing
         // tenant's slot, not bleeding into the other.
-        await using (var alphaQuery = _store.QuerySession("alpha"))
+        await using (var alphaQuery = Store.QuerySession("alpha"))
         {
             (await alphaQuery.LoadAsync<TenantTouchDoc>(betaStream, TestContext.Current.CancellationToken))
                 .ShouldBeNull("beta's doc must not be visible to alpha");
         }
-        await using (var betaQuery = _store.QuerySession("beta"))
+        await using (var betaQuery = Store.QuerySession("beta"))
         {
             (await betaQuery.LoadAsync<TenantTouchDoc>(alphaStream, TestContext.Current.CancellationToken))
                 .ShouldBeNull("alpha's doc must not be visible to beta");
@@ -146,14 +127,14 @@ public class raw_iprojection_per_tenant : IAsyncLifetime
         // is called inline, every event in the batch carries the SAME TenantId
         // (the writing session's tenant). Cross-tenant fan-in does not happen
         // at the inline call site — that's an async-daemon-only concern.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.StartStream(Guid.NewGuid(), new TenantTouchEvent("alpha-call"));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
-        await using (var session = _store.LightweightSession("beta"))
+        await using (var session = Store.LightweightSession("beta"))
         {
             session.Events.StartStream(Guid.NewGuid(), new TenantTouchEvent("beta-call"));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);

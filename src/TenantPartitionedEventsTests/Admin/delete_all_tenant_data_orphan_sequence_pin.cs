@@ -14,6 +14,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -29,71 +30,46 @@ namespace TenantPartitionedEventsTests.Admin;
 /// <see cref="HighWaterShardIdentity.PerTenantPrefix"/> match) is the dropped tenant.
 /// Store-global progression rows are intentionally left alone.
 /// </summary>
-public class delete_all_tenant_data_orphan_sequence_pin : IAsyncLifetime
+public class delete_all_tenant_data_orphan_sequence_pin : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_del";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_del_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
-
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<DelEvent>();
-            // #4683 progression test wants an async projection so the rebuild populates
-            // per-tenant mt_event_progression rows we can then assert on.
-            opts.Projections.Add<DelCountProjection>(ProjectionLifecycle.Async);
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        opts.Events.AddEventType<DelEvent>();
+        // #4683 progression test wants an async projection so the rebuild populates
+        // per-tenant mt_event_progression rows we can then assert on.
+        opts.Projections.Add<DelCountProjection>(ProjectionLifecycle.Async);
     }
 
     [Fact]
     public async Task DeleteAllTenantDataAsync_drops_partitions_and_the_per_tenant_sequence()
     {
         var tenant = "delpin";
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
 
         // Seed some events so the per-tenant sequence advances.
         var streamId = Guid.NewGuid();
-        await using (var session = _store.LightweightSession(tenant))
+        await using (var session = Store.LightweightSession(tenant))
         {
             session.Events.StartStream(streamId,
                 new DelEvent("a"), new DelEvent("b"), new DelEvent("c"));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var seqValueBefore = await ReadSequenceLastValueAsync(_schema, $"mt_events_sequence_{tenant}");
+        var seqValueBefore = await ReadSequenceLastValueAsync(Schema, $"mt_events_sequence_{tenant}");
         seqValueBefore.ShouldBeGreaterThanOrEqualTo(3L, "the sequence advanced past the 3 appended events");
 
         // Act: delete all data for this tenant.
-        await _store.Advanced.DeleteAllTenantDataAsync(tenant, CancellationToken.None);
+        await Store.Advanced.DeleteAllTenantDataAsync(tenant, CancellationToken.None);
 
         // The partition tables are gone — pinning the cleaner's positive effect.
-        var partitionExists = await TableExistsAsync(_schema, $"mt_events_{tenant}");
+        var partitionExists = await TableExistsAsync(Schema, $"mt_events_{tenant}");
         partitionExists.ShouldBeFalse(
             "DeleteAllTenantDataAsync drops the tenant's mt_events partition table");
 
         // #4683: per-tenant sequence is now dropped (was the orphan-leak pin).
-        var seqStillExists = await SequenceExistsAsync(_schema, $"mt_events_sequence_{tenant}");
+        var seqStillExists = await SequenceExistsAsync(Schema, $"mt_events_sequence_{tenant}");
         seqStillExists.ShouldBeFalse(
             "DeleteAllTenantDataAsync now drops the per-tenant mt_events_sequence_<tenant> via " +
             "PerTenantPartitionedCleanup (#4683). Was previously pinned as the orphan leak.");
@@ -107,26 +83,26 @@ public class delete_all_tenant_data_orphan_sequence_pin : IAsyncLifetime
         // explicit "I no longer need this tenant" route), so this confirms PerTenantPartitionedCleanup
         // is wired in on *both* paths -- not just the cleaner's.
         var tenant = "rempin";
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
 
         var streamId = Guid.NewGuid();
-        await using (var session = _store.LightweightSession(tenant))
+        await using (var session = Store.LightweightSession(tenant))
         {
             session.Events.StartStream(streamId,
                 new DelEvent("x"), new DelEvent("y"));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var seqValueBefore = await ReadSequenceLastValueAsync(_schema, $"mt_events_sequence_{tenant}");
+        var seqValueBefore = await ReadSequenceLastValueAsync(Schema, $"mt_events_sequence_{tenant}");
         seqValueBefore.ShouldBeGreaterThanOrEqualTo(2L);
 
-        await _store.Advanced.RemoveMartenManagedTenantsAsync(new[] { tenant }, CancellationToken.None);
+        await Store.Advanced.RemoveMartenManagedTenantsAsync(new[] { tenant }, CancellationToken.None);
 
         // Partition table dropped.
-        (await TableExistsAsync(_schema, $"mt_events_{tenant}")).ShouldBeFalse();
+        (await TableExistsAsync(Schema, $"mt_events_{tenant}")).ShouldBeFalse();
 
         // #4683: sequence is dropped too (was the second orphan-leak pin).
-        (await SequenceExistsAsync(_schema, $"mt_events_sequence_{tenant}")).ShouldBeFalse(
+        (await SequenceExistsAsync(Schema, $"mt_events_sequence_{tenant}")).ShouldBeFalse(
             "RemoveMartenManagedTenantsAsync now drops the per-tenant mt_events_sequence_<tenant> " +
             "via PerTenantPartitionedCleanup (#4683). Was previously pinned as the orphan leak.");
     }
@@ -142,12 +118,12 @@ public class delete_all_tenant_data_orphan_sequence_pin : IAsyncLifetime
         // the HighWaterShardIdentity grammar) and leaves store-global rows alone.
         var keep = "keepme";
         var drop = "dropme";
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, keep, drop);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, keep, drop);
 
         // Touch the events table so the cleaner's batched DELETEs find data to delete (the
         // partition drop itself is the load-bearing part of this test; the actual event count
         // is incidental).
-        await using (var session = _store.LightweightSession(drop))
+        await using (var session = Store.LightweightSession(drop))
         {
             session.Events.StartStream(Guid.NewGuid(), new DelEvent("x"));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -159,7 +135,7 @@ public class delete_all_tenant_data_orphan_sequence_pin : IAsyncLifetime
         //  * {Name}:V2:All:<tenant>   — versioned variant
         // Plus a store-global "HighWaterMark" row + a "SomeProjection:All" row that must
         // survive the drop.
-        await SeedProgressionRowsAsync(_schema, new[]
+        await SeedProgressionRowsAsync(Schema, new[]
         {
             // store-global -- must survive
             "HighWaterMark",
@@ -174,15 +150,15 @@ public class delete_all_tenant_data_orphan_sequence_pin : IAsyncLifetime
             $"VersionedProjection:V2:All:{drop}",
         });
 
-        var beforeNames = await ReadProgressionRowNamesAsync(_schema);
+        var beforeNames = await ReadProgressionRowNamesAsync(Schema);
         beforeNames.ShouldContain($"HighWaterMark:{drop}");
         beforeNames.ShouldContain($"DelCountProjection:All:{drop}");
         beforeNames.ShouldContain($"VersionedProjection:V2:All:{drop}");
 
         // Act.
-        await _store.Advanced.DeleteAllTenantDataAsync(drop, CancellationToken.None);
+        await Store.Advanced.DeleteAllTenantDataAsync(drop, CancellationToken.None);
 
-        var afterNames = await ReadProgressionRowNamesAsync(_schema);
+        var afterNames = await ReadProgressionRowNamesAsync(Schema);
 
         // The dropped tenant's per-tenant rows are gone, across both grammars + the versioned form.
         afterNames.Any(n => MentionsTenant(n, drop)).ShouldBeFalse(

@@ -10,6 +10,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -43,47 +44,17 @@ namespace TenantPartitionedEventsTests.Dcb;
 /// all under partitioning.
 /// </para>
 /// </summary>
-public class dcb_tag_append_under_partitioning : IAsyncLifetime
+public class dcb_tag_append_under_partitioning : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_dcb";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        // Same own-store schema convention as Bug_4611 — Guid + ProcessId fits
-        // under PG's 32-char comfort threshold for nested partition + sequence
-        // suffix names.
-        _schema = $"tp_dcb_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
-
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
-        {
-            await conn.OpenAsync();
-            try { await conn.DropSchemaAsync(_schema); } catch { }
-        }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<DcbOrderPlaced>();
-            // One string-keyed tag — the simplest shape that exercises the
-            // tag side-table column types (text) + the tenant_id PK column
-            // EventTagTable adds under conjoined tenancy.
-            opts.Events.RegisterTagType<DcbOrderRef>("dcb_order_ref");
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        opts.Events.AddEventType<DcbOrderPlaced>();
+        // One string-keyed tag — the simplest shape that exercises the
+        // tag side-table column types (text) + the tenant_id PK column
+        // EventTagTable adds under conjoined tenancy.
+        opts.Events.RegisterTagType<DcbOrderRef>("dcb_order_ref");
     }
 
     [Fact]
@@ -96,11 +67,11 @@ public class dcb_tag_append_under_partitioning : IAsyncLifetime
         // operation runs as a sibling Marten storage operation in the same
         // session, so it must continue to work under the per-tenant
         // partitioned append path.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
 
         var orderRef = new DcbOrderRef("ORD-" + Guid.NewGuid().ToString("N")[..8]);
 
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             var evt = session.Events.BuildEvent(new DcbOrderPlaced("widget"));
             evt.WithTag(orderRef);
@@ -115,7 +86,7 @@ public class dcb_tag_append_under_partitioning : IAsyncLifetime
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand(
-            $"select count(*) from {_schema}.mt_event_tag_dcb_order_ref where value = :v and tenant_id = :t");
+            $"select count(*) from {Schema}.mt_event_tag_dcb_order_ref where value = :v and tenant_id = :t");
         cmd.Parameters.AddWithValue("v", orderRef.Value);
         cmd.Parameters.AddWithValue("t", "alpha");
         var count = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
@@ -143,11 +114,11 @@ public class dcb_tag_append_under_partitioning : IAsyncLifetime
         // added as well. Filed as a follow-up — out of scope for this test
         // file, which only covers the append + same-tenant read happy paths
         // requested by #4617 section 3f.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
 
         var orderRef = new DcbOrderRef("ORD-rt-" + Guid.NewGuid().ToString("N")[..8]);
 
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             var evt = session.Events.BuildEvent(new DcbOrderPlaced("alpha-widget"));
             evt.WithTag(orderRef);
@@ -157,7 +128,7 @@ public class dcb_tag_append_under_partitioning : IAsyncLifetime
 
         var query = new EventTagQuery().Or<DcbOrderRef>(orderRef);
 
-        await using (var queryA = _store.LightweightSession("alpha"))
+        await using (var queryA = Store.LightweightSession("alpha"))
         {
             var events = await queryA.Events.QueryByTagsAsync(query, TestContext.Current.CancellationToken);
             events.Count.ShouldBe(1,

@@ -43,40 +43,14 @@ namespace TenantPartitionedEventsTests.Regressions;
 /// could mask the other's pin on a shared fixture.
 /// </para>
 /// </summary>
-public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
+public class Bug_4596_partition_race_and_MT002_rebuild : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_4596";
 
-    public ValueTask InitializeAsync() => new ValueTask(freshStoreAsync());
-
-    // Build a brand-new isolated store against a brand-new schema. Used by InitializeAsync and re-used
-    // per attempt by the concurrent-race test so each retry starts from a clean slate.
-    private async Task freshStoreAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _store?.Dispose();
-        _schema = $"tp_4596_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
-
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
-        {
-            await conn.OpenAsync();
-            try { await conn.DropSchemaAsync(_schema); } catch { }
-        }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<Bug4596TripStarted>();
-            opts.Events.AddEventType<Bug4596TripLeg>();
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+        opts.Events.AddEventType<Bug4596TripStarted>();
+        opts.Events.AddEventType<Bug4596TripLeg>();
     }
 
     // The race in this test occasionally trips a KNOWN, unrelated transient in Weasel's concurrent
@@ -88,12 +62,6 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
     // and is never swallowed. See the Weasel follow-up referenced on PR #4757.
     private static bool IsKnownWeaselConcurrentReadTransient(Exception e) =>
         e is NullReferenceException && (e.StackTrace?.Contains("readExistingAsync") ?? false);
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
-    }
 
     [Fact]
     public async Task concurrent_AddMartenManagedTenantsAsync_for_same_tenant_is_idempotent()
@@ -115,10 +83,10 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         var attempt = 1;
         while (true)
         {
-            await freshStoreAsync();
+            await BuildFreshStoreAsync();
 
             tasks = Enumerable.Range(0, 3)
-                .Select(_ => Task.Run(() => _store.Advanced.AddMartenManagedTenantsAsync(
+                .Select(_ => Task.Run(() => Store.Advanced.AddMartenManagedTenantsAsync(
                     CancellationToken.None, raceyTenant)))
                 .ToArray();
 
@@ -158,7 +126,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         await using (var cmd = conn.CreateCommand(
             "select count(*) from information_schema.tables where table_schema = :s and table_name = :n"))
         {
-            cmd.Parameters.AddWithValue("s", _schema);
+            cmd.Parameters.AddWithValue("s", Schema);
             cmd.Parameters.AddWithValue("n", $"mt_events_{raceyTenant}");
             var partitionCount = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
             partitionCount.ShouldBe(1L,
@@ -169,7 +137,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         await using (var cmd = conn.CreateCommand(
             "select count(*) from information_schema.sequences where sequence_schema = :s and sequence_name = :n"))
         {
-            cmd.Parameters.AddWithValue("s", _schema);
+            cmd.Parameters.AddWithValue("s", Schema);
             cmd.Parameters.AddWithValue("n", $"mt_events_sequence_{raceyTenant}");
             var seqCount = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
             seqCount.ShouldBe(1L,
@@ -180,7 +148,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         // append — the partition + sequence + tenant-registration row are
         // all coherent. Pre-fix, a losing task occasionally left a
         // partial registration that made the FIRST append fire MT002.
-        await using (var session = _store.LightweightSession(raceyTenant))
+        await using (var session = Store.LightweightSession(raceyTenant))
         {
             session.Events.StartStream<Bug4596TripStarted>(
                 Guid.NewGuid(), new Bug4596TripStarted("post-race append"));
@@ -197,9 +165,9 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         // filtered by tenant_id) — it never calls mt_quick_append_events,
         // so MT002 ("Tenant '...' has no registered partition") doesn't fire.
         // The rebuild just finds zero events for that tenant and is a no-op.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "registered_alpha");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "registered_alpha");
 
-        await using (var session = _store.LightweightSession("registered_alpha"))
+        await using (var session = Store.LightweightSession("registered_alpha"))
         {
             session.Events.StartStream<Bug4596TripStarted>(
                 Guid.NewGuid(),
@@ -213,7 +181,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         // silently create a partition under the user's feet). The check is
         // wrapped in a try so the exception type assertion is unambiguous.
         Exception? appendException = null;
-        await using (var session = _store.LightweightSession("typo_tenant"))
+        await using (var session = Store.LightweightSession("typo_tenant"))
         {
             session.Events.StartStream<Bug4596TripStarted>(
                 Guid.NewGuid(), new Bug4596TripStarted("should-fail"));
@@ -233,7 +201,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
         // Now the complementary pin: rebuild for the same unregistered
         // tenant must NOT throw MT002 (or anything else) — it walks zero
         // events via EventLoader's SELECT path and returns cleanly.
-        using (var daemon = await _store.BuildProjectionDaemonAsync())
+        using (var daemon = await Store.BuildProjectionDaemonAsync())
         {
             // No projection registered on this store — but the call shape
             // still goes through the same daemon entry point that walks the
@@ -251,7 +219,7 @@ public class Bug_4596_partition_race_and_MT002_rebuild : IAsyncLifetime
             await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
             await conn.OpenAsync(TestContext.Current.CancellationToken);
             await using var cmd = conn.CreateCommand(
-                $"select count(*) from {_schema}.mt_events where tenant_id = :t");
+                $"select count(*) from {Schema}.mt_events where tenant_id = :t");
             cmd.Parameters.AddWithValue("t", "typo_tenant");
             var unregisteredCount = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
             unregisteredCount.ShouldBe(0L,

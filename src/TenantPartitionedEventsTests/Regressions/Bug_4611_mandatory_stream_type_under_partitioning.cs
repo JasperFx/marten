@@ -11,6 +11,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -41,39 +42,15 @@ namespace TenantPartitionedEventsTests.Regressions;
 /// affect every sibling test on a shared fixture.
 /// </para>
 /// </summary>
-public class Bug_4611_mandatory_stream_type_under_partitioning : IAsyncLifetime
+public class Bug_4611_mandatory_stream_type_under_partitioning : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_4611";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_4611_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        opts.Events.UseMandatoryStreamTypeDeclaration = true;
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Events.UseMandatoryStreamTypeDeclaration = true;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<MandatoryEvent>();
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        opts.Events.AddEventType<MandatoryEvent>();
     }
 
     [Fact]
@@ -81,27 +58,27 @@ public class Bug_4611_mandatory_stream_type_under_partitioning : IAsyncLifetime
     {
         // The headline #4611 regression — Start then Append must both succeed,
         // and the mt_streams row's type column must carry the AggregateType name.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
 
         var streamId = Guid.NewGuid();
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.StartStream<MandatoryAggregate>(streamId, new MandatoryEvent("first"));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using (var query = _store.QuerySession("alpha"))
+        await using (var query = Store.QuerySession("alpha"))
         {
             (await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken)).Count.ShouldBe(1);
         }
 
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.Append(streamId, new MandatoryEvent("second"));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using (var query = _store.QuerySession("alpha"))
+        await using (var query = Store.QuerySession("alpha"))
         {
             (await query.Events.FetchStreamAsync(streamId, token: TestContext.Current.CancellationToken)).Count.ShouldBe(2);
         }
@@ -109,12 +86,12 @@ public class Bug_4611_mandatory_stream_type_under_partitioning : IAsyncLifetime
         // The end state pin: mt_streams row exists with type = aggregate type alias.
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync(TestContext.Current.CancellationToken);
-        await using var cmd = conn.CreateCommand($"select type from {_schema}.mt_streams where id = @id and tenant_id = @tid");
+        await using var cmd = conn.CreateCommand($"select type from {Schema}.mt_streams where id = @id and tenant_id = @tid");
         cmd.Parameters.AddWithValue("id", streamId);
         cmd.Parameters.AddWithValue("tid", "alpha");
         var typeName = (string?)await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken);
         typeName.ShouldNotBeNull("mt_streams row must exist (not tombstoned) — the headline #4611 regression");
-        typeName.ShouldBe(_store.Events.AggregateAliasFor(typeof(MandatoryAggregate)));
+        typeName.ShouldBe(Store.Events.AggregateAliasFor(typeof(MandatoryAggregate)));
     }
 
     [Fact]
@@ -125,9 +102,9 @@ public class Bug_4611_mandatory_stream_type_under_partitioning : IAsyncLifetime
         // UseMandatoryStreamTypeDeclaration is on. Pre-#4613's fix the
         // bulk-path post-process guard was the wrong layer; the correct guard
         // (this one) was never the problem.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
 
-        await using var session = _store.LightweightSession("alpha");
+        await using var session = Store.LightweightSession("alpha");
 
         Should.Throw<StreamTypeMissingException>(() =>
         {

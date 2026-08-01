@@ -13,6 +13,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -30,44 +31,19 @@ namespace TenantPartitionedEventsTests.Projections;
 /// the <c>AllDocumentsAreMultiTenanted</c> policy.
 /// </para>
 /// </summary>
-public class add_global_projection_under_partitioning : IAsyncLifetime
+public class add_global_projection_under_partitioning : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_glob";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_glob_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        opts.Events.AddEventType<GlobalTickEvent>();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<GlobalTickEvent>();
-
-            // The headline: register a SingleStreamProjection as GLOBAL — its
-            // aggregate doc keeps TenancyStyle.Single even though the source
-            // event store is partitioned per tenant and the default policy
-            // multi-tenants every other doc.
-            opts.Projections.AddGlobalProjection(new GlobalCounterProjection(), ProjectionLifecycle.Inline);
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        // The headline: register a SingleStreamProjection as GLOBAL — its
+        // aggregate doc keeps TenancyStyle.Single even though the source
+        // event store is partitioned per tenant and the default policy
+        // multi-tenants every other doc.
+        opts.Projections.AddGlobalProjection(new GlobalCounterProjection(), ProjectionLifecycle.Inline);
     }
 
     [Fact]
@@ -77,7 +53,7 @@ public class add_global_projection_under_partitioning : IAsyncLifetime
         // the global projection's aggregate doc stays Single-tenanted by design.
         // Pin so a future change that auto-multi-tenants the global doc is a
         // deliberate contract change.
-        _store.StorageFeatures.MappingFor(typeof(GlobalCounter)).TenancyStyle
+        Store.StorageFeatures.MappingFor(typeof(GlobalCounter)).TenancyStyle
             .ShouldBe(TenancyStyle.Single);
     }
 
@@ -93,19 +69,19 @@ public class add_global_projection_under_partitioning : IAsyncLifetime
         // store has global aggregates registered. The rerouted appends then land
         // in a real partition (with their own per-tenant event sequence) instead
         // of raising MT002.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         var globalId = Guid.NewGuid();
 
         // Two different tenants funnel events into the SAME global stream
-        await using (var alpha = _store.LightweightSession("alpha"))
+        await using (var alpha = Store.LightweightSession("alpha"))
         {
             alpha.Events.StartStream<GlobalCounter>(globalId,
                 new GlobalTickEvent("first"), new GlobalTickEvent("second"));
             await alpha.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using (var beta = _store.LightweightSession("beta"))
+        await using (var beta = Store.LightweightSession("beta"))
         {
             beta.Events.Append(globalId, new GlobalTickEvent("third"));
             await beta.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -113,7 +89,7 @@ public class add_global_projection_under_partitioning : IAsyncLifetime
 
         // The inline global projection doc is single-tenanted, so it reads the
         // same from any tenant's session — and reflects BOTH tenants' appends
-        await using (var reader = _store.QuerySession("beta"))
+        await using (var reader = Store.QuerySession("beta"))
         {
             var counter = await reader.LoadAsync<GlobalCounter>(globalId, TestContext.Current.CancellationToken);
             counter.ShouldNotBeNull();
@@ -126,12 +102,12 @@ public class add_global_projection_under_partitioning : IAsyncLifetime
         await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var suffix = (string?)await conn.CreateCommand(
-                $"select partition_suffix from {_schema}.mt_tenant_partitions where partition_value = '{StorageConstants.DefaultTenantId}'")
+                $"select partition_suffix from {Schema}.mt_tenant_partitions where partition_value = '{StorageConstants.DefaultTenantId}'")
             .ExecuteScalarAsync(TestContext.Current.CancellationToken);
         suffix.ShouldBe("__default__");
 
         var eventCount = (long)(await conn.CreateCommand(
-                $"select count(*) from {_schema}.mt_events___default__")
+                $"select count(*) from {Schema}.mt_events___default__")
             .ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         eventCount.ShouldBe(3);
     }
@@ -143,7 +119,7 @@ public class add_global_projection_under_partitioning : IAsyncLifetime
         // global-projection default tenant slot — a shared suffix would fold two
         // partition VALUES into one partition table and corrupt tenant isolation.
         var ex = await Should.ThrowAsync<ArgumentException>(() =>
-            _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None,
+            Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None,
                 new System.Collections.Generic.Dictionary<string, string> { ["acme"] = "__default__" }));
 
         ex.Message.ShouldContain("reserved");

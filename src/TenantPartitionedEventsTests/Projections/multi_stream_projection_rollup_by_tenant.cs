@@ -14,6 +14,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -47,45 +48,20 @@ namespace TenantPartitionedEventsTests.Projections;
 /// looked up.
 /// </para>
 /// </summary>
-public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
+public class multi_stream_projection_rollup_by_tenant : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_rollup";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_rollup_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        opts.Events.AddEventType<AccountOpened>();
+        opts.Events.AddEventType<TransactionPosted>();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
+        // Short alias keeps the partition / index identifiers under PG's
+        // 64-byte limit when combined with tenant slot names downstream.
+        opts.Schema.For<TenantRollup>().DocumentAlias("p2c_tenant_rollup");
 
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<AccountOpened>();
-            opts.Events.AddEventType<TransactionPosted>();
-
-            // Short alias keeps the partition / index identifiers under PG's
-            // 64-byte limit when combined with tenant slot names downstream.
-            opts.Schema.For<TenantRollup>().DocumentAlias("p2c_tenant_rollup");
-
-            opts.Projections.Add<TenantRollupProjection>(ProjectionLifecycle.Async);
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        opts.Projections.Add<TenantRollupProjection>(ProjectionLifecycle.Async);
     }
 
     [Fact]
@@ -97,9 +73,9 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
         // that tenant's events.
         var alpha = "alpha_" + Guid.NewGuid().ToString("N")[..8];
         var beta = "beta_" + Guid.NewGuid().ToString("N")[..8];
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, alpha, beta);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, alpha, beta);
 
-        await using (var session = _store.LightweightSession(alpha))
+        await using (var session = Store.LightweightSession(alpha))
         {
             var acct = Guid.NewGuid();
             session.Events.StartStream(acct,
@@ -108,7 +84,7 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
                 new TransactionPosted(acct, 50m));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
-        await using (var session = _store.LightweightSession(beta))
+        await using (var session = Store.LightweightSession(beta))
         {
             var acct = Guid.NewGuid();
             session.Events.StartStream(acct,
@@ -124,7 +100,7 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
         // since the rollup grouping turns the per-tenant data into single docs
         // by tenant id and we want determinism on the assertion, not race-y
         // wait-for-completion semantics.
-        using (var daemon = await _store.BuildProjectionDaemonAsync())
+        using (var daemon = await Store.BuildProjectionDaemonAsync())
         {
             await daemon.RebuildProjectionAsync(TenantRollupProjection.ProjectionName, alpha, CancellationToken.None);
             await daemon.RebuildProjectionAsync(TenantRollupProjection.ProjectionName, beta, CancellationToken.None);
@@ -133,7 +109,7 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
         // The rollup doc lives in the default tenant slot (slicer hardcodes
         // DefaultTenantId as the group's TenantId) — read from a default-tenant
         // session keyed by the doc identity (= tenant id string).
-        await using var query = _store.QuerySession();
+        await using var query = Store.QuerySession();
         var alphaRollup = await query.LoadAsync<TenantRollup>(alpha, TestContext.Current.CancellationToken);
         var betaRollup = await query.LoadAsync<TenantRollup>(beta, TestContext.Current.CancellationToken);
 
@@ -154,10 +130,10 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
         // rollup doc totals are exactly that tenant's events, not the union.
         var alpha = "alpha_" + Guid.NewGuid().ToString("N")[..8];
         var beta = "beta_" + Guid.NewGuid().ToString("N")[..8];
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, alpha, beta);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, alpha, beta);
 
         var alphaAcct = Guid.NewGuid();
-        await using (var session = _store.LightweightSession(alpha))
+        await using (var session = Store.LightweightSession(alpha))
         {
             session.Events.StartStream(alphaAcct, new AccountOpened(alphaAcct));
             session.Events.Append(alphaAcct,
@@ -168,7 +144,7 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
         }
 
         var betaAcct = Guid.NewGuid();
-        await using (var session = _store.LightweightSession(beta))
+        await using (var session = Store.LightweightSession(beta))
         {
             session.Events.StartStream(betaAcct, new AccountOpened(betaAcct));
             session.Events.Append(betaAcct,
@@ -177,13 +153,13 @@ public class multi_stream_projection_rollup_by_tenant : IAsyncLifetime
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        using (var daemon = await _store.BuildProjectionDaemonAsync())
+        using (var daemon = await Store.BuildProjectionDaemonAsync())
         {
             await daemon.RebuildProjectionAsync(TenantRollupProjection.ProjectionName, alpha, CancellationToken.None);
             await daemon.RebuildProjectionAsync(TenantRollupProjection.ProjectionName, beta, CancellationToken.None);
         }
 
-        await using var query = _store.QuerySession();
+        await using var query = Store.QuerySession();
         var alphaRollup = await query.LoadAsync<TenantRollup>(alpha, TestContext.Current.CancellationToken);
         var betaRollup = await query.LoadAsync<TenantRollup>(beta, TestContext.Current.CancellationToken);
 

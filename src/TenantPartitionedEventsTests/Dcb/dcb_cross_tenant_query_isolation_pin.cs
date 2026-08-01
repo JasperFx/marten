@@ -12,6 +12,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -48,46 +49,19 @@ namespace TenantPartitionedEventsTests.Dcb;
 /// <c>TagTables</c> to keep the pin focused on the path that was broken.
 /// </para>
 /// </summary>
-public class dcb_cross_tenant_query_isolation_pin : IAsyncLifetime
+public class dcb_cross_tenant_query_isolation_pin : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_dcbx";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_dcbx_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        // TagTables is the broken-JOIN path. HStore stores the tag on the
+        // event row itself so the cross-tenant query is intrinsically
+        // safe; this pin is specifically about the JOIN under TagTables.
+        opts.Events.DcbStorageMode = DcbStorageMode.TagTables;
 
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
-        {
-            await conn.OpenAsync();
-            try { await conn.DropSchemaAsync(_schema); } catch { }
-        }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            // TagTables is the broken-JOIN path. HStore stores the tag on the
-            // event row itself so the cross-tenant query is intrinsically
-            // safe; this pin is specifically about the JOIN under TagTables.
-            opts.Events.DcbStorageMode = DcbStorageMode.TagTables;
-
-            opts.Events.AddEventType<DcbXtPayment>();
-            opts.Events.RegisterTagType<DcbXtCustomerId>("dcbxt_customer");
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        opts.Events.AddEventType<DcbXtPayment>();
+        opts.Events.RegisterTagType<DcbXtCustomerId>("dcbxt_customer");
     }
 
     [Fact]
@@ -101,11 +75,11 @@ public class dcb_cross_tenant_query_isolation_pin : IAsyncLifetime
         // event — the #4645 fix tightened the JOIN to also match on tenant_id
         // so the per-tenant-seq-id collision no longer produces a duplicate
         // (or — if the WHERE clause hadn't held — a cross-tenant leak).
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         var sharedCustomer = new DcbXtCustomerId(Guid.NewGuid());
 
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             var evt = session.Events.BuildEvent(new DcbXtPayment("ALPHA-PAYMENT"));
             evt.WithTag(sharedCustomer);
@@ -113,7 +87,7 @@ public class dcb_cross_tenant_query_isolation_pin : IAsyncLifetime
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using (var session = _store.LightweightSession("beta"))
+        await using (var session = Store.LightweightSession("beta"))
         {
             var evt = session.Events.BuildEvent(new DcbXtPayment("BETA-PAYMENT"));
             evt.WithTag(sharedCustomer);
@@ -123,7 +97,7 @@ public class dcb_cross_tenant_query_isolation_pin : IAsyncLifetime
 
         var query = new EventTagQuery().Or<DcbXtCustomerId>(sharedCustomer);
 
-        await using var alphaQuery = _store.LightweightSession("alpha");
+        await using var alphaQuery = Store.LightweightSession("alpha");
         var events = await alphaQuery.Events.QueryByTagsAsync(query, TestContext.Current.CancellationToken);
 
         // Exactly one row — alpha's own event. The fix to EventStore.Dcb.cs:
