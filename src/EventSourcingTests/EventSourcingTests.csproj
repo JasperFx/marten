@@ -78,6 +78,9 @@
         <Compile Include="..\Marten.Testing\Harness\DestructiveIntegrationContext.cs">
             <Link>Harness\DestructiveIntegrationContext.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\Harness\HostedStoreContext.cs">
+            <Link>Harness\HostedStoreContext.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Harness\IntegrationContext.cs">
             <Link>Harness\IntegrationContext.cs</Link>
         </Compile>

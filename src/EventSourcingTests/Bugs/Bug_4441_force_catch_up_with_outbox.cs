@@ -30,7 +30,7 @@ namespace EventSourcingTests.Bugs;
 // IMessageBatch must catch up cleanly and the listener hooks must fire even
 // when the projection raises no side effects.
 
-public class Bug_4441_force_catch_up_with_outbox
+public class Bug_4441_force_catch_up_with_outbox: HostedStoreContext
 {
     public class LetterCounts
     {
@@ -55,17 +55,9 @@ public class Bug_4441_force_catch_up_with_outbox
     [Fact(Timeout = 30000)]
     public async Task force_catch_up_returns_for_async_daemon_without_side_effects()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(s =>
-            {
-                s.AddMarten(m =>
-                {
-                    m.Connection(ConnectionSource.ConnectionString);
-                    m.DatabaseSchemaName = "bug4441_default";
-                    m.Projections.Add<LetterCountsProjection>(ProjectionLifecycle.Async);
-                }).AddAsyncDaemon(DaemonMode.Solo);
-            })
-            .StartAsync();
+        var host = await StartHostAsync(
+            m => m.Projections.Add<LetterCountsProjection>(ProjectionLifecycle.Async),
+            DaemonMode.Solo);
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.CompletelyRemoveAllAsync();
@@ -86,18 +78,12 @@ public class Bug_4441_force_catch_up_with_outbox
     {
         var outbox = new RecordingOutbox();
 
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(s =>
+        var host = await StartHostAsync(m =>
             {
-                s.AddMarten(m =>
-                {
-                    m.Connection(ConnectionSource.ConnectionString);
-                    m.DatabaseSchemaName = "bug4441_outbox";
-                    m.Events.MessageOutbox = outbox;
-                    m.Projections.Add<LetterCountsProjection>(ProjectionLifecycle.Async);
-                }).AddAsyncDaemon(DaemonMode.Solo);
-            })
-            .StartAsync();
+                m.Events.MessageOutbox = outbox;
+                m.Projections.Add<LetterCountsProjection>(ProjectionLifecycle.Async);
+            },
+            DaemonMode.Solo);
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.CompletelyRemoveAllAsync();
