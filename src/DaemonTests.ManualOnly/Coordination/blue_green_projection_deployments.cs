@@ -19,7 +19,7 @@ using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoor
 namespace DaemonTests.ManualOnly.Coordination;
 
 [Collection("OneOffs")]
-public class blue_green_projection_deployments
+public class blue_green_projection_deployments: HostedStoreContext
 {
     [Fact]
     public void shard_name_uses_non_1_as_suffix_in_shard_name_identifier()
@@ -63,14 +63,14 @@ public class blue_green_projection_deployments
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.Projections.Add<BlueProjection>(ProjectionLifecycle.Async);
-            opts.DatabaseSchemaName = "bluegreen";
+            opts.DatabaseSchemaName = SchemaName;
         });
 
         await using var greenStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.Projections.Add<GreenProjection>(ProjectionLifecycle.Async);
-            opts.DatabaseSchemaName = "bluegreen";
+            opts.DatabaseSchemaName = SchemaName;
         });
 
         using var blueDaemon = await blueStore.BuildProjectionDaemonAsync();
@@ -125,29 +125,15 @@ public class blue_green_projection_deployments
     [Fact]
     public async Task test_through_host()
     {
-        using var blueHost = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.Projections.Add<BlueProjection>(ProjectionLifecycle.Async);
-                    opts.DatabaseSchemaName = "bluegreen";
-                }).AddAsyncDaemon(DaemonMode.HotCold);
-            }).StartAsync(TestContext.Current.CancellationToken);
+        var blueHost = await StartHostAsync(
+            opts => opts.Projections.Add<BlueProjection>(ProjectionLifecycle.Async),
+            DaemonMode.HotCold);
 
         var blueStore = blueHost.Services.GetRequiredService<IDocumentStore>();
 
-        using var greenHost = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.Projections.Add<GreenProjection>(ProjectionLifecycle.Async);
-                    opts.DatabaseSchemaName = "bluegreen";
-                }).AddAsyncDaemon(DaemonMode.HotCold);
-            }).StartAsync(TestContext.Current.CancellationToken);
+        var greenHost = await StartHostAsync(
+            opts => opts.Projections.Add<GreenProjection>(ProjectionLifecycle.Async),
+            DaemonMode.HotCold);
 
         var greenStore = greenHost.Services.GetRequiredService<IDocumentStore>();
 
@@ -198,7 +184,7 @@ public class blue_green_projection_deployments
     }
 }
 
-public class BlueProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate, Guid>
+public partial class BlueProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate, Guid>
 {
     public BlueProjection()
     {
@@ -226,7 +212,7 @@ public class BlueProjection: SingleStreamProjection<EventSourcingTests.Aggregati
     }
 }
 
-public class GreenProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate, Guid>
+public partial class GreenProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate, Guid>
 {
     public GreenProjection()
     {

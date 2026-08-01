@@ -12,23 +12,14 @@ using Xunit;
 
 namespace DaemonTests.Internals;
 
-public class pausing_and_resuming_the_daemon
+public class pausing_and_resuming_the_daemon: HostedStoreContext
 {
     [Fact]
     public async Task stop_and_resume_from_the_host_extensions()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DisableNpgsqlLogging = true;
-                    opts.DatabaseSchemaName = "coordinator";
-
-                    opts.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async);
-                }).AddAsyncDaemon(DaemonMode.Solo);
-            }).StartAsync(TestContext.Current.CancellationToken);
+        var host = await StartHostAsync(
+            opts => opts.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async),
+            DaemonMode.Solo);
 
         await host.PauseAllDaemonsAsync();
 

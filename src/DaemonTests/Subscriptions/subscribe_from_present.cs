@@ -15,7 +15,7 @@ using Xunit;
 namespace DaemonTests.Subscriptions;
 
 [Collection("subscriptions")]
-public class subscribe_from_present : IAsyncLifetime
+public class subscribe_from_present : HostedStoreContext
 {
     private readonly ITestOutputHelper _output;
     private readonly FakeSubscription theSubscription = new();
@@ -27,36 +27,22 @@ public class subscribe_from_present : IAsyncLifetime
         _output = output;
     }
 
-    public async ValueTask InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
-        await SchemaUtils.DropSchema(ConnectionSource.ConnectionString, "subscriptions_start");
+        await SchemaUtils.DropSchema(ConnectionSource.ConnectionString, SchemaName);
 
-        _host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "subscriptions_start";
+        _host = await StartHostAsync(opts =>
+        {
+            opts.DotNetLogger = new TestLogger<FakeSubscription>(_output);
 
-                    opts.DotNetLogger = new TestLogger<FakeSubscription>(_output);
-                    opts.DisableNpgsqlLogging = true;
+            theSubscription.Options.SubscribeFromPresent();
+            opts.Events.Subscribe(theSubscription);
 
-                    theSubscription.Options.SubscribeFromPresent();
-                    opts.Events.Subscribe(theSubscription);
-
-                    opts.Events.TimeProvider = theProvider;
-                });
-            }).StartAsync();
+            opts.Events.TimeProvider = theProvider;
+        });
 
         var store = _host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.DeleteAllEventDataAsync();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _host.StopAsync();
-        _host.Dispose();
     }
 
     [Fact]

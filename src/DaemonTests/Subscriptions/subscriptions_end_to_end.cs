@@ -371,295 +371,6 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
     }
 
     [Fact]
-    public async Task use_from_service_provider_as_singleton()
-    {
-        await rewindState();
-
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DisableNpgsqlLogging = true;
-                    opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
-                    ServiceLifetime.Singleton,
-                    o => o.Name = "Simple2");
-            }).StartAsync(TestContext.Current.CancellationToken);
-
-        var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
-
-
-        store.Options.Projections.AllShards().Select(x => x.Name.Identity)
-            .ShouldContain("Simple2:All");
-
-        var events1 = new object[]
-        {
-            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events2 = new object[]
-        {
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events3 = new object[]
-        {
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events4 = new object[]
-        {
-            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-
-        await using var session = store.LightweightSession();
-
-        session.Events.StartStream(Guid.NewGuid(), events1);
-        session.Events.StartStream(Guid.NewGuid(), events2);
-        session.Events.StartStream(Guid.NewGuid(), events3);
-        session.Events.StartStream(Guid.NewGuid(), events4);
-
-        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
-
-        SimpleSubscription.EventsEncountered[1].Count.ShouldBeGreaterThanOrEqualTo(16);
-
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
-        progress.ShouldBeGreaterThanOrEqualTo(16);
-
-        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
-    }
-
-    [Fact]
-    public async Task use_from_service_provider_as_singleton_with_martenStore()
-    {
-        await rewindState();
-
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMartenStore<ICustomStore>(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DisableNpgsqlLogging = true;
-                    opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
-                    ServiceLifetime.Singleton,
-                    o => o.Name = "Simple2");
-            }).StartAsync(TestContext.Current.CancellationToken);
-
-        var store = (DocumentStore)host.Services.GetRequiredService<ICustomStore>();
-
-
-        store.Options.Projections.AllShards().Select(x => x.Name.Identity)
-            .ShouldContain("Simple2:All");
-
-        var events1 = new object[]
-        {
-            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events2 = new object[]
-        {
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events3 = new object[]
-        {
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events4 = new object[]
-        {
-            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-
-        await using var session = store.LightweightSession();
-
-        session.Events.StartStream(Guid.NewGuid(), events1);
-        session.Events.StartStream(Guid.NewGuid(), events2);
-        session.Events.StartStream(Guid.NewGuid(), events3);
-        session.Events.StartStream(Guid.NewGuid(), events4);
-
-        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
-
-        SimpleSubscription.EventsEncountered[1].Count.ShouldBeGreaterThanOrEqualTo(16);
-
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
-        progress.ShouldBeGreaterThanOrEqualTo(16);
-
-        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
-    }
-
-    private async Task rewindState()
-    {
-        SimpleSubscription.Clear();
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        await conn.DropSchemaAsync("ioc");
-        await conn.CloseAsync();
-    }
-
-    [Fact]
-    public async Task use_from_service_provider_as_scoped()
-    {
-        await rewindState();
-
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DisableNpgsqlLogging = true;
-                    opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
-                    ServiceLifetime.Scoped,
-                    o => o.Name = "Simple2");
-            }).StartAsync(TestContext.Current.CancellationToken);
-
-        var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
-
-
-        store.Options.Projections.AllShards().Select(x => x.Name.Identity)
-            .ShouldContain("Simple2:All");
-
-        var events1 = new object[]
-        {
-            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events2 = new object[]
-        {
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events3 = new object[]
-        {
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events4 = new object[]
-        {
-            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-
-        await using var session = store.LightweightSession();
-
-        session.Events.StartStream(Guid.NewGuid(), events1);
-        session.Events.StartStream(Guid.NewGuid(), events2);
-        session.Events.StartStream(Guid.NewGuid(), events3);
-        session.Events.StartStream(Guid.NewGuid(), events4);
-
-        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
-
-        SimpleSubscription.EventsEncountered.Sum(x => x.Count).ShouldBeGreaterThanOrEqualTo(16);
-
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
-        progress.ShouldBeGreaterThanOrEqualTo(16);
-
-        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
-    }
-
-    [Fact]
-    public async Task subscriptions_are_part_of_the_event_store_usage()
-    {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMartenStore<ICustomStore>(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DisableNpgsqlLogging = true;
-                    opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
-                    ServiceLifetime.Scoped,
-                    o => o.Name = "Simple2");
-            }).StartAsync(TestContext.Current.CancellationToken);
-
-        var capabilities = host.Services.GetServices<IEventStore>().ToArray();
-        capabilities.Length.ShouldBe(1);
-
-        var usage = await capabilities[0].TryCreateUsage(CancellationToken.None);
-
-        usage.ShouldNotBeNull();
-    }
-
-    [Fact]
-    public async Task use_from_service_provider_as_scoped_with_martenStore()
-    {
-        await rewindState();
-
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMartenStore<ICustomStore>(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DisableNpgsqlLogging = true;
-                    opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
-                    ServiceLifetime.Scoped,
-                    o => o.Name = "Simple2");
-            }).StartAsync(TestContext.Current.CancellationToken);
-
-        var store = (DocumentStore)host.Services.GetRequiredService<ICustomStore>();
-
-
-        store.Options.Projections.AllShards().Select(x => x.Name.Identity)
-            .ShouldContain("Simple2:All");
-
-        var events1 = new object[]
-        {
-            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events2 = new object[]
-        {
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events3 = new object[]
-        {
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-        var events4 = new object[]
-        {
-            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
-            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
-        };
-
-        await using var session = store.LightweightSession();
-
-        session.Events.StartStream(Guid.NewGuid(), events1);
-        session.Events.StartStream(Guid.NewGuid(), events2);
-        session.Events.StartStream(Guid.NewGuid(), events3);
-        session.Events.StartStream(Guid.NewGuid(), events4);
-
-        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
-
-        await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
-
-        SimpleSubscription.EventsEncountered.Sum(x => x.Count).ShouldBeGreaterThanOrEqualTo(16);
-
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
-        progress.ShouldBeGreaterThanOrEqualTo(16);
-
-        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
-    }
-
-    [Fact]
     public void subscription_wrapper_copies_the_filters_from_subscription_base()
     {
         var services = new ServiceCollection();
@@ -693,6 +404,186 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         wrapper.Options.MaximumHopperSize.ShouldBe(7777);
         wrapper.Name.ShouldBe("custom-subscription-name");
         wrapper.Version.ShouldBe(7u);
+    }
+}
+
+public class subscription_registrations_through_host: HostedStoreContext
+{
+    private async Task rewindState()
+    {
+        SimpleSubscription.Clear();
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await conn.DropSchemaAsync(SchemaName);
+        await conn.DropSchemaAsync($"{SchemaName}_custom");
+        await conn.CloseAsync();
+    }
+
+    private void addCustomStore(IServiceCollection services, ServiceLifetime subscriptionLifetime)
+    {
+        services.AddMartenStore<ICustomStore>(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DisableNpgsqlLogging = true;
+            opts.DatabaseSchemaName = $"{SchemaName}_custom";
+        }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
+            subscriptionLifetime,
+            o => o.Name = "Simple2");
+    }
+
+    private static async Task publishFourStreams(DocumentStore store)
+    {
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+
+        await using var session = store.LightweightSession();
+
+        session.Events.StartStream(Guid.NewGuid(), events1);
+        session.Events.StartStream(Guid.NewGuid(), events2);
+        session.Events.StartStream(Guid.NewGuid(), events3);
+        session.Events.StartStream(Guid.NewGuid(), events4);
+
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task use_from_service_provider_as_singleton()
+    {
+        await rewindState();
+
+        var host = await StartHostAsync(_ => { }, DaemonMode.Solo,
+            configureMarten: marten => marten.AddSubscriptionWithServices<SimpleSubscription>(
+                ServiceLifetime.Singleton,
+                o => o.Name = "Simple2"));
+
+        var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
+
+        store.Options.Projections.AllShards().Select(x => x.Name.Identity)
+            .ShouldContain("Simple2:All");
+
+        await publishFourStreams(store);
+
+        await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
+
+        SimpleSubscription.EventsEncountered[1].Count.ShouldBeGreaterThanOrEqualTo(16);
+
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
+        progress.ShouldBeGreaterThanOrEqualTo(16);
+
+        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task use_from_service_provider_as_singleton_with_martenStore()
+    {
+        await rewindState();
+
+        var host = await StartHostAsync(_ => { },
+            configureServices: services => addCustomStore(services, ServiceLifetime.Singleton));
+
+        var store = (DocumentStore)host.Services.GetRequiredService<ICustomStore>();
+
+        store.Options.Projections.AllShards().Select(x => x.Name.Identity)
+            .ShouldContain("Simple2:All");
+
+        await publishFourStreams(store);
+
+        await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
+
+        SimpleSubscription.EventsEncountered[1].Count.ShouldBeGreaterThanOrEqualTo(16);
+
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
+        progress.ShouldBeGreaterThanOrEqualTo(16);
+
+        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task use_from_service_provider_as_scoped()
+    {
+        await rewindState();
+
+        var host = await StartHostAsync(_ => { }, DaemonMode.Solo,
+            configureMarten: marten => marten.AddSubscriptionWithServices<SimpleSubscription>(
+                ServiceLifetime.Scoped,
+                o => o.Name = "Simple2"));
+
+        var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
+
+        store.Options.Projections.AllShards().Select(x => x.Name.Identity)
+            .ShouldContain("Simple2:All");
+
+        await publishFourStreams(store);
+
+        await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
+
+        SimpleSubscription.EventsEncountered.Sum(x => x.Count).ShouldBeGreaterThanOrEqualTo(16);
+
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
+        progress.ShouldBeGreaterThanOrEqualTo(16);
+
+        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task use_from_service_provider_as_scoped_with_martenStore()
+    {
+        await rewindState();
+
+        var host = await StartHostAsync(_ => { },
+            configureServices: services => addCustomStore(services, ServiceLifetime.Scoped));
+
+        var store = (DocumentStore)host.Services.GetRequiredService<ICustomStore>();
+
+        store.Options.Projections.AllShards().Select(x => x.Name.Identity)
+            .ShouldContain("Simple2:All");
+
+        await publishFourStreams(store);
+
+        await store.WaitForNonStaleProjectionDataAsync(60.Seconds());
+
+        SimpleSubscription.EventsEncountered.Sum(x => x.Count).ShouldBeGreaterThanOrEqualTo(16);
+
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1), token: TestContext.Current.CancellationToken);
+        progress.ShouldBeGreaterThanOrEqualTo(16);
+
+        await store.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task subscriptions_are_part_of_the_event_store_usage()
+    {
+        // Deliberately not through StartHostAsync: this asserts exactly one
+        // IEventStore registration, and the harness's main AddMarten store
+        // would add a second one.
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services => addCustomStore(services, ServiceLifetime.Scoped))
+            .StartAsync(TestContext.Current.CancellationToken);
+
+        var capabilities = host.Services.GetServices<IEventStore>().ToArray();
+        capabilities.Length.ShouldBe(1);
+
+        var usage = await capabilities[0].TryCreateUsage(CancellationToken.None);
+
+        usage.ShouldNotBeNull();
     }
 }
 

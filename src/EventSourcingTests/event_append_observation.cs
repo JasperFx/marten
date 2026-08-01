@@ -35,12 +35,12 @@ public interface IObservationStore: IDocumentStore;
 /// events to the storage-agnostic <see cref="IEventStoreInstrumentation.AppendObserver"/>, so lifecycle
 /// tooling (CritterWatch) can record runtime-observed "appends" edges. Covers main and ancillary stores.
 /// </summary>
-public class event_append_observation
+public class event_append_observation: HostedStoreContext
 {
     [Fact]
     public async Task observer_receives_the_appended_events_with_metadata()
     {
-        using var host = await startHost("eao_basic", advancedTracking: true);
+        var host = await startHost("basic", advancedTracking: true);
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
 
         var observed = new List<IReadOnlyList<IEvent>>();
@@ -64,7 +64,7 @@ public class event_append_observation
     [Fact]
     public async Task no_listener_and_no_observation_when_advanced_tracking_is_off()
     {
-        using var host = await startHost("eao_off", advancedTracking: false);
+        var host = await startHost("off", advancedTracking: false);
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
 
         store.Options.Listeners.OfType<AppendEventObservationListener>().ShouldBeEmpty();
@@ -82,7 +82,7 @@ public class event_append_observation
     [Fact]
     public async Task observer_carries_the_stream_key_for_string_identified_streams()
     {
-        using var host = await startHost("eao_string", advancedTracking: true,
+        var host = await startHost("string", advancedTracking: true,
             opts => opts.Events.StreamIdentity = StreamIdentity.AsString);
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
 
@@ -99,7 +99,7 @@ public class event_append_observation
     [Fact]
     public async Task observer_carries_the_tenant_id_when_multi_tenanted()
     {
-        using var host = await startHost("eao_tenant", advancedTracking: true,
+        var host = await startHost("tenant", advancedTracking: true,
             opts => opts.Events.TenancyStyle = TenancyStyle.Conjoined);
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
 
@@ -116,7 +116,7 @@ public class event_append_observation
     [Fact]
     public async Task observer_does_not_fire_when_no_events_are_appended()
     {
-        using var host = await startHost("eao_doconly", advancedTracking: true);
+        var host = await startHost("doconly", advancedTracking: true);
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
 
         var fired = false;
@@ -132,7 +132,7 @@ public class event_append_observation
     [Fact]
     public async Task a_throwing_observer_does_not_break_save_changes()
     {
-        using var host = await startHost("eao_throw", advancedTracking: true);
+        var host = await startHost("throw", advancedTracking: true);
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
 
         store.Options.EventGraph.AppendObserver = _ => throw new InvalidOperationException("boom");
@@ -153,14 +153,15 @@ public class event_append_observation
     [Fact]
     public async Task observer_set_through_the_di_instrumentation_bridge_fires()
     {
-        await dropSchema("eao_bridge");
+        var schema = $"{SchemaName}_bridge";
+        await dropSchema(schema);
 
         var services = new ServiceCollection();
         services.AddJasperFx(o => o.EnableAdvancedTracking = true);
         services.AddMarten(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "eao_bridge";
+            opts.DatabaseSchemaName = schema;
         });
 
         await using var provider = services.BuildServiceProvider();
@@ -185,26 +186,21 @@ public class event_append_observation
     [Fact]
     public async Task listener_is_applied_to_ancillary_stores()
     {
-        await dropSchema("eao_anc_main");
-        await dropSchema("eao_anc_first");
+        await dropSchema(SchemaName);
+        await dropSchema($"{SchemaName}_first");
 
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(
+            _ => { },
+            configureServices: services =>
             {
                 services.AddJasperFx(o => o.EnableAdvancedTracking = true);
-
-                services.AddMarten(m =>
-                {
-                    m.Connection(ConnectionSource.ConnectionString);
-                    m.DatabaseSchemaName = "eao_anc_main";
-                });
 
                 services.AddMartenStore<IObservationStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "eao_anc_first";
+                    opts.DatabaseSchemaName = $"{SchemaName}_first";
                 });
-            }).StartAsync();
+            });
 
         var ancillary = host.Services.GetRequiredService<IObservationStore>().As<DocumentStore>();
         ancillary.Options.Listeners.OfType<AppendEventObservationListener>().ShouldNotBeEmpty();
@@ -221,26 +217,24 @@ public class event_append_observation
         observed.Single().ShouldAllBe(e => e.StreamId == streamId);
     }
 
-    private static async Task<IHost> startHost(string schema, bool advancedTracking,
+    private async Task<IHost> startHost(string suffix, bool advancedTracking,
         Action<StoreOptions>? configure = null)
     {
+        var schema = $"{SchemaName}_{suffix}";
         await dropSchema(schema);
 
-        return await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        return await StartHostAsync(opts =>
+            {
+                opts.DatabaseSchemaName = schema;
+                configure?.Invoke(opts);
+            },
+            configureServices: services =>
             {
                 if (advancedTracking)
                 {
                     services.AddJasperFx(o => o.EnableAdvancedTracking = true);
                 }
-
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = schema;
-                    configure?.Invoke(opts);
-                });
-            }).StartAsync();
+            });
     }
 
     private static async Task dropSchema(string schema)

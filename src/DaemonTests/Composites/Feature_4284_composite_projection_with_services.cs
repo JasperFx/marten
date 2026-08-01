@@ -15,29 +15,21 @@ using Xunit;
 
 namespace DaemonTests.Composites;
 
-public class Feature_4284_composite_projection_with_services
+public class Feature_4284_composite_projection_with_services: HostedStoreContext
 {
     [Fact]
     public async Task can_use_scoped_services_in_projection_registered_under_composite()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(opts =>
             {
-                services.AddScoped<ICompositePriceLookup, CompositePriceLookup>();
-
-                services.AddMarten(opts =>
-                    {
-                        opts.Connection(ConnectionSource.ConnectionString);
-                        opts.DatabaseSchemaName = "feature_4284_net" + Environment.Version.Major;
-                        opts.Projections.CompositeProjectionFor("Feature4284Products", projection =>
-                        {
-                            projection.AddProjectionWithServices<CompositeProductProjection>(ServiceLifetime.Scoped);
-                            projection.AddProjectionWithServices<CompositeProductMetricProjection>(ServiceLifetime.Scoped);
-                        });
-                    })
-                    .ApplyAllDatabaseChangesOnStartup();
-            })
-            .StartAsync(TestContext.Current.CancellationToken);
+                opts.Projections.CompositeProjectionFor("Feature4284Products", projection =>
+                {
+                    projection.AddProjectionWithServices<CompositeProductProjection>(ServiceLifetime.Scoped);
+                    projection.AddProjectionWithServices<CompositeProductMetricProjection>(ServiceLifetime.Scoped);
+                });
+            },
+            configureServices: services => services.AddScoped<ICompositePriceLookup, CompositePriceLookup>(),
+            configureMarten: marten => marten.ApplyAllDatabaseChangesOnStartup());
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);

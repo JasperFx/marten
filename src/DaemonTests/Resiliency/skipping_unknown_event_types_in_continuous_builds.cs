@@ -21,36 +21,18 @@ using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoor
 
 namespace DaemonTests.Resiliency;
 
-public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
+public class skipping_unknown_event_types_in_continuous_builds : HostedStoreContext
 {
     private IHost _appender;
     private IHost _processor;
 
-    public async ValueTask InitializeAsync()
+    public override async ValueTask InitializeAsync()
     {
-        await SchemaUtils.DropSchema(ConnectionSource.ConnectionString, "missing_events");
+        await SchemaUtils.DropSchema(ConnectionSource.ConnectionString, SchemaName);
 
-        _appender = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DisableNpgsqlLogging = true;
-                    opts.DatabaseSchemaName = "missing_events";
-                    opts.Events.MapEventType<MTAEvent>("TripleAAA");
-                }).ApplyAllDatabaseChangesOnStartup();
-
-            }).StartAsync();
-
-
-
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _appender.StopAsync();
-        await _processor.StopAsync();
+        _appender = await StartHostAsync(
+            opts => opts.Events.MapEventType<MTAEvent>("TripleAAA"),
+            configureMarten: marten => marten.ApplyAllDatabaseChangesOnStartup());
     }
 
     [Fact]
@@ -68,21 +50,13 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
 
             // Rig up a bad, unknown event type
             session.QueueSqlCommand(
-                "update missing_events.mt_events set mt_dotnet_type = 'wrong, wrong' where version = 1");
+                $"update {SchemaName}.mt_events set mt_dotnet_type = 'wrong, wrong' where version = 1");
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        _processor = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DisableNpgsqlLogging = true;
-                    opts.DatabaseSchemaName = "missing_events";
-                    opts.Projections.Add(new WeirdCustomAggregation(), ProjectionLifecycle.Async);
-                }).AddAsyncDaemon(DaemonMode.Solo);
-            }).StartAsync(TestContext.Current.CancellationToken);
+        _processor = await StartHostAsync(
+            opts => opts.Projections.Add(new WeirdCustomAggregation(), ProjectionLifecycle.Async),
+            DaemonMode.Solo);
 
         var daemon = _processor.Services.GetRequiredService<IProjectionCoordinator>().DaemonForMainDatabase();
         await daemon.WaitForShardToBeRunning("Weird:All", 10.Seconds());
