@@ -11,27 +11,17 @@ namespace CoreTests;
 
 public interface ILazyTestStore : IDocumentStore;
 
-public class lazy_ancillary_store_registration
+public class lazy_ancillary_store_registration: HostedStoreContext
 {
     [Fact]
     public async Task lazy_of_ancillary_store_is_registered_as_singleton()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services => services.AddMartenStore<ILazyTestStore>(opts =>
             {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "lazy_test_primary";
-                });
-
-                services.AddMartenStore<ILazyTestStore>(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "lazy_test_ancillary";
-                });
-            })
-            .StartAsync();
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.DatabaseSchemaName = $"{SchemaName}_ancillary";
+            }));
 
         // Lazy<T> should be resolvable
         var lazy = host.Services.GetService<Lazy<ILazyTestStore>>();
@@ -50,24 +40,17 @@ public class lazy_ancillary_store_registration
     [Fact]
     public async Task lazy_of_ancillary_store_can_be_injected_into_a_service()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services =>
             {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "lazy_test2_primary";
-                });
-
                 services.AddMartenStore<ILazyTestStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "lazy_test2_ancillary";
+                    opts.DatabaseSchemaName = $"{SchemaName}_ancillary2";
                 });
 
                 services.AddSingleton<ServiceThatUsesLazyStore>();
-            })
-            .StartAsync();
+            });
 
         var service = host.Services.GetRequiredService<ServiceThatUsesLazyStore>();
         service.ShouldNotBeNull();

@@ -16,19 +16,6 @@ using Shouldly;
 
 namespace CoreTests;
 
-public class MartenHost
-{
-    public static Task<IHost> For(Action<IServiceCollection> configure)
-    {
-        return Host.CreateDefaultBuilder()
-            .ConfigureServices((c, services) =>
-            {
-                configure(services);
-            })
-            .StartAsync();
-    }
-}
-
 public class StubInitialData: IInitialData
 {
     public Task Populate(IDocumentStore store, CancellationToken cancellation)
@@ -40,7 +27,7 @@ public class StubInitialData: IInitialData
     public IDocumentStore ReceivedStore { get; set; }
 }
 
-public class working_with_initial_data : OneOffConfigurationsContext
+public class working_with_initial_data : HostedStoreContext
 {
     [Fact]
     public async Task runs_all_the_initial_data_sets_on_startup()
@@ -49,15 +36,8 @@ public class working_with_initial_data : OneOffConfigurationsContext
         var data2 = Substitute.For<IInitialData>();
         var data3 = Substitute.For<IInitialData>();
 
-        using var host = await MartenHost.For(services =>
-        {
-            services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-
-                })
-                .InitializeWith(data1, data2, data3);
-        });
+        var host = await StartHostAsync(_ => { },
+            configureMarten: marten => marten.InitializeWith(data1, data2, data3));
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
         store.Options.InitialData.ShouldBe([data1, data2, data3]);
@@ -74,17 +54,8 @@ public class working_with_initial_data : OneOffConfigurationsContext
         var data2 = Substitute.For<IInitialData>();
         var data3 = Substitute.For<IInitialData>();
 
-        using var host = await MartenHost.For(services =>
-        {
-            services.AddMarten(opts =>
-            {
-                opts.Connection(ConnectionSource.ConnectionString);
-
-            });
-
-            services.InitializeMartenWith(data1, data2, data3);
-
-        });
+        var host = await StartHostAsync(_ => { },
+            configureServices: services => services.InitializeMartenWith(data1, data2, data3));
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
         store.Options.InitialData.ShouldBe([data1, data2, data3]);
@@ -97,15 +68,8 @@ public class working_with_initial_data : OneOffConfigurationsContext
     [Fact]
     public async Task use_service_registration_for_initial_data()
     {
-        using var host = await MartenHost.For(services =>
-        {
-            services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-
-                })
-                .InitializeWith<StubInitialData>();
-        });
+        var host = await StartHostAsync(_ => { },
+            configureMarten: marten => marten.InitializeWith<StubInitialData>());
 
         var stub = host.Services.GetServices<IInitialData>().OfType<StubInitialData>().Single();
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
@@ -117,17 +81,8 @@ public class working_with_initial_data : OneOffConfigurationsContext
     [Fact]
     public async Task use_service_registration_for_initial_data_separate_registration()
     {
-        using var host = await MartenHost.For(services =>
-        {
-            services.AddMarten(opts =>
-            {
-                opts.Connection(ConnectionSource.ConnectionString);
-
-            });
-
-            services.InitializeMartenWith<StubInitialData>();
-
-        });
+        var host = await StartHostAsync(_ => { },
+            configureServices: services => services.InitializeMartenWith<StubInitialData>());
 
         var stub = host.Services.GetServices<IInitialData>().OfType<StubInitialData>().Single();
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
@@ -144,15 +99,13 @@ public class working_with_initial_data : OneOffConfigurationsContext
         var data2 = Substitute.For<IInitialData>();
         var data3 = Substitute.For<IInitialData>();
 
-        using var host = await MartenHost.For(services =>
-        {
-            services.AddMartenStore<IOtherStore>(opts =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services => services.AddMartenStore<IOtherStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-
+                    opts.DatabaseSchemaName = $"{SchemaName}_other";
                 })
-                .InitializeWith(data1, data2, data3);
-        });
+                .InitializeWith(data1, data2, data3));
 
         var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
         store.Options.InitialData.ShouldBe([data1, data2, data3]);
@@ -169,16 +122,17 @@ public class working_with_initial_data : OneOffConfigurationsContext
         var data2 = Substitute.For<IInitialData>();
         var data3 = Substitute.For<IInitialData>();
 
-        using var host = await MartenHost.For(services =>
-        {
-            services.AddMartenStore<IOtherStore>(opts =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services =>
             {
-                opts.Connection(ConnectionSource.ConnectionString);
+                services.AddMartenStore<IOtherStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = $"{SchemaName}_other";
+                });
 
+                services.InitializeMartenWith<IOtherStore>(data1, data2, data3);
             });
-
-            services.InitializeMartenWith<IOtherStore>(data1, data2, data3);
-        });
 
         var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
         store.Options.InitialData.ShouldBe([data1, data2, data3]);
@@ -191,15 +145,13 @@ public class working_with_initial_data : OneOffConfigurationsContext
     [Fact]
     public async Task use_service_registration_for_initial_data_for_other_store()
     {
-        using var host = await MartenHost.For(services =>
-        {
-            services.AddMartenStore<IOtherStore>(opts =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services => services.AddMartenStore<IOtherStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-
+                    opts.DatabaseSchemaName = $"{SchemaName}_other";
                 })
-                .InitializeWith<StubInitialData>();
-        });
+                .InitializeWith<StubInitialData>());
 
         var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
         var stub = store.Options.InitialData.OfType<StubInitialData>().Single();
@@ -210,17 +162,17 @@ public class working_with_initial_data : OneOffConfigurationsContext
     [Fact]
     public async Task use_service_registration_for_initial_data_for_other_store_separate_call()
     {
-        using var host = await MartenHost.For(services =>
-        {
-            services.AddMartenStore<IOtherStore>(opts =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services =>
             {
-                opts.Connection(ConnectionSource.ConnectionString);
+                services.AddMartenStore<IOtherStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = $"{SchemaName}_other";
+                });
 
+                services.InitializeMartenWith<IOtherStore, StubInitialData>();
             });
-
-            services
-                .InitializeMartenWith<IOtherStore, StubInitialData>();
-        });
 
         var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
         var stub = store.Options.InitialData.OfType<StubInitialData>().Single();
@@ -231,16 +183,17 @@ public class working_with_initial_data : OneOffConfigurationsContext
     [Fact]
     public async Task use_service_registration_for_initial_data_for_other_store_2()
     {
-        using var host = await MartenHost.For(services =>
-        {
-            services.AddMartenStore<IOtherStore>(opts =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services =>
             {
-                opts.Connection(ConnectionSource.ConnectionString);
+                services.AddMartenStore<IOtherStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = $"{SchemaName}_other";
+                });
 
+                services.InitializeMartenWith<IOtherStore, StubInitialData>();
             });
-
-            services.InitializeMartenWith<IOtherStore, StubInitialData>();
-        });
 
         var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
         var stub = store.Options.InitialData.OfType<StubInitialData>().Single();
@@ -252,9 +205,9 @@ public class working_with_initial_data : OneOffConfigurationsContext
     [Fact]
     public async Task initial_data_should_populate_db_with_query_in_populate_method()
     {
-        var store = DocumentStore.For(_ =>
+        await using var store = DocumentStore.For(_ =>
         {
-            _.DatabaseSchemaName = "Bug1495";
+            _.DatabaseSchemaName = $"{SchemaName}_bug1495";
 
             _.Connection(ConnectionSource.ConnectionString);
 
@@ -271,8 +224,6 @@ public class working_with_initial_data : OneOffConfigurationsContext
                 aggregate.Name.ShouldBe(initialAggregate.Name);
             }
         }
-
-        store.Dispose();
     }
 }
 public class InitialDataWithQuery: IInitialData

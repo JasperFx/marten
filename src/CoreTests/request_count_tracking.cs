@@ -10,28 +10,13 @@ using Xunit;
 
 namespace CoreTests;
 
-public class request_count_tracking : IDisposable
+public class request_count_tracking : OneOffConfigurationsContext
 {
     private readonly RecordingLogger logger = new();
-    private readonly DocumentStore _store;
-    private readonly IDocumentSession theSession;
 
     public request_count_tracking()
     {
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "request_counts";
-        });
-
-        theSession = _store.LightweightSession();
         theSession.Logger = logger;
-    }
-
-    public void Dispose()
-    {
-        _store?.Dispose();
-        theSession?.Dispose();
     }
 
     [Fact]

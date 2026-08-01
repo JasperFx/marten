@@ -185,14 +185,11 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
         connectionStringBuilder.CommandTimeout = 1;
 
-        var documentStore = DocumentStore.For(c =>
+        var documentStore = SeparateStore(c =>
         {
+            // Caller-supplied connection string; the base supplies this class's own
+            // schema so the write/read-back doesn't race schema-wiping tests.
             c.Connection(connectionStringBuilder.ToString());
-
-            // Own schema: this test writes then reads back through a caller-supplied
-            // connection, and on the shared public schema it races any test that wipes
-            // the schema in between.
-            c.DatabaseSchemaName = "session_options_custom_connection";
         });
 
         using var query = documentStore.LightweightSession();
@@ -208,14 +205,11 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
         connectionStringBuilder.CommandTimeout = 1;
 
-        var documentStore = DocumentStore.For(c =>
+        var documentStore = SeparateStore(c =>
         {
+            // Caller-supplied connection string; the base supplies this class's own
+            // schema so the write/read-back doesn't race schema-wiping tests.
             c.Connection(connectionStringBuilder.ToString());
-
-            // Own schema: this test writes then reads back through a caller-supplied
-            // connection, and on the shared public schema it races any test that wipes
-            // the schema in between.
-            c.DatabaseSchemaName = "session_options_custom_connection";
         });
 
         var options = new SessionOptions { Timeout = 60 };
@@ -231,14 +225,11 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     {
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
-        var documentStore = DocumentStore.For(c =>
+        var documentStore = SeparateStore(c =>
         {
+            // Caller-supplied connection string; the base supplies this class's own
+            // schema so the write/read-back doesn't race schema-wiping tests.
             c.Connection(connectionStringBuilder.ToString());
-
-            // Own schema: this test writes then reads back through a caller-supplied
-            // connection, and on the shared public schema it races any test that wipes
-            // the schema in between.
-            c.DatabaseSchemaName = "session_options_custom_connection";
         });
 
         var connection = new NpgsqlConnection(connectionStringBuilder.ToString());
@@ -259,14 +250,11 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     {
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
-        var documentStore = DocumentStore.For(c =>
+        var documentStore = SeparateStore(c =>
         {
+            // Caller-supplied connection string; the base supplies this class's own
+            // schema so the write/read-back doesn't race schema-wiping tests.
             c.Connection(connectionStringBuilder.ToString());
-
-            // Own schema: this test writes then reads back through a caller-supplied
-            // connection, and on the shared public schema it races any test that wipes
-            // the schema in between.
-            c.DatabaseSchemaName = "session_options_custom_connection";
         });
 
         var connection = new NpgsqlConnection(connectionStringBuilder.ToString());

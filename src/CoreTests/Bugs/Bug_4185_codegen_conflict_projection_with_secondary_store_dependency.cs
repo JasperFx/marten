@@ -66,31 +66,22 @@ public partial class OrderProjection4185 : SingleStreamProjection<OrderSummary41
 /// secondary <c>IDocumentStore</c> via constructor injection; that's what
 /// this remaining test pins.
 /// </summary>
-public class Bug_4185_codegen_conflict_projection_with_secondary_store_dependency
+public class Bug_4185_codegen_conflict_projection_with_secondary_store_dependency: HostedStoreContext
 {
     [Fact]
     public async Task projection_with_secondary_store_dependency_should_work_at_runtime()
     {
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services => services.AddMartenStore<IBug4185Store>(opts =>
             {
-                services.AddMartenStore<IBug4185Store>(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "bug4185_sec";
-                });
-
-                services.AddMarten(opts =>
-                    {
-                        opts.Connection(ConnectionSource.ConnectionString);
-                        opts.DatabaseSchemaName = "bug4185_pri";
-                    })
-                    .AddProjectionWithServices<OrderProjection4185>(
-                        ProjectionLifecycle.Inline,
-                        ServiceLifetime.Singleton)
-                    .ApplyAllDatabaseChangesOnStartup();
-            })
-            .StartAsync();
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.DatabaseSchemaName = $"{SchemaName}_sec";
+            }),
+            configureMarten: marten => marten
+                .AddProjectionWithServices<OrderProjection4185>(
+                    ProjectionLifecycle.Inline,
+                    ServiceLifetime.Singleton)
+                .ApplyAllDatabaseChangesOnStartup());
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
         var streamId = Guid.NewGuid();

@@ -14,7 +14,7 @@ using Xunit;
 
 namespace CoreTests;
 
-public class configuring_marten_with_async_extensions
+public class configuring_marten_with_async_extensions: HostedStoreContext
 {
     [Fact]
     public async Task feature_flag_positive()
@@ -22,30 +22,26 @@ public class configuring_marten_with_async_extensions
         var featureManager = Substitute.For<IFeatureManager>();
         featureManager.IsEnabledAsync("Module1").Returns(true);
 
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(opts =>
             {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "async_config";
-
-                    // #4552: ApplyAllDatabaseChangesOnStartup takes the global advisory lock
-                    // (default id 4004) to apply schema changes. That id is shared by every
-                    // store in the suite, and advisory locks are connection-scoped, so a pooled
-                    // connection from another test's startup-apply can still hold 4004 and make
-                    // this acquisition time out under CI load ("Unable to attain a global lock in
-                    // time"). Use a distinct lock id so this test can't contend with the default.
-                    opts.ApplyChangesLockId = opts.ApplyChangesLockId + 4552;
-                }).ApplyAllDatabaseChangesOnStartup();
-
+                // #4552: ApplyAllDatabaseChangesOnStartup takes the global advisory lock
+                // (default id 4004) to apply schema changes. That id is shared by every
+                // store in the suite, and advisory locks are connection-scoped, so a pooled
+                // connection from another test's startup-apply can still hold 4004 and make
+                // this acquisition time out under CI load ("Unable to attain a global lock in
+                // time"). Use a distinct lock id so this test can't contend with the default.
+                opts.ApplyChangesLockId = opts.ApplyChangesLockId + 4552;
+            },
+            configureServices: services =>
+            {
                 #region sample_registering_async_config_marten
 
                 services.ConfigureMartenWithServices<FeatureManagementUsingExtension>();
 
                 #endregion
                 services.AddSingleton(featureManager);
-            }).StartAsync();
+            },
+            configureMarten: marten => marten.ApplyAllDatabaseChangesOnStartup());
 
         var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
 
@@ -61,18 +57,12 @@ public class configuring_marten_with_async_extensions
 
         featureManager.IsEnabledAsync("Module1").Returns(false);
 
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var host = await StartHostAsync(_ => { },
+            configureServices: services =>
             {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "async_config";
-                });
-
                 services.ConfigureMartenWithServices<FeatureManagementUsingExtension>();
                 services.AddSingleton(featureManager);
-            }).StartAsync();
+            });
 
         var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
 
@@ -88,17 +78,10 @@ public class configuring_marten_with_async_extensions
         // registered the impl but never wired AsyncConfigureMartenApplication, so
         // Configure() silently never ran. AddMarten now registers the hosted service
         // unconditionally, matching how bare AddSingleton<IConfigureMarten, T>() works.
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "async_config_bare";
-                });
-
-                services.AddSingleton<IAsyncConfigureMarten, RecordingAsyncConfig>();
-            }).StartAsync();
+        var host = await StartHostAsync(
+            opts => opts.DatabaseSchemaName = $"{SchemaName}_bare",
+            configureServices: services =>
+                services.AddSingleton<IAsyncConfigureMarten, RecordingAsyncConfig>());
 
         var recorded = host.Services.GetServices<IAsyncConfigureMarten>()
             .OfType<RecordingAsyncConfig>()

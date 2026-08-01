@@ -679,7 +679,7 @@ namespace CoreTests.Internal.Sessions
         {
             var logger = new BatchSuccessRecordingLogger();
 
-            var store = DocumentStore.For(options =>
+            await using var store = DocumentStore.For(options =>
             {
                 options.Connection(ConnectionSource.ConnectionString);
                 options.OpenTelemetry.TrackConnections = TrackLevel.Normal;

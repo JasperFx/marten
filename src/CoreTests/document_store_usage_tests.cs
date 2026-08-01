@@ -23,15 +23,14 @@ namespace CoreTests;
 /// CritterWatch Documents tab end-to-end so the operationally-interesting
 /// settings reach the monitoring console accurately.
 /// </summary>
-public class document_store_usage_tests
+public class document_store_usage_tests: HostedStoreContext
 {
     [Fact]
     public async Task usage_carries_first_class_identity_properties()
     {
-        using var host = await BuildHost(opts =>
+        var host = await BuildHost(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "doc_usage_identity";
+            opts.DatabaseSchemaName = $"{SchemaName}_identity";
             opts.AutoCreateSchemaObjects = AutoCreate.None;
             opts.Schema.For<User>();
         });
@@ -41,7 +40,7 @@ public class document_store_usage_tests
         usage.ShouldNotBeNull();
         usage.SubjectUri.ShouldBe(new Uri("marten://main"));
         usage.StoreName.ShouldBe("Main");
-        usage.DatabaseSchemaName.ShouldBe("doc_usage_identity");
+        usage.DatabaseSchemaName.ShouldBe($"{SchemaName}_identity");
         usage.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None.ToString());
         usage.EnumStorage.ShouldNotBeNullOrEmpty();
         usage.Version.ShouldNotBeNullOrEmpty();
@@ -51,10 +50,9 @@ public class document_store_usage_tests
     [Fact]
     public async Task usage_includes_a_descriptor_per_registered_document_mapping()
     {
-        using var host = await BuildHost(opts =>
+        var host = await BuildHost(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "doc_usage_mappings";
+            opts.DatabaseSchemaName = $"{SchemaName}_mappings";
             opts.Schema.For<User>();
             opts.Schema.For<Issue>();
             opts.Schema.For<Target>();
@@ -70,7 +68,7 @@ public class document_store_usage_tests
         var userMapping = usage.Documents.Single(d => d.Alias == "user");
         userMapping.DocumentType.FullName.ShouldBe(typeof(User).FullName);
         userMapping.DocumentType.Name.ShouldBe(nameof(User));
-        userMapping.DatabaseSchemaName.ShouldBe("doc_usage_mappings");
+        userMapping.DatabaseSchemaName.ShouldBe($"{SchemaName}_mappings");
         userMapping.IdStrategy.ShouldNotBeNullOrEmpty();
         userMapping.TenancyStyle.ShouldBe("Single");
         userMapping.DeleteStyle.ShouldBe("Remove");
@@ -79,10 +77,9 @@ public class document_store_usage_tests
     [Fact]
     public async Task mapping_descriptor_carries_concurrency_and_tenancy_overrides()
     {
-        using var host = await BuildHost(opts =>
+        var host = await BuildHost(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "doc_usage_overrides";
+            opts.DatabaseSchemaName = $"{SchemaName}_overrides";
             opts.Schema.For<User>().UseOptimisticConcurrency(true);
             opts.Schema.For<Issue>().MultiTenanted();
             opts.Schema.For<Target>().SoftDeleted();
@@ -98,10 +95,9 @@ public class document_store_usage_tests
     [Fact]
     public async Task mapping_descriptor_carries_full_create_table_ddl()
     {
-        using var host = await BuildHost(opts =>
+        var host = await BuildHost(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "doc_usage_ddl";
+            opts.DatabaseSchemaName = $"{SchemaName}_ddl";
             opts.Schema.For<User>();
         });
 
@@ -114,16 +110,15 @@ public class document_store_usage_tests
         // statement for this mapping at minimum.
         mapping.Ddl.ShouldNotBeNullOrEmpty();
         mapping.Ddl.ShouldContain("CREATE", Case.Insensitive);
-        mapping.Ddl.ShouldContain("doc_usage_ddl.mt_doc_user", Case.Insensitive);
+        mapping.Ddl.ShouldContain($"{SchemaName}_ddl.mt_doc_user", Case.Insensitive);
     }
 
     [Fact]
     public async Task usage_carries_flat_option_values_for_secondary_settings()
     {
-        using var host = await BuildHost(opts =>
+        var host = await BuildHost(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "doc_usage_flat";
+            opts.DatabaseSchemaName = $"{SchemaName}_flat";
             opts.CommandTimeout = 42;
             opts.UpdateBatchSize = 250;
             opts.Schema.For<User>();
@@ -149,10 +144,9 @@ public class document_store_usage_tests
     [Fact]
     public async Task event_store_usage_includes_global_aggregates_when_present()
     {
-        using var host = await BuildHost(opts =>
+        var host = await BuildHost(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "doc_usage_global_aggs";
+            opts.DatabaseSchemaName = $"{SchemaName}_global_aggs";
             // GlobalAggregates lives on the internal EventGraph implementation
             // (not on the public IEventStoreOptions surface). CoreTests has
             // InternalsVisibleTo, so the cast is fine here.
@@ -166,14 +160,9 @@ public class document_store_usage_tests
         usage.GlobalAggregates.ShouldContain(g => g.FullName == typeof(User).FullName);
     }
 
-    private static async Task<IHost> BuildHost(Action<StoreOptions> configure)
+    private Task<IHost> BuildHost(Action<StoreOptions> configure)
     {
-        return await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(configure);
-            })
-            .StartAsync();
+        return StartHostAsync(configure);
     }
 
     private static async Task<DocumentStoreUsage> GetUsageAsync(IHost host)
