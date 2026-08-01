@@ -33,22 +33,13 @@ namespace EventSourcingTests.Bugs;
 /// callers needing to reach for the <c>internal set</c>.
 /// </para>
 /// </summary>
-public class Bug_4625_bulk_insert_events_derives_aggregate_type_name
+public class Bug_4625_bulk_insert_events_derives_aggregate_type_name: BugIntegrationContext
 {
     [Fact]
     public async Task BulkInsertEventsAsync_writes_mt_streams_type_from_AggregateType()
     {
-        var schema = $"bug4625_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        var store = StoreOptions(opts =>
         {
-            await conn.OpenAsync();
-            try { await conn.DropSchemaAsync(schema); } catch { }
-        }
-
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = schema;
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
@@ -71,7 +62,7 @@ public class Bug_4625_bulk_insert_events_derives_aggregate_type_name
         await using var conn2 = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn2.OpenAsync();
         await using var cmd = conn2.CreateCommand(
-            $"select type from {schema}.mt_streams where id = @id and tenant_id = @tid");
+            $"select type from {SchemaName}.mt_streams where id = @id and tenant_id = @tid");
         cmd.Parameters.AddWithValue("id", streamKey);
         cmd.Parameters.AddWithValue("tid", "alpha");
         var typeName = (string?)await cmd.ExecuteScalarAsync();
@@ -91,17 +82,8 @@ public class Bug_4625_bulk_insert_events_derives_aggregate_type_name
         // type was lost (NULL) can't take any further appends — the mandatory
         // guard fires on every subsequent operation. Post-fix, the bulk-inserted
         // stream's type IS set, so appends work.
-        var schema = $"bug4625b_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        var store = StoreOptions(opts =>
         {
-            await conn.OpenAsync();
-            try { await conn.DropSchemaAsync(schema); } catch { }
-        }
-
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = schema;
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;

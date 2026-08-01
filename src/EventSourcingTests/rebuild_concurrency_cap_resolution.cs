@@ -12,29 +12,19 @@ namespace EventSourcingTests;
 
 // jasperfx#420 / marten#4710: resolution of the per-database rebuild concurrency cap
 // surfaced through IEventStore.MaxConcurrentRebuildsPerDatabase.
-public class rebuild_concurrency_cap_resolution
+public class rebuild_concurrency_cap_resolution: OneOffConfigurationsContext
 {
-    private static DocumentStore storeWith(Action<StoreOptions> configure)
-    {
-        return DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "rebuild_cap";
-            configure(opts);
-        });
-    }
-
     [Fact]
     public void configured_value_wins_over_derived_default()
     {
-        using var store = storeWith(opts => opts.Projections.MaxConcurrentRebuildsPerDatabase = 3);
+        var store = SeparateStore(opts => opts.Projections.MaxConcurrentRebuildsPerDatabase = 3);
         ((IEventStore)store).MaxConcurrentRebuildsPerDatabase.ShouldBe(3);
     }
 
     [Fact]
     public void non_positive_configured_value_disables_the_cap()
     {
-        using var store = storeWith(opts => opts.Projections.MaxConcurrentRebuildsPerDatabase = 0);
+        var store = SeparateStore(opts => opts.Projections.MaxConcurrentRebuildsPerDatabase = 0);
         ((IEventStore)store).MaxConcurrentRebuildsPerDatabase.ShouldBeNull();
     }
 
@@ -46,11 +36,7 @@ public class rebuild_concurrency_cap_resolution
             MaxPoolSize = 64
         }.ConnectionString;
 
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(connectionString);
-            opts.DatabaseSchemaName = "rebuild_cap";
-        });
+        var store = SeparateStore(opts => opts.Connection(connectionString));
 
         ((IEventStore)store).MaxConcurrentRebuildsPerDatabase.ShouldBe(8);
     }
@@ -63,11 +49,7 @@ public class rebuild_concurrency_cap_resolution
             MaxPoolSize = 5
         }.ConnectionString;
 
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(connectionString);
-            opts.DatabaseSchemaName = "rebuild_cap";
-        });
+        var store = SeparateStore(opts => opts.Connection(connectionString));
 
         ((IEventStore)store).MaxConcurrentRebuildsPerDatabase.ShouldBe(1);
     }
@@ -77,7 +59,7 @@ public class rebuild_concurrency_cap_resolution
     {
         // jasperfx#434: CritterWatch#309's rebuild dispatcher reads the effective cap
         // off the EventStoreUsage descriptor rather than guessing.
-        using var store = storeWith(opts => opts.Projections.MaxConcurrentRebuildsPerDatabase = 6);
+        var store = SeparateStore(opts => opts.Projections.MaxConcurrentRebuildsPerDatabase = 6);
 
         var usage = await ((IEventStore)store).TryCreateUsage(CancellationToken.None);
 

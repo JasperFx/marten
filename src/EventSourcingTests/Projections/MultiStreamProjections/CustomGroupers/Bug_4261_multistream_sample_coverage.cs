@@ -30,7 +30,7 @@ namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers;
 /// https://github.com/JasperFx/marten/discussions/3615.
 /// Pattern 3 should pass because the derived event carries the group key directly.
 /// </summary>
-public partial class Bug_4261_multistream_sample_coverage
+public partial class Bug_4261_multistream_sample_coverage: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
 
@@ -44,10 +44,8 @@ public partial class Bug_4261_multistream_sample_coverage
     [Fact]
     public async Task pattern1_async_same_batch_link_and_usage_is_applied_correctly()
     {
-        await using var store = DocumentStore.For(opts =>
+        var store = StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = $"b4261_p1_net{Environment.Version.Major}";
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AddEventType(typeof(P1.CustomerRegistered));
             opts.Events.AddEventType(typeof(P1.CustomerLinkedToExternalAccount));
@@ -56,8 +54,6 @@ public partial class Bug_4261_multistream_sample_coverage
             opts.Projections.Add<P1.ExternalAccountLinkProjection>(ProjectionLifecycle.Inline);
             opts.Projections.Add<P1.CustomerBillingProjection>(ProjectionLifecycle.Async);
         });
-
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -93,10 +89,8 @@ public partial class Bug_4261_multistream_sample_coverage
     {
         // Sanity baseline: when the link is committed first and the usage arrives
         // in a later batch, Pattern 1 should Just Work.
-        await using var store = DocumentStore.For(opts =>
+        var store = StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = $"b4261_p1_seq_net{Environment.Version.Major}";
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AddEventType(typeof(P1.CustomerRegistered));
             opts.Events.AddEventType(typeof(P1.CustomerLinkedToExternalAccount));
@@ -105,8 +99,6 @@ public partial class Bug_4261_multistream_sample_coverage
             opts.Projections.Add<P1.ExternalAccountLinkProjection>(ProjectionLifecycle.Inline);
             opts.Projections.Add<P1.CustomerBillingProjection>(ProjectionLifecycle.Async);
         });
-
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -157,10 +149,8 @@ public partial class Bug_4261_multistream_sample_coverage
         //
         // If a future engine change makes Pattern 2 work under same-batch ordering,
         // this test will fail and should be retired.
-        await using var store = DocumentStore.For(opts =>
+        var store = StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = $"b4261_p2_net{Environment.Version.Major}";
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AddEventType(typeof(P2.CustomerRegistered));
             opts.Events.AddEventType(typeof(P2.CustomerLinkedToExternalAccount));
@@ -168,8 +158,6 @@ public partial class Bug_4261_multistream_sample_coverage
 
             opts.Projections.Add<P2.CustomerBillingProjection>(ProjectionLifecycle.Async);
         });
-
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -204,10 +192,8 @@ public partial class Bug_4261_multistream_sample_coverage
     {
         // Sanity baseline: when the link arrives first and is already applied to the
         // projection, Pattern 2's containment query in a later batch finds the owner.
-        await using var store = DocumentStore.For(opts =>
+        var store = StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = $"b4261_p2_seq_net{Environment.Version.Major}";
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AddEventType(typeof(P2.CustomerRegistered));
             opts.Events.AddEventType(typeof(P2.CustomerLinkedToExternalAccount));
@@ -215,8 +201,6 @@ public partial class Bug_4261_multistream_sample_coverage
 
             opts.Projections.Add<P2.CustomerBillingProjection>(ProjectionLifecycle.Async);
         });
-
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -259,10 +243,8 @@ public partial class Bug_4261_multistream_sample_coverage
         // to pick up link events that share the same daemon cycle as the usage
         // event. This is the recommended pattern when link+usage events can
         // appear in a single SaveChangesAsync.
-        await using var store = DocumentStore.For(opts =>
+        var store = StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = $"b4261_p4_net{Environment.Version.Major}";
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AddEventType(typeof(P4.CustomerRegistered));
             opts.Events.AddEventType(typeof(P4.CustomerLinkedToExternalAccount));
@@ -271,8 +253,6 @@ public partial class Bug_4261_multistream_sample_coverage
             opts.Projections.Add<P4.ExternalAccountLinkProjection>(ProjectionLifecycle.Inline);
             opts.Projections.Add<P4.CustomerBillingProjection>(ProjectionLifecycle.Async);
         });
-
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -304,10 +284,8 @@ public partial class Bug_4261_multistream_sample_coverage
     {
         // Baseline: Pattern 4 must also handle the case where the link event
         // was committed in a prior batch. The DB fallback covers that.
-        await using var store = DocumentStore.For(opts =>
+        var store = StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = $"b4261_p4_seq_net{Environment.Version.Major}";
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AddEventType(typeof(P4.CustomerRegistered));
             opts.Events.AddEventType(typeof(P4.CustomerLinkedToExternalAccount));
@@ -316,8 +294,6 @@ public partial class Bug_4261_multistream_sample_coverage
             opts.Projections.Add<P4.ExternalAccountLinkProjection>(ProjectionLifecycle.Inline);
             opts.Projections.Add<P4.CustomerBillingProjection>(ProjectionLifecycle.Async);
         });
-
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -357,16 +333,12 @@ public partial class Bug_4261_multistream_sample_coverage
     {
         // Pattern 3 keeps the grouping key (CustomerId) on the terminal event itself,
         // so same-batch ordering cannot create a race.
-        await using var store = DocumentStore.For(opts =>
+        var store = StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = $"b4261_p3_net{Environment.Version.Major}";
             opts.Events.AddEventType(typeof(P3.ShipmentBilled));
 
             opts.Projections.Add<P3.CustomerBillingProjection>(ProjectionLifecycle.Async);
         });
-
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
