@@ -15,21 +15,10 @@ using Weasel.Core;
 
 namespace ValueTypeTests.StrongTypedId;
 
-public class fsharp_discriminated_union_document_operations: IDisposable, IAsyncDisposable
+public class fsharp_discriminated_union_document_operations: OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-    private readonly IDocumentSession theSession;
-
     public fsharp_discriminated_union_document_operations()
     {
-        var schemaName = "strong_typed_fsharp";
-        var options = new StoreOptions();
-        options.Connection(ConnectionSource.ConnectionString);
-
-        options.AutoCreateSchemaObjects = AutoCreate.All;
-        options.NameDataLength = 100;
-        options.DatabaseSchemaName = schemaName;
-
         //For docs on these options see: https://github.com/Tarmil/FSharp.SystemTextJson/blob/master/docs/Customizing.md
         var jsonFSharpOptions =
             JsonFSharpOptions
@@ -39,34 +28,13 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
                 .WithUnionUnwrapSingleCaseUnions()
                 .WithSkippableOptionFields();
 
-        options.UseSystemTextJsonForSerialization(configure: (jsonOptions) =>
+        StoreOptions(options =>
         {
-            jsonFSharpOptions.AddToJsonSerializerOptions(jsonOptions);
+            options.UseSystemTextJsonForSerialization(configure: (jsonOptions) =>
+            {
+                jsonFSharpOptions.AddToJsonSerializerOptions(jsonOptions);
+            });
         });
-
-        // clean-up
-        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        conn.Open();
-        conn.CreateCommand($"drop schema if exists {schemaName} cascade")
-            .ExecuteNonQuery();
-
-
-        theStore = new DocumentStore(options);
-        theSession = theStore.LightweightSession();
-    }
-
-    public void Dispose()
-    {
-        theStore?.Dispose();
-        theSession?.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (theStore != null)
-        {
-            await theStore.DisposeAsync();
-        }
     }
 
     [Fact]

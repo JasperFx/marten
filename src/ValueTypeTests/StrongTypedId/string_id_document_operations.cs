@@ -11,36 +11,8 @@ using Vogen;
 
 namespace ValueTypeTests.StrongTypedId;
 
-public class string_id_document_operations : IDisposable, IAsyncDisposable
+public class string_id_document_operations : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-
-    public string_id_document_operations()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed4";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public void Dispose()
-    {
-        theStore?.Dispose();
-        theSession?.Dispose();
-    }
-
-    private IDocumentSession theSession;
-
-    public async ValueTask DisposeAsync()
-    {
-        if (theStore != null)
-        {
-            await theStore.DisposeAsync();
-        }
-    }
 
     [Fact]
     public async Task store_a_document_smoke_test()
@@ -253,36 +225,8 @@ public class Team3
     public string Name { get; set; }
 }
 
-public class string_id_document_operations_with_non_nullable_id : IDisposable, IAsyncDisposable
+public class string_id_document_operations_with_non_nullable_id : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-
-    public string_id_document_operations_with_non_nullable_id()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed23";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public void Dispose()
-    {
-        theStore?.Dispose();
-        theSession?.Dispose();
-    }
-
-    private IDocumentSession theSession;
-
-    public async ValueTask DisposeAsync()
-    {
-        if (theStore != null)
-        {
-            await theStore.DisposeAsync();
-        }
-    }
 
     [Fact]
     public async Task store_a_document_smoke_test()

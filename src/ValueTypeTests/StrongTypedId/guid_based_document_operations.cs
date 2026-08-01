@@ -11,36 +11,8 @@ using Vogen;
 
 namespace ValueTypeTests.StrongTypedId;
 
-public class guid_id_document_operations : IDisposable, IAsyncDisposable
+public class guid_id_document_operations : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-
-    public guid_id_document_operations()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed1";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public void Dispose()
-    {
-        theStore?.Dispose();
-        theSession?.Dispose();
-    }
-
-    private IDocumentSession theSession;
-
-    public async ValueTask DisposeAsync()
-    {
-        if (theStore != null)
-        {
-            await theStore.DisposeAsync();
-        }
-    }
 
     [Fact]
     public void store_document_will_assign_the_identity()
@@ -293,36 +265,8 @@ public class Invoice3
     public string Name { get; set; }
 }
 
-public class guid_id_document_operations_with_non_nullable_identifier : IDisposable, IAsyncDisposable
+public class guid_id_document_operations_with_non_nullable_identifier : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-
-    public guid_id_document_operations_with_non_nullable_identifier()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed21";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public void Dispose()
-    {
-        theStore?.Dispose();
-        theSession?.Dispose();
-    }
-
-    private IDocumentSession theSession;
-
-    public async ValueTask DisposeAsync()
-    {
-        if (theStore != null)
-        {
-            await theStore.DisposeAsync();
-        }
-    }
 
     [Fact]
     public void store_document_will_assign_the_identity()

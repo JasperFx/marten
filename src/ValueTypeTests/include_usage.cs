@@ -10,30 +10,8 @@ using Vogen;
 
 namespace ValueTypeTests;
 
-public class include_usage : IAsyncDisposable
+public class include_usage : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-    private IDocumentSession theSession;
-
-    public include_usage()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed24";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (theStore != null)
-        {
-            await theStore.DisposeAsync();
-        }
-    }
-
     #region sample_include_a_single_reference_with_strong_identifier
 
     [Fact]

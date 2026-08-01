@@ -9,33 +9,8 @@ using Vogen;
 
 namespace ValueTypeTests.VogenIds;
 
-public class int_based_document_operations : IAsyncLifetime
+public class int_based_document_operations : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-
-    public int_based_document_operations()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed6";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public async ValueTask InitializeAsync()
-    {
-        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Order));
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await theStore.DisposeAsync();
-        theSession?.Dispose();
-    }
-
-    private IDocumentSession theSession;
 
     [Fact]
     public void store_document_will_assign_the_identity()

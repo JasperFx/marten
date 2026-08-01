@@ -10,36 +10,8 @@ using Vogen;
 
 namespace ValueTypeTests.VogenIds;
 
-public class string_id_document_operations : IDisposable, IAsyncDisposable
+public class string_id_document_operations : OneOffConfigurationsContext
 {
-    private readonly DocumentStore theStore;
-
-    public string_id_document_operations()
-    {
-        theStore = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "strong_typed8";
-        });
-
-        theSession = theStore.LightweightSession();
-    }
-
-    public void Dispose()
-    {
-        theStore?.Dispose();
-        theSession?.Dispose();
-    }
-
-    private IDocumentSession theSession;
-
-    public async ValueTask DisposeAsync()
-    {
-        if (theStore != null)
-        {
-            await theStore.DisposeAsync();
-        }
-    }
 
     [Fact]
     public async Task store_a_document_smoke_test()
