@@ -17,6 +17,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -46,47 +47,22 @@ namespace TenantPartitionedEventsTests.Projections;
 /// would change the shared fixture's projection set for every sibling test.
 /// </para>
 /// </summary>
-public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
+public class custom_aggregate_grouper_per_tenant : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_grouper";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_grouper_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        opts.Events.AddEventType<CustomerRegistered>();
+        opts.Events.AddEventType<CustomerLinkedToExternalAccount>();
+        opts.Events.AddEventType<ShippingLabelCreated>();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<CustomerRegistered>();
-            opts.Events.AddEventType<CustomerLinkedToExternalAccount>();
-            opts.Events.AddEventType<ShippingLabelCreated>();
-
-            // Inline lookup: external-account-id -> customer-id (string-keyed
-            // since ExternalAccountId is the natural identity).
-            opts.Projections.Add<ExternalAccountLinkProjection>(ProjectionLifecycle.Inline);
-            // Inline billing: uses the custom grouper to fan ShippingLabelCreated
-            // out to the matching customer via the link table.
-            opts.Projections.Add<CustomerBillingProjection>(ProjectionLifecycle.Inline);
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        // Inline lookup: external-account-id -> customer-id (string-keyed
+        // since ExternalAccountId is the natural identity).
+        opts.Projections.Add<ExternalAccountLinkProjection>(ProjectionLifecycle.Inline);
+        // Inline billing: uses the custom grouper to fan ShippingLabelCreated
+        // out to the matching customer via the link table.
+        opts.Projections.Add<CustomerBillingProjection>(ProjectionLifecycle.Inline);
     }
 
     [Fact]
@@ -98,20 +74,20 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
         // beta's link doc and route beta's shipping events to alpha's customer
         // (or vice versa). The pin: each tenant's billing metrics reflect ONLY
         // its own customer's shipping events.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         const string sharedExternalId = "ACME-PRO";
         var alphaCustomer = Guid.NewGuid();
         var betaCustomer = Guid.NewGuid();
 
         // alpha: register customer, link to ACME-PRO, send 3 shipping labels.
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.StartStream(alphaCustomer, new CustomerRegistered(alphaCustomer, "Alpha Inc"));
             session.Events.Append(alphaCustomer, new CustomerLinkedToExternalAccount(alphaCustomer, sharedExternalId));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             var labelStream = Guid.NewGuid();
             session.Events.StartStream(labelStream,
@@ -123,13 +99,13 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
 
         // beta: register a DIFFERENT customer, link to the SAME external id,
         // send 5 shipping labels.
-        await using (var session = _store.LightweightSession("beta"))
+        await using (var session = Store.LightweightSession("beta"))
         {
             session.Events.StartStream(betaCustomer, new CustomerRegistered(betaCustomer, "Beta LLC"));
             session.Events.Append(betaCustomer, new CustomerLinkedToExternalAccount(betaCustomer, sharedExternalId));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
-        await using (var session = _store.LightweightSession("beta"))
+        await using (var session = Store.LightweightSession("beta"))
         {
             var labelStream = Guid.NewGuid();
             session.Events.StartStream(labelStream,
@@ -144,13 +120,13 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
         // Read each tenant's billing doc using a tenant-scoped query. The
         // billing metric is multi-tenanted (per AllDocumentsAreMultiTenanted),
         // so each tenant sees only its own row keyed by its own customer id.
-        await using var alphaQuery = _store.QuerySession("alpha");
+        await using var alphaQuery = Store.QuerySession("alpha");
         var alphaBilling = await alphaQuery.LoadAsync<CustomerBillingMetrics>(alphaCustomer, TestContext.Current.CancellationToken);
         alphaBilling.ShouldNotBeNull("alpha's grouper must have routed alpha's labels to alpha's customer");
         alphaBilling!.ShippingLabels.ShouldBe(3,
             "alpha appended 3 labels — beta's 5 must not bleed in via shared external id");
 
-        await using var betaQuery = _store.QuerySession("beta");
+        await using var betaQuery = Store.QuerySession("beta");
         var betaBilling = await betaQuery.LoadAsync<CustomerBillingMetrics>(betaCustomer, TestContext.Current.CancellationToken);
         betaBilling.ShouldNotBeNull("beta's grouper must have routed beta's labels to beta's customer");
         betaBilling!.ShippingLabels.ShouldBe(5,
@@ -163,16 +139,16 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
         // Sibling pin: the billing doc itself is partitioned per tenant (it's
         // a multi-tenanted doc). Querying tenant B with tenant A's customer id
         // must return null — no doc visibility across tenant slots.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         var alphaCustomer = Guid.NewGuid();
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.StartStream(alphaCustomer, new CustomerRegistered(alphaCustomer, "Alpha Inc"));
             session.Events.Append(alphaCustomer, new CustomerLinkedToExternalAccount(alphaCustomer, "EXT-A"));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             var labelStream = Guid.NewGuid();
             session.Events.StartStream(labelStream, new ShippingLabelCreated("EXT-A"));
@@ -180,14 +156,14 @@ public class custom_aggregate_grouper_per_tenant : IAsyncLifetime
         }
 
         // Pin from alpha's own session: doc exists.
-        await using (var alphaQuery = _store.QuerySession("alpha"))
+        await using (var alphaQuery = Store.QuerySession("alpha"))
         {
             (await alphaQuery.LoadAsync<CustomerBillingMetrics>(alphaCustomer, TestContext.Current.CancellationToken)).ShouldNotBeNull();
         }
 
         // Pin from beta's session: alpha's customer id finds nothing — the
         // billing doc is in alpha's tenant slot, beta's tenant slot is empty.
-        await using (var betaQuery = _store.QuerySession("beta"))
+        await using (var betaQuery = Store.QuerySession("beta"))
         {
             (await betaQuery.LoadAsync<CustomerBillingMetrics>(alphaCustomer, TestContext.Current.CancellationToken))
                 .ShouldBeNull("alpha's billing doc must not be visible to beta — tenant slot isolation");

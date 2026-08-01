@@ -15,6 +15,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -42,45 +43,25 @@ namespace TenantPartitionedEventsTests.Projections;
 /// projection set.
 /// </para>
 /// </summary>
-public class determine_action_async_per_tenant : IAsyncLifetime
+public class determine_action_async_per_tenant : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_da";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_da_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        opts.Events.AddEventType<DetermineIncrementEvent>();
+        opts.Events.AddEventType<DetermineResetEvent>();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
+        // Inline so the projection runs in the writing session.
+        opts.Projections.Add<DetermineCounterProjection>(ProjectionLifecycle.Inline);
+    }
 
+    public override async ValueTask InitializeAsync()
+    {
         // Reset cross-test capture so each test starts clean.
         DetermineCounterProjection.ObservedTenants.Clear();
 
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<DetermineIncrementEvent>();
-            opts.Events.AddEventType<DetermineResetEvent>();
-
-            // Inline so the projection runs in the writing session.
-            opts.Projections.Add<DetermineCounterProjection>(ProjectionLifecycle.Inline);
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        await base.InitializeAsync();
     }
 
     [Fact]
@@ -90,15 +71,15 @@ public class determine_action_async_per_tenant : IAsyncLifetime
         // captures session.TenantId on every call. Pin: the set of observed
         // tenant ids matches the writing tenants exactly — no *DEFAULT*, no
         // cross-tenant leak.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.StartStream(Guid.NewGuid(),
                 new DetermineIncrementEvent(), new DetermineIncrementEvent());
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
-        await using (var session = _store.LightweightSession("beta"))
+        await using (var session = Store.LightweightSession("beta"))
         {
             session.Events.StartStream(Guid.NewGuid(),
                 new DetermineIncrementEvent());
@@ -128,18 +109,18 @@ public class determine_action_async_per_tenant : IAsyncLifetime
         // each tenant's slot has its own stream). alpha sends one
         // DetermineResetEvent which returns ActionType.Delete. beta's doc
         // for the same stream id must NOT be deleted.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         var sharedStream = Guid.NewGuid();
 
         // alpha: start + increment once → doc with Count = 1.
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.StartStream(sharedStream, new DetermineIncrementEvent());
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         // beta: start + increment twice → doc with Count = 2.
-        await using (var session = _store.LightweightSession("beta"))
+        await using (var session = Store.LightweightSession("beta"))
         {
             session.Events.StartStream(sharedStream,
                 new DetermineIncrementEvent(), new DetermineIncrementEvent());
@@ -147,30 +128,30 @@ public class determine_action_async_per_tenant : IAsyncLifetime
         }
 
         // Confirm both docs exist with their counts.
-        await using (var alphaQuery = _store.QuerySession("alpha"))
+        await using (var alphaQuery = Store.QuerySession("alpha"))
         {
             (await alphaQuery.LoadAsync<DetermineCounter>(sharedStream, TestContext.Current.CancellationToken))!.Count.ShouldBe(1);
         }
-        await using (var betaQuery = _store.QuerySession("beta"))
+        await using (var betaQuery = Store.QuerySession("beta"))
         {
             (await betaQuery.LoadAsync<DetermineCounter>(sharedStream, TestContext.Current.CancellationToken))!.Count.ShouldBe(2);
         }
 
         // alpha sends a DetermineResetEvent → projection returns Delete →
         // alpha's doc is removed.
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.Append(sharedStream, new DetermineResetEvent());
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         // Pin: alpha's doc is gone, beta's is untouched (Count still 2).
-        await using (var alphaQuery = _store.QuerySession("alpha"))
+        await using (var alphaQuery = Store.QuerySession("alpha"))
         {
             (await alphaQuery.LoadAsync<DetermineCounter>(sharedStream, TestContext.Current.CancellationToken))
                 .ShouldBeNull("alpha's reset → Delete should have removed alpha's doc");
         }
-        await using (var betaQuery = _store.QuerySession("beta"))
+        await using (var betaQuery = Store.QuerySession("beta"))
         {
             var betaDoc = await betaQuery.LoadAsync<DetermineCounter>(sharedStream, TestContext.Current.CancellationToken);
             betaDoc.ShouldNotBeNull("beta's doc must NOT be deleted by alpha's reset (tenant isolation)");

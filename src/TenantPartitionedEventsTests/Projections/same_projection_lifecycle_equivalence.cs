@@ -13,6 +13,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -33,47 +34,22 @@ namespace TenantPartitionedEventsTests.Projections;
 /// Local copies of the event + aggregate keep the test self-contained.
 /// </para>
 /// </summary>
-public class same_projection_lifecycle_equivalence : IAsyncLifetime
+public class same_projection_lifecycle_equivalence : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_lifecycle";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_lifecycle_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        opts.Events.AddEventType<TripStartedV2>();
+        opts.Events.AddEventType<TripLegV2>();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<TripStartedV2>();
-            opts.Events.AddEventType<TripLegV2>();
-
-            // Inline materializes a TripSummary per stream as events are
-            // appended. Live aggregation reads the stream + folds via Apply()
-            // on demand — same Apply() body, so any drift between the two
-            // codepaths surfaces as a non-equal aggregate.
-            opts.Schema.For<TripSummary>().Identity(x => x.Id).DocumentAlias("p2c_trip_summary");
-            opts.Projections.Add<TripSummaryInlineProjection>(ProjectionLifecycle.Inline);
-            opts.Projections.LiveStreamAggregation<TripSummary>();
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        // Inline materializes a TripSummary per stream as events are
+        // appended. Live aggregation reads the stream + folds via Apply()
+        // on demand — same Apply() body, so any drift between the two
+        // codepaths surfaces as a non-equal aggregate.
+        opts.Schema.For<TripSummary>().Identity(x => x.Id).DocumentAlias("p2c_trip_summary");
+        opts.Projections.Add<TripSummaryInlineProjection>(ProjectionLifecycle.Inline);
+        opts.Projections.LiveStreamAggregation<TripSummary>();
     }
 
     [Fact]
@@ -83,10 +59,10 @@ public class same_projection_lifecycle_equivalence : IAsyncLifetime
         // events. Read the inline-materialized doc and the live-aggregated
         // result; pin Distance + LegCount byte-equal between the two paths.
         var tenant = "alpha_" + Guid.NewGuid().ToString("N")[..8];
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
 
         var streamId = Guid.NewGuid();
-        await using (var session = _store.LightweightSession(tenant))
+        await using (var session = Store.LightweightSession(tenant))
         {
             session.Events.StartStream<TripSummary>(streamId,
                 new TripStartedV2(streamId),
@@ -96,7 +72,7 @@ public class same_projection_lifecycle_equivalence : IAsyncLifetime
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using var query = _store.QuerySession(tenant);
+        await using var query = Store.QuerySession(tenant);
 
         // Inline-materialized doc: read directly from the projected document
         // table (no folding at read time).

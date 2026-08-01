@@ -11,6 +11,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -31,36 +32,12 @@ namespace TenantPartitionedEventsTests.Admin;
 ///     sequences after registering N tenants; re-apply is idempotent.</item>
 /// </list>
 /// </summary>
-public class admin_extras_under_partitioning : IAsyncLifetime
+public class admin_extras_under_partitioning : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_xtra";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_xtra_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
-
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
     }
 
     [Fact]
@@ -81,15 +58,15 @@ public class admin_extras_under_partitioning : IAsyncLifetime
         var tenantGuid = Guid.NewGuid();
         var expectedSuffix = tenantGuid.ToString("N"); // 32 hex chars, no hyphens
 
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenantGuid);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenantGuid);
 
-        var sequenceExists = await SequenceExistsAsync(_schema, $"mt_events_sequence_{expectedSuffix}");
+        var sequenceExists = await SequenceExistsAsync(Schema, $"mt_events_sequence_{expectedSuffix}");
         sequenceExists.ShouldBeTrue(
             $"per-tenant sequence must be named mt_events_sequence_{expectedSuffix} (N-format) — " +
             "this pins the hyphen-free format choice from #4567");
 
         // Sanity: the hyphenated "D" form is NOT used.
-        var hyphenatedShouldNotExist = await SequenceExistsAsync(_schema,
+        var hyphenatedShouldNotExist = await SequenceExistsAsync(Schema,
             $"mt_events_sequence_{tenantGuid.ToString("D")}");
         hyphenatedShouldNotExist.ShouldBeFalse(
             "the hyphenated D format must NOT be used — N is the canonical choice");
@@ -103,14 +80,14 @@ public class admin_extras_under_partitioning : IAsyncLifetime
         // FK (#4606) and the per-tenant sequence count must NOT register as
         // drift items — those are intentional shape choices, not missing
         // schema objects.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         // After EnsureStorageExistsAsync (in InitializeAsync) + tenant
         // registration, the on-disk schema and the configuration should be
         // byte-identical. AssertDatabaseMatchesConfigurationAsync throws when
         // they diverge; Should.NotThrowAsync pins the no-drift contract.
         await Should.NotThrowAsync(async () =>
-            await _store.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
+            await Store.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
     }
 
     [Fact]
@@ -121,15 +98,15 @@ public class admin_extras_under_partitioning : IAsyncLifetime
         // store-global mt_events_sequence). Re-applying the schema (via
         // EnsureStorageExistsAsync again) is idempotent — no new sequences,
         // no duplicates.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "one", "two", "three");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "one", "two", "three");
 
-        var sequencesAfterRegistration = await CountTenantSequencesAsync(_schema);
+        var sequencesAfterRegistration = await CountTenantSequencesAsync(Schema);
         sequencesAfterRegistration.ShouldBe(3L);
 
         // Idempotency: re-applying changes shouldn't change the count.
-        await _store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
+        await Store.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(ct: TestContext.Current.CancellationToken);
 
-        var sequencesAfterReapply = await CountTenantSequencesAsync(_schema);
+        var sequencesAfterReapply = await CountTenantSequencesAsync(Schema);
         sequencesAfterReapply.ShouldBe(3L,
             "PerTenantEventSequences emits CREATE SEQUENCE IF NOT EXISTS — re-apply must be idempotent, no duplicates");
     }

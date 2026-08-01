@@ -35,51 +35,35 @@ namespace TenantPartitionedEventsTests.Daemon;
 /// no drain loops.
 /// </para>
 /// </summary>
-public class per_tenant_rebuild_cancellation: IAsyncLifetime
+public class per_tenant_rebuild_cancellation: PartitionedStoreContext
 {
-    private static readonly string SchemaName = $"rebuild_cancel_{Environment.ProcessId}";
+    protected override string SchemaPrefix => "rebuild_cancel";
 
-    private DocumentStore _store = null!;
+    protected override string BuildSchemaName() => $"rebuild_cancel_{Environment.ProcessId}";
 
-    public async ValueTask InitializeAsync()
+    protected override bool DropSchemaOnInitialize => false;
+
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = SchemaName;
-            opts.AutoCreateSchemaObjects = AutoCreate.All;
+        opts.AutoCreateSchemaObjects = AutoCreate.All;
 
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
+        // Unique advisory-lock id so this store's daemon machinery never contends
+        // with the shared partitioned fixtures running in sibling collections.
+        opts.Projections.DaemonLockId = 4791;
 
-            // Unique advisory-lock id so this store's daemon machinery never contends
-            // with the shared partitioned fixtures running in sibling collections.
-            opts.Projections.DaemonLockId = 4791;
-
-            opts.Projections.Add(new GatedPerEventProjection(), ProjectionLifecycle.Async,
-                GatedPerEventProjection.ProjectionName);
-            opts.Schema.For<TallyDoc>().DocumentAlias("cancel_tally");
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        opts.Projections.Add(new GatedPerEventProjection(), ProjectionLifecycle.Async,
+            GatedPerEventProjection.ProjectionName);
+        opts.Schema.For<TallyDoc>().DocumentAlias("cancel_tally");
     }
 
     [Fact]
     public async Task cancelling_a_per_tenant_rebuild_leaves_progression_consistent_and_the_cell_rebuildable()
     {
         var tenant = PartitionedFixtureBase.NewTenant();
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
 
         const int eventCount = 40;
-        await using (var session = _store.LightweightSession(tenant))
+        await using (var session = Store.LightweightSession(tenant))
         {
             for (var i = 0; i < 4; i++)
             {
@@ -97,7 +81,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
         GatedPerEventProjection.Gate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         using var cts = new CancellationTokenSource();
-        using var daemon = await _store.BuildProjectionDaemonAsync();
+        using var daemon = await Store.BuildProjectionDaemonAsync();
 
         var rebuildTask = daemon.RebuildProjectionAsync(
             GatedPerEventProjection.ProjectionName, tenant, cts.Token);
@@ -136,7 +120,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
         await daemon.RebuildProjectionAsync(GatedPerEventProjection.ProjectionName, tenant,
             CancellationToken.None);
 
-        await using (var query = _store.QuerySession(tenant))
+        await using (var query = Store.QuerySession(tenant))
         {
             (await query.Query<TallyDoc>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(eventCount,
                 "the follow-up rebuild must fully materialize the cell");
@@ -147,9 +131,9 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
     public async Task pre_cancelled_token_does_not_disturb_the_cell()
     {
         var tenant = PartitionedFixtureBase.NewTenant();
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
 
-        await using (var session = _store.LightweightSession(tenant))
+        await using (var session = Store.LightweightSession(tenant))
         {
             session.Events.StartStream(Guid.NewGuid(), new TallyEvent(), new TallyEvent());
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -158,7 +142,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
         GatedPerEventProjection.Gate = null;
         GatedPerEventProjection.Started = null;
 
-        using var daemon = await _store.BuildProjectionDaemonAsync();
+        using var daemon = await Store.BuildProjectionDaemonAsync();
 
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
@@ -176,7 +160,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
         await daemon.RebuildProjectionAsync(GatedPerEventProjection.ProjectionName, tenant,
             CancellationToken.None);
 
-        await using var query = _store.QuerySession(tenant);
+        await using var query = Store.QuerySession(tenant);
         (await query.Query<TallyDoc>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(2);
     }
 
@@ -186,7 +170,7 @@ public class per_tenant_rebuild_cancellation: IAsyncLifetime
         await conn.OpenAsync();
         await using var cmd = conn.CreateCommand();
         cmd.CommandText =
-            $"select last_seq_id from {SchemaName}.mt_event_progression where name like @name and name like @tenant";
+            $"select last_seq_id from {Schema}.mt_event_progression where name like @name and name like @tenant";
         cmd.Parameters.AddWithValue("name", GatedPerEventProjection.ProjectionName + "%");
         cmd.Parameters.AddWithValue("tenant", "%" + tenantId + "%");
 

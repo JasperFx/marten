@@ -12,6 +12,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using TenantPartitionedEventsTests.Fixtures;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -44,42 +45,17 @@ namespace TenantPartitionedEventsTests.Projections;
 /// set.
 /// </para>
 /// </summary>
-public class flat_table_projection_per_tenant : IAsyncLifetime
+public class flat_table_projection_per_tenant : PartitionedStoreContext
 {
-    private string _schema = null!;
-    private DocumentStore _store = null!;
+    protected override string SchemaPrefix => "tp_flat";
 
-    public async ValueTask InitializeAsync()
+    protected override void ConfigureStore(StoreOptions opts)
     {
-        _schema = $"tp_flat_{Environment.ProcessId}_{Guid.NewGuid():N}".Substring(0, 32);
+        opts.Events.AddEventType<FtCounterIncremented>();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync();
-        try { await conn.DropSchemaAsync(_schema); } catch { }
-
-        _store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = _schema;
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.UseTenantPartitionedEvents = true;
-            opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
-            opts.Policies.AllDocumentsAreMultiTenanted();
-
-            opts.Events.AddEventType<FtCounterIncremented>();
-
-            // Inline so writes from a tenant session land synchronously in
-            // the flat table — keeps the assertions deterministic.
-            opts.Projections.Add(new FtCounterProjection(), ProjectionLifecycle.Inline);
-        });
-
-        await _store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _store?.Dispose();
-        return default;
+        // Inline so writes from a tenant session land synchronously in
+        // the flat table — keeps the assertions deterministic.
+        opts.Projections.Add(new FtCounterProjection(), ProjectionLifecycle.Inline);
     }
 
     [Fact]
@@ -90,14 +66,14 @@ public class flat_table_projection_per_tenant : IAsyncLifetime
         // its DDL to apply. With UseTenantPartitionedEvents on, no FK /
         // partition error should appear (related to the #4606 carve-out
         // that dropped the explicit mt_events → mt_streams FK).
-        await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await Store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync(TestContext.Current.CancellationToken);
         await using var cmd = conn.CreateCommand();
         cmd.CommandText =
             "select count(*) from information_schema.tables where table_schema = @s and table_name = 'ft_counters'";
-        cmd.Parameters.AddWithValue("s", _schema);
+        cmd.Parameters.AddWithValue("s", Schema);
         var count = (long)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
         count.ShouldBe(1L, "FlatTableProjection's ft_counters table must exist after schema apply");
     }
@@ -108,18 +84,18 @@ public class flat_table_projection_per_tenant : IAsyncLifetime
         // Each tenant uses a DIFFERENT counterId — proves the inline write path
         // works end-to-end under partitioning. (Same-PK across tenants is the
         // collision pin below.)
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         var alphaCounter = Guid.NewGuid();
         var betaCounter = Guid.NewGuid();
 
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.StartStream(alphaCounter, new FtCounterIncremented(alphaCounter, 10));
             session.Events.Append(alphaCounter, new FtCounterIncremented(alphaCounter, 5));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
-        await using (var session = _store.LightweightSession("beta"))
+        await using (var session = Store.LightweightSession("beta"))
         {
             session.Events.StartStream(betaCounter, new FtCounterIncremented(betaCounter, 100));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -148,12 +124,12 @@ public class flat_table_projection_per_tenant : IAsyncLifetime
         //
         // Pinned so a future change that auto-tenants flat tables flips
         // this assertion intentionally.
-        await _store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
         var sharedCounterId = Guid.NewGuid();
 
         // alpha writes first.
-        await using (var session = _store.LightweightSession("alpha"))
+        await using (var session = Store.LightweightSession("alpha"))
         {
             session.Events.StartStream(sharedCounterId, new FtCounterIncremented(sharedCounterId, 10));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -163,7 +139,7 @@ public class flat_table_projection_per_tenant : IAsyncLifetime
 
         // beta increments the SAME row (silent overwrite of the row owner —
         // the framework happily applies beta's session writes to the same PK).
-        await using (var session = _store.LightweightSession("beta"))
+        await using (var session = Store.LightweightSession("beta"))
         {
             session.Events.StartStream(sharedCounterId, new FtCounterIncremented(sharedCounterId, 100));
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -184,7 +160,7 @@ public class flat_table_projection_per_tenant : IAsyncLifetime
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
         await using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"select total from {_schema}.ft_counters where id = @id";
+        cmd.CommandText = $"select total from {Schema}.ft_counters where id = @id";
         cmd.Parameters.AddWithValue("id", counterId);
         var raw = await cmd.ExecuteScalarAsync();
         return raw == null || raw is DBNull ? 0 : (int)raw;
