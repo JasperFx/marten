@@ -16,25 +16,15 @@ using Xunit;
 
 namespace MultiTenancyTests;
 
-[CollectionDefinition("multi-tenancy", DisableParallelization = true)]
+[Collection("multi-tenancy")]
 public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
 {
     private IHost _host;
     private IDocumentStore theStore;
 
-    private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
+    private static async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
     {
-        var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
-
-        var exists = await conn.DatabaseExists(databaseName);
-        if (!exists)
-        {
-            await new DatabaseSpecification().BuildDatabase(conn, databaseName);
-        }
-
-        builder.Database = databaseName;
-
-        var connectionString = builder.ConnectionString;
+        var connectionString = await TenantDatabases.CreateIfNotExistsAsync(conn, databaseName);
 
         await SchemaUtils.DropSchema(connectionString, "multi_tenancy");
         await SchemaUtils.DropSchema(connectionString, "mt_events");

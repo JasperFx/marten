@@ -19,35 +19,20 @@ using Xunit;
 
 namespace MultiTenancyTests;
 
-[CollectionDefinition("multi-tenancy", DisableParallelization = true)]
+[Collection("multi-tenancy")]
 public class using_static_database_multitenancy: IAsyncLifetime
 {
     private IHost _host;
     private IDocumentStore theStore;
-
-    private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
-    {
-        var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
-
-        var exists = await conn.DatabaseExists(databaseName);
-        if (!exists)
-        {
-            await new DatabaseSpecification().BuildDatabase(conn, databaseName);
-        }
-
-        builder.Database = databaseName;
-
-        return builder.ConnectionString;
-    }
 
     public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
-        var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
-        var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
-        var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+        var db1ConnectionString = await TenantDatabases.CreateIfNotExistsAsync(conn, "database1");
+        var tenant3ConnectionString = await TenantDatabases.CreateIfNotExistsAsync(conn, "tenant3");
+        var tenant4ConnectionString = await TenantDatabases.CreateIfNotExistsAsync(conn, "tenant4");
 
         #region sample_using_multi_tenanted_databases
 
@@ -213,9 +198,9 @@ public class using_static_database_multitenancy: IAsyncLifetime
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync(TestContext.Current.CancellationToken);
 
-        var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
-        var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
-        var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+        var db1ConnectionString = await TenantDatabases.CreateIfNotExistsAsync(conn, "database1");
+        var tenant3ConnectionString = await TenantDatabases.CreateIfNotExistsAsync(conn, "tenant3");
+        var tenant4ConnectionString = await TenantDatabases.CreateIfNotExistsAsync(conn, "tenant4");
 
         var result = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>

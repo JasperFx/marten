@@ -26,7 +26,7 @@ using Xunit;
 
 namespace MultiTenancyTests;
 
-[CollectionDefinition("multi-tenancy", DisableParallelization = true)]
+[Collection("multi-tenancy")]
 public class using_bucketed_database_sharding_and_document_partitioning: IAsyncLifetime
 {
     private const int NumberOfPartitions = 4;
@@ -40,20 +40,6 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
     private static readonly string TenantBeta = "tenant_beta";
     private static readonly string TenantGamma = "tenant_gamma";
 
-    private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
-    {
-        var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
-
-        var exists = await conn.DatabaseExists(databaseName);
-        if (!exists)
-        {
-            await new DatabaseSpecification().BuildDatabase(conn, databaseName);
-        }
-
-        builder.Database = databaseName;
-        return builder.ConnectionString;
-    }
-
     public async ValueTask InitializeAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -64,7 +50,7 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
 
         foreach (var name in _dbNames)
         {
-            _connectionStrings[name] = await CreateDatabaseIfNotExists(conn, name);
+            _connectionStrings[name] = await TenantDatabases.CreateIfNotExistsAsync(conn, name);
         }
 
         _registry = BucketRegistry.EvenlySpreadOver(_dbNames);

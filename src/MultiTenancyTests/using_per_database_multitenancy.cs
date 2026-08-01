@@ -21,7 +21,7 @@ using Xunit;
 
 namespace MultiTenancyTests;
 
-[CollectionDefinition("multi-tenancy", DisableParallelization = true)]
+[Collection("multi-tenancy")]
 public class using_per_database_multitenancy: IAsyncLifetime
 {
     private IHost _host;
