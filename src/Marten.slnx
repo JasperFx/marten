@@ -58,7 +58,6 @@
     <File Path=".editorconfig" />
   </Folder>
   <Folder Name="/Testing/">
-    <File Path="TestSetup.cs" />
     <Project Path="CompiledQueryTests/CompiledQueryTests.csproj" />
     <Project Path="ContainerScopedProjectionTests/ContainerScopedProjectionTests.csproj" />
     <Project Path="CoreTests/CoreTests.csproj" />
