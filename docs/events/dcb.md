@@ -37,7 +37,7 @@ private void ConfigureStore()
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L68-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_registering_tag_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L77-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_registering_tag_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Each tag type gets its own table (`mt_event_tag_student`, `mt_event_tag_course`, etc.) with a composite primary key of `(value, seq_id)`.
@@ -75,7 +75,7 @@ Tag types should be simple wrapper records around a primitive value:
 public record StudentId(Guid Value);
 public record CourseId(Guid Value);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L18-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_tag_type_definitions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L16-L20' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_tag_type_definitions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Supported inner value types: `Guid`, `string`, `int`, `long`, `short`.
@@ -94,7 +94,7 @@ enrolled.WithTag(studentId, courseId);
 theSession.Events.Append(streamId, enrolled);
 await theSession.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L112-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_tagging_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L113-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_tagging_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Events can have multiple tags of different types. Tags are persisted to their respective tag tables in the same transaction as the event.
@@ -109,7 +109,7 @@ Use `EventTagQuery` to build a query, then execute it with `QueryByTagsAsync`:
 var query = new EventTagQuery().Or<StudentId>(studentId);
 var events = await theSession.Events.QueryByTagsAsync(query);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L119-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_query_by_single_tag' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L120-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_query_by_single_tag' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Multiple Tags (OR)
@@ -124,7 +124,7 @@ var query = new EventTagQuery()
 
 var events = await theSession.Events.QueryByTagsAsync(query);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L149-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_query_multiple_tags_or' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L146-L153' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_query_multiple_tags_or' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Filtering by Event Type
@@ -138,7 +138,7 @@ var query = new EventTagQuery()
 
 var events = await theSession.Events.QueryByTagsAsync(query);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L176-L182' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_query_by_event_type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L173-L179' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_query_by_event_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Events are always returned ordered by sequence number (global append order).
@@ -176,7 +176,7 @@ public class StudentCourseEnrollment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L37-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L35-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Then aggregate across streams by tag query:
@@ -190,7 +190,7 @@ var query = new EventTagQuery()
 
 var aggregate = await theSession.Events.AggregateByTagsAsync<StudentCourseEnrollment>(query);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L222-L228' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_aggregate_by_tags' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L200-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_aggregate_by_tags' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Returns `null` if no matching events are found.
@@ -250,7 +250,7 @@ boundary.AppendOne(assignment);
 // appended matching events after our read
 await session2.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L258-L276' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_fetch_for_writing_by_tags' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L226-L244' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_fetch_for_writing_by_tags' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Handling Concurrency Violations
@@ -269,7 +269,7 @@ catch (DcbConcurrencyException ex)
     // ex.LastSeenSequence -- the sequence at time of read
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L313-L324' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_handling_concurrency' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L281-L292' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_handling_concurrency' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -313,7 +313,7 @@ public async Task events_exist_returns_true_when_matching_events_found()
     exists.ShouldBeTrue();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L520-L538' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_events_exist_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_documentation_samples.cs#L295-L313' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_events_exist_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This is useful for guard clauses and validation logic in DCB workflows where you need to check preconditions before appending new events.

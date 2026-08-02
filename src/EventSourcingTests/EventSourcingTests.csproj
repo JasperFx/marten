@@ -66,6 +66,19 @@
         <Compile Include="..\Marten.Testing\Documents\UserWithInheritedId.cs">
             <Link>Documents\UserWithInheritedId.cs</Link>
         </Compile>
+        <!-- The cross-store event sourcing compliance library. Distributed as linked source (not a
+             project reference) because JasperFx's aggregate source generator has to run inside the
+             consuming assembly to bind the right session type. Extracted to the
+             JasperFx.Events.ComplianceTests source-only package in a later step. -->
+        <Compile Include="..\Marten.Testing\Compliance\**\*.cs">
+            <Link>Compliance\%(RecursiveDir)%(Filename)%(Extension)</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\ComplianceQuerySessionAlias.cs">
+            <Link>Harness\ComplianceQuerySessionAlias.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\MartenComplianceFixture.cs">
+            <Link>Harness\MartenComplianceFixture.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Harness\BugIntegrationContext.cs">
             <Link>Harness\BugIntegrationContext.cs</Link>
         </Compile>

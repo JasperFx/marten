@@ -11,13 +11,15 @@ using Xunit;
 namespace EventSourcingTests.Dcb;
 
 /// <summary>
-/// Parallel of <see cref="assign_tag_where_tests"/> for <see cref="DcbStorageMode.HStore"/>.
+/// The HStore counterpart of the shared
+/// <see cref="JasperFx.Events.ComplianceTests.AssignTagWhereCompliance{TFixture,TOperations,TQuerySession}"/>
+/// suite, for <see cref="DcbStorageMode.HStore"/>.
 /// The retroactive-tag path uses <see cref="Marten.Events.Operations.AssignTagWhereHstoreOperation"/>
 /// which emits <c>UPDATE mt_events SET tags = COALESCE(tags, ''::hstore) || hstore(...)</c>
 /// against rows matching the user-supplied WHERE clause. The merge is naturally
 /// idempotent (re-applying the same key-value yields the same hstore).
 /// Reuses <see cref="RegionId"/>, <see cref="OrderPlaced"/>, <see cref="OrderShipped"/>,
-/// <see cref="OrderCancelled"/> from <c>assign_tag_where_tests.cs</c>.
+/// <see cref="OrderCancelled"/> from <c>OrderTagTypes.cs</c>.
 /// </summary>
 [Collection("OneOffs")]
 public class hstore_assign_tag_where_tests: OneOffConfigurationsContext, IAsyncLifetime
