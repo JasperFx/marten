@@ -10,6 +10,7 @@ using JasperFx.Events.Projections;
 using JasperFx.Events.Tags;
 using Marten.Events;
 using Marten.Services.BatchQuerying;
+using Npgsql;
 
 namespace Marten.Testing.Harness;
 
@@ -27,11 +28,16 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     protected override async Task BuildStoreAsync(ComplianceStoreConfig config)
     {
         var options = new StoreOptions();
-        options.Connection(ConnectionSource.ConnectionString);
+        options.Connection(connectionStringFor(config));
         options.AutoCreateSchemaObjects = AutoCreate.All;
         options.DisableNpgsqlLogging = true;
         options.NameDataLength = 100;
         options.DatabaseSchemaName = (config.SchemaName ?? "compliance").ToLowerInvariant();
+
+        if (config.MaxConcurrentRebuildsPerDatabase.HasValue)
+        {
+            options.Projections.MaxConcurrentRebuildsPerDatabase = config.MaxConcurrentRebuildsPerDatabase;
+        }
 
         config.ApplyTo(new MartenComplianceRegistrar(options));
 
@@ -41,6 +47,19 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         // Marten builds schema lazily, but the compliance suites clean between tests and some
         // of that cleaning is DDL-aware -- get the tables in place up front.
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
+    }
+
+    private static string connectionStringFor(ComplianceStoreConfig config)
+    {
+        if (!config.MaxPoolSize.HasValue)
+        {
+            return ConnectionSource.ConnectionString;
+        }
+
+        return new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+        {
+            MaxPoolSize = config.MaxPoolSize.Value
+        }.ConnectionString;
     }
 
     public override IDocumentOperations OpenSession() => _store.LightweightSession();
@@ -62,7 +81,13 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
                 $"Marten cannot load documents by an identity of type {id.GetType().FullName}")
         };
 
+    public override void StoreDocument<T>(IDocumentOperations session, T document) => session.Store(document);
+
     public override JasperFx.Events.IEventStoreOperations EventsFor(IDocumentOperations session) => session.Events;
+
+    public override IEventStore EventStore => _store;
+
+    public override IEnumerable<Type> AllAggregateTypes() => _store.Options.Projections.AllAggregateTypes();
 
     public override IComplianceBatch CreateBatch(IQuerySession session)
         => new MartenComplianceBatch(session.CreateBatchQuery());
@@ -125,6 +150,9 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
         public void LiveAggregation<TDoc>() where TDoc : notnull
             => _options.Projections.LiveStreamAggregation<TDoc>();
+
+        public void AddProjection(ProjectionBase projection, ProjectionLifecycle lifecycle)
+            => _options.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
     }
 
     internal class MartenComplianceBatch: IComplianceBatch

@@ -22,3 +22,15 @@ public class assign_tag_where_compliance
 
 public class async_daemon_compliance
     : AsyncDaemonCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class auto_discovered_aggregate_compliance
+    : AutoDiscoveredAggregateCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class event_projection_registration_compliance
+    : EventProjectionRegistrationCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class event_projection_enrichment_compliance
+    : EventProjectionEnrichmentCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class rebuild_concurrency_cap_compliance
+    : RebuildConcurrencyCapCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
