@@ -239,7 +239,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.23.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.23.1" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -325,9 +325,13 @@
          than resolving transitively.
          9.23.0 (weasel#416): AssertValidIdentifier now rejects a quote or semicolon outright. This is
          the belt to 9.21.1's braces — 9.21.1 made partition bound VALUES escape correctly, and this
-         closes the identifier side of the same surface. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.23.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.23.0" />
+         closes the identifier side of the same surface.
+         9.23.1 (weasel#420/#422): the same weasel#416 identifier validation extended to the other
+         provider migrators (SQL Server previously validated nothing at all; Oracle, MySQL and Sqlite
+         each missed their own quoting characters), with the PostgreSQL check folded onto the shared
+         Weasel.Core helper so the providers cannot drift apart again. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.23.1" />
+    <PackageVersion Include="Weasel.Storage" Version="9.23.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
