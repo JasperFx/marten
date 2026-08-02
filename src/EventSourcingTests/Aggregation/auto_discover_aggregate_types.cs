@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.ComplianceTests;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -36,7 +37,7 @@ public class auto_discover_aggregate_types : IntegrationContext
     {
         // No explicit Snapshot<T>() registration — relies on auto-discovery
         var streamId = Guid.NewGuid();
-        theSession.Events.StartStream(streamId, new AEvent(), new BEvent(), new CEvent());
+        theSession.Events.StartStream(streamId, new EvolveAEvent(), new EvolveBEvent(), new EvolveCEvent());
         await theSession.SaveChangesAsync();
 
         var aggregate = await theSession.Events.AggregateStreamAsync<MutableIEventEvolveAggregate>(streamId);

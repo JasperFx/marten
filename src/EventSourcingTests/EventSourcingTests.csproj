@@ -6,6 +6,9 @@
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
         <ProjectReference Include="..\FSharpProjections\FSharpProjections.fsproj" />
         <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <!-- Source-only: the compliance suites compile into this assembly so the aggregate source
+             generator above binds Marten's session types. See Compliance/ for the enrollments. -->
+        <PackageReference Include="JasperFx.Events.ComplianceTests" />
     </ItemGroup>
 
     <ItemGroup>
@@ -65,6 +68,12 @@
         </Compile>
         <Compile Include="..\Marten.Testing\Documents\UserWithInheritedId.cs">
             <Link>Documents\UserWithInheritedId.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\ComplianceQuerySessionAlias.cs">
+            <Link>Harness\ComplianceQuerySessionAlias.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\MartenComplianceFixture.cs">
+            <Link>Harness\MartenComplianceFixture.cs</Link>
         </Compile>
         <Compile Include="..\Marten.Testing\Harness\BugIntegrationContext.cs">
             <Link>Harness\BugIntegrationContext.cs</Link>
