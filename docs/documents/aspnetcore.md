@@ -466,9 +466,29 @@ still current:
   document), formatted as a quoted GUID, e.g. `"3f2504e0-4f89-11d3-9a0c-0305e82c3301"`.
   The `mt_version` value is read **inline with the document in the same single
   database round trip** (piggy-backed onto the streaming query), so enabling the
-  ETag adds no extra query. Document types whose version metadata is disabled (no
-  `mt_version` column) simply emit no ETag. Because the document is streamed in that
-  one round trip, a `304` on `StreamOne<T>` saves response bandwidth but not the read.
+  ETag adds no extra query. Because the document is streamed in that one round
+  trip, a `304` on `StreamOne<T>` saves response bandwidth but not the read.
+- For documents using [numeric revisioning](/documents/concurrency) instead of the
+  Guid version — `IRevisioned`/`ILongVersioned` types, and every aggregate-projection
+  target (snapshots, single- and multi-stream projections), since Marten forces
+  numeric revisions on those — the `StreamOne<T>` ETag is the numeric `mt_version`,
+  formatted as a quoted integer, e.g. `"3"`. Documents written by an
+  `EventProjection` are not forced into numeric revisions and emit no ETag unless
+  they opt into a versioning flavor themselves. For a `SingleStreamProjection`
+  target the revision is the source stream's version, so serving the read model
+  through `StreamOne<T>` produces the same ETag that `StreamAggregate<T>` would
+  serve for the stream itself; for an Inline-lifecycle projection, clients can
+  switch between the two read styles without invalidating their caches (an
+  Async-lifecycle document can lag the stream head, so the two styles may briefly
+  disagree). Multi-stream and `ILongVersioned` targets emit their own monotonic
+  per-document revision, which is a valid ETag but not a stream version. Note that
+  revision-derived ETags are deterministic: a projection-logic change plus rebuild
+  that does not advance the stream does not invalidate previously cached responses
+  (bumping `ProjectionVersion` does not reset the revision either), matching the
+  `StreamAggregate<T>` semantics. The compiled-query overload
+  (`StreamOne<TDoc, TOut>`) does not participate in ETag/`304` handling. Document
+  types with neither version flavor enabled (no `mt_version` column) simply emit
+  no ETag.
 - For `StreamAggregate<T>`, the ETag is derived from the event stream's
   version (a `long`), formatted as a quoted integer, e.g. `"42"`. The version
   is looked up before the aggregate is folded, so a cache hit (`304`) skips

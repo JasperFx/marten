@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -58,6 +59,34 @@ internal static class JsonStreamingExtensions
             : await reader.GetFieldValueAsync<Guid>(versionOrdinal, token).ConfigureAwait(false);
 
         return (true, version);
+    }
+
+    /// <summary>
+    /// Numeric-revision counterpart of <see cref="StreamOneWithVersion"/>: streams the first
+    /// row's <c>data</c> column and reads the piggy-backed numeric <c>mt_version</c> value.
+    /// The column is <c>bigint</c> by default but <c>integer</c> for <c>IRevisioned</c>-backed
+    /// documents (#4614), so the value is materialized at whatever width came back and widened
+    /// to long rather than read through a single generic accessor.
+    /// </summary>
+    internal static async Task<(bool found, long? revision)> StreamOneWithRevision(this DbDataReader reader,
+        Stream stream, CancellationToken token)
+    {
+        if (!await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            return (false, null);
+        }
+
+        var dataOrdinal = reader.GetOrdinal("data");
+        await reader.WriteJsonValueAsync(dataOrdinal, stream, token).ConfigureAwait(false);
+
+        var revisionOrdinal = reader.GetOrdinal(Marten.Linq.SqlGeneration.VersionSelectClause.VersionAlias);
+        long? revision = await reader.IsDBNullAsync(revisionOrdinal, token).ConfigureAwait(false)
+            ? null
+            : Convert.ToInt64(
+                await reader.GetFieldValueAsync<object>(revisionOrdinal, token).ConfigureAwait(false),
+                CultureInfo.InvariantCulture);
+
+        return (true, revision);
     }
 
     internal static ValueTask WriteBytes(this Stream stream, byte[] bytes, CancellationToken token)
