@@ -174,6 +174,13 @@
          jasperfx#595 (BatchingChannel could deliver its trailing batch twice on shutdown) and #597. -->
     <PackageVersion Include="JasperFx" Version="2.37.0" />
     <PackageVersion Include="JasperFx.Events" Version="2.37.0" />
+    <!--
+      The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
+      suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
+      Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
+      which closes the seam, lives beside the rest of the harness.
+    -->
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.37.0-compliance.2" />
     <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.37.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

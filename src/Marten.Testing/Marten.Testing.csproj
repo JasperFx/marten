@@ -34,6 +34,9 @@
         <PackageReference Include="xunit.v3" />
         <PackageReference Include="NSubstitute" />
         <PackageReference Include="Shouldly" />
+        <!-- Source-only compliance suites: MartenComplianceFixture in Harness/ closes the seam,
+             so the harness assembly compiles them too. -->
+        <PackageReference Include="JasperFx.Events.ComplianceTests" />
     </ItemGroup>
 
     <ItemGroup>
