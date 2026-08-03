@@ -192,6 +192,31 @@ public static class TestingExtensions
         var perTenant = options.Events.UseTenantPartitionedEvents;
         var shardIdentities = options.Projections.AllShards().Select(s => s.Name.Identity).ToArray();
 
+        // #5161: AllProjectionProgress returns EVERY row in mt_event_progression, and not all of them
+        // track the event sequence. High-water bookkeeping (HighWaterAllocationFence, #5108) records an
+        // observed sequence allocation and legitimately sits below the mark; a row left behind by a
+        // projection that is no longer registered is never advanced by anyone at all. Holding the wait
+        // open until rows like those reach the initial sequence means holding it open forever, so the
+        // bar has to be applied only to rows that represent progress this store is actually making.
+        //
+        // Recognised shapes, matching ShardName.Compose: the store-global high water mark and its
+        // per-tenant HighWaterMark:{tenant} form, plus each registered shard identity and its
+        // {shard}:{tenant} form. Anything else is bookkeeping or residue and is ignored — which is also
+        // what keeps the next such row from reintroducing this.
+        bool isProgressRow(ShardState row)
+        {
+            var name = row.ShardName;
+
+            if (name == ShardState.HighWaterMark
+                || name.StartsWith(ShardState.HighWaterMark + ":", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return shardIdentities.Any(identity =>
+                name == identity || name.StartsWith(identity + ":", StringComparison.Ordinal));
+        }
+
         bool isCaughtUp(IReadOnlyList<ShardState> rows)
         {
             // #4761: under per-tenant event partitioning each tenant has its own mt_events_sequence, so a
@@ -213,7 +238,11 @@ public static class TestingExtensions
             // the pre-#4761 behaviour for that shape.
             if (!perTenant || tenantHighWater.Count == 0)
             {
-                return rows.Count >= projectionsCount && rows.All(x => x.Sequence >= initial.EventSequenceNumber);
+                // projectionsCount is "registered shards + 1" for the high water mark, so the count bar
+                // is measured against progress rows only — see isProgressRow.
+                var progress = rows.Where(isProgressRow).ToArray();
+                return progress.Length >= projectionsCount &&
+                       progress.All(x => x.Sequence >= initial.EventSequenceNumber);
             }
 
             // The leading tenant has not reached the store-wide high-water yet — keep waiting so we never
