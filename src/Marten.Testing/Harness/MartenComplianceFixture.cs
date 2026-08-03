@@ -39,6 +39,17 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             options.Projections.MaxConcurrentRebuildsPerDatabase = config.MaxConcurrentRebuildsPerDatabase;
         }
 
+        if (config.StreamIdentity.HasValue)
+        {
+            options.Events.StreamIdentity = config.StreamIdentity.Value;
+        }
+
+        if (config.EnableCorrelationTracking)
+        {
+            options.Events.MetadataConfig.CorrelationIdEnabled = true;
+            options.Events.MetadataConfig.CausationIdEnabled = true;
+        }
+
         config.ApplyTo(new MartenComplianceRegistrar(options));
 
         _store = new DocumentStore(options);
@@ -84,6 +95,15 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override void StoreDocument<T>(IDocumentOperations session, T document) => session.Store(document);
 
     public override JasperFx.Events.IEventStoreOperations EventsFor(IDocumentOperations session) => session.Events;
+
+    // Session-scoped correlation/causation is shared behavior that no shared interface declares:
+    // in Marten the pair hangs off IQuerySession, which every session from OpenSession() is.
+    public override string? CorrelationIdFor(IDocumentOperations session) => ((IQuerySession)session).CorrelationId;
+
+    public override string? CausationIdFor(IDocumentOperations session) => ((IQuerySession)session).CausationId;
+
+    public override void SetCorrelationId(IDocumentOperations session, string? correlationId)
+        => ((IQuerySession)session).CorrelationId = correlationId;
 
     public override IEventStore EventStore => _store;
 
