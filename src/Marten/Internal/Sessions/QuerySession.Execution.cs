@@ -87,29 +87,15 @@ public partial class QuerySession
         }
     }
 
-    internal async Task<(bool found, Guid? version)> StreamOneWithVersion(DbCommand command, Stream stream,
-        CancellationToken token)
+    internal async Task<StreamOneReadResult> StreamOneWithVersion(DbCommand command, Stream stream,
+        bool numericRevision, Func<Guid?, long?, bool>? shouldWriteBody, CancellationToken token)
     {
         await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
 
         try
         {
-            return await reader.StreamOneWithVersion(stream, token).ConfigureAwait(false);
-        }
-        finally
-        {
-            await reader.CloseAsync().ConfigureAwait(false);
-        }
-    }
-
-    internal async Task<(bool found, long? revision)> StreamOneWithRevision(DbCommand command, Stream stream,
-        CancellationToken token)
-    {
-        await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
-
-        try
-        {
-            return await reader.StreamOneWithRevision(stream, token).ConfigureAwait(false);
+            return await reader.StreamOneWithVersion(stream, numericRevision, shouldWriteBody, token)
+                .ConfigureAwait(false);
         }
         finally
         {

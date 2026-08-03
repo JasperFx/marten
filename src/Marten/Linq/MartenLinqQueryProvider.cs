@@ -31,8 +31,13 @@ internal record WaitForAggregate(TimeSpan Timeout, NonStaleDataTimeoutMode Timeo
 /// types) carries a value; both are null when the document type has no <c>mt_version</c> column
 /// (neither metadata flavor enabled) or the value was SQL NULL — in which case no ETag
 /// should be emitted.
+/// <para>
+/// <see cref="BodyWritten"/> is false when the caller's <c>shouldWriteBody</c> predicate declined
+/// the payload after seeing the version — the conditional-request (<c>304</c>) case, where nothing
+/// was copied into the destination stream.
+/// </para>
 /// </summary>
-internal readonly record struct StreamOneJsonResult(bool Found, Guid? Version, long? Revision);
+internal readonly record struct StreamOneJsonResult(bool Found, Guid? Version, long? Revision, bool BodyWritten);
 
 internal class MartenLinqQueryProvider: IQueryProvider
 {
@@ -281,9 +286,15 @@ internal class MartenLinqQueryProvider: IQueryProvider
     /// When the document type <typeparamref name="T"/> has no <c>mt_version</c> column (neither
     /// metadata flavor enabled), the column is not appended and the result carries neither a
     /// version nor a revision so the caller emits no ETag.
+    /// <para>
+    /// <paramref name="shouldWriteBody"/> is consulted after the version is read but before the
+    /// document payload is copied into <paramref name="destination"/>, so a conditional-request
+    /// caller answering <c>304</c> pays for neither the copy nor the buffer growth. It is not
+    /// consulted on the no-version path, where there is nothing to decide on.
+    /// </para>
     /// </summary>
     public async Task<StreamOneJsonResult> StreamOneWithVersion<T>(Expression expression, Stream destination,
-        CancellationToken token) where T : notnull
+        Func<Guid?, long?, bool>? shouldWriteBody, CancellationToken token) where T : notnull
     {
         var parser = new LinqQueryParser(this, _session, expression);
         var statements = parser.BuildStatements();
@@ -296,35 +307,26 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
         var mapping = _session.Options.Storage.FindMapping(typeof(T)) as DocumentMapping;
 
-        if (mapping is { Metadata.Version.Enabled: true })
+        // Both flavors keep their value in the same physical mt_version column, so one
+        // piggy-backed select serves them; only the CLR type read back differs. For a
+        // SingleStreamProjection target the revision *is* the source stream's version, making the
+        // resulting ETag byte-for-byte the one StreamAggregate serves for the same stream.
+        var numericRevision = mapping is { Metadata.Revision.Enabled: true };
+
+        if (numericRevision || mapping is { Metadata.Version.Enabled: true })
         {
             main.SelectClause = new VersionSelectClause<T>(main.SelectClause);
 
             var command = statement.BuildCommand(_session);
-            var (streamed, version) = await _session.StreamOneWithVersion(command, destination, token)
+            var result = await _session
+                .StreamOneWithVersion(command, destination, numericRevision, shouldWriteBody, token)
                 .ConfigureAwait(false);
 
-            return new StreamOneJsonResult(streamed, version, null);
-        }
-
-        // Numeric-revision documents keep their revision in the same physical mt_version column,
-        // so the identical piggy-backed select serves them — the value just reads back as a
-        // number rather than a uuid. For a SingleStreamProjection target the revision *is* the
-        // source stream's version, making the resulting ETag byte-for-byte the one StreamAggregate
-        // serves for the same stream.
-        if (mapping is { Metadata.Revision.Enabled: true })
-        {
-            main.SelectClause = new VersionSelectClause<T>(main.SelectClause);
-
-            var command = statement.BuildCommand(_session);
-            var (streamed, revision) = await _session.StreamOneWithRevision(command, destination, token)
-                .ConfigureAwait(false);
-
-            return new StreamOneJsonResult(streamed, null, revision);
+            return new StreamOneJsonResult(result.Found, result.Version, result.Revision, result.BodyWritten);
         }
 
         var plainCommand = statement.BuildCommand(_session);
         var found = await _session.StreamOne(plainCommand, destination, token).ConfigureAwait(false);
-        return new StreamOneJsonResult(found, null, null);
+        return new StreamOneJsonResult(found, null, null, found);
     }
 }

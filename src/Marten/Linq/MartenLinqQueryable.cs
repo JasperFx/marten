@@ -311,10 +311,15 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
     /// <c>mt_version</c> in the SAME database round trip (see
     /// <see cref="MartenLinqQueryProvider.StreamOneWithVersion{T}"/>). Used by the ASP.NET Core
     /// <c>StreamOne</c> ETag support to avoid a follow-up metadata query.
+    /// <para>
+    /// <paramref name="shouldWriteBody"/> sees the version before the payload is copied, so a
+    /// caller that answers <c>304 Not Modified</c> can decline the body it would only discard.
+    /// </para>
     /// </summary>
-    internal Task<StreamOneJsonResult> StreamJsonFirstOrDefaultWithVersion(Stream destination, CancellationToken token)
+    internal Task<StreamOneJsonResult> StreamJsonFirstOrDefaultWithVersion(Stream destination,
+        Func<Guid?, long?, bool>? shouldWriteBody, CancellationToken token)
     {
-        return MartenProvider.StreamOneWithVersion<T>(Expression, destination, token);
+        return MartenProvider.StreamOneWithVersion<T>(Expression, destination, shouldWriteBody, token);
     }
 
     public Task StreamJsonSingle(Stream destination, CancellationToken token)
