@@ -63,7 +63,7 @@ internal class HighWaterDetector: IHighWaterDetector
     // gap's sequence numbers were even allocated. Detector-scoped state: resets on restart, which
     // only means a stuck gap waits one fresh threshold before skipping.
     private sealed record StuckGapObservation(long Mark, DateTimeOffset Since, long Xmax, long ReservedCeiling,
-        DateTimeOffset? AllocationFence);
+        DateTimeOffset? AllocationFence, DateTimeOffset? DurableSince);
 
     private StuckGapObservation? _stuckGap;
 
@@ -252,6 +252,10 @@ internal class HighWaterDetector: IHighWaterDetector
             return statistics;
         }
 
+        // #5109: publish the sighting so the NEXT detector generation inherits this gap's clock. The
+        // upsert only restamps when the mark differs, so repeated polls preserve the original moment.
+        await persistStuckGapAsync(observed.Mark, token).ConfigureAwait(false);
+
         var age = statistics.Timestamp.Subtract(observed.Since);
         if (age < _settings.StaleSequenceThreshold)
         {
@@ -266,14 +270,28 @@ internal class HighWaterDetector: IHighWaterDetector
             .ConfigureAwait(false);
         if (liveness.IndicatesLiveReserver)
         {
+            // #5109: the STALE THRESHOLD deliberately stays on the in-memory clock above, so a fresh
+            // detector always gives a just-appeared gap a full settle window before considering a skip.
+            // The CAP is the opposite: it exists to bound the stall itself, so it measures from the
+            // first sighting recorded durably for this mark. Without that, agent churn or restart
+            // cycles shorter than the cap postpone the documented bound forever.
             var cap = _settings.SkipStaleGapsDespiteLiveTransactionsAfter;
-            if (cap == null || age < cap.Value)
+            var stuckAge = observed.DurableSince is { } durable
+                ? statistics.Timestamp.Subtract(durable)
+                : age;
+            if (stuckAge < age)
             {
-                if (age > _settings.StaleSequenceThreshold * 5)
+                // Never let the durable clock read YOUNGER than what this detector has watched
+                stuckAge = age;
+            }
+
+            if (cap == null || stuckAge < cap.Value)
+            {
+                if (stuckAge > _settings.StaleSequenceThreshold * 5)
                 {
                     _logger.LogWarning(
                         "Daemon high water detection has held before the sequence gap above {Mark} for {Age} because a transaction that may still fill it appears to be alive ({Liveness}). Projections will not advance until it commits, aborts, or the SkipStaleGapsDespiteLiveTransactionsAfter cap expires",
-                        observed.Mark, age, liveness);
+                        observed.Mark, stuckAge, liveness);
                 }
                 else
                 {
@@ -287,7 +305,7 @@ internal class HighWaterDetector: IHighWaterDetector
 
             _logger.LogWarning(
                 "Daemon high water detection is skipping the sequence gap above {Mark} DESPITE evidence of a live transaction ({Liveness}) because the gap has been stuck for {Age}, past the configured SkipStaleGapsDespiteLiveTransactionsAfter cap of {Cap}. Events committed later inside the skipped range will NOT be projected",
-                observed.Mark, liveness, age, cap);
+                observed.Mark, liveness, stuckAge, cap);
         }
 
         // Proven dead (or cap expired): clear the WHOLE dead span in one move, but never beyond the
@@ -417,12 +435,22 @@ internal class HighWaterDetector: IHighWaterDetector
         var current = _stuckGap;
         if (current == null || current.Mark != statistics.CurrentMark)
         {
+            // #5109: the cap is meant to bound how long the GAP has been stuck, not how long THIS
+            // detector has watched it. A durable record of the first sighting — keyed on the pinned
+            // mark, so it only applies while the mark has not moved — is what makes daemon restarts
+            // and managed-distribution agent churn stop resetting the clock.
+            var durableSince = statistics is MartenHighWaterStatistics { PersistedStuckGap: { } stuck }
+                               && stuck.Mark == statistics.CurrentMark
+                ? stuck.FirstObservedAt
+                : (DateTimeOffset?)null;
+
             _stuckGap = new StuckGapObservation(
                 statistics.CurrentMark,
                 statistics.Timestamp,
                 (statistics as MartenHighWaterStatistics)?.CurrentXmax ?? 0,
                 statistics.HighestSequence,
-                findAllocationFence(statistics, statistics.CurrentMark));
+                findAllocationFence(statistics, statistics.CurrentMark),
+                durableSince);
         }
     }
 
@@ -436,6 +464,10 @@ internal class HighWaterDetector: IHighWaterDetector
         // #4953: the poll loop is where a stuck gap is usually seen first — record it here so the
         // per-gap stale clock starts as early as possible
         trackStuckGap(statistics);
+        if (_stuckGap is { } polled)
+        {
+            await persistStuckGapAsync(polled.Mark, token).ConfigureAwait(false);
+        }
 
         return statistics;
     }
@@ -919,9 +951,10 @@ select coalesce(
             // never observed, and a fence that is too late wrongly excludes a live reserver.
             await using var cmd =
                 new NpgsqlCommand(
-                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq, last_updated = transaction_timestamp() where name <> :fence")
+                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq, last_updated = transaction_timestamp() where name <> :fence and name <> :stuck")
                     .With("seq", statistics.HighestSequence)
-                    .With("fence", HighWaterAllocationFence.ProgressionName);
+                    .With("fence", HighWaterAllocationFence.ProgressionName)
+                    .With("stuck", HighWaterStuckGap.ProgressionName);
 
             await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
         }
@@ -938,6 +971,41 @@ select coalesce(
         recordAllocationObservation(statistics);
         await persistAllocationFenceAsync(statistics, token).ConfigureAwait(false);
         return statistics;
+    }
+
+    // #5109: durable first-sighting clock for the SkipStaleGapsDespiteLiveTransactionsAfter cap. The
+    // row records "the mark was already pinned HERE at this moment"; because the mark only ever moves
+    // forward, that stays true for as long as the mark has not moved, which makes it a sound lower
+    // bound on how long the gap has been stuck. Keyed on the mark so it self-invalidates: a different
+    // mark means a different gap and the clock restarts.
+    //
+    // Deliberately server time only. The obvious alternative — dating the stall from the earliest
+    // committed event above the mark — reads mt_events.timestamp, which is client-written in Rich
+    // append mode (the default) and skewed by the server's UTC offset in Quick mode (#5136), so a
+    // behind-clock client or a non-UTC server could age a gap past the cap and drop a live append's
+    // events.
+    private async Task persistStuckGapAsync(long mark, CancellationToken token)
+    {
+        try
+        {
+            await using var cmd = new NpgsqlCommand($@"
+insert into {_graph.DatabaseSchemaName}.mt_event_progression(name, last_seq_id, last_updated)
+values (:name, :mark, transaction_timestamp())
+on conflict (name) do update
+   set last_seq_id = excluded.last_seq_id, last_updated = excluded.last_updated
+ where {_graph.DatabaseSchemaName}.mt_event_progression.last_seq_id <> excluded.last_seq_id")
+                .With("name", HighWaterStuckGap.ProgressionName)
+                .With("mark", mark);
+
+            await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (!token.IsCancellationRequested)
+        {
+            // Losing the durable clock only costs the cap its head start — the in-memory clock still
+            // governs, which is the pre-#5109 behavior. Never fail a poll over bookkeeping.
+            _logger.LogDebug(e, "Unable to record the stuck gap observation for database {Database}",
+                DatabaseIdentity);
+        }
     }
 
     // #5108: the in-memory allocation history above dies with the detector instance, and a daemon that

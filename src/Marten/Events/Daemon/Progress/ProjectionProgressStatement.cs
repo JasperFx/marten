@@ -90,10 +90,14 @@ internal class ProjectionProgressStatement: Statement
             whereStarted = true;
         }
 
-        // #5108: the allocation-fence row is high-water bookkeeping, not a projection shard, and must
-        // never be reported as one — see HighWaterAllocationFence.
+        // #5108/#5109: high-water bookkeeping rows are not projection shards and must never be
+        // reported as such — see HighWaterAllocationFence and HighWaterStuckGap.
         builder.Append(whereStarted ? " and " : " where ");
-        builder.Append("name <> ");
-        builder.AppendParameter(HighWaterAllocationFence.ProgressionName);
+        builder.Append("name <> ALL(");
+        builder.AppendParameter(new[]
+        {
+            HighWaterAllocationFence.ProgressionName, HighWaterStuckGap.ProgressionName
+        });
+        builder.Append(")");
     }
 }
