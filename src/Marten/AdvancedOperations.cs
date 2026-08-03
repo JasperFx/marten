@@ -299,7 +299,7 @@ public class AdvancedOperations
         var scenario = new ProjectionScenario(_store);
         configuration(scenario);
 
-        return scenario.Execute(ct);
+        return scenario.ExecuteAsync(ct);
     }
 
     /// <summary>

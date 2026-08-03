@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events.Projections;
+using JasperFx.Events.TestSupport;
 using Marten.Events.TestSupport;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -94,13 +95,13 @@ public class projection_scenario_quality_tests: OneOffConfigurationsContext
         var scenario = new ProjectionScenario(theStore);
         scenario.Append(Guid.NewGuid(), new CreateUser { UserId = Guid.NewGuid(), UserName = "Once" });
 
-        await scenario.Execute(TestContext.Current.CancellationToken);
+        await scenario.ExecuteAsync(TestContext.Current.CancellationToken);
 
         // The steps were consumed by the first run, so a second run would be a silent no-op.
         // It should be a loud failure instead.
         await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
-            await scenario.Execute(TestContext.Current.CancellationToken);
+            await scenario.ExecuteAsync(TestContext.Current.CancellationToken);
         });
     }
 
