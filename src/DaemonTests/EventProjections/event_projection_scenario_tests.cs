@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
+using JasperFx.Events.TestSupport;
 using Marten.Events.TestSupport;
 using Marten.Storage;
 using Marten.Testing.Documents;
