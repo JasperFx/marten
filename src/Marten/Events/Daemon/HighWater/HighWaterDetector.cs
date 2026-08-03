@@ -290,11 +290,26 @@ internal class HighWaterDetector: IHighWaterDetector
                 observed.Mark, liveness, age, cap);
         }
 
-        // Proven dead (or cap expired): walk past the gap, but never beyond the reserved ceiling
-        // recorded when the gap was first observed — sequence numbers reserved after that belong to
-        // newer transactions whose fate is not proven.
-        var walk = await runGapDetectorAsync(statistics.SafeStartMark + 1, false, token).ConfigureAwait(false);
-        var target = walk.HasValue ? Math.Min(walk.Value, observed.ReservedCeiling) : observed.ReservedCeiling;
+        // Proven dead (or cap expired): clear the WHOLE dead span in one move, but never beyond the
+        // reserved ceiling recorded when the gap was first observed — sequence numbers reserved after
+        // that belong to newer transactions whose fate is not proven.
+        //
+        // #5108 §2: this used to advance to the next gap edge, so a field of N dead gaps took N
+        // detection cycles and each one re-paid StaleSequenceThreshold from a fresh observation —
+        // reported as a mark grinding 38 → 426 over 21 seconds, with the cost growing linearly in
+        // write contention. The evidence already in hand covers the entire span: every sequence number
+        // at or below the ceiling was handed out at or before the observation (nextval runs inside the
+        // reserving transaction, so its xact_start cannot postdate it), and the probe above just
+        // established that no transaction from before the observation is still alive. So every one of
+        // those numbers is now either committed or permanently dead — the same argument that licensed
+        // skipping the first gap, applied to all of them at once.
+        // When nothing at all is committed ABOVE the mark, the dead span runs to the end of the
+        // reserved range — reserved-but-never-committed numbers with no live reserver — and the ceiling
+        // is the target, which is the long-standing GH-2681 behavior the null walk used to express.
+        var committed = await _runner.Query(new CommittedSequenceHandler(_graph), token).ConfigureAwait(false);
+        var target = committed > statistics.LastMark
+            ? Math.Min(committed, observed.ReservedCeiling)
+            : observed.ReservedCeiling;
         if (target <= statistics.LastMark)
         {
             return statistics;

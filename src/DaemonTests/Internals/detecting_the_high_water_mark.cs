@@ -131,7 +131,13 @@ public class HighWaterDetectorTests: DaemonContext
 
         var statistics2 = await theDetector.DetectInSafeZone(CancellationToken.None);
 
-        statistics2.CurrentMark.ShouldBe(NumberOfEvents - 96);
+        // #5108 §2: all four dead gaps clear in ONE cycle, not one gap per cycle. Every sequence
+        // number at or below the ceiling recorded at observation was handed out before that moment,
+        // and the liveness probe just established that no transaction from before it is still alive —
+        // so every one of these gaps is provably dead, not just the first. Previously each gap cost
+        // its own detection cycle plus a fresh StaleSequenceThreshold, which is what made recovery
+        // time grow linearly with the number of gaps.
+        statistics2.CurrentMark.ShouldBe(NumberOfEvents);
         statistics2.IncludesSkipping.ShouldBeTrue();
     }
 
