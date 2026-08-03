@@ -1,5 +1,6 @@
 using System.Linq;
 using JasperFx.Events.Projections;
+using Marten.Events.Daemon.HighWater;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 
@@ -86,6 +87,13 @@ internal class ProjectionProgressStatement: Statement
             // are valid PG identifiers so they don't contain LIKE wildcards.
             builder.Append("name like ");
             builder.AppendParameter("%:" + TenantId);
+            whereStarted = true;
         }
+
+        // #5108: the allocation-fence row is high-water bookkeeping, not a projection shard, and must
+        // never be reported as one — see HighWaterAllocationFence.
+        builder.Append(whereStarted ? " and " : " where ");
+        builder.Append("name <> ");
+        builder.AppendParameter(HighWaterAllocationFence.ProgressionName);
     }
 }
