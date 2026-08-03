@@ -53,6 +53,13 @@ public static class StreamingMinimalEndpoints
                     EmitETag = false
                 });
 
+        // StreamOne over a Select() projection (#5158). The ETag still describes the source
+        // document, since the projection is a pure function of it.
+        app.MapGet("/minimal/issue/{id:guid}/summary",
+            (Guid id, IQuerySession session)
+                => new StreamOne<IssueSummary>(session.Query<Issue>().Where(x => x.Id == id)
+                    .Select(x => new IssueSummary { Description = x.Description })));
+
         // Document type whose version metadata is disabled — no mt_version column, so
         // EmitETag = true (the default) must still emit NO ETag rather than a constant zero-Guid.
         app.MapGet("/minimal/versionless/{id:guid}",
@@ -220,6 +227,15 @@ public class VersionlessDoc
 {
     public Guid Id { get; set; }
     public string Name { get; set; }
+}
+
+/// <summary>
+/// Projection shape for the <c>Select()</c>-over-<see cref="Issue"/> endpoint (#5158). Not a
+/// registered document type — it only ever exists as the output of a LINQ projection.
+/// </summary>
+public class IssueSummary
+{
+    public string Description { get; set; }
 }
 
 /// <summary>
