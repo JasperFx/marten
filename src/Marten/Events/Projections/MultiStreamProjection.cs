@@ -96,11 +96,9 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
                 services.AddScoped<TConcrete>();
                 services.ConfigureMarten((s, opts) =>
                 {
-                    var wrapper =
-                        typeof(ScopedAggregationWrapper<,,,,>)
-                            .CloseAndBuildAs<ProjectionBase>(s,
-                                typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
-                                typeof(IQuerySession));
+                    var wrapper = ScopedAggregationWrapper.Build(s,
+                        typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
+                        typeof(IQuerySession));
 
                     wrapper.Lifecycle = lifecycle;
                     configure?.Invoke(wrapper);
@@ -132,11 +130,9 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
                 services.AddScoped<TConcrete>();
                 services.ConfigureMarten<TStore>((s, opts) =>
                 {
-                    var wrapper =
-                        typeof(ScopedAggregationWrapper<,,,,>)
-                            .CloseAndBuildAs<ProjectionBase>(s,
-                                typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
-                                typeof(IQuerySession));
+                    var wrapper = ScopedAggregationWrapper.Build(s,
+                        typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
+                        typeof(IQuerySession));
 
                     wrapper.Lifecycle = lifecycle;
                     configure?.Invoke(wrapper);
