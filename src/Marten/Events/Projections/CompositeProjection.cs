@@ -239,9 +239,8 @@ internal class CompositeProjectionWithServicesSource<TProjection> :
         else if (_aggregateType != null && _identityType != null)
         {
             var projectionServices = new ProjectionActivatingServiceProvider<TProjection>(services);
-            source = typeof(ScopedAggregationWrapper<,,,,>)
-                .CloseAndBuildAs<ProjectionBase>(projectionServices, typeof(TProjection), _aggregateType, _identityType,
-                    typeof(IDocumentOperations), typeof(IQuerySession))
+            source = ScopedAggregationWrapper.Build(projectionServices, typeof(TProjection), _aggregateType,
+                    _identityType, typeof(IDocumentOperations), typeof(IQuerySession))
                 .As<IProjectionSource<IDocumentOperations, IQuerySession>>();
         }
         else
