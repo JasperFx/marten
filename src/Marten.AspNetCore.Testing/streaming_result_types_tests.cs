@@ -216,9 +216,11 @@ public class streaming_result_types_tests: IntegrationContext
     [Fact]
     public async Task stream_one_emits_no_etag_when_version_metadata_disabled()
     {
-        // VersionlessDoc is registered with Metadata.Version.Enabled = false, so there is no
-        // mt_version column to derive an ETag from. EmitETag defaults to true, but the inline
-        // version read comes back null and no ETag (and no false 304) is produced.
+        // VersionlessDoc is registered with Metadata.Version.Enabled = false and carries no
+        // numeric revision metadata either (not a projection target, not IRevisioned), so there
+        // is no mt_version column of either flavor to derive an ETag from. EmitETag defaults to
+        // true, but the inline version read comes back null and no ETag (and no false 304) is
+        // produced.
         var doc = new VersionlessDoc { Id = Guid.NewGuid(), Name = "no version column" };
         await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
         {
@@ -299,6 +301,124 @@ public class streaming_result_types_tests: IntegrationContext
         public void RecordSavedChanges(Marten.IDocumentSession session, Marten.Services.IChangeSet commit) { }
         public void OnBeforeExecute(Npgsql.NpgsqlCommand command) => Count++;
         public void OnBeforeExecute(Npgsql.NpgsqlBatch batch) => Count++;
+    }
+
+    // ──────────────── StreamOne<T> ETag — numeric-revision documents ────────────────
+
+    [Fact]
+    public async Task stream_one_emits_stream_version_etag_for_projection_target_document()
+    {
+        // Order is the target of an inline single-stream projection (Projections.Snapshot<Order>),
+        // so ProjectionDocumentPolicy forces numeric revisions and the projection writes the source
+        // stream's version into mt_version. Serving the projected document through StreamOne emits
+        // that revision as the ETag — the same value StreamAggregate derives for the same stream.
+        var orderId = Guid.NewGuid();
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("Projected Book", 12.50m));
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order-doc/{orderId}");
+            s.StatusCodeShouldBe(200);
+            s.ContentTypeShouldBe("application/json");
+        });
+
+        result.Context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+
+        var order = result.ReadAsJson<Order>();
+        order.Id.ShouldBe(orderId);
+        order.Description.ShouldBe("Projected Book");
+    }
+
+    [Fact]
+    public async Task stream_one_returns_304_when_if_none_match_matches_projection_revision()
+    {
+        var orderId = Guid.NewGuid();
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("Cached Projection", 3.00m));
+            await session.SaveChangesAsync();
+        }
+
+        var second = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order-doc/{orderId}");
+            s.WithRequestHeader("If-None-Match", "\"1\"");
+            s.StatusCodeShouldBe(304);
+        });
+
+        second.Context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+        second.ReadAsText().ShouldBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task stream_one_projection_etag_changes_when_the_stream_advances()
+    {
+        var orderId = Guid.NewGuid();
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("Evolving Book", 8.00m));
+            await session.SaveChangesAsync();
+        }
+
+        var first = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order-doc/{orderId}");
+            s.StatusCodeShouldBe(200);
+        });
+        first.Context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.Append(orderId, new OrderShipped());
+            await session.SaveChangesAsync();
+        }
+
+        // The previously-cached ETag is now stale: full body again, with the new revision.
+        var second = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order-doc/{orderId}");
+            s.WithRequestHeader("If-None-Match", "\"1\"");
+            s.StatusCodeShouldBe(200);
+        });
+
+        second.Context.Response.Headers["ETag"].ToString().ShouldBe("\"2\"");
+
+        var order = second.ReadAsJson<Order>();
+        order.Shipped.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task stream_one_emits_revision_etag_for_plain_revisioned_document()
+    {
+        // Not a projection target: RevisionedIssueNote opts into numeric revisions by
+        // implementing IRevisioned, which also gives its mt_version column the narrower
+        // integer width (#4614) — proving the revision read handles both column widths.
+        var note = new RevisionedIssueNote { Id = Guid.NewGuid(), Name = "rev one" };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(note);
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/revisioned/{note.Id}");
+            s.StatusCodeShouldBe(200);
+            s.ContentTypeShouldBe("application/json");
+        });
+
+        result.Context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+
+        await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/revisioned/{note.Id}");
+            s.WithRequestHeader("If-None-Match", "\"1\"");
+            s.StatusCodeShouldBe(304);
+        });
     }
 
     // ───────────────────────── StreamMany<T> ─────────────────────────

@@ -53,10 +53,11 @@ public sealed class StreamOne<T> : IResult, IEndpointMetadataProvider
 
     /// <summary>
     /// Whether to emit an <c>ETag</c> response header derived from the document's
-    /// <c>mt_version</c>, and honor an incoming <c>If-None-Match</c> request header by
-    /// responding <c>304 Not Modified</c> with an empty body when it matches. Defaults to
-    /// <c>true</c>. Set to <c>false</c> to opt out if a consumer's contract cannot tolerate
-    /// the extra header.
+    /// <c>mt_version</c> (a quoted GUID under Guid optimistic concurrency, a quoted integer
+    /// for numeric-revision documents such as projection targets), and honor an incoming
+    /// <c>If-None-Match</c> request header by responding <c>304 Not Modified</c> with an
+    /// empty body when it matches. Defaults to <c>true</c>. Set to <c>false</c> to opt out
+    /// if a consumer's contract cannot tolerate the extra header.
     /// </summary>
     public bool EmitETag { get; init; } = true;
 

@@ -898,6 +898,19 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
                 $"{DocumentType.FullNameInCode()} cannot be configured with UseNumericRevision and UseOptimisticConcurrency. Choose one or the other");
         }
 
+        // The check above only sees the two mode flags, but the metadata Enabled bits are what
+        // actually emit columns — and the Guid version and numeric revision flavors compete for
+        // the same physical mt_version column, so both enabled means a duplicate column: a raw
+        // duplicate-key ArgumentException from projection storage or invalid DDL at migration
+        // time. The usual route here is Schema.For<T>().UseOptimisticConcurrency(true) on a
+        // projection-target document that ProjectionDocumentPolicy already forced onto numeric
+        // revisions (fluent overrides run after the policies). Fail fast with the fix instead.
+        if (Metadata.Version.Enabled && Metadata.Revision.Enabled)
+        {
+            throw new InvalidDocumentException(
+                $"{DocumentType.FullNameInCode()} has both the Guid version metadata (Metadata.Version, from UseOptimisticConcurrency) and the numeric revision metadata (Metadata.Revision, from UseNumericRevisions) enabled, but they map to the same mt_version column. Choose one or the other — fluent configuration calls accumulate rather than override each other, so remove the call for the mode you do not want. Note that projection-target documents always use numeric revisions and cannot opt into UseOptimisticConcurrency.");
+        }
+
         IQueryableMember idField;
         if (IdStrategy is ValueTypeIdGeneration st)
         {

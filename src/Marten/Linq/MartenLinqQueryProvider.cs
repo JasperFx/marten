@@ -25,11 +25,14 @@ internal record WaitForAggregate(TimeSpan Timeout, NonStaleDataTimeoutMode Timeo
 
 /// <summary>
 /// Outcome of a single-document JSON stream that also read the document's <c>mt_version</c>
-/// inline. <see cref="Found"/> is false when the query matched no row; <see cref="Version"/>
-/// is null when the document type has no <c>mt_version</c> column (version metadata disabled)
-/// or the value was SQL NULL — in which case no ETag should be emitted.
+/// inline. <see cref="Found"/> is false when the query matched no row. At most one of
+/// <see cref="Version"/> (Guid optimistic-concurrency mode) or <see cref="Revision"/>
+/// (numeric revision mode — projection-target documents and <c>IRevisioned</c>/<c>ILongVersioned</c>
+/// types) carries a value; both are null when the document type has no <c>mt_version</c> column
+/// (neither metadata flavor enabled) or the value was SQL NULL — in which case no ETag
+/// should be emitted.
 /// </summary>
-internal readonly record struct StreamOneJsonResult(bool Found, Guid? Version);
+internal readonly record struct StreamOneJsonResult(bool Found, Guid? Version, long? Revision);
 
 internal class MartenLinqQueryProvider: IQueryProvider
 {
@@ -272,9 +275,12 @@ internal class MartenLinqQueryProvider: IQueryProvider
     /// round trip — the version column is piggy-backed onto the streaming query via
     /// <see cref="VersionSelectClause{T}"/> (analogous to the <c>count(*) OVER()</c> stats column),
     /// so the ASP.NET Core <c>StreamOne</c> ETag support no longer needs a follow-up metadata query.
-    /// When the document type <typeparamref name="T"/> has no <c>mt_version</c> column (version
-    /// metadata disabled), the version column is not appended and <see cref="StreamOneJsonResult.Version"/>
-    /// comes back null so the caller emits no ETag.
+    /// The column is read as a Guid when the mapping uses Guid optimistic concurrency, and as a
+    /// numeric revision when the mapping uses numeric revisioning (projection-target documents,
+    /// <c>IRevisioned</c>/<c>ILongVersioned</c> types) — same physical column, different flavor.
+    /// When the document type <typeparamref name="T"/> has no <c>mt_version</c> column (neither
+    /// metadata flavor enabled), the column is not appended and the result carries neither a
+    /// version nor a revision so the caller emits no ETag.
     /// </summary>
     public async Task<StreamOneJsonResult> StreamOneWithVersion<T>(Expression expression, Stream destination,
         CancellationToken token) where T : notnull
@@ -288,24 +294,37 @@ internal class MartenLinqQueryProvider: IQueryProvider
         var main = statements.MainSelector;
         main.Limit = 1;
 
-        var versionEnabled = _session.Options.Storage.FindMapping(typeof(T)) is DocumentMapping
-        {
-            Metadata.Version.Enabled: true
-        };
+        var mapping = _session.Options.Storage.FindMapping(typeof(T)) as DocumentMapping;
 
-        if (!versionEnabled)
+        if (mapping is { Metadata.Version.Enabled: true })
         {
-            var plainCommand = statement.BuildCommand(_session);
-            var found = await _session.StreamOne(plainCommand, destination, token).ConfigureAwait(false);
-            return new StreamOneJsonResult(found, null);
+            main.SelectClause = new VersionSelectClause<T>(main.SelectClause);
+
+            var command = statement.BuildCommand(_session);
+            var (streamed, version) = await _session.StreamOneWithVersion(command, destination, token)
+                .ConfigureAwait(false);
+
+            return new StreamOneJsonResult(streamed, version, null);
         }
 
-        main.SelectClause = new VersionSelectClause<T>(main.SelectClause);
+        // Numeric-revision documents keep their revision in the same physical mt_version column,
+        // so the identical piggy-backed select serves them — the value just reads back as a
+        // number rather than a uuid. For a SingleStreamProjection target the revision *is* the
+        // source stream's version, making the resulting ETag byte-for-byte the one StreamAggregate
+        // serves for the same stream.
+        if (mapping is { Metadata.Revision.Enabled: true })
+        {
+            main.SelectClause = new VersionSelectClause<T>(main.SelectClause);
 
-        var command = statement.BuildCommand(_session);
-        var (streamed, version) = await _session.StreamOneWithVersion(command, destination, token)
-            .ConfigureAwait(false);
+            var command = statement.BuildCommand(_session);
+            var (streamed, revision) = await _session.StreamOneWithRevision(command, destination, token)
+                .ConfigureAwait(false);
 
-        return new StreamOneJsonResult(streamed, version);
+            return new StreamOneJsonResult(streamed, null, revision);
+        }
+
+        var plainCommand = statement.BuildCommand(_session);
+        var found = await _session.StreamOne(plainCommand, destination, token).ConfigureAwait(false);
+        return new StreamOneJsonResult(found, null, null);
     }
 }

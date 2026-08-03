@@ -19,9 +19,12 @@ public static class QueryableExtensions
     /// When <paramref name="emitETag"/> is true (the default), the document's <c>mt_version</c>
     /// is read <b>inline with the document in the same single round trip</b> (piggy-backed onto the
     /// streaming query, analogous to the <c>count(*) OVER()</c> stats column) and written as a quoted
-    /// <c>ETag</c> response header. If the incoming request's <c>If-None-Match</c> header matches that
-    /// version, a <c>304 Not Modified</c> is written instead, with an empty body. Document types with
-    /// version metadata disabled (no <c>mt_version</c> column) emit no ETag.
+    /// <c>ETag</c> response header — a quoted GUID under Guid optimistic concurrency, or a quoted
+    /// integer for numeric-revision documents (projection targets, <c>IRevisioned</c> types), where
+    /// a <c>SingleStreamProjection</c> target's revision is the source stream's version. If the
+    /// incoming request's <c>If-None-Match</c> header matches that value, a <c>304 Not Modified</c>
+    /// is written instead, with an empty body. Document types with neither version nor revision
+    /// metadata enabled (no <c>mt_version</c> column) emit no ETag.
     /// </para>
     /// </summary>
     /// <param name="queryable"></param>
@@ -68,10 +71,14 @@ public static class QueryableExtensions
             return;
         }
 
-        if (result.Version.HasValue)
-        {
-            var etag = ETagHelpers.Format(result.Version.Value);
+        var etag = result.Version.HasValue
+            ? ETagHelpers.Format(result.Version.Value)
+            : result.Revision.HasValue
+                ? ETagHelpers.Format(result.Revision.Value)
+                : null;
 
+        if (etag != null)
+        {
             if (ETagHelpers.IfNoneMatchMatches(context, etag))
             {
                 context.Response.StatusCode = StatusCodes.Status304NotModified;

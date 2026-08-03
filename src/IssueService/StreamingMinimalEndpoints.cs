@@ -56,6 +56,18 @@ public static class StreamingMinimalEndpoints
             (Guid id, IQuerySession session)
                 => new StreamOne<VersionlessDoc>(session.Query<VersionlessDoc>().Where(x => x.Id == id)));
 
+        // Projection-target document (numeric revisions forced by ProjectionDocumentPolicy) —
+        // served through StreamOne instead of StreamAggregate, the ETag is the numeric revision,
+        // which for a single-stream projection equals the source stream's version.
+        app.MapGet("/minimal/order-doc/{id:guid}",
+            (Guid id, IQuerySession session)
+                => new StreamOne<Order>(session.Query<Order>().Where(x => x.Id == id)));
+
+        // Plain document using numeric revisions via IRevisioned — no projection involved.
+        app.MapGet("/minimal/revisioned/{id:guid}",
+            (Guid id, IQuerySession session)
+                => new StreamOne<RevisionedIssueNote>(session.Query<RevisionedIssueNote>().Where(x => x.Id == id)));
+
         // --- StreamMany<T> ---
 
         app.MapGet("/minimal/issues/open",
@@ -173,11 +185,24 @@ public static class StreamingMinimalEndpoints
 }
 
 /// <summary>
-/// A document type registered with version metadata disabled (no <c>mt_version</c> column),
-/// used to prove <see cref="StreamOne{T}"/> emits no ETag for versionless documents.
+/// A document type registered with version metadata disabled (no <c>mt_version</c> column of
+/// either flavor — Guid version or numeric revision), used to prove <see cref="StreamOne{T}"/>
+/// emits no ETag for versionless documents.
 /// </summary>
 public class VersionlessDoc
 {
     public Guid Id { get; set; }
     public string Name { get; set; }
+}
+
+/// <summary>
+/// A plain (non-projection) document using numeric revisions via
+/// <see cref="IRevisioned"/>, used to prove <see cref="StreamOne{T}"/>
+/// derives its ETag from the numeric revision.
+/// </summary>
+public class RevisionedIssueNote: IRevisioned
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; }
+    public int Version { get; set; }
 }
