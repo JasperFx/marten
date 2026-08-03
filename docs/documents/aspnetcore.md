@@ -466,15 +466,20 @@ still current:
   document), formatted as a quoted GUID, e.g. `"3f2504e0-4f89-11d3-9a0c-0305e82c3301"`.
   The `mt_version` value is read **inline with the document in the same single
   database round trip** (piggy-backed onto the streaming query), so enabling the
-  ETag adds no extra query. Because the document is streamed in that one round
-  trip, a `304` on `StreamOne<T>` saves response bandwidth but not the read.
+  ETag adds no extra query. The version is read off the row _before_ the document
+  payload, so a `304` skips buffering a body it would only discard — but the row
+  itself still comes back from Postgres, so a `304` on `StreamOne<T>` saves the
+  response and the copy, not the read.
 - For documents using [numeric revisioning](/documents/concurrency) instead of the
   Guid version — `IRevisioned`/`ILongVersioned` types, and every aggregate-projection
   target (snapshots, single- and multi-stream projections), since Marten forces
   numeric revisions on those — the `StreamOne<T>` ETag is the numeric `mt_version`,
   formatted as a quoted integer, e.g. `"3"`. Documents written by an
-  `EventProjection` are not forced into numeric revisions and emit no ETag unless
-  they opt into a versioning flavor themselves. For a `SingleStreamProjection`
+  `EventProjection` are **not** aggregate-projection targets, so Marten does not
+  force numeric revisions on them; they keep the plain-document default and emit a
+  quoted GUID ETag that changes on every projection write. That is a usable cache
+  validator, but it is not a stream version and does not line up with what
+  `StreamAggregate<T>` serves. For a `SingleStreamProjection`
   target the revision is the source stream's version, so serving the read model
   through `StreamOne<T>` produces the same ETag that `StreamAggregate<T>` would
   serve for the stream itself; for an Inline-lifecycle projection, clients can

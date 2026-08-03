@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -12,6 +11,14 @@ using Marten.Linq;
 using Marten.Util;
 
 namespace Marten.Services;
+
+/// <summary>
+/// Outcome of a single-row read that pairs a document's raw JSON with the piggy-backed
+/// <c>mt_version</c> value. <see cref="BodyWritten"/> is false when the caller's
+/// <c>shouldWriteBody</c> predicate declined the payload after seeing the version —
+/// the conditional-request (<c>304</c>) case, where copying the document would be wasted work.
+/// </summary>
+internal readonly record struct StreamOneReadResult(bool Found, Guid? Version, long? Revision, bool BodyWritten);
 
 internal static class JsonStreamingExtensions
 {
@@ -37,56 +44,59 @@ internal static class JsonStreamingExtensions
     /// <summary>
     /// Streams the first row's <c>data</c> column to <paramref name="stream"/> (as
     /// <see cref="StreamOne"/> does) AND reads the piggy-backed <c>mt_version</c> value
-    /// aliased as <see cref="Marten.Linq.SqlGeneration.VersionSelectClause{T}.VersionAlias"/>,
+    /// aliased as <see cref="Marten.Linq.SqlGeneration.VersionSelectClause.VersionAlias"/>,
     /// so a single-document JSON stream and its version come back in one round trip.
-    /// Returns <c>found = false</c> when the query matched no row, and a null
-    /// <c>version</c> when the version column value was SQL NULL.
+    /// <para>
+    /// The same physical column carries either flavor: a Guid under optimistic concurrency, or a
+    /// number under revisioning (projection targets, <c>IRevisioned</c>/<c>ILongVersioned</c> types).
+    /// <paramref name="numericRevision"/> picks which one to materialize; the numeric column is
+    /// <c>bigint</c> by default but <c>integer</c> for <c>IRevisioned</c>-backed documents (#4614),
+    /// so the accessor matching the reported width is used rather than boxing through <c>object</c>.
+    /// </para>
+    /// <para>
+    /// The version is read BEFORE the payload. Marten never opens readers with
+    /// <c>CommandBehavior.SequentialAccess</c>, so the row is fully buffered and column order does
+    /// not constrain read order — which lets <paramref name="shouldWriteBody"/> veto the document
+    /// copy once the version is known. Returns <c>Found = false</c> when the query matched no row,
+    /// and null for both flavors when the column value was SQL NULL.
+    /// </para>
     /// </summary>
-    internal static async Task<(bool found, Guid? version)> StreamOneWithVersion(this DbDataReader reader,
-        Stream stream, CancellationToken token)
+    internal static async Task<StreamOneReadResult> StreamOneWithVersion(this DbDataReader reader,
+        Stream stream, bool numericRevision, Func<Guid?, long?, bool>? shouldWriteBody, CancellationToken token)
     {
         if (!await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            return (false, null);
+            return new StreamOneReadResult(false, null, null, false);
         }
-
-        var dataOrdinal = reader.GetOrdinal("data");
-        await reader.WriteJsonValueAsync(dataOrdinal, stream, token).ConfigureAwait(false);
 
         var versionOrdinal = reader.GetOrdinal(Marten.Linq.SqlGeneration.VersionSelectClause.VersionAlias);
-        Guid? version = await reader.IsDBNullAsync(versionOrdinal, token).ConfigureAwait(false)
-            ? null
-            : await reader.GetFieldValueAsync<Guid>(versionOrdinal, token).ConfigureAwait(false);
 
-        return (true, version);
-    }
+        Guid? version = null;
+        long? revision = null;
 
-    /// <summary>
-    /// Numeric-revision counterpart of <see cref="StreamOneWithVersion"/>: streams the first
-    /// row's <c>data</c> column and reads the piggy-backed numeric <c>mt_version</c> value.
-    /// The column is <c>bigint</c> by default but <c>integer</c> for <c>IRevisioned</c>-backed
-    /// documents (#4614), so the value is materialized at whatever width came back and widened
-    /// to long rather than read through a single generic accessor.
-    /// </summary>
-    internal static async Task<(bool found, long? revision)> StreamOneWithRevision(this DbDataReader reader,
-        Stream stream, CancellationToken token)
-    {
-        if (!await reader.ReadAsync(token).ConfigureAwait(false))
+        if (!await reader.IsDBNullAsync(versionOrdinal, token).ConfigureAwait(false))
         {
-            return (false, null);
+            if (numericRevision)
+            {
+                revision = reader.GetFieldType(versionOrdinal) == typeof(int)
+                    ? await reader.GetFieldValueAsync<int>(versionOrdinal, token).ConfigureAwait(false)
+                    : await reader.GetFieldValueAsync<long>(versionOrdinal, token).ConfigureAwait(false);
+            }
+            else
+            {
+                version = await reader.GetFieldValueAsync<Guid>(versionOrdinal, token).ConfigureAwait(false);
+            }
+        }
+
+        if (shouldWriteBody != null && !shouldWriteBody(version, revision))
+        {
+            return new StreamOneReadResult(true, version, revision, false);
         }
 
         var dataOrdinal = reader.GetOrdinal("data");
         await reader.WriteJsonValueAsync(dataOrdinal, stream, token).ConfigureAwait(false);
 
-        var revisionOrdinal = reader.GetOrdinal(Marten.Linq.SqlGeneration.VersionSelectClause.VersionAlias);
-        long? revision = await reader.IsDBNullAsync(revisionOrdinal, token).ConfigureAwait(false)
-            ? null
-            : Convert.ToInt64(
-                await reader.GetFieldValueAsync<object>(revisionOrdinal, token).ConfigureAwait(false),
-                CultureInfo.InvariantCulture);
-
-        return (true, revision);
+        return new StreamOneReadResult(true, version, revision, true);
     }
 
     internal static ValueTask WriteBytes(this Stream stream, byte[] bytes, CancellationToken token)

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using IssueService.Controllers;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -56,7 +57,14 @@ public class Startup
             }
             else
             {
+                // NOTE: Order is only a projection target under Guid stream identity, so the
+                // /minimal/order-doc endpoint only carries a revision-derived ETag on hosts built
+                // from this branch. Tests asserting that ETag must use the Guid-identity fixture.
                 options.Projections.Snapshot<Order>(SnapshotLifecycle.Inline);
+
+                // An EventProjection (not an aggregate projection) so its output document is NOT
+                // swept into numeric revisions by ProjectionDocumentPolicy.
+                options.Projections.Add<OrderTouchProjection>(ProjectionLifecycle.Inline);
             }
 
             return options;

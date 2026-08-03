@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
 using IssueService.Controllers;
+using JasperFx.Events;
 using Marten;
 using Marten.AspNetCore;
+using Marten.Events.Projections;
+using Marten.Metadata;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -67,6 +70,30 @@ public static class StreamingMinimalEndpoints
         app.MapGet("/minimal/revisioned/{id:guid}",
             (Guid id, IQuerySession session)
                 => new StreamOne<RevisionedIssueNote>(session.Query<RevisionedIssueNote>().Where(x => x.Id == id)));
+
+        // EmitETag = false opt-out on a numeric-revision document — proves the opt-out short-circuits
+        // before the revision flavor is ever consulted, not just for the Guid flavor.
+        app.MapGet("/minimal/revisioned/{id:guid}/no-etag",
+            (Guid id, IQuerySession session)
+                => new StreamOne<RevisionedIssueNote>(session.Query<RevisionedIssueNote>().Where(x => x.Id == id))
+                {
+                    EmitETag = false
+                });
+
+        // Plain document using the 64-bit revision flavor via ILongVersioned — the shape a
+        // MultiStreamProjection target takes, where the revision is a per-document counter rather
+        // than a stream version, and the mt_version column stays bigint.
+        app.MapGet("/minimal/long-versioned/{id:guid}",
+            (Guid id, IQuerySession session)
+                => new StreamOne<LongVersionedIssueNote>(
+                    session.Query<LongVersionedIssueNote>().Where(x => x.Id == id)));
+
+        // Document written by an EventProjection. ProjectionDocumentPolicy only forces numeric
+        // revisions onto *aggregate* projection targets, so this one keeps the default Guid
+        // version metadata — see the Alba test for what that means for its ETag.
+        app.MapGet("/minimal/event-projection-doc/{id:guid}",
+            (Guid id, IQuerySession session)
+                => new StreamOne<OrderTouch>(session.Query<OrderTouch>().Where(x => x.Id == id)));
 
         // --- StreamMany<T> ---
 
@@ -205,4 +232,39 @@ public class RevisionedIssueNote: IRevisioned
     public Guid Id { get; set; }
     public string Name { get; set; }
     public int Version { get; set; }
+}
+
+/// <summary>
+/// A plain (non-projection) document using the 64-bit revision flavor via
+/// <see cref="ILongVersioned"/> — the shape a <c>MultiStreamProjection</c> target takes. Its
+/// <c>mt_version</c> column stays <c>bigint</c> (unlike <see cref="RevisionedIssueNote"/>, which
+/// #4614 narrows to <c>integer</c>), so the pair covers both widths the revision read must handle.
+/// </summary>
+public class LongVersionedIssueNote: ILongVersioned
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; }
+    public long Version { get; set; }
+}
+
+/// <summary>
+/// Output document of <see cref="OrderTouchProjection"/>, an <c>EventProjection</c> rather than an
+/// aggregate projection. <c>ProjectionDocumentPolicy</c> only forces numeric revisions onto
+/// aggregate targets, so this type is left with whatever versioning a plain document gets.
+/// </summary>
+public class OrderTouch
+{
+    public Guid Id { get; set; }
+    public string Description { get; set; }
+}
+
+/// <summary>
+/// An <c>EventProjection</c> (not an aggregate projection) writing <see cref="OrderTouch"/>
+/// documents keyed by stream id. Declared <c>partial</c> so the JasperFx.Events source generator
+/// can emit its dispatcher for the conventional <c>Create</c> method.
+/// </summary>
+public partial class OrderTouchProjection: EventProjection
+{
+    public OrderTouch Create(IEvent<OrderPlaced> e)
+        => new() { Id = e.StreamId, Description = e.Data.Description };
 }

@@ -421,6 +421,171 @@ public class streaming_result_types_tests: IntegrationContext
         });
     }
 
+    [Fact]
+    public async Task stream_one_emits_revision_etag_for_long_versioned_document()
+    {
+        // ILongVersioned keeps the default bigint mt_version column, where IRevisioned narrows it
+        // to integer (#4614). Pinning both proves the revision read copes with either width, and
+        // that a multi-stream-shaped target emits its own per-document counter as a valid ETag.
+        var note = new LongVersionedIssueNote { Id = Guid.NewGuid(), Name = "long rev" };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(note);
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/long-versioned/{note.Id}");
+            s.StatusCodeShouldBe(200);
+            s.ContentTypeShouldBe("application/json");
+        });
+
+        result.Context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+
+        await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/long-versioned/{note.Id}");
+            s.WithRequestHeader("If-None-Match", "\"1\"");
+            s.StatusCodeShouldBe(304);
+        });
+    }
+
+    [Fact]
+    public async Task stream_one_returns_404_without_etag_for_a_revisioned_document()
+    {
+        // The 404 branch runs before any ETag is formatted, but that was only pinned on the Guid
+        // path — a projection-target miss must not leak a header either.
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order-doc/{Guid.NewGuid()}");
+            s.StatusCodeShouldBe(404);
+        });
+
+        result.Context.Response.Headers.ContainsKey("ETag").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task stream_one_suppresses_etag_on_a_revisioned_document_when_emit_etag_is_false()
+    {
+        var note = new RevisionedIssueNote { Id = Guid.NewGuid(), Name = "opted out" };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(note);
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/revisioned/{note.Id}/no-etag");
+            s.StatusCodeShouldBe(200);
+        });
+
+        result.Context.Response.Headers.ContainsKey("ETag").ShouldBeFalse();
+
+        // The opt-out must still serve the document, not just drop the header.
+        result.ReadAsJson<RevisionedIssueNote>().Name.ShouldBe("opted out");
+    }
+
+    [Fact]
+    public async Task stream_one_emits_a_guid_etag_for_an_event_projection_output_document()
+    {
+        // ProjectionDocumentPolicy only forces numeric revisions onto *aggregate* projection
+        // targets. An EventProjection's output keeps the plain-document default, which is Guid
+        // version metadata — so it does emit an ETag, just not a stream-derived one. That ETag
+        // is opaque and changes on every projection write, so it is only safe as a cache
+        // validator, never as a stream-version equivalent.
+        var orderId = Guid.NewGuid();
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("touched", 5.00m));
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/event-projection-doc/{orderId}");
+            s.StatusCodeShouldBe(200);
+        });
+
+        var etag = result.Context.Response.Headers["ETag"].ToString();
+        etag.ShouldNotBeNullOrEmpty();
+
+        // A Guid ETag, not the stream version the aggregate target would have served.
+        Guid.TryParse(etag.Trim('"'), out _).ShouldBeTrue();
+        etag.ShouldNotBe("\"1\"");
+
+        await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/event-projection-doc/{orderId}");
+            s.WithRequestHeader("If-None-Match", etag);
+            s.StatusCodeShouldBe(304);
+        });
+    }
+
+    [Fact]
+    public async Task stream_one_with_revision_etag_executes_a_single_db_command()
+    {
+        // Companion to stream_one_with_etag_executes_a_single_db_command, which only covered the
+        // Guid flavor. The revision flavor is the projection read-model path — the hot one — so
+        // pin that it also resolves the document AND its ETag in ONE round trip.
+        var store = theHost.Services.GetRequiredService<IDocumentStore>();
+
+        var orderId = Guid.NewGuid();
+        await using (var session = store.LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("single command", 1.00m));
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = store.QuerySession();
+        var logger = new CommandCountingLogger();
+        query.Logger = logger;
+
+        // Warm up storage-existence checks on this session so they don't count against us.
+        await query.Query<Order>().Where(x => x.Id == Guid.NewGuid())
+            .StreamJsonFirstOrDefault(new MemoryStream());
+        logger.Count = 0;
+
+        var context = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+
+        await query.Query<Order>().Where(x => x.Id == orderId)
+            .WriteSingle(context, emitETag: true);
+
+        context.Response.StatusCode.ShouldBe(200);
+        context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+        logger.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task stream_one_does_not_buffer_the_document_body_on_a_304()
+    {
+        // A conditional-request hit reads the version off the row and then declines the payload,
+        // so nothing is copied into the response buffer. The read itself still happens — the row
+        // comes back either way — but the document copy does not.
+        var store = theHost.Services.GetRequiredService<IDocumentStore>();
+
+        var orderId = Guid.NewGuid();
+        await using (var session = store.LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced(new string('x', 20_000), 1.00m));
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = store.QuerySession();
+
+        var body = new MemoryStream();
+        var context = new DefaultHttpContext { Response = { Body = body } };
+        context.Request.Headers["If-None-Match"] = "\"1\"";
+
+        await query.Query<Order>().Where(x => x.Id == orderId).WriteSingle(context, emitETag: true);
+
+        context.Response.StatusCode.ShouldBe(StatusCodes.Status304NotModified);
+        context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+        context.Response.ContentLength.ShouldBe(0);
+        body.Length.ShouldBe(0);
+    }
+
     // ───────────────────────── StreamMany<T> ─────────────────────────
 
     [Fact]

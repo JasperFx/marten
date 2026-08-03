@@ -1,6 +1,8 @@
+using System;
 using EventSourcingTests.Aggregation;
 using JasperFx.Events.Projections;
 using Marten.Exceptions;
+using Marten.Metadata;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -48,5 +50,27 @@ public class optimistic_concurrency_on_projection_target_fails_fast: BugIntegrat
 
         Should.Throw<InvalidDocumentException>(
             () => theStore.Options.Storage.MappingFor(typeof(Target)));
+    }
+
+    [Fact]
+    public void interface_driven_revisions_plus_optimistic_concurrency_fails_fast()
+    {
+        // The likeliest real-world route into the invalid state, and the one neither test above
+        // covers: nothing in the configuration says "numeric revisions" — VersionedPolicy turns
+        // them on because the document implements IRevisioned, and the fluent call then re-enables
+        // the Guid version on top. Before the guard this reached the database as DDL with two
+        // mt_version columns.
+        StoreOptions(opts => opts.Schema.For<RevisionedDoc>().UseOptimisticConcurrency(true));
+
+        var ex = Should.Throw<InvalidDocumentException>(
+            () => theStore.Options.Storage.MappingFor(typeof(RevisionedDoc)));
+
+        ex.Message.ShouldContain(nameof(RevisionedDoc));
+    }
+
+    public class RevisionedDoc: IRevisioned
+    {
+        public Guid Id { get; set; }
+        public int Version { get; set; }
     }
 }

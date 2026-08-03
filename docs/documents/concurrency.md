@@ -193,6 +193,24 @@ same session. Prefer using `UpdateRevision()` if you try to continuously update 
 `IRevisioned.Version` is an `int` — the right choice for an ordinary per-document revision counter. For documents projected from a `MultiStreamProjection` whose `Version` is the global **event sequence number**, the value can exceed `Int32.MaxValue`; implement `ILongVersioned` (with a `long Version`) instead. Both opt the document into numeric revisioning; the only difference is the column type and member width: `IRevisioned` stores its version in an `integer` (`mt_version`) column, while `ILongVersioned` uses a `bigint` column. A `MultiStreamProjection`-derived document that implements `IRevisioned` (int) will overflow on the `bigint → int` read once its version exceeds `Int32` — use `ILongVersioned` for those.
 :::
 
+::: warning A document cannot use both flavors
+Guid optimistic concurrency and numeric revisioning both store their value in the same physical
+`mt_version` column, so a document type can only have one of them. Marten throws an
+`InvalidDocumentException` at bootstrap if a mapping ends up with both enabled, rather than letting
+it reach the database as DDL with two `mt_version` columns.
+
+The two ways to trip this are worth knowing, because neither reads as "I asked for both":
+
+- Calling `UseOptimisticConcurrency(true)` on a type that already has numeric revisions — because it
+  implements `IRevisioned`/`ILongVersioned`, carries a `[Version]` member, or is an
+  aggregate-projection target (Marten forces numeric revisions on those). Fluent configuration runs
+  after those policies and layers on top of them rather than replacing them.
+- Calling `UseNumericRevisions(true)` and then `UseOptimisticConcurrency(true)` on the same type.
+
+Remove the call for the flavor you do not want. Aggregate-projection targets always use numeric
+revisions and cannot opt into `UseOptimisticConcurrency`.
+:::
+
 or finally by adding the `[Version]` attribute to a public member on the document type to opt into the 
 `UseNumericRevisions` behavior on the parent type with the decorated member being tracked as the version number as
 shown in this sample:

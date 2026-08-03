@@ -23,8 +23,10 @@ public static class QueryableExtensions
     /// integer for numeric-revision documents (projection targets, <c>IRevisioned</c> types), where
     /// a <c>SingleStreamProjection</c> target's revision is the source stream's version. If the
     /// incoming request's <c>If-None-Match</c> header matches that value, a <c>304 Not Modified</c>
-    /// is written instead, with an empty body. Document types with neither version nor revision
-    /// metadata enabled (no <c>mt_version</c> column) emit no ETag.
+    /// is written instead, with an empty body — and because the version is read off the row before
+    /// the payload, the document is never copied into the response buffer on that path. Document
+    /// types with neither version nor revision metadata enabled (no <c>mt_version</c> column) emit
+    /// no ETag.
     /// </para>
     /// </summary>
     /// <param name="queryable"></param>
@@ -60,8 +62,12 @@ public static class QueryableExtensions
         // Fetch the document JSON and its mt_version in a single round trip. The version rides
         // on the same streaming query (see MartenLinqQueryProvider.StreamOneWithVersion), so there
         // is no follow-up MetadataForAsync query and no re-deserialization of the buffered JSON.
+        // The predicate runs once the version is known and before the payload is copied, so a
+        // cache hit skips buffering a body that would only be discarded.
         var result = await ((MartenLinqQueryable<T>)queryable)
-            .StreamJsonFirstOrDefaultWithVersion(stream, context.RequestAborted)
+            .StreamJsonFirstOrDefaultWithVersion(stream,
+                (version, revision) => !matchesIfNoneMatch(context, formatETag(version, revision)),
+                context.RequestAborted)
             .ConfigureAwait(false);
 
         if (!result.Found)
@@ -71,27 +77,36 @@ public static class QueryableExtensions
             return;
         }
 
-        var etag = result.Version.HasValue
-            ? ETagHelpers.Format(result.Version.Value)
-            : result.Revision.HasValue
-                ? ETagHelpers.Format(result.Revision.Value)
-                : null;
-
+        var etag = formatETag(result.Version, result.Revision);
         if (etag != null)
         {
-            if (ETagHelpers.IfNoneMatchMatches(context, etag))
-            {
-                context.Response.StatusCode = StatusCodes.Status304NotModified;
-                context.Response.Headers["ETag"] = etag;
-                context.Response.ContentLength = 0;
-                return;
-            }
-
             context.Response.Headers["ETag"] = etag;
+        }
+
+        if (!result.BodyWritten)
+        {
+            context.Response.StatusCode = StatusCodes.Status304NotModified;
+            context.Response.ContentLength = 0;
+            return;
         }
 
         await writeBufferedBody(context, stream, contentType, onFoundStatus).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Format whichever <c>mt_version</c> flavor came back as a quoted strong ETag, or null when the
+    /// document type carries neither (no <c>mt_version</c> column) — in which case no ETag is emitted
+    /// and no conditional request can match.
+    /// </summary>
+    private static string? formatETag(Guid? version, long? revision)
+        => version.HasValue
+            ? ETagHelpers.Format(version.Value)
+            : revision.HasValue
+                ? ETagHelpers.Format(revision.Value)
+                : null;
+
+    private static bool matchesIfNoneMatch(HttpContext context, string? etag)
+        => etag != null && ETagHelpers.IfNoneMatchMatches(context, etag);
 
     private static async Task writeBufferedBody(HttpContext context, System.IO.Stream stream, string contentType,
         int onFoundStatus)
