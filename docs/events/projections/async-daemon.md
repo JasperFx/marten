@@ -104,16 +104,64 @@ means the session holding it keeps a transaction open for as long as it is the l
 `options.Events.UseAdvisoryLockTransaction` to false to use a session-scoped lock instead, which holds
 no open transaction.
 
+::: tip
+Marten's gap detection recognizes its own leadership lock connections and never counts them as
+possible appenders, so a transaction-scoped lock — whether currently held or leaked from a host that
+has already been torn down — does not stall the high water mark. Before 9.23 it could: one such
+session was enough to pin the mark for every later daemon in that process, surfacing as
+`WaitForNonStaleProjectionDataAsync` timing out and a repeating
+`Daemon high water detection is holding before the sequence gap` log. If you are on an older version
+and see that, `UseAdvisoryLockTransaction = false` is the workaround, since a session-scoped lock
+holds no transaction to be seen.
+:::
+
+## Sequence Gaps and the High Water Mark <Badge type="tip" text="9.23" />
+
+The high water mark is the point below which the daemon knows every event is committed and safely
+ordered. It advances contiguously, so it stops under any hole in the event sequence.
+
+Most holes fill in within milliseconds — they are simply appends that have drawn a sequence number and
+not yet committed. Some never fill: a rolled-back `SaveChangesAsync`, or an optimistic-concurrency
+loser, burns its sequence numbers permanently, because PostgreSQL sequences are non-transactional.
+The daemon cannot tell those two apart by looking at the hole, so it asks a different question: is any
+transaction still running that could have reserved it? While the answer is yes, the mark holds. Once
+no such transaction remains, the gap is proven dead and the daemon skips the entire dead span in one
+step, recording it in `mt_high_water_skips`.
+
+This is why the daemon holds rather than guessing, and why it never skips past events that later
+commit. It also means an open transaction that will never commit is the thing that can stall it. That
+covers sessions parked `idle in transaction` — the daemon rules out any session that has provably
+executed nothing since before the gap's sequence numbers were handed out, and its own leadership lock
+connections regardless. The evidence supporting that reasoning is durable, so it survives daemon
+restarts, deploys and shard rebalancing.
+
+If you want a bounded escape hatch anyway — against, say, a leaked application session that holds an
+open transaction forever — set a cap:
+
+```cs
+// Skip a stale gap once it has been stuck this long even if a transaction that
+// could still fill it appears to be alive. Null (the default) never knowingly
+// skips past a live appender.
+opts.Projections.SkipStaleGapsDespiteLiveTransactionsAfter = 5.Minutes();
+```
+
+Use it deliberately: past the cap the daemon skips on a *suspicion* of deadness, so an append that
+commits inside the skipped range will never be projected. PostgreSQL's own
+`idle_in_transaction_session_timeout` is usually the better backstop, since it removes the cause
+rather than working around it. Note that it will also kill Wolverine's transaction-scoped listener
+locks if you use them.
+
+To recover a mark that is stuck for any other reason, `AdvanceHighWaterMarkToLatestAsync()` moves it
+to the highest committed sequence:
+
+```cs
+await store.Advanced.AdvanceHighWaterMarkToLatestAsync(CancellationToken.None);
+```
+
 ::: warning
-Prefer `UseAdvisoryLockTransaction = false` when a **single process starts more than one
-daemon-hosting `IHost` over its lifetime** — the usual shape of an xUnit integration suite that boots
-and tears down a host per test class. Should any leadership lock session outlive its host, a
-transaction-scoped lock leaves that session `idle in transaction` for the rest of the process, and the
-daemon's high-water gap detection has to treat any transaction older than a sequence gap as a
-potential in-flight append it must not skip past. One such session is enough to pin the high water
-mark for every later daemon in that process, which surfaces as `WaitForNonStaleProjectionDataAsync`
-timing out and a repeating `Daemon high water detection is holding before the sequence gap` log. A
-session-scoped lock cannot cause that, because it holds no transaction to be seen.
+`AdvanceHighWaterMarkToLatestAsync()` is a manual override. Anything still in flight below the new
+mark will never be projected, so reach for it when you have established that a gap is genuinely dead
+and not as routine maintenance.
 :::
 
 ## Projection Distribution
