@@ -36,6 +36,12 @@ internal class MartenHighWaterStatistics: HighWaterStatistics
     /// tenant-partitioned store, where no sound store-global allocation reading exists).
     /// </summary>
     public AllocationFenceReading? PersistedAllocationFence { get; set; }
+
+    /// <summary>
+    /// #5109: the durable stuck-gap clock — when the mark this reading carries was FIRST seen pinned,
+    /// recorded by whichever detector generation saw it first. Null when no gap is currently recorded.
+    /// </summary>
+    public StuckGapReading? PersistedStuckGap { get; set; }
 }
 
 /// <summary>
@@ -61,6 +67,28 @@ internal sealed record AllocationFenceReading(long AllocatedHigh, DateTimeOffset
 internal static class HighWaterAllocationFence
 {
     public const string ProgressionName = "HighWaterAllocationFence";
+}
+
+/// <summary>
+/// #5109: a persisted stuck-gap observation — the high water mark was ALREADY pinned at
+/// <paramref name="Mark" /> at <paramref name="FirstObservedAt" />. The mark only advances, so while it
+/// is still sitting at that value the gap above it has been stuck at least that long. That is a lower
+/// bound on the stall's age, which is the direction the
+/// <c>SkipStaleGapsDespiteLiveTransactionsAfter</c> cap needs, and it is measured entirely in server
+/// time — no <c>mt_events.timestamp</c>, which is client-written in Rich append mode and skewed by the
+/// server's UTC offset in Quick mode (#5136).
+/// </summary>
+internal sealed record StuckGapReading(long Mark, DateTimeOffset FirstObservedAt);
+
+/// <summary>
+/// #5109: the reserved <c>mt_event_progression.name</c> under which the durable stuck-gap clock lives.
+/// Bookkeeping, not a projection shard — excluded from <c>ProjectionProgressStatement</c> and from the
+/// blanket UPDATE in <c>HighWaterDetector.TryCorrectProgressInDatabaseAsync</c> for the same reasons as
+/// <see cref="HighWaterAllocationFence" />.
+/// </summary>
+internal static class HighWaterStuckGap
+{
+    public const string ProgressionName = "HighWaterStuckGap";
 }
 
 internal class HighWaterStatisticsDetector: ISingleQueryHandler<HighWaterStatistics>
@@ -107,12 +135,16 @@ select
   p.last_updated,
   {allocatedHighSql} as allocated_high,
   f.last_seq_id as fence_allocated_high,
-  f.last_updated as fence_observed_at
+  f.last_updated as fence_observed_at,
+  g.last_seq_id as stuck_gap_mark,
+  g.last_updated as stuck_gap_first_observed
 from (values (1)) as one(x)
 left join {graph.DatabaseSchemaName}.mt_event_progression p
   on p.name = '{HighWaterShardIdentity.StoreGlobal}'
 left join {graph.DatabaseSchemaName}.mt_event_progression f
   on f.name = '{HighWaterAllocationFence.ProgressionName}'
+left join {graph.DatabaseSchemaName}.mt_event_progression g
+  on g.name = '{HighWaterStuckGap.ProgressionName}'
 ".Trim();
     }
 
@@ -152,6 +184,14 @@ left join {graph.DatabaseSchemaName}.mt_event_progression f
             statistics.PersistedAllocationFence = new AllocationFenceReading(
                 await reader.GetFieldValueAsync<long>(6, token).ConfigureAwait(false),
                 await reader.GetFieldValueAsync<DateTimeOffset>(7, token).ConfigureAwait(false));
+        }
+
+        if (!await reader.IsDBNullAsync(8, token).ConfigureAwait(false)
+            && !await reader.IsDBNullAsync(9, token).ConfigureAwait(false))
+        {
+            statistics.PersistedStuckGap = new StuckGapReading(
+                await reader.GetFieldValueAsync<long>(8, token).ConfigureAwait(false),
+                await reader.GetFieldValueAsync<DateTimeOffset>(9, token).ConfigureAwait(false));
         }
 
         return statistics;
