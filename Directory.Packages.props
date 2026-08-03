@@ -174,21 +174,31 @@
          jasperfx#595 (BatchingChannel could deliver its trailing batch twice on shutdown) and #597.
          JasperFx 2.37.2: compliance wave 2 (marten#5118) — four more shared suites plus the seam
          members they need. Nothing outside JasperFx.Events.ComplianceTests changed; the other
-         packages move only because the line versions together. -->
-    <PackageVersion Include="JasperFx" Version="2.37.2" />
-    <PackageVersion Include="JasperFx.Events" Version="2.37.2" />
+         packages move only because the line versions together.
+         JasperFx 2.37.3: jasperfx#611 — JasperFx.Events.SourceGenerator now discovers an
+         EventProjection's published document types SEMANTICALLY. Discovery used to match only
+         GenericNameSyntax, so an explicit ApplyAsync override writing `ops.Store<Doc>(x)` registered
+         Doc while the equally valid `ops.Store(x)` registered nothing at all, silently (storage is
+         still provisioned on demand, so only schema-ahead-of-time, AllKnownDocumentTypes and rebuild
+         teardown came up short). Binding the invocation gives the same answer for both spellings.
+         Also stops `Store<object>(...)` registering `object` itself as a document type: registrability
+         is now a SpecialType/TypeKind question, because object/string render through ToDisplayString()
+         as C# keywords and slipped past the old name-prefix check. New JFXEVT005 (Info) flags a call
+         that binds to the projection's session but whose document type cannot be named. -->
+    <PackageVersion Include="JasperFx" Version="2.37.3" />
+    <PackageVersion Include="JasperFx.Events" Version="2.37.3" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.37.2" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.37.2">
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.37.3" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.37.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.37.2" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.37.3" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
