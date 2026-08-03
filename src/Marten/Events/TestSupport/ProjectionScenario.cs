@@ -107,6 +107,25 @@ public partial class ProjectionScenario: IEventOperations
                 }
             }
 
+            // A ScenarioAction only flushes when the step AFTER it is an assertion, so whatever a
+            // trailing action queued is still sitting in the session -- and the finally below disposes
+            // that session without committing. An append with no assertion after it is still an append,
+            // and an arrange-only scenario should not be a silent no-op that passes. See #5126.
+            //
+            // Unconditional on purpose: SaveChangesAsync returns immediately when the unit of work is
+            // empty, and WaitForNonStaleData is already a no-op when no daemon is running.
+            try
+            {
+                await Session.SaveChangesAsync(ct).ConfigureAwait(false);
+                await WaitForNonStaleData().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                descriptions.Add($"FAILED: committing the events queued by the final step");
+                descriptions.Add(e.ToString());
+                exceptions.Add(e);
+            }
+
             if (exceptions.Any())
             {
                 throw new ProjectionScenarioException(descriptions, exceptions);
