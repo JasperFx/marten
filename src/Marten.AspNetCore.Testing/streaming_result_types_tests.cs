@@ -586,6 +586,227 @@ public class streaming_result_types_tests: IntegrationContext
         body.Length.ShouldBe(0);
     }
 
+    [Fact]
+    public async Task stream_one_and_stream_aggregate_serve_the_same_etag_for_the_same_stream()
+    {
+        // The cache-coherence claim #5120 rests on, and the reason serving a read model through
+        // StreamOne rather than StreamAggregate is safe: for an Inline SingleStreamProjection the
+        // document's revision IS the source stream's version, so a client can switch between the
+        // two read styles without invalidating what it has cached. Asserted rather than assumed —
+        // both endpoints are hit for the same stream and their ETags compared, at two different
+        // stream versions so a coincidental match at "1" cannot pass.
+        var orderId = Guid.NewGuid();
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("coherent", 9.00m));
+            await session.SaveChangesAsync();
+        }
+
+        var one = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order-doc/{orderId}");
+            s.StatusCodeShouldBe(200);
+        });
+        var aggregate = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order/{orderId}");
+            s.StatusCodeShouldBe(200);
+        });
+
+        var etag = one.Context.Response.Headers["ETag"].ToString();
+        etag.ShouldBe("\"1\"");
+        aggregate.Context.Response.Headers["ETag"].ToString().ShouldBe(etag);
+
+        // Advance the stream and confirm the two stay in step rather than agreeing only at 1.
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Events.Append(orderId, new OrderShipped());
+            await session.SaveChangesAsync();
+        }
+
+        var oneAgain = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order-doc/{orderId}");
+            s.StatusCodeShouldBe(200);
+        });
+        var aggregateAgain = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order/{orderId}");
+            s.StatusCodeShouldBe(200);
+        });
+
+        oneAgain.Context.Response.Headers["ETag"].ToString().ShouldBe("\"2\"");
+        aggregateAgain.Context.Response.Headers["ETag"].ToString().ShouldBe("\"2\"");
+
+        // And a tag minted by one style is honored by the other.
+        await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order/{orderId}");
+            s.WithRequestHeader("If-None-Match", oneAgain.Context.Response.Headers["ETag"].ToString());
+            s.StatusCodeShouldBe(304);
+        });
+        await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/order-doc/{orderId}");
+            s.WithRequestHeader("If-None-Match", aggregateAgain.Context.Response.Headers["ETag"].ToString());
+            s.StatusCodeShouldBe(304);
+        });
+    }
+
+    // ──────────────── StreamOne<T> ETag — Select() projections (#5158) ────────────────
+
+    [Fact]
+    public async Task stream_one_over_a_select_projection_serves_the_projection_and_the_document_etag()
+    {
+        // #5158: VersionSelectClause rebuilds the select list from the inner clause's SelectFields()
+        // rather than delegating to its Apply, which dropped the `as data` alias that
+        // SelectDataSelectClause emits — so the reader's GetOrdinal("data") threw
+        // IndexOutOfRangeException. The plain path only worked because its field is the literal
+        // `d.data`, which Postgres happens to name `data`.
+        var issue = new Issue { Description = "projected", Open = true };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        var full = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{issue.Id}");
+            s.StatusCodeShouldBe(200);
+        });
+        var etag = full.Context.Response.Headers["ETag"].ToString();
+        etag.ShouldNotBeNullOrEmpty();
+
+        var projected = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{issue.Id}/summary");
+            s.StatusCodeShouldBe(200);
+            s.ContentTypeShouldBe("application/json");
+        });
+
+        projected.ReadAsJson<IssueSummary>().Description.ShouldBe("projected");
+
+        // The projection is a pure function of the document, so it validates against the same
+        // version — a client can cache either representation off the same ETag.
+        projected.Context.Response.Headers["ETag"].ToString().ShouldBe(etag);
+
+        var cached = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{issue.Id}/summary");
+            s.WithRequestHeader("If-None-Match", etag);
+            s.StatusCodeShouldBe(304);
+        });
+        cached.ReadAsText().ShouldBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task stream_one_over_an_anonymous_type_projection_emits_the_document_etag()
+    {
+        // The anonymous-type shape from the #5158 report. It cannot go through an endpoint (the
+        // result type has to be nameable), so it is exercised against WriteSingle directly.
+        var store = theHost.Services.GetRequiredService<IDocumentStore>();
+        var issue = new Issue { Description = "anonymous", Open = true };
+        await using (var session = store.LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = store.QuerySession();
+        var context = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+
+        await query.Query<Issue>().Where(x => x.Id == issue.Id)
+            .Select(x => new { x.Description })
+            .WriteSingle(context, emitETag: true);
+
+        context.Response.StatusCode.ShouldBe(200);
+        context.Response.Headers["ETag"].ToString().ShouldNotBeNullOrEmpty();
+
+        context.Response.Body.Position = 0;
+        (await new StreamReader(context.Response.Body).ReadToEndAsync())
+            .ShouldContain("anonymous");
+    }
+
+    [Fact]
+    public async Task stream_one_over_a_scalar_projection_emits_the_document_etag()
+    {
+        // The second #5158 failure mode: for a scalar projection T is a primitive, and looking up
+        // a document mapping for it threw ArgumentOutOfRangeException ("This type cannot be used as
+        // a Marten document") before any SQL was even built. The flavor now comes from the source
+        // document type instead.
+        var store = theHost.Services.GetRequiredService<IDocumentStore>();
+        var issue = new Issue { Description = "scalar projection", Open = true };
+        await using (var session = store.LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = store.QuerySession();
+        var context = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+
+        await query.Query<Issue>().Where(x => x.Id == issue.Id)
+            .Select(x => x.Description)
+            .WriteSingle(context, emitETag: true);
+
+        context.Response.StatusCode.ShouldBe(200);
+        context.Response.Headers["ETag"].ToString().ShouldNotBeNullOrEmpty();
+
+        context.Response.Body.Position = 0;
+        (await new StreamReader(context.Response.Body).ReadToEndAsync())
+            .ShouldBe("\"scalar projection\"");
+    }
+
+    [Fact]
+    public async Task stream_one_over_a_select_projection_of_a_revisioned_document_emits_the_revision()
+    {
+        // The projection path on the numeric-revision flavor: the ETag is still the source
+        // document's revision, which for a single-stream projection target is the stream version.
+        var store = theHost.Services.GetRequiredService<IDocumentStore>();
+        var orderId = Guid.NewGuid();
+        await using (var session = store.LightweightSession())
+        {
+            session.Events.StartStream<Order>(orderId, new OrderPlaced("projected order", 4.00m));
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = store.QuerySession();
+        var context = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+
+        await query.Query<Order>().Where(x => x.Id == orderId)
+            .Select(x => new { x.Description })
+            .WriteSingle(context, emitETag: true);
+
+        context.Response.StatusCode.ShouldBe(200);
+        context.Response.Headers["ETag"].ToString().ShouldBe("\"1\"");
+    }
+
+    [Fact]
+    public async Task stream_one_over_a_select_projection_of_a_versionless_document_emits_no_etag()
+    {
+        // The source document type decides the flavor, so a projection over a type with no
+        // mt_version column must still emit no ETag rather than picking up a default from the
+        // projected type.
+        var store = theHost.Services.GetRequiredService<IDocumentStore>();
+        var doc = new VersionlessDoc { Id = Guid.NewGuid(), Name = "no version" };
+        await using (var session = store.LightweightSession())
+        {
+            session.Store(doc);
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = store.QuerySession();
+        var context = new DefaultHttpContext { Response = { Body = new MemoryStream() } };
+
+        await query.Query<VersionlessDoc>().Where(x => x.Id == doc.Id)
+            .Select(x => new { x.Name })
+            .WriteSingle(context, emitETag: true);
+
+        context.Response.StatusCode.ShouldBe(200);
+        context.Response.Headers.ContainsKey("ETag").ShouldBeFalse();
+    }
+
     // ───────────────────────── StreamMany<T> ─────────────────────────
 
     [Fact]

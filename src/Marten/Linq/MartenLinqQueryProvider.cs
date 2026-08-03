@@ -305,7 +305,16 @@ internal class MartenLinqQueryProvider: IQueryProvider
         var main = statements.MainSelector;
         main.Limit = 1;
 
-        var mapping = _session.Options.Storage.FindMapping(typeof(T)) as DocumentMapping;
+        // Resolve the mapping from the SOURCE document type, not from T. Under a Select()
+        // projection T is the projected type — an anonymous type, a DTO, or a scalar like string —
+        // and asking StorageFeatures for a mapping of that either invents one whose version
+        // metadata defaults to enabled (so a version column got appended to a projected select) or
+        // throws outright for a primitive (#5158). The version being read is the source document's
+        // either way, so the source document type is what decides the flavor.
+        var documentType = parser.DocumentTypes().FirstOrDefault();
+        var mapping = documentType == null
+            ? null
+            : _session.Options.Storage.FindMapping(documentType) as DocumentMapping;
 
         // Both flavors keep their value in the same physical mt_version column, so one
         // piggy-backed select serves them; only the CLR type read back differs. For a
