@@ -14,6 +14,8 @@ namespace DaemonTests.EventProjections;
 
 public class event_projection_scenario_tests : OneOffConfigurationsContext
 {
+    #region sample_using_event_projection_scenario
+
     [Fact]
     public async Task happy_path_test_with_inline_projection()
     {
@@ -44,6 +46,9 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
 
         }, TestContext.Current.CancellationToken);
     }
+
+    #endregion
+
     [Fact]
     public async Task happy_path_test_with_inline_projection_multi_tenanted()
     {

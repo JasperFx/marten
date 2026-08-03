@@ -25,16 +25,7 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldExist<T>(string id, Action<T>? assertions = null) where T : notnull
     {
-        assertion(async (session, ct) =>
-        {
-            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
-            if (document == null)
-            {
-                throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
-            }
-
-            assertions?.Invoke(document);
-        }).Description = $"Document {typeof(T).FullNameInCode()} with id '{id}' should exist";
+        documentShouldExist(id, (session, ct) => session.LoadAsync<T>(id, ct), assertions);
     }
 
     /// <summary>
@@ -45,16 +36,7 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldExist<T>(long id, Action<T>? assertions = null) where T : notnull
     {
-        assertion(async (session, ct) =>
-        {
-            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
-            if (document == null)
-            {
-                throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
-            }
-
-            assertions?.Invoke(document);
-        }).Description = $"Document {typeof(T).FullNameInCode()} with id '{id}' should exist";
+        documentShouldExist(id, (session, ct) => session.LoadAsync<T>(id, ct), assertions);
     }
 
     /// <summary>
@@ -65,16 +47,7 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldExist<T>(int id, Action<T>? assertions = null) where T : notnull
     {
-        assertion(async (session, ct) =>
-        {
-            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
-            if (document == null)
-            {
-                throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
-            }
-
-            assertions?.Invoke(document);
-        }).Description = $"Document {typeof(T).FullNameInCode()} with id '{id}' should exist";
+        documentShouldExist(id, (session, ct) => session.LoadAsync<T>(id, ct), assertions);
     }
 
     /// <summary>
@@ -85,16 +58,7 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldExist<T>(Guid id, Action<T>? assertions = null) where T : notnull
     {
-        assertion(async (session, ct) =>
-        {
-            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
-            if (document == null)
-            {
-                throw new Exception($"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
-            }
-
-            assertions?.Invoke(document);
-        }).Description = $"Document {typeof(T).FullNameInCode()} with id '{id}' should exist";
+        documentShouldExist(id, (session, ct) => session.LoadAsync<T>(id, ct), assertions);
     }
 
     /// <summary>
@@ -104,15 +68,7 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldNotExist<T>(string id) where T : notnull
     {
-        assertion(async (session, ct) =>
-        {
-            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
-            if (document != null)
-            {
-                throw new Exception(
-                    $"Document {typeof(T).FullNameInCode()} with id '{id}' exists, but should not.");
-            }
-        }).Description = $"Document {typeof(T).FullNameInCode()} with id '{id}' should not exist or be deleted";
+        documentShouldNotExist(id, (session, ct) => session.LoadAsync<T>(id, ct));
     }
 
     /// <summary>
@@ -122,15 +78,7 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldNotExist<T>(long id) where T : notnull
     {
-        assertion(async (session, ct) =>
-        {
-            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
-            if (document != null)
-            {
-                throw new Exception(
-                    $"Document {typeof(T).FullNameInCode()} with id '{id}' exists, but should not.");
-            }
-        }).Description = $"Document {typeof(T).FullNameInCode()} with id '{id}' should not exist or be deleted";
+        documentShouldNotExist(id, (session, ct) => session.LoadAsync<T>(id, ct));
     }
 
     /// <summary>
@@ -140,15 +88,7 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldNotExist<T>(int id) where T : notnull
     {
-        assertion(async (session, ct) =>
-        {
-            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
-            if (document != null)
-            {
-                throw new Exception(
-                    $"Document {typeof(T).FullNameInCode()} with id '{id}' exists, but should not.");
-            }
-        }).Description = $"Document {typeof(T).FullNameInCode()} with id '{id}' should not exist or be deleted";
+        documentShouldNotExist(id, (session, ct) => session.LoadAsync<T>(id, ct));
     }
 
     /// <summary>
@@ -158,12 +98,34 @@ public partial class ProjectionScenario
     /// <typeparam name="T">The document type</typeparam>
     public void DocumentShouldNotExist<T>(Guid id) where T : notnull
     {
+        documentShouldNotExist(id, (session, ct) => session.LoadAsync<T>(id, ct));
+    }
+
+    private void documentShouldExist<T>(object id, Func<IQuerySession, CancellationToken, Task<T?>> load,
+        Action<T>? assertions) where T : notnull
+    {
         assertion(async (session, ct) =>
         {
-            var document = await session.LoadAsync<T>(id, ct).ConfigureAwait(false);
+            var document = await load(session, ct).ConfigureAwait(false);
+            if (document == null)
+            {
+                throw new ProjectionScenarioAssertionException(
+                    $"Document {typeof(T).FullNameInCode()} with id '{id}' does not exist");
+            }
+
+            assertions?.Invoke(document);
+        }).Description = $"Document {typeof(T).FullNameInCode()} with id '{id}' should exist";
+    }
+
+    private void documentShouldNotExist<T>(object id, Func<IQuerySession, CancellationToken, Task<T?>> load)
+        where T : notnull
+    {
+        assertion(async (session, ct) =>
+        {
+            var document = await load(session, ct).ConfigureAwait(false);
             if (document != null)
             {
-                throw new Exception(
+                throw new ProjectionScenarioAssertionException(
                     $"Document {typeof(T).FullNameInCode()} with id '{id}' exists, but should not.");
             }
         }).Description = $"Document {typeof(T).FullNameInCode()} with id '{id}' should not exist or be deleted";

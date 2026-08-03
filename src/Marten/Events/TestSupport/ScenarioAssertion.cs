@@ -15,6 +15,6 @@ internal class ScenarioAssertion: ScenarioStep
 
     public override Task Execute(ProjectionScenario scenario, CancellationToken ct = default)
     {
-        return _check(scenario.Session, ct);
+        return _check(scenario.Session!, ct);
     }
 }

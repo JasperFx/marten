@@ -9,43 +9,50 @@ using Marten.Events.Daemon;
 
 namespace Marten.Events.TestSupport;
 
-public partial class ProjectionScenario: IEventOperations
+public partial class ProjectionScenario
 {
     private readonly Queue<ScenarioStep> _steps = new();
     private readonly DocumentStore _store;
+    private bool _hasExecuted;
 
-
-    public ProjectionScenario(DocumentStore store)
+    internal ProjectionScenario(DocumentStore store)
     {
         _store = store;
     }
 
-    internal IProjectionDaemon Daemon { get; private set; }
+    internal IProjectionDaemon? Daemon { get; private set; }
 
     internal ScenarioStep? NextStep => _steps.Count != 0 ? _steps.Peek() : null;
 
-    internal IDocumentSession Session { get; private set; }
+    internal IDocumentSession? Session { get; private set; }
 
     /// <summary>
-    ///     Disable the scenario from "cleaning" out any existing
-    ///     event and projected document data before running the scenario
+    ///     The scenario deletes all existing event data plus the storage for every
+    ///     registered projection before running. Set this to false to run the
+    ///     scenario on top of whatever data already exists
     /// </summary>
-    public bool DoNotDeleteExistingData { get; set; }
+    public bool DeleteExistingData { get; set; } = true;
 
     /// <summary>
     ///     Opt into applying this scenario to a specific tenant id in the
     ///     case of using multi-tenancy of any kind
     /// </summary>
-    public string TenantId { get; set; }
+    public string? TenantId { get; set; }
 
-    internal Task WaitForNonStaleData()
+    /// <summary>
+    ///     Maximum time the scenario waits for any asynchronous projections to
+    ///     catch up after each batch of appended events. Default is 30 seconds
+    /// </summary>
+    public TimeSpan Timeout { get; set; } = 30.Seconds();
+
+    internal Task WaitForNonStaleData(CancellationToken ct = default)
     {
         if (Daemon == null)
         {
             return Task.CompletedTask;
         }
 
-        return Daemon.WaitForNonStaleData(30.Seconds());
+        return Daemon.WaitForNonStaleData(Timeout).WaitAsync(ct);
     }
 
 
@@ -67,7 +74,15 @@ public partial class ProjectionScenario: IEventOperations
 
     internal async Task Execute(CancellationToken ct = default)
     {
-        if (!DoNotDeleteExistingData)
+        if (_hasExecuted)
+        {
+            throw new InvalidOperationException(
+                "This ProjectionScenario has already been executed and its steps have been consumed. Build and run a new scenario with DocumentStore.Advanced.EventProjectionScenario() instead");
+        }
+
+        _hasExecuted = true;
+
+        if (DeleteExistingData)
         {
             await _store.Advanced.Clean.DeleteAllEventDataAsync(ct).ConfigureAwait(false);
             foreach (var storageType in
@@ -88,6 +103,7 @@ public partial class ProjectionScenario: IEventOperations
             var exceptions = new List<Exception>();
             var number = 0;
             var descriptions = new List<string>();
+            var actionFailed = false;
 
             while (_steps.Any())
             {
@@ -104,6 +120,22 @@ public partial class ProjectionScenario: IEventOperations
                     descriptions.Add($"FAILED: {number.ToString().PadLeft(3)}. {step.Description}");
                     descriptions.Add(e.ToString());
                     exceptions.Add(e);
+
+                    // A failed action means every later step would run against a state nobody
+                    // intended, so stop right here instead of piling up cascading noise. Failed
+                    // assertions keep accumulating -- the state is still the intended one.
+                    if (step is ScenarioAction)
+                    {
+                        actionFailed = true;
+                        if (_steps.Count != 0)
+                        {
+                            descriptions.Add(
+                                $"Skipped the remaining {_steps.Count} step(s) after the failed action");
+                            _steps.Clear();
+                        }
+
+                        break;
+                    }
                 }
             }
 
@@ -113,17 +145,21 @@ public partial class ProjectionScenario: IEventOperations
             // and an arrange-only scenario should not be a silent no-op that passes. See #5126.
             //
             // Unconditional on purpose: SaveChangesAsync returns immediately when the unit of work is
-            // empty, and WaitForNonStaleData is already a no-op when no daemon is running.
-            try
+            // empty, and WaitForNonStaleData is already a no-op when no daemon is running. Skipped when
+            // an action failed -- the session may hold a partially built unit of work at that point.
+            if (!actionFailed)
             {
-                await Session.SaveChangesAsync(ct).ConfigureAwait(false);
-                await WaitForNonStaleData().ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                descriptions.Add($"FAILED: committing the events queued by the final step");
-                descriptions.Add(e.ToString());
-                exceptions.Add(e);
+                try
+                {
+                    await Session.SaveChangesAsync(ct).ConfigureAwait(false);
+                    await WaitForNonStaleData(ct).ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    descriptions.Add("FAILED: committing the events queued by the final step");
+                    descriptions.Add(e.ToString());
+                    exceptions.Add(e);
+                }
             }
 
             if (exceptions.Any())
