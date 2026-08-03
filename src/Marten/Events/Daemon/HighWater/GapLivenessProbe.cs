@@ -19,14 +19,14 @@ namespace Marten.Events.Daemon.HighWater;
 /// (e.g. Wolverine's idle-in-transaction advisory-lock listener sessions).
 /// </summary>
 internal record GapLiveness(long OldLockHolders, long OlderTransactions, long OlderWriteXids,
-    long QuiescentSessionsIgnored = 0)
+    long QuiescentSessionsIgnored = 0, long DaemonLockSessionsIgnored = 0)
 {
     public bool IndicatesLiveReserver => OldLockHolders > 0 || OlderTransactions > 0 || OlderWriteXids > 0;
 
     public override string ToString()
     {
         return
-            $"mt_events write locks held by transactions from before the gap: {OldLockHolders}, open transactions from before the gap: {OlderTransactions}, in-progress write transaction ids from before the gap: {OlderWriteXids}, idle-in-transaction sessions ruled out as reservers: {QuiescentSessionsIgnored}";
+            $"mt_events write locks held by transactions from before the gap: {OldLockHolders}, open transactions from before the gap: {OlderTransactions}, in-progress write transaction ids from before the gap: {OlderWriteXids}, idle-in-transaction sessions ruled out as reservers: {QuiescentSessionsIgnored}, daemon advisory-lock sessions ruled out as reservers: {DaemonLockSessionsIgnored}";
     }
 }
 
@@ -68,14 +68,16 @@ internal class GapLivenessProbe: ISingleQueryHandler<GapLiveness>
     private readonly DateTimeOffset _gapFirstObserved;
     private readonly long _xmaxAtObservation;
     private readonly DateTimeOffset? _allocationFence;
+    private readonly long[] _daemonLockIds;
 
     public GapLivenessProbe(EventGraph graph, DateTimeOffset gapFirstObserved, long xmaxAtObservation,
-        DateTimeOffset? allocationFence = null)
+        DateTimeOffset? allocationFence = null, long[]? daemonLockIds = null)
     {
         _graph = graph;
         _gapFirstObserved = gapFirstObserved;
         _xmaxAtObservation = xmaxAtObservation;
         _allocationFence = allocationFence;
+        _daemonLockIds = daemonLockIds ?? [];
     }
 
     public NpgsqlCommand BuildCommand()
@@ -93,6 +95,32 @@ with quiescent as (
    where a.pid <> pg_backend_pid()
      and a.state in ('idle in transaction', 'idle in transaction (aborted)')
      and a.state_change < :fence
+),
+-- #5125: the daemon's OWN HotCold leadership lock. With the default transaction-scoped advisory
+-- lock it sits 'idle in transaction' for the whole of its leadership tenure, so it satisfies the
+-- open-transaction clause forever — including on a store that was already gapped before any daemon
+-- ran, where no allocation fence can ever be established and the quiescent CTE above is therefore
+-- always empty. That connection is dedicated to holding the lock and never appends, so it can never
+-- be a gap's reserver. Matched on Marten's own deterministic lock ids (ProjectionLockIds.Compute
+-- over this store's schema, shards and DaemonLockId), and further restricted to sessions that have
+-- written nothing at all -- a backend that has actually appended has an xid and is never excluded.
+own_daemon_locks as (
+  select a.pid, a.backend_xid
+    from pg_locks l
+    join pg_stat_activity a on a.pid = l.pid
+   where l.locktype = 'advisory'
+     and l.granted
+     and l.pid <> pg_backend_pid()
+     and l.classid = 0
+     and l.objsubid = 1
+     and l.objid = any(:lock_ids)
+     and l.database = (select d.oid from pg_database d where d.datname = current_database())
+     and a.backend_xid is null
+),
+excluded as (
+  select pid, backend_xid from quiescent
+  union
+  select pid, backend_xid from own_daemon_locks
 )
 select
   (select count(*)
@@ -104,7 +132,7 @@ select
       and l.pid <> pg_backend_pid()
       and l.database = (select d.oid from pg_database d where d.datname = current_database())
       and a.xact_start <= :first_observed
-      and l.pid not in (select q.pid from quiescent q)
+      and l.pid not in (select e.pid from excluded e)
       and l.relation in (select c.oid
                            from pg_class c
                            join pg_namespace n on n.oid = c.relnamespace
@@ -118,12 +146,12 @@ select
       and a.backend_type = 'client backend'
       and a.xact_start is not null
       and a.xact_start <= :first_observed
-      and a.pid not in (select q.pid from quiescent q)) as older_transactions,
+      and a.pid not in (select e.pid from excluded e)) as older_transactions,
   (select count(*)
      from pg_snapshot_xip(pg_current_snapshot()) as xip(xid)
     where xip.xid::text::bigint < :xmax0
       and mod(xip.xid::text::bigint, 4294967296) not in
-          (select q.backend_xid::text::bigint from quiescent q where q.backend_xid is not null)) as older_write_xids,
+          (select e.backend_xid::text::bigint from excluded e where e.backend_xid is not null)) as older_write_xids,
   (select count(*)
      from pg_stat_activity a
     where a.datname = current_database()
@@ -131,7 +159,15 @@ select
       and a.backend_type = 'client backend'
       and a.xact_start is not null
       and a.xact_start <= :first_observed
-      and a.pid in (select q.pid from quiescent q)) as quiescent_ignored
+      and a.pid in (select q.pid from quiescent q)) as quiescent_ignored,
+  (select count(*)
+     from pg_stat_activity a
+    where a.datname = current_database()
+      and a.pid <> pg_backend_pid()
+      and a.backend_type = 'client backend'
+      and a.xact_start is not null
+      and a.xact_start <= :first_observed
+      and a.pid in (select o.pid from own_daemon_locks o)) as daemon_lock_ignored
 ".Trim();
 
         var command = new NpgsqlCommand(sql);
@@ -140,6 +176,8 @@ select
         command.AddNamedParameter("xmax0", _xmaxAtObservation);
         // No fence ⇒ nothing qualifies as quiescent ⇒ exactly the unfenced behavior
         command.AddNamedParameter("fence", _allocationFence ?? DateTimeOffset.MinValue);
+        // Empty ⇒ own_daemon_locks matches nothing ⇒ exactly the pre-#5125 behavior
+        command.AddNamedParameter("lock_ids", _daemonLockIds);
 
         return command;
     }
@@ -155,6 +193,7 @@ select
             await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false),
             await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false),
             await reader.GetFieldValueAsync<long>(2, token).ConfigureAwait(false),
-            await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false));
+            await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false),
+            await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false));
     }
 }

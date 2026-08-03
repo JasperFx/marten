@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Daemon.HighWater;
 using JasperFx.Events.Projections;
 using Marten.Events.Projections;
@@ -86,6 +87,40 @@ internal class HighWaterDetector: IHighWaterDetector
     private const int AllocationHistoryCapacity = 128;
 
     private sealed record AllocationObservation(DateTimeOffset Timestamp, long AllocatedHigh);
+
+    // #5125: the advisory lock ids this store's HotCold coordinator negotiates leadership with, so the
+    // liveness probe can rule out the daemon's own idle-in-transaction lock connections. Derived
+    // rather than plumbed: every input is known here, and ProjectionLockIds.Compute is the same
+    // formula the JasperFx distributors use, so no reference to the running coordinator is needed.
+    // SingleTenantProjectionDistributor computes one id per shard from the schema qualifier;
+    // MultiTenantedProjectionDistributor uses the base DaemonLockId as-is. Recomputed per probe (only
+    // while a gap is actually stuck) because the shard list moves at runtime under per-tenant
+    // expansion. Negative ids are dropped: those would encode into pg_locks with a non-zero classid
+    // and the probe's predicate deliberately only matches the classid = 0 space.
+    private long[] daemonAdvisoryLockIds()
+    {
+        try
+        {
+            var projections = _graph.Options.Projections;
+            var baseLockId = projections.DaemonLockId;
+
+            var ids = new HashSet<long> { baseLockId };
+            foreach (var shard in projections.AllShards())
+            {
+                ids.Add(ProjectionLockIds.Compute(_graph.DatabaseSchemaName, shard.Name, baseLockId));
+            }
+
+            return ids.Where(x => x >= 0).ToArray();
+        }
+        catch (Exception e)
+        {
+            // Never let lock-id derivation break gap detection — an empty set is exactly the
+            // pre-#5125 behavior (nothing excluded, the daemon holds).
+            _logger.LogDebug(e, "Unable to derive the daemon advisory lock ids for database {Database}",
+                DatabaseIdentity);
+            return [];
+        }
+    }
 
     public HighWaterDetector(MartenDatabase runner, EventGraph graph, ILogger logger)
     {
@@ -225,7 +260,9 @@ internal class HighWaterDetector: IHighWaterDetector
         }
 
         var liveness = await _runner
-            .Query(new GapLivenessProbe(_graph, observed.Since, observed.Xmax, observed.AllocationFence), token)
+            .Query(
+                new GapLivenessProbe(_graph, observed.Since, observed.Xmax, observed.AllocationFence,
+                    daemonAdvisoryLockIds()), token)
             .ConfigureAwait(false);
         if (liveness.IndicatesLiveReserver)
         {
@@ -253,11 +290,26 @@ internal class HighWaterDetector: IHighWaterDetector
                 observed.Mark, liveness, age, cap);
         }
 
-        // Proven dead (or cap expired): walk past the gap, but never beyond the reserved ceiling
-        // recorded when the gap was first observed — sequence numbers reserved after that belong to
-        // newer transactions whose fate is not proven.
-        var walk = await runGapDetectorAsync(statistics.SafeStartMark + 1, false, token).ConfigureAwait(false);
-        var target = walk.HasValue ? Math.Min(walk.Value, observed.ReservedCeiling) : observed.ReservedCeiling;
+        // Proven dead (or cap expired): clear the WHOLE dead span in one move, but never beyond the
+        // reserved ceiling recorded when the gap was first observed — sequence numbers reserved after
+        // that belong to newer transactions whose fate is not proven.
+        //
+        // #5108 §2: this used to advance to the next gap edge, so a field of N dead gaps took N
+        // detection cycles and each one re-paid StaleSequenceThreshold from a fresh observation —
+        // reported as a mark grinding 38 → 426 over 21 seconds, with the cost growing linearly in
+        // write contention. The evidence already in hand covers the entire span: every sequence number
+        // at or below the ceiling was handed out at or before the observation (nextval runs inside the
+        // reserving transaction, so its xact_start cannot postdate it), and the probe above just
+        // established that no transaction from before the observation is still alive. So every one of
+        // those numbers is now either committed or permanently dead — the same argument that licensed
+        // skipping the first gap, applied to all of them at once.
+        // When nothing at all is committed ABOVE the mark, the dead span runs to the end of the
+        // reserved range — reserved-but-never-committed numbers with no live reserver — and the ceiling
+        // is the target, which is the long-standing GH-2681 behavior the null walk used to express.
+        var committed = await _runner.Query(new CommittedSequenceHandler(_graph), token).ConfigureAwait(false);
+        var target = committed > statistics.LastMark
+            ? Math.Min(committed, observed.ReservedCeiling)
+            : observed.ReservedCeiling;
         if (target <= statistics.LastMark)
         {
             return statistics;
@@ -370,7 +422,7 @@ internal class HighWaterDetector: IHighWaterDetector
                 statistics.Timestamp,
                 (statistics as MartenHighWaterStatistics)?.CurrentXmax ?? 0,
                 statistics.HighestSequence,
-                findAllocationFence(statistics.CurrentMark));
+                findAllocationFence(statistics, statistics.CurrentMark));
         }
     }
 
@@ -639,12 +691,17 @@ select coalesce(
         // No allocation fence here: the vectorized poll reads committed max(seq_id) per tenant, not
         // a reserved last_value, so there is no history to prove when the tenant's gap sequences
         // were allocated — quiescent sessions are NOT ruled out on this path (conservative).
+        // #5125: the daemon's own advisory-lock sessions ARE still ruled out. That exclusion is
+        // structural rather than fence-derived — those connections exist only to hold the leadership
+        // lock and never append — so it holds on this path too, where no fence can ever exist.
         if (_settings.UseTransactionEvidenceForGapSkipping
             && _tenantStaleSince.TryGetValue(statistics.TenantId!, out var observation))
         {
             var age = statistics.Timestamp.Subtract(observation.Since);
             var liveness = await _runner
-                .Query(new GapLivenessProbe(_graph, observation.Since, observation.Xmax), token)
+                .Query(
+                    new GapLivenessProbe(_graph, observation.Since, observation.Xmax, null,
+                        daemonAdvisoryLockIds()), token)
                 .ConfigureAwait(false);
             if (liveness.IndicatesLiveReserver)
             {
@@ -856,10 +913,15 @@ select coalesce(
         var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
         if (statistics.LastMark > statistics.HighestSequence)
         {
+            // #5108: every row EXCEPT the allocation fence. The fence row's last_seq_id is an observed
+            // sequence allocation, not projection progress — restamping it here would have it claim
+            // that nothing above an arbitrary sequence had been handed out at a moment when that was
+            // never observed, and a fence that is too late wrongly excludes a live reserver.
             await using var cmd =
                 new NpgsqlCommand(
-                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq, last_updated = transaction_timestamp()")
-                    .With("seq", statistics.HighestSequence);
+                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq, last_updated = transaction_timestamp() where name <> :fence")
+                    .With("seq", statistics.HighestSequence)
+                    .With("fence", HighWaterAllocationFence.ProgressionName);
 
             await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
         }
@@ -874,7 +936,61 @@ select coalesce(
     {
         var statistics = await _runner.Query(_highWaterStatisticsDetector, token).ConfigureAwait(false);
         recordAllocationObservation(statistics);
+        await persistAllocationFenceAsync(statistics, token).ConfigureAwait(false);
         return statistics;
+    }
+
+    // #5108: the in-memory allocation history above dies with the detector instance, and a daemon that
+    // starts or resumes AFTER a gap formed therefore has no fence at all — the liveness probe falls
+    // back to counting every old open transaction as a possible reserver, so a permanently
+    // idle-in-transaction session (Wolverine's advisory-lock listeners, the daemon's own leadership
+    // lock) holds a dead gap forever. Persisting the fence hands the next detector generation what its
+    // predecessor observed.
+    //
+    // No history is needed in the database: findAllocationFence wants the NEWEST observation whose
+    // allocated high is at or below the mark, and both values only ever move forward, so a single row
+    // maintained incrementally is exactly equivalent. Promote while the store is caught up; the moment
+    // a gap opens, allocation passes the mark, promotion stops, and the row is frozen at the last
+    // moment nothing above the mark had been handed out — precisely the fence.
+    //
+    // Soundness does NOT rest on the mark used here. The row records "at time T, nothing above H had
+    // been allocated", which is true of the statement's own snapshot because the statement re-reads the
+    // sequence itself rather than trusting the reading from the poll above — a timestamp stamped
+    // against a stale allocation reading could sit LATER than the moment it claims, and a fence that is
+    // too late wrongly excludes a genuine reserver. The mark only decides WHEN to refresh; the
+    // read-back independently requires the stored high to be at or below the stuck mark.
+    private async Task persistAllocationFenceAsync(HighWaterStatistics statistics, CancellationToken token)
+    {
+        // Under per-tenant event partitioning tenants draw from their own sequences, so the
+        // store-global sequence says nothing about allocation — same reason AllocatedSequenceHigh is
+        // null there. No sound fence exists to persist.
+        if (_graph.UseTenantPartitionedEvents)
+        {
+            return;
+        }
+
+        try
+        {
+            await using var cmd = new NpgsqlCommand($@"
+insert into {_graph.DatabaseSchemaName}.mt_event_progression(name, last_seq_id, last_updated)
+select '{HighWaterAllocationFence.ProgressionName}', alloc.high, transaction_timestamp()
+from (select case when is_called then last_value else last_value - 1 end as high
+      from {_graph.DatabaseSchemaName}.mt_events_sequence) alloc
+where alloc.high <= :mark
+on conflict (name) do update
+   set last_seq_id = excluded.last_seq_id, last_updated = excluded.last_updated
+ where excluded.last_updated > {_graph.DatabaseSchemaName}.mt_event_progression.last_updated")
+                .With("mark", statistics.LastMark);
+
+            await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (!token.IsCancellationRequested)
+        {
+            // The fence is an optimization on top of a conservative default: without it the detector
+            // simply holds, which is the pre-#5108 behavior. Never let recording it take down a poll.
+            _logger.LogDebug(e, "Unable to record the high water allocation fence for database {Database}",
+                DatabaseIdentity);
+        }
     }
 
     // #4953 follow-up: feed the allocation history from every statistics poll — see _allocationHistory
@@ -925,23 +1041,36 @@ select coalesce(
 
     // The latest server time at which the highest ALLOCATED sequence number was still at or below the
     // stuck mark — every sequence number above the mark was therefore handed out strictly after this
-    // moment. Null when no qualifying poll is in memory (detector started while the gap already
-    // existed). #5091: reading allocation rather than the reserved ceiling is what lets a gap stuck at
+    // moment. Null when neither this detector's own history nor the persisted row offers a qualifying
+    // reading. #5091: reading allocation rather than the reserved ceiling is what lets a gap stuck at
     // mark 0 be fenced at all, since a pristine sequence reserves 1 while having allocated nothing.
-    private DateTimeOffset? findAllocationFence(long mark)
+    // #5108: the persisted row is what carries a fence across detector restarts — see
+    // persistAllocationFenceAsync. Take the LATER of the two: both are sound, and a later fence rules
+    // out strictly more sessions.
+    private DateTimeOffset? findAllocationFence(HighWaterStatistics statistics, long mark)
     {
+        DateTimeOffset? fence = null;
+
         lock (_allocationHistoryLock)
         {
             for (var i = _allocationHistory.Count - 1; i >= 0; i--)
             {
                 if (_allocationHistory[i].AllocatedHigh <= mark)
                 {
-                    return _allocationHistory[i].Timestamp;
+                    fence = _allocationHistory[i].Timestamp;
+                    break;
                 }
             }
         }
 
-        return null;
+        if (statistics is MartenHighWaterStatistics { PersistedAllocationFence: { } persisted }
+            && persisted.AllocatedHigh <= mark
+            && (fence == null || persisted.ObservedAt > fence.Value))
+        {
+            fence = persisted.ObservedAt;
+        }
+
+        return fence;
     }
 
     private async Task<long> findCurrentMark(HighWaterStatistics statistics, DetectionType detectionType,

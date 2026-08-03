@@ -28,6 +28,39 @@ internal class MartenHighWaterStatistics: HighWaterStatistics
     /// not the one being drawn from, so nothing can be concluded about allocation from it.
     /// </summary>
     public long? AllocatedSequenceHigh { get; set; }
+
+    /// <summary>
+    /// #5108: the DURABLE counterpart of the detector's in-memory allocation history — the reading
+    /// persisted by whichever detector last saw the store caught up. Null when no fence has ever been
+    /// recorded for this database (a store that was already gapped before any daemon ran, or a
+    /// tenant-partitioned store, where no sound store-global allocation reading exists).
+    /// </summary>
+    public AllocationFenceReading? PersistedAllocationFence { get; set; }
+}
+
+/// <summary>
+/// #5108: a persisted allocation-fence observation — at <paramref name="ObservedAt" /> the event
+/// sequence had handed out nothing above <paramref name="AllocatedHigh" />. Every sequence number
+/// above that value was therefore allocated strictly later, which is what lets the gap-liveness probe
+/// rule out sessions that have provably executed nothing since.
+/// </summary>
+internal sealed record AllocationFenceReading(long AllocatedHigh, DateTimeOffset ObservedAt);
+
+/// <summary>
+/// #5108: the reserved <c>mt_event_progression.name</c> under which the durable allocation fence
+/// lives. It is bookkeeping for high-water detection, NOT a projection shard: it is deliberately
+/// excluded from <c>ProjectionProgressStatement</c> so it never surfaces as a shard in
+/// <c>AllProjectionProgress()</c>, and from the blanket UPDATE in
+/// <c>HighWaterDetector.TryCorrectProgressInDatabaseAsync</c>, which would otherwise restamp it
+/// against an arbitrary sequence and make the fence claim something that was never observed.
+///
+/// A reserved row rather than a table of its own on purpose: this repairs a DEFAULT-configuration
+/// stall, so it has to engage on every existing database the moment Marten is upgraded, with no DDL
+/// migration standing between the user and the fix.
+/// </summary>
+internal static class HighWaterAllocationFence
+{
+    public const string ProgressionName = "HighWaterAllocationFence";
 }
 
 internal class HighWaterStatisticsDetector: ISingleQueryHandler<HighWaterStatistics>
@@ -72,10 +105,14 @@ select
   pg_snapshot_xmax(pg_current_snapshot())::text::bigint as current_xmax,
   p.last_seq_id,
   p.last_updated,
-  {allocatedHighSql} as allocated_high
+  {allocatedHighSql} as allocated_high,
+  f.last_seq_id as fence_allocated_high,
+  f.last_updated as fence_observed_at
 from (values (1)) as one(x)
 left join {graph.DatabaseSchemaName}.mt_event_progression p
   on p.name = '{HighWaterShardIdentity.StoreGlobal}'
+left join {graph.DatabaseSchemaName}.mt_event_progression f
+  on f.name = '{HighWaterAllocationFence.ProgressionName}'
 ".Trim();
     }
 
@@ -107,6 +144,14 @@ left join {graph.DatabaseSchemaName}.mt_event_progression p
         if (!await reader.IsDBNullAsync(5, token).ConfigureAwait(false))
         {
             statistics.AllocatedSequenceHigh = await reader.GetFieldValueAsync<long>(5, token).ConfigureAwait(false);
+        }
+
+        if (!await reader.IsDBNullAsync(6, token).ConfigureAwait(false)
+            && !await reader.IsDBNullAsync(7, token).ConfigureAwait(false))
+        {
+            statistics.PersistedAllocationFence = new AllocationFenceReading(
+                await reader.GetFieldValueAsync<long>(6, token).ConfigureAwait(false),
+                await reader.GetFieldValueAsync<DateTimeOffset>(7, token).ConfigureAwait(false));
         }
 
         return statistics;
