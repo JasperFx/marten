@@ -289,7 +289,8 @@ public class AdvancedOperations
 
     /// <summary>
     ///     Marten's built in test support for event projections. Only use this in testing as
-    ///     it will delete existing event and projected aggregate data
+    ///     it will delete existing event and projected aggregate data by default (opt out
+    ///     with ProjectionScenario.DeleteExistingData = false)
     /// </summary>
     /// <param name="configuration"></param>
     /// <returns></returns>

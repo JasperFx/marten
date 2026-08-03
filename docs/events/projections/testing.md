@@ -299,6 +299,93 @@ In the version above, we can just be using a shared `IHost` and the async daemon
 new events, then force the test harness to "wait" for the underlying async daemon to be completely caught up before proceeding
 to test the expected documents persisted in the database by the projection. 
 
+## Scripted Scenarios with EventProjectionScenario
+
+For a more declarative way to test a projection end to end, Marten has a built-in scenario runner on
+`IDocumentStore.Advanced` that scripts a sequence of event appends and document assertions, then executes
+the whole sequence for you:
+
+<!-- snippet: sample_using_event_projection_scenario -->
+<a id='snippet-sample_using_event_projection_scenario'></a>
+```cs
+[Fact]
+public async Task happy_path_test_with_inline_projection()
+{
+    StoreOptions(opts =>
+    {
+        opts.Projections.Add(new UserProjection(), ProjectionLifecycle.Inline);
+    });
+
+    await theStore.Advanced.EventProjectionScenario(scenario =>
+    {
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+        var id3 = Guid.NewGuid();
+
+        scenario.Append(Guid.NewGuid(), new CreateUser {UserId = id1, UserName = "Kareem"});
+        scenario.Append(Guid.NewGuid(), new CreateUser {UserId = id2, UserName = "Magic"});
+        scenario.Append(Guid.NewGuid(), new CreateUser {UserId = id3, UserName = "James"});
+
+        scenario.DocumentShouldExist<User>(id1);
+        scenario.DocumentShouldExist<User>(id2);
+        scenario.DocumentShouldExist<User>(id3, user => user.UserName.ShouldBe("James"));
+
+        scenario.Append(Guid.NewGuid(), new DeleteUser {UserId = id2});
+
+        scenario.DocumentShouldExist<User>(id1);
+        scenario.DocumentShouldNotExist<User>(id2);
+        scenario.DocumentShouldExist<User>(id3);
+
+    }, TestContext.Current.CancellationToken);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projection_scenario_tests.cs#L17-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_projection_scenario' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The scenario works with any projection lifecycle. If the store has any asynchronous projections registered, the
+scenario quietly spins up a projection daemon, waits for it to catch up after each batch of appended events, and
+shuts it down afterward — your test code looks identical either way.
+
+A few things to know about how a scenario executes:
+
+- The `Append()` / `StartStream()` / `AppendEvents()` calls **queue** work — nothing touches the database until the
+  scenario executes. The `StartStream()` overloads that generate their own stream id return that `Guid` so you can
+  capture it for later assertions.
+- Consecutive appends are batched into a single commit; the pending work is saved whenever the next step is an
+  assertion, and once more at the end of the scenario.
+- Assertion steps run against a query session after the projected data is up to date. `DocumentShouldExist<T>()`
+  and `DocumentShouldNotExist<T>()` cover the common cases, and `AssertAgainstProjectedData()` is the general
+  purpose hook for anything else.
+- If an *action* step fails, the scenario stops immediately — the remaining steps would be running against a state
+  nobody intended. Failed *assertions* accumulate instead, and everything is reported at the end in a single
+  `ProjectionScenarioException` that lists each step and what went wrong. Assertion failures inside the aggregate
+  are typed as `ProjectionScenarioAssertionException` so tooling can tell them apart from infrastructure failures.
+
+::: warning
+By default the scenario **deletes all event data plus the storage for every registered projection** before it runs,
+so each scenario starts from a clean slate. Only use this feature against a test database! To run a scenario on top
+of existing data instead, set `scenario.DeleteExistingData = false`.
+:::
+
+The scenario object exposes a few knobs:
+
+```cs
+await theStore.Advanced.EventProjectionScenario(scenario =>
+{
+    // Keep any existing event/projection data (the default is to wipe it)
+    scenario.DeleteExistingData = false;
+
+    // Apply the whole scenario to one tenant when using multi-tenancy
+    scenario.TenantId = "tenant1";
+
+    // Maximum time to wait for async projections to catch up
+    // after each batch of events. The default is 30 seconds
+    scenario.Timeout = 5.Seconds();
+
+    // ... queue up appends and assertions
+});
+```
+
 ## What about System Time?!?
 
 ::: info

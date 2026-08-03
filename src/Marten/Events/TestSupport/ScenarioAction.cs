@@ -15,12 +15,12 @@ internal class ScenarioAction: ScenarioStep
 
     public override async Task Execute(ProjectionScenario scenario, CancellationToken ct = default)
     {
-        _action(scenario.Session.Events);
+        _action(scenario.Session!.Events);
 
         if (scenario.NextStep is ScenarioAssertion)
         {
-            await scenario.Session.SaveChangesAsync(ct).ConfigureAwait(false);
-            await scenario.WaitForNonStaleData().ConfigureAwait(false);
+            await scenario.Session!.SaveChangesAsync(ct).ConfigureAwait(false);
+            await scenario.WaitForNonStaleData(ct).ConfigureAwait(false);
         }
     }
 }
