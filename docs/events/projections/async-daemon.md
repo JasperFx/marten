@@ -649,6 +649,13 @@ them from existing runtime state and the shard-state selector reads them back
 into `ShardState` so monitoring tooling such as CritterWatch can display
 per-shard health.
 
+Two further columns, `warning_behind_threshold` and `critical_behind_threshold`, are also created but
+are neither written nor read — nothing has ever owned the value, and every lag threshold lives in the
+monitoring tool. They are kept rather than dropped purely so that upgrading does not change this
+table's schema: `alter table … drop column` needs an ACCESS EXCLUSIVE lock on a small, hot table that
+every running daemon writes, and while that lock waits it blocks every reader and writer behind it.
+Two always-NULL columns are the cheaper trade.
+
 ### Why a shard is down <Badge type="tip" text="9.20" />
 
 The four `failure_*` columns record the *classified* reason a shard paused or stopped, so a consumer
