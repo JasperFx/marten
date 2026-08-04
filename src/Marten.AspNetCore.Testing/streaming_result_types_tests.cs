@@ -121,6 +121,39 @@ public class streaming_result_types_tests: IntegrationContext
         });
     }
 
+    [Fact]
+    public async Task stream_one_streams_the_document_through_an_identity_tracking_session()
+    {
+        // Every other endpoint here takes the QueryOnly IQuerySession, where the payload happens to be the
+        // first selected field. IdColumn.ShouldSelect is storageStyle != QueryOnly, so an identity-tracking
+        // session selects d.id, d.data, ... instead — and aliasing the payload by position then put the
+        // alias on the id, so the reader streamed the document's id as the entire body: a 200 whose payload
+        // does not deserialize into the document type.
+        var issue = new Issue { Description = "through a document session", Open = true };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/issue/{issue.Id}/from-document-session");
+            s.StatusCodeShouldBe(200);
+            s.ContentTypeShouldBe("application/json");
+        });
+
+        var body = result.ReadAsText();
+        body.ShouldNotBe($"\"{issue.Id}\"", "the body must be the document, not its id");
+
+        var read = result.ReadAsJson<Issue>();
+        read.Id.ShouldBe(issue.Id);
+        read.Description.ShouldBe(issue.Description);
+
+        // The ETag is the point of this code path, so prove the alias fix did not cost it.
+        result.Context.Response.Headers.ETag.ToString().ShouldNotBeNullOrEmpty();
+    }
+
     // ───────────────────────── StreamOne<T> ETag / If-None-Match ─────────────────────────
 
     [Fact]
