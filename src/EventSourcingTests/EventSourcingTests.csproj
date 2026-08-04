@@ -8,7 +8,14 @@
         <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <!-- Source-only: the compliance suites compile into this assembly so the aggregate source
              generator above binds Marten's session types. See Compliance/ for the enrollments. -->
-        <PackageReference Include="JasperFx.Events.ComplianceTests" />
+        <PackageReference Include="JasperFx.Events.ComplianceTests" Condition="'$(ComplianceSourceDir)' == ''" />
+        <!-- LOCAL DEV LOOP ONLY: -p:ComplianceSourceDir=/path/to/jasperfx/src/JasperFx.Events.ComplianceTests
+             swaps the published suites for a working copy, so wave-N authoring can be validated
+             against Marten before the JasperFx release. Mirrors the same switch in Polecat.Tests. -->
+        <Compile Include="$(ComplianceSourceDir)\**\*.cs"
+                 Exclude="$(ComplianceSourceDir)\bin\**\*.cs;$(ComplianceSourceDir)\obj\**\*.cs;$(ComplianceSourceDir)\Local\**\*.cs"
+                 LinkBase="ComplianceSuites"
+                 Condition="'$(ComplianceSourceDir)' != ''" />
     </ItemGroup>
 
     <ItemGroup>

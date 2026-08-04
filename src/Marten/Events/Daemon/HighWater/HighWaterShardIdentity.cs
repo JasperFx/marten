@@ -11,11 +11,13 @@ namespace Marten.Events.Daemon.HighWater;
 /// being smeared across SQL string concatenations.
 ///
 /// <para>
-/// The high-water grammar is intentionally asymmetric to the rest of <see cref="ShardName"/>:
-/// JasperFx's <c>ShardName</c> constructor special-cases the HighWaterMark name and collapses
-/// its <c>Identity</c> to the literal constant (dropping any tenant slot). Marten layers
-/// per-tenant high-water tracking on top by writing one row per tenant under the convention
-/// <c>"{HighWaterMark}:{tenantId}"</c>. See the comment in <c>EventProgressionTable</c> for the
+/// The high-water grammar is asymmetric to the rest of <see cref="ShardName"/>: JasperFx's
+/// <c>ShardName</c> constructor special-cases the HighWaterMark name and discards the shard-key
+/// and version slots. It used to discard the tenant slot too, collapsing every high-water shard
+/// to the bare constant; as of jasperfx#618 (JasperFx 2.39.0) it keeps it, so a tenant-scoped
+/// high-water shard now composes to <c>"{HighWaterMark}:{tenantId}"</c> — the very convention
+/// Marten already wrote through this class, which is why that change needed no adjustment on
+/// this side. See the comment in <c>EventProgressionTable</c> for the
 /// surrounding storage-side context — both sides need to agree on this shape exactly, and any
 /// drift (a missing colon, a different separator) silently desyncs the writers from the
 /// readers because the SQL is keyed by string equality on <c>name</c>.
