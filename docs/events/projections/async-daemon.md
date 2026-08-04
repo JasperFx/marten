@@ -745,8 +745,18 @@ opts.Projections.ExtendedProgressionHeartbeatInterval = TimeSpan.FromSeconds(30)
 ```
 
 Budget it as `databases-on-this-node / interval` connection acquisitions per second. All shard states
-that arrive within one interval are coalesced into a single batched `UPDATE`, so the cost scales with
-the number of databases rather than the number of shards.
+that arrive within one interval are coalesced into a single flush on one rented connection, so the
+connection cost scales with the number of databases rather than the number of shards.
+
+Within that flush each shard's row is written by its **own single-row statement, in its own implicit
+transaction**. That is deliberate and load-bearing: a batch is there to amortize the *connection*, not
+the transaction. Marten 9.22.4 and earlier folded the flush into one `UPDATE ... FROM unnest(...)`,
+which takes a row lock on every shard in the batch and holds all of them until it commits — so a single
+slow projection batch sitting on one progression row stalled the telemetry write of every *other* shard
+on that database, and whatever was queued behind those. If you are diagnosing lock waits on
+`mt_event_progression` on an older version, note that `pg_blocking_pids()` reports only *direct*
+blockers: the telemetry `UPDATE` genuinely is the blocker, and the projection transaction that is the
+real root is one hop further down the chain. Walk it recursively.
 
 ::: tip
 Status transitions are always written immediately regardless of this setting, so `agent_status`,

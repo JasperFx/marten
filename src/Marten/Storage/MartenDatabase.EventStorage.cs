@@ -19,6 +19,7 @@ using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
@@ -60,17 +61,39 @@ public partial class MartenDatabase : IEventDatabase
     }
 
     /// <summary>
-    ///     Persist the extended progression telemetry for a whole batch of shards in ONE round trip on
-    ///     ONE rented connection. The JasperFx.Events <c>ExtendedProgressionWriter</c> coalesces every
-    ///     shard's heartbeat on a database into one batch per flush interval and drives this overload,
-    ///     because the per-shard single-row write does not scale under per-tenant agent fan-out
-    ///     (agents = projections × tenants — jasperfx#553). Deliberately a plain UPDATE ... FROM unnest
-    ///     join instead of a database function, so no schema object is added and deployments running
-    ///     <c>AutoCreate.None</c> pick it up without a migration. Semantics match the
-    ///     <c>mt_mark_event_progression_extended</c> function this replaced (the function is still
-    ///     installed for anything calling it directly): update-only telemetry decoration of existing
-    ///     progression rows — never INSERT, never touch <c>last_seq_id</c> / <c>last_updated</c>, shards
-    ///     without a progression row yet are skipped silently.
+    ///     Persist the extended progression telemetry for a whole batch of shards on ONE rented
+    ///     connection, as ONE SINGLE-ROW STATEMENT PER SHARD. The JasperFx.Events
+    ///     <c>ExtendedProgressionWriter</c> coalesces every shard's heartbeat on a database into one batch
+    ///     per flush interval and drives this overload, because renting a connection per shard does not
+    ///     scale under per-tenant agent fan-out (agents = projections × tenants — jasperfx#553).
+    ///     Deliberately plain UPDATE statements instead of a database function, so no schema object is
+    ///     added and deployments running <c>AutoCreate.None</c> pick it up without a migration. Semantics
+    ///     match the <c>mt_mark_event_progression_extended</c> function this replaced (the function is
+    ///     still installed for anything calling it directly): update-only telemetry decoration of
+    ///     existing progression rows — never INSERT, never touch <c>last_seq_id</c> / <c>last_updated</c>,
+    ///     shards without a progression row yet are skipped silently.
+    ///     <para>
+    ///     #5167: this used to be ONE <c>UPDATE … FROM unnest(…)</c> covering the whole batch, and that
+    ///     is a lock convoy. A multi-row statement takes a row lock on EVERY shard in the batch and holds
+    ///     all of them until it commits, so one slow projection batch sitting on one row stalls the
+    ///     telemetry write of every OTHER shard on the database — and, transitively, the progress writes
+    ///     queued behind those. Measured against PostgreSQL: an unrelated shard's progress write,
+    ///     contending with nothing, timed out after 4s queued behind a telemetry statement that had
+    ///     locked its row on the way to a different, genuinely contended one; rewritten this way the same
+    ///     collision clears in ~1ms and only the genuinely contended row waits. The load-bearing property
+    ///     is ONE ROW PER TRANSACTION, so these must stay separate round trips in autocommit — several
+    ///     statements batched into one Npgsql command would share an implicit transaction and reproduce
+    ///     the convoy exactly. What is amortized is the CONNECTION, which is what jasperfx#553 was about.
+    ///     Writes are applied in shard-name order so two writers racing over the same rows cannot take
+    ///     their locks in opposite orders. Being separate transactions, a failure partway through leaves
+    ///     the earlier rows written — correct for best-effort telemetry, where an all-or-nothing batch
+    ///     buys nothing.
+    ///     </para>
+    ///     <para>
+    ///     The <c>is distinct from</c> guard makes a replay of unchanged telemetry an <c>UPDATE 0</c>
+    ///     rather than a new tuple version. <c>mt_event_progression</c> is small and hot, and every
+    ///     avoided rewrite is also an avoided row lock.
+    ///     </para>
     ///     <para>
     ///     #5048 / jasperfx#565: the four <c>failure_*</c> columns follow a different rule from the rest.
     ///     They are written when the state carries a <see cref="ShardState.Failure" />, CLEARED when a
@@ -89,71 +112,77 @@ public partial class MartenDatabase : IEventDatabase
 
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-        var names = new string[states.Count];
-        var heartbeats = new DateTimeOffset?[states.Count];
-        var statuses = new string?[states.Count];
-        var reasons = new string?[states.Count];
-        var nodes = new int?[states.Count];
-        var touchFailures = new bool[states.Count];
-        var failureCategories = new string?[states.Count];
-        var failureSequences = new long?[states.Count];
-        var failureEventTypes = new string?[states.Count];
-        var failureTenantIds = new string?[states.Count];
-
-        for (var i = 0; i < states.Count; i++)
-        {
-            var state = states[i];
-
-            names[i] = state.ShardName;
-            heartbeats[i] = state.LastHeartbeat;
-            statuses[i] = state.AgentStatus;
-            reasons[i] = state.PauseReason;
-            nodes[i] = state.RunningOnNode;
-
-            var failure = state.Failure;
-            touchFailures[i] = failure != null || state.Action == ShardAction.Started;
-            failureCategories[i] = failure?.Category.ToString();
-            failureSequences[i] = failure?.Event?.Sequence;
-            failureEventTypes[i] = failure?.Event?.EventTypeName;
-            failureTenantIds[i] = failure?.Event?.TenantId;
-        }
-
         await using var conn = CreateConnection();
         try
         {
             await conn.OpenAsync(token).ConfigureAwait(false);
-            await conn.CreateCommand($"""
-                update {Options.EventGraph.DatabaseSchemaName}.mt_event_progression as p
-                set heartbeat = t.heartbeat,
-                    agent_status = t.agent_status,
-                    pause_reason = t.pause_reason,
-                    running_on_node = t.running_on_node,
-                    failure_category = case when t.touch_failure then t.failure_category else p.failure_category end,
-                    failure_event_sequence = case when t.touch_failure then t.failure_event_sequence else p.failure_event_sequence end,
-                    failure_event_type = case when t.touch_failure then t.failure_event_type else p.failure_event_type end,
-                    failure_event_tenant_id = case when t.touch_failure then t.failure_event_tenant_id else p.failure_event_tenant_id end
-                from unnest(:names, :heartbeats, :statuses, :reasons, :nodes, :touch_failures,
-                    :failure_categories, :failure_sequences, :failure_event_types, :failure_tenant_ids)
-                    as t(name, heartbeat, agent_status, pause_reason, running_on_node, touch_failure,
-                        failure_category, failure_event_sequence, failure_event_type, failure_event_tenant_id)
-                where p.name = t.name
-                """)
-                .With("names", names, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
-                .With("heartbeats", heartbeats, NpgsqlDbType.Array | NpgsqlDbType.TimestampTz)
-                .With("statuses", statuses, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
-                .With("reasons", reasons, NpgsqlDbType.Array | NpgsqlDbType.Text)
-                .With("nodes", nodes, NpgsqlDbType.Array | NpgsqlDbType.Integer)
-                .With("touch_failures", touchFailures, NpgsqlDbType.Array | NpgsqlDbType.Boolean)
-                .With("failure_categories", failureCategories, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
-                .With("failure_sequences", failureSequences, NpgsqlDbType.Array | NpgsqlDbType.Bigint)
-                .With("failure_event_types", failureEventTypes, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
-                .With("failure_tenant_ids", failureTenantIds, NpgsqlDbType.Array | NpgsqlDbType.Varchar)
-                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+
+            using var command = conn.CreateCommand(extendedProgressionSql());
+
+            var name = command.Parameters.Add(new NpgsqlParameter("name", NpgsqlDbType.Varchar));
+            var heartbeat = command.Parameters.Add(new NpgsqlParameter("heartbeat", NpgsqlDbType.TimestampTz));
+            var status = command.Parameters.Add(new NpgsqlParameter("agent_status", NpgsqlDbType.Varchar));
+            var reason = command.Parameters.Add(new NpgsqlParameter("pause_reason", NpgsqlDbType.Text));
+            var node = command.Parameters.Add(new NpgsqlParameter("running_on_node", NpgsqlDbType.Integer));
+            var touchFailure = command.Parameters.Add(new NpgsqlParameter("touch_failure", NpgsqlDbType.Boolean));
+            var failureCategory = command.Parameters.Add(new NpgsqlParameter("failure_category", NpgsqlDbType.Varchar));
+            var failureSequence = command.Parameters.Add(new NpgsqlParameter("failure_sequence", NpgsqlDbType.Bigint));
+            var failureEventType =
+                command.Parameters.Add(new NpgsqlParameter("failure_event_type", NpgsqlDbType.Varchar));
+            var failureTenantId =
+                command.Parameters.Add(new NpgsqlParameter("failure_tenant_id", NpgsqlDbType.Varchar));
+
+            // The writer already hands these over sorted, but a direct caller need not, and the ordering
+            // is what keeps two racing writers from deadlocking against each other.
+            foreach (var state in states.OrderBy(x => x.ShardName, StringComparer.Ordinal))
+            {
+                var failure = state.Failure;
+
+                name.Value = state.ShardName;
+                heartbeat.Value = (object?)state.LastHeartbeat ?? DBNull.Value;
+                status.Value = (object?)state.AgentStatus ?? DBNull.Value;
+                reason.Value = (object?)state.PauseReason ?? DBNull.Value;
+                node.Value = (object?)state.RunningOnNode ?? DBNull.Value;
+                touchFailure.Value = failure != null || state.Action == ShardAction.Started;
+                failureCategory.Value = (object?)failure?.Category.ToString() ?? DBNull.Value;
+                failureSequence.Value = (object?)failure?.Event?.Sequence ?? DBNull.Value;
+                failureEventType.Value = (object?)failure?.Event?.EventTypeName ?? DBNull.Value;
+                failureTenantId.Value = (object?)failure?.Event?.TenantId ?? DBNull.Value;
+
+                // One ExecuteNonQueryAsync per shard, deliberately: each is its own implicit transaction,
+                // so this loop never holds more than a single row lock at a time.
+                await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            }
         }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
         }
+    }
+
+    private string extendedProgressionSql()
+    {
+        return $"""
+            update {Options.EventGraph.DatabaseSchemaName}.mt_event_progression as p
+            set heartbeat = :heartbeat,
+                agent_status = :agent_status,
+                pause_reason = :pause_reason,
+                running_on_node = :running_on_node,
+                failure_category = case when :touch_failure then :failure_category else p.failure_category end,
+                failure_event_sequence = case when :touch_failure then :failure_sequence else p.failure_event_sequence end,
+                failure_event_type = case when :touch_failure then :failure_event_type else p.failure_event_type end,
+                failure_event_tenant_id = case when :touch_failure then :failure_tenant_id else p.failure_event_tenant_id end
+            where p.name = :name
+              and (p.heartbeat is distinct from :heartbeat
+                or p.agent_status is distinct from :agent_status
+                or p.pause_reason is distinct from :pause_reason
+                or p.running_on_node is distinct from :running_on_node
+                or (:touch_failure
+                    and (p.failure_category is distinct from :failure_category
+                      or p.failure_event_sequence is distinct from :failure_sequence
+                      or p.failure_event_type is distinct from :failure_event_type
+                      or p.failure_event_tenant_id is distinct from :failure_tenant_id)))
+            """;
     }
 
     public async Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token)
