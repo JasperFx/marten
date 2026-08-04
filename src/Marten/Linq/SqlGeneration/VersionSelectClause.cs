@@ -53,6 +53,14 @@ internal class VersionSelectClause<T>: ISelectClause, IModifyableFromObject wher
     private static readonly string VersionColumn =
         $"d.{SchemaConstants.VersionColumn} as {VersionSelectClause.VersionAlias}";
 
+    /// <summary>
+    /// The payload column as the document storage selects it, used to find the field to alias rather than
+    /// assuming its position. Matches <c>DocumentStorage</c>, which builds its select fields as
+    /// <c>d.{column.Name}</c>, and <c>DataColumn</c>, whose name is the same <c>data</c> the streaming reader
+    /// looks up.
+    /// </summary>
+    private static readonly string PayloadColumn = $"d.{VersionSelectClause.DataAlias}";
+
     public VersionSelectClause(ISelectClause inner)
     {
         Inner = inner;
@@ -68,15 +76,33 @@ internal class VersionSelectClause<T>: ISelectClause, IModifyableFromObject wher
     /// <summary>
     /// The inner clause's fields with the payload explicitly aliased to <c>data</c> — see the
     /// remarks on <see cref="VersionSelectClause"/> for why the alias cannot be left implicit.
-    /// <c>DocumentTable.SelectColumns</c> guarantees the payload is the first selected field
-    /// ("the order of the selection is data, id, everything else"), so the remaining fields —
-    /// e.g. the <c>mt_version</c> a revisioned document's storage already selects — pass through
-    /// untouched and keep their own names.
+    /// <para>
+    /// The payload is <b>not</b> reliably the first selected field, whatever the older comment in
+    /// <c>DocumentTable.SelectColumns</c> says: that method puts the id first whenever the id is selected at
+    /// all, and <c>IdColumn.ShouldSelect</c> is <c>storageStyle != QueryOnly</c>. So a query through any
+    /// identity-tracking session selects <c>d.id, d.data, …</c>, aliasing field 0 put the alias on the id
+    /// column, and the streaming reader — which looks the payload up by the name <c>data</c> — found the id
+    /// and wrote the document's id as the entire response body. A 200 whose payload does not deserialize
+    /// into the document type.
+    /// </para>
+    /// <para>
+    /// Matching the payload column by name fixes that for every storage style. The positional fallback stays
+    /// for an inner clause that <i>projects</i> rather than selects the column — <c>SelectDataSelectClause</c>'s
+    /// <c>jsonb_build_object(...)</c> under a <c>Select()</c> (#5158) — where there is no column name to match
+    /// and the projection is the only candidate anyway.
+    /// </para>
     /// </summary>
     private string[] innerFields()
     {
         var fields = Inner.SelectFields().ToArray();
-        fields[0] = $"{fields[0]} as {VersionSelectClause.DataAlias}";
+
+        var payload = Array.IndexOf(fields, PayloadColumn);
+        if (payload < 0)
+        {
+            payload = 0;
+        }
+
+        fields[payload] = $"{fields[payload]} as {VersionSelectClause.DataAlias}";
         return fields;
     }
 

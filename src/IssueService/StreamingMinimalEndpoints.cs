@@ -45,6 +45,15 @@ public static class StreamingMinimalEndpoints
                     ContentType = "application/vnd.marten.issue+json"
                 });
 
+        // Streamed through an identity-tracking session rather than the QueryOnly IQuerySession every
+        // other endpoint here uses. That is not a nicety: IdColumn.ShouldSelect is
+        // storageStyle != QueryOnly, so this is the only shape whose select list starts d.id, d.data, and
+        // it is the shape a Wolverine.Http endpoint gets when the Marten integration hands it a session.
+        // Aliasing the payload by position streamed the id as the whole body here.
+        app.MapGet("/minimal/issue/{id:guid}/from-document-session",
+            (Guid id, IDocumentSession session)
+                => new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == id)));
+
         // EmitETag = false opt-out
         app.MapGet("/minimal/issue/{id:guid}/no-etag",
             (Guid id, IQuerySession session)
