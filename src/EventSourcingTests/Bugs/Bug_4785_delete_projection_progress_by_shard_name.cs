@@ -156,35 +156,88 @@ public class Bug_4785_delete_projection_progress_by_shard_name: BugIntegrationCo
         (await readSequenceFor(shard.Identity)).ShouldBeNull();
     }
 
+    /// <summary>
+    /// Contract check across the JasperFx/Marten boundary, not a test of the delete path.
+    /// <para>
+    /// The HighWaterMark name is a special case inside the <see cref="ShardName"/> ctor: the
+    /// shardKey and version slots are always discarded, and as of jasperfx#618 (JasperFx 2.39.0)
+    /// the tenant slot is <em>not</em> — a store-global high-water shard collapses to the literal
+    /// <c>"HighWaterMark"</c>, a tenant-scoped one to <c>"HighWaterMark:{tenant}"</c>. That is the
+    /// grammar Marten has always persisted through <see cref="HighWaterShardIdentity"/>, so the
+    /// upstream change brought <c>ShardName</c> into line with Marten rather than the other way
+    /// round.
+    /// </para>
+    /// <para>
+    /// Both sides have to agree on this shape exactly. The progression SQL is keyed by string
+    /// equality on <c>name</c>, so any drift — a different separator, a dropped slot, an added
+    /// version prefix — silently desyncs the writers from the readers instead of failing loudly.
+    /// Nothing pinned that agreement before jasperfx#618 moved one side of it.
+    /// </para>
+    /// </summary>
     [Fact]
-    public async Task high_water_mark_identity_is_the_literal_constant_and_is_deletable_by_it()
+    public void high_water_identity_grammar_agrees_between_shard_name_and_marten()
     {
-        // The HighWaterMark name is a special case inside the ShardName ctor: the
-        // shardKey and version slots are always discarded, and as of jasperfx#618
-        // (JasperFx 2.39.0) the tenant slot is NOT — a store-global high-water shard
-        // collapses to the literal "HighWaterMark", a tenant-scoped one to
-        // "HighWaterMark:{tenant}". That is the grammar Marten has always persisted
-        // through HighWaterShardIdentity; the upstream change brought ShardName into
-        // line with it rather than the other way round.
-        //
-        // The override matches on the exact name column, so deleting via either
-        // literal works the same as any other identity. (Operational note:
-        // HighWaterMark is not an orphan — only delete it deliberately.)
         var storeGlobal = new ShardName(ShardState.HighWaterMark, "ignored", 9);
         storeGlobal.Identity.ShouldBe(ShardState.HighWaterMark);
         storeGlobal.Identity.ShouldBe(HighWaterShardIdentity.StoreGlobal);
 
         var perTenant = new ShardName(ShardState.HighWaterMark, "ignored", 9, "blue");
         perTenant.Identity.ShouldBe(HighWaterShardIdentity.PerTenant("blue"));
+        perTenant.Identity.ShouldBe($"{ShardState.HighWaterMark}:blue");
+    }
 
+    [Fact]
+    public async Task store_global_high_water_row_is_deletable_by_its_literal_identity()
+    {
+        // The override matches on the exact name column, so the high-water row deletes
+        // like any other identity. (Operational note: HighWaterMark is not an orphan —
+        // only delete it deliberately.)
         var database = (MartenDatabase)theStore.Storage.Database;
         await database.EnsureStorageExistsAsync(typeof(IEvent));
 
-        await seedProgressionRow(ShardState.HighWaterMark, 999);
+        await seedProgressionRow(HighWaterShardIdentity.StoreGlobal, 999);
         await ((IEventDatabase)database).DeleteProjectionProgressByShardNameAsync(
-            ShardState.HighWaterMark, default);
+            HighWaterShardIdentity.StoreGlobal, default);
 
-        (await readSequenceFor(ShardState.HighWaterMark)).ShouldBeNull();
+        (await readSequenceFor(HighWaterShardIdentity.StoreGlobal)).ShouldBeNull();
+    }
+
+    /// <summary>
+    /// Per-tenant high-water rows became a first-class shape in jasperfx#618, and the delete
+    /// path had no coverage for them. The tenant ids here are chosen deliberately:
+    /// <c>acme_corp</c> and <c>acmeXcorp</c> differ in exactly one character, and that character
+    /// is <c>_</c> — a <c>LIKE</c> single-character wildcard in PostgreSQL.
+    /// <para>
+    /// So if this delete ever stopped being <c>where name = ?</c> and became a pattern match,
+    /// deleting <c>acme_corp</c>'s row would silently take <c>acmeXcorp</c>'s with it. That is
+    /// not hypothetical for this table: #5171 is exactly this bug in the per-tenant progression
+    /// <em>read</em> filter, which builds an unescaped <c>name like '%:' || tenant</c>. The
+    /// delete path is correct today; this pins it so the two paths cannot converge on the wrong
+    /// answer.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task deleting_one_tenants_high_water_row_leaves_a_lookalike_tenant_alone()
+    {
+        var database = (MartenDatabase)theStore.Storage.Database;
+        await database.EnsureStorageExistsAsync(typeof(IEvent));
+
+        var target = HighWaterShardIdentity.PerTenant("acme_corp");
+        var lookalike = HighWaterShardIdentity.PerTenant("acmeXcorp");
+
+        await seedProgressionRow(HighWaterShardIdentity.StoreGlobal, 100);
+        await seedProgressionRow(target, 200);
+        await seedProgressionRow(lookalike, 300);
+
+        await ((IEventDatabase)database).DeleteProjectionProgressByShardNameAsync(target, default);
+
+        (await readSequenceFor(target)).ShouldBeNull();
+
+        // The underscore must not have matched the sibling...
+        (await readSequenceFor(lookalike)).ShouldBe(300);
+
+        // ...and the store-global row is a prefix of both, so a prefix match would eat it too.
+        (await readSequenceFor(HighWaterShardIdentity.StoreGlobal)).ShouldBe(100);
     }
 
     /// <summary>
