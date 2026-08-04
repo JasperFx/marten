@@ -377,12 +377,28 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             handler.ConfigureCommand(builder, null);
 
             await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
-            return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+            var states = await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+
+            return tenantId == null ? states : states.Where(x => belongsToTenant(x, tenantId)).ToList();
         }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// #5171: the SQL suffix filter narrows the read to rows ending in <c>:{tenantId}</c>, which is the
+    /// most a string comparison can do — but <see cref="ShardName.Identity"/> without a tenant is
+    /// <c>{Name}:{ShardKey}</c>, so a projection sliced by a shard key that happens to equal a tenant id
+    /// ends in the same suffix and would be reported as that tenant's progress. Parsing settles it:
+    /// <see cref="ShardName.TryParse"/> puts <c>Foo:acme</c>'s trailing segment in the shard-key slot and
+    /// <c>Orders:All:acme</c>'s (and <c>HighWaterMark:acme</c>'s) in the tenant slot. A name that doesn't
+    /// parse at all isn't attributable to a tenant, so it's excluded rather than guessed at.
+    /// </summary>
+    private static bool belongsToTenant(ShardState state, string tenantId)
+    {
+        return ShardName.TryParse(state.ShardName, out var shard) && shard?.TenantId == tenantId;
     }
 
     /// <summary>

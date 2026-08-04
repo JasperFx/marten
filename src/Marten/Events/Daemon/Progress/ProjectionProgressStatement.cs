@@ -82,11 +82,17 @@ internal class ProjectionProgressStatement: Statement
         if (TenantId != null)
         {
             builder.Append(whereStarted ? " and " : " where ");
-            // Tenant-bearing ShardName.Identity always ends in `:{tenantId}`.
-            // Match the trailing tenant suffix via LIKE — partition suffixes
-            // are valid PG identifiers so they don't contain LIKE wildcards.
-            builder.Append("name like ");
-            builder.AppendParameter("%:" + TenantId);
+
+            // #5171: a tenant-bearing ShardName.Identity always ends in `:{tenantId}`, but this used to
+            // be matched with `name like '%:' || tenantId`, and `_` is BOTH a legal tenant-id character
+            // and a LIKE single-character wildcard — so tenant `acme_corp` also swept in `acmeXcorp`'s
+            // rows. Compare the literal trailing substring instead: no pattern grammar, no escaping to
+            // get wrong, and index-neutral (the old leading-`%` LIKE could never use an index either).
+            var suffix = ":" + TenantId;
+            builder.Append("right(name, char_length(");
+            builder.AppendParameter(suffix);
+            builder.Append(")) = ");
+            builder.AppendParameter(suffix);
             whereStarted = true;
         }
 
