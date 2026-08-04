@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -415,13 +416,21 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     /// sequence;</item>
     /// <item>no match returns null.</item>
     /// </list>
-    /// <see cref="ProjectionProgressRow.AgentStatus"/> and <see cref="ProjectionProgressRow.LastHeartbeat"/>
-    /// are always null: Marten models the columns but no daemon path writes them (jasperfx#519).
+    /// <para>
+    /// #5172: <see cref="ProjectionProgressRow.AgentStatus"/> and
+    /// <see cref="ProjectionProgressRow.LastHeartbeat"/> carry the real persisted values when
+    /// <see cref="EventGraph.EnableExtendedProgressionTracking"/> is on — the daemon has written those
+    /// columns since jasperfx#537, and this targeted read is exactly the call a monitor makes instead of
+    /// pulling every row through <see cref="AllProjectionProgress(string?,CancellationToken)"/>. With
+    /// extended tracking off the columns do not exist on the table and both stay null.
+    /// </para>
     /// </summary>
     public async ValueTask<ProjectionProgressRow?> ReadProjectionProgressAsync(
         string projectionName, string? tenantId, CancellationToken token)
     {
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        var extended = Options.EventGraph.EnableExtendedProgressionTracking;
 
         await using var conn = CreateConnection();
         try
@@ -431,12 +440,15 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             var builder = new CommandBuilder();
             // The trailing ':' guards against a projection whose name is a prefix of another
             // (e.g. "Orders" must not match "OrdersHistory:All").
+            var columns = extended ? "name, last_seq_id, agent_status, heartbeat" : "name, last_seq_id";
             builder.Append(
-                $"select name, last_seq_id from {Options.EventGraph.DatabaseSchemaName}.mt_event_progression where name like ");
+                $"select {columns} from {Options.EventGraph.DatabaseSchemaName}.mt_event_progression where name like ");
             builder.AppendParameter(projectionName + ":%");
 
             ShardName? best = null;
             var bestSequence = 0L;
+            string? bestStatus = null;
+            DateTimeOffset? bestHeartbeat = null;
 
             await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
             while (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -460,15 +472,40 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
                 {
                     best = shard;
                     bestSequence = sequence;
+
+                    if (extended)
+                    {
+                        bestStatus = await readNullableAsync<string>(reader, 2, token).ConfigureAwait(false);
+                        bestHeartbeat = await readNullableStructAsync<DateTimeOffset>(reader, 3, token)
+                            .ConfigureAwait(false);
+                    }
                 }
             }
 
-            return best is null ? null : new ProjectionProgressRow(projectionName, tenantId, bestSequence, null, null);
+            return best is null
+                ? null
+                : new ProjectionProgressRow(projectionName, tenantId, bestSequence, bestStatus, bestHeartbeat);
         }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
         }
+    }
+
+    private static async Task<T?> readNullableAsync<T>(DbDataReader reader, int index, CancellationToken token)
+        where T : class
+    {
+        return await reader.IsDBNullAsync(index, token).ConfigureAwait(false)
+            ? null
+            : await reader.GetFieldValueAsync<T>(index, token).ConfigureAwait(false);
+    }
+
+    private static async Task<T?> readNullableStructAsync<T>(DbDataReader reader, int index, CancellationToken token)
+        where T : struct
+    {
+        return await reader.IsDBNullAsync(index, token).ConfigureAwait(false)
+            ? null
+            : await reader.GetFieldValueAsync<T>(index, token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -478,13 +515,17 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     /// equals <paramref name="name"/>'s <see cref="ShardName.Identity"/> verbatim, so a blue/green deploy's
     /// versions, a sliced projection's shard keys, and per-tenant partitions each address their own row.
     /// A <see cref="ShardName.ShardKey"/> of <c>All</c> is the projection's global cell. Returns null when no
-    /// row exists for that identity; <see cref="ProjectionProgressRow.AgentStatus"/> and
-    /// <see cref="ProjectionProgressRow.LastHeartbeat"/> stay null (jasperfx#519).
+    /// row exists for that identity. <see cref="ProjectionProgressRow.AgentStatus"/> and
+    /// <see cref="ProjectionProgressRow.LastHeartbeat"/> carry the persisted values when
+    /// <see cref="EventGraph.EnableExtendedProgressionTracking"/> is on, and stay null when it is off and
+    /// the columns do not exist (#5172).
     /// </summary>
     public async ValueTask<ProjectionProgressRow?> ReadProjectionProgressAsync(
         ShardName name, CancellationToken token)
     {
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        var extended = Options.EventGraph.EnableExtendedProgressionTracking;
 
         await using var conn = CreateConnection();
         try
@@ -492,8 +533,9 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             await conn.OpenAsync(token).ConfigureAwait(false);
 
             var builder = new CommandBuilder();
+            var columns = extended ? "last_seq_id, agent_status, heartbeat" : "last_seq_id";
             builder.Append(
-                $"select last_seq_id from {Options.EventGraph.DatabaseSchemaName}.mt_event_progression where name = ");
+                $"select {columns} from {Options.EventGraph.DatabaseSchemaName}.mt_event_progression where name = ");
             builder.AppendParameter(name.Identity);
 
             await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
@@ -503,7 +545,16 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             }
 
             var sequence = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
-            return new ProjectionProgressRow(name.Name, name.TenantId, sequence, null, null);
+
+            if (!extended)
+            {
+                return new ProjectionProgressRow(name.Name, name.TenantId, sequence, null, null);
+            }
+
+            var status = await readNullableAsync<string>(reader, 1, token).ConfigureAwait(false);
+            var heartbeat = await readNullableStructAsync<DateTimeOffset>(reader, 2, token).ConfigureAwait(false);
+
+            return new ProjectionProgressRow(name.Name, name.TenantId, sequence, status, heartbeat);
         }
         finally
         {
