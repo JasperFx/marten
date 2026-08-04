@@ -50,8 +50,14 @@ internal class EventProgressionTable: Table
             AddColumn("agent_status", "varchar(20)").AllowNulls();
             AddColumn("pause_reason", "text").AllowNulls();
             AddColumn("running_on_node", "integer").AllowNulls();
-            AddColumn("warning_behind_threshold", "bigint").AllowNulls();
-            AddColumn("critical_behind_threshold", "bigint").AllowNulls();
+
+            // #5173: warning_behind_threshold / critical_behind_threshold used to be created here.
+            // They were created, selected and hydrated onto ShardState -- and written by nothing, in
+            // any repo, so every read of them returned NULL. Two columns of storage, two entries in
+            // every extended-tracking SELECT and two selector ordinals, carrying nothing. Removed
+            // rather than wired: nothing ever owned the value. Existing deployments get an
+            // `alter table ... drop column` on their next apply, which is lossless because the
+            // columns were provably always NULL.
 
             // #5048 / jasperfx#565: the classified reason this shard is paused or stopped, so a consumer
             // polling the database (CritterWatch when the publishing node is DOWN, which is exactly when

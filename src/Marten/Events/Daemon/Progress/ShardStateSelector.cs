@@ -72,17 +72,9 @@ internal class ShardStateSelector: ISelector<ShardState>
             }
             nextIndex++;
 
-            if (!await reader.IsDBNullAsync(nextIndex, token).ConfigureAwait(false))
-            {
-                state.WarningBehindThreshold = await reader.GetFieldValueAsync<long>(nextIndex, token).ConfigureAwait(false);
-            }
-            nextIndex++;
-
-            if (!await reader.IsDBNullAsync(nextIndex, token).ConfigureAwait(false))
-            {
-                state.CriticalBehindThreshold = await reader.GetFieldValueAsync<long>(nextIndex, token).ConfigureAwait(false);
-            }
-            nextIndex++;
+            // #5173: WarningBehindThreshold / CriticalBehindThreshold were hydrated here from two
+            // columns nothing ever wrote. The properties remain on JasperFx's ShardState (unassigned
+            // and unread there too) until they are removed upstream.
 
             // #5048 / jasperfx#565: rehydrate the classified failure so a consumer polling the database
             // (CritterWatch when the publishing node is down) gets the same shape as a live ShardState
