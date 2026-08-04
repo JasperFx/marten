@@ -642,9 +642,8 @@ that just emits and update every time that Marten has to "skip" stale events.
 
 ## Extended Progression Tracking
 
-Extended progression tracking adds ten monitoring columns (`heartbeat`,
-`agent_status`, `pause_reason`, `running_on_node`, `warning_behind_threshold`,
-`critical_behind_threshold`, `failure_category`, `failure_event_sequence`,
+Extended progression tracking adds eight monitoring columns (`heartbeat`,
+`agent_status`, `pause_reason`, `running_on_node`, `failure_category`, `failure_event_sequence`,
 `failure_event_type`, `failure_event_tenant_id`) to `mt_event_progression`. The async daemon writes
 them from existing runtime state and the shard-state selector reads them back
 into `ShardState` so monitoring tooling such as CritterWatch can display
