@@ -50,6 +50,11 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             options.Events.MetadataConfig.CausationIdEnabled = true;
         }
 
+        if (config.EnableHeaders)
+        {
+            options.Events.MetadataConfig.HeadersEnabled = true;
+        }
+
         config.ApplyTo(new MartenComplianceRegistrar(options));
 
         _store = new DocumentStore(options);

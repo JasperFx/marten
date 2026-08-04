@@ -3,6 +3,7 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events.Daemon.HighWater;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -158,14 +159,23 @@ public class Bug_4785_delete_projection_progress_by_shard_name: BugIntegrationCo
     [Fact]
     public async Task high_water_mark_identity_is_the_literal_constant_and_is_deletable_by_it()
     {
-        // The HighWaterMark name is a special case inside the ShardName ctor —
-        // Identity is overwritten to the literal "HighWaterMark" regardless of
-        // the shardKey/version/tenant arguments. The override matches on the
-        // exact name column, so deleting via this literal works the same as
-        // any other identity. (Operational note: HighWaterMark is not an
-        // orphan — only delete it deliberately.)
-        var shard = new ShardName(ShardState.HighWaterMark, "ignored", 9, "ignored");
-        shard.Identity.ShouldBe(ShardState.HighWaterMark);
+        // The HighWaterMark name is a special case inside the ShardName ctor: the
+        // shardKey and version slots are always discarded, and as of jasperfx#618
+        // (JasperFx 2.39.0) the tenant slot is NOT — a store-global high-water shard
+        // collapses to the literal "HighWaterMark", a tenant-scoped one to
+        // "HighWaterMark:{tenant}". That is the grammar Marten has always persisted
+        // through HighWaterShardIdentity; the upstream change brought ShardName into
+        // line with it rather than the other way round.
+        //
+        // The override matches on the exact name column, so deleting via either
+        // literal works the same as any other identity. (Operational note:
+        // HighWaterMark is not an orphan — only delete it deliberately.)
+        var storeGlobal = new ShardName(ShardState.HighWaterMark, "ignored", 9);
+        storeGlobal.Identity.ShouldBe(ShardState.HighWaterMark);
+        storeGlobal.Identity.ShouldBe(HighWaterShardIdentity.StoreGlobal);
+
+        var perTenant = new ShardName(ShardState.HighWaterMark, "ignored", 9, "blue");
+        perTenant.Identity.ShouldBe(HighWaterShardIdentity.PerTenant("blue"));
 
         var database = (MartenDatabase)theStore.Storage.Database;
         await database.EnsureStorageExistsAsync(typeof(IEvent));
