@@ -4,13 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon.HighWater;
 using Marten.Storage;
+using Weasel.Postgresql;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using NpgsqlTypes;
 
 namespace Marten.Events.Daemon;
 
@@ -22,21 +25,29 @@ namespace Marten.Events.Daemon;
 ///     reports Healthy. This check instead detects that the high-water agent has stopped and,
 ///     optionally, restarts it.
 ///     <para>
-///         Two staleness signals, best first (marten#4986):
+///         Two staleness signals, each used where it is actually valid (marten#4986, revised in
+///         marten#5174):
 ///         <list type="number">
 ///             <item>
-///                 <b>Heartbeat age (primary).</b> When ExtendedProgression is enabled, the
-///                 high-water agent stamps a liveness heartbeat on the <c>HighWaterMark</c>
-///                 progression row on every completed poll cycle (JasperFx/jasperfx#539). Its age
-///                 is a direct signal that the loop is <em>cycling</em>, independent of whether the
-///                 mark <em>advances</em> — so a quiet store with no new events never trips it.
+///                 <b>Poll-cycle age — per-tenant rows.</b> Under
+///                 <c>UseTenantPartitionedEvents</c> every vectorized per-tenant poll re-stamps the
+///                 <c>HighWaterMark:&lt;tenant&gt;</c> row through <c>mt_mark_event_progression</c>,
+///                 which always sets <c>last_updated</c> — even when the mark does not move. Its age
+///                 is therefore a direct signal that the loop is <em>cycling</em>, independent of
+///                 whether the mark <em>advances</em>, so a quiet tenant never trips it. No extra
+///                 write, and no dependency on ExtendedProgression.
 ///             </item>
 ///             <item>
-///                 <b>Sequence gap (fallback).</b> When ExtendedProgression is off, no heartbeat is
-///                 persisted, so the check falls back to the original heuristic: the store-global
-///                 mark sitting unchanged while later events pile up past it.
+///                 <b>Sequence gap — the store-global row.</b> There <c>last_updated</c> only moves
+///                 when the mark advances, so it says nothing about liveness and the original
+///                 heuristic is the honest one: the mark sitting unchanged while later events pile
+///                 up past it.
 ///             </item>
 ///         </list>
+///         The ExtendedProgression <c>heartbeat</c> column is deliberately <em>not</em> consulted:
+///         it is never written for high-water rows (<c>ExtendedProgressionWriter.OnNext</c> drops
+///         <c>HighWaterMark</c> states outright), so reading it only made the check look like it had
+///         a signal it did not have — marten#5174.
 ///     </para>
 ///     <para>
 ///         marten#4991: on a multi-database (sharded / <c>MultiTenantedWithShardedDatabases</c>)
@@ -45,26 +56,25 @@ namespace Marten.Events.Daemon;
 ///         for — otherwise a probe fans a connection out across all N databases and (with
 ///         <c>autoRestart</c>) would try to restart agents this node does not own. Under
 ///         <c>UseTenantPartitionedEvents</c> the high-water mark is tracked per tenant
-///         (<c>HighWaterMark:&lt;tenant&gt;</c> rows), and those are evaluated too — via the
-///         heartbeat signal, which is the only reliable per-tenant staleness signal.
+///         (<c>HighWaterMark:&lt;tenant&gt;</c> rows), and those are the rows evaluated.
 ///     </para>
 /// </summary>
 public static class HighWaterHealthCheckExtensions
 {
     /// <summary>
     ///     Adds a health check that reports <see cref="HealthCheckResult.Unhealthy" /> when the
-    ///     high-water agent has stopped for at least <paramref name="staleThreshold" /> — via its
-    ///     liveness heartbeat where available, otherwise via the sequence-gap heuristic
-    ///     (marten#4961 / marten#4986).
+    ///     high-water agent has stopped for at least <paramref name="staleThreshold" /> — via the age
+    ///     of its last completed poll cycle on per-tenant rows, otherwise via the sequence-gap
+    ///     heuristic (marten#4961 / marten#4986 / marten#5174).
     /// </summary>
     /// <param name="builder"><see cref="IHealthChecksBuilder" /></param>
     /// <param name="staleThreshold">
-    ///     How long the high-water agent may go without a heartbeat (or, on the fallback path, how
-    ///     long the mark may sit unchanged while behind the latest event sequence) before the store
-    ///     is considered unhealthy. Defaults to 30 seconds.
+    ///     How long the high-water agent may go without completing a poll cycle (or, on the
+    ///     store-global gap path, how long the mark may sit unchanged while behind the latest event
+    ///     sequence) before the store is considered unhealthy. Defaults to 30 seconds.
     /// </param>
     /// <param name="minimumGap">
-    ///     Fallback path only: the gap (highest event sequence minus high-water mark) that is
+    ///     Store-global gap path only: the gap (highest event sequence minus high-water mark) that is
     ///     treated as "caught up" and never trips the check, absorbing the normal safe-harbor lag.
     ///     Defaults to 1.
     /// </param>
@@ -95,8 +105,9 @@ public static class HighWaterHealthCheckExtensions
     ///     <see cref="DaemonMode.HotCold" />, because in <see cref="DaemonMode.ExternallyManaged" />
     ///     this store hosts no daemon and a frozen mark is legitimate. Set this to <c>true</c> to
     ///     also assert under <see cref="DaemonMode.ExternallyManaged" /> (e.g. Wolverine-managed
-    ///     distribution) — in which case only the <em>heartbeat</em> signal is used, never the gap
-    ///     fallback, since an external owner can legitimately pause the mark. Combine with
+    ///     distribution) — in which case only the per-tenant poll-cycle signal is used, never the
+    ///     store-global gap heuristic, since an external owner can legitimately pause the mark.
+    ///     A non-partitioned store therefore has nothing to assert on there. Combine with
     ///     <paramref name="databaseFilter" /> so the check only asserts on databases the local node
     ///     actually owns. Defaults to <c>false</c>.
     /// </param>
@@ -267,18 +278,18 @@ public static class HighWaterHealthCheckExtensions
 
                 // Solo / HotCold host the daemon here, so use every available signal. ExternallyManaged
                 // (e.g. Wolverine-managed distribution, marten#4991) hosts no local daemon — opt in with
-                // includeExternallyManaged to still assert, but only via the heartbeat signal (the gap
-                // fallback would false-positive when an external owner legitimately pauses the mark).
-                // Disabled and everything else stays a no-op.
+                // includeExternallyManaged to still assert, but only via the per-tenant poll-cycle signal
+                // (the store-global gap heuristic would false-positive when an external owner legitimately
+                // pauses the mark). Disabled and everything else stays a no-op.
                 var mode = projections.AsyncMode;
-                bool heartbeatOnly;
+                bool skipGapHeuristic;
                 if (mode is DaemonMode.Solo or DaemonMode.HotCold)
                 {
-                    heartbeatOnly = false;
+                    skipGapHeuristic = false;
                 }
                 else if (mode == DaemonMode.ExternallyManaged && _includeExternallyManaged)
                 {
-                    heartbeatOnly = true;
+                    skipGapHeuristic = true;
                 }
                 else
                 {
@@ -313,7 +324,7 @@ public static class HighWaterHealthCheckExtensions
 
                 foreach (var database in scoped)
                 {
-                    var result = await checkDatabaseAsync(database, heartbeatOnly, perTenantHighWater,
+                    var result = await checkDatabaseAsync(database, skipGapHeuristic, perTenantHighWater,
                             cancellationToken)
                         .ConfigureAwait(false);
                     if (result.Status != HealthStatus.Healthy)
@@ -330,15 +341,11 @@ public static class HighWaterHealthCheckExtensions
             }
         }
 
-        private async Task<HealthCheckResult> checkDatabaseAsync(IMartenDatabase database, bool heartbeatOnly,
+        private async Task<HealthCheckResult> checkDatabaseAsync(IMartenDatabase database, bool skipGapHeuristic,
             bool perTenantHighWater, CancellationToken token)
         {
-            var allProgress = await database.AllProjectionProgress(token).ConfigureAwait(false);
-
-            var allHighWater = allProgress
-                .Where(x => string.Equals(x.ShardName, HighWaterMarkShard, StringComparison.Ordinal)
-                            || x.ShardName.StartsWith(PerTenantHighWaterPrefix, StringComparison.Ordinal))
-                .ToArray();
+            var allHighWater = await readHighWaterRowsAsync(database, _store.Options.Events.DatabaseSchemaName, token)
+                .ConfigureAwait(false);
 
             // marten#4991: under UseTenantPartitionedEvents the authoritative rows are the per-tenant
             // HighWaterMark:<tenant> rows (the original check matched only the exact "HighWaterMark"
@@ -347,17 +354,9 @@ public static class HighWaterHealthCheckExtensions
             // per-tenant rows, and evaluate only the authoritative set — so the store-global row (which is
             // intentionally frozen under partitioning, the daemon skips its loop) is never gap-assessed
             // there and can't false-positive.
-            var perTenantMode = perTenantHighWater ||
-                                allHighWater.Any(x =>
-                                    x.ShardName.StartsWith(PerTenantHighWaterPrefix, StringComparison.Ordinal));
+            var perTenantMode = perTenantHighWater || allHighWater.Any(x => x.IsPerTenant);
 
-            var highWaterRows = perTenantMode
-                ? allHighWater
-                    .Where(x => x.ShardName.StartsWith(PerTenantHighWaterPrefix, StringComparison.Ordinal))
-                    .ToArray()
-                : allHighWater
-                    .Where(x => string.Equals(x.ShardName, HighWaterMarkShard, StringComparison.Ordinal))
-                    .ToArray();
+            var highWaterRows = allHighWater.Where(x => x.IsPerTenant == perTenantMode).ToArray();
 
             // No HighWaterMark progression row yet -> the daemon has not started here. Nothing to assert.
             if (highWaterRows.Length == 0)
@@ -371,21 +370,31 @@ public static class HighWaterHealthCheckExtensions
 
             foreach (var row in highWaterRows)
             {
-                var isPerTenant =
-                    !string.Equals(row.ShardName, HighWaterMarkShard, StringComparison.Ordinal);
                 var key = trackingKey(database.Identifier, row.ShardName);
 
-                // Primary signal (marten#4986): the liveness heartbeat (jasperfx#539), present only when
-                // ExtendedProgression is enabled. Heartbeat age proves the poll loop is *cycling*
-                // independent of whether the mark *advances*, so a quiet store never trips it — a strictly
-                // better signal than the gap heuristic, and the only reliable per-tenant signal. Use it
-                // whenever it is available.
-                if (row.LastHeartbeat is { } lastHeartbeat)
+                // Primary signal, per-tenant rows only (marten#5174). Every vectorized per-tenant poll
+                // re-stamps HighWaterMark:<tenant> through mt_mark_event_progression, which always sets
+                // last_updated = transaction_timestamp() — even when the mark does not move. So its age
+                // proves the poll loop is *cycling* independent of whether the mark *advances*, which is
+                // what a liveness check needs and what no other persisted column offers here. It costs
+                // nothing extra: the write already happens on every cycle.
+                //
+                // This replaces the ExtendedProgression `heartbeat` column, which this check used to read
+                // as its primary signal. That column is never written for high-water rows —
+                // ExtendedProgressionWriter.OnNext drops HighWaterMark states outright (pinned by
+                // skips_high_water_mark_and_all_projections_states) — so the branch was unreachable in any
+                // real deployment and the check silently degraded to the gap heuristic.
+                if (row.IsPerTenant)
                 {
-                    // The gap tracker is only for the fallback path; keep it clear while on the heartbeat path.
+                    // The gap tracker is only for the store-global fallback path; keep it clear here.
                     _tracker.Readings.TryRemove(key, out _);
 
-                    var age = now - lastHeartbeat;
+                    if (row.LastUpdated is not { } lastUpdated)
+                    {
+                        continue;
+                    }
+
+                    var age = now - lastUpdated;
                     if (age < _staleThreshold)
                     {
                         continue;
@@ -393,16 +402,14 @@ public static class HighWaterHealthCheckExtensions
 
                     var restartNote = await tryAutoRestartAsync(database.Identifier, now, token).ConfigureAwait(false);
                     return HealthCheckResult.Unhealthy(
-                        $"Unhealthy: the high-water agent for '{shardDescription(database, row)}' last reported a liveness heartbeat {age.TotalSeconds:F0}s ago (at {lastHeartbeat:O}), exceeding the {_staleThreshold} staleness threshold. Its poll loop has stopped cycling (see JasperFx/jasperfx#539 / marten#4961).{restartNote}");
+                        $"Unhealthy: the high-water agent for '{shardDescription(database, row)}' last completed a poll cycle {age.TotalSeconds:F0}s ago (at {lastUpdated:O}), exceeding the {_staleThreshold} staleness threshold. Its poll loop has stopped cycling (see marten#4961).{restartNote}");
                 }
 
-                // No heartbeat. The gap fallback is only reliable for the store-global mark under a mode
-                // this store actually hosts:
-                //  - heartbeatOnly (ExternallyManaged) -> an external owner may legitimately pause the mark.
-                //  - per-tenant -> there is no per-tenant highest-sequence to compute a meaningful gap
-                //    (FetchHighestEventSequenceNumber is store-global), so a tenant with no new events would
-                //    look permanently "behind". Enable ExtendedProgression for per-tenant staleness.
-                if (heartbeatOnly || isPerTenant)
+                // Store-global row. last_updated only moves when the mark ADVANCES here
+                // (HighWaterDetector.persistDetectedMarkAsync returns early when nothing changed), so it is
+                // not a liveness signal and the gap heuristic is the only honest one. It is unusable under
+                // skipGapHeuristic (ExternallyManaged), where an external owner may legitimately pause the mark.
+                if (skipGapHeuristic)
                 {
                     _tracker.Readings.TryRemove(key, out _);
                     continue;
@@ -442,11 +449,63 @@ public static class HighWaterHealthCheckExtensions
             return HealthCheckResult.Healthy("Healthy");
         }
 
-        private static string shardDescription(IMartenDatabase database, JasperFx.Events.Projections.ShardState row)
+        /// <summary>
+        ///     marten#5174: read just the high-water progression rows, with <c>last_updated</c>. This used
+        ///     to go through <see cref="IEventDatabase.AllProjectionProgress(CancellationToken)" /> and
+        ///     filter in memory, which pulled every projection × tenant row on every probe and still could
+        ///     not see <c>last_updated</c> — <see cref="JasperFx.Events.Projections.ShardState" /> has no
+        ///     field for it. Two high-water rows out of hundreds is the whole working set here.
+        /// </summary>
+        private static async Task<IReadOnlyList<HighWaterRow>> readHighWaterRowsAsync(IMartenDatabase database,
+            string schema, CancellationToken token)
         {
-            return string.Equals(row.ShardName, HighWaterMarkShard, StringComparison.Ordinal)
-                ? $"database '{database.Identifier}'"
-                : $"database '{database.Identifier}', shard '{row.ShardName}'";
+            await database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+            var rows = new List<HighWaterRow>();
+
+            await using var conn = database.CreateConnection();
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            try
+            {
+                // Both operands are compile-time constants from HighWaterShardIdentity, so there is no
+                // pattern grammar reaching this from user input.
+                await using var reader = await conn
+                    .CreateCommand(
+                        $"select name, last_seq_id, last_updated from {schema}.mt_event_progression where name = :global or name like :prefix")
+                    .With("global", HighWaterMarkShard, NpgsqlDbType.Varchar)
+                    .With("prefix", PerTenantHighWaterPrefix + "%", NpgsqlDbType.Varchar)
+                    .ExecuteReaderAsync(token).ConfigureAwait(false);
+
+                while (await reader.ReadAsync(token).ConfigureAwait(false))
+                {
+                    var name = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+                    var sequence = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
+                    DateTimeOffset? lastUpdated = await reader.IsDBNullAsync(2, token).ConfigureAwait(false)
+                        ? null
+                        : await reader.GetFieldValueAsync<DateTimeOffset>(2, token).ConfigureAwait(false);
+
+                    rows.Add(new HighWaterRow(name, sequence, lastUpdated));
+                }
+            }
+            finally
+            {
+                await conn.CloseAsync().ConfigureAwait(false);
+            }
+
+            return rows;
+        }
+
+        private record HighWaterRow(string ShardName, long Sequence, DateTimeOffset? LastUpdated)
+        {
+            public bool IsPerTenant { get; } =
+                !string.Equals(ShardName, HighWaterMarkShard, StringComparison.Ordinal);
+        }
+
+        private static string shardDescription(IMartenDatabase database, HighWaterRow row)
+        {
+            return row.IsPerTenant
+                ? $"database '{database.Identifier}', shard '{row.ShardName}'"
+                : $"database '{database.Identifier}'";
         }
 
         private static string trackingKey(string databaseIdentifier, string shardName) =>
