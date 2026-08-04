@@ -25,11 +25,20 @@ public class ProjectionScenario: JasperFx.Events.TestSupport.ProjectionScenario<
         _store = store;
     }
 
+    /// <summary>
+    ///     #5169: the wipe list comes from <see cref="IProjectionSource{TOperations,TQuerySession}.PublishedTypes" />,
+    ///     not <c>Options.StorageTypes</c>. A <c>CompositeProjection</c> never populates its own
+    ///     <c>StorageTypes</c> — its members hold theirs — so the loop iterated nothing for a store whose read
+    ///     side is a composite, and every scenario after the first ran against the previous scenario's
+    ///     documents while their events had already been deleted. <c>PublishedTypes()</c> is the traversal that
+    ///     already knows to expand a composite into its members (and is a superset of <c>StorageTypes</c> for
+    ///     everything else), which is why Marten's own schema build-out uses it.
+    /// </summary>
     protected override async Task DeleteExistingDataAsync(CancellationToken ct)
     {
         await _store.Advanced.Clean.DeleteAllEventDataAsync(ct).ConfigureAwait(false);
         foreach (var storageType in
-                 _store.Options.Projections.All.SelectMany(x => x.Options.StorageTypes))
+                 _store.Options.Projections.All.SelectMany(x => x.PublishedTypes()).Distinct())
         {
             await _store.Advanced.Clean.DeleteDocumentsByTypeAsync(storageType, ct).ConfigureAwait(false);
         }
