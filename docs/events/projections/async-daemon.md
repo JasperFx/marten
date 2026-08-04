@@ -720,6 +720,41 @@ compose. (Note that `opts.Events` -- Marten's `EventGraph` -- does not itself
 implement `IEventStoreInstrumentation`; use the `EnableExtendedProgressionTracking`
 property shown above.)
 
+### What extended progression actually costs
+
+The columns themselves are free -- they ride along on writes the daemon already makes when a shard
+starts, pauses or stops. What is **not** free is the *periodic* heartbeat: a timer-driven flush that
+opens its own connection and transaction **per shard database, per node**.
+
+Marten 9.22.4 / JasperFx 2.39 turns that periodic beat **off by default**. Only status transitions
+reach the database, so an idle store makes no telemetry writes at all. Before that it ran on a
+hardcoded 5-second interval with no configuration path, which on a 512-shard-database store worked out
+to roughly 37 connection acquisitions per second per node to keep a handful of rows current -- enough
+to exhaust a small per-database connection pool and queue application requests behind it
+(see [marten#5167](https://github.com/JasperFx/marten/issues/5167)).
+
+If you want the periodic beat back -- a monitoring console that needs to distinguish "this shard is
+alive but idle" from "this shard's agent died" -- opt in explicitly and pick a cadence that suits your
+database count:
+
+```cs
+opts.Events.EnableExtendedProgressionTracking = true;
+
+// Off by default. Any positive value restores the periodic flush at that cadence;
+// null, zero or negative keeps it off.
+opts.Projections.ExtendedProgressionHeartbeatInterval = TimeSpan.FromSeconds(30);
+```
+
+Budget it as `databases-on-this-node / interval` connection acquisitions per second. All shard states
+that arrive within one interval are coalesced into a single batched `UPDATE`, so the cost scales with
+the number of databases rather than the number of shards.
+
+::: tip
+Status transitions are always written immediately regardless of this setting, so `agent_status`,
+`pause_reason` and the `failure_*` columns stay current with the beat switched off. The only thing you
+lose is the periodic refresh of `heartbeat` on a shard that is quietly making progress.
+:::
+
 ## Advanced Skipping Tracking <Badge type="tip" text="8.6" />
 
 ::: info
