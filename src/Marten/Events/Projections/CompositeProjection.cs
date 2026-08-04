@@ -111,6 +111,26 @@ public class CompositeProjection : CompositeProjection<IDocumentOperations, IQue
     }
 
     /// <summary>
+    /// Add a custom IProjection implementation to be executed within this composite, declaring what it
+    /// writes so a rebuild can tear that data down first.
+    /// </summary>
+    /// <remarks>
+    /// #5175: a raw <see cref="IProjection"/> describes neither its storage nor its teardown, so a
+    /// composite rebuild has nothing to delete for it and would replay into surviving rows. Use this
+    /// overload — typically <c>options => options.DeleteViewTypeOnTeardown&lt;MyView&gt;()</c> — for any
+    /// custom projection that writes documents.
+    /// </remarks>
+    /// <param name="projection">The custom IProjection implementation</param>
+    /// <param name="configure">Configure the member's async options, principally its teardown rules</param>
+    /// <param name="stageNumber">Optionally move the execution to a later stage. The default is 1</param>
+    public void Add(IProjection projection, Action<AsyncOptions> configure, int stageNumber = 1)
+    {
+        var wrapper = new CompositeIProjectionSource(projection);
+        configure(wrapper.Options);
+        StageFor(stageNumber).Add(wrapper);
+    }
+
+    /// <summary>
     /// Add a projection to be executed within this composite. The stage number is optional
     /// </summary>
     /// <param name="stageNumber">Optionally move the execution of this snapshot projection to a later stage. The default is 1</param>
@@ -258,6 +278,18 @@ internal class CompositeProjectionWithServicesSource<TProjection> :
             _configure?.Invoke(projection);
             projection.Name = Name;
             projection.OverwriteVersion(Version);
+
+            // #5175: adopt the built projection's options, exactly as ProjectionWrapper /
+            // ScopedProjectionWrapper do. Without this the wrapper keeps the empty AsyncOptions it was
+            // constructed with, and the composite's rebuild teardown -- which reads each member's own
+            // Options.CleanUps -- queues NOTHING for this member. The rebuild then restarts from zero
+            // against a table that still holds the previous run's documents.
+            replaceOptions(projection.Options);
+
+            foreach (var publishedType in projection.PublishedTypes())
+            {
+                RegisterPublishedType(publishedType);
+            }
         }
 
         return source;
@@ -548,6 +580,25 @@ internal class CompositeIProjectionSource :
         if (_projection.GetType().TryGetAttribute<ProjectionVersionAttribute>(out var att))
         {
             Version = att.Version;
+        }
+
+        // #5175: if the wrapped projection carries its own options, adopt them the way
+        // ProjectionWrapper does -- otherwise this wrapper's empty AsyncOptions is what the composite's
+        // rebuild teardown consults, and the member's documents survive the rebuild. Name and Version
+        // are deliberately NOT adopted: they compose this member's ShardName.Identity, and changing
+        // them would orphan every existing progression row.
+        //
+        // A raw IProjection that is not a ProjectionBase declares nothing about what it writes, so
+        // there is nothing to tear down for it and the composite cannot invent one. Register such a
+        // projection through Add(IProjectionSource) if its documents must be wiped on rebuild.
+        if (projection is ProjectionBase source)
+        {
+            replaceOptions(source.Options);
+
+            foreach (var publishedType in source.PublishedTypes())
+            {
+                RegisterPublishedType(publishedType);
+            }
         }
     }
 

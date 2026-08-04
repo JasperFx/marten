@@ -241,11 +241,11 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
                 teardownProjectionStorage(leafSource, session);
             }
 
-            // Have to do the parent projection too!
-            foreach (var agent in source.Shards())
-            {
-                session.QueueOperation(new DeleteProjectionProgress(Events, agent.Name.Identity));
-            }
+            // #5175: the parent composite goes through the SAME teardown as any other source rather
+            // than only having its progression rows dropped. Previously its own AsyncOptions were
+            // never consulted at all, so `composite.Options.DeleteViewTypeOnTeardown<T>()` and
+            // `composite.Options.TeardownDataOnRebuild = false` were silent no-ops.
+            teardownProjectionStorage(composite, session);
         }
         else
         {
@@ -328,6 +328,9 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             {
                 teardownProjectionStorageForTenant(leafSource, session, tenantId);
             }
+
+            // #5175: same as the store-global twin -- the composite's own teardown rules apply too.
+            teardownProjectionStorageForTenant(composite, session, tenantId);
         }
         else
         {
