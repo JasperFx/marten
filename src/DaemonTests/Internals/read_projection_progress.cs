@@ -59,7 +59,8 @@ public class read_projection_progress : OneOffConfigurationsContext, IAsyncLifet
         row.ProjectionName.ShouldBe("Orders");
         row.TenantId.ShouldBeNull();
         row.Sequence.ShouldBe(42);
-        // Marten models the columns but writes neither — always null (jasperfx#519).
+        // This store leaves EnableExtendedProgressionTracking off, so the columns don't exist and there
+        // is nothing to report. See Bug_5172 for the extended-tracking half.
         row.AgentStatus.ShouldBeNull();
         row.LastHeartbeat.ShouldBeNull();
     }
