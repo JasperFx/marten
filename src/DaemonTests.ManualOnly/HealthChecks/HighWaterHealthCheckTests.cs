@@ -73,38 +73,19 @@ public class HighWaterHealthCheckTests: DaemonContext
         await session.SaveChangesAsync();
     }
 
-    private async Task seedHighWaterMarkAsync(long sequence)
-    {
-        var sql =
-            $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated) " +
-            $"values ('HighWaterMark', {sequence}, now()) " +
-            "on conflict (name) do update set last_seq_id = excluded.last_seq_id";
-        await theSession.ExecuteAsync(new NpgsqlCommand(sql));
-    }
-
-    // Seeds the HighWaterMark row's liveness heartbeat (jasperfx#539). Requires
-    // EnableExtendedProgressionTracking so the `heartbeat` column exists.
-    private async Task seedHighWaterHeartbeatAsync(long sequence, DateTimeOffset heartbeat)
-    {
-        var sql =
-            $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated, heartbeat) " +
-            $"values ('HighWaterMark', {sequence}, now(), '{heartbeat:O}'::timestamptz) " +
-            "on conflict (name) do update set last_seq_id = excluded.last_seq_id, heartbeat = excluded.heartbeat";
-        await theSession.ExecuteAsync(new NpgsqlCommand(sql));
-    }
+    private Task seedHighWaterMarkAsync(long sequence) => seedProgressionRowAsync("HighWaterMark", sequence);
 
     // Seeds an arbitrary progression row (store-global "HighWaterMark" or a per-tenant
-    // "HighWaterMark:<tenant>" row) with an optional liveness heartbeat. The heartbeat column only
-    // exists when EnableExtendedProgressionTracking is on, so pass a heartbeat only in that case.
-    private async Task seedProgressionRowAsync(string name, long sequence, DateTimeOffset? heartbeat = null)
+    // "HighWaterMark:<tenant>" row). marten#5174: last_updated is the per-cycle liveness signal for
+    // per-tenant rows -- mt_mark_event_progression stamps it on EVERY vectorized poll, mark advance or
+    // not -- so it is settable here to simulate a poll loop that has stopped cycling.
+    private async Task seedProgressionRowAsync(string name, long sequence, DateTimeOffset? lastUpdated = null)
     {
-        var sql = heartbeat is { } hb
-            ? $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated, heartbeat) " +
-              $"values ('{name}', {sequence}, now(), '{hb:O}'::timestamptz) " +
-              "on conflict (name) do update set last_seq_id = excluded.last_seq_id, heartbeat = excluded.heartbeat"
-            : $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated) " +
-              $"values ('{name}', {sequence}, now()) " +
-              "on conflict (name) do update set last_seq_id = excluded.last_seq_id";
+        var stamp = lastUpdated is { } at ? $"'{at:O}'::timestamptz" : "now()";
+        var sql =
+            $"insert into {theStore.Events.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated) " +
+            $"values ('{name}', {sequence}, {stamp}) " +
+            "on conflict (name) do update set last_seq_id = excluded.last_seq_id, last_updated = excluded.last_updated";
         await theSession.ExecuteAsync(new NpgsqlCommand(sql));
     }
 
@@ -241,22 +222,25 @@ public class HighWaterHealthCheckTests: DaemonContext
         result.Status.ShouldBe(HealthStatus.Healthy);
     }
 
-    // ---- heartbeat primary signal (marten#4986) ------------------------------------------
+    // ---- per-tenant poll-cycle signal (marten#4986, revised by marten#5174) ---------------
+
+    // marten#5174: the ExtendedProgression `heartbeat` column is never written for high-water rows
+    // (ExtendedProgressionWriter.OnNext drops HighWaterMark states outright), so the check no longer
+    // reads it. For per-tenant rows the real per-cycle signal is last_updated, which
+    // mt_mark_event_progression stamps on every vectorized poll whether or not the mark advances.
 
     [Fact]
-    public async Task healthy_when_heartbeat_is_fresh_even_though_mark_is_behind()
+    public async Task healthy_when_the_per_tenant_poll_is_fresh_even_though_the_mark_is_behind()
     {
-        // ExtendedProgression on -> the heartbeat is the primary signal. A fresh heartbeat means the
-        // agent is cycling, so a mark sitting behind the latest event is NOT unhealthy (unlike the gap
-        // heuristic, which would trip here).
+        // A fresh poll cycle means the agent is alive, so a per-tenant mark sitting behind the latest
+        // event is NOT unhealthy.
         StoreOptions(x =>
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
             x.Projections.AsyncMode = DaemonMode.Solo;
-            x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
-        await seedHighWaterHeartbeatAsync(1, _now.AddSeconds(-5)); // mark stuck at 1, but heartbeat is 5s old
+        await seedProgressionRowAsync("HighWaterMark:acme", 1, _now.AddSeconds(-5));
 
         var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
@@ -264,10 +248,31 @@ public class HighWaterHealthCheckTests: DaemonContext
     }
 
     [Fact]
-    public async Task unhealthy_when_heartbeat_is_stale_even_though_mark_is_caught_up()
+    public async Task unhealthy_when_the_per_tenant_poll_is_stale_even_though_the_mark_is_caught_up()
     {
-        // A stale heartbeat means the loop stopped cycling. This trips even when the mark is fully caught
-        // up (gap == 0) — the case the gap heuristic is blind to.
+        // A stale poll cycle means the loop stopped cycling. This trips even when the mark is fully
+        // caught up — the case the store-global gap heuristic is blind to.
+        StoreOptions(x =>
+        {
+            x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
+            x.Projections.AsyncMode = DaemonMode.Solo;
+        });
+        await appendEventsAsync(20);
+        var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
+        await seedProgressionRowAsync("HighWaterMark:acme", stats.EventSequenceNumber, _now.AddSeconds(-90));
+
+        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(HealthStatus.Unhealthy);
+    }
+
+    [Fact]
+    public async Task the_extended_progression_heartbeat_column_is_never_consulted()
+    {
+        // The pin for marten#5174. With ExtendedProgression on and a heartbeat that is *fresh*, a
+        // store-global mark stuck behind the latest event must still be caught by the gap heuristic --
+        // proving the check no longer defers to a column the daemon does not write. (Before this change
+        // the fresh heartbeat short-circuited the whole assessment.)
         StoreOptions(x =>
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
@@ -275,12 +280,18 @@ public class HighWaterHealthCheckTests: DaemonContext
             x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
-        var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
-        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90)); // caught up, heartbeat 90s old
+        await seedProgressionRowAsync("HighWaterMark", 1);
+        await theSession.ExecuteAsync(new NpgsqlCommand(
+            $"update {theStore.Events.DatabaseSchemaName}.mt_event_progression set heartbeat = '{_now:O}'::timestamptz where name = 'HighWaterMark'"));
 
-        var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
+        var check = buildCheck(30.Seconds());
 
-        result.Status.ShouldBe(HealthStatus.Unhealthy);
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status
+            .ShouldBe(HealthStatus.Healthy);
+
+        _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
+        (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status
+            .ShouldBe(HealthStatus.Unhealthy);
     }
 
     // ---- autoRestart remediation (marten#4986) -------------------------------------------
@@ -292,11 +303,10 @@ public class HighWaterHealthCheckTests: DaemonContext
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
             x.Projections.AsyncMode = DaemonMode.Solo;
-            x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
         var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
-        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
+        await seedProgressionRowAsync("HighWaterMark:acme", stats.EventSequenceNumber, _now.AddSeconds(-90));
 
         var daemon = Substitute.For<IProjectionDaemon>();
         var coordinator = new FakeCoordinator(daemon);
@@ -319,11 +329,10 @@ public class HighWaterHealthCheckTests: DaemonContext
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
             x.Projections.AsyncMode = DaemonMode.Solo;
-            x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
         var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
-        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
+        await seedProgressionRowAsync("HighWaterMark:acme", stats.EventSequenceNumber, _now.AddSeconds(-90));
 
         var daemon = Substitute.For<IProjectionDaemon>();
         var coordinator = new FakeCoordinator(daemon);
@@ -475,19 +484,18 @@ public class HighWaterHealthCheckTests: DaemonContext
     // ---- ExternallyManaged gate (marten#4991) --------------------------------------------
 
     [Fact]
-    public async Task healthy_under_externally_managed_by_default_even_if_heartbeat_stale()
+    public async Task healthy_under_externally_managed_by_default_even_if_per_tenant_poll_stale()
     {
         // Default: ExternallyManaged (e.g. Wolverine-managed distribution) hosts no local daemon, so the
-        // check stays a no-op and a stale heartbeat is not asserted.
+        // check stays a no-op and a stalled poll is not asserted.
         StoreOptions(x =>
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
             x.Projections.AsyncMode = DaemonMode.ExternallyManaged;
-            x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
         var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
-        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
+        await seedProgressionRowAsync("HighWaterMark:acme", stats.EventSequenceNumber, _now.AddSeconds(-90));
 
         var result = await buildCheck(30.Seconds()).CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
 
@@ -495,18 +503,17 @@ public class HighWaterHealthCheckTests: DaemonContext
     }
 
     [Fact]
-    public async Task unhealthy_under_externally_managed_when_opted_in_and_heartbeat_stale()
+    public async Task unhealthy_under_externally_managed_when_opted_in_and_per_tenant_poll_stale()
     {
-        // Opted in: assert under ExternallyManaged too — via the heartbeat signal.
+        // Opted in: assert under ExternallyManaged too — via the per-tenant poll-cycle signal.
         StoreOptions(x =>
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
             x.Projections.AsyncMode = DaemonMode.ExternallyManaged;
-            x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
         var stats = await theStore.Advanced.FetchEventStoreStatistics(token: TestContext.Current.CancellationToken);
-        await seedHighWaterHeartbeatAsync(stats.EventSequenceNumber, _now.AddSeconds(-90));
+        await seedProgressionRowAsync("HighWaterMark:acme", stats.EventSequenceNumber, _now.AddSeconds(-90));
 
         var result = await buildCheck(30.Seconds(), includeExternallyManaged: true)
             .CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken);
@@ -515,10 +522,10 @@ public class HighWaterHealthCheckTests: DaemonContext
     }
 
     [Fact]
-    public async Task externally_managed_opted_in_does_not_use_gap_fallback_without_heartbeat()
+    public async Task externally_managed_opted_in_does_not_use_the_store_global_gap_heuristic()
     {
-        // Opted in but ExtendedProgression off -> no heartbeat. The gap fallback must be suppressed under
-        // ExternallyManaged because an external owner can legitimately pause the mark; it stays Healthy.
+        // Opted in, store-global row only. The gap heuristic must be suppressed under ExternallyManaged
+        // because an external owner can legitimately pause the mark; it stays Healthy.
         StoreOptions(x =>
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
@@ -538,16 +545,16 @@ public class HighWaterHealthCheckTests: DaemonContext
     // ---- per-tenant high water (marten#4991) ---------------------------------------------
 
     [Fact]
-    public async Task detects_stale_per_tenant_high_water_via_heartbeat()
+    public async Task detects_a_stale_per_tenant_high_water_row()
     {
         // UseTenantPartitionedEvents persists HighWaterMark:<tenant> rows rather than a single
         // store-global HighWaterMark. The original check matched only "HighWaterMark" and was blind to
-        // a stalled per-tenant agent; now a stale per-tenant heartbeat is detected.
+        // a stalled per-tenant agent; now a per-tenant row whose poll has stopped cycling is detected --
+        // with no dependency on ExtendedProgression (marten#5174).
         StoreOptions(x =>
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
             x.Projections.AsyncMode = DaemonMode.Solo;
-            x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
         await seedProgressionRowAsync("HighWaterMark:acme", 5, _now.AddSeconds(-90));
@@ -558,13 +565,12 @@ public class HighWaterHealthCheckTests: DaemonContext
     }
 
     [Fact]
-    public async Task healthy_when_per_tenant_high_water_heartbeat_is_fresh()
+    public async Task healthy_when_the_per_tenant_high_water_row_was_just_polled()
     {
         StoreOptions(x =>
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
             x.Projections.AsyncMode = DaemonMode.Solo;
-            x.Events.EnableExtendedProgressionTracking = true;
         });
         await appendEventsAsync(20);
         await seedProgressionRowAsync("HighWaterMark:acme", 5, _now.AddSeconds(-5));
@@ -575,24 +581,27 @@ public class HighWaterHealthCheckTests: DaemonContext
     }
 
     [Fact]
-    public async Task per_tenant_high_water_without_heartbeat_is_not_gap_assessed()
+    public async Task a_per_tenant_row_is_never_gap_assessed()
     {
-        // ExtendedProgression off -> a per-tenant row has no heartbeat, and there is no per-tenant
-        // highest-sequence to compute a meaningful gap (FetchHighestEventSequenceNumber is store-global),
-        // so the gap fallback must NOT run for it — otherwise a tenant with no new events false-positives.
+        // There is no per-tenant highest-sequence to compute a meaningful gap against
+        // (FetchHighestEventSequenceNumber is store-global), so the gap heuristic must never run for a
+        // per-tenant row -- otherwise a tenant with no new events false-positives. Its poll cycle is
+        // fresh, so it stays Healthy no matter how far behind the store-global sequence it sits.
         StoreOptions(x =>
         {
             x.Projections.Add(new HwFakeProjection(), ProjectionLifecycle.Async);
             x.Projections.AsyncMode = DaemonMode.Solo;
         });
         await appendEventsAsync(20);
-        await seedProgressionRowAsync("HighWaterMark:acme", 1);
 
         var check = buildCheck(30.Seconds());
 
+        await seedProgressionRowAsync("HighWaterMark:acme", 1, _now);
         (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
 
+        // The poll keeps cycling at the same mark; still healthy a full window later.
         _timeProvider.GetUtcNow().Returns(_now.AddSeconds(60));
+        await seedProgressionRowAsync("HighWaterMark:acme", 1, _now.AddSeconds(60));
         (await check.CheckHealthAsync(new HealthCheckContext(), TestContext.Current.CancellationToken)).Status.ShouldBe(HealthStatus.Healthy);
     }
 

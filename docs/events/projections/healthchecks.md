@@ -113,9 +113,9 @@ Services.AddHealthChecks().AddMartenHighWaterHealthCheck(
     databaseFilter: db => LocallyOwnedDatabaseIdentifiers.Contains(db.Identifier),
 
     // Assert even under DaemonMode.ExternallyManaged (Wolverine-managed distribution). In this
-    // mode only the liveness heartbeat signal is used (never the sequence-gap fallback), because
-    // an external owner can legitimately pause the mark — so this requires
-    // Events.EnableExtendedProgressionTracking to be turned on.
+    // mode only the per-tenant poll-cycle signal is used (never the store-global sequence-gap
+    // heuristic), because an external owner can legitimately pause the mark — so a non-partitioned
+    // store has nothing to assert on there.
     includeExternallyManaged: true);
 ```
 
@@ -148,11 +148,22 @@ Both overloads register the settings through a factory, so replacing
 you need to reach further into DI than the predicate allows.
 
 Under `UseTenantPartitionedEvents` the high-water mark is tracked **per tenant** as
-`HighWaterMark:<tenant>` progression rows rather than a single store-global `HighWaterMark`. The
-check evaluates those per-tenant rows too, using the liveness heartbeat (the sequence-gap
-fallback is store-global and cannot be applied per tenant). Enable
-`Events.EnableExtendedProgressionTracking` so the per-tenant heartbeats are persisted, otherwise
-a stalled per-tenant high-water agent cannot be detected.
+`HighWaterMark:<tenant>` progression rows rather than a single store-global `HighWaterMark`, and
+those are the rows the check evaluates. It uses a different — and better — signal there: every
+vectorized per-tenant poll re-stamps the row's `last_updated` column whether or not the mark
+advances, so its age proves the poll loop is still *cycling*, independent of whether new events
+exist. A quiet tenant never false-positives, and the sequence-gap heuristic (which is inherently
+store-global) is never applied per tenant. No extra configuration is needed —
+`EnableExtendedProgressionTracking` is not involved
+(see [marten#5174](https://github.com/JasperFx/marten/issues/5174)).
+
+::: warning
+On the **store-global** `HighWaterMark` row `last_updated` only moves when the mark *advances*, so
+it says nothing about liveness and the sequence-gap heuristic is the only signal available from the
+database. That means a store-global poll loop that has wedged while fully caught up is not
+detectable from the progression table. For in-process detection of that case use
+`IProjectionDaemon.HighWaterAgent.IsStale` / `LastPolledAt` on the node hosting the daemon.
+:::
 
 ::: tip INFO
 This health check does **not** force the high-water mark forward — it is detection only.
