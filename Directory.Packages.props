@@ -202,21 +202,32 @@
          slow projection batch on one row stalled every other shard's telemetry on that database
          (Marten's side of this is #5186, which does not depend on this bump). The ordering closes
          the cross-writer deadlock hazard — the tracker is per-database and shared, and
-         BuildProjectionDaemonAsync is not cached, so two writers can race over the same rows. -->
-    <PackageVersion Include="JasperFx" Version="2.39.2" />
-    <PackageVersion Include="JasperFx.Events" Version="2.39.2" />
+         BuildProjectionDaemonAsync is not cached, so two writers can race over the same rows.
+         JasperFx 2.39.3: two extended-progression fixes Marten consumes directly.
+         jasperfx#631 — a status transition published while the shard has NO progression row to
+         decorate landed nowhere, because every store's extended-progression write is update-only.
+         That is every fresh shard's Started: the agent starts before its first batch commits. With
+         the periodic beat off by default (jasperfx#622) there was no later write to correct it, so
+         agent_status/heartbeat stayed NULL for the entire life of a healthy agent. Such a shard is
+         now remembered and written again on the first publication carrying a committed sequence.
+         jasperfx#630 follow-up — a duplicate ExtendedProgressionWriter on one database now logs a
+         warning. It used to announce itself as lock contention; one-row-per-transaction writes made
+         it harmless to correctness and therefore silent, while still meaning two daemons are
+         started for one database. Reported, never refused: the duplicate is the symptom. -->
+    <PackageVersion Include="JasperFx" Version="2.39.3" />
+    <PackageVersion Include="JasperFx.Events" Version="2.39.3" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.39.2" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.39.2">
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.39.3" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.39.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.39.2" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.39.3" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
