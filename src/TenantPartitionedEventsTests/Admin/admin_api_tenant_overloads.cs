@@ -113,8 +113,8 @@ public class admin_api_tenant_overloads
         var betaOnly = await db.AllProjectionProgress(tenantId: beta, CancellationToken.None);
         var everything = await db.AllProjectionProgress(tenantId: null, CancellationToken.None);
 
-        // tenant filter is a SQL LIKE on a trailing `:tenant` suffix, so this test's
-        // unique tenant id is the only matching row even on a shared store.
+        // #5171: the tenant filter is a literal trailing-`:tenant` comparison (no LIKE grammar),
+        // so this test's unique tenant id is the only matching row even on a shared store.
         alphaOnly.Select(s => s.ShardName).ShouldHaveSingleItem().ShouldBe(alphaName.Identity);
         betaOnly.Select(s => s.ShardName).ShouldHaveSingleItem().ShouldBe(betaName.Identity);
         // The tenantless query returns EVERY row in the table — including other
