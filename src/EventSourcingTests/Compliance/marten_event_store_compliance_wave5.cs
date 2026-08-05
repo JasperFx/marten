@@ -21,3 +21,6 @@ public class event_store_explorer_compliance
 
 public class flat_table_projection_compliance
     : FlatTableProjectionCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class string_stream_identity_compliance
+    : StringStreamIdentityCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
