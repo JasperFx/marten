@@ -138,6 +138,39 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override Task WaitForNonStaleProjectionDataAsync(TimeSpan timeout)
         => _store.WaitForNonStaleProjectionDataAsync(timeout);
 
+    // A flat table is not a document, so there is no supported Marten read path for its rows. The
+    // schema comes from the store rather than the caller so the compliance suite never has to spell
+    // a qualified name, and the reader is deliberately untyped: the suite asserts values, not the
+    // Npgsql types they arrive as.
+    public override async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> QueryTableAsync(
+        string tableName, CancellationToken token)
+    {
+        var rows = new List<IReadOnlyDictionary<string, object?>>();
+
+        await using var conn = _store.Storage.Database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+
+        await using var command = conn.CreateCommand();
+        command.CommandText =
+            $"select * from {_store.Options.DatabaseSchemaName}.{tableName}";
+
+        await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            var row = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            for (var i = 0; i < reader.FieldCount; i++)
+            {
+                row[reader.GetName(i)] = await reader.IsDBNullAsync(i, token).ConfigureAwait(false)
+                    ? null
+                    : reader.GetValue(i);
+            }
+
+            rows.Add(row);
+        }
+
+        return rows;
+    }
+
     public override async ValueTask DisposeAsync()
     {
         foreach (var disposable in _disposables)
