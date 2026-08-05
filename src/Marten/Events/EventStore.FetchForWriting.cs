@@ -311,6 +311,29 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
                     return naturalKeyPlan;
                 }
             }
+
+            // #5144: not a natural key, but possibly a strong-typed identifier wrapping the stream
+            // identity -- PaymentId(Guid), InvoiceId(string) and friends. That *is* the stream id,
+            // so unwrap it and reuse the plan for the underlying type rather than inventing a
+            // parallel one. Only Guid and string backings can address a stream.
+            var valueType = options.TryFindValueType(typeof(TId));
+            if (valueType != null)
+            {
+                if (valueType.SimpleType == typeof(Guid))
+                {
+                    return new UnwrappedIdentityFetchPlan<TDoc, TId, Guid>(
+                        FindFetchPlan<TDoc, Guid>(), valueType.UnWrapper<TId, Guid>());
+                }
+
+                if (valueType.SimpleType == typeof(string))
+                {
+                    return new UnwrappedIdentityFetchPlan<TDoc, TId, string>(
+                        FindFetchPlan<TDoc, string>(), valueType.UnWrapper<TId, string>());
+                }
+
+                throw new InvalidOperationException(
+                    $"The strong-typed identifier {typeof(TId).FullNameInCode()} wraps {valueType.SimpleType.FullNameInCode()}, which cannot identify an event stream. Only Guid and string backed identifiers are supported here.");
+            }
         }
         else
         {
