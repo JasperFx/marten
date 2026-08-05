@@ -24,3 +24,6 @@ public class flat_table_projection_compliance
 
 public class string_stream_identity_compliance
     : StringStreamIdentityCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class multi_stream_projection_compliance
+    : MultiStreamProjectionCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;

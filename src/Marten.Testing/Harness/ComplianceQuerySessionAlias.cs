@@ -15,3 +15,9 @@ global using ComplianceEventProjection = Marten.Events.Projections.EventProjecti
 // so the base type comes in through this alias.
 global using ComplianceStringPartyProjectionBase =
     Marten.Events.Aggregation.SingleStreamProjection<JasperFx.Events.ComplianceTests.StringQuestParty, string>;
+
+// The multi-stream projection suite declares its projection at file scope for the same reason, and
+// its base is generic over both the document and the identity, so this alias names a closed generic.
+global using ComplianceMultiStreamProjectionBase =
+    Marten.Events.Projections.MultiStreamProjection<
+        JasperFx.Events.ComplianceTests.ComplianceDepartment, string>;
