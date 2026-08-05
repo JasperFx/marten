@@ -119,6 +119,10 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
     public override IEventRegistry Registry => _store.Options.EventGraph;
 
+    // IEventStoreInstrumentation is JasperFx-owned and Marten implements it on EventGraph, so the
+    // storage-agnostic monitoring surface is reachable without any abstraction of our own.
+    public override JasperFx.Events.IEventStoreInstrumentation Instrumentation => (JasperFx.Events.IEventStoreInstrumentation)_store.Options.EventGraph;
+
     public override async Task CleanEventDataAsync()
     {
         await _store.Advanced.Clean.DeleteAllEventDataAsync().ConfigureAwait(false);

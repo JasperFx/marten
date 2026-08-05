@@ -30,3 +30,9 @@ public class multi_stream_projection_compliance
 
 public class snapshot_lifecycle_compliance
     : SnapshotLifecycleCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class event_store_instrumentation_compliance
+    : EventStoreInstrumentationCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class strong_typed_identity_compliance
+    : StrongTypedIdentityCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
