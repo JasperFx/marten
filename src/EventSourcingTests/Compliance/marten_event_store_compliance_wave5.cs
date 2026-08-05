@@ -27,3 +27,6 @@ public class string_stream_identity_compliance
 
 public class multi_stream_projection_compliance
     : MultiStreamProjectionCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class snapshot_lifecycle_compliance
+    : SnapshotLifecycleCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
