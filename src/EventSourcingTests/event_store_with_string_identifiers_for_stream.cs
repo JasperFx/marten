@@ -44,64 +44,17 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
         theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(EventGraph));
     }
 
-    [Fact]
-    public async Task try_to_insert_event_with_string_identifiers()
-    {
-        using (var session = theStore.LightweightSession())
-        {
-            session.Events.Append("First", new MembersJoined(), new MembersJoined());
-            await session.SaveChangesAsync();
-        }
-    }
-
-    [Fact]
-    public async Task try_to_insert_event_with_string_identifiers_non_typed()
-    {
-        using (var session = theStore.LightweightSession())
-        {
-            session.Events.StartStream("First", new MembersJoined(), new MembersJoined());
-            await session.SaveChangesAsync();
-        }
-
-        using (var session = theStore.LightweightSession())
-        {
-            (await session.Events.FetchStreamAsync("First")).Count.ShouldBe(2);
-        }
-    }
-
-    [Fact]
-    public async Task fetch_state()
-    {
-        using (var session = theStore.LightweightSession())
-        {
-            session.Events.Append("First", new MembersJoined(), new MembersJoined());
-            await session.SaveChangesAsync();
-        }
-
-        using (var session = theStore.LightweightSession())
-        {
-            var state = await session.Events.FetchStreamStateAsync("First");
-            state.Key.ShouldBe("First");
-            state.Version.ShouldBe(2);
-        }
-    }
-
-    [Fact]
-    public async Task fetch_state_async()
-    {
-        await using (var session = theStore.LightweightSession())
-        {
-            session.Events.Append("First", new MembersJoined(), new MembersJoined());
-            await session.SaveChangesAsync();
-        }
-
-        await using (var session = theStore.LightweightSession())
-        {
-            var state = await session.Events.FetchStreamStateAsync("First");
-            state.Key.ShouldBe("First");
-            state.Version.ShouldBe(2);
-        }
-    }
+    // ported: the append / fetch-stream / fetch-state behaviour these four tests asserted
+    // (try_to_insert_event_with_string_identifiers, _non_typed, fetch_state, fetch_state_async) now
+    // lives in JasperFx.Events.ComplianceTests.StringStreamIdentityCompliance, which asserts more of
+    // it -- event count, versions, payload type, and the unknown-key null. fetch_state and
+    // fetch_state_async were also byte-identical to each other apart from `using` vs `await using`.
+    //
+    // Kept here deliberately: the two DDL tests above (varchar primary key on mt_streams, storage
+    // creation), which are PostgreSQL storage layout and out of compliance scope; the
+    // sample_eventstore-configure-stream-identity doc region in the constructor; and
+    // store_on_multiple_streams_at_a_time below, which covers two streams in a single unit of work
+    // and has no compliance equivalent.
 
     [Fact]
     public async Task store_on_multiple_streams_at_a_time()

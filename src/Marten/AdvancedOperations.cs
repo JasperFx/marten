@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Protected;
 using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Daemon.HighWater;

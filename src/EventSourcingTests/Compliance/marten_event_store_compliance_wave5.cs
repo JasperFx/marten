@@ -18,3 +18,15 @@ public class stream_archiving_compliance
 
 public class event_store_explorer_compliance
     : EventStoreExplorerCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class flat_table_projection_compliance
+    : FlatTableProjectionCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class string_stream_identity_compliance
+    : StringStreamIdentityCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class multi_stream_projection_compliance
+    : MultiStreamProjectionCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class snapshot_lifecycle_compliance
+    : SnapshotLifecycleCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;

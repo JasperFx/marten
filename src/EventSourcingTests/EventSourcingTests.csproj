@@ -79,6 +79,9 @@
         <Compile Include="..\Marten.Testing\Harness\ComplianceQuerySessionAlias.cs">
             <Link>Harness\ComplianceQuerySessionAlias.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\Harness\ComplianceFlatTableProjection.Marten.cs">
+            <Link>Harness\ComplianceFlatTableProjection.Marten.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Harness\MartenComplianceFixture.cs">
             <Link>Harness\MartenComplianceFixture.cs</Link>
         </Compile>
