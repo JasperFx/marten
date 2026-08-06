@@ -171,6 +171,13 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         return rows;
     }
 
+    // IEventDataMasking is shared (lifted in jasperfx#635), but the entry point that hands one out
+    // is not: Marten spells it on IDocumentStore.Advanced, Polecat on its own, and the two share no
+    // interface. This member is the whole of that gap.
+    public override Task ApplyEventDataMaskingAsync(
+        Action<JasperFx.Events.Protected.IEventDataMasking> configure, CancellationToken token)
+        => _store.Advanced.ApplyEventDataMasking(configure, token);
+
     public override async ValueTask DisposeAsync()
     {
         foreach (var disposable in _disposables)
@@ -217,6 +224,12 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         /// </summary>
         public void RegisterValueType<TValue>() where TValue : notnull
             => _options.RegisterValueType<TValue>();
+
+        public void AddMaskingRule<TEvent>(Action<TEvent> rule) where TEvent : notnull
+            => _options.Events.AddMaskingRuleForProtectedInformation(rule);
+
+        public void AddMaskingRule<TEvent>(Func<TEvent, TEvent> rule) where TEvent : notnull
+            => _options.Events.AddMaskingRuleForProtectedInformation(rule);
 
         public void AddProjection(ProjectionBase projection, ProjectionLifecycle lifecycle)
             => _options.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
