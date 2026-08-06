@@ -209,6 +209,15 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         public void LiveAggregation<TDoc>() where TDoc : notnull
             => _options.Projections.LiveStreamAggregation<TDoc>();
 
+        /// <summary>
+        ///     Marten needs a strong-typed identifier registered before it can use it in LINQ and identity
+        ///     mapping, so this maps straight onto StoreOptions.RegisterValueType. Polecat implements the same
+        ///     seam as a no-op because it derives the same information from ValueTypeInfo when it builds the
+        ///     document mapping — the asymmetry the seam exists to absorb.
+        /// </summary>
+        public void RegisterValueType<TValue>() where TValue : notnull
+            => _options.RegisterValueType<TValue>();
+
         public void AddProjection(ProjectionBase projection, ProjectionLifecycle lifecycle)
             => _options.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
     }
