@@ -223,7 +223,24 @@
       which closes the seam, lives beside the rest of the harness.
     -->
     <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.41.0" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.41.0">
+    <!--
+      Deliberately AHEAD of the rest of the JasperFx line, which stays at 2.41.0 until Marten adopts
+      the strong-typed identity compliance suite that landed in 2.42.0. This package is analyzer-only,
+      declares no dependencies, and Marten bundles its dll into Marten.nupkg (see
+      _BundleEventsSourceGeneratorAnalyzer in Marten.csproj, marten#4557), so its version is
+      independent of the runtime family's.
+
+      2.42.1: jasperfx#637 (marten#5192) — the generator used to register an EventProjection's
+      discovered published document types by emitting a parameterless constructor into the user's
+      partial class. That is illegal on a type declaring a primary constructor, so
+      `partial class MyProjection(ILogger logger) : EventProjection` failed to build with CS8862; and
+      for a projection registered through AddProjectionWithServices the container calls the
+      dependency-taking constructor, so the generated one never ran and the published types went
+      silently unregistered. Registration now rides an override of ProjectionBase.PublishedTypes(),
+      which does not care how the instance was constructed. The generator is otherwise byte-identical
+      from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
+    -->
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.42.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
