@@ -16,3 +16,9 @@ namespace EventSourcingTests.Compliance;
 
 public class strong_typed_identity_compliance
     : StrongTypedIdentityCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class stream_compacting_compliance
+    : StreamCompactingCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+public class event_data_masking_compliance
+    : EventDataMaskingCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
