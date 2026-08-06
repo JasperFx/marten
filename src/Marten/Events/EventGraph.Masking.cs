@@ -39,7 +39,11 @@ public partial class EventGraph
         var matched = false;
         foreach (var masker in _maskers)
         {
-            matched = matched || masker.TryMask(e);
+            // |= and NOT ||=. With the short-circuiting form, the first rule to match an event
+            // stopped every later rule from even being invoked, so only one of several applicable
+            // rules ever ran -- and the operation still reported success. For a right-to-erasure
+            // feature that means protected information silently survives a masking pass.
+            matched |= masker.TryMask(e);
         }
 
         return matched;
