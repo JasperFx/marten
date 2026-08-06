@@ -46,6 +46,15 @@ public class ProjectionScenario: JasperFx.Events.TestSupport.ProjectionScenario<
 
     protected override bool HasAnyAsyncProjections => _store.Options.Projections.HasAnyAsyncProjections();
 
+    /// <summary>
+    ///     #5195: opt into the scenario's in-process daemon wakeup. Marten's ProjectionGraph IS the
+    ///     DaemonSettings the daemon reads, so handing it over lets the harness signal the high-water agent
+    ///     the instant it commits instead of leaving each append to race a 1 second SlowPollingTime back-off.
+    ///     The base class restores whatever was there when the run finishes, and never displaces a wakeup the
+    ///     store already configured (e.g. UseListenNotifyForEventAppends).
+    /// </summary>
+    protected override DaemonSettings DaemonSettings => _store.Options.Projections;
+
     protected override async ValueTask<IProjectionDaemon> BuildDaemonAsync(string? tenantId)
     {
         return await _store.BuildProjectionDaemonAsync(tenantId).ConfigureAwait(false);
