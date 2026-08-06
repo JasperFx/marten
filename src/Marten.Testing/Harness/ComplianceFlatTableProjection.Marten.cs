@@ -13,6 +13,10 @@ namespace JasperFx.Events.ComplianceTests;
  *
  * SchemaNameSource.DocumentSchema rather than a literal, so the table follows whatever schema
  * MartenComplianceFixture built the store in.
+ *
+ * It lives beside the fixture rather than in EventSourcingTests because both assemblies reference
+ * the source-only compliance package, so both compile the suite's half of this partial and both
+ * need this half to satisfy it. EventSourcingTests links the file in, same as the fixture itself.
  */
 public partial class ComplianceFlatTableProjection: FlatTableProjection
 {
