@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Protected;
 
 namespace Marten.Events.Protected;
 
@@ -108,60 +109,8 @@ public class EventDataMasking : IEventDataMasking
     }
 }
 
-public interface IEventDataMasking
-{
-    /// <summary>
-    /// Isolate the event masking to a specific tenant if using multi-tenancy
-    /// </summary>
-    /// <param name="tenantId"></param>
-    /// <returns></returns>
-    IEventDataMasking ForTenant(string tenantId);
-
-    /// <summary>
-    /// Apply data protection masking to this event stream
-    /// </summary>
-    /// <param name="streamId"></param>
-    /// <returns></returns>
-    IEventDataMasking IncludeStream(Guid streamId);
-
-    /// <summary>
-    /// Apply data protection masking to this event stream
-    /// </summary>
-    /// <param name="streamKey"></param>
-    /// <returns></returns>
-    IEventDataMasking IncludeStream(string streamKey);
-
-    /// <summary>
-    /// Apply data protection masking to this event stream
-    /// </summary>
-    /// <param name="streamId"></param>
-    /// <param name="filter">Further filter events within the stream to more finely target events for masking</param>
-    /// <returns></returns>
-    IEventDataMasking IncludeStream(Guid streamId, Func<IEvent, bool> filter);
-
-    /// <summary>
-    /// Apply data protection masking to this event stream
-    /// </summary>
-    /// <param name="streamKey"></param>
-    /// <param name="filter">Further filter events within the stream to more finely target events for masking</param>
-    /// <returns></returns>
-    IEventDataMasking IncludeStream(string streamKey, Func<IEvent, bool> filter);
-
-    /// <summary>
-    /// Apply data protection masking to events matching
-    /// this criteria
-    /// </summary>
-    /// <param name="filter"></param>
-    /// <returns></returns>
-    IEventDataMasking IncludeEvents(Expression<Func<IEvent, bool>> filter);
-
-    /// <summary>
-    /// Add a new header value to the metadata for any event that is masked
-    /// as part of this batch operation. Note that this will only apply to
-    /// event types that have a matching masking rule
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="value"></param>
-    /// <returns></returns>
-    IEventDataMasking AddHeader(string key, object value);
-}
+// IEventDataMasking used to be declared here. jasperfx#635 / marten#5154 lifted it into
+// JasperFx.Events.Protected, beside StreamCompactingRequest<T>: the two products declared it
+// member-for-member identically, and the fluent shape is a database-agnostic description of intent
+// even though executing it is unavoidably store-specific. EventDataMasking above still implements
+// it and is unchanged; only the declaration moved.

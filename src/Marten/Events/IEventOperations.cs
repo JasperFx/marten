@@ -18,20 +18,9 @@ namespace Marten.Events;
 /// </remarks>
 public interface IEventOperations : JasperFx.Events.IEventOperations
 {
-    /// <summary>
-    /// Compact a stream by replacing its first event with a Compacted&lt;T&gt; event that establishes
-    /// the snapshot. Do this when you do not care about older stream data, but do want to
-    /// keep the database size down for better performance.
-    /// </summary>
-    /// <param name="streamKey">The string identifier for the stream</param>
-    /// <param name="configure">Configure the compacting request. Default is to compact at the latest point</param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    Task CompactStreamAsync<T>(string streamKey, Action<StreamCompactingRequest<T>>? configure = null) where T : class;
-
-    /// <summary>
-    /// Compact a stream by replacing its first event with a Compacted&lt;T&gt; event that establishes
-    /// the snapshot.
-    /// </summary>
-    Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null) where T : class;
+    // CompactStreamAsync<T> used to be declared here. jasperfx#635 / marten#5153 lifted the two
+    // overloads onto JasperFx.Events.IEventStoreOperations, which Marten.Events.IEventStoreOperations
+    // already inherits alongside this interface -- so keeping the local copy made every call site
+    // ambiguous (CS0121). The implementation is unchanged and still lives in
+    // Events/EventStore.StreamCompacting.cs; only the declaration moved.
 }
