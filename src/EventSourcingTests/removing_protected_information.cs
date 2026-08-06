@@ -456,6 +456,45 @@ public class removing_protected_information : OneOffConfigurationsContext
         brandybuck.Headers["color"].ShouldBe("blue");
         brandybuck.Data.Members.All(x => x != "*****").ShouldBeTrue();
     }
+
+    /// <summary>
+    ///     Regression for #5199. Every masking test above registers rules over *disjoint* event
+    ///     types, so no event ever matched more than one rule and the short-circuiting
+    ///     `matched || masker.TryMask(e)` in TryMask was unobservable: the first rule to match an
+    ///     event stopped every later rule from being invoked at all, and the operation still
+    ///     reported success. On a right-to-erasure path that leaves protected information in place.
+    /// </summary>
+    [Fact]
+    public void every_matching_rule_runs_not_just_the_first()
+    {
+        theEvents.AddMaskingRuleForProtectedInformation<IAccountEvent>(x => x.Name = "****");
+        theEvents.AddMaskingRuleForProtectedInformation<AccountChanged>(x => x.Email = "****");
+
+        var changed = new AccountChanged { Name = "Harry", Email = "harry@example.com" };
+
+        theEvents.TryMask(new Event<AccountChanged>(changed)).ShouldBeTrue();
+
+        changed.Name.ShouldBe("****");
+        changed.Email.ShouldBe("****");
+    }
+
+    /// <summary>
+    ///     ... and the same in the other registration order, so the test cannot pass by accident of
+    ///     whichever rule happens to be registered first.
+    /// </summary>
+    [Fact]
+    public void every_matching_rule_runs_regardless_of_registration_order()
+    {
+        theEvents.AddMaskingRuleForProtectedInformation<AccountChanged>(x => x.Email = "****");
+        theEvents.AddMaskingRuleForProtectedInformation<IAccountEvent>(x => x.Name = "****");
+
+        var changed = new AccountChanged { Name = "Harry", Email = "harry@example.com" };
+
+        theEvents.TryMask(new Event<AccountChanged>(changed)).ShouldBeTrue();
+
+        changed.Name.ShouldBe("****");
+        changed.Email.ShouldBe("****");
+    }
 }
 
 public interface IAccountEvent
@@ -466,6 +505,10 @@ public interface IAccountEvent
 public class AccountChanged: IAccountEvent
 {
     public string Name { get; set; }
+
+    // A second protected member, so a concrete-type rule has something to mask that the
+    // interface rule above does not reach. See #5199.
+    public string Email { get; set; }
 }
 
 public static class DocumentationSamples
