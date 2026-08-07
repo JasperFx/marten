@@ -110,6 +110,24 @@ public sealed class StreamPagedByCursor<T>: IResult, IEndpointMetadataProvider w
         if (builder == null) throw new ArgumentNullException(nameof(builder));
 
         builder.Metadata.Add(new ProducesResponseTypeMetadata(
-            StatusCodes.Status200OK, typeof(void), new[] { "application/json" }));
+            StatusCodes.Status200OK, typeof(CursorPagedResult<T>), new[] { "application/json" }));
     }
+}
+
+/// <summary>
+/// Shape of the JSON envelope streamed by <see cref="StreamPagedByCursor{T}"/>. Used only for
+/// OpenAPI metadata generation -- <see cref="StreamPagedByCursor{T}"/> itself streams the raw JSON
+/// directly and never materializes this type.
+/// </summary>
+/// <typeparam name="T">The document type contained in the page.</typeparam>
+public sealed class CursorPagedResult<T>
+{
+    /// <summary>The documents on this page.</summary>
+    public T[] Items { get; set; } = Array.Empty<T>();
+
+    /// <summary>
+    /// The continuation cursor to pass to the next request, or <c>null</c> once the end of the
+    /// result set has been reached.
+    /// </summary>
+    public string? NextCursor { get; set; }
 }
