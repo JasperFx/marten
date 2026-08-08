@@ -55,6 +55,11 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             options.Events.MetadataConfig.HeadersEnabled = true;
         }
 
+        if (config.ConjoinedEventTenancy)
+        {
+            options.Events.TenancyStyle = JasperFx.MultiTenancy.TenancyStyle.Conjoined;
+        }
+
         config.ApplyTo(new MartenComplianceRegistrar(options));
 
         _store = new DocumentStore(options);
@@ -230,6 +235,10 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
         public void AddMaskingRule<TEvent>(Func<TEvent, TEvent> rule) where TEvent : notnull
             => _options.Events.AddMaskingRuleForProtectedInformation(rule);
+
+        public void Subscribe(ComplianceSubscription subscription)
+            => _options.Projections.Subscribe(subscription,
+                x => x.Name = ComplianceSubscription.SubscriptionName);
 
         public void AddProjection(ProjectionBase projection, ProjectionLifecycle lifecycle)
             => _options.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
