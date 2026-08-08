@@ -124,6 +124,11 @@ partial class Build : NukeBuild
     //
     // If you add a test project, add a target here AND a matrix entry in tests.yml. A target with
     // no job is how seven projects (#5096) sat un-run for as long as they did.
+    //
+    // TestStress and TestMultiHost are the two deliberate exceptions to the one-job-per-target
+    // rule, and each says why at its own declaration below. Deliberate is the operative word:
+    // both are named here so "which targets have no CI job" stays a question with a written
+    // answer rather than something you find out by grepping the workflow.
 
     Target TestBaseLib => _ => _
         .ProceedAfterFailure()
@@ -211,7 +216,20 @@ partial class Build : NukeBuild
         .ProceedAfterFailure()
         .Executes(() => RunTestProject("src/ContainerScopedProjectionTests/ContainerScopedProjectionTests.csproj"));
 
-    /// <summary>Multi-store hosts, database creation, reset-all-data (~29 tests).</summary>
+    /// <summary>
+    /// Multi-store hosts, database creation, reset-all-data (29 tests).
+    ///
+    /// <para>Has NO job in tests.yml, by decision on 2026-08-08. This is the one suite whose work
+    /// is to be hostile to its own infrastructure — it calls <c>ResetAllData</c> mid-run and
+    /// creates and drops whole databases — which makes it a poor thing to gate a pull request on
+    /// even now that it passes cleanly. Run it deliberately with <c>./build.sh test-stress</c>;
+    /// it is still part of the aggregate <see cref="Test"/> target, so a local full run covers
+    /// it.</para>
+    ///
+    /// <para>Kept as a target rather than dropped: #5096 was about ten suites that nobody could
+    /// run because nothing named them. An excluded suite you can still invoke by name is a
+    /// different thing from a dark one.</para>
+    /// </summary>
     Target TestStress => _ => _
         .ProceedAfterFailure()
         .Executes(() => RunTestProject("src/StressTests/StressTests.csproj"));

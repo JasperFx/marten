@@ -229,12 +229,15 @@ jobs:
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
-          - name: Stress (net9, PG15, Newtonsoft)
-            target: TestStress
-            project: src/StressTests/StressTests.csproj
-            framework: net9.0
-            serializer: Newtonsoft
-            pg_image: postgres:15-alpine
+          # StressTests is DELIBERATELY not here (decided 2026-08-08). It is the one suite in the
+          # repo whose job is to be hostile to its own infrastructure: it calls ResetAllData
+          # mid-run and creates and drops whole databases, so it is a poor thing to gate a pull
+          # request on even now that it passes cleanly. Run it on purpose with
+          # `./build.sh test-stress`; `./build.sh test` still includes it.
+          #
+          # Written down rather than deleted quietly, because an exclusion nobody recorded a reason
+          # for is precisely how ten suites went dark in the first place (#5096). If you are reading
+          # this because you want the coverage back, nothing is stopping you — add the entry.
 
           - name: CompiledQueries (net9, PG15, Newtonsoft)
             target: TestCompiledQueries

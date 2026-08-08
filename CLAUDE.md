@@ -84,7 +84,7 @@ docker-compose up -d
 ./build.sh test-modular-config               # ModularConfigTests
 ./build.sh test-tenant-partitioned-events    # TenantPartitionedEventsTests
 ./build.sh test-container-scoped-projections # ContainerScopedProjectionTests
-./build.sh test-stress                       # StressTests
+./build.sh test-stress                       # StressTests (not in CI, see below)
 ./build.sh test-compiled-queries             # CompiledQueryTests
 ./build.sh test-source-generator             # Marten.SourceGenerator.Tests (no database)
 ./build.sh test-multi-host                   # MultiHostTests (needs its own compose, see below)
@@ -186,6 +186,20 @@ so keep it that way.
 
 A `flakiness` roll-up job downloads every job's retry ledger and reports the aggregate on the run
 page — which suites spent retries, and which tests only passed on one.
+
+**Two targets deliberately have no CI job**, and both say why where they are declared in
+`build/build.cs` rather than only by being absent:
+
+- **`TestStress`** (StressTests) — excluded 2026-08-08. It calls `ResetAllData` mid-run and creates
+  and drops whole databases, which makes it a poor gate on a pull request even though it passes
+  cleanly. Run it with `./build.sh test-stress`; `./build.sh test` still includes it.
+- **`TestMultiHost`** — has a job, but needs the primary/standby pair from
+  `src/MultiHostTests/docker-compose.yaml` rather than the ordinary database, so it is the one
+  entry carrying a `compose:` field.
+
+If you exclude another suite, write the reason down in both places. An exclusion nobody recorded a
+reason for is how ten suites went dark before #5096, and a commented-out step reads as a settled
+decision long after everyone has forgotten there was one.
 
 ## Documentation linting (run locally before pushing doc changes)
 
