@@ -75,6 +75,10 @@
     <Project Path="ModularConfigTests.SatelliteA/ModularConfigTests.SatelliteA.csproj" />
     <Project Path="ModularConfigTests.SatelliteB/ModularConfigTests.SatelliteB.csproj" />
     <Project Path="ModularConfigTests/ModularConfigTests.csproj" />
+    <!-- #5096: was the one test project missing from the solution as well as from CI, so not even
+         a solution-wide build touched it. Its job in tests.yml brings up the primary/standby pair
+         in src/MultiHostTests/docker-compose.yaml. -->
+    <Project Path="MultiHostTests/MultiHostTests.csproj" />
     <Project Path="MultiTenancyTests/MultiTenancyTests.csproj" />
     <Project Path="PatchingTests/PatchingTests.csproj" />
     <Project Path="StressTests/StressTests.csproj" />

@@ -12,9 +12,6 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <NoWarn>$(NoWarn);xUnit1031</NoWarn>
-        <!-- xunit v3: test projects are stand-alone executables. xunit.v3 supplies the
-             generated entry point, so no Program/Main is declared here. -->
-        <OutputType>Exe</OutputType>
     </PropertyGroup>
 
     <ItemGroup>
@@ -54,5 +51,10 @@
              load time. -->
         <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
+
+    <!-- Was the one xunit v3 project declaring OutputType=Exe by hand instead of importing the
+         shared file. That kept it off the Microsoft.Testing.Platform runner Tests.props turns on,
+         which the supervisor needs to drive it (#5096). -->
+    <Import Project="../Tests.props" />
 
 </Project>

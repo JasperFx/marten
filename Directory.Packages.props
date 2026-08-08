@@ -6,6 +6,13 @@
     <PackageVersion Include="Alba" Version="8.2.0" />
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="8.2.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.13.10" />
+    <!-- Bobcat's out-of-process test supervisor, used only by the Nuke build (#5096).
+         It drives each test project's Microsoft.Testing.Platform host as a worker,
+         so a failure can be retried in a FRESH process and a pass-on-retry is
+         reported as flaky rather than laundered into a clean pass. See
+         build/SupervisedTests.cs. Bobcat.Supervisor pulls in Bobcat (the
+         Bobcat.Resilience types) transitively. -->
+    <PackageVersion Include="Bobcat.Supervisor" Version="0.6.1" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="Confluent.Kafka" Version="2.3.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
