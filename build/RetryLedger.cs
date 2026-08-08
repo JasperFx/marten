@@ -151,15 +151,36 @@ partial class Build
         return flattened.Length <= limit ? flattened : flattened[..limit] + "…";
     }
 
+    /// <summary>
+    /// Reduces a matrix job label to something safe on every filesystem AND acceptable to
+    /// actions/upload-artifact, which rejects a superset of what the filesystem does — notably the
+    /// colon in an image tag, on an Ubuntu runner that would have taken it happily.
+    /// </summary>
+    static string fileNameSafe(string name)
+    {
+        var safe = new StringBuilder(name.Length);
+        foreach (var c in name)
+        {
+            safe.Append(char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '_');
+        }
+
+        return safe.ToString();
+    }
+
     static void writeLedgerFile(LedgerEntry entry)
     {
         try
         {
             LedgerDirectory.CreateDirectory();
 
-            // One file per project+framework: a target can run several projects, and a project can
-            // run under several TFMs, so neither alone is a unique key.
-            var path = LedgerDirectory / $"{entry.Job}.{entry.Project}.{entry.Framework}.json";
+            // One file per job+project+framework: a target can run several projects, and a project
+            // can run under several TFMs, so neither alone is a unique key.
+            //
+            // The job name is sanitized because it is a human-readable matrix label, not an
+            // identifier — "TimescaleDB (net9, timescaledb-ha:pg17)" carries a colon, which
+            // actions/upload-artifact rejects outright. That failed three jobs whose tests had all
+            // passed, which is precisely the thing this file must never do.
+            var path = LedgerDirectory / $"{fileNameSafe(entry.Job)}.{entry.Project}.{entry.Framework}.json";
 
             File.WriteAllText(path, JsonSerializer.Serialize(entry, LedgerJson));
         }
