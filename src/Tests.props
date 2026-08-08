@@ -43,6 +43,19 @@
         <!-- Same collision from the other direction: Microsoft.NET.Test.Sdk emits its own
              VSTest Program.cs for test projects. xunit.v3 already provides Main. -->
         <GenerateProgramFile>false</GenerateProgramFile>
+
+        <!-- Every test project doubles as a Microsoft.Testing.Platform host, so Bobcat's
+             supervisor (see build/SupervisedTests.cs) can drive the built executable as a
+             worker process over the MTP wire protocol. That is what buys per-test retries in
+             a FRESH process and honest flaky reporting — see #5096.
+
+             This changes only which runner the executable hosts; the entry point is still
+             xunit.v3's (GenerateTestingPlatformEntryPoint stays false above, or the two
+             collide with CS0017). `dotnet test`, its filter argument, TRX and coverlet all
+             keep working.
+             Set here rather than per-job so a build can never silently produce an
+             executable the supervisor cannot drive. -->
+        <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     </PropertyGroup>
 
 </Project>

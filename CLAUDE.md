@@ -71,21 +71,47 @@ docker-compose up -d
 # Run all tests
 ./build.sh test
 
-# Run individual test suites
-./build.sh test-core              # CoreTests
-./build.sh test-document-db       # DocumentDbTests
-./build.sh test-event-sourcing    # EventSourcingTests
-./build.sh test-linq              # LinqTests
-./build.sh test-multi-tenancy     # MultiTenancyTests
-./build.sh test-patching          # PatchingTests
-./build.sh test-value-types       # ValueTypeTests
-./build.sh test-base-lib          # Marten.Testing
-./build.sh test-code-gen          # Code generation round-trip
-./build.sh test-extensions        # NodaTime + AspNetCore
+# Run individual test suites — one target per test project
+./build.sh test-base-lib                     # Marten.Testing
+./build.sh test-core                         # CoreTests
+./build.sh test-document-db                  # DocumentDbTests
+./build.sh test-event-sourcing               # EventSourcingTests
+./build.sh test-daemon                       # DaemonTests
+./build.sh test-linq                         # LinqTests
+./build.sh test-multi-tenancy                # MultiTenancyTests
+./build.sh test-patching                     # PatchingTests
+./build.sh test-value-types                  # ValueTypeTests
+./build.sh test-modular-config               # ModularConfigTests
+./build.sh test-tenant-partitioned-events    # TenantPartitionedEventsTests
+./build.sh test-container-scoped-projections # ContainerScopedProjectionTests
+./build.sh test-stress                       # StressTests
+./build.sh test-compiled-queries             # CompiledQueryTests
+./build.sh test-source-generator             # Marten.SourceGenerator.Tests (no database)
+./build.sh test-multi-host                   # MultiHostTests (needs its own compose, see below)
+./build.sh test-extensions                   # NodaTime, AspNetCore, PostGIS, PgVector,
+                                             #   TimescaleDB, EntityFrameworkCore, MemoryPack
+
+# MultiHostTests needs a primary/standby pair on 5440/5441 rather than the ordinary database
+docker compose -f src/MultiHostTests/docker-compose.yaml up -d
 
 # Docs
 npm install && npm run docs
 ```
+
+Test targets run through [Bobcat](https://github.com/JasperFx/bobcat)'s supervisor rather than
+`dotnet test` (`build/SupervisedTests.cs`, #5096). A failing test is retried in a **fresh process**,
+and a test that only passes on a retry is reported as flaky — in the log, in the GitHub job summary
+and in a JSON ledger under `artifacts/test-ledger/` — never folded into a clean pass. Two knobs:
+
+- `--disable-test-retry` turns retries off. Measure a suite's real stability with this on; a retry
+  budget hides exactly the instability you are trying to quantify.
+- `[Trait("Retry", "3")]` raises one test's attempt ceiling, `[Trait("Isolated", "true")]` runs it
+  in its own process. Reach for these on a genuinely racy test instead of dropping the project from
+  CI, which is how ten suites went dark before #5096.
+
+This requires each test project to build as a Microsoft.Testing.Platform host, which
+`<UseMicrosoftTestingPlatformRunner>` in `src/Tests.props` turns on for every project importing it.
+A new test project must import `src/Tests.props`.
 
 Default test connection: `Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres` (`build/build.cs:28`). Override with `marten_testing_database` env var.
 
@@ -145,7 +171,21 @@ can pick up rows written by an entirely different project.
 
 ## CI
 
-GitHub Actions runs matrix builds across .NET 8/10, PostgreSQL 15/latest, and both serializers. Workflows in `.github/workflows/`. Tests run in Release config with parallelization disabled.
+`.github/workflows/tests.yml` is **one job per test project** (#5096). Each matrix entry carries its
+own target framework, serializer and Postgres image, and gets its own runner and its own database,
+so suites never contend and adding coverage costs no wall clock. The core suites keep both
+combinations they always had — net9.0/PG15/Newtonsoft and net10.0/PGlatest/System.Text.Json — and
+the extension suites each name the image they need (postgis, pgvector, timescaledb). Tests run in
+Release with parallelization disabled.
+
+**Adding a test project means two edits: a target in `build/build.cs` AND an entry in
+`tests.yml`.** The previous shape was a hand-maintained list of steps inside a handful of monolithic
+jobs, and a project was in CI only if somebody remembered to add a step; ten suites (~780 tests)
+turned out to be running nowhere at all. The matrix is now the single answer to "what does CI run",
+so keep it that way.
+
+A `flakiness` roll-up job downloads every job's retry ledger and reports the aggregate on the run
+page — which suites spent retries, and which tests only passed on one.
 
 ## Documentation linting (run locally before pushing doc changes)
 

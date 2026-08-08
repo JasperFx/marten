@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Bobcat.Supervisor" />
     <PackageReference Include="JasperFx" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Nuke.Common" />

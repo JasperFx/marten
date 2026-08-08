@@ -1,0 +1,458 @@
+name: tests
+
+# One job per test project. See #5096.
+#
+# This replaced eight workflows. Four of them ran a hand-maintained LIST of `./build.sh test-*`
+# steps inside one job; the rest had grown one-offs as suites needed a database the others could
+# not give them. Two things were wrong with that shape, and both are structural rather than
+# accidental:
+#
+#   1. A project was in CI only if somebody remembered to add a step for it. Seven projects had no
+#      step anywhere, and three more — MultiTenancyTests, ValueTypeTests, Marten.AspNetCore.Testing
+#      — sat COMMENTED OUT for long enough that nobody remembered why. Ten suites dark, and nothing
+#      about the files made that visible.
+#   2. Wall clock was the SUM of every step in the job, so adding coverage always cost minutes on
+#      every push. That is a standing incentive to leave a suite out, which is how #1 happened.
+#
+# The matrix below fixes both: adding a project is one entry, the entry runs on its own runner
+# beside all the others, and the list of what CI covers is the list of what is in this file.
+#
+# Every target runs through Bobcat's supervisor (build/SupervisedTests.cs), so a failing test is
+# retried in a fresh process and a pass-on-retry is reported as flaky rather than laundered into a
+# green tick. The `flakiness` job at the bottom rolls those ledgers up across every job.
+#
+# ADDING A TEST PROJECT: add a target in build/build.cs AND an entry here. A target with no entry
+# is exactly the state this workflow exists to make impossible to reach by accident.
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'azure-pipelines.yml'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'azure-pipelines.yml'
+  workflow_dispatch:
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  pg_db: marten_testing
+  pg_user: postgres
+  CONFIGURATION: Release
+  DISABLE_TEST_PARALLELIZATION: true
+  NUKE_TELEMETRY_OPTOUT: true
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  # Superseded PR pushes are worth cancelling — 30 jobs per push adds up. A master run is not:
+  # it is the record for that commit, and cancelling it leaves a gap in exactly the history the
+  # flakiness roll-up is read against.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    # 20 minutes is a deliberate signal, not a budget to grow. Now that each project has its own
+    # runner, a job that needs longer is a project that needs splitting (by namespace, the way
+    # Wolverine shards its heavy suites) rather than a bigger number here.
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ─── The core suites, on both supported combinations ───────────────
+          #
+          # net9.0/PG15/Newtonsoft and net10.0/PGlatest/System.Text.Json were the two workflows
+          # every one of these already ran under. That coverage is preserved exactly; it is only
+          # the packaging that changed.
+
+          - name: BaseLib (net9, PG15, Newtonsoft)
+            target: TestBaseLib
+            project: src/Marten.Testing/Marten.Testing.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+          - name: BaseLib (net10, PGlatest, STJ)
+            target: TestBaseLib
+            project: src/Marten.Testing/Marten.Testing.csproj
+            framework: net10.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+
+          - name: Core (net9, PG15, Newtonsoft)
+            target: TestCore
+            project: src/CoreTests/CoreTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+          - name: Core (net10, PGlatest, STJ)
+            target: TestCore
+            project: src/CoreTests/CoreTests.csproj
+            framework: net10.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+
+          - name: DocumentDb (net9, PG15, Newtonsoft)
+            target: TestDocumentDb
+            project: src/DocumentDbTests/DocumentDbTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+          - name: DocumentDb (net10, PGlatest, STJ)
+            target: TestDocumentDb
+            project: src/DocumentDbTests/DocumentDbTests.csproj
+            framework: net10.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+
+          - name: EventSourcing (net9, PG15, Newtonsoft)
+            target: TestEventSourcing
+            project: src/EventSourcingTests/EventSourcingTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+          - name: EventSourcing (net10, PGlatest, STJ)
+            target: TestEventSourcing
+            project: src/EventSourcingTests/EventSourcingTests.csproj
+            framework: net10.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+
+          - name: Linq (net9, PG15, Newtonsoft)
+            target: TestLinq
+            project: src/LinqTests/LinqTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+          - name: Linq (net10, PGlatest, STJ)
+            target: TestLinq
+            project: src/LinqTests/LinqTests.csproj
+            framework: net10.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+
+          - name: Patching (net9, PG15, Newtonsoft)
+            target: TestPatching
+            project: src/PatchingTests/PatchingTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+          - name: Patching (net10, PGlatest, STJ)
+            target: TestPatching
+            project: src/PatchingTests/PatchingTests.csproj
+            framework: net10.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+
+          - name: ModularConfig (net9, PG15, Newtonsoft)
+            target: TestModularConfig
+            project: src/ModularConfigTests/ModularConfigTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+          - name: ModularConfig (net10, PGlatest, STJ)
+            target: TestModularConfig
+            project: src/ModularConfigTests/ModularConfigTests.csproj
+            framework: net10.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+
+          # ─── Single-combination suites ─────────────────────────────────────
+
+          # Replaces daemon.yml. That workflow shelled straight out to `dotnet test`, so the most
+          # timing-sensitive suite in the repo was the one project with no retry story at all.
+          - name: Daemon (net10, PGlatest, STJ)
+            target: TestDaemon
+            project: src/DaemonTests/DaemonTests.csproj
+            framework: net10.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+
+          # #4617. Kept on PG15 because the partition DDL this exercises is the oldest supported
+          # shape, not the newest.
+          - name: TenantPartitionedEvents (net9, PG15, Newtonsoft)
+            target: TestTenantPartitionedEvents
+            project: src/TenantPartitionedEventsTests/TenantPartitionedEventsTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          - name: NodaTime (net9, PG15, Newtonsoft)
+            target: TestNodaTime
+            project: src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          # ─── Had a target, but every workflow step for it was commented out ───
+          #
+          # Dark for the same reason as the projects below, just less visibly: a commented-out
+          # step reads as a deliberate exclusion long after whoever wrote it has forgotten why.
+
+          - name: MultiTenancy (net9, PG15, Newtonsoft)
+            target: TestMultiTenancy
+            project: src/MultiTenancyTests/MultiTenancyTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          - name: ValueTypes (net9, PG15, Newtonsoft)
+            target: TestValueTypes
+            project: src/ValueTypeTests/ValueTypeTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          - name: AspNetCore (net9, PG15, Newtonsoft)
+            target: TestAspnetcore
+            project: src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          # ─── Wired up by #5096: no target and no job before this ───────────
+
+          - name: ContainerScopedProjections (net9, PG15, Newtonsoft)
+            target: TestContainerScopedProjections
+            project: src/ContainerScopedProjectionTests/ContainerScopedProjectionTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          - name: Stress (net9, PG15, Newtonsoft)
+            target: TestStress
+            project: src/StressTests/StressTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          - name: CompiledQueries (net9, PG15, Newtonsoft)
+            target: TestCompiledQueries
+            project: src/CompiledQueryTests/CompiledQueryTests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          - name: EntityFrameworkCore (net9, PG15, Newtonsoft)
+            target: TestEntityFrameworkCore
+            project: src/Marten.EntityFrameworkCore.Tests/Marten.EntityFrameworkCore.Tests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          # Had a build target since it was written; nothing ever invoked it.
+          - name: MemoryPack (net9, PG15, Newtonsoft)
+            target: TestMemoryPack
+            project: src/Marten.MemoryPack.Tests/Marten.MemoryPack.Tests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          # Pure Roslyn — the service container below goes unused here, which costs a few seconds
+          # of startup and buys one uniform job shape.
+          - name: SourceGenerator (net9)
+            target: TestSourceGenerator
+            project: src/Marten.SourceGenerator.Tests/Marten.SourceGenerator.Tests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+
+          # Needs a streaming-replication PAIR on 5440/5441, not the ordinary test database, so it
+          # brings up its own compose file. net10.0 because the project is single-TFM.
+          - name: MultiHost (net10, replication pair)
+            target: TestMultiHost
+            project: src/MultiHostTests/MultiHostTests.csproj
+            framework: net10.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+            compose: src/MultiHostTests/docker-compose.yaml
+
+          # ─── Extension suites, each on the Postgres image it needs ─────────
+          #
+          # These were already one-project-per-job in their own workflows; folded in here so that
+          # this file is the single answer to "what does CI run".
+
+          - name: PostGIS (net9, postgis:17-3.5)
+            target: TestPostGIS
+            project: src/Marten.PostGIS.Tests/Marten.PostGIS.Tests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: postgis/postgis:17-3.5
+
+          - name: PgVector (net9, pgvector:pg17)
+            target: TestPgVector
+            project: src/Marten.PgVector.Tests/Marten.PgVector.Tests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: pgvector/pgvector:pg17
+
+          - name: TimescaleDB (net9, timescaledb-ha:pg17)
+            target: TestTimescaleDB
+            project: src/Marten.TimescaleDB.Tests/Marten.TimescaleDB.Tests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: timescale/timescaledb-ha:pg17
+
+    services:
+      postgres:
+        image: ${{ matrix.pg_image }}
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: marten_testing
+          NAMEDATALEN: 150
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --user postgres
+
+    env:
+      FRAMEWORK: ${{ matrix.framework }}
+      DEFAULT_SERIALIZER: ${{ matrix.serializer }}
+      # Names this run in the retry ledger (build/RetryLedger.cs). GITHUB_JOB reports the matrix's
+      # job id — the same string for every job here — so it cannot do this on its own.
+      CI_JOB_NAME: ${{ matrix.name }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Optimize database for running tests faster
+        run: |
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format '{{.Names}}')
+          # ALTER SYSTEM rather than exec-editing postgresql.conf: the timescale/timescaledb-ha
+          # image keeps its data dir at /home/postgres/pgdata/data instead of
+          # /var/lib/postgresql/data, so a path-based redirect fails under `bash -e -o pipefail`
+          # and kills the job before a test runs. Letting the server write postgresql.auto.conf
+          # into whatever its own data dir is keeps one tuning step correct for every image in
+          # the matrix.
+          docker exec "$PG_CONTAINER_NAME" psql -U "$pg_user" -d postgres -v ON_ERROR_STOP=1 \
+            -c "ALTER SYSTEM SET fsync = off;" \
+            -c "ALTER SYSTEM SET full_page_writes = off;" \
+            -c "ALTER SYSTEM SET synchronous_commit = off;"
+          docker container restart "$PG_CONTAINER_NAME"
+        shell: bash
+
+      # MultiHostTests only: primary + hot standby on 5440/5441, which a single service container
+      # cannot be.
+      - name: Start the extra compose stack
+        if: ${{ matrix.compose }}
+        run: |
+          docker compose -f "${{ matrix.compose }}" up -d
+          for i in $(seq 1 60); do
+            if docker compose -f "${{ matrix.compose }}" exec -T postgres_replica pg_isready -U user; then
+              echo "replica is ready"
+              exit 0
+            fi
+            echo "waiting for the replica... ($i/60)"
+            sleep 2
+          done
+          echo "the replication pair never came up"
+          docker compose -f "${{ matrix.compose }}" logs
+          exit 1
+        shell: bash
+
+      # Only this project and its dependencies, not the whole solution: with a job per project,
+      # a solution-wide build would be paid ~28 times over for binaries each job mostly discards.
+      - name: compile
+        run: ./build.sh compile-project --project ${{ matrix.project }}
+        shell: bash
+
+      - name: test
+        run: ./build.sh ${{ matrix.target }}
+        shell: bash
+
+      # if: always() — the ledger for a job that FAILED is the one worth having, and it also
+      # records how much of the retry budget a green job quietly spent.
+      - name: Upload the retry ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          # Job names carry spaces, parentheses and commas; artifact names cannot.
+          name: test-ledger-${{ strategy.job-index }}
+          path: artifacts/test-ledger/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # The roll-up. Per-job counts answer "is this job flaky"; only the aggregate answers "which
+  # suites are costing us", which is the question that decides where the next fix goes.
+  flakiness:
+    name: flakiness roll-up
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      # continue-on-error: a pattern matching nothing is a hard error in download-artifact@v4, and
+      # "every job died before it wrote a ledger" must not be reported as a broken roll-up. The
+      # summarize step below says so in words instead.
+      - name: Download every ledger
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: test-ledger-*
+          path: ledgers
+          merge-multiple: true
+
+      - name: Summarize
+        run: |
+          shopt -s nullglob
+          files=(ledgers/*.json)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No ledgers were produced." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Assert on the fields before reading them: a renamed property in
+          # build/RetryLedger.cs would otherwise make jq return null and render as a clean run,
+          # which is the exact failure mode this whole ledger exists to prevent.
+          jq -e 'has("Job") and has("RetriesPerformed") and has("FlakyTests")' "${files[0]}" > /dev/null \
+            || { echo "::error::ledger schema changed — update this jq alongside build/RetryLedger.cs"; exit 1; }
+
+          {
+            echo "## Flakiness roll-up"
+            echo
+            jq -s -r '
+              (map(.RetriesPerformed) | add) as $retries
+              | (map(.PassedOnRetry) | add) as $flaky
+              | (map(.Tests) | add) as $tests
+              | "**\($tests)** tests across **\(length)** supervised runs — **\($retries)** retries, **\($flaky)** passed only on a retry."
+            ' "${files[@]}"
+            echo
+
+            if [ "$(jq -s '[.[] | select(.RetriesPerformed > 0)] | length' "${files[@]}")" != "0" ]; then
+              echo "| job | project | tests | passed on retry | retries | failed |"
+              echo "|---|---|--:|--:|--:|--:|"
+              jq -s -r '
+                [.[] | select(.RetriesPerformed > 0)]
+                | sort_by(-.RetriesPerformed)
+                | .[]
+                | "| \(.Job) | \(.Project) | \(.Tests) | \(.PassedOnRetry) | \(.RetriesPerformed) | \(.Failed) |"
+              ' "${files[@]}"
+              echo
+              echo "### Tests that only passed on a retry"
+              echo
+              jq -s -r 'map(.FlakyTests[]) | unique | .[] | "- `\(.)`"' "${files[@]}"
+            else
+              echo "No test needed a retry. "
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        shell: bash
