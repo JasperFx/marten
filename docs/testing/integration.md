@@ -4,7 +4,7 @@ This documentation aims to guide you through the process of performing integrati
 
 ## Setting Up The Database Using Docker
 
-Although you could spin up a testing [PostgreSQL](https://www.postgresql.org/) any way you want, our prefered way of running integration tests is running a [PostgreSQL](https://www.postgresql.org/) in docker. All that's needed is a `docker-compose.yml`:
+Although you could spin up a testing [PostgreSQL](https://www.postgresql.org/) any way you want, our preferred way of running integration tests is running a [PostgreSQL](https://www.postgresql.org/) in docker. All that's needed is a `docker-compose.yml`:
 
 ```yaml
 version: '3'
