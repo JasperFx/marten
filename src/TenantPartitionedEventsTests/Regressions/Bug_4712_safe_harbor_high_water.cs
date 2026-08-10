@@ -93,9 +93,6 @@ public partial class Bug_4712_safe_harbor_high_water
 
         var statistics = await detector.Detect(CancellationToken.None);
 
-        _output.WriteLine($"appended={appended}, HighestSequence={statistics.HighestSequence}, " +
-                          $"CurrentMark={statistics.CurrentMark}, Timestamp={statistics.Timestamp:O}");
-
         // The high-water detector must see the real sequence height. Without the fix this reads 1
         // (the never-advanced store-global mt_events_sequence) and the store-global agent loops
         // forever in the Stale branch.

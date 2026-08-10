@@ -211,7 +211,6 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
                 .Select(x => x.Name.Identity)
                 .OrderBy(x => x)
                 .ToList();
-            _output.WriteLine($"shard A agents: [{string.Join(", ", agents)}]");
             agents.ShouldContain($"{ShardedDaemonProjection.ProjectionName}:All:{tenant2}",
                 "the coordinator's polling cycle must have started the new tenant's agent");
 
@@ -265,8 +264,6 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
                     x.Name.Identity != $"{ShardedDaemonProjection.ProjectionName}:All:{tenant2}"),
                 30.Seconds(),
                 "tenant 2's agent is reaped by coordinator reconciliation after removal");
-            _output.WriteLine("shard A agents after removal: " +
-                              string.Join(", ", daemon.CurrentAgents().Select(x => x.Name.Identity)));
 
             // Progression-row contract on REMOVE (pinned by #4880): the tenant's per-tenant
             // progression + high-water rows are CLEANED (#4683 semantics), and nothing
@@ -395,11 +392,6 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
 
     private void DumpRows(string label, List<(string Name, long Seq)> rows)
     {
-        _output.WriteLine($"=== {label} ===");
-        foreach (var (name, seq) in rows.OrderBy(r => r.Name))
-        {
-            _output.WriteLine($"{seq,6} | {name}");
-        }
     }
 
     private static long SeqOf(List<(string Name, long Seq)> rows, string name) =>

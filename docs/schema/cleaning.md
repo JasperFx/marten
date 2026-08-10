@@ -94,7 +94,6 @@ using var host = await Host.CreateDefaultBuilder()
                     opts =>
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
-                        opts.Logger(new TestOutputMartenLogger(_output));
                     }
                 )
                 .InitializeWith(new Users());
@@ -120,7 +119,6 @@ using var host = await Host.CreateDefaultBuilder()
                     opts =>
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
-                        opts.Logger(new TestOutputMartenLogger(_output));
                     }
                 )
                 .InitializeWith(new Users());

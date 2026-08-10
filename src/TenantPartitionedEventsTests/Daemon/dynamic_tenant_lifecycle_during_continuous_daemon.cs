@@ -131,7 +131,6 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
             // jasperfx#491: the distributor expanded the store-global shard into per-tenant agents —
             // no store-global agent runs.
             var initialAgents = RunningAgents(daemon);
-            _output.WriteLine("agents after start: " + string.Join(", ", initialAgents));
             initialAgents.OrderBy(x => x).ShouldBe(new[]
             {
                 $"{DynLifeProjection.ProjectionName}:All:{tenantA}",
@@ -193,8 +192,6 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
                     x.Name.Identity == $"{DynLifeProjection.ProjectionName}:All:{tenantB}"),
                 15.Seconds(),
                 "tenant B's agent is reaped by coordinator reconciliation after removal");
-            _output.WriteLine("agents after removal: " +
-                              string.Join(", ", daemon.CurrentAgents().Select(x => x.Name.Identity)));
 
             // B's progression + high-water rows are gone and STAY gone across further polling
             // cycles: the reaped agent no longer advances a progression row, and StopAgentAsync's
@@ -265,11 +262,6 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
         await using var cmd = conn.CreateCommand(
             $"select tenant_id, count(*), max(seq_id) from {Schema}.mt_events group by tenant_id order by tenant_id");
         await using var reader = await cmd.ExecuteReaderAsync();
-        _output.WriteLine("=== mt_events by tenant ===");
-        while (await reader.ReadAsync())
-        {
-            _output.WriteLine($"{reader.GetString(0)} | count={reader.GetInt64(1)} | max_seq={reader.GetInt64(2)}");
-        }
     }
 
     private static async Task WaitForConditionAsync(Func<bool> condition, TimeSpan timeout, string what)
@@ -290,11 +282,6 @@ public partial class dynamic_tenant_lifecycle_during_continuous_daemon
 
     private void DumpRows(string label, List<(string Name, long Seq)> rows)
     {
-        _output.WriteLine($"=== {label} ===");
-        foreach (var (name, seq) in rows.OrderBy(r => r.Name))
-        {
-            _output.WriteLine($"{seq,6} | {name}");
-        }
     }
 
     private static long SeqOf(List<(string Name, long Seq)> rows, string name) =>

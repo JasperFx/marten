@@ -149,7 +149,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             // lock listener, which has provably executed nothing since before seq 9 was allocated.
             // The gap is dead: skip — with NO SkipStaleGapsDespiteLiveTransactionsAfter configured.
             var second = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"After threshold with idle listener present: CurrentMark={second.CurrentMark}");
             second.CurrentMark.ShouldBe(12);
             second.IncludesSkipping.ShouldBeTrue();
 
@@ -194,7 +193,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
 
                 await Task.Delay(700, TestContext.Current.CancellationToken);
                 var second = await detector.DetectInSafeZone(CancellationToken.None);
-                _output.WriteLine($"Past threshold with live reserver: CurrentMark={second.CurrentMark}");
                 second.CurrentMark.ShouldBe(8);
 
                 // The reserver dies — NOW the gap is provably dead and the skip proceeds
@@ -207,7 +205,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
 
             await Task.Delay(200, TestContext.Current.CancellationToken);
             var third = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"After reserver death: CurrentMark={third.CurrentMark}");
             third.CurrentMark.ShouldBe(12);
             third.IncludesSkipping.ShouldBeTrue();
         }
@@ -254,7 +251,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
 
             await Task.Delay(700, TestContext.Current.CancellationToken);
             var second = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"Past threshold, fenceless: CurrentMark={second.CurrentMark}");
             second.CurrentMark.ShouldBe(8);
 
             var persisted = await scalar(

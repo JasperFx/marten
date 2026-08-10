@@ -223,8 +223,6 @@ public partial class multi_node_hotcold_sharded_partitioned_events: IAsyncLifeti
 
                 var onA = await AgentIdentitiesAsync(nodeA, shard);
                 var onB = await AgentIdentitiesAsync(nodeB, shard);
-                _output.WriteLine($"{shard}: node A runs [{string.Join(", ", onA)}], " +
-                                  $"node B runs [{string.Join(", ", onB)}]");
 
                 // Only tenant-bearing agents run, and only for THIS shard's tenants — the
                 // expansion never leaks another shard database's tenants into this set.
@@ -335,11 +333,6 @@ public partial class multi_node_hotcold_sharded_partitioned_events: IAsyncLifeti
 
     private void DumpRows(string label, List<(string Name, long Seq)> rows)
     {
-        _output.WriteLine($"=== {label} ===");
-        foreach (var (name, seq) in rows.OrderBy(r => r.Name))
-        {
-            _output.WriteLine($"{seq,6} | {name}");
-        }
     }
 
     private static long SeqOf(List<(string Name, long Seq)> rows, string name) =>

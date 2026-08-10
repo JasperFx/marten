@@ -42,8 +42,6 @@ public partial class multi_stream_projections: DaemonContext
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
-        _output.WriteLine($"Expecting {NumberOfEvents} events");
-
         await agent.Tracker.WaitForShardState("Day:All", NumberOfEvents, 30.Seconds());
 
         var days = await theSession.Query<Day>().ToListAsync(TestContext.Current.CancellationToken);

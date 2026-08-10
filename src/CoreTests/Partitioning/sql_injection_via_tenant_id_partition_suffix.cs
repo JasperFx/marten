@@ -152,9 +152,8 @@ public class sql_injection_via_tenant_id_partition_suffix: IAsyncLifetime
         {
             await reopened.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            _output.WriteLine($"schema apply threw (acceptable): {e.GetType().Name}: {e.Message}");
         }
 
         (await MarkerExistsAsync()).ShouldBeFalse(

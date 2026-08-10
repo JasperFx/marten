@@ -150,13 +150,6 @@ public class Bug_5024_extended_progression_survives_shutdown: DaemonContext
                 {
                     Exceptions.Add(exception);
                 }
-
-                _output.WriteLine($"{logLevel}: {formatter(state, exception)}");
-                _output.WriteLine(exception.ToString());
-            }
-            else
-            {
-                _output.WriteLine($"{logLevel}: {formatter(state, exception)}");
             }
         }
 

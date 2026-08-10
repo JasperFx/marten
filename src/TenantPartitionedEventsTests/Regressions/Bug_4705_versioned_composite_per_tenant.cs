@@ -163,10 +163,6 @@ public partial class Bug_4705_versioned_composite_per_tenant
 
         await daemon.StopAllAsync();
 
-        _output.WriteLine($"=== Version {version}: appended {appended} events, highWater={highWater}, " +
-                          $"standalone={standalone}, composite(min)={composite} ===");
-        foreach (var (name, seq) in rows) _output.WriteLine($"{seq,6} | {name}");
-
         // Control sanity: the standalone projection should always reach the high-water.
         standalone.ShouldBe(highWater, $"[v{version}] standalone projection should reach high-water {highWater}");
 

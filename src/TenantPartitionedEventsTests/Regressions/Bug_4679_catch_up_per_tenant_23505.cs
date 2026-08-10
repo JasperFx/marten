@@ -197,12 +197,6 @@ public partial class Bug_4679_catch_up_per_tenant_23505
 
         // Headline: no 23505 anywhere in the exception chain. Drill into
         // AggregateException so the per-shard exceptions surface.
-        if (thrown != null)
-        {
-            var allMessages = string.Join("\n", Flatten(thrown).Select(x => $"  {x.GetType().Name}: {x.Message}"));
-            _output.WriteLine("CatchUpAsync threw:\n" + allMessages);
-        }
-
         Flatten(thrown).ShouldNotContain(
             x => x.Message.Contains("23505", StringComparison.Ordinal)
                  || x.Message.Contains("pk_mt_event_progression", StringComparison.Ordinal),

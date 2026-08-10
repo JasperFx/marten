@@ -131,9 +131,6 @@ public partial class Bug_4717_per_tenant_progression
 
         await daemon.StopAllAsync();
 
-        _output.WriteLine("=== mt_event_progression ===");
-        foreach (var (name, seq) in rows.OrderBy(r => r.Name)) _output.WriteLine($"{seq,6} | {name}");
-
         // Per-tenant PROJECTION progress: each (projection, tenant) tracked independently at the
         // tenant's own height. Today only store-global "<Projection>:All" rows are written (#4717).
         foreach (var projection in new[] { "Bug4717Standalone", "Bug4717Trip", "Bug4717Count" })
