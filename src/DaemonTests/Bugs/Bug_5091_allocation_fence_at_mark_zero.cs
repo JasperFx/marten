@@ -123,7 +123,6 @@ public class Bug_5091_allocation_fence_at_mark_zero: DaemonContext
             // lock session, and it has provably executed nothing since before seq 1 was allocated, so
             // it cannot be the reserver. The gap is dead: skip.
             var second = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"Leading gap past threshold with idle listener: CurrentMark={second.CurrentMark}");
             second.CurrentMark.ShouldBe(4);
             second.IncludesSkipping.ShouldBeTrue();
 
@@ -169,7 +168,6 @@ public class Bug_5091_allocation_fence_at_mark_zero: DaemonContext
 
                 await Task.Delay(700, TestContext.Current.CancellationToken);
                 var held = await detector.DetectInSafeZone(CancellationToken.None);
-                _output.WriteLine($"Leading gap past threshold with LIVE reserver: CurrentMark={held.CurrentMark}");
                 held.CurrentMark.ShouldBe(0);
 
                 await tx.RollbackAsync(TestContext.Current.CancellationToken);
@@ -182,7 +180,6 @@ public class Bug_5091_allocation_fence_at_mark_zero: DaemonContext
             // The reserver died, so now the gap is provably dead.
             await Task.Delay(200, TestContext.Current.CancellationToken);
             var after = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"After reserver death: CurrentMark={after.CurrentMark}");
             after.CurrentMark.ShouldBe(4);
             after.IncludesSkipping.ShouldBeTrue();
         }
@@ -222,7 +219,6 @@ public class Bug_5091_allocation_fence_at_mark_zero: DaemonContext
 
             await Task.Delay(700, TestContext.Current.CancellationToken);
             var second = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"Fenceless leading gap past threshold: CurrentMark={second.CurrentMark}");
             second.CurrentMark.ShouldBe(0);
         }
         finally

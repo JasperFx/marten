@@ -157,19 +157,6 @@ public class dcb_concurrency_replay_under_partitioning
         var throws = results.Count(r => r.Exception is DcbConcurrencyException);
         var otherErrors = results.Where(r => r.Exception is not null and not DcbConcurrencyException).ToList();
 
-        _output.WriteLine($"DCB storage mode under partitioning: {storageMode}");
-        _output.WriteLine($"Truly-concurrent racers: {Racers}");
-        _output.WriteLine($"  Committed:                {committed}");
-        _output.WriteLine($"  DcbConcurrencyException:  {throws}");
-        if (otherErrors.Count > 0)
-        {
-            _output.WriteLine($"  Other exceptions:         {otherErrors.Count}");
-            foreach (var er in otherErrors)
-            {
-                _output.WriteLine($"    Racer {er.Index}: {er.Exception}");
-            }
-        }
-
         // Exactly one racer commits; everyone else observes the DCB violation.
         // No other exception type — if partitioning had introduced a deadlock
         // or a different concurrency surface, this would surface here.

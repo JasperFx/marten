@@ -127,7 +127,6 @@ public class Bug_4751_composite_catchup_under_sharded: ShardedPartitionedContext
         await using var query = _store.QuerySession("tenant_a");
         var stage1 = await query.Query<CmpTrip>().CountAsync(TestContext.Current.CancellationToken);
         var stage2 = await query.Query<CmpTripCount>().CountAsync(TestContext.Current.CancellationToken);
-        _output.WriteLine($"stage1 (CmpTrip) = {stage1}, stage2 (CmpTripCount) = {stage2}, expected {streams}");
 
         stage1.ShouldBe(streams, "stage-1 of the composite must be caught up by the async daemon");
         stage2.ShouldBe(streams, "stage-2 of the composite must be caught up by the async daemon");

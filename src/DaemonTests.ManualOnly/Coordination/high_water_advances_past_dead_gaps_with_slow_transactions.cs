@@ -165,7 +165,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync(TestContext.Curr
             // mark — i.e. the only chance to establish the fence.
             var first = await StartDaemonInHotColdMode();
             await first.Daemon().Tracker.WaitForHighWaterMark(published, 30.Seconds());
-            _output.WriteLine($"First daemon generation caught up at {published}");
 
             // The deploy: the process holding that in-memory history goes away
             await first.StopAsync(TestContext.Current.CancellationToken);
@@ -173,11 +172,9 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync(TestContext.Curr
 
             // ...and a dead gap forms while no daemon is running
             var deadSeq = await createDeadGapAsync();
-            _output.WriteLine($"Dead sequence number: {deadSeq}");
 
             await commitEventsDirectlyAsync(3);
             var ceiling = await highestCommittedSequenceAsync();
-            _output.WriteLine($"Highest committed sequence above the gap: {ceiling}");
 
             // The replacement node starts up against a store that was already gapped
             using var second = await StartDaemonInHotColdMode();
@@ -223,7 +220,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync(TestContext.Curr
         NumberOfStreams = 4;
         await PublishSingleThreaded();
         var ceiling = await highestCommittedSequenceAsync();
-        _output.WriteLine($"Highest committed sequence above the poisoned range: {ceiling}");
 
         using var host = await StartDaemonInHotColdMode();
         await host.Daemon().Tracker.WaitForHighWaterMark(ceiling, 60.Seconds());

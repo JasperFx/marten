@@ -68,9 +68,6 @@ public class Bug_4763_reassign_count_divergence: ShardedPartitionedContext
         await _store.Advanced.AddTenantToShardAsync("mover", shardB, CancellationToken.None);
 
         var counts = await ReadPoolCountsAsync();
-        _output.WriteLine("pool tenant_count per database_id: " +
-                          string.Join(", ", counts.Count == 0 ? new[] { "(none)" } : Array.Empty<string>()));
-        foreach (var (db, count) in counts) _output.WriteLine($"  {db} = {count}");
 
         // The tenant now lives on B, so A has 0 active tenants and B has 1.
         counts.ShouldContainKey(shardB);

@@ -209,14 +209,14 @@ public class TestLogger<T>: ILogger<T>, IDisposable
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception,
         Func<TState, Exception, string> formatter)
     {
+        // Test output intentionally suppressed to keep CI fast; the ITestOutputHelper
+        // dependency is retained so existing call sites compile unchanged.
         var message = $"{typeof(T).NameInCode()}/{logLevel}: {formatter(state, exception)}";
         Debug.WriteLine(message);
-        _output.WriteLine(message);
 
         if (exception != null)
         {
             Debug.WriteLine(exception);
-            _output.WriteLine(exception.ToString());
         }
     }
 

@@ -167,7 +167,6 @@ public partial class composite_side_effects_rebuild_under_sharded_partitioning: 
         catch (Exception e)
         {
             thrown = e;
-            _output.WriteLine(e.ToString());
         }
 
         thrown.ShouldBeNull(

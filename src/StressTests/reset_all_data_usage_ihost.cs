@@ -34,7 +34,6 @@ public class reset_all_data_usage_ihost
                             opts =>
                             {
                                 opts.Connection(ConnectionSource.ConnectionString);
-                                opts.Logger(new TestOutputMartenLogger(_output));
                             }
                         )
                         .InitializeWith(new Users());
@@ -60,7 +59,6 @@ public class reset_all_data_usage_ihost
                             opts =>
                             {
                                 opts.Connection(ConnectionSource.ConnectionString);
-                                opts.Logger(new TestOutputMartenLogger(_output));
                             }
                         )
                         .InitializeWith(new Users());

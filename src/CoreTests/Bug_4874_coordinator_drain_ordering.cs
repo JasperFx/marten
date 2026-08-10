@@ -118,11 +118,6 @@ public class Bug_4874_coordinator_drain_ordering
             AppDomain.CurrentDomain.FirstChanceException -= handler;
         }
 
-        foreach (var abort in aborts)
-        {
-            _output.WriteLine(abort);
-        }
-
         aborts.Count.ShouldBe(0,
             $"Expected no disposed-pool aborts on the leadership poll path, but saw {aborts.Count}. " +
             "The cold-node leadership poll opened a connection against an already-disposed data source " +

@@ -155,8 +155,6 @@ public partial class multi_node_hotcold_single_database_partitioned_events
             // ---- Placement: which node runs what ----
             var agentsA = AgentIdentities(nodeA);
             var agentsB = AgentIdentities(nodeB);
-            _output.WriteLine($"node A agents: [{string.Join(", ", agentsA)}]");
-            _output.WriteLine($"node B agents: [{string.Join(", ", agentsB)}]");
 
             var projections = new[] { HcTripProjection.ProjectionName, HcTallyProjection.ProjectionName };
             var perTenantIdentities = projections
@@ -270,11 +268,6 @@ public partial class multi_node_hotcold_single_database_partitioned_events
 
     private void DumpRows(string label, List<(string Name, long Seq)> rows)
     {
-        _output.WriteLine($"=== {label} ===");
-        foreach (var (name, seq) in rows.OrderBy(r => r.Name))
-        {
-            _output.WriteLine($"{seq,6} | {name}");
-        }
     }
 
     private static long SeqOf(List<(string Name, long Seq)> rows, string name) =>

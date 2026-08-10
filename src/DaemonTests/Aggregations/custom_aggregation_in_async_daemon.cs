@@ -31,7 +31,6 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
         {
             var myCustomAggregation = new MyCustomProjection();
             opts.Projections.Add(myCustomAggregation, ProjectionLifecycle.Async);
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
@@ -75,7 +74,6 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
         {
             var myCustomAggregation = new MyCustomProjection{Options = {CacheLimitPerTenant = 100}};
             opts.Projections.Add(myCustomAggregation, ProjectionLifecycle.Async);
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);

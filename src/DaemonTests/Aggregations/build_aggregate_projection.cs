@@ -83,14 +83,11 @@ public class build_aggregate_projection: DaemonContext
         StoreOptions(x =>
         {
             x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
-            x.Logger(new TestOutputMartenLogger(_output));
         });
 
 
 
         await PublishSingleThreaded();
-
-        _output.WriteLine("STARTING DAEMON---------------------------------");
 
         var agent = await StartDaemon();
 
@@ -115,7 +112,6 @@ public class build_aggregate_projection: DaemonContext
         {
             x.Projections.Add(new TripProjectionWithCustomName { Options = { CacheLimitPerTenant = 100 } },
                 ProjectionLifecycle.Async);
-            x.Logger(new TestOutputMartenLogger(_output));
         });
 
         var agent = await StartDaemon();
@@ -406,8 +402,6 @@ public class build_aggregate_projection: DaemonContext
         var shortTrip = new TripStream().TravelIsUnder(200);
         var longTrip = new TripStream().TravelIsOver(2000);
         var initialCount = shortTrip.Events.Count + longTrip.Events.Count;
-
-        _output.WriteLine($"Initially publishing {initialCount} events");
 
         var projection = new TestingSupport.TripProjection();
         projection.Name = "Trip";

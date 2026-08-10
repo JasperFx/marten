@@ -273,7 +273,6 @@ public class when_skipping_events_in_daemon_with_advanced_tracking : DaemonConte
         // Drain the dead letter events queued up
         await daemon.StopAllAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
         var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync(TestContext.Current.CancellationToken);
 
         skipped.Where(x => x.ProjectionName == "CollateNames" && x.ShardName == "All")

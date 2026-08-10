@@ -73,13 +73,10 @@ public class Bug_4730_double_apply_with_out_of_order_stream: OneOffConfiguration
         {
             // The out-of-order stream's poison event is skipped+dead-lettered; non-stale wait can still
             // time out in some runs. The assertion below is what matters.
-            _output.WriteLine($"WaitForNonStaleData threw: {e.GetType().Name}: {e.Message}");
         }
 
         await using var query = theStore.QuerySession();
         var control = await query.LoadAsync<AccountReadModel4730>(streamControl, TestContext.Current.CancellationToken);
-
-        _output.WriteLine($"cacheLimit={cacheLimitPerTenant} control TotalDelta actual={control?.TotalDelta} expected={delta}");
 
         control.ShouldNotBeNull();
         control.TotalDelta.ShouldBe(delta);

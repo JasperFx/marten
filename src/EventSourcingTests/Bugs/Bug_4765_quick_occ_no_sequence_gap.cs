@@ -126,7 +126,6 @@ public class Bug_4765_quick_occ_no_sequence_gap: OneOffConfigurationsContext
 
         // Loser must throw a concurrency exception...
         var ex = await Record.ExceptionAsync(() => s2.SaveChangesAsync());
-        _output.WriteLine(ex?.GetType().FullName ?? "<no exception>");
         ex.ShouldNotBeNull();
         ex.ShouldBeAssignableTo<ConcurrencyException>();
 
@@ -284,18 +283,12 @@ public class Bug_4765_quick_occ_no_sequence_gap: OneOffConfigurationsContext
 
         var successes = Array.FindAll(exceptions, static e => e is null).Length;
         var failures = Array.FindAll(exceptions, static e => e is ConcurrencyException).Length;
-        _output.WriteLine($"successes={successes}, concurrency failures={failures}");
-        for (var i = 0; i < exceptions.Length; i++)
-            if (exceptions[i] != null)
-                _output.WriteLine($"  thread[{i}]: {exceptions[i]!.GetType().Name} — {exceptions[i]!.Message}");
-
         successes.ShouldBe(1, "exactly one concurrent writer should win");
         failures.ShouldBe(2, "the other two should get ConcurrencyException");
 
         // The critical assertion: sequence must equal the highest committed seq_id.
         // A gap means nextval() fired for a losing transaction — the daemon stalls.
         var (lastValue, maxSeq, rowCount) = await ReadSequenceStateAsync(store);
-        _output.WriteLine($"last_value={lastValue}, max seq_id={maxSeq}, rows={rowCount}");
         lastValue.ShouldBe(maxSeq, $"sequence gap: last_value={lastValue} > max committed seq_id={maxSeq}");
 
         // 2 seed + 1 winner; both losers must have rolled back cleanly.
