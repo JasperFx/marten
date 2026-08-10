@@ -47,18 +47,27 @@
         "Test",
         "TestAspnetcore",
         "TestBaseLib",
+        "TestCompiledQueries",
+        "TestContainerScopedProjections",
         "TestCore",
+        "TestDaemon",
         "TestDocumentDb",
+        "TestEntityFrameworkCore",
         "TestEventSourcing",
         "TestExtensions",
         "TestLinq",
         "TestMemoryPack",
         "TestModularConfig",
+        "TestMultiHost",
         "TestMultiTenancy",
         "TestNodaTime",
         "TestPatching",
         "TestPgVector",
         "TestPostGIS",
+        "TestSourceGenerator",
+        "TestStress",
+        "TestTenantPartitionedEvents",
+        "TestTimescaleDB",
         "TestValueTypes"
       ]
     },
@@ -145,6 +154,9 @@
           "type": "string"
         },
         "DisableTestParallelization": {
+          "type": "boolean"
+        },
+        "DisableTestRetry": {
           "type": "boolean"
         },
         "Framework": {
