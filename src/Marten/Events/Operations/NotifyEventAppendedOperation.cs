@@ -14,7 +14,15 @@ namespace Marten.Events.Operations;
 
 internal class NotifyEventAppendedOperation: IStorageOperation, NoDataReturnedCall
 {
-    private static readonly string Sql = $"select pg_notify('{PostgresqlListenWakeup.DefaultChannel}', '')";
+    // #5210 — this operation is a NoDataReturnedCall, so OperationPage.ApplyCallbacksAsync
+    // never advances the batched reader past it. The SQL therefore MUST NOT produce a
+    // result set. The original `select pg_notify(...)` form returned a one-row result set
+    // (a single `void` column), which left the reader one result set behind and made any
+    // data-returning operation later in the same batch (an inline projection upsert, a
+    // revisioned document update, ...) read the pg_notify row instead of its own RETURNING
+    // row. The DO/PERFORM form fires the identical NOTIFY without returning anything.
+    internal static readonly string Sql =
+        $"DO $$ BEGIN PERFORM pg_notify('{PostgresqlListenWakeup.DefaultChannel}', ''); END $$";
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
