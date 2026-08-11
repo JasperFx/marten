@@ -81,9 +81,31 @@ public abstract partial class DocumentSessionBase
 
         var documentStorage = StorageFor<T>();
         var deletion = new StatementOperation(documentStorage, documentStorage.HardDeleteFragment);
-        deletion.ApplyFiltering(this, expression);
+        var where = deletion.ApplyFiltering(this, expression);
+
+        // A hard delete has to reach rows that are already soft-deleted, because removing them
+        // is the entire point of a purge. Leaving the filter on makes HardDeleteWhere silently
+        // skip exactly the rows it exists to remove, while HardDelete by id still works.
+        removeExcludeSoftDeletedFilter(where);
 
         _workTracker.Add(deletion);
+    }
+
+    /// <summary>
+    ///     The soft-deleted exclusion filter is applied to every operation built through
+    ///     <see cref="StatementOperation.ApplyFiltering{T}" />. Operations whose whole purpose is to
+    ///     act on already-deleted rows have to take it back off again.
+    /// </summary>
+    private static void removeExcludeSoftDeletedFilter(ISqlFragment? where)
+    {
+        if (where is CompoundWhereFragment compound)
+        {
+            var filter = compound.Children.OfType<ExcludeSoftDeletedFilter>().FirstOrDefault();
+            if (filter != null)
+            {
+                compound.Remove(filter);
+            }
+        }
     }
 
     /// <summary>
@@ -110,18 +132,9 @@ public abstract partial class DocumentSessionBase
 
         var where = deletion.ApplyFiltering(this, expression);
 
-        // This is hokey, but you need to remove the normally applied filter
-        // to exclude soft-deleted documents because that's exactly what you do want
-        // here
-        if (where is CompoundWhereFragment compound)
-        {
-            var filter = compound.Children.OfType<ExcludeSoftDeletedFilter>().FirstOrDefault();
-            if (filter != null)
-            {
-                compound.Remove(filter);
-            }
-        }
-
+        // Un-deleting is only meaningful against rows that are already soft-deleted, so the
+        // normally applied exclusion filter has to come back off.
+        removeExcludeSoftDeletedFilter(where);
 
         _workTracker.Add(deletion);
     }

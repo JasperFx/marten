@@ -132,6 +132,102 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         count.ShouldBe(0);
     }
 
+    private void plantDeletedAt<T>(IDocumentSession session, object id, DateTimeOffset instant)
+    {
+        var mapping = theStore.Options.Storage.MappingFor(typeof(T));
+
+        var cmd = session.Connection
+            .CreateCommand($"update {mapping.TableName} set mt_deleted_at = :at where id = :id")
+            .With("at", instant.UtcDateTime)
+            .With("id", id);
+
+        cmd.ExecuteNonQuery();
+    }
+
+    private DateTimeOffset? readDeletedAt<T>(IDocumentSession session, object id)
+    {
+        var mapping = theStore.Options.Storage.MappingFor(typeof(T));
+
+        var cmd = session.Connection
+            .CreateCommand($"select mt_deleted_at from {mapping.TableName} where id = :id")
+            .With("id", id);
+
+        var raw = cmd.ExecuteScalar();
+        if (raw == null || raw == DBNull.Value)
+        {
+            return null;
+        }
+
+        // Npgsql surfaces timestamptz as a UTC DateTime, not a DateTimeOffset.
+        return raw is DateTimeOffset offset ? offset : new DateTimeOffset((DateTime)raw, TimeSpan.Zero);
+    }
+
+    /// <summary>
+    ///     Ports polecat#419. A soft <c>DeleteWhere</c> must not re-stamp <c>mt_deleted_at</c> on rows
+    ///     that were already deleted, or every question about *when* a document was deleted
+    ///     (DeletedSince, DeletedBefore, an audit, a retention sweep) silently reads the later bulk
+    ///     call instead of the deletion, and the real value is unrecoverable.
+    ///     <para>
+    ///     Two deletes in the same millisecond agree either way, so calling DeleteWhere twice proves
+    ///     nothing on its own. This plants a known instant far in the past on the already-deleted row
+    ///     and asserts the second call leaves it alone.
+    ///     </para>
+    /// </summary>
+    [Fact]
+    public async Task delete_where_does_not_restamp_deleted_at_on_already_deleted_rows()
+    {
+        var planted = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+        var alreadyDeleted = new StringDoc { Id = "restamp-old", Size = "big" };
+        var stillLive = new StringDoc { Id = "restamp-new", Size = "big" };
+
+        theSession.Store(alreadyDeleted, stillLive);
+        await theSession.SaveChangesAsync();
+
+        theSession.Delete(alreadyDeleted);
+        await theSession.SaveChangesAsync();
+
+        // Plant a deletion instant well in the past, so a re-stamp is unmistakable.
+        plantDeletedAt<StringDoc>(theSession, alreadyDeleted.Id, planted);
+
+        // A later bulk delete whose predicate still matches the already-deleted row.
+        theSession.DeleteWhere<StringDoc>(x => x.Size == "big");
+        await theSession.SaveChangesAsync();
+
+        // The already-deleted row keeps the instant it was actually deleted.
+        var untouched = readDeletedAt<StringDoc>(theSession, alreadyDeleted.Id);
+        untouched.ShouldNotBeNull();
+        untouched.Value.ToUniversalTime().ShouldBe(planted.ToUniversalTime());
+
+        // ... and the row that was still live is deleted now, with a real (recent) timestamp.
+        var freshlyDeleted = readDeletedAt<StringDoc>(theSession, stillLive.Id);
+        freshlyDeleted.ShouldNotBeNull();
+        freshlyDeleted.Value.ShouldBeGreaterThan(planted);
+    }
+
+    /// <summary>
+    ///     Ports polecat#419, the other half. <c>HardDeleteWhere</c> must NOT inherit the soft-delete
+    ///     exclusion filter: a hard delete of an already-soft-deleted row is a real delete and has to
+    ///     proceed, or soft-deleted rows are stranded permanently beyond the reach of the purge that
+    ///     is supposed to remove them.
+    /// </summary>
+    [Fact]
+    public async Task hard_delete_where_still_removes_already_soft_deleted_rows()
+    {
+        var doc = new StringDoc { Id = "purge-me", Size = "big" };
+
+        theSession.Store(doc);
+        await theSession.SaveChangesAsync();
+
+        theSession.Delete(doc);
+        await theSession.SaveChangesAsync();
+
+        theSession.HardDeleteWhere<StringDoc>(x => x.Size == "big");
+        await theSession.SaveChangesAsync();
+
+        assertDocumentIsHardDeleted<StringDoc>(theSession, doc.Id);
+    }
+
     [Fact]
     public async Task soft_delete_a_document_row_state()
     {
