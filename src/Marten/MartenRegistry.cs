@@ -713,8 +713,18 @@ public class MartenRegistry
 
                 if (enabled)
                 {
+                    m.OptimisticConcurrencyRequestedExplicitly = true;
                     m.UseNumericRevisions = false;
                     m.Metadata.Version.Enabled = true;
+
+                    // #5159: mirror UseNumericRevisions, which has always cleared the competing
+                    // flavor. Without this the two calls are order-dependent -- numeric-then-guid
+                    // threw at bootstrap while guid-then-numeric quietly worked -- because both
+                    // metadata flags ended up enabled and they map to the same mt_version column.
+                    // The cases where clearing this is the wrong answer (projection targets,
+                    // revisions declared by IRevisioned/ILongVersioned/[Version]) are caught in
+                    // DocumentMapping.CompileAndValidate instead, where the error can name them.
+                    m.Metadata.Revision.Enabled = false;
                 }
             };
             return this;
