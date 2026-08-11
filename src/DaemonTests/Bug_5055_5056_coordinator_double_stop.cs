@@ -197,12 +197,6 @@ public class Bug_5055_5056_coordinator_double_stop: DaemonContext
             {
                 Entries.Add((logLevel, message, exception));
             }
-
-            _output.WriteLine($"{logLevel}: {message}");
-            if (exception != null)
-            {
-                _output.WriteLine(exception.ToString());
-            }
         }
 
         private sealed class NullScope: IDisposable

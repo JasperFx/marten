@@ -33,7 +33,6 @@ public class using_for_tenant_with_side_effects_and_subscriptions : OneOffConfig
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Projections.Add(new NumbersSubscription(), ProjectionLifecycle.Async);
             opts.Projections.Errors.SkipApplyErrors = false;
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         using var session = theStore.LightweightSession("green");
@@ -56,7 +55,6 @@ public class using_for_tenant_with_side_effects_and_subscriptions : OneOffConfig
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Events.Subscribe(new NumberBatchSubscription());
             opts.Projections.Errors.SkipApplyErrors = false;
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         using var session = theStore.LightweightSession("green");

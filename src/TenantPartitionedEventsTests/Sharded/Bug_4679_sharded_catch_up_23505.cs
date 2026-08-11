@@ -178,7 +178,6 @@ public partial class Bug_4679_sharded_catch_up_23505: ShardedPartitionedContext
         catch (Exception e)
         {
             thrown = e;
-            _output.WriteLine(e.ToString());
         }
 
         // If the regression reproduced, this would throw 23505 on pk_mt_event_progression for a
@@ -271,13 +270,9 @@ public partial class Bug_4679_sharded_catch_up_23505: ShardedPartitionedContext
         catch (Exception e)
         {
             thrown = e;
-            _output.WriteLine("=== CatchUpAsync threw ===");
-            _output.WriteLine(e.ToString());
         }
 
         var names = await progressionNamesAsync(Fixture.ConnectionStrings[shardAssignment["tA"]]);
-        _output.WriteLine("=== mt_event_progression rows on shard_a ===");
-        foreach (var n in names) _output.WriteLine(n);
 
         // OBSERVE: does the composite write store-global (tenant-less) progression names? If the
         // composite execution doesn't honor the per-tenant ShardName, these bare :All rows appear

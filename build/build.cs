@@ -14,7 +14,7 @@ using Nuke.Common.Tools.Npm;
 using Serilog;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-class Build : NukeBuild
+partial class Build : NukeBuild
 {
     public static int Main() => Execute<Build>(x => x.Compile);
 
@@ -28,23 +28,35 @@ class Build : NukeBuild
     [Parameter] readonly string ConnectionString ="Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
     [Parameter] readonly string Project;
 
+    // Everything that runs against the ordinary marten_testing database. CI does not use this
+    // target — .github/workflows/tests.yml gives each project its own job — but a local
+    // `./build.sh test` should still mean "run the suite", so anything added below belongs here.
+    // TestMultiHost is deliberately absent: it needs the replication pair from
+    // src/MultiHostTests/docker-compose.yaml rather than the standard database.
     Target Test => _ => _
         .DependsOn(TestBaseLib)
         .DependsOn(TestCore)
         .DependsOn(TestDocumentDb)
         .DependsOn(TestEventSourcing)
+        .DependsOn(TestDaemon)
         .DependsOn(TestModularConfig)
         .DependsOn(TestLinq)
         .DependsOn(TestMultiTenancy)
         .DependsOn(TestTenantPartitionedEvents)
         .DependsOn(TestPatching)
-        .DependsOn(TestValueTypes);
+        .DependsOn(TestValueTypes)
+        .DependsOn(TestContainerScopedProjections)
+        .DependsOn(TestStress)
+        .DependsOn(TestCompiledQueries)
+        .DependsOn(TestSourceGenerator);
 
     Target TestExtensions => _ => _
         .DependsOn(TestNodaTime)
         .DependsOn(TestAspnetcore)
         .DependsOn(TestPostGIS)
         .DependsOn(TestPgVector)
+        .DependsOn(TestTimescaleDB)
+        .DependsOn(TestEntityFrameworkCore)
         .DependsOn(TestMemoryPack);
 
     Target Init => _ => _
@@ -103,173 +115,83 @@ class Build : NukeBuild
         });
 
 
+    // ─── Test targets ──────────────────────────────────────────────────
+    //
+    // One target per test project, and one CI job per target — see
+    // .github/workflows/tests.yml. Every one of them runs through Bobcat's supervisor
+    // (build/SupervisedTests.cs) rather than `dotnet test`, so a failure is retried in a fresh
+    // process and a pass-on-retry is reported as flaky instead of disappearing into a green tick.
+    //
+    // If you add a test project, add a target here AND a matrix entry in tests.yml. A target with
+    // no job is how seven projects (#5096) sat un-run for as long as they did.
+    //
+    // TestStress and TestMultiHost are the two deliberate exceptions to the one-job-per-target
+    // rule, and each says why at its own declaration below. Deliberate is the operative word:
+    // both are named here so "which targets have no CI job" stays a question with a written
+    // answer rather than something you find out by grepping the workflow.
+
     Target TestBaseLib => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.Testing")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/Marten.Testing/Marten.Testing.csproj"));
 
     Target TestNodaTime => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.NodaTime.Testing")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj"));
 
     Target TestAspnetcore => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.AspNetCore.Testing")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj"));
 
     Target TestMemoryPack => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.MemoryPack.Tests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/Marten.MemoryPack.Tests/Marten.MemoryPack.Tests.csproj"));
 
     Target TestPostGIS => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.PostGIS.Tests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/Marten.PostGIS.Tests/Marten.PostGIS.Tests.csproj"));
 
     Target TestPgVector => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.PgVector.Tests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/Marten.PgVector.Tests/Marten.PgVector.Tests.csproj"));
 
     Target TestTimescaleDB => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.TimescaleDB.Tests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/Marten.TimescaleDB.Tests/Marten.TimescaleDB.Tests.csproj"));
 
     Target TestCore => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/CoreTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/CoreTests/CoreTests.csproj"));
 
     Target TestDocumentDb => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/DocumentDbTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/DocumentDbTests/DocumentDbTests.csproj"));
 
     Target TestEventSourcing => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/EventSourcingTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/EventSourcingTests/EventSourcingTests.csproj"));
+
+    // The async daemon suite. Ran outside the Nuke build until #5096 — daemon.yml shelled out to
+    // `dotnet test` directly — which meant the single most timing-sensitive suite in the repo was
+    // also the one with no retry story at all.
+    Target TestDaemon => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => RunTestProject("src/DaemonTests/DaemonTests.csproj"));
 
     Target TestModularConfig => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/ModularConfigTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/ModularConfigTests/ModularConfigTests.csproj"));
 
     Target TestLinq => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/LinqTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/LinqTests/LinqTests.csproj"));
 
     Target TestValueTypes => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/ValueTypeTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/ValueTypeTests/ValueTypeTests.csproj"));
 
     Target TestMultiTenancy => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/MultiTenancyTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/MultiTenancyTests/MultiTenancyTests.csproj"));
 
     // #4617: dedicated project for the UseTenantPartitionedEvents feature
     // surface. Single-store shared fixtures (string + guid) + per-test unique
@@ -278,27 +200,66 @@ class Build : NukeBuild
     // DisableTestParallelization rationale.
     Target TestTenantPartitionedEvents => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/TenantPartitionedEventsTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/TenantPartitionedEventsTests/TenantPartitionedEventsTests.csproj"));
 
     Target TestPatching => _ => _
         .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/PatchingTests")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
+        .Executes(() => RunTestProject("src/PatchingTests/PatchingTests.csproj"));
+
+    // ─── Projects wired up by #5096 ────────────────────────────────────
+    //
+    // These had no target and no job, so nothing ever ran them. Counts below are `[Fact]`/
+    // `[Theory]` attributes, which undercount theories with many cases.
+
+    /// <summary>Container-scoped projection registration and lifetime (~62 tests).</summary>
+    Target TestContainerScopedProjections => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => RunTestProject("src/ContainerScopedProjectionTests/ContainerScopedProjectionTests.csproj"));
+
+    /// <summary>
+    /// Multi-store hosts, database creation, reset-all-data (29 tests).
+    ///
+    /// <para>Has NO job in tests.yml, by decision on 2026-08-08. This is the one suite whose work
+    /// is to be hostile to its own infrastructure — it calls <c>ResetAllData</c> mid-run and
+    /// creates and drops whole databases — which makes it a poor thing to gate a pull request on
+    /// even now that it passes cleanly. Run it deliberately with <c>./build.sh test-stress</c>;
+    /// it is still part of the aggregate <see cref="Test"/> target, so a local full run covers
+    /// it.</para>
+    ///
+    /// <para>Kept as a target rather than dropped: #5096 was about ten suites that nobody could
+    /// run because nothing named them. An excluded suite you can still invoke by name is a
+    /// different thing from a dark one.</para>
+    /// </summary>
+    Target TestStress => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => RunTestProject("src/StressTests/StressTests.csproj"));
+
+    /// <summary>Marten/EF Core interop over a shared connection (~29 tests).</summary>
+    Target TestEntityFrameworkCore => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => RunTestProject("src/Marten.EntityFrameworkCore.Tests/Marten.EntityFrameworkCore.Tests.csproj"));
+
+    /// <summary>
+    /// The compiled-query source generator (~19 tests). Pure Roslyn — no Postgres needed, which is
+    /// why its job in tests.yml runs without a database service.
+    /// </summary>
+    Target TestSourceGenerator => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => RunTestProject("src/Marten.SourceGenerator.Tests/Marten.SourceGenerator.Tests.csproj"));
+
+    /// <summary>The source-generated compiled query path, correctness and perf gates (~9 tests).</summary>
+    Target TestCompiledQueries => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => RunTestProject("src/CompiledQueryTests/CompiledQueryTests.csproj"));
+
+    /// <summary>
+    /// Primary/standby read routing (~2 tests). Needs the streaming-replication pair from
+    /// src/MultiHostTests/docker-compose.yaml on ports 5440/5441, not the ordinary test database —
+    /// see the multi-host job in tests.yml.
+    /// </summary>
+    Target TestMultiHost => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => RunTestProject("src/MultiHostTests/MultiHostTests.csproj"));
 
     Target RebuildDb => _ => _
         .Executes(() =>

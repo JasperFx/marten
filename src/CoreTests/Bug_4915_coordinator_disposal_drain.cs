@@ -99,11 +99,6 @@ public class Bug_4915_coordinator_disposal_drain
             AppDomain.CurrentDomain.FirstChanceException -= handler;
         }
 
-        foreach (var abort in aborts)
-        {
-            _output.WriteLine(abort);
-        }
-
         aborts.Count.ShouldBe(0,
             $"Expected no disposed-pool aborts on the AdvisoryLock poll path after disposing the cold node, but saw " +
             $"{aborts.Count}. The projection coordinator's leadership loop outlived the data source the " +
@@ -158,11 +153,6 @@ public class Bug_4915_coordinator_disposal_drain
         finally
         {
             AppDomain.CurrentDomain.FirstChanceException -= handler;
-        }
-
-        foreach (var abort in aborts)
-        {
-            _output.WriteLine(abort);
         }
 
         aborts.Count.ShouldBe(0,

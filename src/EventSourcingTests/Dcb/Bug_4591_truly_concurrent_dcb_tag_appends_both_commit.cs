@@ -146,19 +146,6 @@ public class Bug_4591_truly_concurrent_dcb_tag_appends_both_commit: OneOffConfig
         var throws = results.Count(r => r.Exception is DcbConcurrencyException);
         var otherErrors = results.Where(r => r.Exception is not null and not DcbConcurrencyException).ToList();
 
-        _output.WriteLine($"DCB storage mode: {storageMode}");
-        _output.WriteLine($"Truly-concurrent racers: {Racers}");
-        _output.WriteLine($"  Committed:                {committed}");
-        _output.WriteLine($"  DcbConcurrencyException:  {throws}");
-        if (otherErrors.Count > 0)
-        {
-            _output.WriteLine($"  Other exceptions:         {otherErrors.Count}");
-            foreach (var er in otherErrors)
-            {
-                _output.WriteLine($"    Racer {er.Index}: {er.Exception}");
-            }
-        }
-
         // Exactly one racer should commit; everyone else must observe the
         // DCB concurrency violation.
         committed.ShouldBe(1,

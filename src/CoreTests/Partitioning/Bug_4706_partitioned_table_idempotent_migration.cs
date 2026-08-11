@@ -84,7 +84,6 @@ public class Bug_4706_partitioned_table_idempotent_migration: IAsyncLifetime
         await using (var store = BuildStore())
         {
             var migration = await store.Storage.CreateMigrationAsync();
-            _output.WriteLine($"Difference = {migration.Difference}");
 
             migration.Difference.ShouldBe(SchemaPatchDifference.None,
                 "Re-applying an unchanged ByList tenant-partitioned doc table must not diff as a change");

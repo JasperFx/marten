@@ -97,8 +97,6 @@ public class PerfGate: OneOffConfigurationsContext
             result!.UserName.ShouldBe("cold_b");
         }
 
-        _output.WriteLine($"Cold call — codegen: {codegenColdMs}ms; source-gen: {sourceGenColdMs}ms");
-
         // Source-gen should be at minimum no slower than codegen on cold call.
         // In practice it's expected to be dramatically faster because it skips
         // CompiledQuerySourceBuilder.AssembleTypes (Roslyn emit + Activator.CreateInstance).
@@ -163,10 +161,6 @@ public class PerfGate: OneOffConfigurationsContext
             sw.Stop();
             sourceGenSteadyMs = sw.ElapsedMilliseconds;
         }
-
-        var codegenPerCallUs = codegenSteadyMs * 1000.0 / InvocationCount;
-        var sourceGenPerCallUs = sourceGenSteadyMs * 1000.0 / InvocationCount;
-        _output.WriteLine($"Steady state — codegen: {codegenSteadyMs}ms over {InvocationCount} calls ({codegenPerCallUs:F1}us/call); source-gen: {sourceGenSteadyMs}ms ({sourceGenPerCallUs:F1}us/call)");
 
         // Steady-state is dominated by Postgres round-trip; CPU-side dispatch
         // differences are usually <1% of total. The observed signal across

@@ -400,7 +400,7 @@ public class projections_with_IoC_services
         product.Name.ShouldBe("Ankle Socks");
 
         // Now rebuild
-        var daemon = await store.BuildProjectionDaemonAsync(logger:new TestOutputMartenLogger(_output));
+        var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.RebuildProjectionAsync<Product>(CancellationToken.None);
 
         // Test again
@@ -471,7 +471,7 @@ public class projections_with_IoC_services
         product.Name.ShouldBe("Ankle Socks");
 
         // Now rebuild
-        var daemon = await store.BuildProjectionDaemonAsync(logger:new TestOutputMartenLogger(_output));
+        var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.RebuildProjectionAsync<Product>(CancellationToken.None);
 
         // Test again

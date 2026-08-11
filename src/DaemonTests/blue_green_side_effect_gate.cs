@@ -88,7 +88,6 @@ public class blue_green_side_effect_gate : IAsyncLifetime
                {
                    opts.Projections.Add(new GateTripProjection { Version = 2 }, ProjectionLifecycle.Async);
                    opts.Events.MessageOutbox = blueOutbox;
-                   opts.Logger(new TestOutputMartenLogger(_output));
                }))
         {
             await AppendSingleEventStreams(blue, N);
@@ -109,7 +108,6 @@ public class blue_green_side_effect_gate : IAsyncLifetime
             opts.Projections.Add(new GateTripProjection { Version = 3, GateSideEffectsBehindPriorVersion = true },
                 ProjectionLifecycle.Async);
             opts.Events.MessageOutbox = greenOutbox;
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         var tailIds = await AppendSingleEventStreams(green, M);

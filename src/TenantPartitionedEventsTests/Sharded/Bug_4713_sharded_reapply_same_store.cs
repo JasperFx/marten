@@ -115,7 +115,6 @@ public class Bug_4713_sharded_reapply_same_store: ShardedPartitionedContext
         foreach (var shard in shards)
         {
             before[shard] = await partitionsOf(Fixture.ConnectionStrings[shard], "mt_doc_bug4713doc");
-            _output.WriteLine($"[before][{shard}] {string.Join(", ", before[shard])}");
         }
 
         // Re-apply over the SAME store after provisioning. #4713: pre-fix the additive path had cleared
@@ -126,11 +125,6 @@ public class Bug_4713_sharded_reapply_same_store: ShardedPartitionedContext
         var ex = await Record.ExceptionAsync(() =>
             store.Storage.ApplyAllConfiguredChangesToDatabaseAsync());
 
-        if (ex != null)
-        {
-            _output.WriteLine(ex.ToString());
-        }
-
         ex.ShouldBeNull("Re-applying on the same store after tenant provisioning must be idempotent " +
                         "(no 42P07 / no destructive rebuild)");
 
@@ -139,7 +133,6 @@ public class Bug_4713_sharded_reapply_same_store: ShardedPartitionedContext
         foreach (var shard in shards)
         {
             var after = await partitionsOf(Fixture.ConnectionStrings[shard], "mt_doc_bug4713doc");
-            _output.WriteLine($"[after][{shard}] {string.Join(", ", after)}");
             after.ShouldBe(before[shard],
                 $"re-applying the schema must not change shard {shard}'s per-tenant partitions (#4713)");
         }

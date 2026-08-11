@@ -28,8 +28,6 @@ public class Bug_DeleteWhere_Operations_Should_Respect_Tenancy : BugIntegrationC
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Policies.AllDocumentsAreMultiTenanted();
 
-            opts.Logger(new TestOutputMartenLogger(_output));
-
             opts.Advanced.DefaultTenantUsageEnabled = false;
         });
 

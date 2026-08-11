@@ -55,7 +55,6 @@ public partial class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
         catch (ApplyEventException e)
         {
             // this should fail on save as the sync projection does not handle an updated event correctly.
-            _testOutputHelper.WriteLine(e.ToString());
         }
 
         // should be happy, but gets stuck trying to reach highwater mark

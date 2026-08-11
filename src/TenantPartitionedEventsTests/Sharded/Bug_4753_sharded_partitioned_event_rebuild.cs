@@ -103,11 +103,6 @@ public class Bug_4753_sharded_partitioned_event_rebuild: ShardedPartitionedConte
             var ex = await Record.ExceptionAsync(() =>
                 store.Storage.ApplyAllConfiguredChangesToDatabaseAsync());
 
-            if (ex != null)
-            {
-                _output.WriteLine(ex.ToString());
-            }
-
             ex.ShouldBeNull("Re-applying an unchanged sharded ByList tenant-partitioned event store " +
                             "must not rebuild mt_streams / mt_events / must not fail with 23514");
         }

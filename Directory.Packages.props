@@ -6,6 +6,13 @@
     <PackageVersion Include="Alba" Version="8.2.0" />
     <PackageVersion Include="Aspire.Hosting.AppHost" Version="8.2.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.13.10" />
+    <!-- Bobcat's out-of-process test supervisor, used only by the Nuke build (#5096).
+         It drives each test project's Microsoft.Testing.Platform host as a worker,
+         so a failure can be retried in a FRESH process and a pass-on-retry is
+         reported as flaky rather than laundered into a clean pass. See
+         build/SupervisedTests.cs. Bobcat.Supervisor pulls in Bobcat (the
+         Bobcat.Resilience types) transitively. -->
+    <PackageVersion Include="Bobcat.Supervisor" Version="0.6.1" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="Confluent.Kafka" Version="2.3.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
@@ -220,16 +227,34 @@
          and the two ComplianceStoreConfig.AddMaskingRule overloads). Compliance sources only —
          nothing outside JasperFx.Events.ComplianceTests changed, so this bump is behaviourally
          inert for the shipping libraries and only affects the test projects that enrol the
-         suites. -->
-    <PackageVersion Include="JasperFx" Version="2.43.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.43.0" />
+         suites.
+         JasperFx 2.44.0: jasperfx#641 — compliance wave 7 (#5149, #5150), the last two event
+         sourcing suites in the backlog. RebuildAndCatchUpCompliance and DeadLetterCompliance take
+         the library to 26 suites / 216 tests. Neither needed a seam addition: IProjectionDaemon
+         already declared the whole rebuild surface, and the error policy
+         (IEventStore<,>.ContinuousErrors) plus dead-letter reads (IEventStore.AllDatabases() ->
+         IEventDatabase.QueryDeadLetterEventsAsync) were already shared and already overridden here.
+         Compliance sources only, so again behaviourally inert for the shipping libraries.
+         JasperFx 2.45.0: jasperfx#642 — compliance wave 8 (#5148, #5151), the last two suites in
+         the event sourcing backlog. ConjoinedEventTenancyCompliance and SubscriptionCompliance take
+         the library to 28 suites / 230 tests, and with them the ES compliance backlog is empty.
+         Two additive seam members: ComplianceStoreConfig.ConjoinedEventTenancy and
+         IComplianceStoreRegistrar.Subscribe(ComplianceSubscription), the latter paired with a
+         per-consumer partial completing ComplianceSubscription against Marten's own ISubscription
+         (IChangeListener is per-product, so that signature cannot be written once upstream).
+         #5148 needed no tenant-scoped session seam after all — OpenSession(IEventDatabase,
+         tenantId) was already on the shared generic IEventStore<,> and TenancyStyle was already a
+         shared JasperFx.MultiTenancy enum. Compliance sources only; behaviourally inert for the
+         shipping libraries. -->
+    <PackageVersion Include="JasperFx" Version="2.46.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.46.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.43.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.46.0" />
     <!--
       Deliberately AHEAD of the rest of the JasperFx line, which stays at 2.41.0 until Marten adopts
       the strong-typed identity compliance suite that landed in 2.42.0. This package is analyzer-only,
@@ -247,11 +272,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.43.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.46.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.43.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.46.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -302,7 +327,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.23.2" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.24.0" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -396,8 +421,8 @@
          9.23.2 (weasel#424/#425): Sqlite and MySql implement the non-generic
          Weasel.Core.ICommandBuilder (weasel#423), and the JasperFx line moves to 2.38.0 so this
          matrix stays coherent with the JasperFx pins above rather than resolving transitively. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.23.2" />
-    <PackageVersion Include="Weasel.Storage" Version="9.23.2" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.24.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.24.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

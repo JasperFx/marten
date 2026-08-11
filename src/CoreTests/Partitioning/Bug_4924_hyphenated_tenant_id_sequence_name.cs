@@ -113,7 +113,6 @@ public class Bug_4924_hyphenated_tenant_id_sequence_name: IAsyncLifetime
         // Created under the RAW name — anything else and the quick-append function's format('%I') lookup,
         // which reads partition_suffix straight from the tenants table, would miss it.
         (await SequenceCountAsync($"mt_events_sequence_{tenantId}")).ShouldBe(1L);
-        _output.WriteLine($"schema apply created \"{_schema}\".\"mt_events_sequence_{tenantId}\"");
     }
 
     /// <summary>
@@ -141,7 +140,6 @@ public class Bug_4924_hyphenated_tenant_id_sequence_name: IAsyncLifetime
         await reopened.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         var after = await LastValueAsync(tenantId);
 
-        _output.WriteLine($"sequence last_value before={before} after={after}");
         after.ShouldBe(before, "re-applying schema must not recreate (and reset) a live tenant's sequence");
     }
 

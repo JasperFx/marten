@@ -33,7 +33,6 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Projections.Add<Projection1>(ProjectionLifecycle.Async);
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
@@ -90,7 +89,6 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Projections.Add<Projection1>(ProjectionLifecycle.Async);
-            opts.Logger(new TestOutputMartenLogger(_output));
             opts.Events.MessageOutbox = outbox;
         });
 
@@ -130,7 +128,6 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Projections.Add<Projection1>(ProjectionLifecycle.Async);
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
@@ -175,7 +172,6 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Projections.Add<Projection2>(ProjectionLifecycle.Async);
-            opts.Logger(new TestOutputMartenLogger(_output));
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -222,7 +218,6 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         {
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Projections.Add<Projection2>(ProjectionLifecycle.Async);
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync(TestContext.Current.CancellationToken);
@@ -277,7 +272,6 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         {
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Projections.Add<Projection2>(ProjectionLifecycle.Async);
-            opts.Logger(new TestOutputMartenLogger(_output));
 
             opts.Events.AppendMode = EventAppendMode.Quick;
         });

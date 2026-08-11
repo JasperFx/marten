@@ -105,11 +105,6 @@ public class Bug_4706_sharded_partitioned_doc_rebuild: ShardedPartitionedContext
             var ex = await Record.ExceptionAsync(() =>
                 store.Storage.ApplyAllConfiguredChangesToDatabaseAsync());
 
-            if (ex != null)
-            {
-                _output.WriteLine(ex.ToString());
-            }
-
             ex.ShouldBeNull("Re-applying an unchanged sharded ByList tenant-partitioned doc table " +
                             "must not rebuild it / must not fail with 23514");
         }

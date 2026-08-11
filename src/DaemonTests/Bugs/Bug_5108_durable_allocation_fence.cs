@@ -146,7 +146,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync(TestContext.Curr
             await Task.Delay(700, TestContext.Current.CancellationToken);
 
             var skipped = await second.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"Fresh detector past threshold: CurrentMark={skipped.CurrentMark}");
             skipped.CurrentMark.ShouldBe(12);
             skipped.IncludesSkipping.ShouldBeTrue();
         }
@@ -189,7 +188,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync(TestContext.Curr
 
                 await Task.Delay(700, TestContext.Current.CancellationToken);
                 var stillHeld = await second.DetectInSafeZone(CancellationToken.None);
-                _output.WriteLine($"Live reserver, persisted fence only: CurrentMark={stillHeld.CurrentMark}");
                 stillHeld.CurrentMark.ShouldBe(8);
 
                 await tx.RollbackAsync(TestContext.Current.CancellationToken);
@@ -247,7 +245,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync(TestContext.Curr
             await Task.Delay(700, TestContext.Current.CancellationToken);
 
             var skipped = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"Own daemon lock, no fence available: CurrentMark={skipped.CurrentMark}");
             skipped.CurrentMark.ShouldBe(12);
             skipped.IncludesSkipping.ShouldBeTrue();
         }

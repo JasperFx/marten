@@ -67,7 +67,6 @@ public class Bug_4749_query_for_non_stale_data_sequence_gap: OneOffConfiguration
         var ex = await Record.ExceptionAsync(() =>
             theSession.QueryForNonStaleData<SimpleAggregate>(2.Seconds()).ToListAsync());
 
-        _output.WriteLine(ex?.GetType().FullName ?? "<no exception>");
         ex.ShouldBeOfType<TimeoutException>();
     }
 

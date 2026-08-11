@@ -191,7 +191,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             // is provably alive (RowExclusiveLock on mt_events + open transaction evidence)
             await Task.Delay(700, TestContext.Current.CancellationToken);
             var second = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"After threshold with live reserver: CurrentMark={second.CurrentMark}");
             second.CurrentMark.ShouldBe(8);
 
             var persisted = await scalar(
@@ -285,7 +284,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
 
             // Despite the ancient last_updated, the first sighting of this gap must hold
             var first = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"First sighting: CurrentMark={first.CurrentMark}");
             first.CurrentMark.ShouldBe(8);
 
             // Still holding while the reserving transaction lives, even past the threshold
@@ -298,7 +296,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             await Task.Delay(700, TestContext.Current.CancellationToken);
 
             var third = await detector.DetectInSafeZone(CancellationToken.None);
-            _output.WriteLine($"After tail death: CurrentMark={third.CurrentMark} (ceiling {lastValue})");
             third.CurrentMark.ShouldBe(lastValue);
             third.IncludesSkipping.ShouldBeTrue();
         }
@@ -367,7 +364,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             var views = await query.Query<Bug4953GapView>().ToListAsync(TestContext.Current.CancellationToken);
             var projectedSequences = views.SelectMany(x => x.Sequences).OrderBy(x => x).ToArray();
 
-            _output.WriteLine($"persisted={persisted}, projected=[{string.Join(",", projectedSequences)}]");
             projectedSequences.Length.ShouldBe((int)persisted);
             projectedSequences.ShouldContain(9);
         }
@@ -445,7 +441,6 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync();
             var views = await query.Query<Bug4953GapView>().ToListAsync(TestContext.Current.CancellationToken);
             var projected = views.SelectMany(x => x.Sequences).Count();
 
-            _output.WriteLine($"persisted={persisted}, projected={projected}");
             projected.ShouldBe((int)persisted);
         }
         finally
