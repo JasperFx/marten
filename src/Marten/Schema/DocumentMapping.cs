@@ -284,6 +284,16 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
     public bool UseNumericRevisions { get; set; }
 
+    /// <summary>
+    ///     Set only by an explicit <c>Schema.For&lt;T&gt;().UseOptimisticConcurrency(true)</c> fluent call,
+    ///     as opposed to the same flag being inferred by a policy, an interface, or a [Version] member.
+    ///     That call clears the competing numeric-revision metadata so the two orders of the fluent
+    ///     pair behave the same (#5159), which means <see cref="CompileAndValidate" /> can no longer
+    ///     see the conflict in the metadata itself and needs this to report the cases where the
+    ///     override genuinely cannot work.
+    /// </summary>
+    internal bool OptimisticConcurrencyRequestedExplicitly { get; set; }
+
     public IList<IndexDefinition> Indexes { get; } = new List<IndexDefinition>();
 
     public IList<ForeignKey> ForeignKeys { get; } = new List<ForeignKey>();
@@ -898,17 +908,45 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
                 $"{DocumentType.FullNameInCode()} cannot be configured with UseNumericRevision and UseOptimisticConcurrency. Choose one or the other");
         }
 
-        // The check above only sees the two mode flags, but the metadata Enabled bits are what
-        // actually emit columns — and the Guid version and numeric revision flavors compete for
-        // the same physical mt_version column, so both enabled means a duplicate column: a raw
-        // duplicate-key ArgumentException from projection storage or invalid DDL at migration
-        // time. The usual route here is Schema.For<T>().UseOptimisticConcurrency(true) on a
-        // projection-target document that ProjectionDocumentPolicy already forced onto numeric
-        // revisions (fluent overrides run after the policies). Fail fast with the fix instead.
+        // #5159: an explicit UseOptimisticConcurrency(true) now clears the numeric-revision
+        // metadata so the fluent pair is order-independent (last call wins), which is what the
+        // API reads like it should do. That override is right for a plain document, where the
+        // revision was only ever Marten's inference. It is wrong in two cases, and those are
+        // worth distinct, actionable errors rather than one "both flags are set" message:
+        //
+        //   1. a projection-target document, where numeric revisions are load-bearing for the
+        //      projection machinery itself (#2978), and
+        //   2. a revision bound to a real member on the user's own type -- IRevisioned,
+        //      ILongVersioned, or a long [Version] member -- where honoring the override would
+        //      leave that property permanently unmapped and silently never populated.
+        //
+        // In both, the user's configuration cannot work as written, so say which one it is.
+        if (OptimisticConcurrencyRequestedExplicitly)
+        {
+            if (StoreOptions.Projections != null &&
+                StoreOptions.Projections.TryFindAggregate(DocumentType, out _))
+            {
+                throw new InvalidDocumentException(
+                    $"{DocumentType.FullNameInCode()} is the target document of a projection, and projection targets always use numeric revisions -- the projection machinery writes the aggregate version into that column. It cannot also be configured with UseOptimisticConcurrency(true). Remove that call for this document type.");
+            }
+
+            if (Metadata.Revision.Member != null)
+            {
+                throw new InvalidDocumentException(
+                    $"{DocumentType.FullNameInCode()} declares numeric revisions through its own type -- the member '{Metadata.Revision.Member.Name}' (from IRevisioned, ILongVersioned, or a long [Version] member) -- so UseOptimisticConcurrency(true) cannot be honored: the Guid version and the numeric revision map to the same mt_version column, and taking the Guid flavor would leave '{Metadata.Revision.Member.Name}' unmapped and never populated. Either drop the UseOptimisticConcurrency(true) call, or stop declaring the revision member on the document type.");
+            }
+        }
+
+        // Backstop. The metadata Enabled bits are what actually emit columns, and the Guid
+        // version and numeric revision flavors compete for the same physical mt_version column,
+        // so both enabled means a duplicate column: a raw duplicate-key ArgumentException from
+        // projection storage, or invalid DDL at migration time. The fluent path above can no
+        // longer reach this state, but a hand-rolled IDocumentPolicy or direct mapping mutation
+        // still can.
         if (Metadata.Version.Enabled && Metadata.Revision.Enabled)
         {
             throw new InvalidDocumentException(
-                $"{DocumentType.FullNameInCode()} has both the Guid version metadata (Metadata.Version, from UseOptimisticConcurrency) and the numeric revision metadata (Metadata.Revision, from UseNumericRevisions) enabled, but they map to the same mt_version column. Choose one or the other — fluent configuration calls accumulate rather than override each other, so remove the call for the mode you do not want. Note that projection-target documents always use numeric revisions and cannot opt into UseOptimisticConcurrency.");
+                $"{DocumentType.FullNameInCode()} has both the Guid version metadata (Metadata.Version, from UseOptimisticConcurrency) and the numeric revision metadata (Metadata.Revision, from UseNumericRevisions) enabled, but they map to the same mt_version column. Choose one or the other. Note that projection-target documents always use numeric revisions and cannot opt into UseOptimisticConcurrency.");
         }
 
         IQueryableMember idField;
