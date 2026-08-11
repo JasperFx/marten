@@ -124,7 +124,8 @@
     "Ollama",
     "Jeremie",
     "Chassaing",
-    "dedup"
+    "dedup",
+    "unindexed"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links

@@ -339,3 +339,52 @@ var store = DocumentStore.For(_ =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L319-L328' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Prepared Statements and `Max Auto Prepare`
+
+Marten does not use PostgreSQL prepared statements, and there is no Marten API to turn them on. That
+is a deliberate choice rather than a gap, and this section exists to record both the option you do
+have and why it is not the default.
+
+Npgsql can prepare statements automatically, and it is enabled purely through the connection string,
+so it needs nothing from Marten:
+
+```text
+Host=localhost;Database=marten;Username=postgres;Password=...;Max Auto Prepare=50;Auto Prepare Min Usages=2
+```
+
+Nothing in Marten blocks the mechanism. Marten binds values as parameters throughout — including
+`LIMIT` and `OFFSET` — so the generated SQL text is stable across calls and pages, and auto-prepare
+will genuinely reuse plans rather than thrash.
+
+### Set your expectations low
+
+We measured it. On a warm connection, past the minimum-usage threshold:
+
+| query | default | `Max Auto Prepare=50` |
+| --- | --- | --- |
+| unindexed JSONB scan returning 10 rows | 40,102 μs | 39,840 μs |
+| indexed duplicated column returning 1 row | 430 μs | 365 μs |
+| the same single row via a compiled query | 364 μs | 391 μs |
+
+Those land on both sides of zero with overlapping error bars, which is to say there was no
+measurable effect on read latency. That fits the mechanism: `PREPARE` saves the server's parse and
+plan time for a statement, which for a simple single-table query is tens of microseconds, against a
+cost dominated by JSONB extraction, sorting, moving documents over the wire, and deserializing them
+on the client.
+
+### Why it is not on by default
+
+The reasons to be careful are more specific than the reasons to be hopeful:
+
+* **Generic plans.** After a handful of executions PostgreSQL may switch a prepared statement to a
+  generic plan that ignores the actual parameter values. If you use conjoined multi-tenancy, a
+  heavily skewed `tenant_id` appears in nearly every predicate — exactly the data shape where a
+  generic plan can be dramatically worse than a fresh one.
+* **Memory is per connection.** Prepared statements are cached on each physical connection, so the
+  server-side cost scales with pool size multiplied by `Max Auto Prepare`.
+* **Runtime schema changes.** Marten applies schema changes at runtime under its automatic schema
+  creation modes, and DDL can invalidate plans cached on connections already in the pool.
+
+If you do turn it on, treat it as a per-deployment tuning decision, measure it against your own
+workload, and watch for plan regressions on your most skewed columns rather than assuming a win.
