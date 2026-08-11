@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using JasperFx.Events;
+using JasperFx.Events.Documents;
 using Marten.Events;
 using Marten.Internal.Operations;
 
@@ -11,7 +12,13 @@ namespace Marten;
 /// <summary>
 ///     Basic storage operations for document types, but cannot initiate any actual writes
 /// </summary>
-public interface IDocumentOperations: IQuerySession, IStorageOperations
+/// <remarks>
+///     #5216: this is the level the store-agnostic <see cref="IDocumentWriteOperations" /> binds to,
+///     not <see cref="IDocumentSession" /> — enlisting into the unit of work and committing it are
+///     separate concerns in JasperFx's contract too, and Marten already draws the line in the same
+///     place. Every member the contract asks for already exists here with a matching signature.
+/// </remarks>
+public interface IDocumentOperations: IQuerySession, IStorageOperations, IDocumentWriteOperations
 {
     new Marten.Events.IEventStoreOperations Events { get; }
 

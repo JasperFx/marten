@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Documents;
 using Marten.Events;
 using Marten.Internal.Sessions;
 using Marten.Services;
@@ -12,7 +13,12 @@ namespace Marten;
 /// <summary>
 ///     Interface for querying a document database and unit of work updates
 /// </summary>
-public interface IDocumentSession: IDocumentOperations
+/// <remarks>
+///     #5216: adds the transaction boundary on top of <see cref="IDocumentOperations" />, which is
+///     exactly the split <see cref="IDocumentSessionOperations" /> draws. SaveChangesAsync already
+///     matches, so the contract binds with no new members.
+/// </remarks>
+public interface IDocumentSession: IDocumentOperations, IDocumentSessionOperations
 {
     /// <summary>
     /// Force this session to start a connection and transaction. This will make the session do consistent reads through the transaction. Is
