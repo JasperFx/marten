@@ -5,6 +5,8 @@ using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
+using JasperFx.Events.Documents;
 using Marten.Events;
 using Marten.Internal.Sessions;
 using Marten.Linq;
@@ -18,8 +20,16 @@ using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten;
 
-public interface IQuerySession: IDisposable, IAsyncDisposable
+public interface IQuerySession: IDisposable, IAsyncDisposable, IDocumentReadOperations
 {
+    // #5216: IQuerySession already carries LoadAsync(Guid)/LoadAsync(string) with matching
+    // signatures, so the read half of the store-agnostic contract binds implicitly. Query<T>()
+    // is the one member that cannot: Marten returns IMartenQueryable<T> where the contract asks
+    // for IQueryable<T>, and C# has no return-type covariance for interface implementation. A
+    // default interface implementation forwards it here rather than making every concrete
+    // session class carry the same one-liner.
+    IQueryable<T> IDocumentReadOperations.Query<T>() => Query<T>();
+
     /// <summary>
     ///     The underlying Marten database for this session
     /// </summary>
@@ -176,7 +186,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    IMartenQueryable<T> Query<T>() where T : notnull;
+    new IMartenQueryable<T> Query<T>() where T : notnull;
 
     #endregion
 

@@ -88,6 +88,9 @@
         <Compile Include="..\Marten.Testing\Harness\MartenComplianceFixture.cs">
             <Link>Harness\MartenComplianceFixture.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\Harness\MartenDocumentComplianceFixture.cs">
+            <Link>Harness\MartenDocumentComplianceFixture.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Harness\BugIntegrationContext.cs">
             <Link>Harness\BugIntegrationContext.cs</Link>
         </Compile>

@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Documents;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -39,7 +40,7 @@ internal record WaitForAggregate(TimeSpan Timeout, NonStaleDataTimeoutMode Timeo
 /// </summary>
 internal readonly record struct StreamOneJsonResult(bool Found, Guid? Version, long? Revision, bool BodyWritten);
 
-internal class MartenLinqQueryProvider: IQueryProvider
+internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
 {
     private readonly QuerySession _session;
 
@@ -99,6 +100,55 @@ internal class MartenLinqQueryProvider: IQueryProvider
         }
     }
 
+
+    #region IDocumentQueryExecutor -- #5216
+
+    // The store-agnostic async terminators behind JasperFx's DocumentQueryableExtensions. They take
+    // the queryable rather than closing over one, because the extension methods may have composed a
+    // predicate onto it first -- so every one of these reads queryable.Expression rather than any
+    // expression this provider was built with.
+
+    public async Task<IReadOnlyList<T>> ExecuteToListAsync<T>(IQueryable<T> queryable, CancellationToken token)
+    {
+        try
+        {
+            var parser = new LinqQueryParser(this, _session, queryable.Expression);
+            var handler = parser.BuildListHandler<T>();
+
+            await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
+
+            var result = await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+            return result ?? Array.Empty<T>();
+        }
+        catch (Exception e)
+        {
+            MartenExceptionTransformer.WrapAndThrow(e);
+            throw;
+        }
+    }
+
+    public Task<T> ExecuteFirstOrDefaultAsync<T>(IQueryable<T> queryable, CancellationToken token)
+    {
+        // ExecuteAsync constrains TResult to notnull, and the contract deliberately leaves T
+        // unconstrained so a store can return null for "or default". notnull is a nullable-analysis
+        // constraint that the CLR does not enforce, so this is a compile-time annotation mismatch
+        // and nothing more -- the returned value is exactly what FirstOrDefaultAsync<T> gives today.
+#pragma warning disable CS8714
+        return ExecuteAsync<T>(queryable.Expression, token, SingleValueMode.FirstOrDefault)!;
+#pragma warning restore CS8714
+    }
+
+    public Task<int> ExecuteCountAsync<T>(IQueryable<T> queryable, CancellationToken token)
+    {
+        return ExecuteAsync<int>(queryable.Expression, token, SingleValueMode.Count);
+    }
+
+    public Task<bool> ExecuteAnyAsync<T>(IQueryable<T> queryable, CancellationToken token)
+    {
+        return ExecuteAsync<bool>(queryable.Expression, token, SingleValueMode.Any);
+    }
+
+    #endregion
 
     public async Task<TResult?> ExecuteAsync<TResult>(Expression expression, CancellationToken token,
         SingleValueMode valueMode) where TResult : notnull

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Documents;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Services;
@@ -19,8 +20,21 @@ namespace Marten;
 ///     The core abstraction for a Marten document and event store. This should probably be scoped as a
 ///     singleton in your system
 /// </summary>
-public interface IDocumentStore: IDisposable, IAsyncDisposable
+public interface IDocumentStore: IDisposable, IAsyncDisposable,
+    IDocumentSessionFactory<IDocumentSession, IQuerySession>
 {
+    // #5216: Marten's LightweightSession() is an overload with a defaulted IsolationLevel rather
+    // than a genuinely parameterless method, so it does not bind to the contract on its own.
+    // QuerySession() is parameterless and already satisfies the generic form. Default interface
+    // implementations forward both, and the non-generic form is forwarded separately because it
+    // differs from the generic one only by return type.
+    IDocumentSession IDocumentSessionFactory<IDocumentSession, IQuerySession>.LightweightSession()
+        => LightweightSession();
+
+    IDocumentSessionOperations IDocumentSessionFactory.LightweightSession() => LightweightSession();
+
+    IDocumentReadOperations IDocumentSessionFactory.QuerySession() => QuerySession();
+
     /// <summary>
     ///     Information about the current configuration of this IDocumentStore
     /// </summary>
