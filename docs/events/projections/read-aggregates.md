@@ -180,6 +180,74 @@ In all cases, the `FetchForWriting` + `FetchLatest` combination is working toget
 the correct information in the most efficient way possible by eliminating extra trips to the
 database.
 
+## Custom Fetch Plans <Badge type="tip" text="9.24" />
+
+Everything above is Marten choosing a *fetch plan* for you. A fetch plan is the strategy behind a single
+`FetchForWriting()` or `FetchLatest()` call: which SQL gets built, which events come back, and what the
+aggregate is folded onto. Marten ships four, and picks between them by looking at how the aggregate type
+is registered — natural key, `Inline`, `Async`, and `Live`, in that order.
+
+If none of those four fit your aggregate, you can supply your own:
+
+```cs
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(connectionString);
+
+    // Consulted before Marten's four built-in planners
+    opts.Projections.FetchPlanners.Add(new MyFetchPlanner());
+});
+```
+
+Marten asks each planner in `FetchPlanners` — in registration order — for a plan, then falls back to the
+built-ins. The first planner whose `TryMatch<TDoc, TId>()` returns `true` wins:
+
+```cs
+public class MyFetchPlanner: IFetchPlanner
+{
+    public bool TryMatch<TDoc, TId>(IEventIdentityStrategy<TId> identity, StoreOptions options,
+        [NotNullWhen(true)] out IAggregateFetchPlan<TDoc, TId>? plan)
+        where TDoc : class where TId : notnull
+    {
+        if (typeof(TDoc) != typeof(Invoice))
+        {
+            // Everything you decline stays on Marten's default behavior
+            plan = default;
+            return false;
+        }
+
+        plan = new MyFetchPlan<TDoc, TId>(identity, options);
+        return true;
+    }
+}
+```
+
+Returning `false` is the important half of that contract: a planner that only claims the aggregate types
+it knows about leaves every other type resolving exactly as it would without your planner registered.
+
+Two things are worth knowing before you write one:
+
+* **The resolved plan is cached per `(TDoc, TId)` pair**, so `TryMatch()` runs once per aggregate type
+  rather than once per fetch. Register planners while configuring the store; adding one afterwards will
+  not affect types that have already been resolved.
+* **Your plan owns the concurrency story.** `IAggregateFetchPlan<TDoc, TId>` is responsible for reading
+  the current stream version and handing it to `IEventIdentityStrategy<TId>.AppendToStream()`, which is
+  what makes Marten's optimistic concurrency check on `SaveChangesAsync()` work. Read a version you did
+  not verify against the database and you silently lose that check.
+
+Everything a custom plan needs is public: `IEventIdentityStrategy<TId>` gives you
+`BuildCommandForReadingVersionForStream()`, `BuildEventQueryHandler()` (which accepts an optional
+`ISqlFragment` filter, so a plan can narrow which events it reads back) and `StartStream()` /
+`AppendToStream()`, and `StoreOptions.Projections.AggregatorFor<TDoc>()` gives you the same aggregator the
+built-in plans fold with.
+
+::: tip
+Marten's own `FetchLivePlan`, `FetchInlinedPlan` and `FetchAsyncPlan` are the reference implementations —
+they are short, and reading them is by far the fastest way to understand the shape a plan has to take.
+`FetchAsyncPlan` in particular shows the "start from a snapshot at version N, read only the events after
+it, fold" pattern.
+:::
+
 ## Live Aggregation
 
 Also see [Live Aggregations](/events/projections/live-aggregates)
