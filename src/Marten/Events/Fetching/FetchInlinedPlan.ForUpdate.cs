@@ -9,6 +9,7 @@ using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
 
@@ -85,6 +86,11 @@ internal partial class FetchInlinedPlan<TDoc, TId>
 
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+
+            // Always zero -- an Inline snapshot is up to date by construction, so nothing is replayed.
+            // Recorded anyway so the histogram can be compared across lifecycles.
+            _events.Options.OpenTelemetry
+                .RecordEventsReplayed(0, _aggregateTypeName, OpenTelemetryOptions.InlinePlan);
 
             // As an optimization, put the document in the identity map for later
             if (document != null && ((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)

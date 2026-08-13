@@ -11,6 +11,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
 
@@ -108,6 +109,9 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             // Read in any events from after the current state of the aggregate
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+            _events.Options.OpenTelemetry
+                .RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.AsyncPlan);
+
             if (events.Any())
             {
                 document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);

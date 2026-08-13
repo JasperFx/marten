@@ -19,6 +19,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
     private readonly IDocumentStorage<TDoc, TId> _storage;
     private readonly string _versionSelectionSql;
+    private readonly string _aggregateTypeName = typeof(TDoc).FullNameInCode();
     private string? _initialSql;
 
     public FetchAsyncPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
