@@ -140,7 +140,7 @@ named `marten.fetch_for_writing.events_replayed`, recorded once per `FetchForWri
 Reading it is straightforward, because each plan has a characteristic shape:
 
 | `fetch.plan` | What the histogram shows |
-|---|---|
+| --- | --- |
 | `Live` | The full stream length, every single time — the aggregate is rebuilt from scratch on each fetch |
 | `Async` | Only the events the async daemon has not projected yet, so this doubles as a per-fetch view of daemon lag |
 | `Inline` | Always zero — the stored snapshot is current by construction |
