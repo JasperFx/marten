@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using JasperFx.Core;
 using Marten.Internal;
 using Marten.Linq.Parsing;
@@ -10,8 +11,16 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject, IDistinctOnSelectClause where T : notnull
+internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
+    IDistinctOnSelectClause, IParameterBearingSelectClause where T : notnull
 {
+    /// <summary>
+    /// #5233: the fragments this projection renders into the SELECT list, so compiled-query
+    /// parameter discovery can include them alongside the WHERE-clause filters.
+    /// </summary>
+    public IEnumerable<ISqlFragment> SelectFragments()
+        => Selector is NewObject newObject ? newObject.AllFragments() : [Selector];
+
     public string? DistinctOn { get; set; }
 
     public SelectDataSelectClause(string from, ISqlFragment selector)
