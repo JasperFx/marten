@@ -114,6 +114,47 @@ This metric has tags for:
 * `event_type` - the Marten name for the type of the event within its configuration
 * `tenant.id` - the tenant id for which the event was captured. If you are not using multi-tenancy, this value will be "*DEFAULT*" and can be just ignored
 
+## FetchForWriting Metrics <Badge type="tip" text="9.24" />
+
+The cost of a command handler that uses [`FetchForWriting`](/scenarios/command_handler_workflow) is
+mostly the cost of rebuilding the aggregate, and that in turn is however many events Marten had to read
+back and fold. How many that is depends entirely on the aggregate's projection lifecycle, and it is not
+something you can see from the outside. Opt into measuring it with:
+
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // How many events does each FetchForWriting() call actually replay?
+    opts.OpenTelemetry.TrackFetchForWritingMetrics();
+});
+```
+
+This adds a [Histogram](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics-instrumentation)
+named `marten.fetch_for_writing.events_replayed`, recorded once per `FetchForWriting()` call, with tags for:
+
+* `aggregate.type` - the .NET type name of the aggregate that was fetched
+* `fetch.plan` - which plan served the call: `Live`, `Inline` or `Async`
+
+Reading it is straightforward, because each plan has a characteristic shape:
+
+| `fetch.plan` | What the histogram shows |
+| --- | --- |
+| `Live` | The full stream length, every single time — the aggregate is rebuilt from scratch on each fetch |
+| `Async` | Only the events the async daemon has not projected yet, so this doubles as a per-fetch view of daemon lag |
+| `Inline` | Always zero — the stored snapshot is current by construction |
+
+The histogram's own count gives you fetch frequency for free, so a `sum by (aggregate.type)` tells you
+which aggregates dominate your event replay, and the `Live` percentiles tell you what switching one of
+them to `Inline` would actually save before you commit to that migration.
+
+::: tip
+Nothing is created until `TrackFetchForWritingMetrics()` is called, so leaving it off costs a null check
+on the fetch path and nothing more. Both tag values are cached per aggregate type, so a recorded fetch
+allocates nothing on the heap either.
+:::
+
 ## Async Daemon Metrics and Spans
 
 See [Open Telemetry and Metrics within the Async Daemon documentation](/events/projections/async-daemon.html#open-telemetry-and-metrics).

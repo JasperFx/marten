@@ -10,6 +10,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
 
@@ -59,6 +60,8 @@ internal partial class FetchLivePlan<TDoc, TId>
 
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+            _telemetry.RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.LivePlan);
+
             var document = await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
 
             var stream = version == 0

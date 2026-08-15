@@ -10,6 +10,7 @@ using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
 using System.Diagnostics.CodeAnalysis;
@@ -25,6 +26,8 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
     private readonly IAggregator<TDoc, TId, IQuerySession> _aggregator;
     private readonly IIdentitySetter<TDoc, TId> _documentStorage;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
+    private readonly OpenTelemetryOptions _telemetry;
+    private readonly string _aggregateTypeName = typeof(TDoc).FullNameInCode();
 
     public FetchLivePlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
         IIdentitySetter<TDoc, TId> documentStorage)
@@ -33,6 +36,7 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
 
         _identityStrategy = identityStrategy;
         _documentStorage = documentStorage;
+        _telemetry = events.Options.OpenTelemetry;
 
         var raw = events.Options.Projections.AggregatorFor<TDoc>();
 

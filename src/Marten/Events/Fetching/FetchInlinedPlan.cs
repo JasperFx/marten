@@ -22,6 +22,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TI
 {
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
+    private readonly string _aggregateTypeName = typeof(TDoc).FullNameInCode();
 
     internal FetchInlinedPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy)
     {
