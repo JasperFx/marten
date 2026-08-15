@@ -9,6 +9,7 @@ using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
+using Marten.Linq.SqlGeneration;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.CompiledQueries;
@@ -219,9 +220,31 @@ internal class QueryCompiler
 
         var statements = parser.BuildStatements();
         var topStatement = statements.Top;
+        var selectClause = statements.MainSelector.SelectClause;
         topStatement.Apply(queryPlan);
 
-        var filters = topStatement.AllFilters().OfType<ICompiledQueryAwareFilter>().ToArray();
+        // #5233: a compiled query whose projection is applied on the client caches ONE compiled
+        // delegate, closing over the ICompiledQuery instance that built the plan. If that lambda
+        // reads anything off the instance, every later execution silently returns the plan-time
+        // value. Nothing can re-bind a baked-in closure, so refuse the plan instead.
+        if (selectClause is IClientSideProjectionSelectClause { ClosesOverCapturedState: true })
+        {
+            throw new InvalidCompiledQueryException(
+                $"Invalid compiled query type `{typeof(TDoc).FullNameInCode()}`. Its Select() projection cannot be translated to SQL, so Marten applies it on the client through a delegate that is compiled once per plan -- and it reads a value off the compiled query instance, which that delegate would freeze at plan time. Either simplify the projection so Marten can translate it (direct member access, and Count() over a child collection, both translate), or move the captured value into the Where() clause, or run this as a normal LINQ query instead of a compiled one.");
+        }
+
+        // #5233: the select clause can render parameters of its own, and AllFilters() only walks
+        // WHERE clauses. Most select-list parameters re-bind anyway through QueryMember's direct
+        // value match, but one whose value is buried in a composite parameter (a jsonpath vars
+        // payload) has no scalar to match and needs its own filter to reach MatchParameters.
+        var selectFragments = selectClause is IParameterBearingSelectClause parameterBearing
+            ? parameterBearing.SelectFragments()
+            : [];
+
+        var filters = topStatement.AllFilters()
+            .Concat(selectFragments)
+            .OfType<ICompiledQueryAwareFilter>()
+            .ToArray();
 
         queryPlan.MatchParameters(((IMartenSession)session).Options, filters);
 

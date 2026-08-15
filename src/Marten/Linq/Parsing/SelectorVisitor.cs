@@ -151,9 +151,16 @@ public class SelectorVisitor: ExpressionVisitor
             var lambda = Expression.Lambda(selectExpression, parameter);
             var compiled = lambda.Compile();
 
+            // #5233: `compiled` closes over whatever ConstantExpressions the projection reads from.
+            // Harmless for an ordinary query -- the expression tree is rebuilt per call -- but a
+            // compiled query caches this delegate, so a captured value would be frozen at plan time.
+            // Record it here; QueryCompiler is the only caller that cares.
+            var closesOverCapturedState = CapturedStateDetector.Detect(selectExpression);
+
             _statement.SelectClause =
                 typeof(LambdaSelectClause<,>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
                     compiled,
+                    closesOverCapturedState,
                     _collection.ElementType,
                     selectExpression.Type);
         }
@@ -182,5 +189,40 @@ internal sealed class ParameterFinder: ExpressionVisitor
     {
         _found ??= node;
         return base.VisitParameter(node);
+    }
+}
+
+
+/// <summary>
+/// #5233: does this projection read a value off a captured object? A member access whose root is a
+/// <see cref="ConstantExpression" /> is a closure field or, inside <c>ICompiledQuery.QueryIs()</c>,
+/// a property of the compiled query instance. A static member (null root) and a plain literal are
+/// both fine -- neither varies between invocations.
+/// </summary>
+internal sealed class CapturedStateDetector: ExpressionVisitor
+{
+    private bool _found;
+
+    public static bool Detect(Expression expression)
+    {
+        var detector = new CapturedStateDetector();
+        detector.Visit(expression);
+        return detector._found;
+    }
+
+    protected override Expression VisitMember(MemberExpression node)
+    {
+        var root = node.Expression;
+        while (root is MemberExpression inner)
+        {
+            root = inner.Expression;
+        }
+
+        if (root is ConstantExpression)
+        {
+            _found = true;
+        }
+
+        return base.VisitMember(node);
     }
 }

@@ -431,6 +431,30 @@ internal class NewObject : ISqlFragment
 
     public Dictionary<string, ISqlFragment> Members { get; } = new();
 
+    /// <summary>
+    /// #5233: every fragment in this projection, nested objects included. Compiled-query parameter
+    /// discovery needs to see these, because a fragment that carries a query member's value inside
+    /// a composite parameter (a jsonpath vars payload) can only be re-bound through its own
+    /// ICompiledQueryAwareFilter -- a plain value match against the parameter cannot find it.
+    /// </summary>
+    public IEnumerable<ISqlFragment> AllFragments()
+    {
+        foreach (var member in Members.Values)
+        {
+            if (member is NewObject nested)
+            {
+                foreach (var inner in nested.AllFragments())
+                {
+                    yield return inner;
+                }
+            }
+            else
+            {
+                yield return member;
+            }
+        }
+    }
+
     public void Apply(ICommandBuilder builder)
     {
         builder.Append(" jsonb_build_object(");

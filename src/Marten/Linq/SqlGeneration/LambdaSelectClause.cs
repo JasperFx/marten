@@ -20,6 +20,14 @@ namespace Marten.Linq.SqlGeneration;
 /// </summary>
 internal interface IClientSideProjectionSelectClause
 {
+    /// <summary>
+    /// #5233: true when the projection lambda reads a value off a captured object (in a compiled
+    /// query, that is the ICompiledQuery instance itself). The lambda is compiled ONCE, closing
+    /// over the instance that happened to build the plan, so a cached compiled-query plan would
+    /// keep returning the first invocation's values forever. QueryCompiler refuses to build a plan
+    /// in that case rather than silently serving wrong data.
+    /// </summary>
+    bool ClosesOverCapturedState { get; }
 }
 
 /// <summary>
@@ -38,11 +46,15 @@ internal class LambdaSelectClause<TSource, TResult>: ISelectClause, IScalarSelec
 {
     private readonly Func<TSource, TResult> _transform;
 
-    public LambdaSelectClause(string from, Func<TSource, TResult> transform)
+    public LambdaSelectClause(string from, Func<TSource, TResult> transform,
+        bool closesOverCapturedState = false)
     {
         FromObject = from;
         _transform = transform;
+        ClosesOverCapturedState = closesOverCapturedState;
     }
+
+    public bool ClosesOverCapturedState { get; }
 
     public string? DistinctOn { get; set; }
 
