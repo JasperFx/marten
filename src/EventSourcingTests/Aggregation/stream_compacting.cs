@@ -312,6 +312,54 @@ public class stream_compacting : OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task store_level_compaction_by_guid_identity()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<Letters>(SnapshotLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<Letters>(streamId, A(), B(), A(), C(), C(), D(), D(), A(), A());
+        await theSession.SaveChangesAsync();
+
+        // The store level overload resolves the aggregate type off the stream state
+        // and owns its own session, so it has to commit for itself
+        await ((IEventStore)theStore).CompactStreamAsync(streamId, CancellationToken.None);
+
+        await using var session = theStore.LightweightSession();
+        var events = await session.Events.FetchStreamAsync(streamId);
+        var compacted = events.Single().ShouldBeOfType<Event<Compacted<Letters>>>();
+        compacted.Version.ShouldBe(9);
+        compacted.Data.Snapshot.ACount.ShouldBe(4);
+        compacted.Data.Snapshot.BCount.ShouldBe(1);
+        compacted.Data.Snapshot.CCount.ShouldBe(2);
+        compacted.Data.Snapshot.DCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task store_level_compaction_by_string_identity()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Projections.Add<LetterCountsByStringProjection>(ProjectionLifecycle.Inline);
+        });
+
+        var streamKey = Guid.NewGuid().ToString();
+        theSession.Events.StartStream<LetterCountsByString>(streamKey, A(), B(), A(), C(), C(), D(), D(), A(), A());
+        await theSession.SaveChangesAsync();
+
+        await ((IEventStore)theStore).CompactStreamAsync(streamKey, CancellationToken.None);
+
+        await using var session = theStore.LightweightSession();
+        var events = await session.Events.FetchStreamAsync(streamKey);
+        var compacted = events.Single().ShouldBeOfType<Event<Compacted<LetterCountsByString>>>();
+        compacted.Version.ShouldBe(9);
+        compacted.Data.Snapshot.ACount.ShouldBe(4);
+        compacted.Data.Snapshot.BCount.ShouldBe(1);
+        compacted.Data.Snapshot.CCount.ShouldBe(2);
+        compacted.Data.Snapshot.DCount.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task end_to_end_string_identification_at_specified_version()
     {
         StoreOptions(opts =>
