@@ -35,8 +35,16 @@ internal class EventsTable: Table
         // #4596 Session 1: PostgreSQL requires the partition column in every
         // unique constraint on a partitioned table, PK included. When
         // UseTenantPartitionedEvents is on, mark tenant_id as part of the PK
-        // alongside seq_id (which alone is already store-unique via the
-        // sequence — adding tenant_id is purely about satisfying the PG rule).
+        // alongside seq_id.
+        //
+        // #5234: tenant_id here is NOT merely about satisfying the PG rule, which is what this
+        // comment used to claim. Under UseTenantPartitionedEvents every tenant draws from its own
+        // mt_events_sequence_{suffix} (QuickAppendEventFunction), so seq_id is genuinely
+        // NON-unique across tenants — seq_id = 1 exists in every tenant's partition, and the
+        // composite (seq_id, tenant_id) is what actually identifies an event. Any query or
+        // rewrite of mt_events that keys on seq_id alone is a cross-tenant operation in this
+        // mode; that stale claim is the likely reason three of them shipped without a tenant
+        // predicate. See ConjoinedEventFilter.
         var tenantIdColumn = AddColumn<TenantIdColumn>();
         if (events.UseTenantPartitionedEvents)
         {

@@ -131,6 +131,23 @@ public static Task apply_masking_by_tenant(IDocumentStore store, string tenantId
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/removing_protected_information.cs#L556-L572' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_masking_with_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: warning
+`ForTenant()` scopes both the read and the write, but that was only true of the read before the
+fix for [#5234](https://github.com/JasperFx/marten/issues/5234).
+
+Under `Events.UseTenantPartitionedEvents` each tenant draws from its own event sequence, so
+`seq_id` is not unique across tenants. Masking and stream compaction keyed their `UPDATE` and
+`DELETE` on `seq_id` alone, which meant masking one tenant also overwrote the same-numbered event
+in every other tenant, and compacting one tenant's stream deleted the other tenants' events and
+left the calling tenant's `Compacted<T>` snapshot in their place. Nothing threw.
+
+If you ran masking or stream compaction against a store with `UseTenantPartitionedEvents` enabled
+on an affected version, the damage is already written and no code change can reverse it — restore
+the affected tenants' events from a backup or your archival storage. Stores that never enabled
+`UseTenantPartitionedEvents` are unaffected, because a single global sequence makes `seq_id`
+store-unique there.
+:::
+
 Here's a couple more facts you might need to know:
 
 * The masking rules can only be done at configuration time (as of right now)

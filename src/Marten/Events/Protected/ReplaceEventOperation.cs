@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using Marten.Events.Operations;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using NpgsqlTypes;
@@ -73,6 +74,10 @@ internal class ReplaceEventOperation<T> : IStorageOperation, NoDataReturnedCall 
 
         builder.Append(" where seq_id = ");
         builder.AppendParameter(_sequence);
+
+        // #5234: without this the Compacted<T> snapshot -- the calling tenant's whole aggregate
+        // state -- is written into every other tenant's same-numbered event.
+        builder.AppendConjoinedTenantFilter(session);
     }
 
     public Type DocumentType => typeof(IEvent);
