@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
+using Marten.Linq.QueryHandlers;
 using Marten.Linq.SqlGeneration;
 using Marten.Util;
 using Weasel.Postgresql;
@@ -270,11 +271,67 @@ internal class SelectParser: ExpressionVisitor
             }
         }
 
+        // GH-5223: Count() over a child collection is the one LINQ aggregate a
+        // jsonb_build_object() SELECT list can reproduce exactly, because PostgreSQL already
+        // has the two expressions it needs -- jsonb_array_length() for the whole collection,
+        // and jsonb_array_length(jsonb_path_query_array(...)) for a filtered one, which is the
+        // same translation Where(x => x.Lines.Count(l => ...) > n) has used since 9.14.1.
+        // Anything it cannot translate falls through to the client-side transform below rather
+        // than failing the query.
+        if (_currentField != null
+            && node.Method.Name == nameof(Enumerable.Count)
+            && node.Method.DeclaringType == typeof(Enumerable)
+            && tryParseCollectionCount(node, out var count))
+        {
+            NewObject.Members[_currentField] = count;
+            _currentField = null;
+            return null;
+        }
+
         // Any other method call (string.ToUpper(), custom methods, LINQ helpers, etc.)
         // is a computed expression that jsonb_build_object() cannot reproduce. Signal the
         // caller to fall back to a client-side compiled transform (GH-5011) instead of
         // silently dropping the call and returning the raw member value underneath it.
         throw new SelectProjectionNotSimpleException();
+    }
+
+    private bool tryParseCollectionCount(MethodCallExpression node, out ISqlFragment fragment)
+    {
+        fragment = null;
+
+        IQueryableMember member;
+        try
+        {
+            member = _members.MemberFor(node.Arguments[0]);
+        }
+        catch (Exception)
+        {
+            // Not something Marten can resolve to a stored member -- e.g. Count() over a local
+            // collection or a computed sub-expression. Client-side transform.
+            return false;
+        }
+
+        if (member is not ICollectionMember collection)
+        {
+            return false;
+        }
+
+        // Count() with no predicate is just the array length, and the collection already exposes
+        // that as a member -- the same one x.Lines.Count (the property) resolves to.
+        if (node.Arguments.Count == 1)
+        {
+            if (collection is not IHasChildrenMembers hasChildren)
+            {
+                return false;
+            }
+
+            fragment = hasChildren.FindMember(LinqConstants.ArrayLength);
+            return true;
+        }
+
+        return node.Arguments.Count == 2
+               && collection is ICountableCollection countable
+               && countable.TryBuildCountExpression(node.Arguments[1], out fragment);
     }
 
     protected override Expression VisitMember(MemberExpression node)

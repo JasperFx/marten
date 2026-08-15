@@ -142,6 +142,49 @@ directly to the client as raw JSON with no further (de)serialization on the Mart
 see [Query for Raw JSON](/documents/querying/query-json) for `ToJsonArray()`/`ToJsonFirst()`
 and the raw `StreamJsonArray()`/`StreamOne()`/`StreamMany()` methods on `IQueryable<T>`.
 
+### Counting a Child Collection
+
+::: tip
+Available in Marten 9.24 and later.
+:::
+
+`Count()` over a child collection is the one method call a projection can keep in SQL, because
+Postgres already has an expression for it. Both the whole collection and a filtered subset are
+computed server-side:
+
+```cs
+var dtos = await session.Query<Order>()
+    .Select(x => new
+    {
+        x.Id,
+        LineCount = x.Lines.Count(),
+        ActiveLineCount = x.Lines.Count(line => line.IsActive),
+        FooCount = x.Lines.Count(line => line.Product == "foo")
+    })
+    .ToListAsync();
+```
+
+becomes:
+
+```sql
+select jsonb_build_object(
+    'Id', d.id,
+    'LineCount', jsonb_array_length(d.data -> 'Lines'),
+    'ActiveLineCount', jsonb_array_length(jsonb_path_query_array(d.data, '$.Lines[*] ? (@.IsActive == $val1)', :p0)),
+    'FooCount', jsonb_array_length(jsonb_path_query_array(d.data, '$.Lines[*] ? (@.Product == $val1)', :p1))
+) as data
+from mt_doc_order as d
+```
+
+This is the same translation `Where(x => x.Lines.Count(l => ...) > n)` uses, so a count in a
+projection and the same count in a filter always agree. A predicate is translated when every part
+of it is expressible as a JSONPath filter -- equality and the other comparison operators, `&&`,
+and the string methods (`StartsWith`, `EndsWith`, `Contains`) -- and a bare boolean member such as
+`line.IsActive` counts as equality against `true`.
+
+Anything outside that set, notably `||`, falls back to the client-side projection described below
+rather than being narrowed to something that would return a different count.
+
 ### Projections That Can't Be Expressed in SQL
 
 If a `Select()` projection contains anything Marten can't safely translate into
