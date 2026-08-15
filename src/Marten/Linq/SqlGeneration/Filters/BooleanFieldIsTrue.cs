@@ -7,24 +7,29 @@ namespace Marten.Linq.SqlGeneration.Filters;
 
 public class BooleanFieldIsTrue: IReversibleWhereFragment
 {
-    private readonly IQueryableMember _member;
-
     public BooleanFieldIsTrue(IQueryableMember member)
     {
-        _member = member;
+        Member = member;
     }
+
+    /// <summary>
+    ///     The boolean member being tested. Exposed for #5223, where a bare boolean predicate inside a
+    ///     child collection's <c>Count()</c> has to be rewritten as an equivalent member comparison to
+    ///     reach the jsonpath tier.
+    /// </summary>
+    public IQueryableMember Member { get; }
 
     public void Apply(ICommandBuilder builder)
     {
         builder.Append("(");
-        builder.Append(_member.RawLocator);
+        builder.Append(Member.RawLocator);
         builder.Append(" is not null and ");
-        builder.Append(_member.TypedLocator);
+        builder.Append(Member.TypedLocator);
         builder.Append(" = True)");
     }
 
     public ISqlFragment Reverse()
     {
-        return new BooleanFieldIsFalse(_member);
+        return new BooleanFieldIsFalse(Member);
     }
 }

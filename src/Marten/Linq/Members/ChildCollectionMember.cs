@@ -25,7 +25,7 @@ namespace Marten.Linq.Members;
 [UnconditionalSuppressMessage("AOT", "IL3050",
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryableMemberCollection,
-    IExistsElementSource, IAggregateableCollection
+    IExistsElementSource, IAggregateableCollection, ICountableCollection
 {
     private readonly IQueryableMember _count;
     private readonly StoreOptions _options;
@@ -126,6 +126,34 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
     }
 
     public IComparableMember ParseComparableForCount(Expression body)
+    {
+        return parseCount(body);
+    }
+
+    /// <summary>
+    ///     #5223: the same predicate parse as <see cref="ParseComparableForCount" />, but yielding the
+    ///     count as a standalone scalar for a <c>Select()</c> projection.
+    /// </summary>
+    bool ICountableCollection.TryBuildCountExpression(Expression predicate,
+        [NotNullWhen(true)] out ISqlFragment? fragment)
+    {
+        fragment = null;
+
+        try
+        {
+            return parseCount(predicate).TryBuildCountExpression(out fragment);
+        }
+        catch (Exception)
+        {
+            // Deliberately broad. Every way the where-clause parser can reject a predicate ends the
+            // same way here: the projection falls back to the client-side compiled transform, which
+            // is what Marten did for Count() in a Select() before #5223 and is always correct. The
+            // only cost of guessing wrong is that the count is not computed in the database.
+            return false;
+        }
+    }
+
+    private ChildCollectionCount parseCount(Expression body)
     {
         if (body is LambdaExpression l)
         {
