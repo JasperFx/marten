@@ -25,6 +25,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
     private readonly StorageFeatures _features;
 
     private Lazy<SequenceFactory> _sequences;
+    private ILogger? _logger;
 
     public MartenDatabase(
         StoreOptions options,
@@ -64,6 +65,15 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
     }
 
     public StoreOptions Options { get; }
+
+    /// <summary>
+    ///     #5229: the logger this database writes its own diagnostics to. Resolved on first use rather
+    ///     than in the constructor, because <see cref="StoreOptions.DotNetLogger" /> can still be assigned
+    ///     after the databases are built, and every current caller is a cold path well after that.
+    /// </summary>
+    internal ILogger Logger => _logger ??= Options.LogFactory?.CreateLogger<MartenDatabase>()
+        ?? Options.DotNetLogger
+        ?? NullLogger<MartenDatabase>.Instance;
 
     // #4500-family dedupe: IProjectionDatabase contract for the lifted JasperFx.Events
     // projection distributors. Identifier comes from the Weasel DatabaseBase; the URI is

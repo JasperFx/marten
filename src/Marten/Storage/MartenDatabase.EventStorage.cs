@@ -793,15 +793,37 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     async Task IEventDatabase.StoreDeadLetterEventAsync(object storage, DeadLetterEvent deadLetterEvent,
         CancellationToken token)
     {
+        // #5229: IEventDatabase types this parameter as `object` because each store reads it
+        // differently, so the compiler cannot check it and a wrong argument used to land in the
+        // catch below -- the method returned successfully having written nothing. A wrong `storage`
+        // is a programming error, not a transient storage failure: it is the one thing here that can
+        // never succeed on retry, so it must fail loudly at the first call.
+        if (storage is not DocumentStore store)
+        {
+            throw new ArgumentException(
+                $"Marten requires the {nameof(DocumentStore)} that owns this database, but was given {storage?.GetType().FullNameInCode() ?? "null"}.",
+                nameof(storage));
+        }
+
         try
         {
-            using var session = storage.As<DocumentStore>().LightweightSession(SessionOptions.ForDatabase(this));
+            await using var session = store.LightweightSession(SessionOptions.ForDatabase(this));
             session.Store(deadLetterEvent);
             await session.SaveChangesAsync(token).ConfigureAwait(false);
         }
-        catch (Exception)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
-            // TODO -- something to log this?
+            // Shutting down -- the daemon's dead letter block already gave up on this write.
+        }
+        catch (Exception e)
+        {
+            // #5229: the daemon must not fail because it could not record a dead letter, but losing
+            // one silently leaves an operator with a skipped event, no log line, and nothing to grep
+            // for. The projection has already advanced past the event by the time we get here.
+            Logger.LogError(e,
+                "Unable to persist a dead letter event for projection shard {ProjectionName}:{ShardName} at event sequence {EventSequence} of tenant {TenantId} in database {Database}. The record of this skipped event has been lost.",
+                deadLetterEvent.ProjectionName, deadLetterEvent.ShardName, deadLetterEvent.EventSequence,
+                deadLetterEvent.TenantId, Identifier);
         }
     }
 
