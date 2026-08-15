@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +12,31 @@ namespace Marten.EntityFrameworkCore;
 /// the provided connection and transaction, then its tracked changes are flushed.
 /// The initial placeholder connection (used only for provider registration) is
 /// disposed after being swapped out.
+///
+/// <para>
+/// #5228: the placeholder connection used to be released ONLY on the success path, at the end of
+/// <see cref="BeforeCommitAsync"/>. Every route that never reached that line leaked it — a
+/// projection that threw while applying, an optimistic concurrency failure on
+/// <c>SaveChangesAsync</c>, or a throw from inside <c>BeforeCommitAsync</c> itself. Worse, the
+/// participant is created when the projection's storage is built, which for an inline
+/// multi-stream projection happens for EVERY <c>SaveChangesAsync</c> whose events reach the
+/// projection at all — including the very common case where the grouper returns nothing and the
+/// projector never runs. So a workload that merely has an EF Core inline projection registered
+/// leaked a pooled connection per failed save.
+/// </para>
+///
+/// <para>
+/// Release is now owned by disposal rather than by the commit path, so it happens exactly once
+/// however the save ends. <see cref="BeforeCommitAsync"/> still releases eagerly on success so a
+/// long-lived session does not hold connections it has finished with.
+/// </para>
 /// </summary>
-internal class DbContextTransactionParticipant<TDbContext>: ITransactionParticipant
+internal class DbContextTransactionParticipant<TDbContext>: ITransactionParticipant, IAsyncDisposable, IDisposable
     where TDbContext : DbContext
 {
-    public TDbContext DbContext { get; }
     private readonly NpgsqlConnection _initialConnection;
     private readonly string? _schemaName;
+    private bool _released;
 
     public DbContextTransactionParticipant(TDbContext dbContext, NpgsqlConnection initialConnection,
         string? schemaName = null)
@@ -26,6 +45,8 @@ internal class DbContextTransactionParticipant<TDbContext>: ITransactionParticip
         _initialConnection = initialConnection;
         _schemaName = schemaName;
     }
+
+    public TDbContext DbContext { get; }
 
     public async Task BeforeCommitAsync(NpgsqlConnection connection,
         NpgsqlTransaction transaction, CancellationToken token)
@@ -46,7 +67,33 @@ internal class DbContextTransactionParticipant<TDbContext>: ITransactionParticip
         // Flush all tracked changes into the same transaction
         await DbContext.SaveChangesAsync(token).ConfigureAwait(false);
 
-        // Dispose the initial placeholder connection
+        // The placeholder has been swapped out and is no longer referenced by the DbContext, so
+        // release it now rather than waiting for the session to be disposed. Disposal is
+        // idempotent, so the session's own teardown pass is a no-op after this.
+        await ReleaseAsync().ConfigureAwait(false);
+    }
+
+    public ValueTask DisposeAsync() => ReleaseAsync();
+
+    public void Dispose()
+    {
+        if (_released)
+        {
+            return;
+        }
+
+        _released = true;
+        _initialConnection.Dispose();
+    }
+
+    private async ValueTask ReleaseAsync()
+    {
+        if (_released)
+        {
+            return;
+        }
+
+        _released = true;
         await _initialConnection.DisposeAsync().ConfigureAwait(false);
     }
 }

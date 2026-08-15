@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
@@ -59,6 +60,38 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     }
 
     internal IReadOnlyList<ITransactionParticipant> TransactionParticipants => _transactionParticipants;
+
+    // #5228: release anything a participant is holding open, however the save ended. Disposal on
+    // the participant side is idempotent, so a participant that already released itself on the
+    // success path of BeforeCommitAsync is a no-op here.
+    private protected override async ValueTask releaseTransactionParticipantsAsync()
+    {
+        foreach (var participant in _transactionParticipants)
+        {
+            switch (participant)
+            {
+                case IAsyncDisposable asyncDisposable:
+                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    break;
+
+                case IDisposable disposable:
+                    disposable.Dispose();
+                    break;
+            }
+        }
+
+        _transactionParticipants.Clear();
+    }
+
+    private protected override void releaseTransactionParticipants()
+    {
+        foreach (var participant in _transactionParticipants.OfType<IDisposable>())
+        {
+            participant.Dispose();
+        }
+
+        _transactionParticipants.Clear();
+    }
 
     public void EjectAllPendingChanges()
     {
