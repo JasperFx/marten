@@ -36,6 +36,13 @@ namespace CoreTests;
 /// <c>select some_function(...)</c> instead of the <c>DO $$ ... PERFORM ... $$</c> form, this fails
 /// with the offending type named, instead of a version mismatch showing up three operations later.
 /// </para>
+///
+/// <para>
+/// #5222: an operation is only reported as passing when the audit actually saw its SQL. Anything it
+/// could not reconstruct — including an operation whose entire statement is a string field, so an
+/// uninitialized instance yields nothing but <see cref="StandIn" /> — is a visible skip. See the note
+/// on <see cref="StandIn" /> for the false pass that motivated this.
+/// </para>
 /// </summary>
 public class no_data_returned_call_sql_audit
 {
@@ -50,6 +57,23 @@ public class no_data_returned_call_sql_audit
 
     private static readonly Regex HasReturning =
         new(@"\breturning\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>
+    /// #5222. The value every string field of an uninitialized stand-in is set to, deliberately
+    /// chosen so it cannot be mistaken for SQL.
+    ///
+    /// <para>
+    /// It used to be <c>"placeholder"</c>, which reads as a perfectly ordinary bareword to
+    /// <see cref="ReturnsRows" />. That mattered because an operation's entire statement can *be* a
+    /// string field: <c>ExecuteSqlStorageOperation._commandText</c> holds the SQL a caller handed to
+    /// <c>QueueSqlCommand</c>. Its <c>ConfigureCommand</c> appended the stand-in and then threw on the
+    /// parameter values, <see cref="TryCaptureSql" /> read back non-empty text, and the audit reported
+    /// the operation as PASSING — having asserted only that the literal string "placeholder" does not
+    /// return a result set. Unlike the five genuine skips, that gap was invisible: it read as 1 of the
+    /// 15 audited.
+    /// </para>
+    /// </summary>
+    private const string StandIn = "__marten_audit_stand_in__";
 
     public static IEnumerable<object[]> NoDataReturnedCallTypes()
     {
@@ -66,13 +90,13 @@ public class no_data_returned_call_sql_audit
     [MemberData(nameof(NoDataReturnedCallTypes))]
     public void sql_emitted_by_a_no_data_returned_call_must_not_return_a_result_set(Type operationType)
     {
-        if (!TryCaptureSql(operationType, out var sql))
+        if (!TryCaptureSql(operationType, out var sql, out var skipReason))
         {
-            // Deliberately not a silent pass. The operation's ConfigureCommand needs state that an
-            // uninitialized instance does not have, so this test cannot see its SQL. Skipping keeps
-            // the coverage gap visible in the run output rather than pretending it was audited.
-            Assert.Skip(
-                $"{operationType.FullNameInCode()}.ConfigureCommand could not be driven from an uninitialized instance, so its SQL was not audited.");
+            // Deliberately not a silent pass. Either the operation's ConfigureCommand needs state an
+            // uninitialized instance does not have, or (#5222) its statement never got fabricated at
+            // all. Skipping keeps the coverage gap visible in the run output rather than pretending
+            // it was audited.
+            Assert.Skip(skipReason);
             return;
         }
 
@@ -112,9 +136,42 @@ public class no_data_returned_call_sql_audit
         sql.ShouldStartWith("DO $$");
     }
 
-    private static bool TryCaptureSql(Type operationType, out string sql)
+    [Fact]
+    public void an_operation_whose_sql_is_caller_supplied_is_skipped_not_passed()
+    {
+        // #5222, pinned by name. ExecuteSqlStorageOperation is the operation that most needs
+        // auditing and the one a static audit can say the least about: its statement is whatever the
+        // caller passed to QueueSqlCommand. It must report as a visible skip. Before the stand-in
+        // became unmistakable it reported as a PASS, having audited the string "placeholder".
+        TryCaptureSql(typeof(ExecuteSqlStorageOperation), out _, out var skipReason).ShouldBeFalse();
+
+        skipReason.ShouldContain("QueueSqlCommand");
+    }
+
+    [Fact]
+    public void the_stand_in_stays_distinctive_enough_to_strip_safely()
+    {
+        // The "is this only stand-in?" check works by removing every occurrence of StandIn from the
+        // captured text and asking whether anything is left. That is only sound while the stand-in is
+        // a token no real statement would ever contain: shorten it to something like "a" or "id" and
+        // the removal would start eating real SQL, turning audited operations into silent skips —
+        // the same invisible-gap failure #5222 was about, pointed the other way.
+        StandIn.Length.ShouldBeGreaterThan(12);
+        StandIn.ShouldStartWith("__");
+        StandIn.ShouldEndWith("__");
+        StandIn.ShouldNotContain(" ");
+
+        // And it must not read as a statement in its own right, or a whole-statement string field
+        // would fail the audit for the wrong reason instead of skipping.
+        ReturnsRows.IsMatch(StandIn).ShouldBeFalse();
+        HasReturning.IsMatch(StandIn).ShouldBeFalse();
+    }
+
+    private static bool TryCaptureSql(Type operationType, out string sql, out string skipReason)
     {
         sql = string.Empty;
+        skipReason =
+            $"{operationType.FullNameInCode()}.ConfigureCommand could not be driven from an uninitialized instance, so its SQL was not audited.";
 
         // No constructor call. These operations take documents, streams, tags and sessions that are
         // impractical to fabricate here, so the instance is created uninitialized and its reference
@@ -145,7 +202,23 @@ public class no_data_returned_call_sql_audit
             return false;
         }
 
-        return !string.IsNullOrWhiteSpace(sql);
+        if (string.IsNullOrWhiteSpace(sql))
+        {
+            return false;
+        }
+
+        // #5222: whatever came back is made entirely of stand-in values, so no SQL of this
+        // operation's own ever got fabricated and there is nothing here to audit. Asserting against
+        // it would only assert that the stand-in itself is not a SELECT.
+        if (string.IsNullOrWhiteSpace(sql.Replace(StandIn, string.Empty)))
+        {
+            skipReason =
+                $"{operationType.FullNameInCode()} emitted no SQL of its own — its whole statement came from a string field, so an uninitialized instance yields only the stand-in and there is nothing static to audit. " +
+                "For ExecuteSqlStorageOperation this is permanent: the SQL comes from the caller through QueueSqlCommand, so no audit of the type can say anything about it.";
+            return false;
+        }
+
+        return true;
     }
 
     private static object CreateStandIn(Type type, int depth)
@@ -162,7 +235,7 @@ public class no_data_returned_call_sql_audit
 
             if (fieldType == typeof(string))
             {
-                field.SetValue(instance, "placeholder");
+                field.SetValue(instance, StandIn);
                 continue;
             }
 
