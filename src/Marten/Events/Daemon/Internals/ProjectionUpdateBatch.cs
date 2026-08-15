@@ -99,6 +99,26 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
         foreach (var page in _pages) page.ReleaseSession();
 
+        // #5228: the daemon's own path to the same leak. A participant registered by an EF Core
+        // projection holds an open placeholder connection that it only releases inside
+        // BeforeCommitAsync; a batch that fails before or during the flush must not strand it.
+        // Participant disposal is idempotent, so a clean commit makes this a no-op.
+        foreach (var participant in _transactionParticipants)
+        {
+            switch (participant)
+            {
+                case IAsyncDisposable asyncDisposable:
+                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    break;
+
+                case IDisposable disposable:
+                    disposable.Dispose();
+                    break;
+            }
+        }
+
+        _transactionParticipants.Clear();
+
         if (_session != null)
         {
             await _session.DisposeAsync().ConfigureAwait(true);
