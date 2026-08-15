@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using Marten.Events.Operations;
 using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -36,6 +37,9 @@ internal class OverwriteEventOperation : IStorageOperation, NoDataReturnedCall
             session.Serializer.WriteToParameter(parameters[1], _e.Headers);
             parameters[2].NpgsqlDbType = NpgsqlDbType.Bigint;
             parameters[2].Value = _e.Sequence;
+
+            // #5234: seq_id alone is not unique across tenants under UseTenantPartitionedEvents
+            builder.AppendConjoinedTenantFilter(session);
         }
         else
         {
@@ -43,6 +47,9 @@ internal class OverwriteEventOperation : IStorageOperation, NoDataReturnedCall
             session.Serializer.WriteToParameter(parameters[0], _e.Data);
             parameters[1].NpgsqlDbType = NpgsqlDbType.Bigint;
             parameters[1].Value = _e.Sequence;
+
+            // #5234: seq_id alone is not unique across tenants under UseTenantPartitionedEvents
+            builder.AppendConjoinedTenantFilter(session);
         }
     }
 

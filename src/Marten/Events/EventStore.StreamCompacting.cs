@@ -10,6 +10,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Protected;
+using Marten.Events.Operations;
 using Marten.Events.Protected;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -199,6 +200,10 @@ internal class DeleteEventsOperation: IStorageOperation, NoDataReturnedCall
         builder.Append($"delete from {((IMartenSession)session).Options.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(");
         builder.AppendParameter(_sequences);
         builder.Append(")");
+
+        // #5234: without this, compacting one tenant's stream permanently deletes the
+        // same-numbered events out of every other tenant's partition.
+        builder.AppendConjoinedTenantFilter(session);
     }
 
     public Type DocumentType => typeof(IEvent);
