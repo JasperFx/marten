@@ -47,9 +47,26 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     }
 
     /// <summary>
-    ///     Any custom or extended IFetchPlanner strategies for customizing FetchForWriting() behavior
+    ///     Any custom or extended <see cref="IFetchPlanner" /> strategies for customizing
+    ///     <c>FetchForWriting()</c> / <c>FetchLatest()</c> behavior.
     /// </summary>
-    internal List<IFetchPlanner> FetchPlanners { get; } = new();
+    /// <remarks>
+    ///     <para>
+    ///     Marten asks every planner in this list — in registration order — for a plan before falling back to
+    ///     its four built-in planners (natural key, <c>Inline</c>, <c>Async</c>, <c>Live</c>). The first planner
+    ///     whose <see cref="IFetchPlanner.TryMatch{TDoc,TId}" /> returns <see langword="true" /> wins, so a
+    ///     custom planner can either handle an aggregate type the built-ins would not, or take one over from
+    ///     them. Returning <see langword="false" /> for everything you do not recognize leaves Marten's
+    ///     behavior completely unchanged.
+    ///     </para>
+    ///     <para>
+    ///     The resolved plan is cached per <c>(TDoc, TId)</c> pair, so <see cref="IFetchPlanner.TryMatch{TDoc,TId}" />
+    ///     is called once per aggregate type rather than once per fetch. Register planners during
+    ///     <c>AddMarten()</c> configuration; adding one after the store is built has no effect on types that
+    ///     have already been resolved.
+    ///     </para>
+    /// </remarks>
+    public List<IFetchPlanner> FetchPlanners { get; } = new();
 
     /// <summary>
     ///     #4953: when true (the default), the async daemon's high water detection consults PostgreSQL
