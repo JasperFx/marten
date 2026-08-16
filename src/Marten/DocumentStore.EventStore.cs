@@ -22,6 +22,7 @@ using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
 using Marten.Events.Projections;
 using Marten.Exceptions;
+using Marten.Internal;
 using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
 using Marten.Schema;
@@ -728,6 +729,15 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     async Task IEventStore.CompactStreamAsync(Guid streamId, CancellationToken token)
     {
         await using var session = LightweightSession();
+
+        // Assert the identity BEFORE looking the stream up, because FetchStreamStateAsync does not
+        // guard on StreamIdentity itself and neither pre-existing outcome named the actual mistake:
+        // the string overload on a Guid store matched nothing and fell into the "stream not found"
+        // guard below (a misdiagnosis — the stream is there, just identified the other way), while
+        // this Guid overload on a string store reached Npgsql with a null parameter and surfaced
+        // "Parameter '' cannot be null, DBNull.Value should be used instead."
+        Options.EventGraph.EnsureAsGuidStorage((IMartenSession)session);
+
         var state = await session.Events.FetchStreamStateAsync(streamId, token).ConfigureAwait(false);
         if (state?.AggregateType == null)
         {
@@ -742,6 +752,10 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     async Task IEventStore.CompactStreamAsync(string streamKey, CancellationToken token)
     {
         await using var session = LightweightSession();
+
+        // See the Guid overload above.
+        Options.EventGraph.EnsureAsStringStorage((IMartenSession)session);
+
         var state = await session.Events.FetchStreamStateAsync(streamKey, token).ConfigureAwait(false);
         if (state?.AggregateType == null)
         {

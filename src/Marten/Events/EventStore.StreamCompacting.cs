@@ -36,6 +36,14 @@ internal partial class EventStore
     public async Task CompactStreamAsync<T>(string streamKey, Action<StreamCompactingRequest<T>>? configure = null)
         where T : class
     {
+        // Reject the wrong overload the same way every other identity-sensitive entry point does
+        // (see EventStore.ConcurrentAppends and EventStore.FetchForWriting). Without this the
+        // request carries a null StreamId into ExecuteAsync, which branches on the store's
+        // configured StreamIdentity rather than on which overload was called, and the caller got
+        // "Nullable object must have a value" from request.StreamId!.Value -- an error that names
+        // nothing the caller can act on.
+        _store.Events.EnsureAsStringStorage(_session);
+
         var request = new StreamCompactingRequest<T>(streamKey);
         configure?.Invoke(request);
 
@@ -45,6 +53,11 @@ internal partial class EventStore
     public async Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null)
         where T : class
     {
+        // The mirror case is worse than a bad message: on a string-identified store ExecuteAsync
+        // takes the AsString branch, reads a null StreamKey, matches no stream and returns at the
+        // `if (!events.Any()) return;` guard -- so compaction silently did nothing at all.
+        _store.Events.EnsureAsGuidStorage(_session);
+
         var request = new StreamCompactingRequest<T>(streamId);
         configure?.Invoke(request);
 
