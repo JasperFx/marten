@@ -49,6 +49,23 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
             options.Storage.MappingFor(documentType);
         }
 
+        // jasperfx#665/#666 (#5241). ValueTypes carries the strong-typed identifier wrappers the
+        // suite's documents are keyed by, which LoadAsync<T>(object) needs resolved — the one member
+        // of the document contract whose behavior depends on store configuration the contract itself
+        // does not carry.
+        //
+        // Replayed for the same reason as DocumentTypes above, and with the same status: not
+        // strictly required. Marten's identity convention already discovers a strong-typed id from
+        // the document's Id property, which is how every value type these suites currently declare
+        // reaches the store — the four suites pass with this loop deleted, so do not read it as
+        // load-bearing. It is here because the fixture's job is to replay the config it was handed
+        // rather than to rely on a convention reaching the same answer, and a value type that is
+        // NOT a document's Id (a query parameter, a nested identity) would not be discovered.
+        foreach (var valueType in config.ValueTypes)
+        {
+            options.RegisterValueType(valueType);
+        }
+
         _store = new DocumentStore(options);
 
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
