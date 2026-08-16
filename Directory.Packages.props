@@ -252,16 +252,26 @@
          virtuals is told apart from a `new` hiding member, the evolver is handed the registered
          projection instead of a shadow instance, `partial` is only required where the dispatcher
          actually lives, and unregistered published types are reported rather than skipped in
-         silence. The dead opt-out for the removed lambda registration APIs is gone. -->
-    <PackageVersion Include="JasperFx" Version="2.48.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.48.0" />
+         silence. The dead opt-out for the removed lambda registration APIs is gone.
+         JasperFx 2.49.0: jasperfx#665/#666 (marten#5241) — IDocumentReadOperations gains
+         LoadAsync<T>(object id), so store-agnostic code can load a document keyed by a strong-typed
+         identifier. Marten needs NO product change for it: IQuerySession already declares the
+         overload (IQuerySession.cs) and QuerySession implements it publicly, dispatching on
+         id.GetType() — Marten is in fact the store the member was modeled on. It ships with a
+         default implementation (unbox a Guid or string and forward, else NotSupportedException) so
+         Polecat and Fisher can take the bump before adopting it, which means the enforcement lives
+         in DocumentLoadAndStoreCompliance rather than the compiler. What Marten does owe is the
+         fixture line below: DocumentComplianceConfig gained ValueTypes/RegisterValueType<T>() and a
+         fixture that does not replay it fails the two strong-typed facts at runtime. -->
+    <PackageVersion Include="JasperFx" Version="2.49.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.49.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.48.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.49.0" />
     <!--
       Deliberately AHEAD of the rest of the JasperFx line, which stays at 2.41.0 until Marten adopts
       the strong-typed identity compliance suite that landed in 2.42.0. This package is analyzer-only,
@@ -279,11 +289,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.48.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.49.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.48.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.49.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
