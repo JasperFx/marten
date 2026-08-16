@@ -307,6 +307,12 @@ internal sealed class EventLoader: IEventLoader
     internal Task<EventPage> LoadWithSkipAheadAsync(EventRequest request, CancellationToken token)
         => loadWithSkipAheadAsync(request, token);
 
+    // #5239 test seam, same rationale as #4744's above: drive the window-step walk directly so a
+    // regression test can assert the ceiling it reports against the window it actually scanned,
+    // without having to provoke two real statement timeouts to escalate into it. Not used at runtime.
+    internal Task<EventPage> LoadWithWindowStepAsync(EventRequest request, CancellationToken token)
+        => loadWithWindowStepAsync(request, token);
+
     /// <summary>
     /// Skip-ahead strategy: find the MIN(seq_id) matching the type filter after the floor,
     /// then run the normal query starting from there. Avoids scanning non-matching events.
@@ -405,11 +411,20 @@ internal sealed class EventLoader: IEventLoader
             await using var session = (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(Database));
             var page = new EventPage(request.Floor); // Use original floor for page tracking
 
+            // #5239: both counters exist to keep the page's ceiling honest about what this window
+            // actually scanned. skippedEvents mirrors loadNormalAsync so a window that filled the
+            // batch partly with skips is still recognized as full; rowsRead is what decides whether
+            // it is safe to advance past windowCeiling at all (see below).
+            var skippedEvents = 0;
+            var rowsRead = 0;
+
             await using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
             try
             {
                 while (await reader.ReadAsync(token).ConfigureAwait(false))
                 {
+                    rowsRead++;
+
                     try
                     {
                         var @event = await ((ISelector<IEvent>)_storage).ResolveAsync(reader, token).ConfigureAwait(false);
@@ -427,6 +442,7 @@ internal sealed class EventLoader: IEventLoader
                         if (request.ErrorOptions.SkipUnknownEvents)
                         {
                             request.Runtime.Logger.EventUnknown(e.EventTypeName);
+                            skippedEvents++;
                         }
                         else { throw; }
                     }
@@ -436,6 +452,7 @@ internal sealed class EventLoader: IEventLoader
                         {
                             request.Runtime.Logger.EventDeserializationException(e.InnerException!.GetType().Name!, e.Sequence);
                             await request.Runtime.RecordDeadLetterEventAsync(e.ToDeadLetterEvent(request.Name)).ConfigureAwait(false);
+                            skippedEvents++;
                         }
                         else { throw; }
                     }
@@ -446,19 +463,40 @@ internal sealed class EventLoader: IEventLoader
                 await reader.CloseAsync().ConfigureAwait(false);
             }
 
-            if (page.Count > 0)
+            // #5239: return on any row read, not just on a row that made it into the page. A window
+            // whose rows were all skipped (unknown type / deserialization failure) may have had the
+            // LIMIT truncate matching events further up the same window, so advancing past
+            // windowCeiling here would drop them exactly as the ceiling bug below did.
+            if (rowsRead > 0)
             {
-                page.CalculateCeiling(_batchSize, highWater, 0);
+                // #5239: windowCeiling, NOT highWater. The SELECT above is bounded by
+                // (currentFloor, windowCeiling], so that — not the full high-water mark — is the
+                // most this page can claim to have scanned. CalculateCeiling's contract is "if the
+                // page did not fill the batch, the query exhausted everything up to this bound";
+                // passing highWater asserted an exhaustion that never happened, and since the
+                // consumer writes Ceiling as durable projection progress, every matching event
+                // between windowCeiling and highWater was skipped permanently. A window returning
+                // fewer than _batchSize events is the ordinary case here — the window is 10,000
+                // sequence numbers wide and this strategy exists because matching events are
+                // sparse — so that was the common path, not an edge case.
+                //
+                // The full-batch branch stays correct either way, since Last().Sequence is always
+                // <= windowCeiling. Leaving (windowCeiling, highWater] for the next pass is the
+                // intended behaviour of a stepping strategy.
+                page.CalculateCeiling(_batchSize, windowCeiling, skippedEvents);
+
                 // Found events — reset strategy for next batch
                 _currentStrategy = LoadStrategy.Normal;
                 return page;
             }
 
-            // No events in this window — advance
+            // The window returned no rows at all, so nothing in it was elided by the LIMIT and it
+            // is safe to step over.
             currentFloor = windowCeiling;
         }
 
-        // Exhausted the entire range with no matching events
+        // Exhausted the entire range with no matching events. highWater is correct here, unlike in
+        // the loop above: the walk really did scan every window between request.Floor and it.
         var emptyPage = new EventPage(request.Floor);
         emptyPage.CalculateCeiling(_batchSize, highWater, 0);
         return emptyPage;
