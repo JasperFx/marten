@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
@@ -14,7 +15,6 @@ using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
-using JasperFx.Events.Protected;
 using Marten.Events;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
@@ -698,6 +698,33 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         return (IReadOnlyEventStore)session.Events;
     }
 
+    // #5153 lifted both CompactStreamAsync<T> overloads off Marten.Events.IEventStoreOperations and
+    // onto JasperFx.Events.IEventStoreOperations, which left the reflective lookup here resolving to
+    // null on every call. Type.GetMethod does not walk an interface's base interfaces, and its
+    // closed-parameter-signature overload cannot match an open generic method definition either, so
+    // aiming at the moved interface would still have returned null. Reflecting at a private generic
+    // helper instead keeps the resolved signature one Marten owns, and leaves the SaveChangesAsync
+    // and the token that the session level overload expects from its caller in compiled code.
+    private static readonly MethodInfo _compactByStreamId =
+        typeof(DocumentStore).GetMethod(nameof(compactStreamAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    private static readonly MethodInfo _compactByStreamKey =
+        typeof(DocumentStore).GetMethod(nameof(compactStreamByKeyAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
+
+    private static async Task compactStreamAsync<T>(IDocumentSession session, Guid streamId, CancellationToken token)
+        where T : class
+    {
+        await session.Events.CompactStreamAsync<T>(streamId, x => x.CancellationToken = token).ConfigureAwait(false);
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    private static async Task compactStreamByKeyAsync<T>(IDocumentSession session, string streamKey,
+        CancellationToken token) where T : class
+    {
+        await session.Events.CompactStreamAsync<T>(streamKey, x => x.CancellationToken = token).ConfigureAwait(false);
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
     async Task IEventStore.CompactStreamAsync(Guid streamId, CancellationToken token)
     {
         await using var session = LightweightSession();
@@ -708,10 +735,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
                 $"Cannot compact stream {streamId}: stream not found or no aggregate type associated.");
         }
 
-        var method = typeof(Marten.Events.IEventStoreOperations).GetMethod(nameof(Marten.Events.IEventStoreOperations.CompactStreamAsync),
-            [typeof(Guid), typeof(Action<>).MakeGenericType(typeof(StreamCompactingRequest<>).MakeGenericType(state.AggregateType))]);
-        var genericMethod = method!.MakeGenericMethod(state.AggregateType);
-        await ((Task)genericMethod.Invoke(session.Events, [streamId, null])!).ConfigureAwait(false);
+        var genericMethod = _compactByStreamId.MakeGenericMethod(state.AggregateType);
+        await ((Task)genericMethod.Invoke(null, [session, streamId, token])!).ConfigureAwait(false);
     }
 
     async Task IEventStore.CompactStreamAsync(string streamKey, CancellationToken token)
@@ -724,9 +749,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
                 $"Cannot compact stream '{streamKey}': stream not found or no aggregate type associated.");
         }
 
-        var method = typeof(Marten.Events.IEventStoreOperations).GetMethod(nameof(Marten.Events.IEventStoreOperations.CompactStreamAsync),
-            [typeof(string), typeof(Action<>).MakeGenericType(typeof(StreamCompactingRequest<>).MakeGenericType(state.AggregateType))]);
-        var genericMethod = method!.MakeGenericMethod(state.AggregateType);
-        await ((Task)genericMethod.Invoke(session.Events, [streamKey, null])!).ConfigureAwait(false);
+        var genericMethod = _compactByStreamKey.MakeGenericMethod(state.AggregateType);
+        await ((Task)genericMethod.Invoke(null, [session, streamKey, token])!).ConfigureAwait(false);
     }
 }
