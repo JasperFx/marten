@@ -328,6 +328,22 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     // calling through a contract-typed session notices. Pinned by DocumentSessionEventsCompliance.
     JasperFx.Events.IEventStoreOperations JasperFx.Events.Documents.IDocumentSessionOperations.Events => Events;
 
+    // jasperfx#673 (#5250): the StreamActions this session has enlisted but not yet committed, so a
+    // store-agnostic listener or pre-commit hook can read what is about to be written without naming
+    // a store. Same non-covariance trap as the Events accessor above -- PendingChanges.Streams()
+    // returns IList<StreamAction>, and IList<T> is NOT assignable to IReadOnlyList<T>, so the public
+    // surface does not satisfy this member and it would otherwise bind to the interface's throwing
+    // default with no compile error anywhere. Pinned by PendingStreamActionsCompliance.
+    //
+    // Forwards to the work tracker's backing List<StreamAction> rather than PendingChanges.Streams()
+    // .ToArray(): a concrete List<T> DOES implement IReadOnlyList<T>, so this costs no per-call
+    // allocation. That makes it a live view rather than a snapshot, which the contract explicitly
+    // allows -- it says a store may hand back either, and that a caller needing stability across
+    // further appends should copy. The tracker clears this same list on commit rather than replacing
+    // it, so the "committing clears the collection" fact holds through the live view.
+    IReadOnlyList<StreamAction> JasperFx.Events.Documents.IDocumentSessionOperations.PendingStreams
+        => _workTracker.Streams;
+
 
     public void QueueOperation(Weasel.Storage.IStorageOperation storageOperation)
     {

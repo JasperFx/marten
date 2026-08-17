@@ -53,6 +53,19 @@ public class document_session_compliance
 public class document_session_events_compliance
     : DocumentSessionEventsCompliance<MartenDocumentComplianceFixture>;
 
+/*
+ * jasperfx#673 (#5250). The sixth suite, opt-in for the same reason as the fifth, and reusing its
+ * event types -- so the two are enrolled together. Same trap again, one layer down: Marten's
+ * PendingChanges.Streams() returns IList<StreamAction>, and IList<T> is not assignable to
+ * IReadOnlyList<T>, so it did not satisfy IDocumentSessionOperations.PendingStreams either.
+ * DocumentSessionBase now carries the explicit implementation and this is what pins it. The suite's
+ * first fact -- an empty collection on a session with nothing enlisted -- is precisely the one a
+ * store still on the interface's throwing default cannot pass.
+ */
+[Collection(DocumentComplianceCollection.Name)]
+public class pending_stream_actions_compliance
+    : PendingStreamActionsCompliance<MartenDocumentComplianceFixture>;
+
 public static class DocumentComplianceCollection
 {
     public const string Name = "document storage compliance";
