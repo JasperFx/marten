@@ -448,13 +448,14 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
             return explicitSerializer;
         }
 
-        // jasperfx#669: BOTH attributes are honored. Marten.Events.BinaryEventAttribute is what
-        // every existing user wrote; JasperFx.Events.BinaryEventAttribute is the promoted one an
-        // event type shared across Marten / Polecat / Fisher can declare. Two checks rather than
-        // one against a common base because the promoted attribute is sealed, so Marten's cannot
-        // derive from it.
-        if (eventType.IsDefined(typeof(BinaryEventAttribute), inherit: false)
-            || eventType.IsDefined(typeof(JasperFx.Events.BinaryEventAttribute), inherit: false))
+        // jasperfx#669/#672: BOTH spellings are honored, in ONE lookup. Marten.Events
+        // .BinaryEventAttribute is what every existing user wrote; JasperFx.Events
+        // .BinaryEventAttribute is the promoted one an event type shared across Marten / Polecat /
+        // Fisher can declare. Marten's now derives from the promoted one (2.51.0 unsealed it for
+        // exactly this), and IsDefined matches attributes assignable to the requested type, so the
+        // base lookup finds the subclass. `inherit: false` is unrelated and stays as it was — it
+        // governs the EVENT type's hierarchy, not the attribute class's.
+        if (eventType.IsDefined(typeof(JasperFx.Events.BinaryEventAttribute), inherit: false))
         {
             if (DefaultBinarySerializer is null)
             {

@@ -75,6 +75,25 @@ public class binary_event_serializer_promotion
             .IsBinary.ShouldBeTrue();
     }
 
+    /// <summary>
+    /// jasperfx#672: the promoted attribute was unsealed so Marten's own could derive from it, which
+    /// is what lets ResolveBinarySerializerFor do ONE lookup instead of two. If someone ever unpicks
+    /// the derivation, martens_own_binary_event_attribute_is_still_honored above starts failing —
+    /// this says why, so the fix is to restore the base type rather than to re-add the second check.
+    /// </summary>
+    [Fact]
+    public void martens_attribute_derives_from_the_promoted_one()
+    {
+        typeof(Marten.Events.BinaryEventAttribute)
+            .IsAssignableTo(typeof(JasperFx.Events.BinaryEventAttribute))
+            .ShouldBeTrue();
+
+        // ...which is the whole mechanism: a lookup for the base finds the subclass.
+        typeof(PromotionMartenMarked)
+            .IsDefined(typeof(JasperFx.Events.BinaryEventAttribute), inherit: false)
+            .ShouldBeTrue();
+    }
+
     [Fact]
     public void an_unmarked_event_type_stays_on_the_json_path()
     {
