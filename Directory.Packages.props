@@ -262,16 +262,28 @@
          Polecat and Fisher can take the bump before adopting it, which means the enforcement lives
          in DocumentLoadAndStoreCompliance rather than the compiler. What Marten does owe is the
          fixture line below: DocumentComplianceConfig gained ValueTypes/RegisterValueType<T>() and a
-         fixture that does not replay it fails the two strong-typed facts at runtime. -->
-    <PackageVersion Include="JasperFx" Version="2.49.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.49.0" />
+         fixture that does not replay it fails the two strong-typed facts at runtime.
+         JasperFx 2.50.0: jasperfx#669/#671 — two additive changes. (1) The document session
+         contracts gain an Events accessor: IDocumentReadOperations.Events (IQueryEventStore) and
+         IDocumentSessionOperations.Events (IEventStoreOperations), both with throwing defaults.
+         ⚠️ Marten did NOT satisfy either implicitly, on BOTH tiers: its sessions declare Events as
+         Marten.Events.IQueryEventStore / Marten.Events.IEventStoreOperations — Marten's own
+         subtypes — and C# interface implementation is not return-type covariant, so both members
+         bound to the throwing defaults with no compile error anywhere. QuerySession and
+         DocumentSessionBase now carry one explicit interface implementation each, pinned by
+         DocumentSessionEventsCompliance. (2) IEventBinarySerializer and BinaryEventAttribute are
+         promoted out of Marten.Events into JasperFx.Events; Marten's interface now derives from the
+         core one, its attribute is checked alongside the core one (which is sealed, so no
+         inheritance), and the registration surface is widened to the core interface. -->
+    <PackageVersion Include="JasperFx" Version="2.50.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.50.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.49.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.50.0" />
     <!--
       Deliberately AHEAD of the rest of the JasperFx line, which stays at 2.41.0 until Marten adopts
       the strong-typed identity compliance suite that landed in 2.42.0. This package is analyzer-only,
@@ -289,11 +301,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.49.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.50.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.49.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.50.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

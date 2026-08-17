@@ -212,6 +212,21 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
         public void AddEventType(Type eventType) => _options.Events.AddEventType(eventType);
 
+        /// <summary>
+        ///     jasperfx#669: both binary-serialization members take the promoted
+        ///     <see cref="JasperFx.Events.IEventBinarySerializer" />, which Marten's registration surface was
+        ///     widened to accept in 9.26. Before that widening these could only have been implemented by
+        ///     wrapping the compliance suite's serializer in a Marten-namespaced adapter — the exact
+        ///     per-store duplication the promotion exists to delete.
+        /// </summary>
+        public void UseBinarySerializer<TEvent>(JasperFx.Events.IEventBinarySerializer serializer)
+            where TEvent : notnull
+            => _options.Events.UseBinarySerializer<TEvent>(serializer);
+
+        /// <inheritdoc cref="UseBinarySerializer{TEvent}" />
+        public void SetDefaultBinarySerializer(JasperFx.Events.IEventBinarySerializer serializer)
+            => _options.Events.DefaultBinarySerializer = serializer;
+
         public ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull
             => _options.Events.RegisterTagType<TTag>(tableSuffix);
 

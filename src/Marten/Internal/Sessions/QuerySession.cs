@@ -44,6 +44,14 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
     public StoreOptions Options { get; }
     public IQueryEventStore Events { get; }
 
+    // jasperfx#669: the read tier of the store-agnostic Events accessor. The public property above
+    // is Marten.Events.IQueryEventStore -- Marten's OWN subtype of JasperFx.Events.IQueryEventStore,
+    // which the `using Marten.Events;` at the top of this file is what makes the unqualified name
+    // resolve to. Interface implementation is not return-type covariant, so it does NOT satisfy
+    // IDocumentReadOperations.Events; absent this line the member binds to the throwing default with
+    // no compile error. Pinned by DocumentSessionEventsCompliance.
+    JasperFx.Events.IQueryEventStore JasperFx.Events.Documents.IDocumentReadOperations.Events => Events;
+
     protected virtual IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
     {
         return new QueryEventStore(this, store, tenant);

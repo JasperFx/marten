@@ -26,19 +26,17 @@ namespace Marten.Events;
 ///         store-wide <c>opts.Events.DefaultBinarySerializer</c> if one is set.
 ///     </para>
 /// </remarks>
-public interface IEventBinarySerializer
+public interface IEventBinarySerializer: JasperFx.Events.IEventBinarySerializer
 {
-    /// <summary>
-    ///     Serialize an event data instance to bytes.
-    /// </summary>
-    /// <param name="type">The runtime CLR type of the event data.</param>
-    /// <param name="data">The event data to serialize.</param>
-    byte[] Serialize(Type type, object data);
-
-    /// <summary>
-    ///     Deserialize bytes back into an event data instance.
-    /// </summary>
-    /// <param name="type">The target CLR type to deserialize into.</param>
-    /// <param name="data">The bytes previously produced by <see cref="Serialize"/>.</param>
-    object Deserialize(Type type, byte[] data);
+    // jasperfx#669 / JasperFx 2.50.0: the contract was promoted verbatim into JasperFx.Events so
+    // one serializer implementation can serve every Critter Stack store. Both members
+    // (byte[] Serialize(Type, object) and object Deserialize(Type, byte[])) now come from the core
+    // interface -- this one deliberately declares NOTHING of its own.
+    //
+    // Keeping the Marten-namespaced name as a derived interface is what makes the move
+    // non-breaking in both directions: an existing `class MySerializer : Marten.Events.IEventBinarySerializer`
+    // keeps compiling untouched AND now satisfies the core type, while Marten's registration
+    // surface (EventGraph.UseBinarySerializer / DefaultBinarySerializer) has been widened to accept
+    // the core type so a store-agnostic serializer can be registered without implementing anything
+    // Marten-specific.
 }

@@ -51,6 +51,30 @@ The recommended session type for read/write operations is `LightweightSession`, 
 For read-only access, use `QuerySession`.
 :::
 
+## Reaching the event store from a store-agnostic session <Badge type="tip" text="9.26" />
+
+Marten's sessions implement the shared Critter Stack session contracts in `JasperFx.Events.Documents`,
+which is what lets one body of code be compiled against Marten, Polecat or Fisher. As of 9.26 those
+contracts carry an `Events` accessor, so a consumer holding a session as the shared contract can
+reach the event store without naming a Marten type:
+
+```csharp
+// The session was opened through the shared IDocumentSessionFactory, so nothing here
+// knows it is talking to Marten.
+IDocumentSessionOperations session = factory.LightweightSession();
+
+session.Events.StartStream<Order>(streamKey, new OrderPlaced(/* ... */));
+await session.SaveChangesAsync(token);
+```
+
+The split mirrors Marten's own: `IDocumentReadOperations.Events` is read-only
+(`IQueryEventStore`), and `IDocumentSessionOperations.Events` adds appending
+(`IEventStoreOperations`) — so a query session cannot append. Appends made through the accessor ride
+the session's unit of work exactly as `Store()` does; nothing is written until `SaveChangesAsync`.
+
+Nothing changes for code that holds a Marten session as `IQuerySession` / `IDocumentSession` — that
+is the same `Events` property it always was.
+
 ## Read Only QuerySession
 
 For strictly read-only querying, the `QuerySession` is a lightweight session that is optimized
