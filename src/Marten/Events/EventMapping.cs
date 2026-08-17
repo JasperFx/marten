@@ -50,12 +50,6 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
         _parent = parent;
         DocumentType = eventType;
 
-        // #4515: pick up binary-serializer wiring at construction. Either an
-        // explicit per-type registration via UseBinarySerializer<T>(...) or
-        // the BinaryEventAttribute + store-wide DefaultBinarySerializer.
-        // Null = plain JSON-serialized event (the existing path).
-        BinarySerializer = parent.ResolveBinarySerializerFor(eventType);
-
         IdMember = DocumentType.GetProperty(nameof(IEvent.Id))!;
 
         _inner = new DocumentMapping(eventType, parent.Options);
@@ -79,8 +73,43 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
     ///     row's <c>bdata IS NULL</c> state so JSON-serialized rows for the same
     ///     event type still read correctly.
     /// </summary>
+    /// <remarks>
+    ///     Resolved <strong>lazily</strong>, and that is load-bearing rather than an optimization.
+    ///     It used to be resolved in this constructor, which made the store options
+    ///     order-dependent in a way nothing announced: <c>opts.Events.AddEventType&lt;T&gt;()</c>
+    ///     builds the mapping eagerly, so registering a <c>[BinaryEvent]</c> type <em>before</em>
+    ///     assigning <c>opts.Events.DefaultBinarySerializer</c> threw
+    ///     "no IEventBinarySerializer was registered" out of what looks like a plain type
+    ///     registration — while the reverse order worked. Resolving on first read defers the
+    ///     failure to first use, which is what the documentation always claimed and what makes the
+    ///     fluent options builder order-insensitive. Caught by
+    ///     <c>BinaryEventSerializationCompliance</c>, whose config registers event types first.
+    /// </remarks>
     [IgnoreDescription]
-    public IEventBinarySerializer? BinarySerializer { get; internal set; }
+    public JasperFx.Events.IEventBinarySerializer? BinarySerializer
+    {
+        get
+        {
+            if (!_binarySerializerResolved)
+            {
+                // Deliberately NOT latched before the call: ResolveBinarySerializerFor throws for
+                // an attribute-marked type with no serializer registered yet, and a later
+                // DefaultBinarySerializer assignment has to still be able to satisfy it.
+                _binarySerializer = _parent.ResolveBinarySerializerFor(DocumentType);
+                _binarySerializerResolved = true;
+            }
+
+            return _binarySerializer;
+        }
+        internal set
+        {
+            _binarySerializer = value;
+            _binarySerializerResolved = true;
+        }
+    }
+
+    private JasperFx.Events.IEventBinarySerializer? _binarySerializer;
+    private bool _binarySerializerResolved;
 
     /// <summary>
     /// #4680: true when this <see cref="EventMapping"/> was created by

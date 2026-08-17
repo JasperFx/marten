@@ -26,6 +26,23 @@ namespace Marten.Events;
 ///         continue to read through the JSON path.
 ///     </para>
 /// </remarks>
+/// <remarks>
+///     <para>
+///         jasperfx#669 / JasperFx 2.50.0: the attribute was promoted into
+///         <see cref="JasperFx.Events.BinaryEventAttribute"/> so an event type shared by source
+///         compiled against several Critter Stack stores can declare its intent once. Marten
+///         honors <strong>both</strong> spellings — <see cref="EventGraph.ResolveBinarySerializerFor"/>
+///         tests for either attribute — so this one keeps working untouched and no existing user
+///         has anything to change. Prefer the JasperFx attribute in new code, and use it in any
+///         event type shared across stores.
+///     </para>
+///     <para>
+///         The two are checked separately rather than this one deriving from the core attribute
+///         (which would have let a single <c>IsDefined</c> against the base cover both): the
+///         promoted <c>JasperFx.Events.BinaryEventAttribute</c> is <c>sealed</c>, so there is no
+///         inheritance to lean on.
+///     </para>
+/// </remarks>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
 public sealed class BinaryEventAttribute: Attribute
 {

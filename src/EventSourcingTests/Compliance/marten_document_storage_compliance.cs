@@ -39,6 +39,20 @@ public class document_delete_compliance
 public class document_session_compliance
     : DocumentSessionCompliance<MartenDocumentComplianceFixture>;
 
+/*
+ * jasperfx#669. The fifth suite, and the only opt-in one of the five -- it requires the store to be
+ * an event store as well as a document store. It exists to catch a silent failure: C# interface
+ * implementation is not return-type covariant, so Marten's sessions, which already declared an
+ * `Events` property of Marten's OWN IQueryEventStore / IEventStoreOperations, did not implement
+ * IDocumentReadOperations.Events or IDocumentSessionOperations.Events at all -- both bound to the
+ * interfaces' throwing default implementations with no compile error anywhere. Both tiers now carry
+ * an explicit interface implementation (QuerySession / DocumentSessionBase) and this is what pins
+ * them.
+ */
+[Collection(DocumentComplianceCollection.Name)]
+public class document_session_events_compliance
+    : DocumentSessionEventsCompliance<MartenDocumentComplianceFixture>;
+
 public static class DocumentComplianceCollection
 {
     public const string Name = "document storage compliance";

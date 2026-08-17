@@ -320,6 +320,14 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     public new Marten.Events.IEventStoreOperations Events => (Marten.Events.IEventStoreOperations)base.Events;
 
+    // jasperfx#669: the write tier of the store-agnostic Events accessor. C# interface
+    // implementation is NOT return-type covariant, so the public property above -- typed as
+    // Marten.Events.IEventStoreOperations, which *derives* from the JasperFx one -- does not
+    // satisfy IDocumentSessionOperations.Events. Without this line the member silently binds to
+    // the interface's throwing default implementation, with no compile error anywhere; only a test
+    // calling through a contract-typed session notices. Pinned by DocumentSessionEventsCompliance.
+    JasperFx.Events.IEventStoreOperations JasperFx.Events.Documents.IDocumentSessionOperations.Events => Events;
+
 
     public void QueueOperation(Weasel.Storage.IStorageOperation storageOperation)
     {

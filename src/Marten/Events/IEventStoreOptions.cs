@@ -250,8 +250,14 @@ namespace Marten.Events
         ///     serializer was wired via <see cref="UseBinarySerializer{TEvent}"/>. Default
         ///     is <c>null</c>; setting this is what makes attribute-only opt-in work for
         ///     the common case of one binary serializer per store. See #4515.
+        ///     <para>
+        ///         Typed as the promoted <see cref="JasperFx.Events.IEventBinarySerializer"/> since
+        ///         9.26 (jasperfx#669) so a store-agnostic serializer can be registered. Marten's
+        ///         own <see cref="IEventBinarySerializer"/> derives from it, so existing
+        ///         implementations still assign here unchanged.
+        ///     </para>
         /// </summary>
-        public IEventBinarySerializer? DefaultBinarySerializer { get; set; }
+        public JasperFx.Events.IEventBinarySerializer? DefaultBinarySerializer { get; set; }
 
         /// <summary>
         ///     Opt a single event type into binary serialization (#4515). The event's
@@ -261,9 +267,14 @@ namespace Marten.Events
         ///     the registry (no separate <see cref="AddEventType{TEvent}"/> call needed).
         /// </summary>
         /// <typeparam name="TEvent">CLR event type to opt in.</typeparam>
-        /// <param name="serializer">Per-type serializer to use for this event.</param>
+        /// <param name="serializer">
+        ///     Per-type serializer to use for this event. Widened to the promoted
+        ///     <see cref="JasperFx.Events.IEventBinarySerializer"/> in 9.26 (jasperfx#669); Marten's
+        ///     own <see cref="IEventBinarySerializer"/> derives from it, so existing call sites are
+        ///     unaffected.
+        /// </param>
         /// <returns>Event store options, to allow fluent definition.</returns>
-        IEventStoreOptions UseBinarySerializer<TEvent>(IEventBinarySerializer serializer);
+        IEventStoreOptions UseBinarySerializer<TEvent>(JasperFx.Events.IEventBinarySerializer serializer);
 
         /// <summary>
         ///     Maps CLR event type as particular event type name. This is useful for event type migration.

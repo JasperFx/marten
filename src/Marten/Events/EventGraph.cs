@@ -406,13 +406,13 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     // constructor calls ResolveBinarySerializerFor when the mapping is built
     // (lazily on first use); UseBinarySerializer<T> populates this dictionary
     // ahead of time so the resolution lands on the registered instance.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<Type, IEventBinarySerializer> _binarySerializerByType = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<Type, JasperFx.Events.IEventBinarySerializer> _binarySerializerByType = new();
 
     /// <inheritdoc />
-    public IEventBinarySerializer? DefaultBinarySerializer { get; set; }
+    public JasperFx.Events.IEventBinarySerializer? DefaultBinarySerializer { get; set; }
 
     /// <inheritdoc />
-    public IEventStoreOptions UseBinarySerializer<TEvent>(IEventBinarySerializer serializer)
+    public IEventStoreOptions UseBinarySerializer<TEvent>(JasperFx.Events.IEventBinarySerializer serializer)
     {
         if (serializer == null) throw new ArgumentNullException(nameof(serializer));
 
@@ -441,14 +441,20 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     ///     beats <see cref="BinaryEventAttribute"/> + <see cref="DefaultBinarySerializer"/>.
     ///     Returns <c>null</c> for plain JSON events.
     /// </summary>
-    internal IEventBinarySerializer? ResolveBinarySerializerFor(Type eventType)
+    internal JasperFx.Events.IEventBinarySerializer? ResolveBinarySerializerFor(Type eventType)
     {
         if (_binarySerializerByType.TryGetValue(eventType, out var explicitSerializer))
         {
             return explicitSerializer;
         }
 
-        if (eventType.IsDefined(typeof(BinaryEventAttribute), inherit: false))
+        // jasperfx#669: BOTH attributes are honored. Marten.Events.BinaryEventAttribute is what
+        // every existing user wrote; JasperFx.Events.BinaryEventAttribute is the promoted one an
+        // event type shared across Marten / Polecat / Fisher can declare. Two checks rather than
+        // one against a common base because the promoted attribute is sealed, so Marten's cannot
+        // derive from it.
+        if (eventType.IsDefined(typeof(BinaryEventAttribute), inherit: false)
+            || eventType.IsDefined(typeof(JasperFx.Events.BinaryEventAttribute), inherit: false))
         {
             if (DefaultBinarySerializer is null)
             {

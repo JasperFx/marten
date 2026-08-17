@@ -8,6 +8,13 @@ ergonomic wins for a meaningful throughput and storage-size improvement on
 hot streams. See [#4515](https://github.com/JasperFx/marten/issues/4515) for
 the design discussion.
 
+::: tip New in 9.26
+Both `IEventBinarySerializer` and `[BinaryEvent]` now live in **`JasperFx.Events`**, shared by every
+Critter Stack store, so one serializer implementation and one attribute serve Marten, Polecat and
+Fisher alike. The Marten-namespaced spellings still work exactly as before — see
+[Store-agnostic serializers and events](#store-agnostic-serializers-and-events) below.
+:::
+
 The opt-in is **per event type** — binary-serialized and JSON-serialized events
 coexist in the same `mt_events` table, so the feature can be rolled out on an
 existing store with **no migration of existing data**.
@@ -87,15 +94,79 @@ public partial record TripEnded(Guid TripId, DateTimeOffset EndedAt);
 opts.Events.UseBinarySerializer<TripEnded>(new MemoryPackEventSerializer());
 ```
 
-Resolution order on `EventMapping` construction:
+Resolution order:
 
 1. Explicit `opts.Events.UseBinarySerializer<TEvent>(...)` for that type.
 2. `[BinaryEvent]` attribute + `opts.Events.DefaultBinarySerializer`.
 3. Otherwise, plain JSON (existing path).
 
 If a type carries `[BinaryEvent]` but no per-type serializer was wired AND
-`DefaultBinarySerializer` is `null`, Marten throws at the first append with a
+`DefaultBinarySerializer` is `null`, Marten throws at the first use with a
 remediation message naming both registration entry points.
+
+**Registration order does not matter.** Resolution happens on first use, not when the event type is
+registered, so these two are equivalent:
+
+```csharp
+// Either order works.
+opts.Events.AddEventType(typeof(TripEnded));
+opts.Events.DefaultBinarySerializer = new MemoryPackEventSerializer();
+
+opts.Events.DefaultBinarySerializer = new MemoryPackEventSerializer();
+opts.Events.AddEventType(typeof(TripEnded));
+```
+
+::: warning Fixed in 9.26
+Before 9.26 the serializer was resolved when the `EventMapping` was built, which made the first
+ordering above throw `"no IEventBinarySerializer was registered"` out of what looks like a plain
+type registration.
+:::
+
+## Store-agnostic serializers and events
+
+As of 9.26 the two public building blocks of this feature are shared across the Critter Stack rather
+than owned by Marten:
+
+| Type | Home |
+| --- | --- |
+| `IEventBinarySerializer` | `JasperFx.Events` |
+| `BinaryEventAttribute` (`[BinaryEvent]`) | `JasperFx.Events` |
+
+That matters if you compile one body of event definitions against more than one store — the shape
+the store-agnostic document/session contracts already exist for. Write the serializer once against
+the JasperFx interface and register it with Marten directly:
+
+```csharp
+using JasperFx.Events;
+
+public sealed class MessagePackEventSerializer : IEventBinarySerializer  // JasperFx.Events
+{
+    public byte[] Serialize(Type type, object data) => /* ... */;
+    public object Deserialize(Type type, byte[] data) => /* ... */;
+}
+
+// Marten's registration surface takes the JasperFx interface, so nothing Marten-specific
+// is needed to wire it up.
+opts.Events.DefaultBinarySerializer = new MessagePackEventSerializer();
+opts.Events.UseBinarySerializer<TripStarted>(new MessagePackEventSerializer());
+```
+
+Likewise, mark shared event types with `JasperFx.Events.BinaryEventAttribute` so the same declaration
+is honored by every store.
+
+### Nothing existing breaks
+
+- `Marten.Events.IEventBinarySerializer` still exists and now simply **derives** from the JasperFx
+  interface while declaring nothing of its own. An existing serializer class compiles untouched and
+  is accepted everywhere the JasperFx interface is.
+- `Marten.Events.BinaryEventAttribute` still exists and is still honored. Marten checks for **both**
+  attributes, so a type marked with either is picked up. (Two checks rather than one against a
+  common base because the JasperFx attribute is `sealed`.)
+- `opts.Events.DefaultBinarySerializer` and `opts.Events.UseBinarySerializer<TEvent>(...)` were
+  *widened* to accept the JasperFx interface. Every existing call site still compiles, because the
+  Marten interface derives from it.
+
+Prefer the JasperFx spellings in new code.
 
 ## Bring your own serializer
 
@@ -103,6 +174,8 @@ remediation message naming both registration entry points.
 binary format — MessagePack, protobuf, etc.:
 
 ```csharp
+// JasperFx.Events (9.26+); Marten.Events.IEventBinarySerializer derives from it
+// and is still accepted everywhere.
 public interface IEventBinarySerializer
 {
     byte[] Serialize(Type type, object data);

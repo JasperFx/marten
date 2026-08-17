@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Events;
 using JasperFx.Events.ComplianceTests;
 using JasperFx.Events.Documents;
 
@@ -64,6 +65,22 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
         foreach (var valueType in config.ValueTypes)
         {
             options.RegisterValueType(valueType);
+        }
+
+        // jasperfx#669. Only DocumentSessionEventsCompliance populates this, and unlike the two
+        // loops above it IS load-bearing: that suite appends through a session's Events accessor
+        // with a *string* stream key, and Marten's default StreamIdentity is Guid — so without the
+        // switch below every fact in it fails on the append rather than on the accessor it is
+        // there to hold to a definition. Conditional on the list being non-empty so the four
+        // document-only suites, which share this schema, never provoke event storage at all.
+        if (config.EventTypes.Count != 0)
+        {
+            options.Events.StreamIdentity = StreamIdentity.AsString;
+
+            foreach (var eventType in config.EventTypes)
+            {
+                options.Events.AddEventType(eventType);
+            }
         }
 
         _store = new DocumentStore(options);
