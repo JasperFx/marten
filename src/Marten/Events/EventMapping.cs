@@ -109,7 +109,13 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
     }
 
     private JasperFx.Events.IEventBinarySerializer? _binarySerializer;
-    private bool _binarySerializerResolved;
+
+    // volatile, and it matters now that resolution is lazy: the flag's release/acquire semantics are
+    // what stop a racing reader from seeing "resolved" before the serializer reference it guards is
+    // visible. Reading null there would silently route a binary event down the JSON path -- a data
+    // corruption rather than an exception. Resolution itself is idempotent, so a duplicated race is
+    // harmless.
+    private volatile bool _binarySerializerResolved;
 
     /// <summary>
     /// #4680: true when this <see cref="EventMapping"/> was created by
