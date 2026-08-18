@@ -1,10 +1,12 @@
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
+using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Storage;
 using Weasel.Postgresql;
 using System.Diagnostics.CodeAnalysis;
+using JasperFx.Events.Fetching;
 
 namespace Marten.Events.Fetching;
 
@@ -20,6 +22,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     private readonly IDocumentStorage<TDoc, TId> _storage;
     private readonly string _versionSelectionSql;
     private readonly string _aggregateTypeName = typeof(TDoc).FullNameInCode();
+    private readonly string _cachedVersionSelectionSql;
+    private readonly IAggregateWriteCache? _cache;
     private string? _initialSql;
 
     public FetchAsyncPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
@@ -48,6 +52,20 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
             _versionSelectionSql =
                 $" left outer join {storage.TableName.QualifiedName} as a on d.stream_id = a.id and d.tenant_id = a.tenant_id where (a.mt_version is NULL or d.version > a.mt_version) and d.stream_id = ";
         }
+
+        // The cached path knows its baseline version up front, so it needs no join to the aggregate
+        // table at all -- just the events after the snapshot we already hold.
+        _cachedVersionSelectionSql = " where d.stream_id = ";
+
+        // Resolved once per plan, never per fetch. ResolveCache(Type) hands back
+        // NulloAggregateWriteCache for a type nobody enrolled, so a store *may* drop this branch and
+        // let every take miss -- Marten deliberately does not. The cached path builds an
+        // AggregateCacheKey per fetch, which boxes the stream id, and dropping the branch would put
+        // that allocation on every FetchForWriting in every store that never opted in.
+        if (_events.AggregateWriteCaching.IsEnabled(typeof(TDoc)))
+        {
+            _cache = _events.AggregateWriteCaching.ResolveCache(typeof(TDoc));
+        }
     }
 
     public bool IsGlobal { get; }
@@ -68,5 +86,40 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
             builder.Append(" and d.tenant_id = ");
             builder.AppendParameter(builder.TenantId);
         }
+    }
+
+    /// <summary>
+    ///     The delta query for a cache hit: only the events after the version of the snapshot we already
+    ///     hold in memory. Mirrors the tenancy branching of <see cref="writeEventFetchStatement" />.
+    /// </summary>
+    private void writeCachedEventFetchStatement(TId id, long baselineVersion, ICommandBuilder builder)
+    {
+        builder.Append(_initialSql!);
+        builder.Append(_cachedVersionSelectionSql);
+        builder.AppendParameter(id);
+
+        builder.Append(" and d.version > ");
+        builder.AppendParameter(baselineVersion);
+
+        // You must do this for performance even if the stream ids were
+        // magically unique across tenants
+        if (_events.TenancyStyle == TenancyStyle.Conjoined && !_events.GlobalAggregates.Contains(typeof(TDoc)))
+        {
+            builder.Append(" and d.tenant_id = ");
+            builder.AppendParameter(builder.TenantId);
+        }
+    }
+
+    /// <summary>
+    ///     Composes the cache key for a stream. Getting the tenant or database wrong here would be a
+    ///     cross-tenant data leak rather than a performance bug, so both are always part of the key.
+    /// </summary>
+    private AggregateCacheKey cacheKeyFor(DocumentSessionBase session, TId id)
+    {
+        return new AggregateCacheKey(
+            typeof(TDoc),
+            session.Database.Identifier,
+            IsGlobal ? AggregateCacheKey.GlobalTenant : session.TenantId,
+            id);
     }
 }

@@ -233,6 +233,18 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         public void Snapshot<TDoc>(SnapshotLifecycle lifecycle) where TDoc : notnull
             => _options.Projections.Snapshot<TDoc>(lifecycle);
 
+        /// <summary>
+        ///     jasperfx#674 (#5251). Two lines against the shared <c>EventRegistry</c> surface, which is
+        ///     the point: the enrollment and the cache slot are both inherited, and all the registrar
+        ///     supplies is which options object the store hangs its event registry off.
+        /// </summary>
+        public void CacheAggregatesForWriting<TDoc>(JasperFx.Events.Fetching.IAggregateWriteCache cache)
+            where TDoc : class
+        {
+            _options.Events.AggregateWriteCaching.Cache = cache;
+            _options.Events.CacheAggregatesForWriting<TDoc>();
+        }
+
         public void LiveAggregation<TDoc>() where TDoc : notnull
             => _options.Projections.LiveStreamAggregation<TDoc>();
 

@@ -152,6 +152,76 @@ so that updates from new events can be directly applied to the in memory documen
 load those documents over and over again from the database as new events trickle in. This is of course much more effective
 when your projection is constantly updating a relatively small number of different aggregates.
 
+## Caching Aggregate Snapshots for FetchForWriting <Badge type="tip" text="9.26" />
+
+The cache above is the *daemon's*. This one is the command side's: an opt-in, node-local cache of aggregate
+snapshots that lets `FetchForWriting` skip loading the stored snapshot and read only the events after it.
+Think of it as an identity map for aggregates with a lifetime longer than a session.
+
+It is off for every aggregate type, and is enabled per type:
+
+```csharp
+opts.Projections.Snapshot<Order>(SnapshotLifecycle.Async);
+
+// Keep up to 1000 recently fetched Order snapshots
+opts.Events.CacheAggregatesForWriting<Order>(sizeLimit: 1000);
+```
+
+Per type rather than store-wide because the win is proportional to how often *one* stream is fetched for
+writing. It is real on a hot aggregate under high message volume, and only overhead on an aggregate
+written once.
+
+### What it does and does not skip
+
+The cached snapshot is only ever a **baseline**. On every call Marten still reads the stream version and
+every event after the cached version from the database, folds those onto the baseline, and leaves the
+optimistic concurrency assertion on append completely untouched. So a stale entry costs a larger delta
+query — never a wrong aggregate, and never a suppressed `EventStreamUnexpectedMaxEventIdException`.
+
+That is what makes a node-local, deliberately incoherent cache the right shape here, and why there is no
+coherence protocol between nodes and no `IDistributedCache` option: a distributed cache would reintroduce
+exactly the round trip this exists to remove.
+
+::: warning
+A "trusted" variant that also skipped the version read was built, measured and **retired**: it was worth
+0.19 ms of a 13.2 ms round, about 1.4%, in exchange for the concurrency guarantee. Do not reintroduce it.
+:::
+
+### The two lifecycles differ
+
+| | Async | Inline |
+| --- | --- | --- |
+| Cached entry is | a baseline; newer events are folded onto it | usable only on an **exact** version match |
+| Written to the cache | as soon as the fetch completes | only **after a successful commit** |
+
+The asymmetry is not an implementation accident. An Inline snapshot is written in the same transaction as
+the events, so it is always exactly at the stream head and there is no delta query to reconcile a stale
+entry with. And under Inline the projection applies the caller's appended events to the very instance
+`FetchForWriting` handed out, during `SaveChangesAsync` — so an entry written at fetch time would describe
+state that is durable only if that commit happens to succeed. Deferring the write to after the commit
+removes the hazard rather than mitigating it: a rolled-back commit simply leaves no entry, and the next
+fetch reloads from the database.
+
+### Supplying your own cache
+
+The default is a bounded, least-recently-used, in-process cache. Substitute any implementation of the
+three-member `JasperFx.Events.Fetching.IAggregateWriteCache`:
+
+```csharp
+opts.Events.AggregateWriteCaching.Cache = new MyAggregateWriteCache();
+opts.Events.CacheAggregatesForWriting<Order>();
+```
+
+One requirement an implementation owes callers, because it is a correctness property rather than a
+performance detail: `TryTake` must **remove** the entry in the same atomic step it hands it out.
+Aggregates are commonly mutable and Marten folds delta events onto the instance it is given, so exactly
+one caller may ever win an entry. Concurrent callers miss and take the normal uncached path, which is
+always correct. Beyond that an implementation may evict whenever it likes — dropping an entry is always
+sound.
+
+`IAggregateWriteCache` and its supporting types live in `JasperFx.Events`, shared across the Critter
+Stack, so one cache implementation serves Marten, Polecat and Fisher alike.
+
 ## Event Type Index for Projection Rebuilds <Badge type="tip" text="8.29" />
 
 If you have projections that filter on a small subset of event types and your event store has
