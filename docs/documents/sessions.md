@@ -75,6 +75,32 @@ the session's unit of work exactly as `Store()` does; nothing is written until `
 Nothing changes for code that holds a Marten session as `IQuerySession` / `IDocumentSession` — that
 is the same `Events` property it always was.
 
+### Reading what a session is about to append
+
+`IDocumentSessionOperations.PendingStreams` exposes the `StreamAction`s a session has queued but not
+yet committed — every `StartStream` and `Append` enlisted since the last `SaveChangesAsync`. It is
+there for a listener or a pre-commit hook that needs to decide something from the events the session
+is about to write, again without naming a store:
+
+```csharp
+IDocumentSessionOperations session = factory.LightweightSession();
+
+session.Events.StartStream<Order>(streamKey, new OrderPlaced(/* ... */));
+
+// One StreamAction, carrying the OrderPlaced event, before anything is written.
+foreach (var stream in session.PendingStreams)
+{
+    // stream.ActionType is Start here; it would be Append against an existing stream.
+}
+
+await session.SaveChangesAsync(token);   // PendingStreams is empty again afterwards
+```
+
+Only the streams are exposed, deliberately — pending **document** operations are not part of the shared
+contract. In Marten this is the same collection as `IDocumentSession.PendingChanges.Streams()`, and
+it is a live view of the session rather than a snapshot, so copy it if you need stability across
+further appends.
+
 ## Read Only QuerySession
 
 For strictly read-only querying, the `QuerySession` is a lightweight session that is optimized
