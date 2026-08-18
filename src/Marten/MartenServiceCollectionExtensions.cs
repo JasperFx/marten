@@ -233,6 +233,24 @@ public static class MartenServiceCollectionExtensions
             options.ReadJasperFxOptions(s.GetService<JasperFxOptions>());
 
             options.InitialData.AddRange(s.GetServices<IInitialData>());
+
+            // jasperfx#679 (#5258). Sweep any store-agnostic IDocumentCommitListener out of the
+            // container and adapt it onto Marten's own listener collection. This runs inside the
+            // StoreOptions factory, and session construction copies Options.Listeners strictly
+            // afterwards (QuerySession's constructors), so every session opened from this store
+            // sees them.
+            //
+            // ⚠️ PRIMARY STORE ONLY, deliberately, and it is the IInitialData line above that sets
+            // the precedent: a bare GetServices<T>() sweep from this factory cannot tell which store
+            // a registration was meant for, so applying it to ancillary stores as well would attach
+            // every listener in the container to every AddMartenStore<T>() in the application --
+            // silently, and with no way to opt one out. Ancillary stores configure through
+            // IConfigureMarten<T>, so their opt-in is
+            // services.ConfigureMarten<T>(opts => opts.AddCommitListener(listener)).
+            foreach (var listener in s.GetServices<JasperFx.Events.Documents.IDocumentCommitListener>())
+            {
+                options.AddCommitListener(listener);
+            }
             options.Projections.AttachServiceProvider(s);
             options.Services = s;
 

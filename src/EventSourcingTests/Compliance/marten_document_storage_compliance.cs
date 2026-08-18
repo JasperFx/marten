@@ -66,6 +66,25 @@ public class document_session_events_compliance
 public class pending_stream_actions_compliance
     : PendingStreamActionsCompliance<MartenDocumentComplianceFixture>;
 
+/*
+ * jasperfx#679 (#5258). The seventh suite, and the first that needs NOTHING from the event store --
+ * it is opt-in only in the sense that the fixture has to replay DocumentComplianceConfig.CommitListeners,
+ * which MartenDocumentComplianceFixture now does.
+ *
+ * Different risk from the fifth and sixth suites rather than the same one. IDocumentCommitListener
+ * and IDocumentChangeSet have no default implementations, so a near-miss on either is CS0535 rather
+ * than a silent bind to a throwing default -- which is precisely why Marten bridges them with
+ * DocumentCommitListenerAdapter + MartenDocumentChangeSet instead of widening IChangeSet, whose
+ * IEnumerable<object> members would not satisfy the contract's IReadOnlyList<object> ones and whose
+ * every existing implementor would break. What no compiler sees is the wiring, and that is what
+ * these ten facts pin -- in particular the_change_set_survives_the_session_moving_on, which is the
+ * one Marten can fail while doing everything else right: IChangeSet IS the session's live unit of
+ * work and DocumentSessionBase.SaveChangesAsync resets it immediately after the listener loop.
+ */
+[Collection(DocumentComplianceCollection.Name)]
+public class document_commit_listener_compliance
+    : DocumentCommitListenerCompliance<MartenDocumentComplianceFixture>;
+
 public static class DocumentComplianceCollection
 {
     public const string Name = "document storage compliance";

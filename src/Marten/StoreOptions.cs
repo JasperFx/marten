@@ -105,6 +105,33 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public List<IDocumentSessionListener> Listeners { get; } = new();
 
     /// <summary>
+    ///     Register a store-agnostic <see cref="JasperFx.Events.Documents.IDocumentCommitListener" />
+    ///     (jasperfx#679) to be invoked after every successful session commit.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///     Sugar over <see cref="Listeners" />, and the only public way to do this: the adapter that
+    ///     bridges the contract's signature onto Marten's <see cref="IDocumentSessionListener" /> is
+    ///     internal, because it is an implementation detail of the bridge rather than something a
+    ///     user should construct or subclass.
+    ///     </para>
+    ///     <para>
+    ///     Anything registered as an <c>IDocumentCommitListener</c> in the container is swept onto
+    ///     the PRIMARY store automatically by <c>AddMarten</c>. This method is what an ancillary
+    ///     store (<c>AddMartenStore&lt;T&gt;</c>) uses to opt in, via
+    ///     <c>services.ConfigureMarten&lt;T&gt;(opts =&gt; opts.AddCommitListener(listener))</c> —
+    ///     the same split <c>IInitialData</c> already has.
+    ///     </para>
+    /// </remarks>
+    public StoreOptions AddCommitListener(JasperFx.Events.Documents.IDocumentCommitListener listener)
+    {
+        if (listener == null) throw new ArgumentNullException(nameof(listener));
+
+        Listeners.Add(new DocumentCommitListenerAdapter(listener));
+        return this;
+    }
+
+    /// <summary>
     ///     Types that should be treated as "child document" containers (JSONB) when
     ///     resolving LINQ members. The optional <c>Marten.Newtonsoft</c> package
     ///     adds <c>Newtonsoft.Json.Linq.JObject</c> here via its
