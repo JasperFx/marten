@@ -67,20 +67,27 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
             options.RegisterValueType(valueType);
         }
 
-        // jasperfx#669. Only DocumentSessionEventsCompliance populates this, and unlike the two
-        // loops above it IS load-bearing: that suite appends through a session's Events accessor
-        // with a *string* stream key, and Marten's default StreamIdentity is Guid — so without the
-        // switch below every fact in it fails on the append rather than on the accessor it is
-        // there to hold to a definition. Conditional on the list being non-empty so the four
-        // document-only suites, which share this schema, never provoke event storage at all.
-        if (config.EventTypes.Count != 0)
+        // jasperfx#672 (#5249). The suite states the stream identity it needs and the fixture
+        // replays it, rather than the fixture inferring it. This is load-bearing in the same way
+        // ValueTypes above is not: DocumentSessionEventsCompliance and PendingStreamActionsCompliance
+        // both append by string stream *key*, and Marten's default StreamIdentity is Guid — so a
+        // fixture that drops this fails those suites on the append rather than on the thing they are
+        // there to pin.
+        //
+        // It was previously inferred from EventTypes being non-empty, which happened to reach the
+        // same answer only because every suite populating EventTypes wanted AsString. Nullable, so
+        // null still means "leave the store on its own default" and the four document-only suites
+        // sharing this schema are untouched.
+        if (config.StreamIdentity.HasValue)
         {
-            options.Events.StreamIdentity = StreamIdentity.AsString;
+            options.Events.StreamIdentity = config.StreamIdentity.Value;
+        }
 
-            foreach (var eventType in config.EventTypes)
-            {
-                options.Events.AddEventType(eventType);
-            }
+        // Registering event types does not by itself provoke event storage, so unlike the identity
+        // switch above this needs no guard — for the document-only suites the list is empty.
+        foreach (var eventType in config.EventTypes)
+        {
+            options.Events.AddEventType(eventType);
         }
 
         _store = new DocumentStore(options);
