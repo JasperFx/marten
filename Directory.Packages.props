@@ -274,16 +274,39 @@
          DocumentSessionEventsCompliance. (2) IEventBinarySerializer and BinaryEventAttribute are
          promoted out of Marten.Events into JasperFx.Events; Marten's interface now derives from the
          core one, its attribute is checked alongside the core one (which is sealed, so no
-         inheritance), and the registration surface is widened to the core interface. -->
-    <PackageVersion Include="JasperFx" Version="2.50.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.50.0" />
+         inheritance), and the registration surface is widened to the core interface.
+         JasperFx 2.51.0: three additive changes, each with its own Marten adoption issue. All are
+         purely additive — nothing here is a compile break, so this bump lands on its own and the
+         adoptions follow separately.
+         (1) jasperfx#672/#677 (marten#5248, marten#5249) — DocumentComplianceConfig gains a nullable
+         StreamIdentity so a document suite can declare the stream identity style it needs instead of
+         leaving each fixture to guess it (DocumentSessionEventsCompliance appends by stream key and
+         failed three facts on every store's Guid default), and JasperFx.Events.BinaryEventAttribute
+         is unsealed so Marten can derive its own back-compat attribute from it and collapse
+         EventGraph.ResolveBinarySerializerFor back to one lookup.
+         (2) jasperfx#673/#675 (marten#5250) — IDocumentSessionOperations.PendingStreams
+         (IReadOnlyList&lt;StreamAction&gt;), so store-agnostic code can read the stream actions a session
+         has queued but not committed. ⚠️ Same non-covariance trap as 2.50.0's Events accessor:
+         Marten's PendingChanges.Streams() returns IList&lt;StreamAction&gt;, which does NOT satisfy an
+         IReadOnlyList&lt;StreamAction&gt; member, so this binds to the throwing default until Marten
+         writes the forward. Pinned by PendingStreamActionsCompliance.
+         (3) jasperfx#674/#676 (marten#5251) — IAggregateWriteCache, AggregateCacheKey,
+         NulloAggregateWriteCache, RecentlyUsedAggregateWriteCache and AggregateWriteCacheOptions move
+         into JasperFx.Events.Fetching, with AggregateWriteCaching/CacheAggregatesForWriting&lt;T&gt;() on
+         EventRegistry so all three stores inherit the registration surface. Grade 1 semantics only:
+         the cached snapshot is a baseline, version and delta are always re-read, OCC is untouched.
+         The default cache is backed by JasperFx.Core's RecentlyUsedCache, deliberately NOT
+         Microsoft.Extensions.Caching.Memory — the prototype's IMemoryCache dependency would have been
+         pushed onto every consumer of JasperFx.Events rather than one store. -->
+    <PackageVersion Include="JasperFx" Version="2.51.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.51.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.50.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.51.0" />
     <!--
       Deliberately AHEAD of the rest of the JasperFx line, which stays at 2.41.0 until Marten adopts
       the strong-typed identity compliance suite that landed in 2.42.0. This package is analyzer-only,
@@ -301,11 +324,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.50.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.51.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.50.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.51.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
