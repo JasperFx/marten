@@ -211,6 +211,86 @@ As of Marten 1.4, you can also register `IDocumentSessionListener` objects scope
 
 As of Marten v5, separate listeners will need to be registered for Document Store and Async Daemon. Adding listeners for Async Daemon are covered in the next section.
 
+### Store-agnostic commit listeners <Badge type="tip" text="9.28" />
+
+`IDocumentSessionListener` is a Marten type, so a listener written against it cannot be shared with a codebase that also runs Polecat or Fisher. For the common case of "tell me what a commit wrote, after it committed", implement JasperFx's `IDocumentCommitListener` instead -- it is the same hook expressed in shared types, and the same class works unchanged on all three stores:
+
+<!-- snippet: sample_writing_a_document_commit_listener -->
+<a id='snippet-sample_writing_a_document_commit_listener'></a>
+```cs
+// The store-agnostic post-commit hook. The same class works unchanged against
+// Marten, Polecat and Fisher -- nothing in it names a store.
+public class AuditCommitListener: IDocumentCommitListener
+{
+    private readonly List<string> _audit = new();
+
+    public Task AfterCommitAsync(
+        IDocumentSessionOperations session,
+        IDocumentChangeSet commit,
+        CancellationToken token)
+    {
+        foreach (var document in commit.Inserted) _audit.Add($"Inserted {document.GetType().Name}");
+        foreach (var document in commit.Updated) _audit.Add($"Updated {document.GetType().Name}");
+
+        // Deletions arrive as descriptors rather than as documents, because
+        // Delete<T>(id) and DeleteWhere<T>(...) never loaded one to report
+        foreach (var deletion in commit.Deleted) _audit.Add($"Deleted {deletion.DocumentType.Name} {deletion.Id}");
+
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/DocumentCommitListenerSamples.cs#L10-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_a_document_commit_listener' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Register one either directly on `StoreOptions`, or in the container:
+
+<!-- snippet: sample_registering_a_document_commit_listener -->
+<a id='snippet-sample_registering_a_document_commit_listener'></a>
+```cs
+services.AddMarten(opts =>
+{
+    opts.Connection(connectionString);
+
+    // Directly, when you have the instance in hand
+    opts.AddCommitListener(new AuditCommitListener());
+});
+
+// Or register it in the container, and AddMarten() will find it. Note
+// that this only reaches the MAIN store
+services.AddSingleton<IDocumentCommitListener, AuditCommitListener>();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/DocumentCommitListenerSamples.cs#L42-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_a_document_commit_listener' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: warning The container sweep reaches the main store only
+`AddMarten()` sweeps `IDocumentCommitListener` registrations out of the container, but a bare sweep cannot tell which store a registration was meant for -- so applying it to ancillary stores as well would attach every listener in the application to every `AddMartenStore<T>()`, with no way to opt one out. Ancillary stores opt in explicitly, exactly as they do for `IInitialData`:
+
+<!-- snippet: sample_registering_a_document_commit_listener_on_ancillary_store -->
+<a id='snippet-sample_registering_a_document_commit_listener_on_ancillary_store'></a>
+```cs
+services.AddMartenStore<IOrdersStore>(opts =>
+{
+    opts.Connection(connectionString);
+    opts.DatabaseSchemaName = "orders";
+});
+
+// Ancillary stores are NOT swept from the container -- otherwise every
+// listener registered anywhere would attach to every store -- so they
+// opt in explicitly
+services.ConfigureMarten<IOrdersStore>(opts => opts.AddCommitListener(new AuditCommitListener()));
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/DocumentCommitListenerSamples.cs#L61-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_a_document_commit_listener_on_ancillary_store' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+:::
+
+Two things to know about the change set it hands you:
+
+* The three collections are **snapshots** taken when the commit is raised, not views over the session. You can stash an `IDocumentChangeSet` and read it later; the Marten `IChangeSet` above is the session's live unit of work and is reset immediately after the listener loop, so it cannot be stashed.
+* `Deleted` carries `{ DocumentType, Id }` descriptors rather than document instances, because `Delete<T>(id)` and `DeleteWhere<T>(...)` never loaded a document to report. If you need the deleted document itself, read it before the delete or use Marten's own `IDocumentSessionListener`.
+
+This is the **session** half only -- it does not fire for the async daemon's projection batches. Use `IChangeListener` (above) or JasperFx's `IDaemonChangeListener` for those, and register both if you want both.
+
 ## Listening for Async Daemon Events
 
 Use `AsyncListeners` to register session listeners that will ONLY be applied within the asynchronous daemon updates.
@@ -246,7 +326,7 @@ public class FakeListener: IChangeListener
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Internals/basic_functionality.cs#L123-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Internals/basic_functionality.cs#L122-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Wiring a Async Daemon listener:
@@ -260,7 +340,7 @@ StoreOptions(x =>
     x.Projections.AsyncListeners.Add(listener);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Internals/basic_functionality.cs#L153-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Internals/basic_functionality.cs#L152-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Logging
@@ -538,7 +618,7 @@ The `IMartenLogger` can be swapped out on any `IQuerySession` or `IDocumentSessi
 // session to pipe Marten logging to the xUnit.Net output
 theSession.Logger = new TestOutputMartenLogger(_output);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L135-L139' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L134-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Previewing the PostgreSQL Query Plan

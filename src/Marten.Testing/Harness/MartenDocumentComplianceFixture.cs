@@ -90,6 +90,20 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
             options.Events.AddEventType(eventType);
         }
 
+        // jasperfx#679 (#5258). The one config member that is an INSTANCE rather than a Type,
+        // because the suite has to hold the very listener it registered in order to read back what
+        // the store handed it. Replayed through StoreOptions.AddCommitListener, which wraps each one
+        // in Marten's internal DocumentCommitListenerAdapter and drops it on Options.Listeners.
+        //
+        // ⚠️ Load-bearing in the strongest sense of any line in this fixture: a fixture that drops
+        // it does not make DocumentCommitListenerCompliance skip -- every fact in it fails, because
+        // "the listener was never registered" and "the store never invokes listeners" are the same
+        // observable result.
+        foreach (var listener in config.CommitListeners)
+        {
+            options.AddCommitListener(listener);
+        }
+
         _store = new DocumentStore(options);
 
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
