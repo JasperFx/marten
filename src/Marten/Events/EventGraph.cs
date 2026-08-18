@@ -15,6 +15,7 @@ using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
 using JasperFx.Events.Tags;
 using Marten.Events.Aggregation;
+using Marten.Events.Fetching;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -922,6 +923,52 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     }
 
     public List<Type> GlobalAggregates { get; } = new();
+
+    /// <summary>
+    ///     Keep recently fetched snapshots of <typeparamref name="T" /> in a node local cache so that a
+    ///     subsequent FetchForWriting can skip loading the stored snapshot and read only the events after
+    ///     it. Effectively an identity map for aggregates with a lifetime longer than a session.
+    ///     <para>
+    ///     The cache is never trusted blindly. The stream version is still read from the database on every
+    ///     call, and the optimistic concurrency assertion on append is untouched, so a stale entry costs an
+    ///     extra query and never yields a wrong aggregate. See
+    ///     <see cref="JasperFx.Events.Fetching.IAggregateWriteCache" /> for the full semantics, which are
+    ///     shared with every other Critter Stack store (jasperfx#674).
+    ///     </para>
+    ///     <para>
+    ///     Supported for both <see cref="ProjectionLifecycle.Async" /> and
+    ///     <see cref="ProjectionLifecycle.Inline" />, but they behave differently:
+    ///     </para>
+    ///     <list type="bullet">
+    ///         <item><b>Async</b> — the cached snapshot is a <i>baseline</i>. Events after the cached
+    ///         version are read and folded onto it, so a stale entry just means a larger delta query. The
+    ///         entry is written as soon as the fetch completes, because the daemon (not the session) applies
+    ///         appended events, so the instance cannot drift ahead of the database.</item>
+    ///         <item><b>Inline</b> — the stored snapshot is written in the same transaction as the events
+    ///         and so is always exactly at the stream head. A cached entry is therefore only usable on an
+    ///         <i>exact</i> version match, and anything else falls back to loading the snapshot. The entry
+    ///         is written back only <i>after a successful commit</i>, because the inline projection applies
+    ///         the caller's events to the fetched instance during that commit.</item>
+    ///     </list>
+    /// </summary>
+    /// <param name="sizeLimit">Maximum number of cached aggregates, when the default cache is built</param>
+    /// <remarks>
+    ///     Overridden rather than merely inherited from <see cref="EventRegistry" /> because the write back
+    ///     for the Inline lifecycle needs a session listener, and where a listener lives is Marten's own
+    ///     business. The enrollment itself — the type set, the size limit, resolving the cache — is the
+    ///     shared registry's.
+    /// </remarks>
+    public override void CacheAggregatesForWriting<T>(int sizeLimit = 1000)
+    {
+        base.CacheAggregatesForWriting<T>(sizeLimit);
+
+        // Inline aggregates are written back to the cache only after a successful commit, which needs a
+        // session listener. Harmless for Async-only usage -- the listener no-ops when nothing was tracked.
+        if (!Options.Listeners.Contains(AggregateWriteCacheListener.Instance))
+        {
+            Options.Listeners.Add(AggregateWriteCacheListener.Instance);
+        }
+    }
 
     internal DocumentProvider<IEvent>? Provider { get; private set; }
 

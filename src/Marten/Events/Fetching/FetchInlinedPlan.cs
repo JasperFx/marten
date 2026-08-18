@@ -15,6 +15,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Npgsql;
 using Weasel.Postgresql;
+using JasperFx.Events.Fetching;
 
 namespace Marten.Events.Fetching;
 
@@ -23,6 +24,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TI
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
     private readonly string _aggregateTypeName = typeof(TDoc).FullNameInCode();
+    private readonly IAggregateWriteCache? _cache;
 
     internal FetchInlinedPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy)
     {
@@ -30,9 +32,25 @@ internal partial class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TI
 
         _events = events;
         _identityStrategy = identityStrategy;
+
+        // See FetchAsyncPlan's constructor for why the enablement branch stays rather than leaning on
+        // ResolveCache(Type) returning the nullo cache.
+        if (events.AggregateWriteCaching.IsEnabled(typeof(TDoc)))
+        {
+            _cache = events.AggregateWriteCaching.ResolveCache(typeof(TDoc));
+        }
     }
 
     public bool IsGlobal { get; }
+
+    private AggregateCacheKey cacheKeyFor(DocumentSessionBase session, TId id)
+    {
+        return new AggregateCacheKey(
+            typeof(TDoc),
+            session.Database.Identifier,
+            IsGlobal ? AggregateCacheKey.GlobalTenant : session.TenantId,
+            id);
+    }
 
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Inline;
 

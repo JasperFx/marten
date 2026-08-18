@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Fetching;
 using JasperFx.Events.Subscriptions;
 using JasperFx.Events.Tags;
 using Marten.Events;
@@ -42,6 +43,37 @@ namespace Marten.Events
         /// outside of Marten internals
         /// </summary>
         bool UseIdentityMapForAggregates { get; set; }
+
+        /// <summary>
+        ///     Opt in caching of aggregate snapshots between FetchForWriting calls. Disabled for every
+        ///     aggregate type by default; see <see cref="CacheAggregatesForWriting{T}" />.
+        /// </summary>
+        /// <remarks>
+        ///     Both members are declared here as well as inherited by <see cref="EventGraph" /> from
+        ///     JasperFx's <c>EventRegistry</c>, because <c>StoreOptions.Events</c> is typed as this
+        ///     interface rather than as the graph — so without them <c>opts.Events</c> could not reach
+        ///     either one.
+        /// </remarks>
+        AggregateWriteCacheOptions AggregateWriteCaching { get; }
+
+        /// <summary>
+        ///     Keep recently fetched snapshots of <typeparamref name="T" /> in a node local cache so that a
+        ///     subsequent FetchForWriting can skip loading the stored snapshot and read only the events
+        ///     after it. Effectively an identity map for aggregates with a lifetime longer than a session.
+        ///     <para>
+        ///     The cached snapshot is only ever a baseline: the stream version and any newer events are
+        ///     still read from the database on every call, and the optimistic concurrency assertion on
+        ///     append is untouched. A stale entry therefore costs a larger delta query, never a wrong
+        ///     aggregate. See <see cref="JasperFx.Events.Fetching.IAggregateWriteCache" /> for the full
+        ///     semantics, which are shared across the Critter Stack.
+        ///     </para>
+        ///     <para>
+        ///     Supported for both the Async and Inline lifecycles; see
+        ///     <see cref="EventGraph.CacheAggregatesForWriting{T}" /> for how they differ.
+        ///     </para>
+        /// </summary>
+        /// <param name="sizeLimit">Maximum number of cached aggregates, when the default cache is built</param>
+        void CacheAggregatesForWriting<T>(int sizeLimit = 1000) where T : class;
 
         /// <summary>
         ///     Override the database schema name for event related tables. By default this

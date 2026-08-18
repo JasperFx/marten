@@ -12,6 +12,7 @@ using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
+using JasperFx.Events.Fetching;
 
 namespace Marten.Events.Fetching;
 
@@ -19,6 +20,23 @@ internal partial class FetchInlinedPlan<TDoc, TId>
 {
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
         CancellationToken cancellation = default)
+    {
+        try
+        {
+            return await fetchForWriting(session, id, forUpdate, true, cancellation).ConfigureAwait(false);
+        }
+        catch (CachedSnapshotUnusableException)
+        {
+            // The cached snapshot was not at the stream's current version. Unlike the Async plan there is
+            // no delta query to reconcile with -- an Inline snapshot is always exactly at the stream head,
+            // so anything else means the entry is simply wrong. TryTake has already removed it; redo the
+            // fetch on the always-correct uncached path.
+            return await fetchForWriting(session, id, forUpdate, false, cancellation).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<IEventStream<TDoc>> fetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
+        bool useCachedSnapshot, CancellationToken cancellation)
     {
         IDocumentStorage<TDoc, TId>? storage = null;
         if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
@@ -41,20 +59,38 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
         }
 
+        var cache = _cache;
+        var cacheKey = cache == null ? default : cacheKeyFor(session, id);
+        object? cachedAggregate = null;
+        var cachedVersion = 0L;
+        var cacheHit = cache != null && useCachedSnapshot &&
+                       cache.TryTake(cacheKey, out cachedAggregate, out cachedVersion);
+
         var builder = new BatchBuilder{TenantId = session.TenantId};
         _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, forUpdate);
 
-        builder.StartNewCommand();
-
         var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
-        handler.ConfigureCommand(builder, session);
+
+        // Under Inline the stored snapshot is written in the same transaction as the events, so it is
+        // always exactly at the stream head -- there is no delta to fold. That makes the snapshot load the
+        // *whole* cost this cache exists to remove: the doc row, and the JSON deserialize of it.
+        if (!cacheHit)
+        {
+            builder.StartNewCommand();
+            handler.ConfigureCommand(builder, session);
+        }
 
         try
         {
             await using var reader =
                 await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
 
-            return await ReadIntoStream(session, id, cancellation, reader, handler).ConfigureAwait(false);
+            return await ReadIntoStream(session, id, cancellation, reader, handler,
+                new CacheAttempt(cache, cacheKey, cacheHit, cachedAggregate, cachedVersion)).ConfigureAwait(false);
+        }
+        catch (CachedSnapshotUnusableException)
+        {
+            throw;
         }
         catch (Exception e)
         {
@@ -73,8 +109,29 @@ internal partial class FetchInlinedPlan<TDoc, TId>
     }
 
 
+    /// <summary>
+    ///     Everything the read side needs to know about a cache attempt. Default value == caching off.
+    /// </summary>
+    private readonly record struct CacheAttempt(
+        IAggregateWriteCache? Cache,
+        AggregateCacheKey Key,
+        bool Hit,
+        object? Aggregate,
+        long Version);
+
+    /// <summary>
+    ///     Signals that a cached snapshot did not match the stream's current version and the fetch must be
+    ///     redone uncached. Never escapes <see cref="FetchForWriting" />.
+    /// </summary>
+    /// <remarks>
+    ///     Derives from <see cref="MartenException" /> for the same reason as
+    ///     <c>FetchAsyncPlan.CacheAheadOfDatabaseException</c>: the assembly-wide convention test does not
+    ///     exempt nested private types, and should not.
+    /// </remarks>
+    private sealed class CachedSnapshotUnusableException: MartenException;
+
     private async Task<IEventStream<TDoc>> ReadIntoStream(DocumentSessionBase session, TId id, CancellationToken cancellation,
-        DbDataReader reader, LoadByIdHandler<TDoc, TId> handler)
+        DbDataReader reader, LoadByIdHandler<TDoc, TId> handler, CacheAttempt cacheAttempt = default)
     {
         long version = 0;
         try
@@ -84,23 +141,60 @@ internal partial class FetchInlinedPlan<TDoc, TId>
                 version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
             }
 
-            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
-            var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+            TDoc? document;
+            if (cacheAttempt.Hit)
+            {
+                if (cacheAttempt.Version != version)
+                {
+                    // An Inline snapshot is durably at the stream head, so a version that is not an exact
+                    // match means the entry is stale or wrong -- and there is no delta query in this plan to
+                    // reconcile it with. The snapshot was never requested in this batch, so drain the reader
+                    // to leave the connection clean and let FetchForWriting retry uncached.
+                    while (await reader.NextResultAsync(cancellation).ConfigureAwait(false))
+                    {
+                    }
 
-            // Always zero -- an Inline snapshot is up to date by construction, so nothing is replayed.
-            // Recorded anyway so the histogram can be compared across lifecycles.
+                    throw new CachedSnapshotUnusableException();
+                }
+
+                document = (TDoc)cacheAttempt.Aggregate!;
+            }
+            else
+            {
+                await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+                document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+            }
+
+            // #5227: always zero -- an Inline snapshot is up to date by construction, so nothing is
+            // replayed on either path. A cache hit does not change that; what it removes is the
+            // snapshot LOAD, which this histogram does not measure. Recorded anyway so the histogram
+            // can be compared across lifecycles.
             _events.Options.OpenTelemetry
                 .RecordEventsReplayed(0, _aggregateTypeName, OpenTelemetryOptions.InlinePlan);
 
-            // As an optimization, put the document in the identity map for later
+            // As an optimization, put the document in the identity map for later. On a cache hit this is
+            // what lets the inline projection reuse the very instance we just handed out when it applies
+            // the caller's events during commit, instead of loading the snapshot a second time.
             if (document != null && ((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
             {
                 session.StoreDocumentInItemMap(id, document);
             }
 
+            // Deliberately NOT stored in the cache here -- see PendingAggregateCacheWrites. Under Inline the
+            // commit mutates this instance, so an entry written now would describe state that is only
+            // durable if SaveChangesAsync succeeds. Queue it for write back after the commit instead.
+            if (cacheAttempt.Cache != null && document != null)
+            {
+                trackForWriteBack(session, cacheAttempt.Cache, cacheAttempt.Key, document, id, version);
+            }
+
             return version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+        }
+        catch (CachedSnapshotUnusableException)
+        {
+            throw;
         }
         catch (Exception e)
         {
@@ -118,6 +212,20 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         }
     }
 
+
+    private static void trackForWriteBack(DocumentSessionBase session, IAggregateWriteCache cache,
+        AggregateCacheKey key, TDoc document, TId id, long version)
+    {
+        var map = ((IMartenSession)session).ItemMap;
+        if (!map.TryGetValue(typeof(PendingAggregateCacheWrites), out var raw) ||
+            raw is not PendingAggregateCacheWrites pending)
+        {
+            pending = new PendingAggregateCacheWrites();
+            map[typeof(PendingAggregateCacheWrites)] = pending;
+        }
+
+        pending.Track(cache, key, document, id, version);
+    }
 
     public IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id, bool forUpdate)
     {
