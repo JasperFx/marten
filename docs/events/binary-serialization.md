@@ -159,9 +159,9 @@ is honored by every store.
 - `Marten.Events.IEventBinarySerializer` still exists and now simply **derives** from the JasperFx
   interface while declaring nothing of its own. An existing serializer class compiles untouched and
   is accepted everywhere the JasperFx interface is.
-- `Marten.Events.BinaryEventAttribute` still exists and is still honored. Marten checks for **both**
-  attributes, so a type marked with either is picked up. (Two checks rather than one against a
-  common base because the JasperFx attribute is `sealed`.)
+- `Marten.Events.BinaryEventAttribute` still exists and is still honored. It now **derives** from
+  `JasperFx.Events.BinaryEventAttribute` and declares nothing of its own, so a type marked with
+  either spelling is picked up by one attribute lookup — attribute lookup matches by assignability.
 - `opts.Events.DefaultBinarySerializer` and `opts.Events.UseBinarySerializer<TEvent>(...)` were
   *widened* to accept the JasperFx interface. Every existing call site still compiles, because the
   Marten interface derives from it.

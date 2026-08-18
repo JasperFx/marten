@@ -30,20 +30,26 @@ namespace Marten.Events;
 ///     <para>
 ///         jasperfx#669 / JasperFx 2.50.0: the attribute was promoted into
 ///         <see cref="JasperFx.Events.BinaryEventAttribute"/> so an event type shared by source
-///         compiled against several Critter Stack stores can declare its intent once. Marten
-///         honors <strong>both</strong> spellings — <see cref="EventGraph.ResolveBinarySerializerFor"/>
-///         tests for either attribute — so this one keeps working untouched and no existing user
-///         has anything to change. Prefer the JasperFx attribute in new code, and use it in any
-///         event type shared across stores.
+///         compiled against several Critter Stack stores can declare its intent once. This one
+///         keeps working untouched and no existing user has anything to change. Prefer the JasperFx
+///         attribute in new code, and use it in any event type shared across stores.
 ///     </para>
 ///     <para>
-///         The two are checked separately rather than this one deriving from the core attribute
-///         (which would have let a single <c>IsDefined</c> against the base cover both): the
-///         promoted <c>JasperFx.Events.BinaryEventAttribute</c> is <c>sealed</c>, so there is no
-///         inheritance to lean on.
+///         jasperfx#672 / JasperFx 2.51.0 unsealed the promoted attribute specifically so this one
+///         could <strong>derive</strong> from it. <see cref="EventGraph.ResolveBinarySerializerFor"/>
+///         used to test for both attribute types separately, because a sealed base left no
+///         inheritance to lean on (CS0509); now a single lookup for
+///         <see cref="JasperFx.Events.BinaryEventAttribute"/> finds this one too, since attribute
+///         lookup matches by assignability.
+///     </para>
+///     <para>
+///         Marten is the only store that subclasses the promoted attribute, and only because of the
+///         back-compat obligation to the users who already applied this one. A store without a
+///         pre-existing attribute should use the JasperFx one directly — a store-namespaced
+///         subclass reintroduces exactly what promoting the attribute removed.
 ///     </para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
-public sealed class BinaryEventAttribute: Attribute
+public sealed class BinaryEventAttribute: JasperFx.Events.BinaryEventAttribute
 {
 }
