@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -212,6 +212,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
         // Default Polly setup
         ResiliencePipeline = new ResiliencePipelineBuilder().AddMartenDefaults().Build();
+        WriteResiliencePipeline = new ResiliencePipelineBuilder().AddMartenWriteDefaults().Build();
 
         // Add logging into our NpgsqlDataSource
         NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(connectionString =>
@@ -243,6 +244,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         configure(builder);
 
         ResiliencePipeline = builder.Build();
+        WriteResiliencePipeline = ResiliencePipeline;
     }
 
     /// <summary>
@@ -255,6 +257,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         configure(builder);
 
         ResiliencePipeline = builder.AddMartenDefaults().Build();
+
+        var writeBuilder = new ResiliencePipelineBuilder();
+        configure(writeBuilder);
+
+        WriteResiliencePipeline = writeBuilder.AddMartenWriteDefaults().Build();
     }
 
     /// <summary>
@@ -307,6 +314,14 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// Polly policies for retries within Marten command execution
     /// </summary>
     internal ResiliencePipeline ResiliencePipeline { get; set; }
+
+    /// <summary>
+    /// Polly policies for retries around a unit of work commit. A batch of document and event
+    /// operations is not idempotent, so unlike <see cref="ResiliencePipeline"/> this one only retries
+    /// failures where PostgreSQL itself reported the error and the transaction is therefore known to
+    /// have been rolled back.
+    /// </summary>
+    internal ResiliencePipeline WriteResiliencePipeline { get; set; }
 
     /// <summary>
     ///     Advisory lock id is used by the ApplyChangesOnStartup() option to serialize access to making

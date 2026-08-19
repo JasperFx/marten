@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -168,7 +168,7 @@ public abstract partial class DocumentSessionBase
 
                 await executeBeforeCommitListeners(batch).ConfigureAwait(false);
 
-                await Options.ResiliencePipeline.ExecuteAsync(
+                await Options.WriteResiliencePipeline.ExecuteAsync(
                     static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t, e.Participants)), execution, token).ConfigureAwait(false);
 
                 await executeAfterCommitListeners(batch).ConfigureAwait(false);

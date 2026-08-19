@@ -28,6 +28,19 @@ return builder
 The general idea is to have _some_ level of retry with an exponential backoff on typical transient errors encountered
 in database usage (network hiccups, a database being too busy, etc.).
 
+Committing a unit of work is held to a stricter policy. A batch of document and event operations is
+**not idempotent** — replaying it appends the same events a second time — so `SaveChangesAsync()` only
+retries when the previous transaction is known to be gone. A command timeout or a dropped connection
+kills the connector, which means the `ROLLBACK` never reaches PostgreSQL and the server may well have
+committed while the response never made it back to the client. Retrying in that situation is what turns
+one lost commit into a duplicated one, so Marten does not do it:
+
+<!-- snippet: sample_default_write_polly_setup -->
+<!-- endSnippet -->
+
+Errors that PostgreSQL itself reports (a serialization failure, a deadlock, a constraint violation) do
+leave the transaction definitively aborted, and are still retried.
+
 You can **replace** Marten's Polly configuration through:
 
 <!-- snippet: sample_configure_polly -->
