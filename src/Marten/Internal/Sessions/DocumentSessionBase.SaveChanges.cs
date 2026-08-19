@@ -194,6 +194,19 @@ public abstract partial class DocumentSessionBase
             await tryApplyTombstoneEventsAsync(token).ConfigureAwait(false);
             throw;
         }
+        finally
+        {
+            // Operations can hold pooled buffers that back their command parameters, and the
+            // resilience pipeline above may execute the same batch more than once - so the rentals
+            // belong to the unit of work, not to a single execution. See #5262.
+            foreach (var page in pages)
+            {
+                foreach (var operation in page.Operations)
+                {
+                    if (operation is IDisposable disposable) disposable.Dispose();
+                }
+            }
+        }
     }
 
     private async Task executeAfterCommitListeners(IUpdateBatch batch)

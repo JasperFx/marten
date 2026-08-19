@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
@@ -18,7 +18,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;
 
-public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExceptionTransform
+public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExceptionTransform, IDisposable
 {
     // SQLSTATE raised by mt_quick_append_events when the target stream is archived.
     // Keep in sync with QuickAppendEventFunction.WriteCreateStatement.
@@ -57,7 +57,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
     }
 
     // 9.0 (#4385): per-batch column-array rentals from ArrayPool<T>.Shared, returned in
-    // PostprocessAsync once Npgsql has written the parameters to the wire.
+    // Dispose() once the whole unit of work is finished. NOT in PostprocessAsync: the resilience
+    // pipeline can re-execute the very same NpgsqlBatch (OperationPage calls ConfigureCommand once,
+    // in its constructor, and Compile() only hands back the already-built batch), and a released
+    // PooledList reports Count = 0, so the retry would send empty event_ids arrays. See #5262.
     // Capacity 12 covers writeBasicParameters (4) + writeCausationIds + writeCorrelationIds
     // + writeHeaders + writeUserNames + writeTimestamps + up-to-N tag-type arrays without
     // a List growth. Lazily-allocated so subclasses that override ConfigureCommand without
@@ -318,67 +321,67 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
 
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
-        try
+        if (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            if (await reader.ReadAsync(token).ConfigureAwait(false))
+            // #5062: nothing to post-process for an append with no events -- but the row
+            // still has to be consumed above so the reader stays aligned for the rest of
+            // the page. Bail before touching field 0: on a database whose
+            // mt_quick_append_events predates the COALESCE fix, the empty case comes back
+            // as ARRAY[NULL] and GetFieldValueAsync<long[]> throws InvalidCastException,
+            // which would then replace whatever exception actually made the caller fail.
+            // #5062: nothing to post-process for an append with no events -- but the row
+            // still has to be consumed above so the reader stays aligned for the rest of
+            // the page. Bail before touching field 0: on a database whose
+            // mt_quick_append_events predates the COALESCE fix, the empty case comes back
+            // as ARRAY[NULL] and GetFieldValueAsync<long[]> throws InvalidCastException,
+            // which would then replace whatever exception actually made the caller fail.
+            if (Stream.Events.Count == 0)
             {
-                // #5062: nothing to post-process for an append with no events -- but the row
-                // still has to be consumed above so the reader stays aligned for the rest of
-                // the page. Bail before touching field 0: on a database whose
-                // mt_quick_append_events predates the COALESCE fix, the empty case comes back
-                // as ARRAY[NULL] and GetFieldValueAsync<long[]> throws InvalidCastException,
-                // which would then replace whatever exception actually made the caller fail.
-                // #5062: nothing to post-process for an append with no events -- but the row
-                // still has to be consumed above so the reader stays aligned for the rest of
-                // the page. Bail before touching field 0: on a database whose
-                // mt_quick_append_events predates the COALESCE fix, the empty case comes back
-                // as ARRAY[NULL] and GetFieldValueAsync<long[]> throws InvalidCastException,
-                // which would then replace whatever exception actually made the caller fail.
-                if (Stream.Events.Count == 0)
-                {
-                    return;
-                }
+                return;
+            }
 
-                var values = await reader.GetFieldValueAsync<long[]>(0, token).ConfigureAwait(false);
+            var values = await reader.GetFieldValueAsync<long[]>(0, token).ConfigureAwait(false);
 
-                var finalVersion = values[0];
-                var events = Stream.Events;
-                for (int i = events.Count - 1; i >= 0; i--)
-                {
-                    events[i].Version = finalVersion;
-                    finalVersion--;
-                }
+            var finalVersion = values[0];
+            var events = Stream.Events;
+            for (int i = events.Count - 1; i >= 0; i--)
+            {
+                events[i].Version = finalVersion;
+                finalVersion--;
+            }
 
-                // Ignore the first value
-                for (int i = 1; i < values.Length; i++)
-                {
-                    // Only setting the sequence to aid in tombstone processing
-                    events[i - 1].Sequence = values[i];
-                }
+            // Ignore the first value
+            for (int i = 1; i < values.Length; i++)
+            {
+                // Only setting the sequence to aid in tombstone processing
+                events[i - 1].Sequence = values[i];
+            }
 
-                // UseMandatoryStreamTypeDeclaration rejects appending to a stream that does not
-                // exist yet (its first event would come back as version 1). But when
-                // UseTenantPartitionedEvents is on, StartStream actions are also routed through this
-                // bulk-append operation (see QuickEventAppender.registerOperationsForStreams), and a
-                // legitimate StartStream of a brand-new stream likewise produces version 1. Only an
-                // Append — not a Start — to a non-existent stream is the case this guard is meant to
-                // catch, so exclude StartStream actions here. Without this, a partitioned StartStream
-                // throws NonExistentStreamException and the events get tombstoned (#4611).
-                if (Events is { UseMandatoryStreamTypeDeclaration: true }
-                    && events[0].Version == 1
-                    && Stream.ActionType != StreamActionType.Start)
-                {
-                    throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
-                        ? Stream.Id
-                        : Stream.Key);
-                }
+            // UseMandatoryStreamTypeDeclaration rejects appending to a stream that does not
+            // exist yet (its first event would come back as version 1). But when
+            // UseTenantPartitionedEvents is on, StartStream actions are also routed through this
+            // bulk-append operation (see QuickEventAppender.registerOperationsForStreams), and a
+            // legitimate StartStream of a brand-new stream likewise produces version 1. Only an
+            // Append — not a Start — to a non-existent stream is the case this guard is meant to
+            // catch, so exclude StartStream actions here. Without this, a partitioned StartStream
+            // throws NonExistentStreamException and the events get tombstoned (#4611).
+            if (Events is { UseMandatoryStreamTypeDeclaration: true }
+                && events[0].Version == 1
+                && Stream.ActionType != StreamActionType.Start)
+            {
+                throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
+                    ? Stream.Id
+                    : Stream.Key);
             }
         }
-        finally
-        {
-            // Parameter bytes hit the wire before ExecuteReaderAsync returned, so the
-            // rentals are safe to release here regardless of whether the body threw.
-            releaseColumnRentals();
-        }
+    }
+
+    /// <summary>
+    /// Returns the rented column buffers. Called once the unit of work is finished, because the
+    /// batch these parameters belong to may be executed more than once. See #5262.
+    /// </summary>
+    public void Dispose()
+    {
+        releaseColumnRentals();
     }
 }
