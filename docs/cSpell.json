@@ -125,7 +125,9 @@
     "Jeremie",
     "Chassaing",
     "dedup",
-    "unindexed"
+    "unindexed",
+    "SQLSTATE",
+    "SQLSTATEs"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links

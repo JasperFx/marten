@@ -52,9 +52,11 @@ public class Bug_5262_retry_loses_events: OneOffConfigurationsContext
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
 
-            // The permissive default, explicitly, so this test measures the retry itself and not the
-            // narrowed write policy from this branch.
-            opts.ConfigurePolly(builder => builder.AddMartenDefaults());
+            // The permissive default, explicitly, so this test measures the buffer lifetime under retry
+            // rather than the narrowed write policy. Note this has to be ConfigureWritePolly: ConfigurePolly
+            // deliberately no longer reaches the commit path, precisely so that tuning read retries cannot
+            // silently take the replay protection off a non-idempotent write.
+            opts.ConfigureWritePolly(builder => builder.AddMartenDefaults());
         });
 
         var streamKeys = Enumerable.Range(0, Count).Select(i => $"stream-{i}").ToArray();

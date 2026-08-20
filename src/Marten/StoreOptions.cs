@@ -212,6 +212,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
         // Default Polly setup
         ResiliencePipeline = new ResiliencePipelineBuilder().AddMartenDefaults().Build();
+        WriteResiliencePipeline = new ResiliencePipelineBuilder().AddMartenWriteDefaults().Build();
 
         // Add logging into our NpgsqlDataSource
         NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(connectionString =>
@@ -236,6 +237,12 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     /// Configure and override the Polly error handling policies for this DocumentStore
     /// </summary>
+    /// <remarks>
+    /// This governs reads and other idempotent operations. It deliberately does <b>not</b> touch the
+    /// commit path: a unit of work is not idempotent, so replaying one can append the same events
+    /// twice, and that protection should not come off as a side effect of tuning retries elsewhere.
+    /// Use <see cref="ConfigureWritePolly"/> to take over commits as well.
+    /// </remarks>
     /// <param name="configure"></param>
     public void ConfigurePolly(Action<ResiliencePipelineBuilder> configure)
     {
@@ -246,15 +253,47 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     /// <summary>
+    /// Configure and override the Polly error handling policies used when committing a unit of work.
+    /// </summary>
+    /// <remarks>
+    /// Marten's default here is much narrower than <see cref="ConfigurePolly"/>. Overriding it means
+    /// taking on the duplicate-append hazard: a commit carrying event appends cannot be safely
+    /// replayed when the outcome of the previous attempt is unknown.
+    /// </remarks>
+    public void ConfigureWritePolly(Action<ResiliencePipelineBuilder> configure)
+    {
+        var builder = new ResiliencePipelineBuilder();
+        configure(builder);
+
+        WriteResiliencePipeline = builder.Build();
+    }
+
+    /// <summary>
     /// Extend default error handling policies for this DocumentStore.
     /// Any user supplied policies will take precedence over the default policies.
     /// </summary>
+    /// <remarks>
+    /// As with <see cref="ConfigurePolly"/>, this leaves the commit path alone. Use
+    /// <see cref="ExtendWritePolly"/> for that.
+    /// </remarks>
     public void ExtendPolly(Action<ResiliencePipelineBuilder> configure)
     {
         var builder = new ResiliencePipelineBuilder();
         configure(builder);
 
         ResiliencePipeline = builder.AddMartenDefaults().Build();
+    }
+
+    /// <summary>
+    /// Extend the default error handling policies used when committing a unit of work.
+    /// Any user supplied policies will take precedence over Marten's write defaults.
+    /// </summary>
+    public void ExtendWritePolly(Action<ResiliencePipelineBuilder> configure)
+    {
+        var builder = new ResiliencePipelineBuilder();
+        configure(builder);
+
+        WriteResiliencePipeline = builder.AddMartenWriteDefaults().Build();
     }
 
     /// <summary>
@@ -307,6 +346,14 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// Polly policies for retries within Marten command execution
     /// </summary>
     internal ResiliencePipeline ResiliencePipeline { get; set; }
+
+    /// <summary>
+    ///     Polly policies for retries around a unit-of-work commit. Separate from
+    ///     <see cref="ResiliencePipeline" /> because a commit is not idempotent: it carries event appends,
+    ///     and replaying a batch that already committed server-side appends them twice. See
+    ///     <see cref="WriteRetryClassifier" /> for the rationale and the SQLSTATE allowlist.
+    /// </summary>
+    internal ResiliencePipeline WriteResiliencePipeline { get; set; }
 
     /// <summary>
     ///     Advisory lock id is used by the ApplyChangesOnStartup() option to serialize access to making

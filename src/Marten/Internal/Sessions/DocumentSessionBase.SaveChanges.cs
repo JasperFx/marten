@@ -168,7 +168,10 @@ public abstract partial class DocumentSessionBase
 
                 await executeBeforeCommitListeners(batch).ConfigureAwait(false);
 
-                await Options.ResiliencePipeline.ExecuteAsync(
+                // #5262: the WRITE pipeline, not the general one. A unit of work carries event appends
+                // and is not idempotent, so it may only be replayed when the previous attempt is known
+                // to have left nothing behind. See WriteRetryClassifier.
+                await Options.WriteResiliencePipeline.ExecuteAsync(
                     static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t, e.Participants)), execution, token).ConfigureAwait(false);
 
                 await executeAfterCommitListeners(batch).ConfigureAwait(false);
