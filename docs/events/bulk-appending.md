@@ -288,6 +288,15 @@ The bulk append API intentionally trades off features for throughput:
   pipeline, so they have to be handled separately after bulk loading. This matters for an imported history:
   an untagged event is not an error to a tag query, it is simply absent from the answer.
 
+  Two limits on the hstore support. An event carrying **two tags of the same type** throws
+  `MartenNotSupportedException`, because an hstore maps one key to one value and the key is the tag type —
+  the same rule the ordinary append path applies; use `DcbStorageMode.TagTables` for those events. And the
+  bulk path does **not** bump `mt_dcb_tag_version`, which is the row a concurrent
+  `FetchForWritingByTags` takes its consistency check against. That is consistent with the rest of this
+  API — it creates new streams, has no optimistic concurrency, and is meant for loading a history rather
+  than for writing alongside live traffic — but it does mean a bulk import running against a live store
+  can commit tagged events without an in-flight DCB boundary check noticing.
+
 ## Performance
 
 In local benchmarks, the bulk append API achieves approximately **80,000-110,000 events/second**

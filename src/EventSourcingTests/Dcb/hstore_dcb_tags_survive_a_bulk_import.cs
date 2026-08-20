@@ -6,6 +6,7 @@ using JasperFx.Events;
 using JasperFx.Events.Tags;
 using Marten;
 using Marten.Events;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -91,5 +92,30 @@ public class hstore_dcb_tags_survive_a_bulk_import: OneOffConfigurationsContext,
         // And both events did land — the import is not what dropped Bob.
         var all = await theSession.Events.QueryAllRawEvents().ToListAsync(default);
         all.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task two_tags_of_one_type_are_refused_rather_than_silently_collapsed()
+    {
+        // #5265 landed after this import path was written, and the two meet here: BuildHstore is shared
+        // with the ordinary append path precisely so the rule cannot drift, which means the bulk path
+        // inherits the refusal too. An hstore maps one key to one value and the key is the tag type, so
+        // there is nowhere to put the second -- and silently keeping one is the failure a consistency
+        // boundary must not have, whether the events arrived by append or by import.
+        var first = new StudentId(Guid.NewGuid());
+        var second = new StudentId(Guid.NewGuid());
+
+        var action = StreamAction.Start(theStore.Events, Guid.NewGuid(), new StudentEnrolled("Alice", "Math"));
+        foreach (var e in action.Events)
+        {
+            e.WithTag(first);
+            e.WithTag(second);
+        }
+
+        var ex = await Should.ThrowAsync<MartenNotSupportedException>(
+            () => theStore.BulkInsertEventsAsync(new List<StreamAction> { action }));
+
+        ex.Message.ShouldContain("StudentId");
+        ex.Message.ShouldContain("TagTables");
     }
 }
