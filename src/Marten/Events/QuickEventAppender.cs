@@ -132,6 +132,14 @@ internal class QuickEventAppender: IEventAppender
                 {
                     EventTagOperations.QueueTagOperationsByEventId(eventGraph, session, stream);
                 }
+                else
+                {
+                    // #5265: the function's tag parameters are one varchar[] per registered tag
+                    // type, parallel to the events array, so it can only carry the FIRST tag of
+                    // each type on each event. Anything beyond that is written here as ordinary
+                    // tag-table rows, keyed on the event id exactly like the HStore path above.
+                    EventTagOperations.QueueSurplusTagOperationsByEventId(eventGraph, session, stream);
+                }
             }
 
             // #4591: queue the DCB tag-version producer-bump once per stream,

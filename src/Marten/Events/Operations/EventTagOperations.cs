@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten.Events.Dcb;
+using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Storage;
 
@@ -110,6 +113,49 @@ internal static class EventTagOperations
         }
     }
 
+    /// <summary>
+    /// #5265: queue the tag inserts the bulk <c>mt_quick_append_events</c> function cannot write.
+    /// Its signature carries one <c>varchar[]</c> per registered tag type, parallel to the events
+    /// array, so it has exactly one slot per (event, tag type) and
+    /// <see cref="QuickAppendEventsOperationBase.writeAllTagValues" /> fills that slot from the
+    /// FIRST matching tag. An event legitimately carrying two tags of one type — "homework copied",
+    /// naming the student copied from and the student who copied — would silently lose the rest,
+    /// and a lost tag is not an error to a DCB query, it is simply absent from the answer.
+    ///
+    /// So the function keeps writing the first of each type and this writes the surplus. Skipping
+    /// the first here is what keeps the two halves from fighting; the tag tables' primary key is
+    /// (value, [tenant_id], seq_id[, is_archived]), so distinct values on one event are distinct
+    /// rows and the operation's <c>on conflict do nothing</c> never fires for them.
+    /// </summary>
+    public static void QueueSurplusTagOperationsByEventId(EventGraph eventGraph, DocumentSessionBase session,
+        StreamAction stream)
+    {
+        if (eventGraph.TagTypes.Count == 0) return;
+
+        var schema = eventGraph.DatabaseSchemaName;
+        var isConjoined = eventGraph.TenancyStyle == TenancyStyle.Conjoined;
+        var useArchived = eventGraph.UseArchivedStreamPartitioning;
+
+        foreach (var @event in stream.Events)
+        {
+            var tags = @event.Tags;
+            if (tags == null || tags.Count < 2) continue;
+
+            var seen = new HashSet<Type>();
+            foreach (var tag in tags)
+            {
+                var registration = eventGraph.FindTagType(tag.TagType);
+                if (registration == null) continue;
+
+                // The first tag of each registered type is the one the function writes.
+                if (seen.Add(registration.TagType)) continue;
+
+                session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id,
+                    tag.Value, isConjoined, useArchived));
+            }
+        }
+    }
+
     // #4591: collect canonical (tag_table, tag_value) tuples for the
     // mt_dcb_tag_version producer-bump operation. Skips tag types that aren't
     // registered for storage and dedupes tuples already seen in this save.
@@ -155,7 +201,20 @@ internal static class EventTagOperations
 
             // hstore values are always text — Npgsql will coerce the Dictionary<string,string>
             // to hstore via NpgsqlDbType.Hstore, so we stringify primitives here.
-            result[registration.TableSuffix] = rawValue.ToString()!;
+            var value = rawValue.ToString()!;
+
+            // #5265: hstore maps one key to one value, and the key here is the tag type. A second
+            // tag of the same type has nowhere to go, so this storage mode cannot represent it at
+            // all -- unlike TagTables, where the surplus is written as extra rows. Fail loudly
+            // rather than dropping it: an absent tag is invisible to a DCB query rather than being
+            // an error, which is exactly the failure a consistency boundary must not have.
+            if (result.TryGetValue(registration.TableSuffix, out var existing) && existing != value)
+            {
+                throw new MartenNotSupportedException(
+                    $"An event carries more than one '{registration.TagType.NameInCode()}' tag ('{existing}' and '{value}'). DcbStorageMode.HStore cannot store that — its hstore column holds one value per tag type. Use DcbStorageMode.TagTables for events tagged with several values of one type.");
+            }
+
+            result[registration.TableSuffix] = value;
         }
 
         return result;

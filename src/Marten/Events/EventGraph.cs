@@ -131,26 +131,39 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     public IAggregatorSource<IQuerySession>? Build<TDoc>()
     {
-        var idType = Options.Storage.MappingFor(typeof(TDoc)).IdType;
+        // #5264: MappingFor() is not a read-only probe -- it registers a DocumentMapping in
+        // StorageFeatures as a side effect. A [BoundaryAggregate] has no identity at all, so
+        // that mapping later throws InvalidDocumentException ("Could not determine an 'id/Id'
+        // field") the first time anything enumerates AllActiveFeatures -- which is every
+        // full-schema operation: ResetAllData, ApplyAllConfiguredChangesToDatabaseAsync,
+        // AssertDatabaseMatchesConfigurationAsync, db-patch and db-apply. Decide the id type
+        // from the attribute before touching storage, so no mapping is ever created.
+        //
+        // TId is unconditionally string for these: the source generator emits
+        // IGeneratedSyncEvolver<TDoc, string> (jasperfx#324) and the id is vestigial -- it
+        // only has to match the SingleStreamProjection<T, string> built here so the dispatcher
+        // lookup hits, regardless of StreamIdentity or of any stray Id member on the type.
+        if (typeof(TDoc).IsDefined(typeof(BoundaryAggregateAttribute), inherit: false))
+        {
+            return typeof(SingleStreamProjection<,>)
+                .CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), typeof(string));
+        }
+
+        var mapping = Options.Storage.MappingFor(typeof(TDoc));
+        var idType = mapping.IdType;
 
         // For the quite legitimate case of doing a live aggregation when
         // there is no Id member
         if (idType == null)
         {
-            // [BoundaryAggregate] SG emits TId=string (see jasperfx#324); match
-            // it here so the dispatcher lookup hits regardless of StreamIdentity.
-            if (typeof(TDoc).IsDefined(typeof(BoundaryAggregateAttribute), inherit: false))
-            {
-                idType = typeof(string);
-            }
-            else if (StreamIdentity == StreamIdentity.AsGuid)
-            {
-                idType = typeof(Guid);
-            }
-            else
-            {
-                idType = typeof(string);
-            }
+            // #5264: same hazard as above, one step over. An explicitly registered document
+            // type with no Id would already have thrown inside MappingFor's CompileAndValidate,
+            // so reaching here means this is a fallback mapping materialized for aggregation
+            // only. It can never be stored, so keep it out of schema generation rather than
+            // letting it fail DDL for the whole store later.
+            mapping.SkipSchemaGeneration = true;
+
+            idType = StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
         }
 
         return typeof(SingleStreamProjection<,>)
