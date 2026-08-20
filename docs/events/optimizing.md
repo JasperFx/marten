@@ -202,6 +202,33 @@ state that is durable only if that commit happens to succeed. Deferring the writ
 removes the hazard rather than mitigating it: a rolled-back commit simply leaves no entry, and the next
 fetch reloads from the database.
 
+### What the cache actually removes under Inline
+
+Unlike Async there is no delta query to shrink here, so the entire value of the cache under Inline is the
+removed snapshot load. Counted as reads of the aggregate's own document table across one complete
+fetch → append → `SaveChangesAsync` round:
+
+| `UseIdentityMapForAggregates` | Without the cache | With a cache hit |
+| --- | --- | --- |
+| `true` (the default) | 1 | **0** |
+| `false` | 2 | 1 |
+
+Two loads are in play: one on the fetch side, and one during the commit when the inline projection needs
+the snapshot to apply the appended events to. A cache hit always removes the fetch-side load. Whether the
+commit-side load is also avoided depends on the flag: with `UseIdentityMapForAggregates` on, the fetched
+instance goes into the session's item map and the projection reuses that very instance; with it off, the
+commit takes a session-state-free load path — deliberately, so the async daemon's parallel workers never
+touch session state — which has no item map to consult and always reads.
+
+So the cache is worth having either way, and it is worth roughly twice as much with the flag left at its
+`true` default. `RestoreV8Defaults()` sets it to `false`.
+
+::: tip
+The `marten.fetch_for_writing.events_replayed` histogram is **not** a proxy for any of this. It is always
+zero on the Inline plan by construction — an Inline snapshot is at the stream head, so nothing is ever
+replayed — and it does not measure the load.
+:::
+
 ### Supplying your own cache
 
 The default is a bounded, least-recently-used, in-process cache. Substitute any implementation of the

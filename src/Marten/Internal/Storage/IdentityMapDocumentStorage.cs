@@ -177,7 +177,8 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    private List<T> preselectLoadedDocuments(TId[] ids, IStorageSession session, out DbCommand command)
+    private List<T> preselectLoadedDocuments(TId[] ids, IStorageSession session, out DbCommand command,
+        out bool anythingLeftToFetch)
     {
         var list = new List<T>();
 
@@ -205,6 +206,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
             }
         }
 
+        anythingLeftToFetch = idList.Count > 0;
         command = BuildLoadManyCommand(idList.ToArray(), session.TenantId);
         return list;
     }
@@ -212,7 +214,14 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
     public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IStorageSession session,
         CancellationToken token)
     {
-        var list = preselectLoadedDocuments(ids, session, out var command);
+        var list = preselectLoadedDocuments(ids, session, out var command, out var anythingLeftToFetch);
+
+        // #5258: every id was already resolved from the item map, so there is nothing left to ask the
+        // database for. Without this the command still went out with an empty id array -- a round trip
+        // that could only ever return no rows. That is the commit-side load under an Inline
+        // FetchForWriting cache hit, where the aggregate the caller was handed is already in the map.
+        if (!anythingLeftToFetch) return list;
+
         var selector = (ISelector<T>)BuildSelector(session);
 
         await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);

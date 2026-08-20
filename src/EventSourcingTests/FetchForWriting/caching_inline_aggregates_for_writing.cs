@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx.Events;
 using JasperFx.Events.Fetching;
 using JasperFx.Events.Projections;
 using Marten;
@@ -218,5 +219,98 @@ public class caching_inline_aggregates_for_writing: OneOffConfigurationsContext
 
         // Every round after the first took its snapshot from the cache
         theCache.Hits.ShouldBe(11);
+    }
+
+    [Fact]
+    public async Task two_sessions_racing_one_stream_leave_exactly_one_entry_at_the_winning_version()
+    {
+        // #5260. Take-on-read is what stops two callers folding events onto the same mutable aggregate, and on
+        // the Async side that is covered under contention. The Inline write path is genuinely different: the
+        // entry is not written at fetch time at all, it is queued into the session's item map as
+        // PendingAggregateCacheWrites and stored by AggregateWriteCacheListener.AfterCommitAsync at the version
+        // the committed StreamAction landed on. That write-back is the piece with no concurrency coverage.
+        UseCachedInlineSnapshots();
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        await using (var warmUp = theStore.LightweightSession())
+        {
+            var warmUpStream = await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+            warmUpStream.AppendOne(new AEvent());
+            await warmUp.SaveChangesAsync();
+        }
+
+        theCache.SingleEntry().Version.ShouldBe(3);
+
+        await using var winner = theStore.LightweightSession();
+        await using var loser = theStore.LightweightSession();
+
+        // Both fetch before either commits. Exactly one of them can have taken the entry -- TryTake removes it
+        // as it hands it out -- so the other is already on the uncached path.
+        var winnerStream = await winner.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var loserStream = await loser.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+        theCache.Hits.ShouldBe(1);
+        theCache.Keys.ShouldBeEmpty();
+
+        winnerStream.AppendOne(new CEvent());
+        loserStream.AppendOne(new CEvent());
+
+        await winner.SaveChangesAsync();
+
+        // The loser fails on optimistic concurrency, its listener never runs, and it therefore contributes no
+        // entry. The failure path needs no compensation precisely because nothing was written at fetch time.
+        await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(() => loser.SaveChangesAsync());
+
+        var entry = theCache.SingleEntry();
+        entry.Version.ShouldBe(4);
+        ((SimpleAggregate)entry.Aggregate).CCount.ShouldBe(1);
+
+        // ...and the surviving entry is a usable baseline rather than stale-and-poisonous.
+        await using var next = theStore.LightweightSession();
+        var nextStream = await next.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+        theCache.Hits.ShouldBe(2);
+        nextStream.CurrentVersion.ShouldBe(4);
+        nextStream.Aggregate.CCount.ShouldBe(1);
+        nextStream.Aggregate.ACount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task entries_do_not_cross_between_sessions_committing_different_streams()
+    {
+        // Same machinery, the other way round: PendingAggregateCacheWrites lives in the session item map, so
+        // two sessions sharing one cache instance must not be able to write each other's aggregates back.
+        UseCachedInlineSnapshots();
+
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(first, new AEvent());
+        theSession.Events.StartStream<SimpleAggregate>(second, new BEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        await using var sessionA = theStore.LightweightSession();
+        await using var sessionB = theStore.LightweightSession();
+
+        var streamA = await sessionA.Events.FetchForWriting<SimpleAggregate>(first);
+        var streamB = await sessionB.Events.FetchForWriting<SimpleAggregate>(second);
+
+        streamA.AppendOne(new CEvent());
+        streamB.AppendOne(new CEvent());
+
+        await sessionA.SaveChangesAsync();
+        await sessionB.SaveChangesAsync();
+
+        theCache.Keys.Count.ShouldBe(2);
+
+        await using var next = theStore.LightweightSession();
+
+        var again = await next.Events.FetchForWriting<SimpleAggregate>(first);
+        again.CurrentVersion.ShouldBe(2);
+        again.Aggregate.ACount.ShouldBe(1);
+        again.Aggregate.BCount.ShouldBe(0);
+        again.Aggregate.CCount.ShouldBe(1);
     }
 }
