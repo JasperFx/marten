@@ -365,6 +365,28 @@ There is no place within Marten where it keeps a stateful connection open across
 By default, Marten just uses the underlying timeout configuration from the [Npgsql connection string](http://www.npgsql.org/doc/connection-string-parameters.html).
 You can though, opt to set a different command timeout per session with this syntax:
 
+### How the effective timeout is resolved
+
+For any given session, the timeout is the first of these that has an opinion:
+
+1. `SessionOptions.Timeout`, if you set one for that session.
+2. `StoreOptions.CommandTimeout`, if you set it deliberately — either by assigning it, or by passing a connection
+   string to `StoreOptions.Connection(...)`, which reads `Command Timeout` out of it.
+3. The `Command Timeout` on the connection string of **the database this session is actually working against**.
+4. Marten's own default of 5 seconds.
+
+Step 3 matters under multi-database tenancy. There is no single connection string in that setup, so the shard
+connection strings never reach `StoreOptions.Connection(...)` and step 2 never fires — which used to mean a
+`Command Timeout=300` on every shard was ignored and every command ran with a 5 second budget, with nothing
+reporting that the setting had no effect. Since [#5269](https://github.com/JasperFx/marten/issues/5269) the
+database being used has a say.
+
+::: tip
+Note that step 2 still beats step 3. Assigning `StoreOptions.CommandTimeout` is a store-wide instruction, so it
+is not overridden by whatever an individual shard's connection string happens to carry. If you want per-shard
+timeouts, put them on the shard connection strings and leave `StoreOptions.CommandTimeout` alone.
+:::
+
 <!-- snippet: sample_configurecommandtimeout -->
 <a id='snippet-sample_configurecommandtimeout'></a>
 ```cs

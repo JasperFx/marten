@@ -636,7 +636,35 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     IReadOnlyLinqParsing IReadOnlyStoreOptions.Linq => Linq;
 
-    public int CommandTimeout { get; set; } = DefaultTimeout;
+    private int _commandTimeout = DefaultTimeout;
+
+    /// <summary>
+    ///     The store-wide command timeout in seconds. Defaults to <see cref="DefaultTimeout" />, and is raised
+    ///     from the connection string passed to <see cref="Connection(string)" /> when there is one.
+    /// </summary>
+    /// <remarks>
+    ///     #5269: under multi-database tenancy there is no single connection string, so this never picked one up
+    ///     and every batch ran at the 5 second default no matter what the shard connection strings said. When
+    ///     this property has not been set explicitly — neither by you nor by <see cref="Connection(string)" /> —
+    ///     the effective timeout now comes from the connection string of the database the session is actually
+    ///     working against, via <see cref="IMartenDatabase.ConfiguredCommandTimeout" />. Setting it explicitly
+    ///     still wins store-wide, and <see cref="Services.SessionOptions.Timeout" /> still wins per session.
+    /// </remarks>
+    public int CommandTimeout
+    {
+        get => _commandTimeout;
+        set
+        {
+            _commandTimeout = value;
+            CommandTimeoutIsExplicit = true;
+        }
+    }
+
+    /// <summary>
+    ///     True once <see cref="CommandTimeout" /> has been given a value deliberately, so per-database
+    ///     resolution knows not to override it.
+    /// </summary>
+    internal bool CommandTimeoutIsExplicit { get; private set; }
 
     // Service provider from DI — set during store construction so sessions can resolve ancillary stores
     internal IServiceProvider? Services { get; set; }
@@ -681,6 +709,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             var builder = new NpgsqlConnectionStringBuilder(connectionString);
 
+            // Note this counts as explicit even when the connection string is silent, because the builder
+            // hands back Npgsql's own 30 second default rather than nothing. Preserving that is deliberate:
+            // it is what a single-database store has always run at, and #5269 is about the multi-database
+            // case, where this method never runs at all.
             if (builder.CommandTimeout > 0)
                 CommandTimeout = builder.CommandTimeout;
         }

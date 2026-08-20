@@ -37,6 +37,19 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     // including Guid/String ids that never touch a sequence.
     ISequence ISequenceSource.SequenceFor(Type documentType) => Sequences.SequenceFor(documentType);
 
+    /// <summary>
+    ///     The command timeout in seconds that this database's own connection string asks for, or null when it
+    ///     does not name one.
+    /// </summary>
+    /// <remarks>
+    ///     #5269. Under multi-database tenancy the shard connection strings never pass through
+    ///     <see cref="StoreOptions.Connection(string)" />, so a <c>Command Timeout</c> on them used to be
+    ///     ignored entirely and every batch ran at the store default of five seconds. This is what lets the
+    ///     database the work actually runs against have a say. Only consulted when
+    ///     <see cref="StoreOptions.CommandTimeout" /> was not set deliberately, so an explicit store-wide value
+    ///     still wins.
+    /// </remarks>
+    int? ConfiguredCommandTimeout => null;
 
     IProviderGraph Providers { get; }
 

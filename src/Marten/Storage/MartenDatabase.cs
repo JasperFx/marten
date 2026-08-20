@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -27,6 +29,11 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
     private Lazy<SequenceFactory> _sequences;
     private ILogger? _logger;
 
+    // #5269: resolved once from this database's own connection string. Lazy rather than eager because it
+    // is only consulted when the store-wide CommandTimeout was left alone, and a store can have hundreds
+    // of shard databases that never serve a session.
+    private readonly Lazy<int?> _configuredCommandTimeout;
+
     public MartenDatabase(
         StoreOptions options,
         NpgsqlDataSource npgsqlDataSource,
@@ -39,6 +46,8 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
     {
         _features = options.Storage;
         Options = options;
+
+        _configuredCommandTimeout = new Lazy<int?>(() => ReadCommandTimeoutFrom(npgsqlDataSource));
 
         // #4863: EVERY database of the store — not just DefaultTenancy's single database —
         // must hydrate the Marten-managed tenant partition state from its OWN
@@ -55,6 +64,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
         resetSequences();
 
         Providers = options.Providers;
+
 
         Tracker = new ShardStateTracker(options.LogFactory?.CreateLogger<MartenDatabase>() ?? options.DotNetLogger ??
             NullLogger<MartenDatabase>.Instance);
@@ -83,6 +93,45 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
     public ISequences Sequences => _sequences.Value;
 
     public IProviderGraph Providers { get; }
+
+    /// <inheritdoc />
+    public int? ConfiguredCommandTimeout => _configuredCommandTimeout.Value;
+
+    /// <summary>
+    ///     #5269: pull an explicitly configured <c>Command Timeout</c> out of this database's own connection
+    ///     string. Returns null when the string does not name one, so the caller falls back to the store-wide
+    ///     value rather than to Npgsql's 30 second default.
+    /// </summary>
+    private static int? ReadCommandTimeoutFrom(NpgsqlDataSource? dataSource)
+    {
+        if (dataSource?.ConnectionString is not { } connectionString) return null;
+
+        try
+        {
+            // The UNTYPED builder deliberately: it keeps exactly the keys the string actually contains,
+            // whereas NpgsqlConnectionStringBuilder reports every keyword it knows about and hands back
+            // Npgsql's own default of 30 for a string that never mentioned a timeout. "Unspecified" has to
+            // stay distinguishable from "deliberately 30", or the store-wide default becomes unreachable.
+            var raw = new DbConnectionStringBuilder { ConnectionString = connectionString };
+
+            if (!raw.TryGetValue("Command Timeout", out var value) &&
+                !raw.TryGetValue("CommandTimeout", out value))
+            {
+                return null;
+            }
+
+            return int.TryParse(value?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture,
+                out var seconds) && seconds > 0
+                ? seconds
+                : null;
+        }
+        catch (Exception)
+        {
+            // A connection string Marten cannot parse is not this method's problem to report -- it will
+            // fail loudly at connection time with a far better message.
+            return null;
+        }
+    }
 
     /// <summary>
     ///     Set the minimum sequence number for a Hilo sequence for a specific document type

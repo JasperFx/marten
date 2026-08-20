@@ -36,9 +36,33 @@ public sealed class SessionOptions
     public DocumentTracking Tracking { get; set; } = DocumentTracking.None;
 
     /// <summary>
-    ///     If not specified, sessions default to Npgsql command timeout (30 seconds)
+    ///     If not specified, the timeout is resolved from <see cref="StoreOptions.CommandTimeout" /> or, when
+    ///     that was left at its default, from the connection string of the database this session works against.
     /// </summary>
     public int? Timeout { get; set; }
+
+    /// <summary>
+    ///     #5269: the effective command timeout for this session, in seconds.
+    /// </summary>
+    /// <remarks>
+    ///     Precedence: this session's own <see cref="Timeout" />, then a deliberately-set store-wide
+    ///     <see cref="StoreOptions.CommandTimeout" />, then whatever the connection string of the database
+    ///     being used asks for, then the store default.
+    ///     <para>
+    ///     The third step is the fix. Under multi-database tenancy the shard connection strings never reach
+    ///     <see cref="StoreOptions.Connection(string)" />, so a <c>Command Timeout</c> on them was silently
+    ///     ignored and every batch ran at five seconds — including, in the report behind #5269, a
+    ///     215-operation batch against a loaded shard whose connection string asked for 300.
+    ///     </para>
+    /// </remarks>
+    internal int ResolveCommandTimeout(StoreOptions storeOptions)
+    {
+        if (Timeout.HasValue) return Timeout.Value;
+
+        if (storeOptions.CommandTimeoutIsExplicit) return storeOptions.CommandTimeout;
+
+        return Tenant?.Database.ConfiguredCommandTimeout ?? storeOptions.CommandTimeout;
+    }
 
     /// <summary>
     ///     Default to IsolationLevel.ReadCommitted
@@ -117,7 +141,7 @@ public sealed class SessionOptions
             return buildRlsConnectionLifetime(store, mode, rls);
         }
 
-        var timeout = Timeout ?? store.Options.CommandTimeout;
+        var timeout = ResolveCommandTimeout(store.Options);
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
@@ -159,7 +183,7 @@ public sealed class SessionOptions
     private IConnectionLifetime buildRlsConnectionLifetime(DocumentStore store, CommandRunnerMode mode, string rls)
     {
         var tenantId = Tenant!.TenantId;
-        var timeout = Timeout ?? store.Options.CommandTimeout;
+        var timeout = ResolveCommandTimeout(store.Options);
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
@@ -229,7 +253,7 @@ public sealed class SessionOptions
             return await buildRlsConnectionLifetimeAsync(store, mode, rls, token).ConfigureAwait(false);
         }
 
-        var timeout = Timeout ?? store.Options.CommandTimeout;
+        var timeout = ResolveCommandTimeout(store.Options);
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
@@ -266,7 +290,7 @@ public sealed class SessionOptions
     private async Task<IConnectionLifetime> buildRlsConnectionLifetimeAsync(DocumentStore store, CommandRunnerMode mode, string rls, CancellationToken token)
     {
         var tenantId = Tenant!.TenantId;
-        var timeout = Timeout ?? store.Options.CommandTimeout;
+        var timeout = ResolveCommandTimeout(store.Options);
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {

@@ -30,7 +30,9 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         _options = options;
         _database = options.Tenant!.Database;
 
-        CommandTimeout = _options.Timeout ?? storeOptions.CommandTimeout;
+        // #5269: same resolution as every other lifetime -- this one builds its own rather than being handed
+        // one by SessionOptions, and it is the lifetime the default (non-sticky) write path uses.
+        CommandTimeout = _options.ResolveCommandTimeout(storeOptions);
         _readerConnectionUsage =
             options.Mode == CommandRunnerMode.ReadOnly
             ? ConnectionUsage.Read
