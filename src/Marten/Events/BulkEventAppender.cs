@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
 using Marten.Events.Daemon.HighWater;
+using Marten.Events.Operations;
 using Marten.Events.Schema;
 using Marten.Storage;
 using Npgsql;
@@ -674,6 +675,14 @@ internal class BulkEventAppender
             columns.Add("user_name");
         }
 
+        // Last, so the optional metadata columns above keep the positions they had. In hstore mode the DCB
+        // tags are a column on mt_events, so they ride along in this same COPY; without this a bulk-imported
+        // event is invisible to every tag query, which is silent rather than loud.
+        if (_events.DcbStorageMode == DcbStorageMode.HStore)
+        {
+            columns.Add("tags");
+        }
+
         return columns;
     }
 
@@ -791,6 +800,27 @@ internal class BulkEventAppender
             if (e.UserName != null)
             {
                 await writer.WriteAsync(e.UserName, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);
+            }
+            else
+            {
+                await writer.WriteNullAsync(cancellation).ConfigureAwait(false);
+            }
+        }
+
+        // tags (hstore, nullable) — same rule the append path applies, so a bulk-imported event answers a
+        // DCB tag query exactly like an appended one. Null when the event carries no tag, or none of its
+        // tags belongs to a registered tag type.
+        if (_events.DcbStorageMode == DcbStorageMode.HStore)
+        {
+            // Null rather than empty when nothing was ever tagged, so this cannot be a Count check alone.
+            var tags = e.Tags;
+            var hstore = tags is { Count: > 0 }
+                ? EventTagOperations.BuildHstore(_events, tags)
+                : null;
+
+            if (hstore is { Count: > 0 })
+            {
+                await writer.WriteAsync(hstore, NpgsqlDbType.Hstore, cancellation).ConfigureAwait(false);
             }
             else
             {
