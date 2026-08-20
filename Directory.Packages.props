@@ -399,7 +399,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.24.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.25.1" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -492,9 +492,31 @@
          Weasel.Core helper so the providers cannot drift apart again.
          9.23.2 (weasel#424/#425): Sqlite and MySql implement the non-generic
          Weasel.Core.ICommandBuilder (weasel#423), and the JasperFx line moves to 2.38.0 so this
-         matrix stays coherent with the JasperFx pins above rather than resolving transitively. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.24.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.24.0" />
+         matrix stays coherent with the JasperFx pins above rather than resolving transitively.
+         9.25.0: "the identifier release" (see weasel docs/release-9-25.md). Most of it lands on the
+         other providers — SQL Server bracketing, MySQL identifier normalization, the SQLite rebuild
+         fix — but two things reach Marten. weasel#462 makes PostgreSQL quote for SHAPE as well as for
+         case and keywords, and weasel#458 stops TableColumn silently rewriting a space in a column
+         name to an underscore. Both are no-ops for conventional lowercase schemas, which is every
+         name Marten generates itself; a user-supplied duplicated-field column containing a space
+         would now be emitted quoted rather than folded. weasel#468 also widens identifier validation
+         to every identifier a table writes rather than only the ones naming objects, which is the
+         same surface as the 9.21.1/9.23.x hardening and matters most to the per-tenant partition
+         names. Verified against the schema-heavy suites rather than assumed — see the bump commit.
+         9.25.1 (weasel#485/#487, found here): REQUIRED to move off 9.24.0 — do not pin 9.25.0. That
+         weasel#468 widening ran local identifiers through AssertValidIdentifier, which also enforces
+         the 63-character limit, so a long primary key CONSTRAINT name was refused where PostgreSQL
+         had always just truncated it. Weasel's own TableDelta compares those names through
+         TruncatedNameIdentifier precisely so a truncated one matches, so the two halves disagreed.
+         9.25.1 adds Migrator.AssertValidLocalIdentifier: same safety rules, no length limit.
+         It cost two Marten failures on 9.25.0, and the second is the one to remember — the same
+         rejection aborted a projection's schema application and surfaced as a 23505 on
+         pk_mt_event_progression during per-tenant catch-up, an error naming a table with nothing to
+         do with identifiers. A validation failure on this path does not only throw where you can
+         see it.
+         Requires JasperFx.Events >= 2.46.0; this matrix is already at 2.47.0. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.25.1" />
+    <PackageVersion Include="Weasel.Storage" Version="9.25.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
