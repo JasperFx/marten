@@ -187,7 +187,11 @@ internal static class EventTagOperations
     /// path). Key is the registered tag's <c>TableSuffix</c>, value is the stringified
     /// tag value (Npgsql maps the dictionary to hstore via <c>NpgsqlDbType.Hstore</c>).
     /// </summary>
-    private static Dictionary<string, string> BuildHstore(EventGraph eventGraph,
+    /// <summary>
+    /// Internal rather than private because the bulk import writes the same value into the same column,
+    /// and a second implementation of this rule would be a second thing to keep in step.
+    /// </summary>
+    internal static Dictionary<string, string> BuildHstore(EventGraph eventGraph,
         IReadOnlyList<EventTag> tags)
     {
         var result = new Dictionary<string, string>(capacity: tags.Count);
