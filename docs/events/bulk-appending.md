@@ -281,8 +281,12 @@ The bulk append API intentionally trades off features for throughput:
 - **No optimistic concurrency** -- there is no version checking against existing streams. This API is
   designed for initial data loading, not concurrent writes.
 - **New streams only** -- bulk append creates new streams. It does not support appending to existing streams.
-- **No event tags** -- DCB tag operations are not included in the COPY pipeline. Tags would need to be
-  handled separately after bulk loading.
+- **Event tags: hstore only** -- with `DcbStorageMode.HStore` the DCB tags travel in the same COPY as the
+  events, because they live in a column on `mt_events`; tag a built `IEvent` with `WithTag(...)` before
+  handing its `StreamAction` to the bulk API and a tag query finds it like any appended event. With
+  `DcbStorageMode.TagTables` the tags are rows in per-type tables and are *not* written by the COPY
+  pipeline, so they have to be handled separately after bulk loading. This matters for an imported history:
+  an untagged event is not an error to a tag query, it is simply absent from the answer.
 
 ## Performance
 
