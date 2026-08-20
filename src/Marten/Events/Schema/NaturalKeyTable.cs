@@ -94,6 +94,14 @@ internal class NaturalKeyTable: Table, ISchemaObject
             IsUnique = false,
             Columns = new[] { streamCol }
         });
+
+        // Every other name this table writes is shortened; the primary key constraint was left on
+        // Weasel's pkey_{table}_{columns} default, which runs past PostgreSQL's 63 character limit
+        // for an aggregate type name of any real length -- 16 characters is enough once tenant_id
+        // joins the key under conjoined tenancy. PostgreSQL used to truncate it silently; Weasel
+        // 9.25 validates primary key constraint names and refuses to emit one that would be cut.
+        PrimaryKeyName = PostgresqlIdentifier.Shorten(
+            $"pkey_{Identifier.Name}_{string.Join("_", PrimaryKeyColumns)}");
     }
 
     /// <summary>
