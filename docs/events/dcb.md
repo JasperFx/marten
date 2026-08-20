@@ -344,6 +344,8 @@ CREATE TABLE IF NOT EXISTS mt_event_tag_student (
 
 DCB queries `LEFT JOIN` across each referenced tag table. Strengths: native column types preserve `Guid`/`int`/`string`/`long`/`short` semantics, and single-tag `EventsExistAsync` checks hit a small dedicated table via its primary-key index. Trade-offs: every distinct tag type adds a table, two indexes, and a foreign key; queries spanning N tag types pay N JOINs.
 
+Because the primary key is `(value, seq_id)`, **one event may carry several values of the same tag type** — a `HomeworkCopied` event naming the student copied from and the student who copied is two `student` tags on one event, and either one finds it. This is the mode to pick when your events tag that way; `HStore` cannot represent it.
+
 #### `DcbStorageMode.HStore` (opt-in)
 
 Tags are stored inline on a new `mt_events.tags hstore` column, covered by a single GIN index that handles every registered tag type. The `hstore` extension is registered automatically as part of schema creation:
@@ -375,7 +377,7 @@ Trade-offs:
 - All tag values are stored as text — Npgsql automatically converts `Dictionary<string, string>` to `hstore` via `NpgsqlDbType.Hstore`, and `Guid`/`int`/`long`/`short` are stringified at the database boundary. Tag-type **registration** (`RegisterTagType<StudentId>("student")`) and **usage** (`event.WithTag(new StudentId(...))`) are unchanged — only the on-disk representation is different.
 - The `hstore` extension must be installable on the target database. Most managed Postgres providers ship it; bare-metal installations may need `CREATE EXTENSION` privileges on first run.
 - The `mt_quick_append_events` Postgres function does not take per-tag-type arrays — Marten writes the inline hstore as a follow-up `UPDATE` after the event INSERT.
-- **Each tag type is single-valued per event.** An hstore is a map with unique keys, and Marten uses the registered tag's table-suffix as the key. If you call `AssignTagWhere` twice on the same event with two different values of the *same* tag type, the second value overwrites the first. The TagTables layout permits multiple values of the same tag type per event (the underlying table PK is `(value, seq_id)`); HStore does not. Cross-type merging (e.g. adding a `StudentId` tag to an event that already has a `RegionId` tag) works correctly in both modes — HStore uses Postgres' `hstore || hstore` concatenation to preserve the existing keys.
+- **Each tag type is single-valued per event.** An hstore is a map with unique keys, and Marten uses the registered tag's table-suffix as the key, so there is nowhere to put a second value of one tag type. Appending an event that carries two different values of the same tag type throws `MartenNotSupportedException` rather than silently keeping one of them — a dropped tag is not an error to a DCB query, it is simply absent from the answer, and that is the one failure a consistency boundary must not have. TagTables has no such restriction (see below). Cross-type merging (e.g. adding a `StudentId` tag to an event that already has a `RegionId` tag) works correctly in both modes — HStore uses Postgres' `hstore || hstore` concatenation to preserve the existing keys.
 
 ### Choosing a Storage Mode
 
