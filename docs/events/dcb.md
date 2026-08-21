@@ -379,6 +379,53 @@ Trade-offs:
 - The `mt_quick_append_events` Postgres function does not take per-tag-type arrays — Marten writes the inline hstore as a follow-up `UPDATE` after the event INSERT.
 - **Each tag type is single-valued per event.** An hstore is a map with unique keys, and Marten uses the registered tag's table-suffix as the key, so there is nowhere to put a second value of one tag type. Appending an event that carries two different values of the same tag type throws `MartenNotSupportedException` rather than silently keeping one of them — a dropped tag is not an error to a DCB query, it is simply absent from the answer, and that is the one failure a consistency boundary must not have. TagTables has no such restriction (see below). Cross-type merging (e.g. adding a `StudentId` tag to an event that already has a `RegionId` tag) works correctly in both modes — HStore uses Postgres' `hstore || hstore` concatenation to preserve the existing keys.
 
+### Enabling HStore on an existing store <Badge type="tip" text="9.29" />
+
+Switching an existing store to `DcbStorageMode.HStore` adds two things to `mt_events`. The `tags hstore`
+column is free — a nullable add is metadata-only. The GIN index over it is not: Marten emits a plain
+`CREATE INDEX`, which holds `ACCESS EXCLUSIVE` for the whole build. On a large event table that is a
+write outage rather than a migration.
+
+There is no flag that fixes this in general. `CREATE INDEX CONCURRENTLY` cannot run inside the
+transaction a migration uses, and under `UseTenantPartitionedEvents` PostgreSQL refuses it on a
+partitioned parent outright (`cannot create index on partitioned table ... concurrently`).
+
+So the index can be handed to the operator instead. Ignore it, and Marten leaves it out of the schema
+diff in **both** directions — it will neither create it nor treat one you built yourself as drift:
+
+```csharp
+opts.Events.DcbStorageMode = DcbStorageMode.HStore;
+
+// Marten adds the tags column, but leaves this index alone
+opts.Events.IgnoreIndex(EventGraph.HStoreTagIndexName);
+```
+
+Apply the schema as usual to get the column, then build the index out of band. On an unpartitioned
+event table:
+
+```sql
+CREATE INDEX CONCURRENTLY idx_mt_events_tags ON mt_events USING gin (tags);
+```
+
+On a tenant-partitioned one, PostgreSQL's supported sequence is three steps — the parent index is
+created invalid and flips to valid once every child is attached:
+
+```sql
+-- 1. metadata only; the parent index is left invalid
+CREATE INDEX idx_mt_events_tags ON ONLY mt_events USING gin (tags);
+
+-- 2. per partition, without blocking writes
+CREATE INDEX CONCURRENTLY idx_mt_events_tags_<partition> ON mt_events_<partition> USING gin (tags);
+
+-- 3. per partition; after the last one the parent is valid
+ALTER INDEX idx_mt_events_tags ATTACH PARTITION idx_mt_events_tags_<partition>;
+```
+
+::: warning
+Tag queries are correct without the index — they just fall back to a sequential scan, which on a large
+event table is slow enough to matter. Build it before you rely on DCB queries in production, not after.
+:::
+
 ### Choosing a Storage Mode
 
 The HStore mode trades native column types and small-table primary-key lookups for index-of-one and JOIN elimination. The right choice depends on your DCB query shape.

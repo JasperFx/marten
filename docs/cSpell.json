@@ -127,7 +127,8 @@
     "dedup",
     "unindexed",
     "SQLSTATE",
-    "SQLSTATEs"
+    "SQLSTATEs",
+    "unpartitioned"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links

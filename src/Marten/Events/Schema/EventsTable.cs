@@ -68,7 +68,7 @@ internal class EventsTable: Table
         if (events.DcbStorageMode == DcbStorageMode.HStore)
         {
             AddColumn("tags", "hstore").AllowNulls();
-            Indexes.Add(new IndexDefinition("idx_mt_events_tags")
+            Indexes.Add(new IndexDefinition(EventGraph.HStoreTagIndexName)
             {
                 Method = IndexMethod.gin,
                 Columns = ["tags"]
