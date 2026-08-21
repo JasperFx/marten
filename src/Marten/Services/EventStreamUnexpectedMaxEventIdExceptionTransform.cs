@@ -62,11 +62,42 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
         return true;
     }
 
+    /// <summary>
+    ///     The unique index that guards one version per stream. Marten always names it
+    ///     <c>pk_mt_events_stream_and_version</c>, but under
+    ///     <see cref="Events.EventGraph.UseArchivedStreamPartitioning" /> the index is partitioned and
+    ///     PostgreSQL reports the CHILD index, whose name it generates from the partition and the
+    ///     indexed columns. Those columns differ by tenancy style, so there is a name per configuration:
+    ///     <list type="bullet">
+    ///         <item><description>no partitioning — <c>pk_mt_events_stream_and_version</c></description></item>
+    ///         <item><description>partitioned — <c>mt_events_default_stream_id_version_is_archived_idx</c></description></item>
+    ///         <item><description>partitioned + conjoined — <c>mt_events_default_tenant_id_stream_id_version_is_archived_idx</c></description></item>
+    ///     </list>
+    /// </summary>
+    /// <remarks>
+    ///     #5270. Matched by shape rather than by an enumerated list, because enumerating is what let this
+    ///     through twice: #3520 added the second name and the third was still missing, and each partition
+    ///     other than <c>_default</c> produces another one again. The <c>stream_id_version</c> requirement
+    ///     is what keeps the OTHER unique index on this table — the one over <c>id</c>, whose child is
+    ///     <c>mt_events_default_id_idx</c> — from being transformed: a duplicate event id is not an
+    ///     optimistic-concurrency conflict and must keep surfacing as itself.
+    /// </remarks>
     private static bool Matches(Exception e)
     {
-        return e is PostgresException pe
-            && pe.SqlState == PostgresErrorCodes.UniqueViolation
-            && (pe.ConstraintName == "pk_mt_events_stream_and_version" || pe.ConstraintName == "mt_events_default_stream_id_version_is_archived_idx");
+        if (e is not PostgresException pe || pe.SqlState != PostgresErrorCodes.UniqueViolation)
+        {
+            return false;
+        }
+
+        if (pe.ConstraintName is not { } name)
+        {
+            return false;
+        }
+
+        return name == "pk_mt_events_stream_and_version"
+               || (name.StartsWith("mt_events", StringComparison.Ordinal)
+                   && name.EndsWith("_idx", StringComparison.Ordinal)
+                   && name.Contains("stream_id_version", StringComparison.Ordinal));
     }
 }
 
