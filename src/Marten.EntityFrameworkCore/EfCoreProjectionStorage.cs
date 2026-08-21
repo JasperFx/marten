@@ -48,6 +48,24 @@ internal class EfCoreProjectionStorage<
     public string TenantId => _tenantId;
     public Type IdType => typeof(TId);
 
+    /// <summary>
+    ///     #5266. One <see cref="DbContext" /> is created per tenant/batch and shared by every slice in
+    ///     the range, and a <c>DbContext</c> is not thread-safe. <c>AggregationRunner</c> otherwise applies
+    ///     slices through a fixed 10-wide block, so a multi-stream projection with custom grouping — where
+    ///     one event fans out into many slices — has up to ten of them concurrently calling
+    ///     <see cref="DbContext.Entry(object)" /> / <c>FindAsync</c> and mutating the same change tracker.
+    ///     That corrupts EF Core's identity map, surfacing as an <see cref="InvalidOperationException" />
+    ///     out of <c>Dictionary.TryInsert</c> or a <see cref="NullReferenceException" /> out of
+    ///     <c>ChangeDetector.DetectChanges</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Locking inside this class is not a substitute, which is why the declaration lives here rather
+    ///     than being worked around: a lock around each member still leaves the aggregation on one thread
+    ///     mutating entities while another thread's <c>Entry()</c> runs change detection over them. The
+    ///     fan-out itself has to stop, and only the runner can stop it (jasperfx#683).
+    /// </remarks>
+    public bool IsThreadSafe => false;
+
     public TId Identity(TDoc document)
     {
         var entityType = DbContext.Model.FindEntityType(typeof(TDoc));
