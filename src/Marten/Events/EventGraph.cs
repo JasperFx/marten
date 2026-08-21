@@ -44,6 +44,26 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     IDisposable, IAsyncDisposable,
     IAggregationSourceFactory<IQuerySession>, IDescribeMyself
 {
+    /// <summary>
+    ///     The name of the GIN index over the <c>tags</c> hstore column in
+    ///     <see cref="DcbStorageMode.HStore" /> mode. Pass it to <see cref="IgnoreIndex" /> to keep the
+    ///     index out of schema migrations and build it yourself.
+    /// </summary>
+    /// <remarks>
+    ///     #5268. Turning HStore mode on for an existing store adds two things to <c>mt_events</c>: the
+    ///     nullable <c>tags</c> column, which is a metadata-only add, and this index, which is not.
+    ///     Marten emits a plain <c>CREATE INDEX</c>, which holds ACCESS EXCLUSIVE for the whole build —
+    ///     on a large event table that is a write outage rather than a migration. And under
+    ///     <see cref="UseTenantPartitionedEvents" /> no flag would fix it: PostgreSQL refuses
+    ///     <c>CREATE INDEX CONCURRENTLY</c> on a partitioned parent at all, and the index has to be built
+    ///     per partition and attached.
+    ///     <para>
+    ///     Ignoring it takes it out of the schema diff in both directions, so Marten will neither create
+    ///     it nor treat an index you built yourself as drift.
+    ///     </para>
+    /// </remarks>
+    public const string HStoreTagIndexName = "idx_mt_events_tags";
+
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
 

@@ -1,0 +1,187 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Events;
+using Marten;
+using Marten.Events;
+using Marten.Testing.Harness;
+using Npgsql;
+using Shouldly;
+using Weasel.Postgresql;
+using Xunit;
+
+namespace EventSourcingTests.Dcb;
+
+/// <summary>
+/// #5268. Turning <see cref="DcbStorageMode.HStore" /> on for an existing store adds two things to
+/// <c>mt_events</c>: a nullable <c>tags hstore</c> column, which is a metadata-only add, and a GIN index
+/// over it, which is not. Marten emits a plain <c>CREATE INDEX</c>, holding ACCESS EXCLUSIVE for the
+/// build — a write outage on a large event table rather than a migration. And under
+/// <c>UseTenantPartitionedEvents</c> a <c>CONCURRENTLY</c> flag would not help anyway, because
+/// PostgreSQL refuses <c>CREATE INDEX CONCURRENTLY</c> on a partitioned parent outright.
+/// <para>
+/// The escape hatch is <c>Events.IgnoreIndex</c>: the index drops out of the schema diff, so an operator
+/// can build it out of band — <c>CREATE INDEX ... ON ONLY</c> the parent, <c>CONCURRENTLY</c> per
+/// partition, then <c>ALTER INDEX ... ATTACH PARTITION</c> — without a maintenance window. These tests
+/// pin that it genuinely works, because it is the difference between "documented workaround" and
+/// "there is no non-blocking path".
+/// </para>
+/// </summary>
+[Collection("OneOffs")]
+public class Bug_5268_hstore_tag_index_can_be_built_out_of_band: OneOffConfigurationsContext
+{
+    private DocumentStore StoreFor(bool hstore, bool ignoreTagIndex)
+    {
+        return StoreOptions(opts =>
+        {
+            opts.Events.AddEventType<StudentEnrolled>();
+
+            if (hstore)
+            {
+                opts.Events.DcbStorageMode = DcbStorageMode.HStore;
+                opts.Events.RegisterTagType<StudentId>("student");
+            }
+
+            if (ignoreTagIndex)
+            {
+                opts.Events.IgnoreIndex(EventGraph.HStoreTagIndexName);
+            }
+        }, cleanAll: false);
+    }
+
+    private async Task<bool> IndexExistsAsync(string indexName)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "select count(*) from pg_indexes where schemaname = @schema and indexname = @name";
+        cmd.Parameters.AddWithValue("schema", SchemaName);
+        cmd.Parameters.AddWithValue("name", indexName);
+
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+    }
+
+    private async Task<bool> ColumnExistsAsync(string column)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+                          select count(*) from information_schema.columns
+                          where table_schema = @schema and table_name = 'mt_events' and column_name = @column
+                          """;
+        cmd.Parameters.AddWithValue("schema", SchemaName);
+        cmd.Parameters.AddWithValue("column", column);
+
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0;
+    }
+
+    /// <summary>
+    /// Drop the whole schema and seed a store with the event tables but WITHOUT hstore mode, so the
+    /// following migration is the real "turn hstore on for an existing store" case rather than a
+    /// first-time create.
+    /// </summary>
+    private async Task SeedNonHStoreStoreAsync()
+    {
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.DropSchemaAsync(SchemaName);
+        }
+
+        var store = StoreFor(hstore: false, ignoreTagIndex: false);
+
+        await using var session = store.LightweightSession();
+        session.Events.StartStream(Guid.NewGuid(), new StudentEnrolled("Alice", "Math"));
+        await session.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task turning_hstore_on_adds_the_index_by_default()
+    {
+        // The baseline the escape hatch is measured against: without opting out, the migration adds it.
+        await SeedNonHStoreStoreAsync();
+
+        var store = StoreFor(hstore: true, ignoreTagIndex: false);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        (await ColumnExistsAsync("tags")).ShouldBeTrue();
+        (await IndexExistsAsync(EventGraph.HStoreTagIndexName)).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task the_tag_index_can_be_left_to_the_operator()
+    {
+        await SeedNonHStoreStoreAsync();
+
+        var store = StoreFor(hstore: true, ignoreTagIndex: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        // The column still arrives -- it is a nullable add, metadata only, and DCB cannot work without it.
+        (await ColumnExistsAsync("tags")).ShouldBeTrue();
+
+        // The expensive half did not.
+        (await IndexExistsAsync(EventGraph.HStoreTagIndexName)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task an_operator_built_index_is_left_alone_by_a_later_migration()
+    {
+        // The other half of the workaround, and the one that would make it useless if it failed: having
+        // built the index out of band, a subsequent schema application must not decide it is drift and
+        // try to recreate or drop it.
+        await SeedNonHStoreStoreAsync();
+
+        var store = StoreFor(hstore: true, ignoreTagIndex: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await using var cmd = conn.CreateCommand();
+            // What the operator would run out of band. CONCURRENTLY is the point of doing it by hand;
+            // it is omitted here only because a test has no need to avoid the lock.
+            cmd.CommandText =
+                $"create index {EventGraph.HStoreTagIndexName} on {SchemaName}.mt_events using gin (tags)";
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        (await IndexExistsAsync(EventGraph.HStoreTagIndexName)).ShouldBeTrue();
+
+        await Should.NotThrowAsync(() => store.Storage.ApplyAllConfiguredChangesToDatabaseAsync());
+
+        // Still there, and the store still reports itself as matching its configuration.
+        (await IndexExistsAsync(EventGraph.HStoreTagIndexName)).ShouldBeTrue();
+        await Should.NotThrowAsync(() => store.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
+    }
+
+    [Fact]
+    public async Task tag_queries_still_work_once_the_index_is_built_out_of_band()
+    {
+        // Guard against a hollow victory: suppressing the index must not suppress the tagging itself.
+        await SeedNonHStoreStoreAsync();
+
+        var store = StoreFor(hstore: true, ignoreTagIndex: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var studentId = new StudentId(Guid.NewGuid());
+
+        await using (var session = store.LightweightSession())
+        {
+            var evt = session.Events.BuildEvent(new StudentEnrolled("Bob", "Math"));
+            evt.WithTag(studentId);
+            session.Events.StartStream(Guid.NewGuid(), evt);
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = store.LightweightSession();
+        var found = await query.Events.QueryByTagsAsync(
+            new JasperFx.Events.Tags.EventTagQuery().Or<StudentId>(studentId));
+
+        found.Count.ShouldBe(1);
+    }
+}
