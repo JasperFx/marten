@@ -7,6 +7,7 @@ using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Storage.Metadata;
 using Weasel.Core;
+using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage;
@@ -132,6 +133,22 @@ internal class DocumentTable: Table
                 column.AsPrimaryKey();
             }
         }
+
+        // Last, because the partitioning block above can still add columns to the key.
+        //
+        // Same fix as #5271 did for the natural key table, one table over and far more exposed: this
+        // is every document Marten stores. The primary key constraint was left on Weasel's
+        // pkey_{table}_{columns} default, which runs past PostgreSQL's 63 character limit for a
+        // document type name of no great length once tenant_id joins the key under conjoined tenancy
+        // -- pkey_mt_doc_bug_4679_catch_up_per_tenant_23505_tripdistance_tenant_id_id is 72.
+        //
+        // PostgreSQL truncates such a name rather than rejecting it, and the constraint's backing
+        // index is a schema-scoped object, so two document types whose names agree for long enough
+        // collide outright: 'relation "pkey_..." already exists' on the second CREATE TABLE. Shorten
+        // appends a deterministic hash, which is what keeps them distinct. It is a no-op at 63
+        // characters or fewer, so nothing changes for a schema that was not already being truncated.
+        PrimaryKeyName = PostgresqlIdentifier.Shorten(
+            $"pkey_{Identifier.Name}_{string.Join("_", PrimaryKeyColumns)}");
     }
 
     public Type DocumentType => _mapping.DocumentType;
