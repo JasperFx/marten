@@ -110,7 +110,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
 
     public ISqlFragment ParseWhereForContains(MethodCallExpression body, IReadOnlyStoreOptions options)
     {
-        return new WhereFragment($"? = ANY({TypedLocator})", body.Arguments.Last().Value());
+        return new WhereFragment($"? = ANY({TypedLocator})", body.ContainsValueArgument().Value());
     }
 
     public IQueryableMember FindMember(MemberInfo member)
