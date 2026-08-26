@@ -237,7 +237,7 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         // necessarily references at least one tag).
         await reader.NextResultAsync(token).ConfigureAwait(false);
 
-        var capturedVersions = await readCapturedVersions(reader, token).ConfigureAwait(false);
+        var capturedVersions = await readCapturedVersions(reader, lastSeenSequence, token).ConfigureAwait(false);
 
         T? aggregate = default;
         if (events.Count > 0)
@@ -252,14 +252,19 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
             aggregate = await aggregator.BuildAsync(events, docSession, default, token).ConfigureAwait(false);
         }
 
-        var assertion = new DcbTagVersionAssertion(_store.Events, _query, lastSeenSequence, capturedVersions);
-        docSession.QueueOperation(assertion);
+        // #5276/#5280: the captured rows are handed to the session, not turned into an operation
+        // here. The boundary condition guards an append, so it only belongs in the unit of work if
+        // this session appends something -- and every boundary the session reads folds into a single
+        // assertion so one row is never asserted twice. See
+        // DocumentSessionBase.QueuePendingDcbBoundaryAssertions, which drains this at
+        // ProcessEventsAsync time, ahead of the producer-side bumps.
+        docSession.CaptureDcbBoundary(capturedVersions);
 
         return new EventBoundary<T>(docSession, _store.Events, aggregate, events, lastSeenSequence);
     }
 
     private async Task<IReadOnlyList<DcbTagVersionEntry>> readCapturedVersions(
-        DbDataReader reader, CancellationToken token)
+        DbDataReader reader, long lastSeenSequence, CancellationToken token)
     {
         // SELECT returns only the rows that exist. A missing row means no prior
         // save has touched this tag boundary yet — captured version = 0, and the
@@ -280,7 +285,11 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         {
             var key = (targets[i].TagTable, targets[i].TagValue);
             byKey.TryGetValue(key, out var version);   // missing → version = 0
-            entries[i] = new DcbTagVersionEntry(targets[i].TagTable, targets[i].TagValue, version);
+
+            // #5280: each row carries the query that captured it, so a merged assertion covering
+            // several boundaries still reports the one that actually lost.
+            entries[i] = new DcbTagVersionEntry(targets[i].TagTable, targets[i].TagValue, version,
+                _query, lastSeenSequence);
         }
 
         return entries;

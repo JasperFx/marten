@@ -23,7 +23,14 @@ namespace Marten.Events.Dcb;
 /// </param>
 /// <param name="TagValue">Canonical string form of the tag value (see <see cref="TagValueStringifier"/>).</param>
 /// <param name="CapturedVersion">The version observed at fetch time. The save's UPDATE WHERE version = $captured is the optimistic check.</param>
-internal readonly record struct DcbTagVersionEntry(string TagTable, string TagValue, long CapturedVersion);
+/// <param name="Query">The boundary query this row was captured for — carried per row rather than per assertion so a merged assertion can still name the boundary that failed. See #5280.</param>
+/// <param name="LastSeenSequence">The event sequence <paramref name="Query"/> had read up to, for the exception message.</param>
+internal readonly record struct DcbTagVersionEntry(
+    string TagTable,
+    string TagValue,
+    long CapturedVersion,
+    EventTagQuery Query,
+    long LastSeenSequence);
 
 /// <summary>
 /// Storage operation that enforces the DCB tag boundary by bumping the
@@ -38,35 +45,71 @@ internal readonly record struct DcbTagVersionEntry(string TagTable, string TagVa
 /// tuples are sorted by (tag_table, tag_value) before SQL is built so two
 /// concurrent appenders touching the same tag set acquire locks in identical
 /// order — no risk of deadlock from cross-locking.
+///
+/// #5280: one save carries ONE of these, covering every boundary the session
+/// read. A row named by two boundaries — the same query fetched twice, or two
+/// overlapping queries — appears once. Two assertions over one row would each
+/// carry the same captured version, and the first one's bump would make the
+/// second one's <c>where version = $captured</c> miss: a session reporting a
+/// concurrency conflict against itself.
 /// </remarks>
 internal class DcbTagVersionAssertion: IStorageOperation
 {
     private readonly EventGraph _events;
-    private readonly EventTagQuery _query;
-    private readonly long _lastSeenSequence;
     private readonly IReadOnlyList<DcbTagVersionEntry> _orderedEntries;
 
     public DcbTagVersionAssertion(
         EventGraph events,
-        EventTagQuery query,
-        long lastSeenSequence,
         IReadOnlyList<DcbTagVersionEntry> capturedEntries)
     {
         _events = events;
-        _query = query;
-        _lastSeenSequence = lastSeenSequence;
 
         // Sort once, here — both ConfigureCommand and PostprocessAsync iterate
         // in the same order, and the deterministic order is what keeps two
         // concurrent appenders touching the same tag rows from deadlocking.
+        // Sorting the merged set is also what makes that guarantee hold across
+        // boundaries: two sessions holding the same pair of boundaries in
+        // opposite fetch order would otherwise take the row locks in opposite
+        // order too.
         var sorted = new DcbTagVersionEntry[capturedEntries.Count];
         for (var i = 0; i < capturedEntries.Count; i++) sorted[i] = capturedEntries[i];
         Array.Sort(sorted, static (a, b) =>
         {
             var byTable = string.CompareOrdinal(a.TagTable, b.TagTable);
-            return byTable != 0 ? byTable : string.CompareOrdinal(a.TagValue, b.TagValue);
+            if (byTable != 0) return byTable;
+
+            var byValue = string.CompareOrdinal(a.TagValue, b.TagValue);
+            if (byValue != 0) return byValue;
+
+            // Oldest capture first, so collapsing a duplicate run below keeps the
+            // strictest check of the row: every read the session made has to still
+            // be valid, not just the most recent one.
+            return a.CapturedVersion.CompareTo(b.CapturedVersion);
         });
-        _orderedEntries = sorted;
+
+        _orderedEntries = collapseDuplicateRows(sorted);
+    }
+
+    // Duplicates are adjacent after the sort, so one pass over the run keeps the
+    // first (oldest captured version) of each (tag_table, tag_value).
+    private static DcbTagVersionEntry[] collapseDuplicateRows(DcbTagVersionEntry[] sorted)
+    {
+        if (sorted.Length < 2) return sorted;
+
+        var kept = 1;
+        for (var i = 1; i < sorted.Length; i++)
+        {
+            var previous = sorted[kept - 1];
+            if (sorted[i].TagTable == previous.TagTable && sorted[i].TagValue == previous.TagValue) continue;
+
+            sorted[kept++] = sorted[i];
+        }
+
+        if (kept == sorted.Length) return sorted;
+
+        var collapsed = new DcbTagVersionEntry[kept];
+        Array.Copy(sorted, collapsed, kept);
+        return collapsed;
     }
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
@@ -115,7 +158,7 @@ internal class DcbTagVersionAssertion: IStorageOperation
 
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
-        var conflictDetected = false;
+        DcbTagVersionEntry? conflicted = null;
 
         for (var i = 0; i < _orderedEntries.Count; i++)
         {
@@ -129,16 +172,19 @@ internal class DcbTagVersionAssertion: IStorageOperation
             var hasRow = await reader.ReadAsync(token).ConfigureAwait(false);
             if (!hasRow)
             {
-                conflictDetected = true;
+                // First loser wins the exception — the row carries the boundary
+                // query that captured it, so the message names a query the caller
+                // actually made even when the save spans several boundaries.
+                conflicted ??= _orderedEntries[i];
                 // Keep iterating so we consume the remaining result sets — the
                 // batch protocol requires every statement's result set to be
                 // walked before the next operation can read its own.
             }
         }
 
-        if (conflictDetected)
+        if (conflicted.HasValue)
         {
-            exceptions.Add(new DcbConcurrencyException(_query, _lastSeenSequence));
+            exceptions.Add(new DcbConcurrencyException(conflicted.Value.Query, conflicted.Value.LastSeenSequence));
         }
     }
 
