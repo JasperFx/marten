@@ -1005,36 +1005,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
                 "https://github.com/JasperFx/marten/issues/4596). Pick one for now.");
         }
 
-        // #5268: Events.BuildHStoreTagIndexConcurrently leans on Weasel's three-step sequence for a
-        // concurrent index on a partitioned table (weasel#502) — CREATE INDEX ON ONLY the parent, one
-        // concurrent index per partition, then ATTACH PARTITION for each. Weasel derives the partition
-        // list from ListPartitioning.PartitionTableNames, which reads its own declared partitions and
-        // does NOT consult the partition manager. Under UseTenantPartitionedEvents the partitions are
-        // entirely manager-owned (mt_tenant_partitions), so that list comes back empty and only step one
-        // runs: the parent index is created and left permanently INVALID, which PostgreSQL will not use
-        // and which every later apply then reports as drift.
-        //
-        // Refuse the combination rather than emitting an index that silently does nothing. The
-        // out-of-band route still works here and is documented for exactly this shape — see
-        // EventGraph.HStoreTagIndexName and docs/events/dcb.md.
-        //
-        // Filed as weasel#520; this guard comes out once that ships, and the test pinning it
-        // (Bug_5268_concurrent_tag_index_under_partitioning) turns into the positive case.
-        if (Events.BuildHStoreTagIndexConcurrently && Events.UseTenantPartitionedEvents &&
-            Events.DcbStorageMode == DcbStorageMode.HStore)
-        {
-            throw new InvalidOperationException(
-                "Events.BuildHStoreTagIndexConcurrently cannot yet be combined with " +
-                "Events.UseTenantPartitionedEvents. Building an index concurrently on a partitioned " +
-                "mt_events means building one per tenant partition and attaching each, and the partition " +
-                "list is owned by Marten's tenant partition manager rather than declared on the table, so " +
-                $"the sequence would create {EventGraph.HStoreTagIndexName} and leave it permanently " +
-                "invalid. Build it out of band instead: call " +
-                "Events.IgnoreIndex(EventGraph.HStoreTagIndexName) and follow the procedure under " +
-                "'Enabling HStore on an existing store' at https://martendb.io/events/dcb, which Marten " +
-                "will then leave alone in both directions.");
-        }
-
         // #4596 Session 1: per-tenant event partitioning re-uses Marten's existing
         // ManagedListPartitions machinery via the `mt_tenant_partitions` lookup
         // table. The EventsTable / StreamsTable schema needs the same

@@ -15,24 +15,23 @@ using Xunit;
 namespace TenantPartitionedEventsTests.Dcb;
 
 /// <summary>
-/// #5268, the partitioned half. <c>Events.BuildHStoreTagIndexConcurrently</c> builds the DCB tag index
-/// without blocking writes, but not on a partitioned <c>mt_events</c>: PostgreSQL refuses
-/// <c>CREATE INDEX CONCURRENTLY</c> on a partitioned parent outright, and the sequence it accepts instead
-/// — an <c>ON ONLY</c> parent index, one concurrent index per partition, an
-/// <c>ALTER INDEX ... ATTACH PARTITION</c> for each — needs the partition list, which under
-/// <c>UseTenantPartitionedEvents</c> lives in <c>mt_tenant_partitions</c> rather than on the table.
+/// #5268, the partitioned half — the reporter's own shape, a sharded tenant-partitioned event store where
+/// turning HStore mode on should not cost a maintenance window per shard.
 /// <para>
-/// Left to run, the sequence stops after step one and leaves the index INVALID: present in
-/// <c>pg_indexes</c>, unusable by the planner, and reported as drift by every later apply. So the
-/// combination is refused at configuration time, and these tests pin that refusal together with the two
-/// things that must keep working around it — the ordinary blocking build, and the out-of-band route from
-/// <see cref="EventGraph.HStoreTagIndexName" />, which is what the reporter's sharded, tenant-partitioned
-/// deployment actually uses.
+/// PostgreSQL refuses <c>CREATE INDEX CONCURRENTLY</c> on a partitioned parent outright, so
+/// <c>Events.BuildHStoreTagIndexConcurrently</c> here means the sequence it does accept: an
+/// <c>ON ONLY</c> parent index, one concurrent index per tenant partition, and an
+/// <c>ALTER INDEX ... ATTACH PARTITION</c> for each. The parent index is created INVALID by design and
+/// flips to valid only when the last child is attached — which is why every assertion below reads
+/// <c>indisvalid</c> rather than mere existence. An index that exists but is invalid is one the planner
+/// ignores, and it is exactly what a half-finished run leaves behind.
 /// </para>
 /// <para>
-/// The refusal is temporary: weasel#520 tracks <c>ListPartitioning.PartitionTableNames</c> consulting the
-/// partition manager, which is what makes the list empty. When that ships, the guard comes out and
-/// <see cref="the_concurrent_build_is_refused_under_tenant_partitioning" /> becomes the positive case.
+/// That last point is not hypothetical. On Weasel 9.26.0 this produced precisely that state, because the
+/// sequence was built from the table's DECLARED partitions and under <c>UseTenantPartitionedEvents</c>
+/// every partition is owned by the manager backing <c>mt_tenant_partitions</c> — the enumeration came
+/// back empty and only step one ran. Fixed in Weasel 9.27.0 (weasel#520), which is the floor for this
+/// feature.
 /// </para>
 /// </summary>
 public class Bug_5268_concurrent_tag_index_under_partitioning: IAsyncLifetime
@@ -137,23 +136,77 @@ public class Bug_5268_concurrent_tag_index_under_partitioning: IAsyncLifetime
     }
 
     [Fact]
-    public void the_concurrent_build_is_refused_under_tenant_partitioning()
+    public async Task the_tag_index_is_built_concurrently_across_every_tenant_partition()
     {
-        // Refused rather than quietly downgraded to a blocking build: the whole reason to set this flag is
-        // to avoid an outage, so silently taking the lock anyway would be the worst of the three outcomes.
-        var ex = Should.Throw<InvalidOperationException>(() => StoreFor(hstore: true, concurrentIndex: true));
+        // The headline case. On Weasel 9.26.0 this produced the parent index with indisvalid = false and
+        // no children at all, so both halves of the assertion matter: the children have to be attached,
+        // AND the parent has to have flipped to valid as a result.
+        await SeedPartitionedStoreAsync();
 
-        ex.Message.ShouldContain("BuildHStoreTagIndexConcurrently");
-        ex.Message.ShouldContain("UseTenantPartitionedEvents");
-        // The message has to carry the way out, not just the refusal.
-        ex.Message.ShouldContain("IgnoreIndex");
+        using var store = StoreFor(hstore: true, concurrentIndex: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        // Two tenant partitions; a manager-owned LIST partitioning has no default partition.
+        (await AttachedChildIndexCountAsync()).ShouldBe(2, "one attached index per tenant partition");
+        (await TagIndexIsValidAsync())
+            .ShouldBe(true, "the parent index is still invalid, so PostgreSQL will not use it");
+    }
+
+    [Fact]
+    public async Task a_concurrently_built_tag_index_is_not_drift()
+    {
+        // The half that would make the whole thing useless if it were wrong. Weasel reports an INVALID
+        // index as drift, and CONCURRENTLY is not part of what pg_get_indexdef echoes back -- so if the
+        // canonical form were wrong in either direction, every apply would rebuild a GIN index on a live
+        // event table, which is the outage this exists to avoid, now happening on every startup.
+        await SeedPartitionedStoreAsync();
+
+        using var store = StoreFor(hstore: true, concurrentIndex: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await Should.NotThrowAsync(() => store.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
+        await Should.NotThrowAsync(() => store.Storage.ApplyAllConfiguredChangesToDatabaseAsync());
+
+        (await AttachedChildIndexCountAsync()).ShouldBe(2);
+        (await TagIndexIsValidAsync()).ShouldBe(true);
+    }
+
+    [Fact]
+    public async Task a_tenant_added_after_the_index_gets_its_own_partition_index()
+    {
+        // Tenant partitions arrive over time, long after the index was built, and the enumeration the
+        // sequence is built from is only a point-in-time answer. A new partition is empty, so PostgreSQL
+        // builds and attaches its index as part of creating it -- but the parent would go invalid again
+        // if that did not happen, so it is worth pinning rather than assuming.
+        await SeedPartitionedStoreAsync();
+
+        using var store = StoreFor(hstore: true, concurrentIndex: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "gamma");
+
+        (await AttachedChildIndexCountAsync()).ShouldBe(3);
+        (await TagIndexIsValidAsync()).ShouldBe(true);
+
+        // And the new tenant can actually use it.
+        var orderRef = new TagIndexOrderRef("ORD-gamma");
+
+        await using var session = store.LightweightSession("gamma");
+        var evt = session.Events.BuildEvent(new TagIndexOrderPlaced("gamma-widget"));
+        evt.WithTag(orderRef);
+        session.Events.StartStream(Guid.NewGuid(), evt);
+        await session.SaveChangesAsync();
+
+        var found = await session.Events.QueryByTagsAsync(
+            new JasperFx.Events.Tags.EventTagQuery().Or<TagIndexOrderRef>(orderRef));
+        found.Count.ShouldBe(1);
     }
 
     [Fact]
     public void the_flag_is_harmless_without_hstore_mode()
     {
-        // Nothing to build, so nothing to refuse. A store that never turns DCB hstore mode on must not be
-        // rejected for a flag that has no index to apply to.
+        // Nothing to build. A store that never turns DCB hstore mode on must not be affected by a flag
+        // that has no index to apply to.
         Should.NotThrow(() =>
         {
             using var store = DocumentStore.For(opts =>
@@ -187,9 +240,11 @@ public class Bug_5268_concurrent_tag_index_under_partitioning: IAsyncLifetime
     [Fact]
     public async Task the_out_of_band_index_survives_under_partitioning()
     {
-        // The route the refusal points at, exercised in the shape it is actually for. Nothing here needs to
-        // avoid the lock, so the three steps run as three ordinary statements -- what is being pinned is
-        // that Marten then leaves the result alone rather than deciding it is drift.
+        // The other route, still supported: IgnoreIndex plus an operator building the index by hand. It
+        // stays worth pinning because it is what a shard already running an older Marten has to use, and
+        // because it is the escape hatch if the emitted sequence is ever not what a given site wants.
+        // Nothing here needs to avoid the lock, so the three steps run as three ordinary statements --
+        // what is pinned is that Marten then leaves the result alone rather than deciding it is drift.
         await SeedPartitionedStoreAsync();
 
         using var store = StoreFor(hstore: true, ignoreTagIndex: true);

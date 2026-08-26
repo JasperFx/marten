@@ -436,28 +436,30 @@ column is free — a nullable add is metadata-only. The GIN index over it is not
 `CREATE INDEX`, which holds `ACCESS EXCLUSIVE` for the whole build. On a large event table that is a
 write outage rather than a migration.
 
-On an event table that is **not** tenant-partitioned, Marten can build it without blocking writes
-(9.30+):
+Marten can build it for you without blocking writes (9.30+):
 
 ```csharp
 opts.Events.DcbStorageMode = DcbStorageMode.HStore;
 
-// CREATE INDEX CONCURRENTLY, outside the migration's transaction
+// Non-blocking, whichever shape mt_events has
 opts.Events.BuildHStoreTagIndexConcurrently = true;
 ```
+
+On an ordinary event table that is `CREATE INDEX CONCURRENTLY`. Under `UseTenantPartitionedEvents`,
+`mt_events` is a partitioned table and PostgreSQL refuses `CONCURRENTLY` on a partitioned parent
+outright (`cannot create index on partitioned table ... concurrently`), so Marten emits the three-step
+sequence it does accept instead: the index created on only the parent, one concurrent index per tenant
+partition, and each attached. The parent index is invalid until the last child is attached, so a run
+that dies halfway leaves a visible state rather than a silent one, and the next apply repairs it.
 
 The trade-off is that a concurrent build cannot run inside a transaction, so what `db-patch` and
 `db-dump` write out is no longer runnable as a single transactional script. It is still correct applied
 against a live database — which is what `ApplyAllConfiguredChangesToDatabaseAsync` and the schema
 management on startup do.
 
-This flag is **rejected at configuration time** alongside `UseTenantPartitionedEvents`, because
-PostgreSQL refuses `CREATE INDEX CONCURRENTLY` on a partitioned parent outright
-(`cannot create index on partitioned table ... concurrently`) and the per-partition sequence it accepts
-instead cannot be generated for partitions owned by Marten's tenant partition manager. There, and
-anywhere you would simply rather own the index yourself, hand it to the operator instead. Ignore it, and
-Marten leaves it out of the schema diff in **both** directions — it will neither create it nor treat one
-you built yourself as drift:
+If you would rather own the index yourself, hand it to the operator instead. Ignore it, and Marten
+leaves it out of the schema diff in **both** directions — it will neither create it nor treat one you
+built yourself as drift:
 
 ```csharp
 opts.Events.DcbStorageMode = DcbStorageMode.HStore;

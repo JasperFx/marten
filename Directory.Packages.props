@@ -399,7 +399,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.26.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.27.0" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -527,9 +527,18 @@
          that failed halfway is repaired by the next apply rather than sitting there unused; and
          weasel#500 makes DbObjectName.Schema/.Name hold the UNDELIMITED name. The latter changes
          meaning for anything comparing those properties against a literal carrying quotes — Marten
-         carries none (verified), and all emitted DDL is byte-identical. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.26.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.26.0" />
+         carries none (verified), and all emitted DDL is byte-identical.
+         9.27.0 (weasel#520/#522, found here): REQUIRED for the tenant-partitioned half of marten#5268.
+         9.26.0 shipped the three-step sequence but built it from ListPartitioning.PartitionTableNames,
+         which read the table's DECLARED partitions and did not consult the PartitionManager the way
+         CreateDelta and WriteCreateStatement already did. UsePartitionManager also clears
+         EnableDefaultPartition, so under UseTenantPartitionedEvents — where every partition is
+         manager-owned — that enumeration returned the EMPTY sequence, not a short one. Only step 1
+         rendered, and the parent index was created permanently INVALID: unusable by the planner, and
+         reported as drift by every later apply thanks to weasel#508. All three call sites now resolve
+         through one expectedPartitions() helper, which is why RangePartitioning never had the bug. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.27.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.27.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

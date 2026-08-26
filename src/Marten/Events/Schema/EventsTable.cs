@@ -75,9 +75,10 @@ internal class EventsTable: Table
 
                 // #5268: a plain CREATE INDEX holds ACCESS EXCLUSIVE on mt_events for the whole GIN
                 // build, so turning HStore mode on for an existing store costs a write outage. Opting
-                // in has Weasel emit CREATE INDEX CONCURRENTLY as a command of its own, outside the
-                // migration's transaction. Only reachable without UseTenantPartitionedEvents -- the
-                // combination is refused in StoreOptions.Validate, which explains why.
+                // in hands the shape to Weasel, which emits CONCURRENTLY as a command of its own on an
+                // ordinary table and the ON ONLY parent / concurrent child / ATTACH PARTITION sequence
+                // on a partitioned one (weasel#502 + #522) -- PostgreSQL refuses CONCURRENTLY on a
+                // partitioned parent outright. Needs Weasel >= 9.27.0 for the partitioned case.
                 IsConcurrent = events.BuildHStoreTagIndexConcurrently
             });
         }

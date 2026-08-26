@@ -624,16 +624,16 @@ namespace Marten.Events
         /// <para>
         /// A plain <c>CREATE INDEX</c> holds ACCESS EXCLUSIVE on <c>mt_events</c> for the whole build,
         /// which on an existing event store of any size is a write outage rather than a migration.
-        /// With this on, Marten emits <c>CREATE INDEX CONCURRENTLY</c> instead.
+        /// With this on, Marten emits <c>CREATE INDEX CONCURRENTLY</c> instead — or, under
+        /// <see cref="UseTenantPartitionedEvents"/>, where PostgreSQL refuses <c>CONCURRENTLY</c> on a
+        /// partitioned parent outright, the sequence it does accept: the index created on only the
+        /// parent, one concurrent index per tenant partition, and each attached to the parent.
         /// </para>
         /// <para>
-        /// Two trade-offs. A concurrent build cannot run inside a transaction, so the SQL that
+        /// The trade-off is that a concurrent build cannot run inside a transaction, so the SQL that
         /// <c>db-patch</c> and <c>db-dump</c> write is no longer runnable as one transactional script.
-        /// And this cannot be combined with <see cref="UseTenantPartitionedEvents"/>, which is rejected
-        /// at configuration time — PostgreSQL refuses <c>CONCURRENTLY</c> on a partitioned parent, and
-        /// the per-partition sequence it accepts instead cannot be generated for partitions owned by
-        /// Marten's tenant partition manager. Use <see cref="IgnoreIndex"/> and build the index out of
-        /// band there, which also remains the answer if you would simply rather own it yourself.
+        /// It is still correct applied against a live database. Use <see cref="IgnoreIndex"/> instead if
+        /// you would rather own the index yourself.
         /// </para>
         /// </summary>
         bool BuildHStoreTagIndexConcurrently { get; set; }
