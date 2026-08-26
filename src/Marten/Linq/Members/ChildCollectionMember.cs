@@ -238,7 +238,7 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
         // containment semantics: an element matches when it contains every serialized
         // member of the argument, so documents written with extra/evolved properties
         // still match
-        var constant = body.Arguments.Last().ReduceToConstant();
+        var constant = body.ContainsValueArgument().ReduceToConstant();
         if (constant.Value() != null)
         {
             return ContainmentWhereFilter.ForValue(this, constant.Value()!, options.Serializer());

@@ -150,7 +150,7 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
 
     public ISqlFragment ParseWhereForContains(MethodCallExpression body, IReadOnlyStoreOptions options)
     {
-        var value = body.Arguments.Last().ReduceToConstant();
+        var value = body.ContainsValueArgument().ReduceToConstant();
 
         return new ContainmentWhereFilter(this, value, options.Serializer());
     }

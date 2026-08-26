@@ -164,6 +164,19 @@ public static class LinqInternalExtensions
 
     public static IQueryableMember MemberFor(this IHasChildrenMembers collection, MemberInfo[] members)
     {
+        if (members.Length == 0)
+        {
+            // A bare lambda parameter over a value collection, e.g. x.Colors.Any(c => c == value),
+            // has no member chain at all -- the "member" is the collection element itself
+            if (collection is IValueCollectionMember valueCollection)
+            {
+                return valueCollection.Element;
+            }
+
+            throw new BadLinqExpressionException(
+                $"Marten cannot derive a queryable member from an empty member chain against {collection}");
+        }
+
         var member = collection.FindMember(members[0]);
         for (var i = 1; i < members.Length; i++)
         {
@@ -313,6 +326,20 @@ public static class LinqInternalExtensions
     {
         typeof(ConstantExpression)
     };
+
+    /// <summary>
+    ///     Returns the searched-for value argument of a Contains() call. The last argument
+    ///     is not necessarily the value: on modern TFMs array.Contains(value) can bind to
+    ///     MemoryExtensions.Contains(span, value, IEqualityComparer) whenever the element
+    ///     type does not implement IEquatable (enums, most classes), and the compiler
+    ///     supplies a null comparer as the trailing argument.
+    /// </summary>
+    public static Expression ContainsValueArgument(this MethodCallExpression call)
+    {
+        // Instance method (List<T>.Contains(value)) vs extension method
+        // (Enumerable/MemoryExtensions.Contains(source, value, ...))
+        return call.Object is null ? call.Arguments[1] : call.Arguments[0];
+    }
 
     public static object Value(this Expression expression)
     {

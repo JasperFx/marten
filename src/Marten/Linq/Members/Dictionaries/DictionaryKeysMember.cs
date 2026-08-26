@@ -106,7 +106,7 @@ internal class DictionaryKeysMember: QueryableMember, ICollectionMember, IValueC
 
     public ISqlFragment ParseWhereForContains(MethodCallExpression body, IReadOnlyStoreOptions options)
     {
-        var value = body.Arguments.Last().ReduceToConstant();
+        var value = body.ContainsValueArgument().ReduceToConstant();
         return new DictionaryContainsKeyFilter(_parent, options.Serializer(), value);
     }
 
