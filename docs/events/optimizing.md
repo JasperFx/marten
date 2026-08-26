@@ -279,7 +279,7 @@ Even without the index, the async daemon automatically adapts when event loading
 It will fall back to progressively simpler query strategies:
 
 1. **Normal**: Standard range query with type filter
-2. **Skip-ahead**: Find the MIN(seq_id) matching the type filter, then fetch from there
+2. **Skip-ahead**: Find the first `seq_id` matching the type filter, then fetch from there
 3. **Window-step**: Advance through the sequence in fixed 10,000-event windows
 
 This adaptive behavior is automatic and requires no configuration.
