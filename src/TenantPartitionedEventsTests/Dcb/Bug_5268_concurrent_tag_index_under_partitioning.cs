@@ -29,6 +29,11 @@ namespace TenantPartitionedEventsTests.Dcb;
 /// <see cref="EventGraph.HStoreTagIndexName" />, which is what the reporter's sharded, tenant-partitioned
 /// deployment actually uses.
 /// </para>
+/// <para>
+/// The refusal is temporary: weasel#520 tracks <c>ListPartitioning.PartitionTableNames</c> consulting the
+/// partition manager, which is what makes the list empty. When that ships, the guard comes out and
+/// <see cref="the_concurrent_build_is_refused_under_tenant_partitioning" /> becomes the positive case.
+/// </para>
 /// </summary>
 public class Bug_5268_concurrent_tag_index_under_partitioning: IAsyncLifetime
 {

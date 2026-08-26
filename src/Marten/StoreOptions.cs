@@ -1017,6 +1017,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         // Refuse the combination rather than emitting an index that silently does nothing. The
         // out-of-band route still works here and is documented for exactly this shape — see
         // EventGraph.HStoreTagIndexName and docs/events/dcb.md.
+        //
+        // Filed as weasel#520; this guard comes out once that ships, and the test pinning it
+        // (Bug_5268_concurrent_tag_index_under_partitioning) turns into the positive case.
         if (Events.BuildHStoreTagIndexConcurrently && Events.UseTenantPartitionedEvents &&
             Events.DcbStorageMode == DcbStorageMode.HStore)
         {
