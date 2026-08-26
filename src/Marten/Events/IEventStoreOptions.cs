@@ -571,6 +571,25 @@ namespace Marten.Events
         ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull;
 
         /// <summary>
+        /// Derive a DCB tag from an event's own data, for every event appended through this store.
+        /// <para>
+        /// Tag inference can only find a tag when the event exposes a property whose <i>type</i> is the tag
+        /// type, and it only runs on the <c>IEventBoundary</c> path. A rule closes both gaps: it works for
+        /// an event that names its identifiers as primitives, and it applies wherever the event is built --
+        /// ordinary appends, <c>StartStream</c>, aggregate handlers and bulk inserts alike.
+        /// </para>
+        /// <para>
+        /// Return <c>null</c> to leave an event untagged. A rule declared on a base type or interface
+        /// applies to every event assignable to it, and several rules may contribute different tag types to
+        /// one event. A tag type already on the event is left alone, so a rule never fights an explicit
+        /// <c>WithTag</c>.
+        /// </para>
+        /// </summary>
+        /// <typeparam name="TEvent">The event type, or a base type or interface of it</typeparam>
+        /// <param name="rule">Returns the tag value for an event, or null to leave it untagged</param>
+        void TagWith<TEvent>(Func<TEvent, object?> rule) where TEvent : notnull;
+
+        /// <summary>
         /// The registered tag types for DCB support.
         /// </summary>
         IReadOnlyList<ITagTypeRegistration> TagTypes { get; }
