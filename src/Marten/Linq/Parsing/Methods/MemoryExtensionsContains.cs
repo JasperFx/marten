@@ -42,6 +42,9 @@ internal class MemoryExtensionsContains: IMethodCallParser
             // NpgsqlDbType '-2147483639'`) and the same fix: project the constant
             // collection through EnumIsOneOfWhereFragment so it becomes a string[]/int[]
             // with the right NpgsqlDbType for the active EnumStorage.
+            // Three parsers need this same branch, one per binding the C# compiler can pick:
+            // here, EnumerableContains (#2946) and HashSetEnumerableContains (#5287).
+            // Fix one, check the other two.
             if (collectionMember.MemberType.IsEnum && constant.Value is not null)
             {
                 // EnumIsOneOfWhereFragment requires a System.Array; for net10's

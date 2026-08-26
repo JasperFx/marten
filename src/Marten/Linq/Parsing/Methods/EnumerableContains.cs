@@ -56,6 +56,9 @@ internal class EnumerableContains: IMethodCallParser
             // EnumIsOneOfWhereFragment already does exactly that for the parallel
             // LinqExtensions.IsOneOf path (IsOneOf.cs:36) — route the Contains shape through
             // it too so HotChocolate's `[UseFiltering]` `in` operator works on enum members.
+            // Three parsers need this same branch, one per binding the C# compiler can pick:
+            // here, MemoryExtensionsContains (net10's span binding, #4610) and
+            // HashSetEnumerableContains (#5287). Fix one, check the other two.
             if (collectionMember.MemberType.IsEnum && constant.Value is not null)
             {
                 // EnumIsOneOfWhereFragment requires a System.Array — HotChocolate hands an
@@ -118,7 +121,23 @@ internal class HashSetEnumerableContains: IMethodCallParser
         if ((expression.Object ?? expression.Arguments[0]).TryToParseConstant(out var constant))
         {
             // This is the value.Contains() pattern
-            var collectionMember = memberCollection.MemberFor(expression.Arguments.Last());
+            var collectionMember = memberCollection.MemberFor(expression.ContainsValueArgument());
+
+            // #5287: the same enum handling EnumerableContains and MemoryExtensionsContains already
+            // do for the array and List shapes of this pattern. correctToArray below hands Npgsql a
+            // raw EnumType[], which it has no parameter mapping for ("Writing values of
+            // 'YourEnum[]' is not supported for parameters having NpgsqlDbType '-2147483639'"), so
+            // the constant has to be projected to string[]/int[] per the active EnumStorage first.
+            if (collectionMember.MemberType.IsEnum && constant.Value is not null)
+            {
+                // EnumIsOneOfWhereFragment requires a System.Array, and here the constant is a
+                // HashSet<TEnum> rather than one -- correctToArray does that conversion for the
+                // non-enum path below and is reused for exactly the same reason.
+                return new EnumIsOneOfWhereFragment(
+                    (Array)correctToArray(constant.Value),
+                    options.Serializer().EnumStorage,
+                    collectionMember.TypedLocator);
+            }
 
             return new WhereFragment($"{collectionMember.TypedLocator} = ANY(?)", correctToArray(constant.Value!));
         }
