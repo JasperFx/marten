@@ -130,6 +130,21 @@ Rules compose the way you would expect:
 A rule that produces a tag type you never registered throws, rather than writing an event whose tag no
 query can ever match.
 
+When an application already owns a single place that knows what an event is about, hand that over whole
+instead of restating it as one registration per tag type:
+
+```cs
+opts.Events.TagEventsBy(data => data switch
+{
+    LineInvoiced e => [new InvoiceId(e.Invoice), new LineId(e.Line)],
+    IInvoiceEvent e => [new InvoiceId(e.Invoice)],
+    _ => Array.Empty<object>()
+});
+```
+
+Return an empty sequence to leave an event untagged. The rule receives the event body: the stream is
+assigned after the event is built, so it is not available here.
+
 ## Querying Events by Tags
 
 Use `EventTagQuery` to build a query, then execute it with `QueryByTagsAsync`:
