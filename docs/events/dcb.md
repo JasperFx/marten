@@ -99,6 +99,37 @@ await theSession.SaveChangesAsync();
 
 Events can have multiple tags of different types. Tags are persisted to their respective tag tables in the same transaction as the event.
 
+### Tag Rules <Badge type="tip" text="9.30" />
+
+Tagging every event at its call site is a rule nothing enforces, and a forgotten tag is not an error to a
+tag query -- it is simply absent from the answer. A tag rule states the rule once, and Marten applies it
+wherever the event is built:
+
+```cs
+opts.Events.RegisterTagType<InvoiceId>("invoice");
+opts.Events.RegisterTagType<LineId>("line");
+
+// Declared on an interface, so it reaches every event that belongs to an invoice
+opts.Events.TagWith<IInvoiceEvent>(e => new InvoiceId(e.Invoice));
+opts.Events.TagWith<LineInvoiced>(e => new LineId(e.Line));
+```
+
+This closes the two gaps that [tag inference](#tag-routing) leaves open. Inference matches a property by
+its *type*, so an event that names its identifiers as `Guid` or `string` can never be inferred, and it only
+runs on the `IEventBoundary` path. A rule applies to ordinary appends, `StartStream`, aggregate handlers
+and bulk inserts alike, because it runs where the event is built.
+
+Rules compose the way you would expect:
+
+- returning `null` leaves the event untagged;
+- a rule declared on a base type or interface applies to every event assignable to it;
+- several rules may contribute different tag types to one event;
+- a tag type already on the event is left alone, so a rule never fights an explicit `WithTag` -- and never
+  adds a second value of one tag type, which HStore mode refuses.
+
+A rule that produces a tag type you never registered throws, rather than writing an event whose tag no
+query can ever match.
+
 ## Querying Events by Tags
 
 Use `EventTagQuery` to build a query, then execute it with `QueryByTagsAsync`:

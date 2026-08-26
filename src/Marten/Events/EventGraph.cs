@@ -90,6 +90,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     internal DocumentStore Store => _store;
 
     private readonly List<ITagTypeRegistration> _tagTypes = new();
+    private readonly List<IEventTagRule> _tagRules = new();
 
     // Roots EventMapping<>'s constructor for trimming / Native AOT. Without this root the constructor metadata is trimmed
     // and Activator throws MissingMethodException at StoreOptions construction.
@@ -258,12 +259,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
             var mapping = EventMappingFor(e.EventType);
             e.EventTypeName = mapping.EventTypeName;
             e.DotNetTypeName = mapping.DotNetTypeName;
+            if (_tagRules.Count > 0) applyTagRules(e);
             return e;
         }
         else
         {
             var mapping = EventMappingFor(eventData.GetType());
-            return mapping.Wrap(eventData);
+            var wrapped = mapping.Wrap(eventData);
+            if (_tagRules.Count > 0) applyTagRules(wrapped);
+            return wrapped;
         }
 
 
@@ -546,6 +550,77 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// The registered tag types for DCB support.
     /// </summary>
     public IReadOnlyList<ITagTypeRegistration> TagTypes => _tagTypes;
+
+    /// <summary>
+    /// Derive a DCB tag from an event's own data, for every event appended through this store.
+    /// <para>
+    /// <see cref="Tags.EventTagInference" /> can only find a tag when the event exposes a property whose
+    /// <i>type</i> is the tag type, and it only runs on the <c>IEventBoundary</c> path. A rule closes both
+    /// gaps: it works for an event that names its identifiers as primitives, and it applies wherever the
+    /// event is built -- ordinary appends, <c>StartStream</c>, aggregate handlers and bulk inserts alike.
+    /// </para>
+    /// <para>
+    /// Return <c>null</c> to leave an event untagged. A rule declared on a base type or interface applies
+    /// to every event assignable to it, and several rules may contribute different tag types to one event.
+    /// A tag type already present on the event is left alone, so a rule never fights an explicit
+    /// <c>WithTag</c> call.
+    /// </para>
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// opts.Events.RegisterTagType&lt;InvoiceId&gt;("invoice");
+    /// opts.Events.TagWith&lt;InvoiceCreated&gt;(e =&gt; new InvoiceId(e.Invoice));
+    /// </code>
+    /// </example>
+    public void TagWith<TEvent>(Func<TEvent, object?> rule) where TEvent : notnull
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        _tagRules.Add(new EventTagRule<TEvent>(rule));
+    }
+
+    /// <summary>
+    /// The registered tag rules. See <see cref="TagWith{TEvent}" />.
+    /// </summary>
+    public IReadOnlyList<IEventTagRule> TagRules => _tagRules;
+
+    private void applyTagRules(IEvent @event)
+    {
+        for (var i = 0; i < _tagRules.Count; i++)
+        {
+            var tag = _tagRules[i].Resolve(@event.Data);
+            if (tag == null) continue;
+
+            var tagType = tag.GetType();
+
+            // An explicit WithTag wins, and re-building an event that already carries the tag must not add
+            // it twice -- in HStore mode a second value of one tag type throws rather than overwriting.
+            if (@event.Tags != null)
+            {
+                var alreadyTagged = false;
+                for (var t = 0; t < @event.Tags.Count; t++)
+                {
+                    if (@event.Tags[t].TagType == tagType)
+                    {
+                        alreadyTagged = true;
+                        break;
+                    }
+                }
+
+                if (alreadyTagged) continue;
+            }
+
+            if (!_tagTypes.Any(x => x.TagType == tagType))
+            {
+                throw new InvalidOperationException(
+                    $"The tag rule for '{_tagRules[i].EventType.FullName}' produced a tag of type "
+                    + $"'{tagType.FullName}', which is not a registered tag type. A tag Marten does not know "
+                    + "cannot be stored or queried, so this would silently write nothing. Call "
+                    + $"RegisterTagType<{tagType.Name}>() when configuring the store.");
+            }
+
+            @event.AddTag(new EventTag(tagType, tag));
+        }
+    }
 
     private DcbStorageMode _dcbStorageMode = DcbStorageMode.TagTables;
 
