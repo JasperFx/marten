@@ -197,10 +197,7 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
             return;
         }
 
-        // Get the paths being modified by this patch operation
-        var modifiedPaths = _patchSet
-            .Select(patch => patch.Items["path"].ToString())
-            .ToHashSet(System.StringComparer.Ordinal);
+        var modifiedPaths = collectModifiedPaths();
 
         // Only update duplicated fields where their mapping path is affected by the patch path
         var affectedFields = fields.Where(f => IsFieldAffectedByPatchPath(f, modifiedPaths)).ToList();
@@ -225,10 +222,71 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
         writeWhereClause(builder);
     }
 
+    /// <summary>
+    /// Every JSON location this patch set writes to, in the same form <c>PatchExpression.toPath</c> emits.
+    /// </summary>
+    /// <remarks>
+    /// #5295: "path" is not the only place a patch writes. A <c>duplicate</c> carries its destinations in
+    /// "targets", and a <c>rename</c> puts the value at a sibling of "path" named by "to" — a duplicated
+    /// column over either location went stale because neither was ever considered.
+    /// </remarks>
+    private HashSet<string> collectModifiedPaths()
+    {
+        var paths = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var patch in _patchSet)
+        {
+            if (!patch.Items.TryGetValue("path", out var raw) || raw?.ToString() is not { } path) continue;
+
+            paths.Add(path);
+
+            if (patch.Items.TryGetValue("targets", out var targets) && targets is IEnumerable<string> destinations)
+            {
+                foreach (var destination in destinations) paths.Add(destination);
+            }
+
+            if (patch.Items.TryGetValue("to", out var to) && to?.ToString() is { Length: > 0 } newName)
+            {
+                var lastSeparator = path.LastIndexOf('.');
+                paths.Add(lastSeparator < 0 ? newName : string.Concat(path.AsSpan(0, lastSeparator + 1), newName));
+            }
+        }
+
+        return paths;
+    }
+
     private bool IsFieldAffectedByPatchPath(IDuplicatedField field, HashSet<string> modifiedPaths)
     {
-        // get the dot seperated path derived from field Members info
-        var path = string.Join('.', field.Members.Select(x => x.Name.FormatCase(_serializer.Casing)));
-        return modifiedPaths.Any(p => p.StartsWith(path, StringComparison.Ordinal));
+        // #5290/#5295: ToJsonKey, not Name.FormatCase. PatchExpression.toPath resolves serializer member
+        // aliases, so on an aliased member the two disagreed -- the patch wrote "st" and this looked for
+        // "AliasedStatus", found no overlap, and left the duplicated column holding the old value while
+        // the document held the new one.
+        var path = string.Join('.', field.Members.Select(x => x.ToJsonKey(_serializer.Casing)));
+
+        return modifiedPaths.Any(p => pathsOverlap(path, p));
+    }
+
+    /// <summary>
+    /// True when writing <paramref name="patchPath" /> can change the value at <paramref name="fieldPath" />.
+    /// </summary>
+    /// <remarks>
+    /// #5295. Overlap runs in BOTH directions and only on a separator boundary. Patching a parent moves
+    /// everything beneath it, so <c>Set(x =&gt; x.Job, ...)</c> has to refresh a column duplicated from
+    /// <c>Job.Progress</c> — the previous one-way prefix test missed exactly that and left the column
+    /// stale. The boundary check is what stops <c>Status</c> and <c>StatusCode</c> from matching each
+    /// other, which the old test also got wrong, though only ever by doing harmless extra work.
+    /// </remarks>
+    private static bool pathsOverlap(string fieldPath, string patchPath)
+    {
+        if (fieldPath.Length == patchPath.Length)
+        {
+            return string.Equals(fieldPath, patchPath, StringComparison.Ordinal);
+        }
+
+        var (shorter, longer) = fieldPath.Length < patchPath.Length
+            ? (fieldPath, patchPath)
+            : (patchPath, fieldPath);
+
+        return longer.StartsWith(shorter, StringComparison.Ordinal) && longer[shorter.Length] == '.';
     }
 }
