@@ -144,6 +144,44 @@ public class declarative_event_tag_rules: OneOffConfigurationsContext
         found.Count.ShouldBe(1);
     }
 
+    /// <summary>
+    /// One store-wide rule, for an application that already owns a single place that knows what an event is
+    /// about. Without it the same translator has to be restated as one registration per tag type.
+    /// </summary>
+    [Fact]
+    public async Task one_store_wide_rule_can_carry_every_tag()
+    {
+        var invoice = Guid.NewGuid();
+        var line = Guid.NewGuid();
+
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsGuid;
+            opts.Events.DcbStorageMode = DcbStorageMode.HStore;
+            opts.Events.RegisterTagType<InvoiceId>("invoice");
+            opts.Events.RegisterTagType<LineId>("line");
+
+            opts.Events.TagEventsBy(data => data switch
+            {
+                LineInvoiced e => [new InvoiceId(e.Invoice), new LineId(e.Line)],
+                IInvoiceEvent e => [new InvoiceId(e.Invoice)],
+                _ => Array.Empty<object>()
+            });
+        });
+
+        theSession.Events.StartStream(Guid.NewGuid(), new InvoiceRaised(invoice, 4m));
+        theSession.Events.StartStream(Guid.NewGuid(), new LineInvoiced(invoice, line));
+        theSession.Events.StartStream(Guid.NewGuid(), new UnrelatedThingHappened("no tags here"));
+        await theSession.SaveChangesAsync();
+
+        (await theSession.Events.QueryByTagsAsync(new EventTagQuery().Or(new InvoiceId(invoice))))
+            .Count.ShouldBe(2);
+
+        var byLine = await theSession.Events.QueryByTagsAsync(new EventTagQuery().Or(new LineId(line)));
+        byLine.Count.ShouldBe(1);
+        byLine[0].Data.ShouldBeOfType<LineInvoiced>();
+    }
+
     [Fact]
     public async Task a_rule_producing_an_unregistered_tag_type_says_so()
     {

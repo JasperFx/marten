@@ -590,6 +590,22 @@ namespace Marten.Events
         void TagWith<TEvent>(Func<TEvent, object?> rule) where TEvent : notnull;
 
         /// <summary>
+        /// Derive every DCB tag an event carries from one store-wide rule, for applications that already
+        /// have a single place that knows what an event is about.
+        /// <para>
+        /// <see cref="TagWith{TEvent}" /> states one tag for one event type. This states all of them for
+        /// all of them, so a translator an application already owns can be handed over whole instead of
+        /// being restated as one registration per tag type.
+        /// </para>
+        /// <para>
+        /// Return an empty sequence or <c>null</c> to leave an event untagged. The rule receives the event
+        /// body: the stream is assigned after the event is built, so it is not available here.
+        /// </para>
+        /// </summary>
+        /// <param name="tagger">Returns the tags for an event body, or nothing to leave it untagged</param>
+        void TagEventsBy(Func<object, IEnumerable<object>?> tagger);
+
+        /// <summary>
         /// The registered tag types for DCB support.
         /// </summary>
         IReadOnlyList<ITagTypeRegistration> TagTypes { get; }

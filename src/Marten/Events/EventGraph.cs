@@ -579,7 +579,17 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     }
 
     /// <summary>
-    /// The registered tag rules. See <see cref="TagWith{TEvent}" />.
+    /// Derive every DCB tag an event carries from one store-wide rule. See
+    /// <see cref="IEventStoreOptions.TagEventsBy" />.
+    /// </summary>
+    public void TagEventsBy(Func<object, IEnumerable<object>?> tagger)
+    {
+        ArgumentNullException.ThrowIfNull(tagger);
+        _tagRules.Add(new StoreWideEventTagRule(tagger));
+    }
+
+    /// <summary>
+    /// The registered tag rules. See <see cref="TagWith{TEvent}" /> and <see cref="TagEventsBy" />.
     /// </summary>
     public IReadOnlyList<IEventTagRule> TagRules => _tagRules;
 
@@ -587,8 +597,17 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     {
         for (var i = 0; i < _tagRules.Count; i++)
         {
-            var tag = _tagRules[i].Resolve(@event.Data);
-            if (tag == null) continue;
+            foreach (var tag in _tagRules[i].Resolve(@event.Data))
+            {
+                applyTag(@event, _tagRules[i], tag);
+            }
+        }
+    }
+
+    private void applyTag(IEvent @event, IEventTagRule rule, object? tag)
+    {
+        {
+            if (tag == null) return;
 
             var tagType = tag.GetType();
 
@@ -606,13 +625,13 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                     }
                 }
 
-                if (alreadyTagged) continue;
+                if (alreadyTagged) return;
             }
 
             if (!_tagTypes.Any(x => x.TagType == tagType))
             {
                 throw new InvalidOperationException(
-                    $"The tag rule for '{_tagRules[i].EventType.FullName}' produced a tag of type "
+                    $"The tag rule for '{rule.Description}' produced a tag of type "
                     + $"'{tagType.FullName}', which is not a registered tag type. A tag Marten does not know "
                     + "cannot be stored or queried, so this would silently write nothing. Call "
                     + $"RegisterTagType<{tagType.Name}>() when configuring the store.");
