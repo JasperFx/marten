@@ -252,8 +252,12 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
             aggregate = await aggregator.BuildAsync(events, docSession, default, token).ConfigureAwait(false);
         }
 
+        // #5276: registered, not queued. The boundary condition guards an append, so it only belongs
+        // in the unit of work if this session actually appends something -- see
+        // DocumentSessionBase.QueuePendingDcbBoundaryAssertions, which drains this at
+        // ProcessEventsAsync time, ahead of the producer-side bumps.
         var assertion = new DcbTagVersionAssertion(_store.Events, _query, lastSeenSequence, capturedVersions);
-        docSession.QueueOperation(assertion);
+        docSession.RegisterDcbBoundaryAssertion(assertion);
 
         return new EventBoundary<T>(docSession, _store.Events, aggregate, events, lastSeenSequence);
     }

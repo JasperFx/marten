@@ -286,6 +286,8 @@ Internally, `FetchForWritingByTags` records the captured version of every tag va
 
 Every save that appends a tagged event — boundary or otherwise — also queues a producer-side bump against the same row. That's what keeps a plain `session.Events.Append(streamId, taggedEvent)` from silently committing past an in-flight boundary fetch held by another session: the version moves on every commit, not only on boundary saves.
 
+A boundary that decides there is **nothing to append** is not a save at all as far as the side table is concerned. The check guards an append, so a session that fetches a boundary and then calls `SaveChangesAsync()` without appending anything leaves `mt_dcb_tag_version` exactly as it found it, and never throws `DcbConcurrencyException` — even if another session moved the boundary in the meantime. Two sessions can reach the same "nothing to do" conclusion about one boundary and both commit, and a no-op decision never invalidates a concurrent session that does have events to append. The boundary is released by that commit: to act on it afterwards, fetch it again.
+
 The side table grows with **distinct boundary-tag values**, not with event volume, and is never deleted automatically — the same `StudentId` or `CourseId` reuses its row across every save. Avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
 
 ## Checking Event Existence

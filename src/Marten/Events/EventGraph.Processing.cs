@@ -50,6 +50,13 @@ public partial class EventGraph
             await session.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
         }
 
+        // #5276: hand any DCB boundary the session captured to the unit of work, but only if this
+        // save actually appends events -- the boundary is a condition on an append, and a save that
+        // appends nothing has to leave mt_dcb_tag_version exactly as it found it. Done here rather
+        // than at fetch time, and *before* the appender, so the assertion still runs ahead of the
+        // producer-side bumps it would otherwise read as a conflict.
+        session.QueuePendingDcbBoundaryAssertions();
+
         await EventAppender.ProcessEventsAsync(this, session, _inlineProjections.Value, token).ConfigureAwait(false);
 
         if (UseListenNotifyForEventAppends)

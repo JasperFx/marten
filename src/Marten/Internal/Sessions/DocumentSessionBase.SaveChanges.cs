@@ -24,6 +24,10 @@ public abstract partial class DocumentSessionBase
         processChangeTrackers();
         if (!_workTracker.HasOutstandingWork())
         {
+            // #5276: a session whose only work was reading a DCB boundary lands here. Nothing is
+            // written, so nothing enforces the boundary -- and the read does not carry over to the
+            // next unit of work either.
+            ForgetPendingDcbBoundaryAssertions();
             return;
         }
 
@@ -78,6 +82,9 @@ public abstract partial class DocumentSessionBase
 
         // Need to clear the unit of work here
         _workTracker.Reset();
+
+        // #5276: and with it any boundary this save read but never appended to.
+        ForgetPendingDcbBoundaryAssertions();
     }
 
     private IMessageBatch? _messageBatch;
