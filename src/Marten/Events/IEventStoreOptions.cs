@@ -619,6 +619,26 @@ namespace Marten.Events
         DcbStorageMode DcbStorageMode { get; set; }
 
         /// <summary>
+        /// Opt into building the GIN index over the <c>tags</c> hstore column without blocking writes.
+        /// Only has any effect in <see cref="DcbStorageMode.HStore"/> mode. Default is false.
+        /// <para>
+        /// A plain <c>CREATE INDEX</c> holds ACCESS EXCLUSIVE on <c>mt_events</c> for the whole build,
+        /// which on an existing event store of any size is a write outage rather than a migration.
+        /// With this on, Marten emits <c>CREATE INDEX CONCURRENTLY</c> instead — or, under
+        /// <see cref="UseTenantPartitionedEvents"/>, where PostgreSQL refuses <c>CONCURRENTLY</c> on a
+        /// partitioned parent outright, the sequence it does accept: the index created on only the
+        /// parent, one concurrent index per tenant partition, and each attached to the parent.
+        /// </para>
+        /// <para>
+        /// The trade-off is that a concurrent build cannot run inside a transaction, so the SQL that
+        /// <c>db-patch</c> and <c>db-dump</c> write is no longer runnable as one transactional script.
+        /// It is still correct applied against a live database. Use <see cref="IgnoreIndex"/> instead if
+        /// you would rather own the index yourself.
+        /// </para>
+        /// </summary>
+        bool BuildHStoreTagIndexConcurrently { get; set; }
+
+        /// <summary>
         /// When enabled, adds heartbeat, agent_status, pause_reason, running_on_node, and
         /// warning/critical-behind-threshold columns to the event progression table for
         /// CritterWatch monitoring.
