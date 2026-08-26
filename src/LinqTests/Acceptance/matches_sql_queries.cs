@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Exceptions;
 using Marten.Linq.MatchesSql;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -63,6 +64,78 @@ public class matches_sql_queries: IntegrationContext
                 .Select(x => x.UserName)
                 .ToListAsync())
             .ShouldHaveTheSameElementsAs("baz", "foo");
+    }
+
+    /// <summary>
+    /// #5289 follow-up. The overload takes <c>params object[]</c>, so a caller may reasonably pass
+    /// anything; the fix that made it usable at all only covered strings, because
+    /// <c>AppendWithParameters</c> seeds each placeholder with the provider's STRING parameter type and
+    /// assigning <c>.Value</c> alone leaves it there. A number therefore still failed with the same
+    /// exception the fix was for.
+    /// </summary>
+    [Fact]
+    public async Task query_using_matches_json_path_with_a_non_string_parameter()
+    {
+        var user1 = new User { UserName = "foo", Age = 30 };
+        var user2 = new User { UserName = "bar", Age = 60 };
+
+        using var session = theStore.LightweightSession();
+        session.Store(user1, user2);
+        await session.SaveChangesAsync();
+
+        // The value bound on its own, into a JSONPath variable rather than into the path text -- the
+        // shape a caller-supplied filter value has to take if it is not to be concatenated in.
+        (await session.Query<User>()
+                .Where(x => x.MatchesJsonPath(
+                    "jsonb_path_exists(d.data, '$ ? (@.Age <= $v)', jsonb_build_object('v', ^))", 30))
+                .Select(x => x.UserName)
+                .ToListAsync())
+            .ShouldHaveTheSameElementsAs("foo");
+    }
+
+    /// <summary>
+    /// #5289 follow-up. <c>CommandParameter</c> maps null onto <c>DBNull.Value</c>, which is why
+    /// <c>MatchesSql</c> accepts a null argument. Assigning the raw value overwrote the
+    /// <c>DBNull.Value</c> that <c>AppendWithParameters</c> had already put there, and Npgsql refuses a
+    /// CLR null outright.
+    /// </summary>
+    [Fact]
+    public async Task query_using_matches_json_path_with_a_null_parameter()
+    {
+        using var session = theStore.LightweightSession();
+        session.Store(new User { UserName = "foo" });
+        await session.SaveChangesAsync();
+
+        // NULL::jsonpath matches nothing rather than throwing, which is the point: a null filter value
+        // should return no rows, not take the query down.
+        (await session.Query<User>()
+                .Where(x => x.MatchesJsonPath("d.data @? ^::jsonpath", new object[] { null }))
+                .ToListAsync())
+            .ShouldBeEmpty();
+    }
+
+    /// <summary>
+    /// #5289 follow-up. '^' is the placeholder character for this overload and is also a regex anchor,
+    /// so it turns up inside JSONPath literals by accident — <c>like_regex "^ba"</c> is one stray
+    /// placeholder. That used to surface as an IndexOutOfRangeException thrown from inside the LINQ
+    /// provider, and in the opposite direction (more values than placeholders) as silence, with the
+    /// surplus values never reaching the query at all.
+    /// </summary>
+    [Fact]
+    public async Task mismatched_json_path_placeholder_count_is_reported()
+    {
+        using var session = theStore.LightweightSession();
+
+        var tooFew = await Should.ThrowAsync<BadLinqExpressionException>(() => session.Query<User>()
+            .Where(x => x.MatchesJsonPath("d.data @? '$ ? (@.UserName like_regex \"^ba\")'"))
+            .ToListAsync());
+
+        tooFew.Message.ShouldContain("0 parameter(s)");
+        tooFew.Message.ShouldContain("1 '^' placeholder(s)");
+
+        await Should.ThrowAsync<BadLinqExpressionException>(() => session.Query<User>()
+            .Where(x => x.MatchesJsonPath("d.data @? ^::jsonpath", "$ ? (@.UserName == \"baz\")", "spare"))
+            .ToListAsync());
     }
 
     [Fact]
