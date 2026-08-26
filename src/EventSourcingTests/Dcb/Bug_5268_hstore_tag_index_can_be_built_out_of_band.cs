@@ -32,11 +32,13 @@ namespace EventSourcingTests.Dcb;
 [Collection("OneOffs")]
 public class Bug_5268_hstore_tag_index_can_be_built_out_of_band: OneOffConfigurationsContext
 {
-    private DocumentStore StoreFor(bool hstore, bool ignoreTagIndex, bool concurrentTagIndex = false)
+    private DocumentStore StoreFor(bool hstore, bool ignoreTagIndex, bool concurrentTagIndex = false,
+        bool archivedPartitioning = false)
     {
         return StoreOptions(opts =>
         {
             opts.Events.AddEventType<StudentEnrolled>();
+            opts.Events.UseArchivedStreamPartitioning = archivedPartitioning;
 
             if (hstore)
             {
@@ -231,6 +233,56 @@ public class Bug_5268_hstore_tag_index_can_be_built_out_of_band: OneOffConfigura
         await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         (await IndexIsValidAsync(EventGraph.HStoreTagIndexName)).ShouldBe(true);
+    }
+
+    /// <summary>
+    /// The third shape <c>mt_events</c> comes in, and the one #5291 left untested.
+    /// </summary>
+    /// <remarks>
+    /// <c>UseArchivedStreamPartitioning</c> partitions the table by <c>is_archived</c> with STATICALLY
+    /// declared partitions, where <c>UseTenantPartitionedEvents</c> partitions by tenant with partitions
+    /// owned by a manager. Both take Weasel's per-partition concurrent-index sequence, so the archived
+    /// shape rides on the same code — but it reaches it down a different path, and it was the difference
+    /// between declared and manager-owned partitions that broke the tenant case on Weasel 9.26.0
+    /// (weasel#520). Assuming the other one is fine because the code is shared is exactly the reasoning
+    /// that missed it the first time.
+    /// </remarks>
+    [Fact]
+    public async Task the_concurrent_index_works_under_archived_stream_partitioning()
+    {
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.DropSchemaAsync(SchemaName);
+        }
+
+        var store = StoreFor(hstore: true, ignoreTagIndex: false, concurrentTagIndex: true,
+            archivedPartitioning: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        // The archived partition plus the default one. A missing child leaves the parent invalid forever.
+        (await AttachedChildIndexCountAsync(EventGraph.HStoreTagIndexName)).ShouldBe(2);
+        (await IndexIsValidAsync(EventGraph.HStoreTagIndexName)).ShouldBe(true);
+
+        await Should.NotThrowAsync(() => store.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
+    }
+
+    private async Task<int> AttachedChildIndexCountAsync(string indexName)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+                          select count(*) from pg_inherits h
+                          join pg_class parent on parent.oid = h.inhparent
+                          join pg_namespace n on n.oid = parent.relnamespace
+                          where n.nspname = @schema and parent.relname = @name
+                          """;
+        cmd.Parameters.AddWithValue("schema", SchemaName);
+        cmd.Parameters.AddWithValue("name", indexName);
+
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
 
     [Fact]
