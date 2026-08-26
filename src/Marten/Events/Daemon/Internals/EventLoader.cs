@@ -28,7 +28,7 @@ namespace Marten.Events.Daemon.Internals;
 ///
 /// Strategy progression on timeout:
 /// 1. Normal: seq_id range + type filter (standard query)
-/// 2. Skip-ahead: find MIN(seq_id) matching the type filter, then fetch from there
+/// 2. Skip-ahead: find the first seq_id matching the type filter, then fetch from there
 /// 3. Window-step: advance through the sequence in fixed windows until events are found
 /// </summary>
 internal sealed class EventLoader: IEventLoader
@@ -44,6 +44,17 @@ internal sealed class EventLoader: IEventLoader
     private readonly string _schemaName;
     private readonly bool _hasTypeFilter;
     private readonly bool _hasEventTypeIndex;
+    private readonly bool _includeArchivedEvents;
+
+    /// <summary>
+    /// #5277: whether the skip-ahead probe has to join <c>mt_streams</c> at all. Only
+    /// <see cref="AggregateTypeFilter"/> emits a predicate against the <c>s</c> alias
+    /// ("s.type = ?", see #4744); every other filter Marten builds is on <c>d</c> alone, and
+    /// <c>mt_events.stream_id</c> is a foreign key into <c>mt_streams</c>, so for those the join
+    /// matches every row and only costs work. Postgres does not eliminate provably-redundant
+    /// inner joins on its own.
+    /// </summary>
+    private readonly bool _skipAheadJoinsStreams;
 
     // Adaptive strategy state
     private LoadStrategy _currentStrategy = LoadStrategy.Normal;
@@ -98,6 +109,8 @@ internal sealed class EventLoader: IEventLoader
         _schemaName = store.Options.Events.DatabaseSchemaName;
         _hasTypeFilter = filters.OfType<EventTypeFilter>().Any();
         _hasEventTypeIndex = store.Options.EventGraph.EnableEventTypeIndex;
+        _includeArchivedEvents = includeArchivedEvents;
+        _skipAheadJoinsStreams = filters.OfType<AggregateTypeFilter>().Any();
 
         TenantFilterValue = (shardName?.TenantId != null && store.Options.Events.UseTenantPartitionedEvents)
             ? shardName!.TenantId
@@ -300,7 +313,7 @@ internal sealed class EventLoader: IEventLoader
         return page;
     }
 
-    // #4744 test seam: drive the skip-ahead MIN probe directly so a regression test can prove
+    // #4744 test seam: drive the skip-ahead probe directly so a regression test can prove
     // its SQL is valid (the probe must join mt_streams whenever a filter references the s alias,
     // e.g. AggregateTypeFilter's "s.type = ?") without having to provoke a real statement
     // timeout. Not used at runtime.
@@ -313,55 +326,90 @@ internal sealed class EventLoader: IEventLoader
     internal Task<EventPage> LoadWithWindowStepAsync(EventRequest request, CancellationToken token)
         => loadWithWindowStepAsync(request, token);
 
+    // Exposed for the #5277 SQL-shape regression tests, same rationale as CommandText above:
+    // the probe's SQL is built from StoreOptions alone, so its shape can be asserted with no
+    // database round-trip. Not used at runtime.
+    internal string SkipAheadCommandText => buildSkipAheadCommand(0).CommandText;
+
     /// <summary>
-    /// Skip-ahead strategy: find the MIN(seq_id) matching the type filter after the floor,
+    /// #5277: find the first matching seq_id after the floor with an ORDER BY … LIMIT 1 rather than
+    /// MIN(d.seq_id). The two return the same sequence, but MIN is an aggregate over the whole
+    /// filtered set and Postgres only rewrites it into an ordered index scan when its input is a
+    /// single relation — joined to mt_streams it degrades to a bitmap heap scan of every remaining
+    /// row in the partition. That made this probe O(events after the floor) on the one code path
+    /// that exists precisely BECAUSE the store is too large for the normal query. The explicit
+    /// ORDER BY … LIMIT 1 keeps the index scan in every shape, joined or not.
+    /// </summary>
+    private NpgsqlCommand buildSkipAheadCommand(long floor)
+    {
+        var builder = new CommandBuilder();
+        builder.Append($"select d.seq_id from {_schemaName}.mt_events as d");
+
+        // #4744: the probe replays the same _filters as the normal query, and an AggregateTypeFilter
+        // (from a projection that filters on stream type) emits "s.type = ?" — without the join that
+        // predicate references a missing FROM-clause entry and Postgres throws 42P01. #5277: but
+        // that is the ONLY filter referencing s, so join only when one is present. mt_events.stream_id
+        // is a foreign key into mt_streams, so otherwise the join matches every row and buys nothing.
+        if (_skipAheadJoinsStreams)
+        {
+            builder.Append($" inner join {_schemaName}.mt_streams as s on d.stream_id = s.id");
+
+            if (_store.Options.Events.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                builder.Append(" and d.tenant_id = s.tenant_id");
+            }
+
+            if (_store.Options.Events.UseArchivedStreamPartitioning && !_includeArchivedEvents)
+            {
+                // #5277: the same pruning predicate #4745 gave the normal query. Without it the
+                // planner has to visit the archived mt_streams partition on every row the probe
+                // walks; the event-row predicate only prunes mt_events.
+                builder.Append($" and s.{IsArchivedColumn.ColumnName} = FALSE");
+            }
+        }
+
+        builder.Append(" where d.seq_id > ");
+        builder.AppendParameter(floor, NpgsqlDbType.Bigint);
+
+        if (TenantFilterValue != null)
+        {
+            // Same per-tenant scoping the normal SELECT applies (see TenantFilterValue
+            // doc) — partition-prunes mt_events so the probe doesn't scan other tenants'
+            // events looking for the next match.
+            builder.Append(" and d.tenant_id = '");
+            builder.Append(TenantFilterValue.Replace("'", "''"));
+            builder.Append("'");
+        }
+
+        foreach (var filter in _filters)
+        {
+            builder.Append(" and ");
+            filter.Apply(builder);
+        }
+
+        builder.Append(" order by d.seq_id limit 1");
+
+        return builder.Compile();
+    }
+
+    /// <summary>
+    /// Skip-ahead strategy: find the first seq_id matching the type filter after the floor,
     /// then run the normal query starting from there. Avoids scanning non-matching events.
     /// </summary>
     private async Task<EventPage> loadWithSkipAheadAsync(EventRequest request, CancellationToken token)
     {
         await using var session = (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(Database));
 
-        // Build a MIN query to find the next matching event. #4744: this MUST mirror the normal
-        // query's FROM clause — including the join to mt_streams — because the same _filters are
-        // replayed below, and an AggregateTypeFilter (from a projection that filters on stream
-        // type) emits "s.type = ?". Without the join that predicate references a missing FROM-clause
-        // entry and Postgres throws 42P01. seq_id lives only on mt_events, so qualify it as d.seq_id.
-        var minBuilder = new CommandBuilder();
-        minBuilder.Append(
-            $"select min(d.seq_id) from {_schemaName}.mt_events as d inner join {_schemaName}.mt_streams as s on d.stream_id = s.id");
-
-        if (_store.Options.Events.TenancyStyle == TenancyStyle.Conjoined)
-        {
-            minBuilder.Append(" and d.tenant_id = s.tenant_id");
-        }
-
-        minBuilder.Append(" where d.seq_id > ");
-        minBuilder.AppendParameter(request.Floor, NpgsqlDbType.Bigint);
-
-        if (TenantFilterValue != null)
-        {
-            // Same per-tenant scoping the normal SELECT applies (see TenantFilterValue
-            // doc) — partition-prunes mt_events so the MIN doesn't scan other tenants'
-            // events looking for the next match.
-            minBuilder.Append(" and d.tenant_id = '");
-            minBuilder.Append(TenantFilterValue.Replace("'", "''"));
-            minBuilder.Append("'");
-        }
-
-        foreach (var filter in _filters)
-        {
-            minBuilder.Append(" and ");
-            filter.Apply(minBuilder);
-        }
-
-        var minCommand = minBuilder.Compile();
+        var probeCommand = buildSkipAheadCommand(request.Floor);
         long? nextMatchingSeqId;
 
-        await using (var reader = await session.ExecuteReaderAsync(minCommand, token).ConfigureAwait(false))
+        await using (var reader = await session.ExecuteReaderAsync(probeCommand, token).ConfigureAwait(false))
         {
-            await reader.ReadAsync(token).ConfigureAwait(false);
-            nextMatchingSeqId = await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
-                ? null : reader.GetInt64(0);
+            // LIMIT 1, so "no row" is the no-match answer. MIN() returned a single NULL row for that
+            // case and the old code tested IsDBNull; d.seq_id is NOT NULL, so there is nothing to test.
+            nextMatchingSeqId = await reader.ReadAsync(token).ConfigureAwait(false)
+                ? reader.GetInt64(0)
+                : null;
             await reader.CloseAsync().ConfigureAwait(false);
         }
 
