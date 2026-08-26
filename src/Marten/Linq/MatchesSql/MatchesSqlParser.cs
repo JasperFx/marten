@@ -68,7 +68,10 @@ public class MatchesJsonPathParser: IMethodCallParser
     public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
         MethodCallExpression expression)
     {
-        var arguments = expression.Arguments[2].Value().As<object[]>().Select(x => new CommandParameter(x)).ToArray();
+        // The raw values, not CommandParameter wrappers. LiteralSqlWithJsonPath assigns each element
+        // straight to NpgsqlParameter.Value, so wrapping here made Npgsql try to write a
+        // CommandParameter into a text parameter and throw.
+        var arguments = expression.Arguments[2].Value().As<object[]>();
 
         return new LiteralSqlWithJsonPath(expression.Arguments[1].Value().As<string>(), arguments);
     }

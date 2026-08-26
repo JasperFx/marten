@@ -37,6 +37,35 @@ public class matches_sql_queries: IntegrationContext
     }
 
     [Fact]
+    public async Task query_using_matches_json_path_with_parameters()
+    {
+        var user1 = new User { UserName = "foo" };
+        var user2 = new User { UserName = "bar" };
+        var user3 = new User { UserName = "baz" };
+
+        using var session = theStore.LightweightSession();
+        session.Store(user1, user2, user3);
+        await session.SaveChangesAsync();
+
+        // The JSONPath itself travels as a bound parameter rather than being concatenated into the
+        // SQL, which is the reason to reach for the overload that takes them.
+        (await session.Query<User>()
+                .Where(x => x.MatchesJsonPath("d.data @? ^::jsonpath", "$ ? (@.UserName == \"baz\")"))
+                .Select(x => x.UserName)
+                .ToListAsync())
+            .ShouldHaveTheSameElementsAs("baz");
+
+        // More than one, to prove the parameters are not transposed or reused.
+        (await session.Query<User>()
+                .Where(x => x.MatchesJsonPath("d.data @? ^::jsonpath or d.data @? ^::jsonpath",
+                    "$ ? (@.UserName == \"baz\")", "$ ? (@.UserName == \"foo\")"))
+                .OrderBy(x => x.UserName)
+                .Select(x => x.UserName)
+                .ToListAsync())
+            .ShouldHaveTheSameElementsAs("baz", "foo");
+    }
+
+    [Fact]
     public async Task query_using_where_fragment()
     {
         var user1 = new User { UserName = "foo" };
