@@ -348,8 +348,15 @@ internal class PatchExpression<T>: IPatchExpression<T>
         var visitor = new PatchingMemberFinder();
         visitor.Visit(expression);
 
-        // TODO -- don't like this. Smells like duplication in logic
-        return visitor.Members.Select(x => x.Name.FormatCase(_session.Serializer.Casing)).Join(".");
+        // #5290: ToJsonKey, not Name.FormatCase. Casing alone ignores serializer member aliases
+        // ([JsonPropertyName], and [JsonProperty] through Marten.Newtonsoft's resolver), so a patch
+        // on an aliased member wrote a phantom node beside the real one -- the patch reported
+        // success, every reader kept seeing the old value, and the next full save erased the
+        // evidence. ToJsonKey is the same resolution QueryableMember uses, so the patch path and
+        // the LINQ provider now agree about where a member lives by construction rather than by
+        // coincidence. IndexerKeyInfo (dictionary keys) declares no attributes, so it keeps the
+        // casing-only behavior it had.
+        return visitor.Members.Select(x => x.ToJsonKey(_session.Serializer.Casing)).Join(".");
     }
 
     private string toPathExpression(Expression expression)

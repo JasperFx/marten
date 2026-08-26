@@ -92,7 +92,12 @@ public sealed class JsonPathCreator(ISerializer serializer) : ExpressionVisitor
         }
         else
         {
-            _jsonPathBuilder.Append($"@.{node.Member.Name.FormatCase(serializer.Casing)}");
+            // #5290: same resolution as PatchExpression.toPath and QueryableMember. This visitor is
+            // only reached from the patching API's predicate overloads, where the members named are
+            // document members and so carry the serializer's aliases; casing alone would build a
+            // JSONPath predicate that matches nothing on an aliased member. The branch above is a
+            // captured closure value, not a document path, so it stays on the raw name.
+            _jsonPathBuilder.Append($"@.{node.Member.ToJsonKey(serializer.Casing)}");
 
             if (!_memberIfInBinary.Contains(node) && node.Type == typeof(bool))
                 _jsonPathBuilder.Append($" {LogicalOperators[ExpressionType.Equal]} {(_memberIfInUnary.Contains(node) ? "false" : "true")}");
