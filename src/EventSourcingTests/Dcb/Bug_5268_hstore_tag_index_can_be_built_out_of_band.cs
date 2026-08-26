@@ -32,7 +32,7 @@ namespace EventSourcingTests.Dcb;
 [Collection("OneOffs")]
 public class Bug_5268_hstore_tag_index_can_be_built_out_of_band: OneOffConfigurationsContext
 {
-    private DocumentStore StoreFor(bool hstore, bool ignoreTagIndex)
+    private DocumentStore StoreFor(bool hstore, bool ignoreTagIndex, bool concurrentTagIndex = false)
     {
         return StoreOptions(opts =>
         {
@@ -42,6 +42,7 @@ public class Bug_5268_hstore_tag_index_can_be_built_out_of_band: OneOffConfigura
             {
                 opts.Events.DcbStorageMode = DcbStorageMode.HStore;
                 opts.Events.RegisterTagType<StudentId>("student");
+                opts.Events.BuildHStoreTagIndexConcurrently = concurrentTagIndex;
             }
 
             if (ignoreTagIndex)
@@ -157,6 +158,79 @@ public class Bug_5268_hstore_tag_index_can_be_built_out_of_band: OneOffConfigura
         // Still there, and the store still reports itself as matching its configuration.
         (await IndexExistsAsync(EventGraph.HStoreTagIndexName)).ShouldBeTrue();
         await Should.NotThrowAsync(() => store.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
+    }
+
+    /// <summary>
+    /// Reads <c>indisvalid</c> rather than merely whether the index exists. A CONCURRENTLY build that
+    /// fails leaves the index in place and INVALID, which PostgreSQL will not use — "it is there" is the
+    /// assertion that would let a broken build pass.
+    /// </summary>
+    private async Task<bool?> IndexIsValidAsync(string indexName)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+                          select i.indisvalid from pg_index i
+                          join pg_class c on c.oid = i.indexrelid
+                          join pg_namespace n on n.oid = c.relnamespace
+                          where n.nspname = @schema and c.relname = @name
+                          """;
+        cmd.Parameters.AddWithValue("schema", SchemaName);
+        cmd.Parameters.AddWithValue("name", indexName);
+
+        return (bool?)await cmd.ExecuteScalarAsync();
+    }
+
+    [Fact]
+    public async Task the_tag_index_can_be_built_without_blocking_writes()
+    {
+        // The other way out of the maintenance window, and the one that does not need an operator:
+        // Marten builds the index itself with CREATE INDEX CONCURRENTLY. Nothing here can observe the
+        // absence of the lock directly, so what is pinned is that the concurrent build actually
+        // completed -- an index that exists but is invalid is one PostgreSQL ignores.
+        await SeedNonHStoreStoreAsync();
+
+        var store = StoreFor(hstore: true, ignoreTagIndex: false, concurrentTagIndex: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        (await ColumnExistsAsync("tags")).ShouldBeTrue();
+        (await IndexIsValidAsync(EventGraph.HStoreTagIndexName)).ShouldBe(true);
+    }
+
+    [Fact]
+    public async Task a_concurrently_built_tag_index_is_not_drift()
+    {
+        // CONCURRENTLY is not part of what pg_get_indexdef reports back, so the canonical form Weasel
+        // compares against has to ignore it. If it did not, every apply would rebuild the index -- which
+        // is the outage the flag exists to avoid, now happening on every startup instead of once.
+        await SeedNonHStoreStoreAsync();
+
+        var store = StoreFor(hstore: true, ignoreTagIndex: false, concurrentTagIndex: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await Should.NotThrowAsync(() => store.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
+        await Should.NotThrowAsync(() => store.Storage.ApplyAllConfiguredChangesToDatabaseAsync());
+
+        (await IndexIsValidAsync(EventGraph.HStoreTagIndexName)).ShouldBe(true);
+    }
+
+    [Fact]
+    public async Task a_store_created_from_scratch_can_use_the_concurrent_index_too()
+    {
+        // Not just the migration path: the flag also has to survive a first-time create, where the index
+        // is written as part of the table's own creation script rather than as a delta.
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.DropSchemaAsync(SchemaName);
+        }
+
+        var store = StoreFor(hstore: true, ignoreTagIndex: false, concurrentTagIndex: true);
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        (await IndexIsValidAsync(EventGraph.HStoreTagIndexName)).ShouldBe(true);
     }
 
     [Fact]

@@ -71,7 +71,14 @@ internal class EventsTable: Table
             Indexes.Add(new IndexDefinition(EventGraph.HStoreTagIndexName)
             {
                 Method = IndexMethod.gin,
-                Columns = ["tags"]
+                Columns = ["tags"],
+
+                // #5268: a plain CREATE INDEX holds ACCESS EXCLUSIVE on mt_events for the whole GIN
+                // build, so turning HStore mode on for an existing store costs a write outage. Opting
+                // in has Weasel emit CREATE INDEX CONCURRENTLY as a command of its own, outside the
+                // migration's transaction. Only reachable without UseTenantPartitionedEvents -- the
+                // combination is refused in StoreOptions.Validate, which explains why.
+                IsConcurrent = events.BuildHStoreTagIndexConcurrently
             });
         }
 

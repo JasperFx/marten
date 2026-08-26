@@ -52,14 +52,14 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <remarks>
     ///     #5268. Turning HStore mode on for an existing store adds two things to <c>mt_events</c>: the
     ///     nullable <c>tags</c> column, which is a metadata-only add, and this index, which is not.
-    ///     Marten emits a plain <c>CREATE INDEX</c>, which holds ACCESS EXCLUSIVE for the whole build —
-    ///     on a large event table that is a write outage rather than a migration. And under
-    ///     <see cref="UseTenantPartitionedEvents" /> no flag would fix it: PostgreSQL refuses
-    ///     <c>CREATE INDEX CONCURRENTLY</c> on a partitioned parent at all, and the index has to be built
-    ///     per partition and attached.
+    ///     Marten emits a plain <c>CREATE INDEX</c> by default, which holds ACCESS EXCLUSIVE for the whole
+    ///     build — on a large event table that is a write outage rather than a migration.
     ///     <para>
-    ///     Ignoring it takes it out of the schema diff in both directions, so Marten will neither create
-    ///     it nor treat an index you built yourself as drift.
+    ///     There are two ways out. <see cref="BuildHStoreTagIndexConcurrently" /> has Marten build it
+    ///     without blocking writes, on any event table that is not tenant-partitioned. Ignoring it instead
+    ///     takes it out of the schema diff in both directions, so Marten will neither create it nor treat
+    ///     an index you built yourself as drift — which is the route for a partitioned <c>mt_events</c>,
+    ///     where PostgreSQL refuses <c>CREATE INDEX CONCURRENTLY</c> on the parent outright.
     ///     </para>
     /// </remarks>
     public const string HStoreTagIndexName = "idx_mt_events_tags";
@@ -642,6 +642,30 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     }
 
     private DcbStorageMode _dcbStorageMode = DcbStorageMode.TagTables;
+
+    /// <summary>
+    /// Opt into building <see cref="HStoreTagIndexName" /> without blocking writes to <c>mt_events</c>.
+    /// Only has any effect in <see cref="DcbStorageMode.HStore" /> mode. Default is false.
+    /// </summary>
+    /// <remarks>
+    ///     #5268. Turning HStore mode on for an existing store is otherwise a maintenance window: the
+    ///     plain <c>CREATE INDEX</c> holds ACCESS EXCLUSIVE for the whole GIN build. With this on the
+    ///     index is marked concurrent, and Weasel emits <c>CREATE INDEX CONCURRENTLY</c> as its own
+    ///     command outside the migration's transaction.
+    ///     <para>
+    ///     Off by default because a concurrent build cannot run inside a transaction, so it changes what
+    ///     the generated <c>db-patch</c> / <c>db-dump</c> script is: still correct against a live
+    ///     database, no longer runnable as one transactional block.
+    ///     </para>
+    ///     <para>
+    ///     Rejected at configuration time alongside <see cref="UseTenantPartitionedEvents" />. PostgreSQL
+    ///     refuses <c>CONCURRENTLY</c> on a partitioned parent and wants an <c>ON ONLY</c> parent index,
+    ///     a concurrent index per partition, and an <c>ALTER INDEX ... ATTACH PARTITION</c> for each —
+    ///     and Weasel takes that partition list from the table's declared partitions, which is empty when
+    ///     the partitions belong to Marten's tenant partition manager. See StoreOptions.Validate.
+    ///     </para>
+    /// </remarks>
+    public bool BuildHStoreTagIndexConcurrently { get; set; }
 
     /// <summary>
     /// How Dynamic Consistency Boundary (DCB) tags are physically stored. Default is
