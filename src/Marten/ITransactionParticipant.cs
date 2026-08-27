@@ -17,6 +17,11 @@ public interface ITransactionParticipant
     /// transaction is committed. Implementations should use the provided
     /// connection and transaction to execute any pending work.
     /// </summary>
-    Task BeforeCommitAsync(NpgsqlConnection connection, NpgsqlTransaction transaction,
+    /// <param name="transaction">
+    /// Null when the session is enlisted in an ambient <c>System.Transactions</c> scope, where the
+    /// connection is enlisted and no <c>NpgsqlTransaction</c> exists. Work must still be executed
+    /// on <paramref name="connection"/>, which carries the enlistment.
+    /// </param>
+    Task BeforeCommitAsync(NpgsqlConnection connection, NpgsqlTransaction? transaction,
         CancellationToken token);
 }

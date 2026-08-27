@@ -312,5 +312,20 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             throw new AggregateException(exceptions);
         }
 
+        // The other three lifetimes invoke participants immediately before they commit. This one
+        // never commits: the ambient TransactionScope owns that, and completes when the caller
+        // completes the scope. So the last safe point is here, after the pages have executed and
+        // after the failure paths above have thrown.
+        //
+        // The transaction argument is null by necessity rather than by omission. The connection is
+        // enlisted in the ambient transaction, so no NpgsqlTransaction exists to hand over, and EF
+        // Core throws if given one while it is operating inside a TransactionScope.
+        if (participants is { Count: > 0 })
+        {
+            foreach (var participant in participants)
+            {
+                await participant.BeforeCommitAsync(_connection!, null, token).ConfigureAwait(false);
+            }
+        }
     }
 }

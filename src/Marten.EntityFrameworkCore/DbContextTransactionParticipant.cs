@@ -49,8 +49,12 @@ internal class DbContextTransactionParticipant<TDbContext>: ITransactionParticip
     public TDbContext DbContext { get; }
 
     public async Task BeforeCommitAsync(NpgsqlConnection connection,
-        NpgsqlTransaction transaction, CancellationToken token)
+        NpgsqlTransaction? transaction, CancellationToken token)
     {
+        // A null transaction means the session is in an ambient TransactionScope and the connection
+        // carries the enlistment. Assigning null to DbCommand.Transaction is correct there, and
+        // UseTransactionAsync(null) is required rather than merely tolerated: EF Core throws if it
+        // is handed a transaction while already operating inside a TransactionScope.
         // Set search_path on Marten's real connection so EF Core targets the right schema
         if (!string.IsNullOrEmpty(_schemaName))
         {
