@@ -14,6 +14,20 @@ namespace EventSourcingTests.Dcb;
 // writers race the same boundary, only one may commit. This pins that invariant under
 // staggered (non-lockstep) concurrency, exercised with many racers over many rounds.
 // Note: #4591's test only covers the lockstep case (racers synchronized).
+//
+// #5300: what makes the staggered case different is that FetchForWritingByTags reads the
+// events and the mt_dcb_tag_version row in two SEPARATE statements, and at READ COMMITTED
+// each statement takes its own snapshot -- so a commit landing between them is visible to
+// one read and not the other. Pre-fix the version was captured SECOND, which paired a fresh
+// version with a stale aggregate and let the save's `where version = $captured` match a check
+// the caller never actually made. The window is the whole duration of the events query, which
+// is why a handful of concurrent requests is enough to hit it. #4591's barrier syncs every
+// racer AFTER the fetch, so all of them capture the same version and the ordering bug cannot
+// show up there.
+//
+// The fix captures the version FIRST. If anything commits mid-fetch the captured version is
+// stale-low and the assertion fails -- a spurious conflict the caller retries, never a lost
+// one. Do not "tidy" the two statements back into the other order.
 [Collection("OneOffs")]
 public class dcb_staggered_concurrent_append_tests : OneOffConfigurationsContext
 {

@@ -43,6 +43,20 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         var schema = _store.Events.DatabaseSchemaName;
         var isHStore = _store.Events.DcbStorageMode == DcbStorageMode.HStore;
 
+        // #5300: the version capture goes FIRST, ahead of the events SELECT.
+        // The two are separate statements, and at READ COMMITTED each statement
+        // takes its own snapshot -- so a save that commits while one of them is
+        // running is visible to the other but not to it. Capturing after the
+        // events read pairs a FRESH version with a STALE aggregate, and the
+        // save's `where version = $captured` then matches: the conflict is
+        // missed and both appends commit. Capturing first can only pair a STALE
+        // version with a fresh aggregate, which fails the assertion -- a
+        // spurious conflict the caller retries, never a lost one. Same ordering
+        // (and same reason) as FetchAsyncPlan.FetchForWriting, which reads the
+        // stream version ahead of the events.
+        AppendVersionCapture(builder, (IMartenSession)session);
+        builder.StartNewCommand();
+
         builder.Append("select ");
         for (var f = 0; f < selectFields.Length; f++)
         {
@@ -128,13 +142,6 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         }
 
         builder.Append(" order by e.seq_id");
-
-        // #4591: append the DCB tag-version capture step as a second statement
-        // in the same command. The events SELECT above is unchanged; this just
-        // SELECTs the current version for each (tag_table, tag_value) in the
-        // query so the captured version flows into DcbTagVersionAssertion's
-        // INSERT … ON CONFLICT DO UPDATE WHERE at SaveChangesAsync time.
-        AppendVersionCapture(builder, (IMartenSession)session);
     }
 
     private void AppendVersionCapture(ICommandBuilder builder, IMartenSession session)
@@ -165,10 +172,12 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
 
         var tenantId = session.TenantId;
 
-        // Use StartNewCommand (not `; <sql>`) so Npgsql sends a separate
-        // batched command. Multiple `;`-separated statements in a single
-        // prepared statement raise Postgres SQLSTATE 42601.
-        builder.StartNewCommand();
+        // No StartNewCommand here -- this is the handler's FIRST statement, and the
+        // batched-query path (CommandExtensions.BuildCommand) already opens a command
+        // per handler. A second call back to back would push an empty statement into
+        // the batch and shift every NextResultAsync in HandleAsync by one. The
+        // boundary between this statement and the events SELECT is opened by the
+        // caller instead.
 
         // Plain SELECT — no INSERT here. The fetch query shares the session
         // connection, and any INSERT-OR-IGNORE here would hold the row lock
@@ -222,6 +231,14 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         var docSession = (DocumentSessionBase)session;
         var storage = (EventDocumentStorage)docSession.EventStorage();
 
+        // #4591/#5300: FIRST result set is the per-tag captured versions for the side-table
+        // assertion. Always present because AppendVersionCapture always runs (any DCB tag
+        // query necessarily references at least one tag). It has to be read before the
+        // events -- see the ordering note in ConfigureCommand.
+        var capturedByKey = await readCapturedVersions(reader, token).ConfigureAwait(false);
+
+        await reader.NextResultAsync(token).ConfigureAwait(false);
+
         var events = new List<IEvent>();
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
@@ -231,13 +248,7 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
 
         var lastSeenSequence = events.Count > 0 ? events.Max(e => e.Sequence) : 0;
 
-        // #4591: second result set from ConfigureCommand — per-tag captured
-        // versions for the side-table assertion. Always present because
-        // AppendVersionUpsertAndCapture always runs (any DCB tag query
-        // necessarily references at least one tag).
-        await reader.NextResultAsync(token).ConfigureAwait(false);
-
-        var capturedVersions = await readCapturedVersions(reader, lastSeenSequence, token).ConfigureAwait(false);
+        var capturedVersions = buildEntries(capturedByKey, lastSeenSequence);
 
         T? aggregate = default;
         if (events.Count > 0)
@@ -263,8 +274,8 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         return new EventBoundary<T>(docSession, _store.Events, aggregate, events, lastSeenSequence);
     }
 
-    private async Task<IReadOnlyList<DcbTagVersionEntry>> readCapturedVersions(
-        DbDataReader reader, long lastSeenSequence, CancellationToken token)
+    private static async Task<Dictionary<(string, string), long>> readCapturedVersions(
+        DbDataReader reader, CancellationToken token)
     {
         // SELECT returns only the rows that exist. A missing row means no prior
         // save has touched this tag boundary yet — captured version = 0, and the
@@ -279,6 +290,12 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
             byKey[(tagTable, tagValue)] = version;
         }
 
+        return byKey;
+    }
+
+    private IReadOnlyList<DcbTagVersionEntry> buildEntries(
+        Dictionary<(string, string), long> byKey, long lastSeenSequence)
+    {
         var targets = _versionTargets!;
         var entries = new DcbTagVersionEntry[targets.Count];
         for (var i = 0; i < targets.Count; i++)
