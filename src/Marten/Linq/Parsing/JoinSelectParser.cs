@@ -447,14 +447,26 @@ internal sealed class AnonProjectionExpander: ExpressionVisitor
     private readonly Dictionary<string, Expression> _memberToSource = new(StringComparer.Ordinal);
     private readonly Type _projectionType;
 
+    // Set for (x, c) => c, where the projection *is* one of the join's sides. There is nothing to
+    // index then, so without this CanExpand is false and every post-SelectMany Where()/OrderBy() is
+    // silently dropped rather than routed to a side.
+    private readonly ParameterExpression? _identitySource;
+
     public AnonProjectionExpander(LambdaExpression flattenedResultSelector)
     {
         _projectionType = flattenedResultSelector.ReturnType;
-        ExtractBindings(flattenedResultSelector.Body);
+        if (flattenedResultSelector.Body is ParameterExpression identity)
+        {
+            _identitySource = identity;
+        }
+        else
+        {
+            ExtractBindings(flattenedResultSelector.Body);
+        }
     }
 
-    /// <summary>True if the result selector body was a NewExpression / MemberInit we could index.</summary>
-    public bool CanExpand => _memberToSource.Count > 0;
+    /// <summary>True if the result selector body was a NewExpression / MemberInit we could index, or a bare side.</summary>
+    public bool CanExpand => _memberToSource.Count > 0 || _identitySource != null;
 
     /// <summary>Rewrites <paramref name="body"/>, replacing every <c>z.X</c> (where z is the projection type) with the bound source expression.</summary>
     public Expression Expand(Expression body) => Visit(body);
@@ -492,6 +504,14 @@ internal sealed class AnonProjectionExpander: ExpressionVisitor
                 _memberToSource[binding.Member.Name] = binding.Expression;
             }
         }
+    }
+
+    protected override Expression VisitParameter(ParameterExpression node)
+    {
+        // z (or z.X) where the projection is a bare side: z is that side. Matched by type, since the
+        // post-SelectMany lambda has its own parameter instance. Returning the join's own parameter
+        // keeps the side analyzer -- which compares by reference -- able to place the expression.
+        return _identitySource != null && node.Type == _projectionType ? _identitySource : base.VisitParameter(node);
     }
 
     protected override Expression VisitMember(MemberExpression node)

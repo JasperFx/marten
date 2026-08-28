@@ -320,6 +320,9 @@ public partial class CollectionUsage
         return statement;
     }
 
+    private static Ordering CopyOrdering(Ordering source, LambdaExpression rewritten) =>
+        new(rewritten, source.Direction) { CasingRule = source.CasingRule, IsTransformed = source.IsTransformed };
+
     public Statement CompileGroupJoin(IStorageSession session,
         SelectorStatement outerStatement, QueryStatistics? statistics)
     {
@@ -572,6 +575,77 @@ public partial class CollectionUsage
             }
         }
 
+        // Post-SelectMany OrderBy(): render it on the join select, not inside a CTE. A join is free to
+        // discard the order of its inputs, and Limit/Offset are already transferred above -- so leaving
+        // the ordering out does not produce an unordered list, it produces an arbitrary page.
+        var postSmOrderings = new List<Ordering>();
+        for (var sweep = Inner; sweep != null; sweep = sweep.Inner)
+        {
+            postSmOrderings.AddRange(sweep.OrderingExpressions);
+        }
+
+        foreach (var ordering in postSmOrderings)
+        {
+            if (!string.IsNullOrEmpty(ordering.Literal))
+            {
+                joinStatement.Ordering.Expressions.Add(ordering.Literal!);
+                continue;
+            }
+
+            if (!expander.CanExpand)
+            {
+                throw new BadLinqExpressionException(
+                    "Marten cannot translate an OrderBy() applied after GroupJoin(...).SelectMany(...) for this "
+                    + "projection. Order the outer Query<T>() before the GroupJoin instead.");
+            }
+
+            var body = ordering.Expression;
+            while (body is UnaryExpression { NodeType: ExpressionType.Quote or ExpressionType.Convert } unary)
+            {
+                body = unary.Operand;
+            }
+
+            if (body is LambdaExpression orderingLambda)
+            {
+                body = orderingLambda.Body;
+            }
+
+            var expandedOrdering = expander.Expand(body);
+            var orderingSide = PostSelectManyFilterSideAnalyzer.Analyze(
+                expandedOrdering, groupJoin.FlattenedResultSelector.Parameters);
+
+            string sql;
+            if (orderingSide == PostSelectManyFilterSideAnalyzer.Side.InnerOnly)
+            {
+                var innerParam = Expression.Parameter(groupJoin.InnerElementType, "child");
+                var rewritten = new ParameterReplacingVisitor(
+                    groupJoin.FlattenedResultSelector.Parameters[1], innerParam).Visit(expandedOrdering);
+
+                sql = CopyOrdering(ordering, Expression.Lambda(rewritten, innerParam))
+                    .BuildExpression(innerCollection)
+                    .Replace("d.", innerCteAlias + ".");
+            }
+            else if (orderingSide == PostSelectManyFilterSideAnalyzer.Side.OuterOnly)
+            {
+                var outerParam = Expression.Parameter(ElementType, "outer");
+                var rewritten = new GroupJoinOuterNavigationStripper(
+                    groupJoin.FlattenedResultSelector.Parameters[0],
+                    groupJoin.ResultSelector, outerParam).Visit(expandedOrdering);
+
+                sql = CopyOrdering(ordering, Expression.Lambda(rewritten, outerParam))
+                    .BuildExpression(outerCollection)
+                    .Replace("d.", outerCteAlias + ".");
+            }
+            else
+            {
+                throw new BadLinqExpressionException(
+                    "Marten cannot translate this post-SelectMany OrderBy() -- it touches both the outer and "
+                    + "inner sides of the GroupJoin (or neither). Order by a member of one side.");
+            }
+
+            joinStatement.Ordering.Expressions.Add(sql);
+        }
+
         // Transfer Distinct() from the SelectMany usage chain. JoinSelectClause implements
         // IScalarSelectClause, so ProcessSingleValueModeIfAny renders DISTINCT(<projection>) for
         // a materialized Distinct() and wraps it in a count(*) CTE for Distinct().Count().
@@ -601,6 +675,28 @@ public partial class CollectionUsage
             joinStatement.AddToEnd(scalarStatement);
 
             ProcessSingleValueModeIfAny(scalarStatement, session, null, statistics);
+
+            return joinStatement;
+        }
+
+        // Count()/LongCount() must count the join, not the outer side. ProcessSingleValueModeIfAny
+        // builds its count(*) over SelectClause.FromObject, and JoinSelectClause reports the *outer*
+        // CTE there -- so counting without wrapping silently drops the join itself, along with every
+        // filter on the inner side. Distinct().Count() is left alone: ProcessSingleValueModeIfAny
+        // already builds its own count(*) CTE over the DISTINCT projection.
+        if ((SingleValueMode is Marten.Linq.Parsing.SingleValueMode.Count
+                or Marten.Linq.Parsing.SingleValueMode.LongCount)
+            && !joinStatement.IsDistinct)
+        {
+            joinStatement.ConvertToCommonTableExpression(session);
+
+            var countStatement = new SelectorStatement
+            {
+                SelectClause = new NewScalarStringSelectClause("d.data", joinStatement.ExportName)
+            };
+            joinStatement.AddToEnd(countStatement);
+
+            ProcessSingleValueModeIfAny(countStatement, session, null, statistics);
 
             return joinStatement;
         }

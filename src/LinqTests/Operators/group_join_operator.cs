@@ -679,4 +679,107 @@ public class group_join_operator: OneOffConfigurationsContext
     }
 
     #endregion
+
+    #region Ordering and filtering after the join (#5302)
+
+    [Fact]
+    public async Task OrderBy_after_the_join_is_applied()
+    {
+        await SetupData();
+
+        var amounts = await _session.Query<JoinCustomer>()
+            .GroupJoin(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, o) => o)
+            .OrderByDescending(o => o.Amount)
+            .Select(o => o.Amount)
+            .ToListAsync();
+
+        amounts.ShouldHaveTheSameElementsAs(300m, 200m, 100m);
+    }
+
+    [Fact]
+    public async Task OrderBy_and_paging_after_the_join_return_the_asked_for_page()
+    {
+        await SetupData();
+
+        // Skip/Take were already transferred to the join select, so an unapplied OrderBy did not
+        // produce an unordered list -- it produced an arbitrary page.
+        var amounts = await _session.Query<JoinCustomer>()
+            .GroupJoin(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, o) => o)
+            .OrderByDescending(o => o.Amount)
+            .Skip(1)
+            .Take(1)
+            .Select(o => o.Amount)
+            .ToListAsync();
+
+        amounts.ShouldHaveTheSameElementsAs(200m);
+    }
+
+    [Fact]
+    public async Task OrderBy_after_the_join_can_order_by_the_outer_side()
+    {
+        await SetupData();
+
+        var names = await _session.Query<JoinCustomer>()
+            .GroupJoin(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, o) => new { x.c.Name, o.Amount })
+            .OrderByDescending(z => z.Name)
+            .ThenBy(z => z.Amount)
+            .Select(z => z.Name)
+            .ToListAsync();
+
+        names.ShouldHaveTheSameElementsAs("Bob", "Alice", "Alice");
+    }
+
+    [Fact]
+    public async Task Where_after_the_join_is_applied_when_the_projection_is_the_inner_side()
+    {
+        await SetupData();
+
+        // (x, o) => o binds nothing to index, which used to make the Where() disappear.
+        var amounts = await _session.Query<JoinCustomer>()
+            .GroupJoin(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, o) => o)
+            .Where(o => o.Amount > 150m)
+            .OrderBy(o => o.Amount)
+            .Select(o => o.Amount)
+            .ToListAsync();
+
+        amounts.ShouldHaveTheSameElementsAs(200m, 300m);
+    }
+
+    [Fact]
+    public async Task Count_after_the_join_respects_a_post_join_Where()
+    {
+        await SetupData();
+
+        var count = await _session.Query<JoinCustomer>()
+            .GroupJoin(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, o) => o)
+            .Where(o => o.Amount > 150m)
+            .CountAsync();
+
+        count.ShouldBe(2);
+    }
+
+
+    [Fact]
+    public async Task Count_after_the_join_counts_the_join_and_not_the_outer_side()
+    {
+        await SetupData();
+
+        // Diana has no orders, so the outer side has four customers and the join has three rows.
+        // The existing Count coverage cannot see this: with three of each, both answers are 3.
+        _session.Store(new JoinCustomer { Id = Guid.NewGuid(), Name = "Diana", City = "Seattle" });
+        await _session.SaveChangesAsync();
+
+        var count = await _session.Query<JoinCustomer>()
+            .GroupJoin(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, o) => o)
+            .CountAsync();
+
+        count.ShouldBe(3);
+    }
+    #endregion
 }
