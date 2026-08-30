@@ -56,6 +56,30 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         set => _options.Events.UseIdentityMapForAggregates = value;
     }
 
+    /// <summary>
+    ///     In HotCold mode, how long this node may own zero projection sets before the
+    ///     ProjectionCoordinator logs a warning that it is running no asynchronous projections at all.
+    ///     Default is 2 minutes. Set to null to disable the warning entirely.
+    /// </summary>
+    /// <remarks>
+    ///     A node that has been denied every database's leadership lock is indistinguishable, in the logs,
+    ///     from a healthy node on an idle system -- the lock-denied branch of the coordinator's polling loop
+    ///     is otherwise completely silent. That silence hid a ~35 minute outage in which an ungracefully
+    ///     killed node's session-scoped advisory locks stayed alive server-side until Postgres's TCP layer
+    ///     gave up, leaving every replacement node with nothing to run.
+    ///
+    ///     On a genuinely multi-node HotCold cluster the standby nodes legitimately own nothing, and will
+    ///     emit this warning on the <see cref="NoOwnedProjectionSetsRepeatTime" /> cadence. That is the
+    ///     intended tradeoff: no single node can observe "nobody owns this database", only "I own nothing".
+    /// </remarks>
+    public TimeSpan? NoOwnedProjectionSetsWarningThreshold { get; set; } = 2.Minutes();
+
+    /// <summary>
+    ///     How often to repeat the warning described by <see cref="NoOwnedProjectionSetsWarningThreshold" />
+    ///     while this node continues to own zero projection sets. Default is 5 minutes.
+    /// </summary>
+    public TimeSpan NoOwnedProjectionSetsRepeatTime { get; set; } = 5.Minutes();
+
     protected override void onAddProjection(object projection)
     {
         if (projection is IAggregateProjection { Lifecycle: ProjectionLifecycle.Live } aggregateProjection)

@@ -34,6 +34,9 @@ public class ProjectionCoordinator: IProjectionCoordinator
     private ImHashMap<string, IProjectionDaemon> _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
     private Task? _runner;
 
+    // Ownership tallies for recordOwnership(). Only ever touched from the single executeAsync loop.
+    private readonly OwnershipTracker _ownership;
+
     public ProjectionCoordinator(IDocumentStore documentStore, ILogger<ProjectionCoordinator> logger)
     {
         var store = (DocumentStore)documentStore;
@@ -60,6 +63,7 @@ public class ProjectionCoordinator: IProjectionCoordinator
         _logger = logger;
         _resilience = store.Options.ResiliencePipeline;
         _timeProvider = _options.Events.TimeProvider;
+        _ownership = new OwnershipTracker(_timeProvider);
         Store = store;
     }
 
@@ -199,6 +203,9 @@ public class ProjectionCoordinator: IProjectionCoordinator
                 var sets = await Distributor
                     .BuildDistributionAsync().ConfigureAwait(false);
 
+                var owned = 0;
+                var denied = 0;
+
                 foreach (var set in sets)
                 {
                     // Is it already running here?
@@ -208,6 +215,7 @@ public class ProjectionCoordinator: IProjectionCoordinator
 
                         // check if it's still running
                         await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
+                        owned++;
                         continue;
                     }
 
@@ -219,6 +227,7 @@ public class ProjectionCoordinator: IProjectionCoordinator
 
                             // check if it's still running
                             await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
+                            owned++;
                         }
                         else
                         {
@@ -226,15 +235,19 @@ public class ProjectionCoordinator: IProjectionCoordinator
                             var daemon = resolveDaemon(set);
 
                             await stopAgentsIfNecessaryAsync(set, daemon).ConfigureAwait(false);
+                            denied++;
                         }
                     }
                     catch (Exception e)
                     {
                         _logger.LogError(e, "Error trying to attain a lock for set {Name} and lock id {LockId}. Will retry later", set.Names.Select(x => x.Identity).Join(", "), set.LockId);
+                        denied++;
                         await Task.Delay(_options.Projections.LeadershipPollingTime.Milliseconds(), stoppingToken)
                             .ConfigureAwait(false);
                     }
                 }
+
+                recordOwnership(owned, denied, sets.Count);
             }
             catch (Exception e)
             {
@@ -276,6 +289,43 @@ public class ProjectionCoordinator: IProjectionCoordinator
     }
 
 
+    /// <summary>
+    ///     Log this node's share of the projection sets, so that "this node is running nothing" is visible
+    ///     in telemetry rather than having to be inferred from the absence of other log lines.
+    /// </summary>
+    /// <remarks>
+    ///     The lock-denied branch of the polling loop above was completely silent: no log, no metric, no
+    ///     health signal. Only a thrown exception produced any output. That made a node which had been
+    ///     denied every database's lock indistinguishable from a healthy node on an idle system, and hid a
+    ///     ~35 minute projection outage after an ungraceful node kill left session-scoped advisory locks
+    ///     alive server-side until Postgres's TCP layer timed the dead peer out.
+    ///
+    ///     Steady state is quiet: the Information line is only written when the tally actually changes.
+    ///     The warning is the part that cannot be made both loud and quiet at once -- a node can observe
+    ///     "I own nothing" but never "nobody owns this", so on a real multi-node HotCold cluster the
+    ///     standbys will warn on their repeat cadence. That is why the threshold is configurable and can
+    ///     be switched off outright.
+    /// </remarks>
+    private void recordOwnership(int owned, int denied, int total)
+    {
+        var report = _ownership.Record(owned, denied, total,
+            _options.Projections.NoOwnedProjectionSetsWarningThreshold,
+            _options.Projections.NoOwnedProjectionSetsRepeatTime);
+
+        if (report.TallyChanged)
+        {
+            _logger.LogInformation(
+                "ProjectionCoordinator owns {Owned} of {Total} projection sets ({Denied} held by another node)",
+                owned, total, denied);
+        }
+
+        if (!report.ShouldWarn) return;
+
+        _logger.LogWarning(
+            "ProjectionCoordinator has owned none of the {Total} known projection sets for {Elapsed}, so no asynchronous projections or subscriptions are running on this node. Every leadership lock is held elsewhere -- if no other node is running them, the likely cause is a previous node that was killed without releasing its session-scoped advisory locks, which Postgres will hold until it detects the dead client. This is expected on a standby node in a multi-node HotCold cluster; set StoreOptions.Projections.NoOwnedProjectionSetsWarningThreshold to null to silence it",
+            total, report.OwnedNothingFor);
+    }
+
     private async Task startAgentsIfNecessaryAsync(IProjectionSet set,
         IProjectionDaemon daemon, CancellationToken stoppingToken)
     {
@@ -290,6 +340,24 @@ public class ProjectionCoordinator: IProjectionCoordinator
                      _timeProvider.GetUtcNow().Subtract(agent.PausedTime.Value) >
                      _options.Projections.HealthCheckPollingTime)
             {
+                await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);
+            }
+            else if (agent.Status == AgentStatus.Stopped)
+            {
+                // A stranded agent. SubscriptionAgent.ReportCriticalFailureAsync sets its own Status and
+                // disposes itself, but never calls back into the daemon's StopAgentAsync -- so the corpse
+                // stays in the daemon's agent map. A ProgressionProgressOutOfOrderException lands it here
+                // with Status == Stopped and PausedTime == null, which matched neither branch above: the
+                // shard was dead, this node still held the set's lock, and nothing ever restarted it or
+                // released the lock. Paused agents self-heal through the branch above; Stopped ones did not.
+                //
+                // Restarting is safe and idempotent. Daemon.StartAgentAsync builds a *fresh* agent for the
+                // shard and AddOrUpdates it over the dead entry, and its own guard only declines when the
+                // existing agent is still Running.
+                _logger.LogWarning(
+                    "Restarting stranded projection agent {ShardName} on database {Database}: the agent is in a Stopped state while this node still holds the leadership lock",
+                    name.Identity, set.Database.Identifier);
+
                 await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);
             }
         }
