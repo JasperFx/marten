@@ -342,19 +342,35 @@
          verified by diffing the discovered test list against master, not by comparing run totals.
          Inert for Marten: the Event Model provenance ladder (jasperfx#703/#704) only affects hosts
          registering an IEventModelDefinitionSource, which Marten does not, and
-         RetryBlock.ShouldRetry/OnTerminalFailure (jasperfx#701) are additive and default to null. -->
-    <PackageVersion Include="JasperFx" Version="2.56.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.56.0" />
+         RetryBlock.ShouldRetry/OnTerminalFailure (jasperfx#701) are additive and default to null.
+
+         2.57-2.59 (marten#5305): the bump this branch actually needs. jasperfx#721 fixed
+         TenantedEventSlicer.SliceAsync(EventRange) to honour ForceSingleTenancy. It was respected
+         only by the IReadOnlyList<IEvent> overload, and the async daemon reaches only the EventRange
+         one. Marten has set that flag in SingleStreamProjection.BuildSlicer since the marten#4085
+         fix, so until 2.58.0 the flag was being set on precisely the path that could not read it.
+         Bug_4085_async_projection_with_mixed_tenant_ids fails on anything earlier; that was verified
+         by pinning back to 2.57.2 and watching it go red, not by reading release notes.
+
+         Also arriving, both inert for Marten: jasperfx#723 moves ForceSingleTenancy resolution into
+         JasperFxSingleStreamProjectionBase behind IEventTenancySource on the session, which Marten's
+         own BuildSlicer override already computes identically (Polecat and Fisher, whose subclasses
+         are empty class bodies, are the stores that needed it); and two opt-in compliance suites
+         (jasperfx#724, #725) that add no tests until a store enrolls them. Marten enrolls neither;
+         see jasperfx#727 for why #724 in particular is being reconsidered. -->
+    <PackageVersion Include="JasperFx" Version="2.59.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.59.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.56.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.59.0" />
     <!--
-      Deliberately AHEAD of the rest of the JasperFx line, which stays at 2.41.0 until Marten adopts
-      the strong-typed identity compliance suite that landed in 2.42.0. This package is analyzer-only,
+      No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
+      whole family moves together, and this note is kept for the history below. This package is
+      analyzer-only,
       declares no dependencies, and Marten bundles its dll into Marten.nupkg (see
       _BundleEventsSourceGeneratorAnalyzer in Marten.csproj, marten#4557), so its version is
       independent of the runtime family's.
@@ -369,11 +385,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.56.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.59.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.56.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.59.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
