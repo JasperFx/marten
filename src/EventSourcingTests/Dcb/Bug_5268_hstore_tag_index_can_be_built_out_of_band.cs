@@ -37,6 +37,25 @@ public class Bug_5268_hstore_tag_index_can_be_built_out_of_band: OneOffConfigura
     {
         return StoreOptions(opts =>
         {
+            // #5308: CREATE INDEX CONCURRENTLY cannot finish until every transaction that was open when
+            // it started has finished, and that wait is cluster-wide -- transactions in completely
+            // unrelated schemas count. A full single-process EventSourcingTests run keeps sessions open
+            // across hundreds of schemas, so whichever method here happens to start while enough of them
+            // are in flight waits behind them and blows Npgsql's 30s default. The symptom is a command
+            // timeout rather than an assertion, on a different method each run, while the class passes
+            // 8 of 8 in isolation -- which reads as a regression in whatever change you are validating.
+            //
+            // CI never tripped this, because it shards the suite per area and no job concentrates that
+            // much concurrent load on one instance. But a test whose success depends on how much
+            // unrelated work happens to be in flight is fragile regardless of whether CI currently
+            // trips it, and validating a dependency bump by running everything at once and comparing
+            // failure counts is a reasonable thing to want to do. This removes the dependency instead of
+            // leaving it to be rediscovered.
+            //
+            // A longer timeout, not [Trait("Isolated")]: the contention is other transactions on the
+            // same DATABASE, so moving this class to its own process does not remove it.
+            opts.CommandTimeout = 300;
+
             opts.Events.AddEventType<StudentEnrolled>();
             opts.Events.UseArchivedStreamPartitioning = archivedPartitioning;
 
