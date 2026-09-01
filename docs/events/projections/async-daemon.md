@@ -686,17 +686,24 @@ past the event type's introduction.
 A shard that recovers clears its failure columns on the next successful start, so a supervisor built on
 them does not keep alerting on a failure that was fixed an hour ago.
 
-**Default: off**. The columns are useful for
-any stuck-shard diagnosis -- not just CritterWatch -- and the write-side cost is
-negligible because they're already-computed daemon-internal values. When enabled,
-the next `ApplyAllConfiguredChangesToDatabaseAsync()` adds the columns to an existing
-database; they're nullable so no backfill is required.
+**Default: on.** The columns are useful for any stuck-shard diagnosis -- not just CritterWatch --
+and the write-side cost is negligible, because they carry already-computed daemon-internal values.
 
-Opt in (e.g. for CritterWatch monitoring or your own shard health tooling)
-by setting the toggle to true explicitly:
+The columns themselves are created for **every** store regardless of this setting, and the next
+`ApplyAllConfiguredChangesToDatabaseAsync()` adds them to an existing database. They are nullable,
+so no backfill is required, and a store that leaves tracking off simply never writes them.
+
+That the shape does not depend on the setting is deliberate. It used to, and two `DocumentStore`s
+pointed at the same `DatabaseSchemaName` that disagreed about the flag then stripped each other's
+columns on every schema application -- last writer wins, with no warning on either side. Two
+processes over one schema is an ordinary arrangement (a service beside a seeder, a reporting job or
+a migration tool), so the table shape is now the same for all of them
+(see [marten#5309](https://github.com/JasperFx/marten/issues/5309)).
+
+To turn the tracking off, set the toggle explicitly:
 
 ```cs
-opts.Events.EnableExtendedProgressionTracking = true;
+opts.Events.EnableExtendedProgressionTracking = false;
 ```
 
 Marten registers a storage-agnostic
@@ -720,11 +727,12 @@ public class EnableExtendedProgression: IConfigureMarten
 }
 ```
 
-The adapter's value is applied at store build and does **not** overwrite a direct
-`opts.Events.EnableExtendedProgressionTracking = true`, so the two opt-in paths
-compose. (Note that `opts.Events` -- Marten's `EventGraph` -- does not itself
-implement `IEventStoreInstrumentation`; use the `EnableExtendedProgressionTracking`
-property shown above.)
+The adapter's value is applied at store build only if something actually set it, so it does **not**
+overwrite a direct `opts.Events.EnableExtendedProgressionTracking = ...` of either polarity and the
+two paths compose. Setting `ExtendedProgressionEnabled = false` on the adapter is a real opt-out, not
+merely the absence of an opt-in. (Note that `opts.Events` -- Marten's `EventGraph` -- does not itself
+implement `IEventStoreInstrumentation`; use the `EnableExtendedProgressionTracking` property shown
+above.)
 
 ### What extended progression actually costs
 
