@@ -408,8 +408,11 @@ public class jasper_fx_mechanics
     [Fact]
     public async Task advanced_tracking_off_leaves_extended_progression_tracking_at_default()
     {
-        // Sanity: when EnableAdvancedTracking is not set (default false), we do NOT
-        // flip EnableExtendedProgressionTracking on. Per-store opt-in is preserved.
+        // Sanity: when EnableAdvancedTracking is not set (default false), ReadJasperFxOptions does
+        // not touch EnableExtendedProgressionTracking at all -- the stores keep whatever the Marten
+        // default is. #5310 restored that default to true, so "at default" now means true; the point
+        // of the test is that JasperFxOptions is not the thing deciding it, which is why the
+        // assertions read the same for every store below.
         using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
@@ -429,10 +432,10 @@ public class jasper_fx_mechanics
             }).StartAsync();
 
         var main = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        main.Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+        main.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
 
         var first = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
-        first.Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+        first.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
     }
 
     [Fact]

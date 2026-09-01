@@ -1143,13 +1143,19 @@ internal class SetEventStoreInstrumentation: IConfigureMarten, IEventStoreInstru
 {
     public void Configure(IServiceProvider services, StoreOptions options)
     {
-        // #4981: only apply the adapter's values, never overwrite. This adapter is always
-        // registered by AddMarten, so an unconditional assignment clobbered a direct
+        // #4981: only apply the adapter's value, never overwrite. This adapter is always registered
+        // by AddMarten, so an unconditional assignment clobbered a direct
         // `opts.Events.EnableExtendedProgressionTracking = true` (and any directly-set
         // AppendObserver) back to the adapter defaults at store build.
-        if (ExtendedProgressionEnabled)
+        //
+        // #5310: "was it assigned" and "is it true" have to be different questions. #4981's guard was
+        // `if (ExtendedProgressionEnabled)`, which was a correct opt-out only while the EventGraph
+        // default was false -- once the default is true, that guard cannot fire for
+        // `ExtendedProgressionEnabled = false` and the opt-out silently stops working. Keying off the
+        // backing field instead means unset still never clobbers, while an explicit false is applied.
+        if (_extendedProgressionEnabled.HasValue)
         {
-            options.EventGraph.EnableExtendedProgressionTracking = true;
+            options.EventGraph.EnableExtendedProgressionTracking = _extendedProgressionEnabled.Value;
         }
 
         if (AppendObserver != null)
@@ -1158,7 +1164,16 @@ internal class SetEventStoreInstrumentation: IConfigureMarten, IEventStoreInstru
         }
     }
 
-    public bool ExtendedProgressionEnabled { get; set; }
+    private bool? _extendedProgressionEnabled;
+
+    public bool ExtendedProgressionEnabled
+    {
+        // Unset reads as the EventGraph default this adapter would leave in place, so reading the
+        // property before the store is built does not misreport what the store will get.
+        get => _extendedProgressionEnabled ?? true;
+        set => _extendedProgressionEnabled = value;
+    }
+
     public Action<IReadOnlyList<IEvent>>? AppendObserver { get; set; }
 }
 
@@ -1166,10 +1181,11 @@ internal class SetEventStoreInstrumentation<T>: IConfigureMarten<T>, IEventStore
 {
     public void Configure(IServiceProvider services, StoreOptions options)
     {
-        // #4981: see SetEventStoreInstrumentation.Configure — apply, do not clobber.
-        if (ExtendedProgressionEnabled)
+        // #4981 / #5310: see SetEventStoreInstrumentation.Configure — apply an explicit value of
+        // either polarity, never clobber an unset one.
+        if (_extendedProgressionEnabled.HasValue)
         {
-            options.EventGraph.EnableExtendedProgressionTracking = true;
+            options.EventGraph.EnableExtendedProgressionTracking = _extendedProgressionEnabled.Value;
         }
 
         if (AppendObserver != null)
@@ -1178,6 +1194,13 @@ internal class SetEventStoreInstrumentation<T>: IConfigureMarten<T>, IEventStore
         }
     }
 
-    public bool ExtendedProgressionEnabled { get; set; }
+    private bool? _extendedProgressionEnabled;
+
+    public bool ExtendedProgressionEnabled
+    {
+        get => _extendedProgressionEnabled ?? true;
+        set => _extendedProgressionEnabled = value;
+    }
+
     public Action<IReadOnlyList<IEvent>>? AppendObserver { get; set; }
 }
