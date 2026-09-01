@@ -282,15 +282,27 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 
     /// <summary>
-    /// When enabled, adds heartbeat, agent_status, pause_reason, running_on_node, and
-    /// warning/critical-behind-threshold columns to the event progression table for
-    /// CritterWatch monitoring.
+    /// When enabled, the daemon writes heartbeat, agent_status, pause_reason, running_on_node and the
+    /// failure_* columns of the event progression table, and progression reads hydrate them, for
+    /// CritterWatch monitoring. Defaults to <c>true</c>.
     /// </summary>
+    /// <remarks>
+    /// #4687 flipped this default from false to true; the values are written from daemon runtime state
+    /// that already exists, so the cost is negligible and the columns are useful for any stuck-shard
+    /// diagnosis, not just CritterWatch. #5310: that flip landed in 824e3b783 and was lost the next day
+    /// in 769a6fd5e, which moved the property onto the SetEventStoreInstrumentation adapters and did not
+    /// carry the initializer over -- taking the regression guard with it, which is why nothing caught it.
+    /// <para>
+    /// This no longer decides the SHAPE of mt_event_progression. Since #5309 the columns are always
+    /// created, because a table shape that depends on configuration means two stores over one schema can
+    /// disagree about it and strip each other's columns. This flag now gates only reads and writes.
+    /// </para>
+    /// </remarks>
     public bool EnableExtendedProgressionTracking
     {
         get;
         set;
-    }
+    } = true;
 
     /// <summary>
     /// Optional best-effort observer invoked after each successful <c>SaveChangesAsync</c> with the

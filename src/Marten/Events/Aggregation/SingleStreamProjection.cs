@@ -50,7 +50,28 @@ public class SingleStreamProjection<TDoc, TId>:
     {
         // This will address https://github.com/JasperFx/wolverine/issues/2053
         var isSingleTenanted = session.As<QuerySession>().Options.EventGraph.TenancyStyle == TenancyStyle.Single;
-        return new TenantedEventSlicer<TDoc, TId>(new ByStream<TDoc, TId>()){ForceSingleTenancy = isSingleTenanted};
+
+        // #5307: a global aggregate counts too, so that this agrees with FetchAsyncPlan, which has
+        // always read `TenancyStyle == Single || GlobalAggregates.Contains(typeof(TDoc))`. Under
+        // AddGlobalProjection the document is single-tenanted while the events stay conjoined, so
+        // slicing per tenant would be slicing a stream that the fetch path treats as one.
+        //
+        // This is alignment, not a fix: no reachable corruption depended on it, and the reason is
+        // structural rather than lucky. GlobalEventAppenderDecorator forces a global aggregate's
+        // stream onto the default tenant at WRITE time, matching either on the stream's AggregateType
+        // or on the event type being one the global projection includes -- which is exactly the set of
+        // events this projection could ever apply. So every event that could reach an Apply is already
+        // on one tenant by the time the slicer sees it, and the per-tenant split had nothing to split.
+        // An event type the projection does NOT include can still land under another tenant, but it
+        // lands in a group the projection ignores. Both shapes are pinned in
+        // Bug_5307_global_aggregate_slicing_under_conjoined_tenancy.
+        //
+        // Setting it anyway means the two sites cannot drift into disagreeing again, and that the next
+        // reader does not have to reconstruct the argument above to decide whether they are safe.
+        return new TenantedEventSlicer<TDoc, TId>(new ByStream<TDoc, TId>())
+        {
+            ForceSingleTenancy = isSingleTenanted || IsGlobalWithinConjoinedTenancy
+        };
     }
 
     public static void Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,
