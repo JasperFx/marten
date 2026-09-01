@@ -357,16 +357,35 @@
          own BuildSlicer override already computes identically (Polecat and Fisher, whose subclasses
          are empty class bodies, are the stores that needed it); and two opt-in compliance suites
          (jasperfx#724, #725) that add no tests until a store enrolls them. Marten enrolls neither;
-         see jasperfx#727 for why #724 in particular is being reconsidered. -->
-    <PackageVersion Include="JasperFx" Version="2.59.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.59.0" />
+         see jasperfx#727 for why #724 in particular is being reconsidered.
+
+         JasperFx 2.60.0: jasperfx#730, an identity-less [BoundaryAggregate] folded by
+         Evolve(IEvent) got no evolver AND no diagnostic, while its Apply/Create sibling in the same
+         compilation generated fine. AnalyzeSelfAggregatingEvolve bailed with a bare `return null`
+         when it could not infer an identity, and control then fell to the Apply/Create path, which
+         returned at its "no conventional methods" guard, so the [BoundaryAggregate] opt-in below
+         that guard was never reached. Marten users saw it far from the cause, as
+         FetchForWritingByTags<T> throwing "No source-generated dispatcher found" at fetch time,
+         naming neither the type nor the reason. The Evolve path now takes the same TId-defaults-to-
+         string fallback, matching the SingleStreamProjection<T, string> the DCB aggregator builds.
+         Adds JFXEVT007, an error for a [BoundaryAggregate] carrying nothing to fold events with:
+         silence is right for a bare no-Id aggregate, wrong for an explicit opt-in that generates
+         nothing.
+
+         Also arriving and inert for Marten's own code: jasperfx#728, a `projection-run` CLI command
+         that replays one projection over a stream slice or DCB tag match and prints per-event
+         before/after state, writing nothing. It is picked up by JasperFx.CommandLine discovery, so
+         every Marten host referencing JasperFx.Events gains the command on this bump with no Marten
+         change, which is worth knowing about when it shows up in the CLI help output. -->
+    <PackageVersion Include="JasperFx" Version="2.60.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.60.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.59.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.60.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -385,11 +404,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.59.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.60.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.59.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.60.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
