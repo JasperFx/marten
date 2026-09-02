@@ -25,6 +25,16 @@ internal partial class FetchLivePlan<TDoc, TId>
                 var starting = stream.Aggregate;
                 var appendedEvents = stream.Events;
 
+                // An aggregate that applies events in place -- which most class aggregates do -- is moved
+                // past its stream version by the fold below, and the write cache may be holding that exact
+                // instance filed under the version it was fetched at. Drop the entry rather than leave one
+                // whose version understates the state it points at, which the next fetch would top up with
+                // events it already has.
+                if (appendedEvents.Count > 0)
+                {
+                    _cache?.Evict(cacheKeyFor(session, id));
+                }
+
                 return await _aggregator.BuildAsync(appendedEvents, session, starting, id, _documentStorage, cancellation).ConfigureAwait(false);
             }
         }

@@ -133,6 +133,46 @@ public class caching_live_aggregates_for_writing: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task fetch_latest_in_the_same_session_does_not_poison_the_entry()
+    {
+        UseCachedLiveAggregates();
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new AEvent(), new AEvent());
+        await theSession.SaveChangesAsync();
+
+        // Seed the cache
+        await using (var warmUp = theStore.LightweightSession())
+        {
+            await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+        }
+
+        // FetchForWriting -> append -> FetchLatest is the aggregate handler workflow's shape. Its item map
+        // optimization folds the appended events onto the very instance the fetch handed out, and for an
+        // aggregate that applies events in place -- which SimpleAggregate does, like most class aggregates
+        // -- that instance is the one an entry stored at fetch time would still be pointing at. Left alone,
+        // the entry would then claim a version below the state it actually holds, and the next fetch would
+        // fold the same events onto it a second time.
+        await using (var writer = theStore.LightweightSession())
+        {
+            var stream = await writer.Events.FetchForWriting<SimpleAggregate>(streamId);
+            stream.AppendOne(new AEvent());
+
+            var latest = await writer.Events.FetchLatest<SimpleAggregate>(streamId);
+            latest.ACount.ShouldBe(4);
+
+            await writer.SaveChangesAsync();
+        }
+
+        await using var session = theStore.LightweightSession();
+        var reread = await session.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+        var expected = await session.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        reread.CurrentVersion.ShouldBe(4);
+        reread.Aggregate.ACount.ShouldBe(expected.ACount);
+    }
+
+    [Fact]
     public async Task stale_cache_entry_still_yields_the_correct_aggregate()
     {
         UseCachedLiveAggregates();
