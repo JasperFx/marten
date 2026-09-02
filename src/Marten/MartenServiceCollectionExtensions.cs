@@ -1148,11 +1148,11 @@ internal class SetEventStoreInstrumentation: IConfigureMarten, IEventStoreInstru
         // `opts.Events.EnableExtendedProgressionTracking = true` (and any directly-set
         // AppendObserver) back to the adapter defaults at store build.
         //
-        // #5310: "was it assigned" and "is it true" have to be different questions. #4981's guard was
-        // `if (ExtendedProgressionEnabled)`, which was a correct opt-out only while the EventGraph
-        // default was false -- once the default is true, that guard cannot fire for
-        // `ExtendedProgressionEnabled = false` and the opt-out silently stops working. Keying off the
-        // backing field instead means unset still never clobbers, while an explicit false is applied.
+        // #5310: "was it assigned" and "is it true" are different questions, and keying off the backing
+        // field keeps them apart. #4981's guard was `if (ExtendedProgressionEnabled)`, which cannot
+        // distinguish "left alone" from "deliberately turned off" -- harmless while the EventGraph
+        // default is false, and silently wrong the moment anything changes that. Kept even though the
+        // default went back to false, because it is correct for either one and costs nothing.
         if (_extendedProgressionEnabled.HasValue)
         {
             options.EventGraph.EnableExtendedProgressionTracking = _extendedProgressionEnabled.Value;
@@ -1168,9 +1168,9 @@ internal class SetEventStoreInstrumentation: IConfigureMarten, IEventStoreInstru
 
     public bool ExtendedProgressionEnabled
     {
-        // Unset reads as the EventGraph default this adapter would leave in place, so reading the
-        // property before the store is built does not misreport what the store will get.
-        get => _extendedProgressionEnabled ?? true;
+        // Unset reads as the EventGraph default this adapter would leave in place (false), so reading
+        // the property before the store is built does not misreport what the store will get.
+        get => _extendedProgressionEnabled ?? false;
         set => _extendedProgressionEnabled = value;
     }
 
@@ -1198,7 +1198,7 @@ internal class SetEventStoreInstrumentation<T>: IConfigureMarten<T>, IEventStore
 
     public bool ExtendedProgressionEnabled
     {
-        get => _extendedProgressionEnabled ?? true;
+        get => _extendedProgressionEnabled ?? false;
         set => _extendedProgressionEnabled = value;
     }
 
