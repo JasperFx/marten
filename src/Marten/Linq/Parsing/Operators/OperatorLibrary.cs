@@ -38,6 +38,8 @@ internal class OperatorLibrary
         Add<OrderBySqlOperator>();
         Add<ThenBySqlOperator>();
         Add<OrderByNgramRankOperator>();
+        Add<OrderByTextRankOperator>();
+        Add<ThenByTextRankOperator>();
 
         foreach (var mode in Enum.GetValues<SingleValueMode>()) addSingleValueMode(mode);
     }

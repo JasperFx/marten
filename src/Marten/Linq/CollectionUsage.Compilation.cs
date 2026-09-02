@@ -42,7 +42,7 @@ public partial class CollectionUsage
 
         foreach (var ordering in OrderingExpressions)
         {
-            statement.Ordering.Expressions.Add(ordering.BuildExpression(collection));
+            statement.Ordering.Expressions.Add(ordering.BuildFragment(collection));
         }
 
         statement.ParseWhereClause(WhereExpressions, session, collection, storage);
@@ -150,7 +150,7 @@ public partial class CollectionUsage
         var keySql = member.BuildOrderingExpression(
             new Ordering(DistinctByExpression, OrderingDirection.Asc), CasingRule.CaseSensitive);
 
-        statement.Ordering.Expressions.Insert(0, keySql);
+        statement.Ordering.Expressions.Insert(0, new LiteralOrdering(keySql));
 
         if (statement.SelectClause is IDistinctOnSelectClause distinctOn)
         {
@@ -201,7 +201,7 @@ public partial class CollectionUsage
         statement.IsDistinct = IsDistinct;
 
         foreach (var ordering in OrderingExpressions)
-            statement.Ordering.Expressions.Add(ordering.BuildExpression(collection));
+            statement.Ordering.Expressions.Add(ordering.BuildFragment(collection));
 
         statement.ParseWhereClause(WhereExpressions, session, collection);
 
@@ -588,7 +588,7 @@ public partial class CollectionUsage
         {
             if (!string.IsNullOrEmpty(ordering.Literal))
             {
-                joinStatement.Ordering.Expressions.Add(ordering.Literal!);
+                joinStatement.Ordering.Expressions.Add(new LiteralOrdering(ordering.Literal!));
                 continue;
             }
 
@@ -643,7 +643,7 @@ public partial class CollectionUsage
                     + "inner sides of the GroupJoin (or neither). Order by a member of one side.");
             }
 
-            joinStatement.Ordering.Expressions.Add(sql);
+            joinStatement.Ordering.Expressions.Add(new LiteralOrdering(sql));
         }
 
         // Transfer Distinct() from the SelectMany usage chain. JoinSelectClause implements

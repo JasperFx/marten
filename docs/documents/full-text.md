@@ -305,6 +305,87 @@ var posts = (await session.Query<BlogPost>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L405-L411' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regconfig_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Weighted Full Text Indexes and Relevance Ranking <Badge type="tip" text="9.31" />
+
+By default a full text index concatenates its members into one flat vector, so a match in a title is
+exactly as relevant as a match in a long description. PostgreSQL can do better: `setweight()` labels
+each member, and `ts_rank()` then scores a title match above a body match.
+
+### Weighting the index
+
+```csharp
+opts.Schema.For<Achievement>().WeightedFullTextIndex(idx => idx
+    .Weighted(a => a.Title, TextSearchWeight.A)
+    .Weighted(a => a.Tagline, TextSearchWeight.B)
+    .Weighted(a => a.Description, TextSearchWeight.C));
+```
+
+which produces:
+
+```sql
+create index mt_doc_achievement_idx_fts on public.mt_doc_achievement using gin ((
+  setweight(to_tsvector('english', coalesce(data ->> 'Title', '')), 'A') ||
+  setweight(to_tsvector('english', coalesce(data ->> 'Tagline', '')), 'B') ||
+  setweight(to_tsvector('english', coalesce(data ->> 'Description', '')), 'C')
+));
+```
+
+Note that each member is converted to a vector *separately* and the vectors are concatenated. That is
+what `setweight` requires, and it is why weighting is a distinct method rather than an option on
+`FullTextIndex()` — the DDL is a different shape, not a configured variant of the same one.
+
+There are four weight labels, `A` through `D`. They carry no numbers of their own; the rank function
+supplies those, defaulting to `{D, C, B, A} = {0.1, 0.2, 0.4, 1.0}`. `D` is what an unlabelled vector
+already means, so it is the default.
+
+::: warning
+A weighted index needs at least two *different* weights. Weighting expresses a relative ordering, so
+one weight — or the same weight on every member — ranks nothing, and Marten refuses it at
+configuration time rather than emitting an index that looks weighted and is not.
+:::
+
+### Ordering by relevance
+
+`OrderByTextRank()` sorts by `ts_rank()`, highest first:
+
+```csharp
+var results = await session
+    .Query<Achievement>()
+    .Where(a => a.WebStyleSearch(term))
+    .OrderByTextRank(term, TextSearchFunction.WebStyle)
+    .ToListAsync();
+```
+
+Use `ThenByTextRank()` to add relevance after another ordering.
+
+The search function is explicit and has no default. Ranking with a different `tsquery` function than
+the `Where` clause used is always a mistake, and a friendly default would be occasionally wrong and
+silently so — so pass the one that matches your filter: `Plain`, `Phrase`, `WebStyle` or `Raw`.
+
+The rank resolves the *same* tsvector the `Where` clause matched on, read from the index definition.
+That is deliberate rather than incidental: a rank computed over a different vector than the filter
+matched on returns rows in an order that looks plausible and means nothing, which is a far quieter
+failure than returning the wrong rows.
+
+::: tip
+The search term is passed as a parameter rather than interpolated into the SQL.
+:::
+
+### Costs worth knowing before you use it
+
+**GIN indexes cannot order.** `ts_rank` is a post-filter sort over everything the `@@` matched, so
+ranking a broad query sorts a lot of rows. Narrow the filter before reaching for the rank.
+
+**Adding weights to an existing index is not a free migration.** Weights change the index expression,
+so Weasel drops and recreates the index on the next schema apply. On a large table that is an outage
+rather than a migration — consider building it out of band, as described in
+[the ignore-indexes documentation](/documents/indexing/ignore-indexes).
+
+**One index per text search configuration.** If a document has two full text indexes sharing a
+`regConfig`, Marten cannot tell which one a search means and will refuse the query rather than pick
+one. Give them different `regConfig` values, or register a single index covering every member you
+want to search.
+
 ## Partial text search in a multi-word text (NGram search)
 
 Marten provides the ability to search partial text or words in a string containing multiple words using NGram search. This is quite similar in functionality to [NGrams in Elastic Search](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-ngram-tokenizer.html). As an example, we can now accurately match `rich com text` within `Communicating Across Contexts (Enriched)`. NGram search uses English by default. NGram search also encompasses and handles unigrams, bigrams and trigrams. This functionality is added in v5.

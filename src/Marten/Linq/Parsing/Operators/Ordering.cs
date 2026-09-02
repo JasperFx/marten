@@ -5,6 +5,9 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
+using Marten.Linq.SqlGeneration;
+using Marten.Schema.Indexing.FullText;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Operators;
 
@@ -58,6 +61,31 @@ public class Ordering
     /// For NgramRank ordering: the store options for schema name and unaccent config.
     /// </summary>
     internal StoreOptions? NgramRankOptions { get; init; }
+
+    /// <summary>
+    /// For ts_rank ordering (#5298): everything needed to render a relevance ordering that resolves the
+    /// same tsvector the Where clause matched on, and binds its search term as a parameter.
+    /// </summary>
+    internal TextRankOrdering? TextRank { get; init; }
+
+    /// <summary>
+    ///     Build this ordering as a SQL fragment, so that an ordering carrying a user value can bind it as
+    ///     a parameter rather than interpolating it (#5298).
+    /// </summary>
+    /// <remarks>
+    ///     Every other ordering is a member locator or a caller-supplied literal, neither of which
+    ///     contains user input, so those keep going through <see cref="BuildExpression" /> and are wrapped
+    ///     as a <see cref="LiteralOrdering" />.
+    /// </remarks>
+    public ISqlFragment BuildFragment(IQueryableMemberCollection collection)
+    {
+        if (TextRank != null)
+        {
+            return TextRank.Build(collection, Direction);
+        }
+
+        return new LiteralOrdering(BuildExpression(collection));
+    }
 
     public string BuildExpression(IQueryableMemberCollection collection)
     {
