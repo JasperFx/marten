@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Marten.Linq.Parsing.Methods.FullText;
 using Marten.Schema;
+using Marten.Util;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 using Weasel.Postgresql.Tables.Indexes;
@@ -35,7 +36,7 @@ internal class FullTextWhereFragment: ISqlFragment
 
         _regConfig = regConfig;
 
-        _dataConfig = GetDataConfig(mapping, regConfig).Replace("data", "d.data");
+        _dataConfig = GetDataConfig(mapping, regConfig).ApplyTableAliasToDataColumn("d");
         _searchFunction = searchFunction;
         _searchTerm = searchTerm;
     }

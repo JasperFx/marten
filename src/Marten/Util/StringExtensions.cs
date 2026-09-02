@@ -16,6 +16,12 @@ internal static class StringExtensionMethods
 {
     private static readonly ConcurrentDictionary<string, Regex> _removeTableAliasRegexCache = new();
 
+    // Alternation order matters: the single-quoted literal is tried first so its contents are
+    // consumed before the identifier branch can see anything inside it.
+    private static readonly Regex _dataColumnPattern = new(
+        @"'(?:[^']|'')*'|(?<![\w.])data(?![\w])",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     /// <summary>
     /// Process-wide list of optional member-name resolvers. Marten core leaves this empty
     /// and only honors <see cref="JsonPropertyNameAttribute"/> (STJ). The optional
@@ -62,6 +68,22 @@ internal static class StringExtensionMethods
         }
 
         return memberLocator;
+    }
+
+    /// <summary>
+    /// Qualify bare references to the document <c>data</c> column with a table alias — the inverse of
+    /// <see cref="RemoveTableAlias"/>, since index definitions store the un-aliased form. Quoted
+    /// literals are skipped so a JSON key is not rewritten along with the column
+    /// (https://github.com/JasperFx/marten/issues/5314), as are <c>metadata</c> and already-qualified
+    /// occurrences, which makes this idempotent.
+    /// </summary>
+    public static string ApplyTableAliasToDataColumn(this string sql, string tableAlias)
+    {
+        if (string.IsNullOrEmpty(sql) || string.IsNullOrEmpty(tableAlias))
+            return sql;
+
+        return _dataColumnPattern.Replace(sql,
+            match => match.Value[0] == '\'' ? match.Value : $"{tableAlias}.{match.Value}");
     }
 
     /// <summary>
