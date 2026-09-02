@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions;
 using Marten.Linq;
+using Marten.Schema.Indexing.FullText;
+using Weasel.Postgresql.Tables.Indexes;
 using Marten.Linq.Includes;
 using Marten.Services.BatchQuerying;
 using Npgsql;
@@ -839,6 +841,68 @@ public static class QueryableExtensions
                 queryable.Expression,
                 memberExpression,
                 Expression.Constant(searchTerm)));
+    }
+
+    private static MethodInfo _orderByTextRankMethod = typeof(QueryableExtensions).GetMethod(
+        nameof(OrderByTextRank), BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
+
+    private static MethodInfo _thenByTextRankMethod = typeof(QueryableExtensions).GetMethod(
+        nameof(ThenByTextRank), BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
+
+    /// <summary>
+    ///     Order results by full text search relevance, using PostgreSQL's <c>ts_rank</c>. Highest
+    ///     relevance first.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Pair with a matching full text search in the <c>Where</c> clause. The rank resolves the same
+    ///         tsvector the filter does — including a weighted one from <c>WeightedFullTextIndex</c> — so
+    ///         the two cannot drift apart.
+    ///     </para>
+    ///     <code>
+    ///     session.Query&lt;Achievement&gt;()
+    ///         .Where(a =&gt; a.WebStyleSearch(term))
+    ///         .OrderByTextRank(term, TextSearchFunction.WebStyle)
+    ///     </code>
+    ///     <para>
+    ///         <paramref name="function" /> is explicit and has no default on purpose: ranking with a
+    ///         different tsquery function than the <c>Where</c> used is always a mistake, and a friendly
+    ///         default would be occasionally wrong and silently so.
+    ///     </para>
+    ///     <para>
+    ///         GIN cannot order, so this is a post-filter sort over the matched set. Ranking a broad query
+    ///         sorts a lot of rows.
+    ///     </para>
+    /// </remarks>
+    /// <param name="searchTerm">The term to rank against — normally the same one the Where clause used</param>
+    /// <param name="function">The tsquery function, which must match the one the Where clause used</param>
+    /// <param name="regConfig">The text search configuration, defaulting to 'english'</param>
+    public static IQueryable<T> OrderByTextRank<T>(this IQueryable<T> queryable, string searchTerm,
+        TextSearchFunction function, string regConfig = FullTextIndexDefinition.DefaultRegConfig)
+    {
+        return queryable.Provider.CreateQuery<T>(
+            Expression.Call(null,
+                _orderByTextRankMethod.MakeGenericMethod(typeof(T)),
+                queryable.Expression,
+                Expression.Constant(searchTerm),
+                Expression.Constant(function),
+                Expression.Constant(regConfig)));
+    }
+
+    /// <summary>
+    ///     Add a <c>ts_rank</c> relevance ordering after an existing ordering. See
+    ///     <see cref="OrderByTextRank{T}" />.
+    /// </summary>
+    public static IQueryable<T> ThenByTextRank<T>(this IQueryable<T> queryable, string searchTerm,
+        TextSearchFunction function, string regConfig = FullTextIndexDefinition.DefaultRegConfig)
+    {
+        return queryable.Provider.CreateQuery<T>(
+            Expression.Call(null,
+                _thenByTextRankMethod.MakeGenericMethod(typeof(T)),
+                queryable.Expression,
+                Expression.Constant(searchTerm),
+                Expression.Constant(function),
+                Expression.Constant(regConfig)));
     }
 
     /// <summary>
