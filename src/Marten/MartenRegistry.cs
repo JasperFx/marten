@@ -7,6 +7,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing;
 using Marten.Schema;
+using Marten.Schema.Indexing.FullText;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Indexing.Unique;
@@ -398,6 +399,43 @@ public class MartenRegistry
         public DocumentMappingExpression<T> FullTextIndex(Action<FullTextIndexDefinition> configure)
         {
             _builder.Alter = m => m.AddFullTextIndex(FullTextIndexDefinition.DefaultRegConfig, configure);
+            return this;
+        }
+
+        /// <summary>
+        ///     Create a full text index whose members carry PostgreSQL <c>setweight</c> labels, so that a
+        ///     match in one field can outrank a match in another.
+        /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         #5298. Pair it with <c>OrderByTextRank()</c> to actually order by relevance; the weights
+        ///         alone only make the rank meaningful, they do not sort anything.
+        ///     </para>
+        ///     <code>
+        ///     opts.Schema.For&lt;Achievement&gt;().WeightedFullTextIndex(idx =&gt; idx
+        ///         .Weighted(a =&gt; a.Title, TextSearchWeight.A)
+        ///         .Weighted(a =&gt; a.Tagline, TextSearchWeight.B)
+        ///         .Weighted(a =&gt; a.Description, TextSearchWeight.C));
+        ///     </code>
+        ///     <para>
+        ///         A distinct method rather than an overload of <c>FullTextIndex</c>: that name already has
+        ///         an <c>Action&lt;FullTextIndexDefinition&gt;</c> overload, so an
+        ///         <c>Action&lt;WeightedFullTextIndexExpression&lt;T&gt;&gt;</c> beside it would be
+        ///         ambiguous at any call site using a lambda — the same reason Weasel exposed
+        ///         <c>ForTsVector</c> as a factory instead of a constructor overload.
+        ///     </para>
+        ///     <para>
+        ///         Adding weights to an EXISTING index changes its expression, so Weasel drops and recreates
+        ///         it. On a large table that is an outage rather than a migration — build it out of band if
+        ///         that matters.
+        ///     </para>
+        /// </remarks>
+        public DocumentMappingExpression<T> WeightedFullTextIndex(
+            Action<WeightedFullTextIndexExpression<T>> configure,
+            string regConfig = FullTextIndexDefinition.DefaultRegConfig,
+            string? indexName = null)
+        {
+            _builder.Alter = m => m.AddWeightedFullTextIndex(configure, regConfig, indexName);
             return this;
         }
 
