@@ -686,12 +686,15 @@ past the event type's introduction.
 A shard that recovers clears its failure columns on the next successful start, so a supervisor built on
 them does not keep alerting on a failure that was fixed an hour ago.
 
-**Default: on.** The columns are useful for any stuck-shard diagnosis -- not just CritterWatch --
-and the write-side cost is negligible, because they carry already-computed daemon-internal values.
+**Default: off.** Opt in explicitly. The columns are useful for any stuck-shard diagnosis -- not just
+CritterWatch -- and the write-side cost is negligible, because they carry already-computed
+daemon-internal values. That is a good reason to turn it on, and not a reason for Marten to turn it on
+for you: an existing store that never asked for monitoring should not start writing six columns on
+every shard state transition because it upgraded.
 
 The columns themselves are created for **every** store regardless of this setting, and the next
-`ApplyAllConfiguredChangesToDatabaseAsync()` adds them to an existing database. They are nullable,
-so no backfill is required, and a store that leaves tracking off simply never writes them.
+`ApplyAllConfiguredChangesToDatabaseAsync()` adds them to an existing database. They are nullable, so
+no backfill is required, and a store that leaves tracking off never writes them.
 
 That the shape does not depend on the setting is deliberate. It used to, and two `DocumentStore`s
 pointed at the same `DatabaseSchemaName` that disagreed about the flag then stripped each other's
@@ -700,10 +703,10 @@ processes over one schema is an ordinary arrangement (a service beside a seeder,
 a migration tool), so the table shape is now the same for all of them
 (see [marten#5309](https://github.com/JasperFx/marten/issues/5309)).
 
-To turn the tracking off, set the toggle explicitly:
+Opt in (e.g. for CritterWatch monitoring or your own shard health tooling) by setting the toggle:
 
 ```cs
-opts.Events.EnableExtendedProgressionTracking = false;
+opts.Events.EnableExtendedProgressionTracking = true;
 ```
 
 Marten registers a storage-agnostic

@@ -14,44 +14,54 @@ namespace CoreTests.Events;
 public class EventGraph_IEventStoreInstrumentation
 {
 
-    // #4687: default flipped from false → true (Critter Stack 1.0 timing). The monitoring
-    // columns are written from existing daemon runtime state so the cost is negligible, and
-    // they're useful for any stuck-shard diagnosis -- not just CritterWatch.
+    // The default is OFF, deliberately and permanently, and this is the third time it has come up --
+    // so the reasoning lives here rather than in a commit message.
     //
-    // #5310: this guard is the whole reason that flip regressed unnoticed. 824e3b783 added the
-    // `= true` and renamed this test to default_is_enabled; 769a6fd5e reverted both the next day
-    // while moving the property onto the SetEventStoreInstrumentation adapters, leaving this
-    // comment arguing for a default the test underneath it pinned as false. Both shipped in
-    // V9.30.0. If this is ever flipped back, flip the comment with it.
+    // #4687 argued for flipping it to true, on the grounds that the columns are cheap because they
+    // carry daemon runtime state that already exists. #5310 then found that the flip had landed in
+    // 824e3b783 and been lost the next day in 769a6fd5e, and restored it as an unintended regression.
+    //
+    // That restoration was reversed. Turning this on by default is a BREAKING change: every existing
+    // store that never asked for monitoring silently starts writing six columns on every shard state
+    // transition after an upgrade. "It was originally meant to be true" is a reason to document the
+    // opt-in well; it is not a reason to change what someone else's deployment does without them
+    // asking. The cheapness argument is a fine argument for turning it ON and no argument at all for
+    // turning it on for somebody else.
+    //
+    // If you are here because you are about to flip it again: don't, without a major version.
     [Fact]
-    public void default_is_enabled()
+    public void default_is_disabled()
     {
-        new StoreOptions().EventGraph.EnableExtendedProgressionTracking.ShouldBeTrue();
+        new StoreOptions().EventGraph.EnableExtendedProgressionTracking.ShouldBeFalse();
     }
 
-    // #5310: the scope of the regression was wider than "a bare DocumentStore.For(...) gets false"
-    // -- no path defaulted to true, AddMarten included. Pin the DI path separately, since it runs
-    // the adapters and the bare StoreOptions constructor does not.
+    // The DI path is pinned separately from the bare constructor because it runs the
+    // SetEventStoreInstrumentation adapters and the constructor does not -- so "off by default" has to
+    // be true of both, and an adapter that clobbers is exactly how that would stop being true.
     [Fact]
-    public void add_marten_alone_is_enabled()
+    public void add_marten_alone_is_disabled()
     {
         var collection = new ServiceCollection();
         collection.AddMarten(ConnectionSource.ConnectionString);
 
         using var provider = collection.BuildServiceProvider();
         provider.GetRequiredService<IDocumentStore>()
-            .Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
+            .Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
     }
 
-    // #5310: with a true default, an opt-out has to actually opt out. #4981's guard was
-    // `if (ExtendedProgressionEnabled)`, which cannot fire for false -- correct while the default
-    // was false, silently inert the moment it is true. The adapter now distinguishes unset from
-    // explicitly-false, so this is the case that would regress if it ever goes back to a plain bool.
+    // The adapter distinguishes unset from explicitly-false, which is a no-op against today's false
+    // default -- kept because it is the difference between an opt-out that works and one that silently
+    // does nothing, and #4981's `if (ExtendedProgressionEnabled)` could not tell those apart. Pinned so
+    // that a future default change does not quietly break the opt-out the way it nearly did.
     [Fact]
     public void explicit_opt_out_on_the_di_singleton_is_honored()
     {
         var collection = new ServiceCollection();
-        collection.AddMarten(ConnectionSource.ConnectionString);
+        collection.AddMarten(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.Events.EnableExtendedProgressionTracking = true;
+        });
 
         using var provider = collection.BuildServiceProvider();
         provider.GetRequiredService<IEventStoreInstrumentation>().ExtendedProgressionEnabled = false;
@@ -60,8 +70,7 @@ public class EventGraph_IEventStoreInstrumentation
             .Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
     }
 
-    // #5310: and the direct opt-out has to survive the adapter too -- the mirror of
-    // direct_toggle_inside_add_marten_survives_store_build, which only covered opting IN.
+    // The mirror of direct_toggle_inside_add_marten_survives_store_build, which only covered opting IN.
     [Fact]
     public void direct_opt_out_inside_add_marten_survives_store_build()
     {
@@ -112,9 +121,8 @@ public class EventGraph_IEventStoreInstrumentation
         store.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
     }
 
-    // #4981: the adapter must apply, not clobber. Under the #5310 true default the interesting
-    // direction is the opposite one from the original test -- an untouched DI singleton must leave
-    // a direct opt-OUT alone, which is exactly what an unconditional assignment would break.
+    // #4981: the adapter must apply, not clobber. An untouched DI singleton has to leave a direct
+    // opt-IN alone, which is the case that unconditional assignment broke.
     [Fact]
     public void untouched_di_singleton_does_not_clobber_a_direct_toggle()
     {
@@ -122,17 +130,17 @@ public class EventGraph_IEventStoreInstrumentation
         collection.AddMarten(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.Events.EnableExtendedProgressionTracking = false;
+            opts.Events.EnableExtendedProgressionTracking = true;
         });
 
         using var provider = collection.BuildServiceProvider();
 
-        // Never assigned, so the adapter has nothing to apply and the direct toggle stands. The
-        // getter reports the EventGraph default it would leave in place rather than default(bool).
-        provider.GetRequiredService<IEventStoreInstrumentation>().ExtendedProgressionEnabled.ShouldBeTrue();
+        // Never assigned, so the adapter has nothing to apply and the direct toggle stands. The getter
+        // reports the EventGraph default it would leave in place.
+        provider.GetRequiredService<IEventStoreInstrumentation>().ExtendedProgressionEnabled.ShouldBeFalse();
 
         var store = provider.GetRequiredService<IDocumentStore>();
-        store.Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+        store.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
     }
 
     [Fact]
