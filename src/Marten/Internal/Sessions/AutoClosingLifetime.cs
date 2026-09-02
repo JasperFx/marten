@@ -245,6 +245,11 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                     catch (Exception e)
                     {
                         Logger.LogFailure(batch, e);
+
+                        // This lifetime executes the batch itself rather than going through
+                        // handleCommandException, so the batch has to be recorded here or the SQL is
+                        // gone by the time the outer catch builds a MartenCommandException.
+                        e.RecordNpgsqlBatch(batch);
                         throw;
                     }
 
