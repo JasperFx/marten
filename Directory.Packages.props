@@ -376,16 +376,36 @@
          that replays one projection over a stream slice or DCB tag match and prints per-event
          before/after state, writing nothing. It is picked up by JasperFx.CommandLine discovery, so
          every Marten host referencing JasperFx.Events gains the command on this bump with no Marten
-         change, which is worth knowing about when it shows up in the CLI help output. -->
-    <PackageVersion Include="JasperFx" Version="2.60.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.60.0" />
+         change, which is worth knowing about when it shows up in the CLI help output.
+
+         JasperFx 2.61.0: jasperfx#733, a source generator fix that only bites self-aggregating
+         snapshots whose "Create" handler is an event-shaped constructor, `public Foo(FooCreated e)`,
+         rather than a named `static Create`. That works on its own. Adding a ShouldDelete method
+         to the same aggregate switched the generator to a different emitter, one that built its
+         dispatch switch from named conventional methods only, so the constructor's event type got no
+         case arm at all. Nothing failed loudly: the constructor never ran, and the next Apply-only
+         event built the aggregate through RuntimeHelpers.GetUninitializedObject, skipping every
+         field initializer. The reporter saw an ApplyEventException wrapping a NullReferenceException
+         out of an Apply that appended to a collection property; the general symptom is a silently
+         blank aggregate. Both documented workarounds (converting the constructor to a static Create,
+         or registering the delete through DeleteEvent&lt;T&gt;() instead of ShouldDelete) become
+         unnecessary on this bump.
+
+         The same omission was in the generated EventTypes property on EVERY self-aggregating path,
+         including the ones whose dispatch was already correct, so an aggregate with a constructor
+         Create and no ShouldDelete also gains its creating event in that list here.
+
+         Covered by Bug_jasperfx_733_event_constructor_create_with_should_delete, which fails on
+         2.60.0 (inline, async and live) and passes on this pin. -->
+    <PackageVersion Include="JasperFx" Version="2.61.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.61.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.60.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.61.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -404,11 +424,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.60.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.61.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.60.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.61.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
