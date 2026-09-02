@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx;
 using JasperFx.Events;
 using Marten;
 using Marten.Storage;
@@ -241,6 +242,95 @@ public class caching_live_aggregates_for_writing: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task two_writers_on_one_stream_leave_the_cache_in_a_correct_state()
+    {
+        UseCachedLiveAggregates();
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new AEvent(), new AEvent());
+        await theSession.SaveChangesAsync();
+
+        await using (var warmUp = theStore.LightweightSession())
+        {
+            await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+        }
+
+        // Two writers racing for one stream -- a message handler and an HTTP endpoint, say. Take-on-read
+        // means exactly one of them claims the entry and the other takes the uncached path; both read the
+        // true stream version, so both assert against 3 on append.
+        await using var first = theStore.LightweightSession();
+        await using var second = theStore.LightweightSession();
+
+        var firstStream = await first.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var secondStream = await second.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+        // Both get a hit, not one: the first writer's store put the entry back before the second fetched.
+        theCache.Hits.ShouldBe(2);
+        theCache.Misses.ShouldBe(1);
+
+        firstStream.AppendOne(new BEvent());
+        secondStream.AppendOne(new CEvent());
+
+        await first.SaveChangesAsync();
+
+        // The loser is refused, exactly as it would be with no cache in play
+        await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(async () =>
+        {
+            await second.SaveChangesAsync();
+        });
+
+        // Both writers stored an entry at the version they read, and the loser's commit never happened --
+        // so whatever is left behind must still agree with a cold replay rather than carry the discarded
+        // event or claim a version it cannot back up.
+        await using var reread = theStore.LightweightSession();
+        var stream = await reread.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+        var expected = await reread.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        stream.CurrentVersion.ShouldBe(4);
+        stream.Aggregate.ACount.ShouldBe(expected.ACount);
+        stream.Aggregate.BCount.ShouldBe(expected.BCount);
+        stream.Aggregate.CCount.ShouldBe(expected.CCount);
+    }
+
+    [Fact]
+    public async Task a_second_fetch_must_not_fold_onto_an_instance_another_session_still_holds()
+    {
+        UseCachedLiveAggregates();
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new AEvent(), new AEvent());
+        await theSession.SaveChangesAsync();
+
+        await using (var warmUp = theStore.LightweightSession())
+        {
+            await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+        }
+
+        // One writer fetches and holds its aggregate for the length of its session, as a handler does.
+        await using var holder = theStore.LightweightSession();
+        var held = await holder.Events.FetchForWriting<SimpleAggregate>(streamId);
+        held.Aggregate.ACount.ShouldBe(3);
+
+        // Meanwhile the stream moves on somewhere else
+        await using (var other = theStore.LightweightSession())
+        {
+            other.Events.Append(streamId, new AEvent());
+            await other.SaveChangesAsync();
+        }
+
+        // A second writer now fetches the same stream and folds its delta. If it was handed the very
+        // instance the first writer is still holding, that fold lands in the first writer's aggregate --
+        // which then reports state it never fetched and never asserted a version against.
+        await using (var second = theStore.LightweightSession())
+        {
+            var stream = await second.Events.FetchForWriting<SimpleAggregate>(streamId);
+            stream.Aggregate.ACount.ShouldBe(4);
+        }
+
+        held.Aggregate.ACount.ShouldBe(3);
+    }
+
+    [Fact]
     public async Task cache_ahead_of_the_database_falls_back_to_the_uncached_path()
     {
         UseCachedLiveAggregates();
@@ -301,6 +391,84 @@ public class caching_live_aggregates_for_writing: OneOffConfigurationsContext
 
         // The uncached retry found nothing to cache, and take-on-read already dropped the stale entry
         theCache.Keys.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task an_expected_version_below_the_stream_still_throws_against_a_warm_cache()
+    {
+        UseCachedLiveAggregates();
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new AEvent(), new AEvent());
+        await theSession.SaveChangesAsync();
+
+        await using (var warmUp = theStore.LightweightSession())
+        {
+            await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+        }
+
+        await using var session = theStore.LightweightSession();
+
+        // The expected version overload asserts against the version it read from the database, so it has
+        // to refuse a claim of 1 against a stream at 3 whether or not an entry is sitting in the cache.
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            await session.Events.FetchForWriting<SimpleAggregate>(streamId, 1);
+        });
+
+        // ... and it neither consumed nor replaced the entry, because that overload does not cache
+        theCache.Hits.ShouldBe(0);
+        var (_, version) = theCache.SingleEntry();
+        version.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task an_expected_version_below_the_stream_still_throws_in_a_batch()
+    {
+        UseCachedLiveAggregates();
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new AEvent(), new AEvent());
+        await theSession.SaveChangesAsync();
+
+        await using (var warmUp = theStore.LightweightSession())
+        {
+            await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+        }
+
+        await using var session = theStore.LightweightSession();
+
+        // Same assertion down the batched query handler, which composes the stream version statement
+        // itself rather than going through FetchForWriting
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            var batch = session.CreateBatchQuery();
+            var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId, 1);
+            await batch.Execute();
+            await streamQuery;
+        });
+    }
+
+    [Fact]
+    public async Task a_batched_fetch_for_writing_reads_the_widened_version_statement()
+    {
+        UseCachedLiveAggregates();
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        // The batched handler builds the version statement itself and takes no cache attempt, so it is the
+        // one path that reads is_archived at ordinal 1 with nothing to compare it against.
+        await using var session = theStore.LightweightSession();
+        var batch = session.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId);
+        await batch.Execute();
+        var stream = await streamQuery;
+
+        stream.CurrentVersion.ShouldBe(3);
+        stream.Aggregate.ACount.ShouldBe(1);
+        stream.Aggregate.BCount.ShouldBe(2);
     }
 
     [Fact]
