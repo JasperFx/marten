@@ -68,7 +68,7 @@ namespace Marten.Events
         ///     semantics, which are shared across the Critter Stack.
         ///     </para>
         ///     <para>
-        ///     Supported for both the Async and Inline lifecycles; see
+        ///     Supported for the Live, Async and Inline lifecycles; see
         ///     <see cref="EventGraph.CacheAggregatesForWriting{T}" /> for how they differ.
         ///     </para>
         /// </summary>

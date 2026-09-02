@@ -15,7 +15,11 @@ internal partial class EventStore
     public void BuildCommandForReadingVersionForStream(bool isGlobal, ICommandBuilder builder, Guid streamId,
         bool forUpdate)
     {
-        builder.Append("select version from ");
+        // is_archived rides along in the same statement because the aggregate write cache needs it: a
+        // cache hit on a stream archived elsewhere would otherwise resurrect the cached aggregate, where
+        // an uncached Live fetch answers null. Every other reader takes the version by ordinal 0 and is
+        // unaffected.
+        builder.Append("select version, is_archived from ");
         builder.Append(_store.Events.DatabaseSchemaName);
         builder.Append('.');
         builder.Append("mt_streams where id = ");
@@ -36,7 +40,11 @@ internal partial class EventStore
     public void BuildCommandForReadingVersionForStream(bool isGlobal, ICommandBuilder builder, string streamKey,
         bool forUpdate)
     {
-        builder.Append("select version from ");
+        // is_archived rides along in the same statement because the aggregate write cache needs it: a
+        // cache hit on a stream archived elsewhere would otherwise resurrect the cached aggregate, where
+        // an uncached Live fetch answers null. Every other reader takes the version by ordinal 0 and is
+        // unaffected.
+        builder.Append("select version, is_archived from ");
         builder.Append(_store.Events.DatabaseSchemaName);
         builder.Append('.');
         builder.Append("mt_streams where id = ");

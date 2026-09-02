@@ -1106,10 +1106,16 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     ///     shared with every other Critter Stack store (jasperfx#674).
     ///     </para>
     ///     <para>
-    ///     Supported for both <see cref="ProjectionLifecycle.Async" /> and
-    ///     <see cref="ProjectionLifecycle.Inline" />, but they behave differently:
+    ///     Supported for all three of <see cref="ProjectionLifecycle.Live" />,
+    ///     <see cref="ProjectionLifecycle.Async" /> and <see cref="ProjectionLifecycle.Inline" />, but they
+    ///     behave differently:
     ///     </para>
     ///     <list type="bullet">
+    ///         <item><b>Live</b> — there is no stored snapshot at all, so uncached every fetch replays the
+    ///         whole stream. The cached snapshot is a <i>baseline</i> and only the events after it are read
+    ///         and folded, which makes this the lifecycle with the most to gain. Written as soon as the
+    ///         fetch completes, like Async. An archived stream discards the entry rather than resurrecting
+    ///         it, because its events are filtered out and an uncached fetch would answer null.</item>
     ///         <item><b>Async</b> — the cached snapshot is a <i>baseline</i>. Events after the cached
     ///         version are read and folded onto it, so a stale entry just means a larger delta query. The
     ///         entry is written as soon as the fetch completes, because the daemon (not the session) applies

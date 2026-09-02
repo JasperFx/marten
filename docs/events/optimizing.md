@@ -155,8 +155,9 @@ when your projection is constantly updating a relatively small number of differe
 ## Caching Aggregate Snapshots for FetchForWriting <Badge type="tip" text="9.26" />
 
 The cache above is the *daemon's*. This one is the command side's: an opt-in, node-local cache of aggregate
-snapshots that lets `FetchForWriting` skip loading the stored snapshot and read only the events after it.
-Think of it as an identity map for aggregates with a lifetime longer than a session.
+snapshots that gives `FetchForWriting` a baseline to start from, so it reads only the events after it
+instead of the stored snapshot or the whole stream. Think of it as an identity map for aggregates with a
+lifetime longer than a session.
 
 It is off for every aggregate type, and is enabled per type:
 
@@ -165,6 +166,14 @@ opts.Projections.Snapshot<Order>(SnapshotLifecycle.Async);
 
 // Keep up to 1000 recently fetched Order snapshots
 opts.Events.CacheAggregatesForWriting<Order>(sizeLimit: 1000);
+```
+
+It works on all three lifecycles, including `Live` aggregates that have no stored snapshot at all:
+
+```csharp
+opts.Projections.LiveStreamAggregation<Order>();
+
+opts.Events.CacheAggregatesForWriting<Order>();
 ```
 
 Per type rather than store-wide because the win is proportional to how often *one* stream is fetched for
@@ -187,20 +196,40 @@ A "trusted" variant that also skipped the version read was built, measured and *
 0.19 ms of a 13.2 ms round, about 1.4%, in exchange for the concurrency guarantee. Do not reintroduce it.
 :::
 
-### The two lifecycles differ
+### The three lifecycles differ
 
-| | Async | Inline |
-| --- | --- | --- |
-| Cached entry is | a baseline; newer events are folded onto it | usable only on an **exact** version match |
-| Written to the cache | as soon as the fetch completes | only **after a successful commit** |
+| | Live | Async | Inline |
+| --- | --- | --- | --- |
+| Without the cache, a fetch reads | the whole stream | the snapshot + the daemon's lag | the snapshot only |
+| Cached entry is | a baseline; newer events are folded onto it | a baseline; newer events are folded onto it | usable only on an **exact** version match |
+| Written to the cache | as soon as the fetch completes | as soon as the fetch completes | only **after a successful commit** |
+| A hit removes | reading and folding the events below the baseline | the snapshot load | the snapshot load |
 
-The asymmetry is not an implementation accident. An Inline snapshot is written in the same transaction as
-the events, so it is always exactly at the stream head and there is no delta query to reconcile a stale
-entry with. And under Inline the projection applies the caller's appended events to the very instance
-`FetchForWriting` handed out, during `SaveChangesAsync` — so an entry written at fetch time would describe
-state that is durable only if that commit happens to succeed. Deferring the write to after the commit
-removes the hazard rather than mitigating it: a rolled-back commit simply leaves no entry, and the next
-fetch reloads from the database.
+The Inline asymmetry is not an implementation accident. An Inline snapshot is written in the same
+transaction as the events, so it is always exactly at the stream head and there is no delta query to
+reconcile a stale entry with. And under Inline the projection applies the caller's appended events to the
+very instance `FetchForWriting` handed out, during `SaveChangesAsync` — so an entry written at fetch time
+would describe state that is durable only if that commit happens to succeed. Deferring the write to after
+the commit removes the hazard rather than mitigating it: a rolled-back commit simply leaves no entry, and
+the next fetch reloads from the database.
+
+### What the cache removes under Live
+
+Live is the lifecycle with the most to gain and the least machinery, because there is no stored snapshot
+in the first place: uncached, every `FetchForWriting` replays the entire stream and folds it from scratch.
+A hit turns that into the same delta query the Async plan issues, with the baseline coming from memory
+instead of from a document table — so the events the baseline already accounts for are neither read nor
+folded.
+
+This is the shape a chain of cascading commands over one stream hits, where each hop is its own message,
+session and transaction and therefore fetches the same stream again. The
+`marten.fetch_for_writing.events_replayed` histogram measures it directly here, unlike under Inline:
+tagged `fetch.plan = Live`, it drops from the full stream length to the size of the delta.
+
+One case is specific to Live. An archived stream's events are filtered out of the event query, so an
+uncached fetch answers `null` where a cached entry still holds the aggregate. Marten reads `is_archived`
+alongside the stream version and discards the entry rather than resurrecting it, so a cache hit and a cold
+fetch agree.
 
 ### What the cache actually removes under Inline
 

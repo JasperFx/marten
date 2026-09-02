@@ -14,6 +14,7 @@ using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
 using System.Diagnostics.CodeAnalysis;
+using JasperFx.Events.Fetching;
 
 namespace Marten.Events.Fetching;
 
@@ -28,6 +29,7 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
     private readonly OpenTelemetryOptions _telemetry;
     private readonly string _aggregateTypeName = typeof(TDoc).FullNameInCode();
+    private readonly IAggregateWriteCache? _cache;
 
     public FetchLivePlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
         IIdentitySetter<TDoc, TId> documentStorage)
@@ -37,6 +39,14 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
         _identityStrategy = identityStrategy;
         _documentStorage = documentStorage;
         _telemetry = events.Options.OpenTelemetry;
+
+        // Resolved once per plan, never per fetch, and left null when nobody enrolled this type -- the
+        // cached path builds an AggregateCacheKey per fetch, which boxes the stream id, and a null check
+        // keeps that allocation off every FetchForWriting in every store that never opted in.
+        if (events.AggregateWriteCaching.IsEnabled(typeof(TDoc)))
+        {
+            _cache = events.AggregateWriteCaching.ResolveCache(typeof(TDoc));
+        }
 
         var raw = events.Options.Projections.AggregatorFor<TDoc>();
 
@@ -59,4 +69,17 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
     public bool IsGlobal { get; }
 
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Live;
+
+    /// <summary>
+    ///     Composes the cache key for a stream. Getting the tenant or database wrong here would be a
+    ///     cross-tenant data leak rather than a performance bug, so both are always part of the key.
+    /// </summary>
+    private AggregateCacheKey cacheKeyFor(DocumentSessionBase session, TId id)
+    {
+        return new AggregateCacheKey(
+            typeof(TDoc),
+            session.Database.Identifier,
+            IsGlobal ? AggregateCacheKey.GlobalTenant : session.TenantId,
+            id);
+    }
 }
