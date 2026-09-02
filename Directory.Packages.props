@@ -459,7 +459,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.27.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.29.0" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -596,9 +596,21 @@
          manager-owned — that enumeration returned the EMPTY sequence, not a short one. Only step 1
          rendered, and the parent index was created permanently INVALID: unusable by the planner, and
          reported as drift by every later apply thanks to weasel#508. All three call sites now resolve
-         through one expectedPartitions() helper, which is why RangePartitioning never had the bug. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.27.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.27.0" />
+         through one expectedPartitions() helper, which is why RangePartitioning never had the bug.
+
+         9.29.0 (weasel#541, raised from marten#5298): FullTextIndexDefinition can index an expression
+         that is ALREADY a tsvector, via TsVectorExpression and the ForTsVector factory. That is what
+         makes per-member setweight() weighting expressible at all. PostgreSQL's setweight labels a
+         vector, so weighting concatenates the VECTORS rather than the text, and the old unconditional
+         to_tsvector wrapping turned that into a type error rather than a weighted index. IndexedTsVector
+         is the single property both the DDL and Marten's query-side filter read, so the indexed vector
+         and the searched vector cannot drift apart. Left unset it is byte-identical to before, which
+         matters because a changed index expression makes Weasel drop and recreate the index.
+         Also arriving: 9.28.0 (weasel#538) lets a rebuildable Invalid delta through
+         AssertPatchingIsValid, and weasel#539/#540 are SQLite and foreign-key-cycle fixes with no
+         Marten surface. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.29.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.29.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

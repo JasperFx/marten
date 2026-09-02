@@ -672,11 +672,78 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
         return AddFullTextIndexIfDoesNotExist(index);
     }
 
+    /// <summary>
+    ///     Adds a full text index whose members carry PostgreSQL <c>setweight</c> labels, so that a match
+    ///     in one field can outrank a match in another.
+    /// </summary>
+    /// <remarks>
+    ///     #5298. Distinct from <see cref="AddFullTextIndex(string, Action{FullTextIndexDefinition})" />
+    ///     because the DDL is a different shape, not a configured variant of the same one: weighting
+    ///     concatenates the VECTORS rather than the text, so the expression is a <c>tsvector</c> at the top
+    ///     level and goes to Weasel's <c>ForTsVector</c> factory instead of to <c>DocumentConfig</c>
+    ///     (weasel#541).
+    /// </remarks>
+    public FullTextIndexDefinition AddWeightedFullTextIndex<T>(
+        Action<WeightedFullTextIndexExpression<T>> configure,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig,
+        string? indexName = null)
+    {
+        var expression = new WeightedFullTextIndexExpression<T>();
+        configure(expression);
+
+        if (expression.IsEmpty)
+        {
+            throw new ArgumentOutOfRangeException(nameof(configure),
+                "A weighted full text index needs at least two members. Call Weighted() to add them.");
+        }
+
+        // One member, or the same label on every member, ranks nothing -- setweight only ever
+        // expresses a RELATIVE ordering. Refused at configuration time rather than emitting DDL that
+        // looks weighted and is not, because the failure otherwise shows up as a ranked screen that
+        // silently returns arbitrary order.
+        if (expression.IsUniform)
+        {
+            throw new ArgumentOutOfRangeException(nameof(configure),
+                "A weighted full text index needs at least two DIFFERENT weights -- weighting expresses a relative ranking, so one weight, or the same weight on every member, ranks nothing. Use FullTextIndex() for an unweighted index.");
+        }
+
+        var index = FullTextIndexDefinition.ForTsVector(
+            PostgresqlObjectName.From(TableName),
+            expression.BuildTsVectorExpression(this, regConfig),
+            indexName,
+            SchemaConstants.MartenPrefix);
+
+        // RegConfig takes no part in the DDL for a pre-built vector -- it is already inside the
+        // expression -- but the query side resolves an index by it, so it still has to be set.
+        index.RegConfig = regConfig;
+
+        return AddFullTextIndexIfDoesNotExist(index);
+    }
+
     private FullTextIndexDefinition AddFullTextIndexIfDoesNotExist(FullTextIndexDefinition index)
     {
         var existing = Indexes.OfType<FullTextIndexDefinition>().FirstOrDefault(x => x.Name == index.Name);
         if (existing != null)
         {
+            // #5315: the dedupe is here so that configuring the same index twice is idempotent, which is
+            // ordinary in composed configuration. But a name collision does not prove the two are the
+            // same index -- FullTextIndexDefinition derives its name from the TABLE (and the regConfig
+            // when non-default), not from its members, so two calls naming different members collide by
+            // construction:
+            //
+            //   .FullTextIndex(x => x.Title)
+            //   .FullTextIndex(x => x.Body)     // same derived name, silently discarded
+            //
+            // That returned the first index and threw the second away with no warning, so the second was
+            // never created and never searched. A document matching only on it simply never came back.
+            // Idempotence is worth keeping; silently dropping a DIFFERENT configuration is not.
+            if (existing.IndexedTsVector != index.IndexedTsVector)
+            {
+                throw new AmbiguousFullTextIndexException(
+                    $"Document type {DocumentType.FullNameInCode()} already has a full text index named '{index.Name}' over a different expression, and full text index names are derived from the table rather than from the members being indexed -- so two indexes over different members collide by construction. "
+                    + "Give at least one of them an explicit index name, or combine the members into a single FullTextIndex() call.");
+            }
+
             return existing;
         }
 
