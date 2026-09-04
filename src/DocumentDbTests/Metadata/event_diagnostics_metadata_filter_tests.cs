@@ -22,9 +22,11 @@ namespace DocumentDbTests.Metadata;
 /// Each of the three new filters (<see cref="EventQuery.CorrelationId"/>,
 /// <see cref="EventQuery.CausationId"/>, <see cref="EventQuery.UserName"/>) is honored only
 /// when both the option is set AND the event store has the corresponding metadata column
-/// enabled. When set but disabled, the filter is silently skipped — the LINQ member
-/// registration in <c>EventQueryMapping</c> is gated by the same flag, so a Where on a
-/// disabled member would fail to translate at runtime if we didn't skip it here.
+/// enabled. When set but disabled, the query is REFUSED with a <see cref="NotSupportedException"/>
+/// naming the field — the jasperfx#737 guard rail (<see cref="EventQuery.AssertFiltersAreSupported"/>).
+/// Pre-#737 the filter was silently skipped, which returned unfiltered results that read as
+/// filtered; the LINQ member registration in <c>EventQueryMapping</c> is gated by the same
+/// flag, so the disabled column is subtracted from the declared filter set instead.
 ///
 /// Seeding strategy mirrors the doc-filter suite: 8 events, each one appended in its own
 /// session so each carries distinct (CorrelationId / CausationId / UserName) session-scoped
@@ -91,7 +93,7 @@ public class event_diagnostics_metadata_filter_tests
     }
 
     [Fact]
-    public async Task filter_is_silently_ignored_when_correlation_id_column_is_disabled()
+    public async Task filter_is_refused_by_name_when_correlation_id_column_is_disabled()
     {
         const string schema = "diag4791_evt_corr_off";
         using var host = await BuildHost(schema, enableCorr: false, enableCaus: true, enableUser: true);
@@ -100,18 +102,20 @@ public class event_diagnostics_metadata_filter_tests
         var store = host.Services.GetRequiredService<IDocumentStore>();
         var readStore = ((IEventStore)store).OpenReadOnlyEventStore();
 
-        var result = await readStore.QueryEventsAsync(new EventQuery
+        // jasperfx#737: a store that does not capture the column must refuse the filter by name,
+        // never silently return unfiltered results that read as filtered.
+        var ex = await Should.ThrowAsync<NotSupportedException>(() => readStore.QueryEventsAsync(new EventQuery
         {
             PageNumber = 1,
             PageSize = 50,
-            CorrelationId = "c0" // would otherwise narrow to 4 events
-        }, CancellationToken.None);
+            CorrelationId = "c0"
+        }, CancellationToken.None));
 
-        result.TotalCount.ShouldBe(8);
+        ex.Message.ShouldContain(nameof(EventQuery.CorrelationId));
     }
 
     [Fact]
-    public async Task filter_is_silently_ignored_when_causation_id_column_is_disabled()
+    public async Task filter_is_refused_by_name_when_causation_id_column_is_disabled()
     {
         const string schema = "diag4791_evt_caus_off";
         using var host = await BuildHost(schema, enableCorr: true, enableCaus: false, enableUser: true);
@@ -120,18 +124,18 @@ public class event_diagnostics_metadata_filter_tests
         var store = host.Services.GetRequiredService<IDocumentStore>();
         var readStore = ((IEventStore)store).OpenReadOnlyEventStore();
 
-        var result = await readStore.QueryEventsAsync(new EventQuery
+        var ex = await Should.ThrowAsync<NotSupportedException>(() => readStore.QueryEventsAsync(new EventQuery
         {
             PageNumber = 1,
             PageSize = 50,
             CausationId = "u0"
-        }, CancellationToken.None);
+        }, CancellationToken.None));
 
-        result.TotalCount.ShouldBe(8);
+        ex.Message.ShouldContain(nameof(EventQuery.CausationId));
     }
 
     [Fact]
-    public async Task filter_is_silently_ignored_when_user_name_column_is_disabled()
+    public async Task filter_is_refused_by_name_when_user_name_column_is_disabled()
     {
         const string schema = "diag4791_evt_user_off";
         using var host = await BuildHost(schema, enableCorr: true, enableCaus: true, enableUser: false);
@@ -140,18 +144,18 @@ public class event_diagnostics_metadata_filter_tests
         var store = host.Services.GetRequiredService<IDocumentStore>();
         var readStore = ((IEventStore)store).OpenReadOnlyEventStore();
 
-        var result = await readStore.QueryEventsAsync(new EventQuery
+        var ex = await Should.ThrowAsync<NotSupportedException>(() => readStore.QueryEventsAsync(new EventQuery
         {
             PageNumber = 1,
             PageSize = 50,
             UserName = "n0"
-        }, CancellationToken.None);
+        }, CancellationToken.None));
 
-        result.TotalCount.ShouldBe(8);
+        ex.Message.ShouldContain(nameof(EventQuery.UserName));
     }
 
     [Fact]
-    public async Task filter_set_alongside_an_enabled_filter_when_a_column_is_disabled_still_narrows_via_the_enabled_one()
+    public async Task a_disabled_column_filter_alongside_enabled_ones_still_refuses_the_whole_query()
     {
         const string schema = "diag4791_evt_mixed";
         using var host = await BuildHost(schema, enableCorr: true, enableCaus: false, enableUser: true);
@@ -160,22 +164,20 @@ public class event_diagnostics_metadata_filter_tests
         var store = host.Services.GetRequiredService<IDocumentStore>();
         var readStore = ((IEventStore)store).OpenReadOnlyEventStore();
 
-        var result = await readStore.QueryEventsAsync(new EventQuery
+        // Pre-#737 this returned the two events matching the enabled filters while silently
+        // dropping the disabled one — a partially-filtered answer that read as fully filtered.
+        // The guard rail refuses the query outright, naming only the unsupported field.
+        var ex = await Should.ThrowAsync<NotSupportedException>(() => readStore.QueryEventsAsync(new EventQuery
         {
             PageNumber = 1,
             PageSize = 50,
-            CorrelationId = "c0",   // honored — 4 events
-            CausationId = "u0",      // silently ignored — column disabled
-            UserName = "n0"          // honored — narrows to 2
-        }, CancellationToken.None);
+            CorrelationId = "c0",   // supported — the column is captured
+            CausationId = "u0",     // NOT captured — this is the refusal
+            UserName = "n0"         // supported
+        }, CancellationToken.None));
 
-        // corr=c0 (events 0,1,2,3) ∩ user=n0 (events 0,2,4,6) = events 0, 2.
-        result.TotalCount.ShouldBe(2);
-        var returnedIndices = result.Events
-            .Select(e => ((EventMetaPayload)e.Data).Index)
-            .OrderBy(i => i)
-            .ToList();
-        returnedIndices.ShouldBe(new[] { 0, 2 });
+        ex.Message.ShouldContain(nameof(EventQuery.CausationId));
+        ex.Message.ShouldNotContain(nameof(EventQuery.CorrelationId));
     }
 
     [Fact]

@@ -6,7 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Tags;
+using Marten.Events.Dcb;
 using Marten.Events.Querying;
+using Marten.Linq.MatchesSql;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq;
@@ -246,6 +249,36 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 
     public async Task<PagedEvents> QueryEventsAsync(EventQuery query, CancellationToken token = default)
     {
+        // jasperfx#737 guard rail, first thing: declare exactly what this store honors, so a query
+        // carrying anything else is refused with a NotSupportedException naming the field rather
+        // than silently ignored (unfiltered results would read as filtered).
+        //
+        // Marten honors every EventQuery filter, with one honesty carve-out: the metadata filters
+        // (correlation_id, causation_id, user_name) are only queryable when the store actually
+        // captures the corresponding column — the LINQ member registration in EventQueryMapping is
+        // itself gated by the Metadata.X.Enabled flag (see EventQueryMapping.cs), so a Where on a
+        // disabled member would fail to translate. Pre-#737 this method silently skipped those
+        // filters; now the disabled column is subtracted from the declared set so the assert
+        // refuses the filter by name instead.
+        var eventMetadata = _store.Events.Metadata;
+        var supportedFilters = EventQueryFilters.All;
+        if (!eventMetadata.CorrelationId.Enabled)
+        {
+            supportedFilters &= ~EventQueryFilters.CorrelationId;
+        }
+
+        if (!eventMetadata.CausationId.Enabled)
+        {
+            supportedFilters &= ~EventQueryFilters.CausationId;
+        }
+
+        if (!eventMetadata.UserName.Enabled)
+        {
+            supportedFilters &= ~EventQueryFilters.UserName;
+        }
+
+        query.AssertFiltersAreSupported(supportedFilters);
+
         await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var queryable = QueryAllRawEvents();
@@ -263,9 +296,18 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.TenantIsOneOf(query.TenantId));
         }
 
-        if (query.EventTypeName != null)
+        // jasperfx#737: EventTypeName and EventTypeNames are one filter with two spellings — the
+        // union semantics live upstream in CombinedEventTypeNames() so all three stores agree.
+        var eventTypeNames = query.CombinedEventTypeNames();
+        if (eventTypeNames.Count == 1)
         {
-            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.EventTypeName == query.EventTypeName);
+            var single = eventTypeNames[0];
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.EventTypeName == single);
+        }
+        else if (eventTypeNames.Count > 1)
+        {
+            var names = eventTypeNames.ToArray();
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.EventTypeName.IsOneOf(names));
         }
 
         if (query.StreamId != null)
@@ -280,28 +322,58 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             }
         }
 
-        // #4791 / CritterWatch #629: exact-match filters on the event's metadata columns
-        // (correlation_id, causation_id, user_name). A filter is honored only when both the
-        // EventQuery option is set AND the event store has the corresponding metadata column
-        // enabled — the LINQ member registration in EventQueryMapping is itself gated by the
-        // Metadata.X.Enabled flag (see EventQueryMapping.cs:46-59), so a Where on a disabled
-        // member would fail to translate. We mirror that gate here to silently skip the filter
-        // (per the JasperFx EventQuery contract: "Only honored when the store advertises and
-        // captures the metadata column").
-        var eventMetadata = _store.Events.Metadata;
-        if (query.CorrelationId != null && eventMetadata.CorrelationId.Enabled)
+        // #4791 / CritterWatch #629: exact-match filters on the event's metadata columns. The
+        // AssertFiltersAreSupported call above already refused any of these whose column is not
+        // captured, so reaching here means the member is registered and translates.
+        if (query.CorrelationId != null)
         {
             queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.CorrelationId == query.CorrelationId);
         }
 
-        if (query.CausationId != null && eventMetadata.CausationId.Enabled)
+        if (query.CausationId != null)
         {
             queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.CausationId == query.CausationId);
         }
 
-        if (query.UserName != null && eventMetadata.UserName.Enabled)
+        if (query.UserName != null)
         {
             queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.UserName == query.UserName);
+        }
+
+        // jasperfx#737: inclusive timestamp window on the server-assigned timestamp. An inverted
+        // window needs no special case — the AND of the two bounds already matches nothing.
+        if (query.TimestampFrom != null)
+        {
+            var from = query.TimestampFrom.Value;
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.Timestamp >= from);
+        }
+
+        if (query.TimestampTo != null)
+        {
+            var to = query.TimestampTo.Value;
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.Timestamp <= to);
+        }
+
+        // jasperfx#737: inclusive sequence window on the store-global sequence, same shape.
+        if (query.SequenceFloor != null)
+        {
+            var floor = query.SequenceFloor.Value;
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.Sequence >= floor);
+        }
+
+        if (query.SequenceCeiling != null)
+        {
+            var ceiling = query.SequenceCeiling.Value;
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.Sequence <= ceiling);
+        }
+
+        // jasperfx#737: the folded DCB tag conditions. The spec's OR'd conditions select events,
+        // and that selection ANDs into everything above via a raw SQL fragment that mirrors the
+        // translation HasTagParser / BuildTagQuerySql use for the same storage modes.
+        if (query.TagConditions != null)
+        {
+            var (tagSql, tagParameters) = buildTagConditionsFilter(query.TagConditions);
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.MatchesSql(tagSql, tagParameters));
         }
 
         var totalCount = await queryable.CountAsync(token).ConfigureAwait(false);
@@ -309,8 +381,10 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
         var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
         var offset = (pageNumber - 1) * query.PageSize;
 
+        // Sequence-ascending is contract (see IReadOnlyEventStore.QueryEventsAsync), and the paging
+        // walks that ordering.
         var events = await queryable
-            .OrderByDescending(e => e.Sequence)
+            .OrderBy(e => e.Sequence)
             .Skip(offset)
             .Take(query.PageSize)
             .ToListAsync(token)
@@ -323,6 +397,89 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             PageNumber = pageNumber,
             PageSize = query.PageSize
         };
+    }
+
+    /// <summary>
+    /// Translate the wire-form <see cref="EventTagQuerySpec"/> into a raw SQL fragment over the
+    /// event query's <c>d</c> alias (mt_events), OR'ing the conditions. Each condition takes the
+    /// same per-storage-mode shape as <c>HasTagParser</c>: a correlated tag-table subquery in
+    /// TagTables mode, hstore containment in HStore mode, with an optional <c>d.type</c> predicate
+    /// when the condition is scoped to an event type. IN-subqueries / containment are set
+    /// semantics, so an event matching several conditions still appears once.
+    /// </summary>
+    private (string sql, object[] parameters) buildTagConditionsFilter(EventTagQuerySpec spec)
+    {
+        var events = _store.Events;
+
+        // Resolve the wire descriptors back to CLR types against the registered tag/event graph.
+        var knownTypes = events.TagTypes.Select(x => x.TagType)
+            .Concat(events.AllKnownEventTypes().Select(x => x.EventType));
+        var tagQuery = spec.Resolve(EventTagQuerySpec.ResolverFor(knownTypes));
+
+        var conditions = tagQuery.Conditions;
+        if (conditions.Count == 0)
+        {
+            throw new ArgumentException("EventQuery.TagConditions must carry at least one condition.");
+        }
+
+        var schema = events.DatabaseSchemaName;
+        var isHStore = events.DcbStorageMode == DcbStorageMode.HStore;
+        var isConjoined = events.TenancyStyle == TenancyStyle.Conjoined;
+
+        var sb = new System.Text.StringBuilder();
+        var parameters = new List<object>();
+
+        sb.Append('(');
+        for (var i = 0; i < conditions.Count; i++)
+        {
+            if (i > 0)
+            {
+                sb.Append(" or ");
+            }
+
+            var condition = conditions[i];
+            var registration = events.FindTagType(condition.TagType)
+                               ?? throw new InvalidOperationException(
+                                   $"Tag type '{condition.TagType.Name}' is not registered. Call RegisterTagType<{condition.TagType.Name}>() first.");
+
+            sb.Append('(');
+            if (isHStore)
+            {
+                sb.Append("d.tags @> hstore(?, ?)");
+                parameters.Add(registration.TableSuffix);
+                parameters.Add(TagValueStringifier.Stringify(registration.ExtractValue(condition.TagValue)));
+            }
+            else
+            {
+                // Under conjoined tenancy seq_id is not unique across tenants (per-tenant
+                // sequences), so the correlated subquery must also match tenant_id; the outer
+                // event query is already tenant-scoped. Mirrors HasTagParser / #4645.
+                sb.Append("d.seq_id in (select seq_id from ");
+                sb.Append(schema);
+                sb.Append(".mt_event_tag_");
+                sb.Append(registration.TableSuffix);
+                sb.Append(" where value = ?");
+                if (isConjoined)
+                {
+                    sb.Append(" and tenant_id = d.tenant_id");
+                }
+
+                sb.Append(')');
+                parameters.Add(registration.ExtractValue(condition.TagValue));
+            }
+
+            if (condition.EventType != null)
+            {
+                sb.Append(" and d.type = ?");
+                parameters.Add(events.EventMappingFor(condition.EventType).EventTypeName);
+            }
+
+            sb.Append(')');
+        }
+
+        sb.Append(')');
+
+        return (sb.ToString(), parameters.ToArray());
     }
 
     private static JasperFx.Events.StreamState ToJasperFxStreamState(StreamState martenState)
