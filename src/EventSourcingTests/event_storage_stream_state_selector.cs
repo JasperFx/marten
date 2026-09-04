@@ -68,6 +68,7 @@ public class event_storage_stream_state_selector: IntegrationContext
         actual.LastTimestamp.ShouldBe(expected.LastTimestamp);
         actual.IsArchived.ShouldBe(expected.IsArchived);
         actual.AggregateType.ShouldBe(expected.AggregateType);
+        actual.CompactedVersion.ShouldBe(expected.CompactedVersion);
     }
 
     [Fact]
@@ -88,6 +89,8 @@ public class event_storage_stream_state_selector: IntegrationContext
         sql.ShouldContain("timestamp");
         sql.ShouldContain("created");
         sql.ShouldContain("is_archived");
+        // jasperfx#740: the compaction watermark rides the same SELECT/selector pair.
+        sql.ShouldContain("compacted_version");
         sql.ShouldContain("mt_streams");
         sql.ShouldStartWith("select ");
     }

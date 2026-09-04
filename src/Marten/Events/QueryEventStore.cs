@@ -492,7 +492,28 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             AggregateType = martenState.AggregateType,
             LastTimestamp = martenState.LastTimestamp,
             Created = martenState.Created,
-            IsArchived = martenState.IsArchived
+            IsArchived = martenState.IsArchived,
+            CompactedVersion = martenState.CompactedVersion
         };
+    }
+
+    /// <summary>
+    /// jasperfx#740 (marten#5333): the streams table as a real <see cref="IQueryable{T}"/> of
+    /// <see cref="StreamState"/>, translated against <c>mt_streams</c> and executed through the
+    /// shared <see cref="JasperFx.Events.Documents.IDocumentQueryExecutor"/> hook. See
+    /// <see cref="StreamStateQueryProvider"/> for the translatable set and the refusal rules.
+    /// </summary>
+    public IQueryable<StreamState> QueryStreamStates(string? tenantId = null)
+    {
+        // A tenant scope against a store with no tenant dimension must be refused, never quietly
+        // answered with unscoped rows that read as tenant-scoped — the jasperfx#737 rule applied
+        // to the tenant filter.
+        if (tenantId != null && _store.Events.TenancyStyle != TenancyStyle.Conjoined)
+        {
+            throw new NotSupportedException(
+                $"This event store does not have a tenant dimension (TenancyStyle.{_store.Events.TenancyStyle}), so QueryStreamStates cannot scope to tenant '{tenantId}'. Omit the tenantId argument, or configure conjoined multi-tenancy.");
+        }
+
+        return new StreamStateQueryProvider(_session, _store, _tenant, tenantId).CreateRoot();
     }
 }
