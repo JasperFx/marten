@@ -20,6 +20,18 @@ internal class StreamsTable: Table
 {
     public const string TableName = "mt_streams";
 
+    /// <summary>
+    ///     jasperfx#740 (marten#5333): the stream-compaction watermark — the stream version through
+    ///     which events have been folded into a <c>Compacted&lt;T&gt;</c> snapshot. 0 means never
+    ///     compacted. Written by <c>CompactStreamAsync</c> (see
+    ///     <c>RecordCompactionWatermarkOperation</c>), surfaced on <c>StreamState.CompactedVersion</c>
+    ///     by both the fetch path and <c>QueryStreamStates</c>. Deliberately NOT an
+    ///     <see cref="IStreamTableColumn"/>: the append/insert paths enumerate
+    ///     <c>Columns.OfType&lt;IStreamTableColumn&gt;().Where(x => x.Writes)</c>, and this column is
+    ///     only ever written by the compaction operation — new streams get the 0 default.
+    /// </summary>
+    public const string CompactedVersionColumn = "compacted_version";
+
     public StreamsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, TableName))
     {
         foreach (var index in events.IgnoredIndexes)
@@ -60,6 +72,8 @@ internal class StreamsTable: Table
         {
             AddColumn<TenantIdColumn>();
         }
+
+        AddColumn<long>(CompactedVersionColumn).NotNull().DefaultValueByExpression("0");
 
         var archiving = AddColumn<IsArchivedColumn>();
         if (events.UseArchivedStreamPartitioning)

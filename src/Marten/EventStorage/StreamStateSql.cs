@@ -14,5 +14,5 @@ namespace Marten.EventStorage;
 internal static class StreamStateSql
 {
     public static string Build(EventGraph graph) =>
-        $"select id, version, type, timestamp, created, is_archived from {graph.DatabaseSchemaName}.mt_streams";
+        $"select id, version, type, timestamp, created, is_archived, compacted_version from {graph.DatabaseSchemaName}.mt_streams";
 }

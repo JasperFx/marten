@@ -284,6 +284,13 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         state.Created = reader.GetFieldValue<DateTimeOffset>(4);
         state.IsArchived = reader.GetFieldValue<bool>(5);
 
+        // jasperfx#740: the compaction watermark. The column is NOT NULL DEFAULT 0, but guard the
+        // null read anyway for a database mid-migration.
+        if (!reader.IsDBNull(6))
+        {
+            state.CompactedVersion = reader.GetFieldValue<long>(6);
+        }
+
         return state;
     }
 
@@ -313,6 +320,13 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         state.LastTimestamp = await reader.GetFieldValueAsync<DateTimeOffset>(3, token).ConfigureAwait(false);
         state.Created = await reader.GetFieldValueAsync<DateTimeOffset>(4, token).ConfigureAwait(false);
         state.IsArchived = await reader.GetFieldValueAsync<bool>(5, token).ConfigureAwait(false);
+
+        // jasperfx#740: the compaction watermark. The column is NOT NULL DEFAULT 0, but guard the
+        // null read anyway for a database mid-migration.
+        if (!await reader.IsDBNullAsync(6, token).ConfigureAwait(false))
+        {
+            state.CompactedVersion = await reader.GetFieldValueAsync<long>(6, token).ConfigureAwait(false);
+        }
 
         return state;
     }

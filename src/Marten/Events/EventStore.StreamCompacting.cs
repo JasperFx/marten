@@ -143,6 +143,14 @@ internal static class StreamCompactingExecution
         session.Events.CompletelyReplaceEvent(request.Sequence, compacted);
 
         session.QueueOperation(new DeleteEventsOperation(sequences));
+
+        // jasperfx#740 (marten#5333): record the compaction watermark on mt_streams so
+        // StreamState.CompactedVersion — and the (Version - CompactedVersion) growth measure the
+        // Stream Compaction Policies are built on — reads truthfully. request.Version is the
+        // version of the last event folded into the Compacted<T> snapshot: the caller's cutoff for
+        // a partial compaction, the stream's current version for a full one.
+        session.QueueOperation(new RecordCompactionWatermarkOperation(
+            ((IMartenSession)session).Options.EventGraph, request.StreamId, request.StreamKey, request.Version));
     }
 
     private static IAggregator<T, IQuerySession> FindAggregator<T>(DocumentSessionBase session) where T : class
@@ -198,6 +206,59 @@ public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOpera
 }
 
 #endregion
+
+/// <summary>
+///     jasperfx#740 (marten#5333): stamp the stream-compaction watermark onto
+///     <c>mt_streams.compacted_version</c> as part of the same unit of work that writes the
+///     <c>Compacted&lt;T&gt;</c> snapshot and deletes the folded events. <c>greatest()</c> keeps the
+///     watermark monotonic — a replayed or lower-cutoff compaction request can never move it
+///     backwards, which would make a stream's un-compacted growth read larger than it is.
+/// </summary>
+internal class RecordCompactionWatermarkOperation: IStorageOperation, NoDataReturnedCall
+{
+    private readonly EventGraph _events;
+    private readonly Guid? _streamId;
+    private readonly string? _streamKey;
+    private readonly long _version;
+
+    public RecordCompactionWatermarkOperation(EventGraph events, Guid? streamId, string? streamKey, long version)
+    {
+        _events = events;
+        _streamId = streamId;
+        _streamKey = streamKey;
+        _version = version;
+    }
+
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
+    {
+        builder.Append(
+            $"update {_events.DatabaseSchemaName}.{Schema.StreamsTable.TableName} set {Schema.StreamsTable.CompactedVersionColumn} = greatest({Schema.StreamsTable.CompactedVersionColumn}, ");
+        builder.AppendParameter(_version);
+        builder.Append(") where id = ");
+
+        if (_events.StreamIdentity == StreamIdentity.AsGuid)
+        {
+            builder.AppendParameter(_streamId!.Value);
+        }
+        else
+        {
+            builder.AppendParameter(_streamKey!);
+        }
+
+        // Same #5234 discipline as the sibling compaction operations: under conjoined tenancy the
+        // same stream id exists in every tenant, and only the calling tenant's watermark may move.
+        builder.AppendConjoinedTenantFilter(session);
+    }
+
+    public Type DocumentType => typeof(IEvent);
+
+    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
+
+    public OperationRole Role() => OperationRole.Events;
+}
 
 internal class DeleteEventsOperation: IStorageOperation, NoDataReturnedCall
 {

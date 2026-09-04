@@ -32,6 +32,7 @@ public record CliCargoInspected(string Inspector);
 /// is captured and the default JSON report parsed, so the assertion covers the full path an
 /// operator or agent consumes: flags → EventQuery → QueryEventsAsync → JSON on stdout.
 /// </summary>
+[Collection("CliCommands")]
 public class event_query_command_end_to_end
 {
     private static IHostBuilder martenHostBuilder(string schemaName, bool enableUserName = false)
@@ -74,14 +75,9 @@ public class event_query_command_end_to_end
             Console.SetOut(original);
         }
 
-        var output = console.ToString();
-
-        // The report is the only JSON object on stdout; anchor on its first brace so an incidental
-        // plain-text line from the host bootstrap cannot break the parse.
-        var start = output.IndexOf('{');
-        start.ShouldBeGreaterThanOrEqualTo(0, $"expected a JSON report on stdout, but got: {output}");
-
-        return (success, JsonDocument.Parse(output[start..]));
+        // Console.Out is process-global, so parallel tests can interleave writes into the capture —
+        // extract the report robustly rather than anchoring on the first brace.
+        return (success, CommandJsonOutput.ExtractReport(console.ToString()));
     }
 
     [Fact]
