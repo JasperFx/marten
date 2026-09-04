@@ -920,7 +920,27 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     internal EventMapping? TryGetRegisteredMappingForDotNetTypeName(string dotnetTypeName)
     {
-        return AllEvents().FirstOrDefault(x => x.DotNetTypeName == dotnetTypeName);
+        var registered = AllEvents().FirstOrDefault(x => x.DotNetTypeName == dotnetTypeName);
+        if (registered != null)
+        {
+            return registered;
+        }
+
+        // Nothing registers event types up front -- not even projections -- so the scan above misses whenever this
+        // process happens not to have touched the type yet. mt_dotnet_type is the unambiguous record of what was
+        // written, so resolve and register it rather than leaving the caller with a colliding alias's mapping and a
+        // silent deserialization into the wrong CLR type. Reads never registered a type before this, so which of two
+        // same-named types won an alias was decided per process by runtime ordering.
+        try
+        {
+            return EventMappingFor(TypeForDotNetName(dotnetTypeName));
+        }
+        catch (UnknownEventTypeException)
+        {
+            // The stored type isn't loadable here -- a genuinely foreign event, or an assembly this process doesn't
+            // reference. Fall back to the alias mapping, which is what the caller did before this resolution existed.
+            return null;
+        }
     }
 
     // Fetch additional event aliases that map to these types
