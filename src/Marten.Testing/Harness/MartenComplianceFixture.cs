@@ -50,6 +50,14 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             options.Events.MetadataConfig.CausationIdEnabled = true;
         }
 
+        // Opt-in exactly like correlation tracking above -- the user_name column is only
+        // captured (and only queryable) when the store enables it. Added for the jasperfx#737
+        // EventQueryCompliance suite's user-name filter facts.
+        if (config.EnableUserNameTracking)
+        {
+            options.Events.MetadataConfig.UserNameEnabled = true;
+        }
+
         if (config.EnableHeaders)
         {
             options.Events.MetadataConfig.HeadersEnabled = true;
@@ -114,6 +122,12 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
     public override void SetCorrelationId(IDocumentOperations session, string? correlationId)
         => ((IQuerySession)session).CorrelationId = correlationId;
+
+    // Same seam shape as SetCorrelationId: Marten hangs the user-name metadata off the session
+    // as LastModifiedBy, which stamps the user_name column on appended events when
+    // MetadataConfig.UserNameEnabled is on (see ComplianceStoreConfig.EnableUserNameTracking).
+    public override void SetUserName(IDocumentOperations session, string? userName)
+        => ((IDocumentSession)session).LastModifiedBy = userName;
 
     public override IEventStore EventStore => _store;
 
