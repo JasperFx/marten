@@ -283,6 +283,29 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
         public void AddProjection(ProjectionBase projection, ProjectionLifecycle lifecycle)
             => _options.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
+
+        /// <summary>
+        ///     jasperfx#725 (#5335) — exactly the forward-plus-adapter the seam documents: the calls are
+        ///     identical across the products but the composite type is Marten's own, so the adapter's only
+        ///     job is to drop the DocumentMappingExpression return value that Marten's Snapshot has and the
+        ///     void-returning shared member deliberately does not.
+        /// </summary>
+        public void AddCompositeProjection(string name, Action<IComplianceCompositeBuilder> configure)
+            => _options.Projections.CompositeProjectionFor(name,
+                composite => configure(new MartenCompositeBuilder(composite)));
+
+        private sealed class MartenCompositeBuilder: IComplianceCompositeBuilder
+        {
+            private readonly Marten.Events.Projections.CompositeProjection _composite;
+
+            public MartenCompositeBuilder(Marten.Events.Projections.CompositeProjection composite)
+            {
+                _composite = composite;
+            }
+
+            public void Snapshot<TDoc>(int stageNumber) where TDoc : notnull
+                => _composite.Snapshot<TDoc>(stageNumber);
+        }
     }
 
     internal class MartenComplianceBatch: IComplianceBatch
