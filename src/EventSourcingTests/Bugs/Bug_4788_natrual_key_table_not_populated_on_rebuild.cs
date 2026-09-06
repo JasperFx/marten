@@ -89,6 +89,12 @@ public class Bug_4788_natrual_key_table_not_populated_on_rebuild: OneOffConfigur
         StoreOptions(ConfigureStore);
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
+        // #5344: this test pins its own schema and never cleaned it, so every run left another live
+        // stream behind claiming order number "12345". That was invisible while a second claimant
+        // silently repointed the lookup row; now that a live key is refused, the second run of the
+        // test fails on its own leftovers rather than on anything it is trying to assert.
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+
         var streamId = Guid.NewGuid();
         await using var session = theStore.LightweightSession();
         session.Events.StartStream<Order>(streamId, new OrderPlaced(streamId, "12345"));
