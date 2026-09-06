@@ -495,6 +495,42 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     /// </summary>
     public override bool SupportsUnarchiveStream => false;
 
+    /// <summary>
+    ///     Marten names its own six exceptions rather than the ones lifted into JasperFx.Events by
+    ///     jasperfx#751.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Not an oversight and not a gap. Marten enforces
+    ///         CoreTests.all_exceptions_should_derive_from_MartenException:
+    ///         every exception Marten throws must derive from MartenException, so that a caller can
+    ///         catch the whole family in one clause. C# has single inheritance, so a Marten type
+    ///         cannot derive from both MartenException and the lifted JasperFx type -- adopting the
+    ///         shared types by subclassing, the way Polecat and Fisher did, would break that
+    ///         convention. Marten therefore keeps all six in Marten.Exceptions and nominates them
+    ///         here. Revisiting the convention is deferred to Marten 10 (marten#5346).
+    ///     </para>
+    ///     <para>
+    ///         Fully qualified because JasperFx.Events is imported above and declares six types of
+    ///         exactly these names; the unqualified name would silently resolve to the wrong one and
+    ///         the assertion would fail with a type mismatch rather than a compile error.
+    ///     </para>
+    /// </remarks>
+    public override Type ExceptionTypeFor(ComplianceExceptionKind kind) =>
+        kind switch
+        {
+            ComplianceExceptionKind.UnknownEventType => typeof(Marten.Exceptions.UnknownEventTypeException),
+            ComplianceExceptionKind.NonExistentStream => typeof(Marten.Exceptions.NonExistentStreamException),
+            ComplianceExceptionKind.ExistingStreamIdCollision =>
+                typeof(Marten.Exceptions.ExistingStreamIdCollisionException),
+            ComplianceExceptionKind.EventDeserializationFailure =>
+                typeof(Marten.Exceptions.EventDeserializationFailureException),
+            ComplianceExceptionKind.StreamLocked => typeof(Marten.Exceptions.StreamLockedException),
+            ComplianceExceptionKind.DefaultTenantUsageDisabled =>
+                typeof(Marten.Exceptions.DefaultTenantUsageDisabledException),
+            _ => base.ExceptionTypeFor(kind)
+        };
+
     public override async ValueTask DisposeAsync()
     {
         foreach (var disposable in _disposables)
