@@ -59,6 +59,16 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         _transactionParticipants.Add(participant);
     }
 
+    /// <summary>
+    /// #5353: the message batch enlists itself as a participant for the life of one unit of work,
+    /// and drops out again when that unit of work commits. Everything else registered here is
+    /// session-scoped and stays until disposal.
+    /// </summary>
+    internal virtual void RemoveTransactionParticipant(ITransactionParticipant participant)
+    {
+        _transactionParticipants.Remove(participant);
+    }
+
     internal IReadOnlyList<ITransactionParticipant> TransactionParticipants => _transactionParticipants;
 
     // #5228: release anything a participant is holding open, however the save ended. Disposal on
