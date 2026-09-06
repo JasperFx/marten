@@ -411,6 +411,21 @@ If you need to suppress the teardown entirely -- for instance when the entity ta
 data Marten did not write -- set `Options.TeardownDataOnRebuild = false` in your projection's
 constructor and clear the table yourself.
 
+::: warning
+A **per-tenant** rebuild (`RebuildProjectionAsync` scoped to one tenant) scopes the wipe with
+`delete from <entity table> where tenant_id = ?`. That column name is not read from your EF Core
+model, so it only matches a `DbContext` that maps the tenant property to a snake_case `tenant_id`
+column -- as the conjoined multi-tenancy example above does. Under EF Core's default naming the
+column is `TenantId` and the rebuild fails with `42703: column "tenant_id" does not exist`. Map the
+column explicitly:
+
+```csharp
+entity.Property(e => e.TenantId).HasColumnName("tenant_id");
+```
+
+See [#5351](https://github.com/JasperFx/marten/issues/5351). A store-wide rebuild is unaffected.
+:::
+
 ## How It Works
 
 Under the hood, EF Core projections:
