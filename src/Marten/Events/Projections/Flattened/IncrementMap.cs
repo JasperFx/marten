@@ -29,7 +29,9 @@ internal class IncrementMap: IColumnMap
 
     public string ToInsertExpression(Table table)
     {
-        return "0";
+        // The creating event counts: after one event the column reads 1, not 0. Polecat, Fisher and
+        // the lifted Weasel.Storage DSL all insert 1; Marten's 0 was an off-by-one (marten#5341).
+        return "1";
     }
 
 }
