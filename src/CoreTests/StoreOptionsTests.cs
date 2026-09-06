@@ -30,7 +30,9 @@ public class StoreOptionsTests
     [Fact]
     public void STJ_is_the_default_serializer()
     {
-        new StoreOptions().Serializer().ShouldBeOfType<SystemTextJsonSerializer>();
+        // Qualified since Weasel 9.30.0 lifted an STJ serializer of the same simple name into
+        // Weasel.Core (weasel#559). Marten's is the one that has to be the default.
+        new StoreOptions().Serializer().ShouldBeOfType<Marten.Services.SystemTextJsonSerializer>();
     }
 
     [Fact]

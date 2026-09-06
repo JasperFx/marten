@@ -22,8 +22,10 @@ public class Bug_2465_make_event_serialization_strategy_be_lazy : BugIntegration
             o.Events.AddEventType<TestEvent>();
 
             // If this is set before adding the events works fine
+            // Qualified since Weasel 9.30.0 lifted an STJ serializer of the same simple name into
+            // Weasel.Core (weasel#559); this test is about Marten's.
             o.Serializer(
-                new SystemTextJsonSerializer { EnumStorage = EnumStorage.AsString });
+                new Marten.Services.SystemTextJsonSerializer { EnumStorage = EnumStorage.AsString });
         });
         await using var session = theStore.LightweightSession();
         var @event = new TestEvent()

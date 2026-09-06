@@ -841,7 +841,14 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         Casing casing = Casing.Default,
         Action<JsonSerializerOptions>? configure = null)
     {
-        var serializer = new SystemTextJsonSerializer(options) { EnumStorage = enumStorage, Casing = casing, };
+        // Fully qualified because Weasel 9.30.0 lifted the STJ serializer shared by Polecat and
+        // Fisher into Weasel.Core under the same simple name (weasel#559). Marten's own
+        // SystemTextJsonSerializer is public API with Marten-specific behaviour, so it stays the one
+        // this method builds.
+        var serializer = new Marten.Services.SystemTextJsonSerializer(options)
+        {
+            EnumStorage = enumStorage, Casing = casing,
+        };
 
         if (configure is not null)
             serializer.Configure(configure);
