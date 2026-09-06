@@ -303,6 +303,16 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         builder.AppendParameter(innerValue);
         builder.Append(" and nk.is_archived = false");
 
+        // #5344: archival is a property of the *stream*, and nothing on the write side copies it
+        // onto the lookup row -- ArchiveStream() and the Archived event both go through
+        // mt_archive_stream, which has never touched mt_natural_key_X. Reading the flag off the
+        // stream we are already joined to is what Fisher does, and it needs no schema change, no
+        // migration of existing lookup tables, and covers every route into the archive (the explicit
+        // call, the Archived marker event, and the daemon) with one predicate. nk.is_archived above
+        // is kept because it is genuinely maintained under UseArchivedStreamPartitioning, where the
+        // cascading FK moves the lookup row along with its stream.
+        builder.Append(" and s.is_archived = false");
+
         if (_isConjoined && !_isGlobal)
         {
             builder.Append(" and s.tenant_id = ");

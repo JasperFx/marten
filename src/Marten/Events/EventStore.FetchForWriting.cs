@@ -259,15 +259,26 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
     internal IAggregateFetchPlan<TDoc, TId> FindFetchPlan<TDoc, TId>() where TDoc : class where TId : notnull
     {
-        if (typeof(TId) == typeof(Guid))
+        var options = ((IMartenSession)_session).Options;
+
+        // #5344: only assert the store's stream identity when TId is actually being used to address
+        // a *stream*. A [NaturalKey] whose type happens to be Guid or string is not a stream id, and
+        // asserting here refused a primitive `string` natural key on a Guid-identity store outright
+        // ("This Marten event store is configured to identify streams with Guids") before any
+        // planner got a look at it. A wrapped natural key never hit this because it is neither Guid
+        // nor string, which is why only the primitive case was broken.
+        if (!IsNaturalKeyIdentity<TDoc, TId>(options))
         {
-            ((IMartenSession)_session).Options.EventGraph.EnsureAsGuidStorage(_session);
+            if (typeof(TId) == typeof(Guid))
+            {
+                options.EventGraph.EnsureAsGuidStorage(_session);
+            }
+            else if (typeof(TId) == typeof(string))
+            {
+                options.EventGraph.EnsureAsStringStorage(_session);
+            }
+            // else: natural key type — event storage initialization deferred to the plan
         }
-        else if (typeof(TId) == typeof(string))
-        {
-            ((IMartenSession)_session).Options.EventGraph.EnsureAsStringStorage(_session);
-        }
-        // else: natural key type — event storage initialization deferred to the plan
 
         // Use (TDoc, TId) as cache key to support both stream id and natural key lookups
         var cacheKey = new AggregateFetchKey(typeof(TDoc), typeof(TId));
@@ -276,7 +287,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
             return (IAggregateFetchPlan<TDoc, TId>)stored;
         }
 
-        var plan = determineFetchPlan<TDoc, TId>(((IMartenSession)_session).Options);
+        var plan = determineFetchPlan<TDoc, TId>(options);
 
         _fetchStrategies = _fetchStrategies.AddOrUpdate(cacheKey, plan);
 
@@ -285,9 +296,12 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
     private IAggregateFetchPlan<TDoc, TId> determineFetchPlan<TDoc, TId>(StoreOptions options) where TDoc : class where TId : notnull
     {
-        // For natural key types (not Guid/string), try natural key planners first
-        // before attempting the cast to IEventIdentityStrategy<TId>
-        if (typeof(TId) != typeof(Guid) && typeof(TId) != typeof(string))
+        // For natural key types, try natural key planners first before attempting the cast to
+        // IEventIdentityStrategy<TId>. #5344: a natural key is usually a wrapper (neither Guid nor
+        // string), but it can also be a primitive `string` on a Guid-identity store — in which case
+        // it still is not a stream identifier, so it belongs on this branch too.
+        if (IsNaturalKeyIdentity<TDoc, TId>(options) ||
+            (typeof(TId) != typeof(Guid) && typeof(TId) != typeof(string)))
         {
             // Auto-discover natural key from [NaturalKey] attribute on the aggregate type
             // BEFORE iterating planners, so the projection is registered and available
@@ -351,6 +365,45 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     }
 
     /// <summary>
+    /// #5344: is <typeparamref name="TId"/> the aggregate's <em>natural</em> key rather than its
+    /// stream identifier?
+    /// </summary>
+    /// <remarks>
+    /// The store's own stream identity always wins, so on a string-identity store
+    /// <c>FetchLatest&lt;T, string&gt;(value)</c> addresses the stream and never the natural key,
+    /// exactly as it did before. What this adds is the other half: on a Guid-identity store a
+    /// <c>string</c> cannot possibly name a stream, so a <c>[NaturalKey] string</c> is the only
+    /// thing it can mean. Falls back to probing the attribute directly because the natural key
+    /// projection may not be registered yet — <see cref="tryAutoRegisterNaturalKeyProjection{TDoc,TId}"/>
+    /// runs later, inside <see cref="determineFetchPlan{TDoc,TId}"/>.
+    /// </remarks>
+    internal static bool IsNaturalKeyIdentity<TDoc, TId>(StoreOptions options)
+        where TDoc : class where TId : notnull
+    {
+        var streamIdentityType = options.EventGraph.StreamIdentity == StreamIdentity.AsGuid
+            ? typeof(Guid)
+            : typeof(string);
+
+        if (typeof(TId) == streamIdentityType)
+        {
+            return false;
+        }
+
+        if (options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
+        {
+            return projection.NaturalKeyDefinition?.OuterType == typeof(TId);
+        }
+
+        return FindNaturalKeyProperty<TDoc>()?.PropertyType == typeof(TId);
+    }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2072",
+        Justification = "Aggregate types reaching the fetch planners are preserved at the projection-registration boundary.")]
+    private static PropertyInfo? FindNaturalKeyProperty<TDoc>() =>
+        typeof(TDoc).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .FirstOrDefault(p => p.GetCustomAttribute<NaturalKeyAttribute>() != null);
+
+    /// <summary>
     /// Auto-discovers a natural key from [NaturalKey] attribute on the aggregate type
     /// and registers an Inline snapshot projection if no projection exists yet.
     /// This enables FetchForWriting with natural keys on self-aggregating types
@@ -366,8 +419,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
             return false;
         }
 
-        var naturalKeyProp = typeof(TDoc).GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .FirstOrDefault(p => p.GetCustomAttribute<NaturalKeyAttribute>() != null);
+        var naturalKeyProp = FindNaturalKeyProperty<TDoc>();
 
         if (naturalKeyProp == null || naturalKeyProp.PropertyType != typeof(TId))
         {
