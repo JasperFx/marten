@@ -1,6 +1,8 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Marten.Internal.CompiledQueries;
 
@@ -23,6 +25,27 @@ internal class SimpleParameterFinder<T>: IParameterFinder
     public bool Matches(Type memberType)
     {
         return memberType == DotNetType;
+    }
+
+    // #5328: both T and T[] are closed here at compile time, so Native AOT has native code for
+    // PropertyQueryMember<T> / PropertyQueryMember<T[]> and never needs MakeGenericType.
+    public IQueryMember? BuildQueryMember(MemberInfo member, Type memberType)
+    {
+        if (memberType == typeof(T))
+        {
+            return member is PropertyInfo property
+                ? new PropertyQueryMember<T>(property)
+                : new FieldQueryMember<T>((FieldInfo)member);
+        }
+
+        if (memberType == typeof(T[]))
+        {
+            return member is PropertyInfo arrayProperty
+                ? new PropertyQueryMember<T[]>(arrayProperty)
+                : new FieldQueryMember<T[]>((FieldInfo)member);
+        }
+
+        return null;
     }
 
     public bool AreValuesUnique(object query, CompiledQueryPlan plan)

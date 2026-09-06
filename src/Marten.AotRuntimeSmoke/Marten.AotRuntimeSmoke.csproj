@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <!--
+        RUNTIME AOT smoke test (marten#5328).
+
+        src/Marten.AotSmoke is a BUILD-time gate: it promotes the IL analyzer warnings to
+        errors and never opens a connection. #5328 is exactly the failure that gate cannot
+        see — a native binary that publishes analyzer-clean and then throws on the first
+        document READ, because MakeGenericType + Activator.CreateInstance over a user
+        document type has no native code to run:
+
+            MissingMethodException: No parameterless constructor defined for type
+            'Marten.Internal.Sessions.QuerySession+StorageFinder`1[Praktijk]'
+
+        This project closes that gap. It PUBLISHES natively and EXECUTES against a real
+        PostgreSQL, exercising every read path a document consumer actually takes:
+        LoadAsync, LINQ (literal, captured variable, StartsWith + OrderBy, IsOneOf),
+        raw SQL, aggregates, and a source-generated compiled query. Any regression that
+        reintroduces runtime code generation on a read path fails here with a non-zero exit,
+        not with a clean build and a broken app.
+
+        Deliberately NOT a test project — no xUnit, no test discovery. `./build.sh
+        test-aot-runtime` publishes it for the host RID and runs the binary.
+
+        Single-TFM (net10.0) on purpose: this gate is about the native runtime, not about
+        TFM coverage, and one ILC compile per CI run is enough to pay for.
+        -->
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <IsAotCompatible>true</IsAotCompatible>
+        <PublishAot>true</PublishAot>
+        <TrimMode>full</TrimMode>
+        <InvariantGlobalization>true</InvariantGlobalization>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Marten reflects over the document type to find its Id member, so the consumer's own
+             assembly has to survive trimming. This is step 1 of the documented AOT recipe
+             (docs/configuration/aot-publishing.md) and the reporter in #5328 had it in place. -->
+        <TrimmerRootAssembly Include="Marten.AotRuntimeSmoke" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+        <!-- The consumer-facing opt-in shape for source-generated compiled queries: analyzer
+             reference + [assembly: JasperFxAssembly]. Same wiring as src/CompiledQueryTests. -->
+        <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+</Project>

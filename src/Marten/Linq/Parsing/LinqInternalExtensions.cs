@@ -397,6 +397,28 @@ public static class LinqInternalExtensions
                 $"Marten cannot reduce the expression '{expression}' to a constant because it references the free parameter '{p.Name}' of type '{p.Type.Name}'. This usually indicates a Linq parser issue at the call site.");
         }
 
+        // #5328: the overwhelmingly common shapes here are a closure field read
+        // (`where x.Name == localVariable`), a compiled query's own property
+        // (`q => q.Where(x => x.Name == QueryProperty)`), or a static member. Walking those
+        // by reflection is both faster than emitting a lambda and the only option under
+        // Native AOT, where FastExpressionCompiler falls back to Reflection.Emit and throws
+        // PlatformNotSupportedException. Anything more exotic still goes through FEC.
+        try
+        {
+            if (TryEvaluateWithoutCompiling(expression, out var evaluated))
+            {
+                return Expression.Constant(evaluated, expression.Type);
+            }
+        }
+        catch (Exception e)
+        {
+            // Same contract as the FastExpressionCompiler path below: a value that cannot be read
+            // (a null receiver in `where x.Id == someNullObject.Id`, a throwing getter) is a bad
+            // Linq expression, not an internal reflection failure.
+            throw new BadLinqExpressionException(
+                "Error while trying to find a value for the Linq expression " + expression, e);
+        }
+
         var lambdaWithoutParameters = Expression.Lambda<Func<object>>(Expression.Convert(expression, typeof(object)));
         var compiledLambda = FastExpressionCompiler.ExpressionCompiler.CompileFast(lambdaWithoutParameters);
 
@@ -411,6 +433,125 @@ public static class LinqInternalExtensions
             throw new BadLinqExpressionException(
                 "Error while trying to find a value for the Linq expression " + expression, e);
         }
+    }
+
+    /// <summary>
+    ///     Evaluate the closed expression shapes Marten sees most often — constants, field and
+    ///     property reads (instance or static), boxing/upcast conversions, and array literals of
+    ///     those — without compiling a delegate. Returns false for anything else so the caller can
+    ///     fall back to <c>FastExpressionCompiler</c>.
+    /// </summary>
+    /// <remarks>
+    ///     #5328: <c>CompileFast</c> is Reflection.Emit under the covers, which Native AOT cannot
+    ///     do. Every `where x.Member == captured` clause and every compiled-query parameter lands
+    ///     here, so without this the first non-literal filter throws
+    ///     <c>PlatformNotSupportedException: Dynamic code generation is not supported on this
+    ///     platform</c>. Reflective member reads are AOT-safe as long as the declaring type
+    ///     survives trimming, which it does for the consumer's own query and closure types.
+    /// </remarks>
+    internal static bool TryEvaluateWithoutCompiling(Expression expression, out object? value)
+    {
+        switch (expression)
+        {
+            case ConstantExpression constant:
+                value = constant.Value;
+                return true;
+
+            case MemberExpression { Member: FieldInfo field } member:
+            {
+                if (field.IsStatic)
+                {
+                    value = field.GetValue(null);
+                    return true;
+                }
+
+                if (member.Expression == null || !TryEvaluateWithoutCompiling(member.Expression, out var target))
+                {
+                    value = null;
+                    return false;
+                }
+
+                value = field.GetValue(target);
+                return true;
+            }
+
+            case MemberExpression { Member: PropertyInfo property } member:
+            {
+                if (!property.CanRead || property.GetIndexParameters().Length > 0)
+                {
+                    value = null;
+                    return false;
+                }
+
+                if (property.GetMethod is { IsStatic: true })
+                {
+                    value = property.GetValue(null);
+                    return true;
+                }
+
+                if (member.Expression == null || !TryEvaluateWithoutCompiling(member.Expression, out var target))
+                {
+                    value = null;
+                    return false;
+                }
+
+                value = property.GetValue(target);
+                return true;
+            }
+
+            // Only the conversions that do not change the underlying value: boxing, upcasts, and
+            // Nullable<T> wrapping. Numeric conversions are left to FEC so we never silently
+            // change a value's representation here.
+            case UnaryExpression
+            {
+                NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked or ExpressionType.Quote or
+                ExpressionType.TypeAs
+            } unary when IsValuePreservingConversion(unary):
+                return TryEvaluateWithoutCompiling(unary.Operand, out value);
+
+            case NewArrayExpression { NodeType: ExpressionType.NewArrayInit } array:
+            {
+                var elementType = array.Type.GetElementType();
+                if (elementType == null)
+                {
+                    value = null;
+                    return false;
+                }
+
+                var values = Array.CreateInstance(elementType, array.Expressions.Count);
+                for (var i = 0; i < array.Expressions.Count; i++)
+                {
+                    if (!TryEvaluateWithoutCompiling(array.Expressions[i], out var element))
+                    {
+                        value = null;
+                        return false;
+                    }
+
+                    values.SetValue(element, i);
+                }
+
+                value = values;
+                return true;
+            }
+
+            default:
+                value = null;
+                return false;
+        }
+    }
+
+    private static bool IsValuePreservingConversion(UnaryExpression unary)
+    {
+        if (unary.Method != null)
+        {
+            // A user-defined conversion operator; let FEC run it.
+            return false;
+        }
+
+        var from = unary.Operand.Type;
+        var to = unary.Type;
+
+        return to.IsAssignableFrom(from) || Nullable.GetUnderlyingType(to) == from;
     }
 
     /// <summary>

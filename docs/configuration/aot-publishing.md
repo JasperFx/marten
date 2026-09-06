@@ -201,6 +201,12 @@ Every warning carries the source location of the offending call. The fix path de
 
 For a baseline confidence check, Marten ships [`src/Marten.AotSmoke/`](https://github.com/JasperFx/marten/tree/master/src/Marten.AotSmoke) — a tiny app that consumes the AOT-clean cross-section of Marten's surface with all the IL warning codes promoted to errors. Mirror its csproj setup in your own app, scoped to the Marten surface you actually use.
 
+::: warning A clean publish is necessary, not sufficient
+Analyzer cleanliness and runtime correctness are different properties. A `MakeGenericType` call that the analyzer has been told to trust still needs the closed instantiation to exist in the native image, and if it does not you get a clean publish followed by `MissingMethodException` on the first call — which is exactly how [#5328](https://github.com/JasperFx/marten/issues/5328) reached a release.
+
+Marten now also ships [`src/Marten.AotRuntimeSmoke/`](https://github.com/JasperFx/marten/tree/master/src/Marten.AotRuntimeSmoke), which publishes natively and *runs* every document read path against a real PostgreSQL in CI. Doing the same for your own app — publish AOT, then exercise your real queries against a real database once in your pipeline — is worth more than any amount of analyzer output.
+:::
+
 ## Troubleshooting
 
 ### "No source-generated dispatcher found for aggregate `X`"
@@ -220,13 +226,27 @@ The source generator skips base types it doesn't recognize. If you wrote a custo
 
 ### LINQ query throwing in AOT mode
 
-Marten's runtime LINQ path uses expression-tree walking that the trim analyzer flags. The supported AOT pattern is:
+`LoadAsync`, LINQ, raw SQL and compiled queries all run from a native binary as of the fix for [#5328](https://github.com/JasperFx/marten/issues/5328). Before that release, the first *read* of any kind threw even though the publish was clean:
 
-1. Wrap the query in an `ICompiledQuery<TDoc, TOut>`.
-2. Reference `Marten.SourceGenerator` and add `[assembly: JasperFx.JasperFxAssembly]`.
-3. Call the compiled-query handler via `session.QueryAsync(compiledQueryInstance)`.
+```
+MissingMethodException: No parameterless constructor defined for type
+'Marten.Internal.Sessions.QuerySession+StorageFinder`1[MyDocument]'
+```
 
-The compiled-query path bypasses the LINQ-to-SQL translator at runtime and dispatches directly through the source-generated handler. See [`Marten.SourceGenerator/README.md`](https://github.com/JasperFx/marten/blob/master/src/Marten.SourceGenerator/README.md) for the full surface.
+```
+PlatformNotSupportedException: Dynamic code generation is not supported on this platform.
+   at FastExpressionCompiler.ExpressionCompiler.CompileFast[R](...)
+   at Marten.Linq.Parsing.LinqInternalExtensions.ReduceToConstant(Expression)
+```
+
+If you see either of those, you are on an older Marten — upgrade rather than working around it.
+
+Two shapes still need runtime code generation and therefore still need a JIT:
+
+- **A compiled query with an `enum`-typed parameter.** Marten closes `PropertyQueryMember<T>` over each supported parameter type ahead of time, but it cannot do that for an enum declared in your assembly. Store the value as its underlying type on the query object if you need this under AOT.
+- **A `where` clause whose value comes from a method call** — `x => x.Name == BuildName()`. Constants, captured locals, instance and static members, member chains and array literals are all evaluated reflectively; anything else falls back to expression compilation. Hoist the call into a local before the query.
+
+Compiled queries remain worth using under AOT for their own reasons — reference `Marten.SourceGenerator`, add `[assembly: JasperFx.JasperFxAssembly]`, and call `session.QueryAsync(compiledQueryInstance)` to dispatch through a source-generated handler instead of parsing the expression tree on every call. See [`Marten.SourceGenerator/README.md`](https://github.com/JasperFx/marten/blob/master/src/Marten.SourceGenerator/README.md) for the full surface. They are no longer a *workaround* for LINQ, though.
 
 ### Secondary store throws `MissingMethodException` at boot
 

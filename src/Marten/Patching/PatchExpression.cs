@@ -29,7 +29,7 @@ internal class PatchExpression<T>: IPatchExpression<T>
     public PatchExpression(ISqlFragment filter, DocumentSessionBase session)
     {
         _session = session;
-        var storage = _session.StorageFor(typeof(T));
+        var storage = _session.StorageFor<T>();
         var operation = new PatchOperation(session, PatchFunction, storage, _patchSet, _session.Serializer);
         if (filter != null)
         {
@@ -45,7 +45,7 @@ internal class PatchExpression<T>: IPatchExpression<T>
     public PatchExpression(Expression<Func<T, bool>> filterExpression, DocumentSessionBase session)
     {
         _session = session;
-        var storage = _session.StorageFor(typeof(T));
+        var storage = _session.StorageFor<T>();
         var operation = new PatchOperation(session, PatchFunction, storage, _patchSet, _session.Serializer);
         if (filterExpression != null)
         {

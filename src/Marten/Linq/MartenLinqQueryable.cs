@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
@@ -33,6 +34,11 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
 {
     public MartenLinqQueryable(QuerySession session, MartenLinqQueryProvider provider, Expression expression)
     {
+        // #5328: the LINQ pipeline resolves document storage from CollectionUsage.ElementType,
+        // i.e. a runtime Type. This is the generic entry point every LINQ query passes through,
+        // so it is where the closed instantiation is proven to exist for Native AOT.
+        DocumentStorageResolvers.Register<T>();
+
         Provider = provider;
         Session = session;
         MartenProvider = provider;
@@ -41,6 +47,8 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
 
     public MartenLinqQueryable(QuerySession session)
     {
+        DocumentStorageResolvers.Register<T>();
+
         Session = session;
         MartenProvider = new MartenLinqQueryProvider(session, typeof(T));
         Provider = MartenProvider;

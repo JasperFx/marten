@@ -15,6 +15,7 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using StreamState = JasperFx.Events.StreamState;
 using Marten.Exceptions;
+using Marten.Internal;
 using Marten.Schema;
 using Weasel.Core;
 using Weasel.Core.Migrations;
@@ -153,6 +154,12 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
         {
             return (DocumentMappingBuilder<T>)builder;
         }
+
+        // #5328: Schema.For<T>() is the earliest generic mention of a document type, so it is
+        // the widest net for the AOT Type -> StorageFor<T>() bridge. Covers the Type-keyed
+        // admin paths (document cleaner, TruncateTable, DeleteAllForTenant) that a read or
+        // write of T may never have warmed.
+        DocumentStorageResolvers.Register<T>();
 
         builder = new DocumentMappingBuilder<T>();
         _builders.Swap(d => d.AddOrUpdate(typeof(T), builder));

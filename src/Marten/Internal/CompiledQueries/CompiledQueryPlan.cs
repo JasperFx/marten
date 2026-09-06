@@ -96,15 +96,9 @@ public class CompiledQueryPlan : ICommandBuilder
                 // Arrays like string[], int[], Guid[] etc. whose element type has a registered
                 // parameter finder should be treated as query parameters, NOT as include members.
                 // This check must come before the IList<> check since arrays implement IList<T>.
-                if (member is PropertyInfo)
+                if (member is PropertyInfo or FieldInfo)
                 {
-                    var queryMember = typeof(PropertyQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType);
-                    QueryMembers.Add(queryMember);
-                }
-                else if (member is FieldInfo)
-                {
-                    var queryMember = typeof(FieldQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType);
-                    QueryMembers.Add(queryMember);
+                    QueryMembers.Add(buildQueryMember(member, memberType));
                 }
             }
             else if (memberType.Closes(typeof(IList<>)))
@@ -119,17 +113,35 @@ public class CompiledQueryPlan : ICommandBuilder
             {
                 InvalidMembers.Add(member);
             }
-            else if (member is PropertyInfo)
+            else if (member is PropertyInfo or FieldInfo)
             {
-                var queryMember = typeof(PropertyQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType);
-                QueryMembers.Add(queryMember);
-            }
-            else if (member is FieldInfo)
-            {
-                var queryMember = typeof(FieldQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType);
-                QueryMembers.Add(queryMember);
+                QueryMembers.Add(buildQueryMember(member, memberType));
             }
         }
+    }
+
+    /// <summary>
+    ///     #5328: ask the registered <see cref="IParameterFinder" />s to build the member first.
+    ///     Each finder is already closed over its own type (<c>SimpleParameterFinder&lt;string&gt;</c>
+    ///     and friends), so the resulting <c>PropertyQueryMember&lt;T&gt;</c> /
+    ///     <c>FieldQueryMember&lt;T&gt;</c> instantiations are statically reachable and Native AOT
+    ///     has native code for them. Only enum-valued members fall through to the reflective
+    ///     <c>CloseAndBuildAs</c>, which needs a JIT.
+    /// </summary>
+    private static IQueryMember buildQueryMember(MemberInfo member, Type memberType)
+    {
+        foreach (var finder in QueryCompiler.Finders)
+        {
+            var queryMember = finder.BuildQueryMember(member, memberType);
+            if (queryMember != null)
+            {
+                return queryMember;
+            }
+        }
+
+        return member is PropertyInfo
+            ? typeof(PropertyQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType)
+            : typeof(FieldQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType);
     }
 
     private IEnumerable<MemberInfo> findMembers()

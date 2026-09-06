@@ -1,6 +1,8 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.CompiledQueries;
@@ -40,5 +42,17 @@ internal class EnumParameterFinder: IParameterFinder
     {
         var enumValues = type.GetEnumValues();
         return new Queue<object>(enumValues.OfType<object>());
+    }
+
+    /// <summary>
+    ///     Enum members are the one shape this finder cannot close statically — the enum type comes
+    ///     from the consumer's compiled query. Returning null routes <c>CompiledQueryPlan</c> to its
+    ///     reflective fallback, which is correct anywhere a JIT is available; under Native AOT an
+    ///     enum-valued compiled query member still needs the consumer to keep that instantiation
+    ///     reachable.
+    /// </summary>
+    public IQueryMember? BuildQueryMember(MemberInfo member, Type memberType)
+    {
+        return null;
     }
 }

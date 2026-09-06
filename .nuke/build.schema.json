@@ -45,6 +45,7 @@
         "RecordBenchmarks",
         "Restore",
         "Test",
+        "TestAotRuntime",
         "TestAspnetcore",
         "TestBaseLib",
         "TestCompiledQueries",

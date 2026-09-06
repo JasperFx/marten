@@ -1,6 +1,8 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Marten.Internal.CompiledQueries;
 
@@ -33,6 +35,19 @@ internal class ArrayParameterFinder<TElement> : IParameterFinder
     public bool Matches(Type memberType)
     {
         return memberType == typeof(TElement[]);
+    }
+
+    // #5328: see IParameterFinder.BuildQueryMember — closed at compile time for Native AOT.
+    public IQueryMember? BuildQueryMember(MemberInfo member, Type memberType)
+    {
+        if (memberType != typeof(TElement[]))
+        {
+            return null;
+        }
+
+        return member is PropertyInfo property
+            ? new PropertyQueryMember<TElement[]>(property)
+            : new FieldQueryMember<TElement[]>((FieldInfo)member);
     }
 
     public bool AreValuesUnique(object query, CompiledQueryPlan plan)

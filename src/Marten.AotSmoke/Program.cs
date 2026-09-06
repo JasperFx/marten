@@ -44,8 +44,15 @@
 //   - Connecting / querying / persisting anything — this is a build-time
 //     analyzer test, not a runtime test. The connection string is a
 //     placeholder; the host is built but never actually opens a connection.
+//     src/Marten.AotRuntimeSmoke is the counterpart that DOES connect and
+//     query from a native binary. It exists because this project is
+//     structurally blind to #5328: reflective generic construction over a
+//     user document type analyzes clean here and throws
+//     MissingMethodException on the first read. Neither gate replaces the
+//     other.
 //   - Compiled queries — Marten.SourceGenerator covers that surface and has
-//     its own analyzer-level tests in Marten.SourceGenerator.Tests.
+//     its own analyzer-level tests in Marten.SourceGenerator.Tests, and
+//     Marten.AotRuntimeSmoke runs one natively (#5328).
 //   - JasperFx.RuntimeCompiler / services.AddRuntimeCompilation() — Marten 9
 //     retired that path (#4454 / #4461). This smoke deliberately does not
 //     pull it back in.

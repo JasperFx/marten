@@ -396,6 +396,58 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  # The RUNTIME Native AOT gate (#5328). Deliberately its OWN job rather than a matrix entry:
+  # it does not compile a test project and it does not run through the supervisor, it publishes a
+  # native binary with ILC and executes it. Two things make that worth a separate runner —
+  #
+  #   1. The ILC compile is minutes of CPU that no other job needs, so folding it into the matrix
+  #      shape would mean either a bespoke branch in every step or paying it 30 times over.
+  #   2. It is the only job here that can fail the way #5328 failed: a build that analyzes clean,
+  #      publishes clean, and then throws MissingMethodException on the first document read
+  #      because a generic instantiation only exists when a JIT can make one. The Marten.AotSmoke
+  #      project (built by every `compile-project` job) covers the analyzer axis and is structurally
+  #      blind to this one — it never opens a connection.
+  aot-runtime:
+    name: AOT runtime (net10, PGlatest, native)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:latest
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: marten_testing
+          NAMEDATALEN: 150
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --user postgres
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      # ILC shells out to the platform linker and toolchain; the ubuntu runner image has clang
+      # but not the zlib/objcopy pieces a native link needs.
+      - name: Install the native toolchain
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+        shell: bash
+
+      - name: publish natively and run
+        run: ./build.sh test-aot-runtime
+        shell: bash
+
   # The roll-up. Per-job counts answer "is this job flaky"; only the aggregate answers "which
   # suites are costing us", which is the question that decides where the next fix goes.
   flakiness:

@@ -30,7 +30,12 @@ public partial class QuerySession
             return storage;
         }
 
-        storage = typeof(StorageFinder<>).CloseAndBuildAs<IStorageFinder>(documentType).Find(this);
+        // #5328: prefer the AOT-safe registry. Every document type passes through a generic
+        // entry point (Query<T>, Include<TInclude>, Store<T>, ...) before it can reach here, and
+        // that entry point registers the closed-generic lookup. Falling back to the reflective
+        // shim keeps behaviour identical anywhere a JIT is available.
+        storage = DocumentStorageResolvers.TryResolve(documentType, this)
+                  ?? typeof(StorageFinder<>).CloseAndBuildAs<IStorageFinder>(documentType).Find(this);
         _byType = _byType.AddOrUpdate(documentType, storage);
 
         return storage;
@@ -64,6 +69,10 @@ public partial class QuerySession
         {
             return (IDocumentStorage<T>)storage;
         }
+
+        // #5328: this call site proves the closed instantiation exists, which is exactly what
+        // the Type-keyed StorageFor(Type) overload needs under Native AOT.
+        DocumentStorageResolvers.Register<T>();
 
         return selectStorage(_providers.StorageFor<T>());
     }

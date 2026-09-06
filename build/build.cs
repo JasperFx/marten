@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -48,7 +49,8 @@ partial class Build : NukeBuild
         .DependsOn(TestContainerScopedProjections)
         .DependsOn(TestStress)
         .DependsOn(TestCompiledQueries)
-        .DependsOn(TestSourceGenerator);
+        .DependsOn(TestSourceGenerator)
+        .DependsOn(TestAotRuntime);
 
     Target TestExtensions => _ => _
         .DependsOn(TestNodaTime)
@@ -251,6 +253,55 @@ partial class Build : NukeBuild
     Target TestCompiledQueries => _ => _
         .ProceedAfterFailure()
         .Executes(() => RunTestProject("src/CompiledQueryTests/CompiledQueryTests.csproj"));
+
+    /// <summary>
+    /// The RUNTIME Native AOT gate (#5328). Not an xUnit project: it publishes
+    /// src/Marten.AotRuntimeSmoke natively for the host RID and executes the binary against the
+    /// ordinary test database, so a read path that only breaks once the JIT is gone fails here.
+    /// src/Marten.AotSmoke stays the build-time analyzer gate; it cannot see this class of defect
+    /// because the offending code analyzes clean and throws one line later.
+    ///
+    /// Needs a native toolchain for the host platform (clang + zlib on Linux; Xcode command line
+    /// tools on macOS; the VS C++ workload on Windows) — see the aot-runtime job in tests.yml.
+    /// </summary>
+    Target TestAotRuntime => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            const string projectPath = "src/Marten.AotRuntimeSmoke/Marten.AotRuntimeSmoke.csproj";
+            const string framework = "net10.0";
+            var rid = RuntimeInformation.RuntimeIdentifier;
+
+            Log.Information("Publishing {Project} natively for {Rid} — the ILC compile takes a few minutes",
+                projectPath, rid);
+
+            DotNetPublish(s => s
+                .SetProject(projectPath)
+                .SetConfiguration(Configuration)
+                .SetFramework(framework)
+                .SetRuntime(rid)
+                .SetSelfContained(true));
+
+            var executable = RootDirectory / "src" / "Marten.AotRuntimeSmoke" / "bin" / Configuration / framework /
+                             rid / "publish" / (OperatingSystem.IsWindows()
+                                 ? "Marten.AotRuntimeSmoke.exe"
+                                 : "Marten.AotRuntimeSmoke");
+
+            if (!File.Exists(executable))
+            {
+                throw new InvalidOperationException(
+                    $"The native binary was never produced at {executable}. Either PublishAot did not run for this RID, or the native toolchain is missing — this target needs clang + zlib on Linux, Xcode command line tools on macOS, or the VS C++ workload on Windows.");
+            }
+
+            var process = ProcessTasks.StartProcess(executable, workingDirectory: RootDirectory);
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+            {
+                throw new InvalidOperationException(
+                    "The Marten AOT runtime smoke failed. A document read path needs runtime code generation again — see the output above for which one.");
+            }
+        });
 
     /// <summary>
     /// Primary/standby read routing (~2 tests). Needs the streaming-replication pair from

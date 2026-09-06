@@ -16,7 +16,9 @@ internal static class ProviderGraphExtensions
 {
     internal static IDocumentStorage StorageFor(this IProviderGraph providers, Type documentType)
     {
-        return typeof(StorageFinder<>).CloseAndBuildAs<IStorageFinder>(documentType).Find(providers);
+        // #5328: registry first so Native AOT never needs MakeGenericType here.
+        return DocumentStorageResolvers.TryResolve(documentType, providers)
+               ?? typeof(StorageFinder<>).CloseAndBuildAs<IStorageFinder>(documentType).Find(providers);
     }
 
     private interface IStorageFinder
