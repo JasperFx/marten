@@ -57,23 +57,13 @@ public abstract partial class DocumentSessionBase
             await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
         }
 
-        // #5343: Marten declares IMessageBatch : IMessageSink, IChangeListener -- so it promises BOTH
-        // commit hooks -- but only ever called AfterCommitAsync below. The before hook is the half a
-        // transactional outbox actually needs, because it is the only point at which an outbox can
-        // queue its own operations and have them land in the SAME UpdateBatch, and therefore the same
-        // transaction, as the events that produced the messages. Hence the placement: immediately
-        // after the session listeners' BeforeSaveChangesAsync and before the UpdateBatch is built
-        // from _workTracker, which is exactly the contract those listeners already get.
-        //
-        // Found by the jasperfx#763 ProjectionSideEffectCompliance suite, whose commit-boundary facts
-        // observe what the rest of the database can see at each hook rather than merely that the
-        // hooks ran. Wolverine's MartenToWolverineMessageBatch.BeforeCommitAsync is currently a
-        // no-op, so nothing downstream changes behaviour on this fix today.
-        if (_messageBatch != null)
-        {
-            await _messageBatch.BeforeCommitAsync(this, _workTracker, token).ConfigureAwait(false);
-        }
-
+        // #5343 wired up IMessageBatch.BeforeCommitAsync, which Marten promised (IMessageBatch :
+        // IMessageSink, IChangeListener) but never called. #5353 moved WHERE it is called from. It
+        // used to run here, before the UpdateBatch was built and before the transaction was even
+        // open, so it fired for units of work that went on to fail -- and there is no rollback hook
+        // on IChangeListener to take it back. The batch is now enlisted as an ITransactionParticipant
+        // in StartMessageBatch below, which runs it after every operation has succeeded and
+        // immediately before the COMMIT. See MessageBatchTransactionParticipant.
         var batch = new UpdateBatch(_workTracker.AllOperations);
 
         await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
@@ -84,6 +74,7 @@ public abstract partial class DocumentSessionBase
             // This is important, we need to throw this away on every commit and start w/ a fresh
             // one on new transactions
             _messageBatch = null;
+            discardMessageBatchParticipant();
         }
 
 
@@ -105,10 +96,30 @@ public abstract partial class DocumentSessionBase
     }
 
     private IMessageBatch? _messageBatch;
+    private MessageBatchTransactionParticipant? _messageBatchParticipant;
+
     internal virtual async ValueTask<IMessageBatch> StartMessageBatch()
     {
-        _messageBatch ??= await Options.Events.MessageOutbox.CreateBatch(this).ConfigureAwait(false);
+        if (_messageBatch == null)
+        {
+            _messageBatch = await Options.Events.MessageOutbox.CreateBatch(this).ConfigureAwait(false);
+
+            // #5353: the batch's before-commit hook is a transaction participant, not something
+            // SaveChangesAsync calls on its way in. That is what keeps it off the failure path.
+            _messageBatchParticipant =
+                new MessageBatchTransactionParticipant(_messageBatch, this, () => _workTracker);
+            AddTransactionParticipant(_messageBatchParticipant);
+        }
+
         return _messageBatch;
+    }
+
+    private void discardMessageBatchParticipant()
+    {
+        if (_messageBatchParticipant == null) return;
+
+        RemoveTransactionParticipant(_messageBatchParticipant);
+        _messageBatchParticipant = null;
     }
 
     bool IStorageOperations.EnableSideEffectsOnInlineProjections => Options.Events.EnableSideEffectsOnInlineProjections;

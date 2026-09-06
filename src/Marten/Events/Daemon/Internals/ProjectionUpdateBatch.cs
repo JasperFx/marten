@@ -292,7 +292,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             return;
         }
 
-        if (_settings.AsyncListeners.Count == 0 && Listeners.Count == 0)
+        if (_settings.AsyncListeners.Count == 0 && Listeners.Count == 0 && _batch == null)
         {
             return;
         }
@@ -306,6 +306,14 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         foreach (var listener in Listeners)
         {
             await listener.AfterCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
+                .ConfigureAwait(false);
+        }
+
+        // #5353: the message batch's before hook is a transaction participant rather than a
+        // listener, so its after hook is fired here rather than falling out of the loop above.
+        if (_batch != null)
+        {
+            await _batch.AfterCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
                 .ConfigureAwait(false);
         }
     }
@@ -524,7 +532,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             }
 
             _batch = await ((IMartenSession)_session).Options.Events.MessageOutbox.CreateBatch(session).ConfigureAwait(false);
-            Listeners.Add(_batch);
+            enlistMessageBatch();
 
             return _batch;
         }
@@ -542,6 +550,25 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         var projectionSession = new ProjectionDocumentSession((DocumentStore)_session.DocumentStore, this, sessionOptions,
             ShardExecutionMode.Continuous);
         _batch = await ((IMartenSession)_session).Options.Events.MessageOutbox.CreateBatch(projectionSession).ConfigureAwait(false);
-        Listeners.Add(_batch);
+        enlistMessageBatch();
+    }
+
+    /// <summary>
+    /// #5353: the message batch is NOT an ordinary <see cref="IChangeListener" /> on this batch. It
+    /// used to be, which meant <see cref="PreUpdateAsync" /> fired its before-commit hook before a
+    /// single one of the batch's pages had been executed -- so a daemon batch that then failed had
+    /// already told its outbox the transaction was about to commit, exactly the inline-session
+    /// defect #5353 describes. As a transaction participant it runs after the pages have succeeded
+    /// and immediately before the COMMIT instead; the after-commit hook is fired explicitly from
+    /// <see cref="PostUpdateAsync" />.
+    /// </summary>
+    private void enlistMessageBatch()
+    {
+        // Preserves the gate the listener path already had: no commit hooks on a rebuild, or on a
+        // batch that carries no events.
+        if (!ShouldApplyListeners) return;
+
+        AddTransactionParticipant(new MessageBatchTransactionParticipant(_batch!, (IDocumentSession)_session,
+            () => new UnitOfWork(_pages.SelectMany(x => x.Operations))));
     }
 }
