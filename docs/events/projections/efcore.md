@@ -52,6 +52,33 @@ public class OrderDbContext : DbContext
 Entity tables defined in the DbContext are automatically migrated alongside Marten's own schema objects through [Weasel](https://weasel.jasperfx.net/). You do not need to run `dotnet ef database update` separately.
 :::
 
+### Marten emits no document table for the aggregate
+
+The `DbContext`-mapped table is the *only* table for an EF Core-backed aggregate. Marten does not
+generate a `mt_doc_<tdoc>` table for it, and none of the full-schema operations --
+`ApplyAllConfiguredChangesToDatabaseAsync()`, `AssertDatabaseMatchesConfigurationAsync()`,
+`CreateMigrationAsync()`, or the `db-apply` / `db-patch` commands -- create, assert or script one.
+
+Two things follow:
+
+- A schema built by a migration pass that does **not** register the projection still passes
+  `AssertDatabaseMatchesConfigurationAsync()` in the application that does, which is the usual
+  `AutoCreate.None` deployment shape.
+- The aggregate does **not** need an `Id` member. EF Core is happy with any primary key --
+  `[Key] public Guid OrderNumber` and friends -- and because the type never reaches Marten's
+  document conventions, neither is Marten. Identity is read from the EF Core model's primary key.
+
+```csharp
+modelBuilder.Entity<Shipment>(entity =>
+{
+    entity.ToTable("shipments");
+
+    // No "Id" anywhere -- fine for an EF Core projection aggregate
+    entity.HasKey(e => e.TrackingNumber);
+    entity.Property(e => e.TrackingNumber).HasColumnName("tracking_number");
+});
+```
+
 ## Single Stream Projections
 
 Use `EfCoreSingleStreamProjection<TDoc, TId, TDbContext>` to build an aggregate from a single event stream and persist it through EF Core.

@@ -183,7 +183,9 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
         }
 
         // This needs to be done second so that it can pick up any subclass
-        // relationships
+        // relationships. #5351: a published type backed by custom projection storage still
+        // materializes here -- PublishedTypes() is deliberately untouched -- but MappingFor
+        // marks its mapping SkipSchemaGeneration so no mt_doc_ table is emitted for it.
         foreach (var documentType in _options.Projections.AllPublishedTypes()) FindMapping(documentType);
     }
 
@@ -235,6 +237,43 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
             var explicitlyRegistered = _builders.Value.TryFind(documentType, out _);
 
             value = Build(documentType, _options);
+
+            // #5351: a type whose projection storage was substituted is not a Marten document at
+            // all -- an EF Core projection's aggregate lives in a DbContext-mapped table, and
+            // Marten never reads or writes mt_doc_<tdoc> for it. Left in schema generation it
+            // produces an empty table nothing uses, and under the ordinary AutoCreate.None
+            // deployment shape AssertDatabaseMatchesConfigurationAsync then reports that table
+            // MISSING against a schema built by a migration pass that did not register the
+            // projection. Worse, an EF entity keyed on anything but Id -- which EF Core is
+            // perfectly happy with -- has no IdMember for Marten's document conventions to find,
+            // so DocumentTable's constructor throws InvalidDocumentException out of *every*
+            // full-schema operation: ApplyAllConfiguredChangesToDatabaseAsync,
+            // AssertDatabaseMatchesConfigurationAsync, CreateMigrationAsync, ResetAllData and the
+            // db-apply / db-patch commands.
+            //
+            // CustomProjectionStorageProviders is the authoritative "this type's data is NOT in
+            // Marten document storage" registry: RegisterEfCoreStorage writes it, the write path
+            // (DocumentSessionBase.FetchProjectionStorageAsync) reads it to skip
+            // EnsureStorageExistsAsync, and rebuild teardown reads it too since #5329/#5350.
+            // Keying off it here puts all three on one source of truth, and fixes the class of
+            // defect rather than the EF Core instance of it -- the registry is public API, so any
+            // future custom storage provider would otherwise re-import this bug.
+            //
+            // Marking the mapping is the shape #5264 settled on for the same failure mode, and
+            // DocumentMappingsWithSchema already honours the flag. Doing it here, at the one
+            // point where every mapping is born, makes it independent of whether a full-schema
+            // operation ran first -- unlike a filter in BuildAllMappings, which would leave
+            // DeleteDocumentsExceptAsync (it enumerates DocumentMappingsWithSchema directly)
+            // still trying to truncate a table that was never created.
+            //
+            // Note that ProjectionBase.PublishedTypes() is deliberately NOT narrowed to achieve
+            // this: #5169 is the cautionary tale, and composite projection teardown depends on
+            // that traversal yielding the full set.
+            if (_options.CustomProjectionStorageProviders.ContainsKey(documentType))
+            {
+                value.SkipSchemaGeneration = true;
+            }
+
             _documentMappings.Swap(d => d.AddOrUpdate(documentType, value));
 
             // 9.0: Validation moved here from ApplyConfiguration's eager loop
