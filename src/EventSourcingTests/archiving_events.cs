@@ -381,21 +381,20 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
     /// exercises the lone-marker case. It took a shared compliance fact to find it.
     /// </para>
     /// <para>
-    /// <b>Skipped deliberately, and not because the case is unimportant.</b> jasperfx#780 (in the
-    /// 2.65.0 bump this test arrives on) closed the inline <c>continue</c> in
+    /// <b>Was skipped through the 2.65.0 pin, and is live again as of 2.66.0.</b> jasperfx#780 (in
+    /// the 2.65.0 bump this test arrived on) closed the inline <c>continue</c> in
     /// <c>JasperFxSingleStreamProjectionBase.ApplyInline</c>, but that is not the gate that decides
     /// this: <c>Archived</c> is absent from a single stream projection's <c>AllEventTypes</c>, since
     /// an aggregate has no reason to declare an <c>Apply</c> for a stateless marker, so
     /// <c>AppliesTo</c> answers false and the stream is screened out before the <c>continue</c> is
-    /// ever reached. jasperfx#784 is the commit that closes it, and it merged after the 2.65.0
-    /// version bump, so it is not in the published package. Measured on this bump rather than
-    /// assumed — this test and
+    /// ever reached. jasperfx#784 is the commit that closes it; it merged after the 2.65.0 version
+    /// bump and shipped in <b>2.66.0</b>, which is the bump that unskipped this. Measured rather
+    /// than assumed on both bumps — on 2.65.0 this test and
     /// <c>stream_archiving_compliance.capturing_an_archived_event_archives_a_string_identified_stream</c>
-    /// fail identically. Unskip on the JasperFx bump that carries jasperfx#784.
+    /// failed identically, and on 2.66.0 both pass.
     /// </para>
     /// </remarks>
-    [Fact(Skip =
-        "Blocked on a JasperFx release carrying jasperfx#784 (gh-778). 2.65.0 has jasperfx#780, which is not the gate that decides this -- see the remarks. Unskip with that bump.")]
+    [Fact]
     public async Task capture_a_lone_archived_event_with_inline_projection_will_archive_the_stream()
     {
         StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));

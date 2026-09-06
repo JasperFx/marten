@@ -487,17 +487,48 @@
          supplied state that no store performs; the over-tight assertion was dropped.
 
          Not in 2.65.0: jasperfx#784 (gh-778), which is the commit that actually closes the archiving
-         fact — see above. Track it with the next JasperFx bump. -->
+         fact — see above. Track it with the next JasperFx bump.
 
-    <PackageVersion Include="JasperFx" Version="2.65.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.65.0" />
+         JasperFx 2.66.0: the bump that carries jasperfx#784, and it does what the 2.65.0 note said
+         it would. Measured on this bump rather than assumed:
+
+         stream_archiving_compliance.capturing_an_archived_event_archives_a_string_identified_stream
+         PASSES. On 2.65.0 it failed `state.IsArchived should be True but was False`. #784 closed the
+         two gates outside the one #780 closed — the decisive one being that Archived is absent from
+         a single stream projection's AllEventTypes, so AppliesTo answered false and ApplyInline's
+         opening `streams.Where(x => AppliesTo(...))` screened the stream out before the `continue`
+         was ever reached. The Marten-local regression added SKIPPED on the 2.65.0 bump
+         (archiving_events.cs, capture_a_lone_archived_event_with_inline_projection_will_archive_the_
+         stream) is UNSKIPPED here, which its own remarks instructed — and it passes, so the local
+         reproduction and the shared fact agree on the way out exactly as they agreed on the way in.
+
+         Also in 2.66.0 and consumed by marten#5354 rather than by this file: jasperfx#791 adds
+         ComplianceExceptionKind, which is what lets MartenComplianceFixture name Marten's own six
+         exception types to the shared suite. #5354 could not compile against the 2.65.0 pin because
+         Marten.Testing references JasperFx.Events.ComplianceTests unconditionally (no
+         ComplianceSourceDir switch, unlike EventSourcingTests), so it was deliberately held open
+         until this bump landed. Merge order is therefore this bump FIRST, then #5354.
+
+         STILL RED after this bump, and correctly so:
+         projection_side_effect_compliance.a_unit_of_work_that_fails_publishes_nothing. On the 2.65.0
+         pin and on this one before #5354 it fails on the exception-type assertion — "Expected
+         ExistingStreamIdCollisionException ... but got Marten.Exceptions.ExistingStreamIdCollision
+         Exception", the fixture not naming Marten's own type rather than a behavioural difference.
+         With #5354 merged it gets PAST that assertion and fails on
+         `_outbox.CommittedBatches should be empty but had 1 item`, which is marten#5353, a genuine
+         outbox bug. That transition is the evidence #5354 worked; the fact stays red until #5353 is
+         fixed and must not be weakened to make it green. -->
+
+
+    <PackageVersion Include="JasperFx" Version="2.66.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.66.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.65.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.66.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -516,11 +547,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.65.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.66.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.65.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.66.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
