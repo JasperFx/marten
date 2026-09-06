@@ -228,12 +228,12 @@ The source generator skips base types it doesn't recognize. If you wrote a custo
 
 `LoadAsync`, LINQ, raw SQL and compiled queries all run from a native binary as of the fix for [#5328](https://github.com/JasperFx/marten/issues/5328). Before that release, the first *read* of any kind threw even though the publish was clean:
 
-```
+```text
 MissingMethodException: No parameterless constructor defined for type
 'Marten.Internal.Sessions.QuerySession+StorageFinder`1[MyDocument]'
 ```
 
-```
+```text
 PlatformNotSupportedException: Dynamic code generation is not supported on this platform.
    at FastExpressionCompiler.ExpressionCompiler.CompileFast[R](...)
    at Marten.Linq.Parsing.LinqInternalExtensions.ReduceToConstant(Expression)
