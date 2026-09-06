@@ -396,6 +396,21 @@ public class MyProjection
 }
 ```
 
+## Rebuilding
+
+`IProjectionDaemon.RebuildProjectionAsync` works normally for EF Core projections. Because the
+projection's data lives in the `DbContext`-mapped table rather than in a Marten document table, the
+rebuild's teardown step clears **that** table -- Marten's conventional `mt_doc_<tdoc>` table is
+neither created nor truncated for an EF Core-backed aggregate.
+
+This matters when you build your schema with a separate migration and run with
+`AutoCreateSchemaObjects = AutoCreate.None`: there is no `mt_doc_<tdoc>` table to find, and the
+rebuild does not go looking for one.
+
+If you need to suppress the teardown entirely -- for instance when the entity table is shared with
+data Marten did not write -- set `Options.TeardownDataOnRebuild = false` in your projection's
+constructor and clear the table yourself.
+
 ## How It Works
 
 Under the hood, EF Core projections:
@@ -404,3 +419,4 @@ Under the hood, EF Core projections:
 2. **Register a transaction participant** so the DbContext's `SaveChangesAsync` is called within Marten's transaction, ensuring atomicity
 3. **Migrate entity tables** through Weasel alongside Marten's own schema objects, so `dotnet ef` migrations are not needed
 4. **Use EF Core change tracking** for insert vs. update detection (detached entities are added; unchanged entities are marked as modified)
+5. **Register the entity table as the rebuild teardown target**, so a rebuild clears the rows EF Core actually wrote

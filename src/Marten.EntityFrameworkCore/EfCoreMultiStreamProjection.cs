@@ -63,6 +63,18 @@ public abstract class EfCoreMultiStreamProjection<
     {
         _schemaName = options.DatabaseSchemaName;
         var schemaName = _schemaName;
+
+        // #5329: point rebuild teardown at the table EF Core actually writes. The inherited
+        // DeleteViewTypeOnTeardown<TDoc>() cleanup names Marten's mt_doc_<tdoc> table, which is
+        // never created for an EF-backed projection; Marten's teardown skips it once the line
+        // below registers this type as having custom storage.
+        var efTable = EfCoreProjectionExtensions
+            .ResolveEntityTableIdentifier<TDoc, TDbContext>(schemaName, ConfigureDbContext);
+        if (efTable != null)
+        {
+            Options.DeleteDataInTableOnTeardown(efTable);
+        }
+
         options.CustomProjectionStorageProviders[typeof(TDoc)] = (session, tenantId) =>
         {
             var (dbContext, initialConnection) = session.Database.Create<TDbContext>(ConfigureDbContext, schemaName);

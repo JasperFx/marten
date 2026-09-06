@@ -361,7 +361,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     {
         if (source.Options.TeardownDataOnRebuild)
         {
-            source.Options.TeardownForTenant(session, tenantId);
+            source.Options.TeardownForTenant(session, tenantId, Options);
         }
     }
 
@@ -369,7 +369,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     {
         if (source.Options.TeardownDataOnRebuild)
         {
-            source.Options.Teardown(session);
+            source.Options.Teardown(session, Options);
         }
 
         foreach (var agent in source.Shards())
