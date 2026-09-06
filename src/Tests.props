@@ -58,4 +58,25 @@
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     </PropertyGroup>
 
+    <!-- jasperfx#756 (marten#5343). JasperFx.Events 2.64.0 added canonical versions of the six
+         event exception types that were previously declared once per store, so any file importing
+         both JasperFx.Events and Marten.Exceptions now sees an ambiguous simple name (CS0104).
+         Six suites hit it: EventSourcingTests, TenantPartitionedEventsTests, MultiTenancyTests,
+         DaemonTests, DocumentDbTests and CoreTests.
+
+         These aliases are the test-side half of the same API-preserving choice made in
+         src/Marten/GlobalUsings.cs: Marten's own exception types stay the ones Marten's tests
+         assert on, because that is what Marten's callers catch, and the lift commit is explicit
+         that "stores will subclass or type-forward in a later node". When that node lands and
+         Marten's copies become subclasses or type-forwards of the shared ones, both alias blocks
+         go away together. A test that specifically wants the shared type fully-qualifies it. -->
+    <ItemGroup>
+        <Using Include="Marten.Exceptions.UnknownEventTypeException" Alias="UnknownEventTypeException" />
+        <Using Include="Marten.Exceptions.NonExistentStreamException" Alias="NonExistentStreamException" />
+        <Using Include="Marten.Exceptions.ExistingStreamIdCollisionException" Alias="ExistingStreamIdCollisionException" />
+        <Using Include="Marten.Exceptions.EventDeserializationFailureException" Alias="EventDeserializationFailureException" />
+        <Using Include="Marten.Exceptions.StreamLockedException" Alias="StreamLockedException" />
+        <Using Include="Marten.Exceptions.DefaultTenantUsageDisabledException" Alias="DefaultTenantUsageDisabledException" />
+    </ItemGroup>
+
 </Project>

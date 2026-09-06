@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
@@ -10,6 +12,9 @@ using JasperFx.Events.Projections;
 using JasperFx.Events.Tags;
 using Marten.Events;
 using Marten.Services.BatchQuerying;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace Marten.Testing.Harness;
@@ -66,6 +71,15 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         if (config.ConjoinedEventTenancy)
         {
             options.Events.TenancyStyle = JasperFx.MultiTenancy.TenancyStyle.Conjoined;
+
+            // #5343: conjoined EVENTS are not enough on their own once the configuration also
+            // registers a snapshot. Marten refuses to build a store whose events are Conjoined but
+            // whose projected aggregate document is Single ("Tenancy storage style mismatch"), and
+            // that is Marten telling the truth rather than being fussy -- a per-tenant event slice
+            // folded into a single-tenanted document would silently merge tenants in the read model.
+            // Every earlier conjoined suite registered no projection, so this pairing first appears
+            // with NaturalKeyCompliance's tenanted configuration.
+            options.Policies.AllDocumentsAreMultiTenanted();
         }
 
         config.ApplyTo(new MartenComplianceRegistrar(options));
@@ -197,6 +211,290 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         Action<JasperFx.Events.Protected.IEventDataMasking> configure, CancellationToken token)
         => _store.Advanced.ApplyEventDataMasking(configure, token);
 
+    // ---------------------------------------------------------------------------------------
+    // JasperFx 2.64.0 compliance wave (marten#5343). Everything below is either a seam member
+    // with a throwing default in the shared fixture, or the capability flag that gates it.
+    // ---------------------------------------------------------------------------------------
+
+    /// <summary>
+    ///     jasperfx#755. Marten translates the HasTag marker by matching the declaring type in its LINQ
+    ///     parser, so the predicate has to be built here where Marten's own extension is in scope; a
+    ///     lambda written in the shared source would carry the wrong MethodInfo and never be recognized.
+    ///     Deliberately does not validate the tag type -- an unregistered tag must throw at query
+    ///     translation, which is the behavior the suite pins.
+    /// </summary>
+    public override Expression<Func<IEvent, bool>> HasTagFilter<TTag>(TTag value)
+        => e => e.HasTag(value);
+
+    /// <summary>
+    ///     The single-Where contract is load-bearing rather than incidental: the HasTag facts assert
+    ///     that a tag predicate composes with ordinary event predicates inside ONE predicate tree,
+    ///     which two chained Where() calls would not exercise.
+    /// </summary>
+    public override async Task<IReadOnlyList<IEvent>> QueryRawEventsAsync(IQuerySession session,
+        Expression<Func<IEvent, bool>> filter, CancellationToken token)
+        => await session.Events.QueryAllRawEvents().Where(filter).ToListAsync(token).ConfigureAwait(false);
+
+    public override bool SupportsHasTagLinqPredicates => true;
+
+    /// <summary>
+    ///     jasperfx#754. Marten's AggregateToAsync / AggregateToManyAsync ride on QueryAllRawEvents(),
+    ///     which returns IMartenQueryable and so is deliberately outside the shared IQueryEventStore
+    ///     contract -- hence the seam. Both members apply the optional predicate in a single Where()
+    ///     and then hand off to Marten's own terminator; no ordering and no paging, so this cannot
+    ///     grow into pinning Marten's operator set.
+    /// </summary>
+    public override Task<T?> AggregateEventsToAsync<T>(IQuerySession session,
+        Expression<Func<IEvent, bool>>? filter, T? initialState, CancellationToken token)
+        where T : class
+    {
+        var queryable = session.Events.QueryAllRawEvents();
+
+        return filter == null
+            ? queryable.AggregateToAsync(initialState, token)
+            : queryable.Where(filter).AggregateToAsync(initialState, token);
+    }
+
+    /// <inheritdoc cref="AggregateEventsToAsync{T}" />
+    public override Task<IReadOnlyList<T>> AggregateEventsToManyAsync<T>(IQuerySession session,
+        Expression<Func<IEvent, bool>>? filter, CancellationToken token)
+        where T : class
+    {
+        var queryable = session.Events.QueryAllRawEvents();
+
+        return filter == null
+            ? queryable.AggregateToManyAsync<T>(token)
+            : queryable.Where(filter).AggregateToManyAsync<T>(token);
+    }
+
+    public override bool SupportsAggregateToLinqOperators => true;
+
+    /// <summary>
+    ///     jasperfx#764 (#4788). Marten maintains an mt_natural_key_X lookup table per aggregate
+    ///     carrying a [NaturalKey], written by the auto-registered NaturalKeyProjection, and resolves
+    ///     the FetchForWriting / FetchForExclusiveWriting / FetchLatest triple through it.
+    /// </summary>
+    public override bool SupportsNaturalKeys => true;
+
+    /// <summary>
+    ///     jasperfx#762. Both plan types ship on Marten (Marten.FetchStreamStatePlan /
+    ///     Marten.FetchStreamPlan), each implementing IQueryPlan&lt;T&gt; and IBatchQueryPlan&lt;T&gt;
+    ///     so the same instance can run standalone or inside a batch.
+    /// </summary>
+    public override bool SupportsStreamQueryPlans => true;
+
+    public override async Task<StreamState?> FetchStreamStateByPlanAsync(
+        IQuerySession session, object streamIdentity, bool batched, CancellationToken token)
+    {
+        var plan = streamIdentity switch
+        {
+            Guid streamId => new FetchStreamStatePlan(streamId),
+            string streamKey => new FetchStreamStatePlan(streamKey),
+            _ => throw new ArgumentOutOfRangeException(nameof(streamIdentity),
+                $"Marten streams are identified by Guid or string, not {streamIdentity.GetType().FullName}")
+        };
+
+        if (!batched)
+        {
+            return await session.QueryByPlanAsync(plan, token).ConfigureAwait(false);
+        }
+
+        // The batched path composes its SQL separately from the standalone one, which is exactly
+        // why the suite runs every fact both ways.
+        var batch = session.CreateBatchQuery();
+        var result = batch.QueryByPlan(plan);
+        await batch.Execute(token).ConfigureAwait(false);
+
+        return await result.ConfigureAwait(false);
+    }
+
+    /// <inheritdoc cref="FetchStreamStateByPlanAsync" />
+    public override async Task<IReadOnlyList<IEvent>> FetchStreamByPlanAsync(
+        IQuerySession session, object streamIdentity, long version, bool batched, CancellationToken token)
+    {
+        var plan = streamIdentity switch
+        {
+            Guid streamId => new FetchStreamPlan(streamId, version),
+            string streamKey => new FetchStreamPlan(streamKey, version),
+            _ => throw new ArgumentOutOfRangeException(nameof(streamIdentity),
+                $"Marten streams are identified by Guid or string, not {streamIdentity.GetType().FullName}")
+        };
+
+        if (!batched)
+        {
+            return await session.QueryByPlanAsync(plan, token).ConfigureAwait(false);
+        }
+
+        var batch = session.CreateBatchQuery();
+        var result = batch.QueryByPlan(plan);
+        await batch.Execute(token).ConfigureAwait(false);
+
+        return await result.ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     jasperfx#769. A forward, never a re-implementation -- the suite is testing Marten's own
+    ///     advertised entry point as much as the shared harness behind it, so inlining the three
+    ///     lines Advanced.EventProjectionScenario runs would pass every fact while that entry point
+    ///     was missing or wired to the wrong store.
+    /// </summary>
+    public override Task RunProjectionScenarioAsync(
+        Action<JasperFx.Events.TestSupport.ProjectionScenario<IDocumentOperations, IQuerySession>> configure,
+        CancellationToken token)
+        => _store.Advanced.EventProjectionScenario(scenario => configure(scenario), token);
+
+    /// <summary>
+    ///     For the one fact the run entry point structurally cannot reach: a scenario's steps are
+    ///     consumed by its first run, so proving a second run fails loudly rather than passing as a
+    ///     silent no-op needs a handle on the instance, and the entry point above constructs one and
+    ///     throws it away.
+    /// </summary>
+    public override JasperFx.Events.TestSupport.ProjectionScenario<IDocumentOperations, IQuerySession>
+        CreateProjectionScenario()
+        => new Marten.Events.TestSupport.ProjectionScenario(_store);
+
+    public override bool SupportsProjectionScenario => true;
+
+    /// <summary>
+    ///     PostgreSQL is an MVCC snapshot reader: a second connection reading a row the first
+    ///     connection's open transaction is mid-write sees the pre-write snapshot and returns
+    ///     immediately rather than blocking on a lock. That is precisely the property this flag is
+    ///     asking about, so the before-commit probe cannot deadlock against the hook holding the
+    ///     commit open.
+    /// </summary>
+    public override bool SupportsCommitVisibilityProbe => true;
+
+    public override bool SupportsSubscriptionEventFilters => true;
+
+    /// <summary>
+    ///     jasperfx#763. Marten has a real message outbox seam -- Events.MessageOutbox, defaulted to
+    ///     NulloMessageOutbox and replaced by the Wolverine integration -- and routes a projection's
+    ///     published side effects through it, so the outbox facts run rather than skip.
+    /// </summary>
+    public override bool SupportsMessageOutbox => true;
+
+    /// <summary>
+    ///     jasperfx#732. Marten's documented registration -- AddMarten(...).AddAsyncDaemon(...) --
+    ///     is what has to be under test here, not a hand-built daemon, because the gap this suite
+    ///     exists to close (fisher#138) was a store that produced no reachable IProjectionCoordinator
+    ///     from its documented DI registration while passing all 37 other suites.
+    /// </summary>
+    public override bool SupportsAncillaryCoordinators => true;
+
+    /// <summary>
+    ///     Resolves MARTEN's IProjectionCoordinator&lt;T&gt;, not the shared one. AddMartenStore&lt;T&gt;
+    ///     registers the singleton against Marten.Events.Daemon.Coordination.IProjectionCoordinator&lt;T&gt;
+    ///     only; that interface derives from the JasperFx one, so the shared seam is satisfied, and
+    ///     resolving the product's own marker-typed service is exactly the per-product asymmetry this
+    ///     seam exists to absorb.
+    /// </summary>
+    public override IProjectionCoordinator AncillaryCoordinatorFrom(IServiceProvider services)
+        => services
+            .GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator<IComplianceAncillaryStore>>();
+
+    protected override async Task<IComplianceCoordinatorHost<IDocumentOperations>> StartCoordinatorHostAsync(
+        ComplianceStoreConfig config, bool includeAncillaryStore)
+    {
+        var builder = Host.CreateApplicationBuilder();
+        builder.Logging.ClearProviders();
+
+        var schemaName = (config.SchemaName ?? "compliance").ToLowerInvariant();
+
+        builder.Services.AddMarten(options =>
+            {
+                options.Connection(connectionStringFor(config));
+                options.AutoCreateSchemaObjects = AutoCreate.All;
+                options.DisableNpgsqlLogging = true;
+                options.NameDataLength = 100;
+
+                // The same database AND the same schema as the fixture's own store, so the
+                // per-test CleanEventDataAsync isolation covers the hosted store too.
+                options.DatabaseSchemaName = schemaName;
+
+                if (config.StreamIdentity.HasValue)
+                {
+                    options.Events.StreamIdentity = config.StreamIdentity.Value;
+                }
+
+                config.ApplyTo(new MartenComplianceRegistrar(options));
+            })
+            .AddAsyncDaemon(DaemonMode.Solo);
+
+        if (includeAncillaryStore)
+        {
+            // Only ever registered for the one ancillary fact. Load-bearing that it is NOT
+            // registered otherwise: the suite asserts the hosted-service walk finds EXACTLY one
+            // coordinator, so a second store on the default host would fail every core fact.
+            builder.Services.AddMartenStore<IComplianceAncillaryStore>(options =>
+                {
+                    options.Connection(connectionStringFor(config));
+                    options.AutoCreateSchemaObjects = AutoCreate.All;
+                    options.DisableNpgsqlLogging = true;
+                    options.NameDataLength = 100;
+                    options.DatabaseSchemaName = schemaName + "_ancillary";
+                })
+                .AddAsyncDaemon(DaemonMode.Solo);
+        }
+
+        var host = builder.Build();
+        await host.StartAsync().ConfigureAwait(false);
+
+        return new MartenCoordinatorHost(host);
+    }
+
+    /// <summary>
+    ///     The marker type for the ancillary store in the coordinator suite. A fixture-local type
+    ///     because every product constrains ancillary markers to its own store interface, so only
+    ///     the fixture can name one.
+    /// </summary>
+    public interface IComplianceAncillaryStore: IDocumentStore;
+
+    private sealed class MartenCoordinatorHost: IComplianceCoordinatorHost<IDocumentOperations>
+    {
+        private readonly IHost _host;
+
+        public MartenCoordinatorHost(IHost host)
+        {
+            _host = host;
+        }
+
+        public IServiceProvider Services => _host.Services;
+
+        public IDocumentOperations OpenSession()
+            => _host.Services.GetRequiredService<IDocumentStore>().LightweightSession();
+
+        public async ValueTask DisposeAsync()
+        {
+            // IHost.Dispose alone does not call StopAsync, and an abandoned daemon host leaks
+            // agents into the next test.
+            await _host.StopAsync().ConfigureAwait(false);
+            _host.Dispose();
+        }
+    }
+
+    /// <summary>
+    ///     jasperfx#752/#757. Left FALSE deliberately, and this is a real divergence rather than
+    ///     unfinished work on this branch. Marten has had event upcasting since v5, but it is
+    ///     Marten's OWN implementation: registrations hang off IEventStoreOptions.Upcast and the read
+    ///     path routes through EventMapping.IsUpcastTarget, not through the shared
+    ///     JasperFx.Events.Upcasting.EventRegistry.Upcasters registry the suite asserts on, and
+    ///     Marten implements neither IUpcastPayload nor anything else in that namespace. The shared
+    ///     contract was deliberately specified ahead of any store implementing it, so the suite is
+    ///     enrolled here skipping wholesale -- which keeps it compiling and running -- and the flag
+    ///     flips in the node that moves Marten's read path onto the shared registry.
+    /// </summary>
+    public override bool SupportsUpcasting => false;
+
+    /// <summary>
+    ///     Left FALSE because the operation genuinely does not exist in Marten. ArchiveStream is on
+    ///     the shared IEventStoreOptions surface but its reverse is not: Polecat declares
+    ///     UnArchiveStream on its own IEventOperations and Marten has no equivalent at all (nothing
+    ///     in src/Marten matches "UnArchive"), which is why the shared fixture gates it rather than
+    ///     putting it on IEventStoreOperations. The unarchive facts of StreamArchivingCompliance skip;
+    ///     every archiving fact around them still runs.
+    /// </summary>
+    public override bool SupportsUnarchiveStream => false;
+
     public override async ValueTask DisposeAsync()
     {
         foreach (var disposable in _disposables)
@@ -277,9 +575,33 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         public void AddMaskingRule<TEvent>(Func<TEvent, TEvent> rule) where TEvent : notnull
             => _options.Events.AddMaskingRuleForProtectedInformation(rule);
 
+        /// <summary>
+        ///     The name is pinned because progression is keyed on it and the products disagree on what
+        ///     an unnamed subscription defaults to.
+        ///
+        ///     jasperfx#768 (#5343) adds the filter replay. A list declared on the shared subscription
+        ///     object reaches nothing on its own: Marten wraps a bare ISubscription in its own
+        ///     SubscriptionWrapper, and it is the WRAPPER the daemon reads filters from. Replaying each
+        ///     declared type onto the wrapper's IncludeType is the whole of what
+        ///     SupportsSubscriptionEventFilters gates.
+        /// </summary>
         public void Subscribe(ComplianceSubscription subscription)
-            => _options.Projections.Subscribe(subscription,
-                x => x.Name = ComplianceSubscription.SubscriptionName);
+            => _options.Projections.Subscribe(subscription, x =>
+            {
+                x.Name = ComplianceSubscription.SubscriptionName;
+
+                foreach (var eventType in subscription.IncludedEventTypes)
+                {
+                    x.IncludeType(eventType);
+                }
+            });
+
+        /// <summary>
+        ///     jasperfx#763 (#5343). Every store spells this the same way; the seam exists because
+        ///     IMessageOutbox is a per-product type, so the shared config cannot declare the property.
+        /// </summary>
+        public void UseMessageOutbox(RecordingMessageOutbox outbox)
+            => _options.Events.MessageOutbox = outbox;
 
         public void AddProjection(ProjectionBase projection, ProjectionLifecycle lifecycle)
             => _options.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);

@@ -85,6 +85,9 @@
         <Compile Include="..\Marten.Testing\Harness\ComplianceSubscription.Marten.cs">
             <Link>Harness\ComplianceSubscription.Marten.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\Harness\RecordingMessageOutbox.Marten.cs">
+            <Link>Harness\RecordingMessageOutbox.Marten.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Harness\MartenComplianceFixture.cs">
             <Link>Harness\MartenComplianceFixture.cs</Link>
         </Compile>

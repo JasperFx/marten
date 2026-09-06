@@ -21,3 +21,22 @@ global using ComplianceStringPartyProjectionBase =
 global using ComplianceMultiStreamProjectionBase =
     Marten.Events.Projections.MultiStreamProjection<
         JasperFx.Events.ComplianceTests.ComplianceDepartment, string>;
+
+// jasperfx#754 (marten#5343). AggregateToManyCompliance's whole point is that the operator drives
+// the REGISTERED projection -- identity routing, a session-reading custom grouper, ShouldDelete --
+// rather than reimplementing the fold inline, so its two multi-stream projections are real
+// registrations declared at file scope, and need the same closed-generic alias as the department
+// projection above.
+global using ComplianceBalanceProjectionBase =
+    Marten.Events.Projections.MultiStreamProjection<
+        JasperFx.Events.ComplianceTests.ComplianceBalance, System.Guid>;
+global using ComplianceMemberLoyaltyProjectionBase =
+    Marten.Events.Projections.MultiStreamProjection<
+        JasperFx.Events.ComplianceTests.ComplianceMemberLoyalty, System.Guid>;
+
+// jasperfx#763 (marten#5343). ProjectionSideEffectCompliance's projection has to OVERRIDE
+// RaiseSideEffects, so it must derive from Marten's own SingleStreamProjection<TDoc, TId> rather
+// than anything the suite could name itself.
+global using ComplianceWatchtowerProjectionBase =
+    Marten.Events.Aggregation.SingleStreamProjection<
+        JasperFx.Events.ComplianceTests.ComplianceWatchtower, System.Guid>;

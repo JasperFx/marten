@@ -57,6 +57,23 @@ public abstract partial class DocumentSessionBase
             await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
         }
 
+        // #5343: Marten declares IMessageBatch : IMessageSink, IChangeListener -- so it promises BOTH
+        // commit hooks -- but only ever called AfterCommitAsync below. The before hook is the half a
+        // transactional outbox actually needs, because it is the only point at which an outbox can
+        // queue its own operations and have them land in the SAME UpdateBatch, and therefore the same
+        // transaction, as the events that produced the messages. Hence the placement: immediately
+        // after the session listeners' BeforeSaveChangesAsync and before the UpdateBatch is built
+        // from _workTracker, which is exactly the contract those listeners already get.
+        //
+        // Found by the jasperfx#763 ProjectionSideEffectCompliance suite, whose commit-boundary facts
+        // observe what the rest of the database can see at each hook rather than merely that the
+        // hooks ran. Wolverine's MartenToWolverineMessageBatch.BeforeCommitAsync is currently a
+        // no-op, so nothing downstream changes behaviour on this fix today.
+        if (_messageBatch != null)
+        {
+            await _messageBatch.BeforeCommitAsync(this, _workTracker, token).ConfigureAwait(false);
+        }
+
         var batch = new UpdateBatch(_workTracker.AllOperations);
 
         await ExecuteBatchAsync(batch, token).ConfigureAwait(false);

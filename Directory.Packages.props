@@ -416,16 +416,47 @@
          Marten's implementation is the dedicated provider in Marten.Events.Querying (marten#5333;
          see StreamStateQueryable.cs for why it is not the general LINQ engine), the watermark is a
          new mt_streams compacted_version column written by CompactStreamAsync, and the new
-         StreamStateQueryCompliance suite is enrolled as compliance wave 12. -->
-    <PackageVersion Include="JasperFx" Version="2.63.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.63.0" />
+         StreamStateQueryCompliance suite is enrolled as compliance wave 12.
+
+         JasperFx 2.64.0 (marten#5343): the largest compliance wave yet, and the first one where
+         Marten's enrollment is the ONLY runtime validation the suites have ever had — the JasperFx
+         repo enrolls the document suites but no event store, so everything below shipped
+         compile-checked and design-reasoned only. Nothing outside JasperFx.Events.ComplianceTests
+         changed behaviourally for Marten except jasperfx#756 (the per-store event exception types
+         lifted into JasperFx.Events) and jasperfx#753 (CompositeIProjectionSource moved into
+         JasperFx.Events.Projections.Composite), both of which Marten already consumes through the
+         shared namespaces.
+
+         New suites, and what each one needs from the fixture:
+         jasperfx#764/#765 (+#772) NaturalKeyCompliance => SupportsNaturalKeys, no seam member.
+         jasperfx#754/#758 AggregateTo{Many,LinqOperator} => AggregateEventsTo{,Many}Async.
+         jasperfx#755/#759 DcbHasTagLinqCompliance => QueryRawEventsAsync + HasTagFilter.
+         jasperfx#763/#767 ProjectionSideEffectCompliance => IComplianceStoreRegistrar.UseMessageOutbox
+                                                              plus the RecordingMessageOutbox partials.
+         jasperfx#762/#766 AlwaysEnforceConsistency => no seam member.
+                           StreamQueryPlanCompliance => Fetch{StreamState,Stream}ByPlanAsync.
+         jasperfx#769/#771 ProjectionScenarioCompliance => Run/CreateProjectionScenario.
+         jasperfx#732/#760 ProjectionCoordinatorCompliance => StartCoordinatorHostAsync. Deliberately
+                                                              ungated: it is the suite that would have
+                                                              caught fisher#138, so a store that enrolls
+                                                              it without the seam FAILS rather than skips.
+         jasperfx#757 UpcastingCompliance => SupportsUpcasting + registrar Upcast.
+
+         Deepened suites Marten already enrolls, which gain facts on this bump with no new seam:
+         jasperfx#768/#770 SubscriptionCompliance grows rewind, event filters, session writes and a
+         listener; jasperfx#762 adds facts to FetchLatestCompliance, StreamArchivingCompliance,
+         EventDataMaskingCompliance and StrongTypedIdentityCompliance; jasperfx#774/#775 add the two
+         FlatTableProjectionCompliance facts that pin Increment/Decrement onto a row that does not
+         exist yet => the increment half is marten#5342, already fixed on this branch's base. -->
+    <PackageVersion Include="JasperFx" Version="2.64.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.64.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.63.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.64.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -444,11 +475,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.63.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.64.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.63.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.64.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
