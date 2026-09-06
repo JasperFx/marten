@@ -16,8 +16,9 @@ namespace EventSourcingTests;
 /// after a stream is archived (and physically moved to the archived partition
 /// when <c>UseArchivedStreamPartitioning</c> is on), its row in
 /// <c>mt_streams_identity</c> stays put. Re-using that identity therefore
-/// surfaces a unique violation that <see cref="InsertStreamBase"/> translates
-/// into <see cref="ExistingStreamIdCollisionException"/>.
+/// surfaces a unique violation that
+/// <c>PostgresEventStoreDialect.MapInsertStreamException</c> translates into
+/// <see cref="ExistingStreamIdCollisionException"/>.
 ///
 /// Without the flag, that reuse silently succeeds under partitioning (see
 /// <c>start_stream_with_id_of_previously_archived_stream</c> for the

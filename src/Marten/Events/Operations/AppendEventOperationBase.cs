@@ -11,7 +11,17 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;
 
-// Leave public for codegen!
+/// <summary>
+/// Legacy base for the per-event append operation, from the pre-#4821 runtime-codegen write path.
+/// </summary>
+/// <remarks>
+/// Superseded by <see cref="Weasel.Storage.AppendEventOperationBase"/>, which the closed-shape
+/// hierarchy's Rich append operation derives from and which
+/// <c>EventTracingConnectionLifetime</c> type-tests against. This copy has no subclasses and no
+/// call sites left anywhere in Marten; it is retained only so that a 9.x consumer who subclassed
+/// it keeps compiling, and is slated for deletion in v10. See #5339.
+/// </remarks>
+[Obsolete("Superseded by Weasel.Storage.AppendEventOperationBase, which the closed-shape event storage uses. This unused legacy base will be removed in Marten 10. See https://github.com/JasperFx/marten/issues/5339")]
 public abstract class AppendEventOperationBase: IStorageOperation, NoDataReturnedCall
 {
     public AppendEventOperationBase(StreamAction stream, IEvent e)

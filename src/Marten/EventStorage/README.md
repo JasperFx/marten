@@ -8,39 +8,67 @@ in Marten 9; planned default-on in 10.
 See the [`UseClosedShapeStorage` migration-guide section](../../../docs/migration-guide.md#closed-shape-event-storage)
 for the consumer-facing intro and the v9 / v10 / v11 transition plan.
 
-> **#4821 event-storage extraction (in progress).** The dialect-neutral pieces of this
-> hierarchy are being moved into the shared `Weasel.Storage` package so Marten and Polecat
-> (SQL Server) share them. As of Weasel 9.15.0 (event E2) the descriptor classes
-> (`RichEventStorageDescriptor` / `QuickEventStorageDescriptor` /
-> `QuickWithServerTimestampsEventStorageDescriptor`), `IEventMetadataBinder` + the metadata
-> binders, and `IEventStoreSqlDialect` now live in `namespace Weasel.Storage` — the in-repo
-> relative links below to those specific types point at their former Marten location.
-> `PostgresEventStoreDialect` (the Postgres implementation), the storage classes, and the
-> operations remain here.
+> **#4821 event-storage extraction — done.** The dialect-neutral half of this hierarchy now
+> lives in the shared `Weasel.Storage` package, so Marten (Postgres), Polecat (SQL Server) and
+> Fisher (SQLite) share it. **Most type names mentioned below resolve to `namespace
+> Weasel.Storage`, not to a file in this directory** — see the two tables in
+> [What lives where](#what-lives-where). What remains in this folder is Postgres-specific SQL
+> plus the adapter onto Marten's own `EventDocumentStorage` contract; the remaining follow-ups
+> are enumerated in [#5339](https://github.com/JasperFx/marten/issues/5339).
+
+## What lives where
+
+Everything dialect-neutral is in **`Weasel.Storage`** (`Weasel.Storage/Events/`):
+
+| Concern | Types |
+| --- | --- |
+| Storage hierarchy | `EventStorage<TId>`, `Rich/RichEventStorage<TId>`, `Quick/QuickEventStorage<TId>`, `QuickWithServerTimestamps/QuickWithServerTimestampsEventStorage<TId>` |
+| Construction | `EventStorageBuilder` |
+| Descriptors | `RichEventStorageDescriptor`, `QuickEventStorageDescriptor`, `QuickWithServerTimestampsEventStorageDescriptor` |
+| Seams | `IEventStoreSqlDialect`, `IEventMetadataBinder`, `EventAuxiliaryOperations` |
+| Metadata binders | `Metadata/{Sequence,Headers,CausationId,CorrelationId,UserName}ColumnBinder` |
+| Shared operations | `Operations/{AppendEventOperationBase,InsertStreamOperationBase,UpdateStreamVersionOperationBase,QuickAppendEventWithVersionOperation,AssertStreamVersionOperation}` and the per-mode insert-stream / update-stream-version operations |
+
+What stays **here in Marten**, and why:
+
+| File | Why it does not move |
+| --- | --- |
+| `Dialects/PostgresEventStoreDialect.cs` | The Postgres half of the `IEventStoreSqlDialect` seam — store-specific by construction. |
+| `ClosedShapeEventDocumentStorage.cs` | Adapter from `EventStorage<TId>` onto Marten's own `EventDocumentStorage` contract. Polecat's equivalent is its `ClosedShapeOperationAdapter`. |
+| `Quick/QuickAppendEventsOperation.cs`, `QuickWithServerTimestamps/QuickAppendEventsWithServerTimestampsOperation.cs`, and their base `Marten.Events.Operations.QuickAppendEventsOperationBase` | Call sites for the `mt_quick_append_events` PL/pgSQL function: one `NpgsqlDbType.Array \| …` parameter per column, a returned `long[]`. Polecat and Fisher implement `Weasel.Storage.IStorageOperation` **directly** with a fundamentally different command shape (per-event `INSERT … OUTPUT` for SQL Server), so there is no three-way base to extract. |
+| `Querying/ClosedShapeStreamStateQueryHandler.cs`, `StreamStateSql.cs` | Coupled to Marten's `StreamStateQueryHandler` and its `ISelector<StreamState>`, and to the `mt_streams` column list. Lifting these needs the `StreamState` query pipeline neutralised first — a separate piece of work, not #4821. |
+| `../Events/Schema/QuickAppendEventFunction.cs`, the `mt_append_event` PL/pgSQL | No analogue in the other stores. |
+
+Three `public abstract` operation bases in `../Events/Operations/`
+(`AppendEventOperationBase`, `InsertStreamBase`, `UpdateStreamVersion`) are leftovers of the
+pre-#4821 codegen write path with no subclasses and no call sites. They are `[Obsolete]` for
+9.x source compatibility and are deleted in v10 — do not add new code against them.
 
 ## Architecture overview
 
 Three concrete `EventStorage<TId>` subclasses, one per
 [`EventAppendMode`](https://github.com/JasperFx/jasperfx/blob/master/src/JasperFx.Events/EventAppendMode.cs):
 
-| Append mode | Storage class | Descriptor |
+| Append mode | Storage class (`Weasel.Storage`) | Descriptor (`Weasel.Storage`) |
 | --- | --- | --- |
-| `Rich` | `Rich/RichEventStorage<TId>` | `Rich/RichEventStorageDescriptor` |
-| `Quick` | `Quick/QuickEventStorage<TId>` | `Quick/QuickEventStorageDescriptor` |
-| `QuickWithServerTimestamps` | `QuickWithServerTimestamps/QuickWithServerTimestampsEventStorage<TId>` | `QuickWithServerTimestamps/QuickWithServerTimestampsEventStorageDescriptor` |
+| `Rich` | `Rich/RichEventStorage<TId>` | `RichEventStorageDescriptor` |
+| `Quick` | `Quick/QuickEventStorage<TId>` | `QuickEventStorageDescriptor` |
+| `QuickWithServerTimestamps` | `QuickWithServerTimestamps/QuickWithServerTimestampsEventStorage<TId>` | `QuickWithServerTimestampsEventStorageDescriptor` |
 
 Exactly one of the three is instantiated at `DocumentStore` construction
-time by [`EventStorageBuilder.Build<TId>`](EventStorageBuilder.cs) based
-on `EventGraph.AppendMode`. The runtime never branches on append mode
-again after that: per-session dispatch is a virtual call through
-[`EventStorage<TId>`](EventStorage.cs).
+time by `Weasel.Storage.EventStorageBuilder.Build<TId>` based on
+`EventGraph.AppendMode`, with the Postgres dialect supplied by
+[`ClosedShapeEventDocumentStorage`](ClosedShapeEventDocumentStorage.cs)'s
+constructor. The runtime never branches on append mode again after that:
+per-session dispatch is a virtual call through `EventStorage<TId>`.
 
 [`ClosedShapeEventDocumentStorage`](ClosedShapeEventDocumentStorage.cs)
 is the adapter that bridges this hierarchy to Marten's existing
-`EventDocumentStorage` contract — it owns the read-path `ISelector<IEvent>`
-(which still uses the codegen-emitted `ApplyReaderDataToEvent` in 9.0)
-and delegates every write-path method to the `EventStorage<TId>`
-instance the builder produced.
+`EventDocumentStorage` contract — it owns the read path (walking
+`IEventTableColumn.ReadValueSync` / `ReadValueAsync` over a column list
+derived from `EventsTable.SelectColumns()`) and delegates every
+write-path method to the `EventStorage<TId>` instance the builder
+produced.
 
 ### Why three implementations instead of one
 
@@ -74,20 +102,20 @@ configuration. Rich and Quick handle that differently:
 ### Rich: `IEventMetadataBinder` array (the hybrid)
 
 Rich's per-event `INSERT` writes scalar parameters, one per column.
-[`RichEventStorageDescriptor.MetadataBinders`](Rich/RichEventStorageDescriptor.cs)
-is an ordered array of [`IEventMetadataBinder`](IEventMetadataBinder.cs).
-[`Rich/RichAppendEventOperation`](Rich/RichAppendEventOperation.cs) writes
+`Weasel.Storage.RichEventStorageDescriptor.MetadataBinders` is an ordered
+array of `Weasel.Storage.IEventMetadataBinder`.
+`Weasel.Storage.RichAppendEventOperation` writes
 the inlined core columns then loops over the binder array — one virtual
 `Bind` call per active metadata column, in lockstep with the SQL prefix's
 column order.
 
 Adding a new Rich-mode metadata column:
 
-1. Add an `IEventMetadataBinder` in [`Metadata/`](Metadata/) — see
-   [`Metadata/HeadersColumnBinder.cs`](Metadata/HeadersColumnBinder.cs)
-   for the simple write-only shape or
-   [`Metadata/SequenceColumnBinder.cs`](Metadata/SequenceColumnBinder.cs)
-   for the server-set-with-write-back shape.
+1. Add an `IEventMetadataBinder` in `Weasel.Storage/Events/Metadata/` —
+   see `HeadersColumnBinder` for the simple write-only shape or
+   `SequenceColumnBinder` for the server-set-with-write-back shape. (These
+   are in the shared package, so a new binder is available to Polecat and
+   Fisher too; only the dialect's selection of it is Marten's.)
 2. Add a switch arm in `SelectRichMetadataBinders` and (if the column
    participates in the QuickWithVersion path) `SelectQuickModeMetadataBinders`
    in [`Dialects/PostgresEventStoreDialect.cs`](Dialects/PostgresEventStoreDialect.cs).
@@ -115,9 +143,8 @@ Used by both Quick / QuickWithServerTimestamps (for new streams + streams
 with `ExpectedVersionOnServer.HasValue`) and Rich (for the side-effect
 event replay path called by JasperFx.Events `EventSlice.BuildOperations`,
 [#4428](https://github.com/JasperFx/marten/pull/4434)). The operation
-class
-[`Quick/QuickAppendEventWithVersionOperation`](Quick/QuickAppendEventWithVersionOperation.cs)
-is shared cross-namespace; the per-mode descriptor supplies a slightly
+class `Weasel.Storage.QuickAppendEventWithVersionOperation` is shared
+cross-mode; the per-mode descriptor supplies a slightly
 different SQL suffix (`", nextval('schema.mt_events_sequence'))"` for
 server-claimed sequence, `")"` for bound sequence) and a different
 binder array (with vs without `SequenceColumnBinder`).
@@ -126,30 +153,38 @@ binder array (with vs without `SequenceColumnBinder`).
 
 ### `IEventStoreSqlDialect`
 
-[`IEventStoreSqlDialect`](IEventStoreSqlDialect.cs) — `internal` — has
-one method per append mode that returns a fully-built descriptor:
+`Weasel.Storage.IEventStoreSqlDialect` — `public`, since the
+implementations live in the stores — has one method per append mode that
+returns a fully-built descriptor, plus an optional auxiliary-operations
+factory:
 
 ```csharp
-RichEventStorageDescriptor BuildRichDescriptor(EventGraph, ISerializer);
-QuickEventStorageDescriptor BuildQuickDescriptor(EventGraph, ISerializer);
-QuickWithServerTimestampsEventStorageDescriptor BuildQuickWithServerTimestampsDescriptor(EventGraph, ISerializer);
+RichEventStorageDescriptor BuildRichDescriptor(EventRegistry, IStorageSerializer);
+QuickEventStorageDescriptor BuildQuickDescriptor(EventRegistry, IStorageSerializer);
+QuickWithServerTimestampsEventStorageDescriptor BuildQuickWithServerTimestampsDescriptor(EventRegistry, IStorageSerializer);
+EventAuxiliaryOperations? BuildAuxiliaryOperations(EventRegistry) => null;
 ```
+
+Configuration arrives as the neutral `EventRegistry` (Marten's
+`EventGraph` derives from it, and the dialect downcasts) and
+serialization through the neutral `IStorageSerializer`.
 
 The dialect owns SQL strings, metadata-column ordering, and binder
 selection as one joint concern (not three independent ones) — that's
 how the SQL stays aligned with the parameter binds.
 
-Marten ships [`Dialects/PostgresEventStoreDialect`](Dialects/PostgresEventStoreDialect.cs).
-The SQL Server dialect (Polecat) lands after `JasperFx.Storage` (W2)
-cuts.
+Marten ships [`Dialects/PostgresEventStoreDialect`](Dialects/PostgresEventStoreDialect.cs),
+which also implements `BuildAuxiliaryOperations` (archive / tombstone /
+projection-progression). Polecat ships `SqlServerEventStoreDialect` and
+Fisher `SqliteEventStoreDialect` against the same seam.
 
 ### `IEventMetadataBinder`
 
-[`IEventMetadataBinder`](IEventMetadataBinder.cs) — the Rich-mode
-per-column abstraction. One `Bind(IGroupedParameterBuilder, StreamAction, IEvent, IMartenSession)`
-method (write-side) plus an optional `OnRead` for server-set columns.
+`Weasel.Storage.IEventMetadataBinder` — the Rich-mode per-column
+abstraction. One `Bind` method (write-side) plus an optional `OnRead` for
+server-set columns.
 
-Implementations live in [`Metadata/`](Metadata/):
+Implementations live in `Weasel.Storage/Events/Metadata/`:
 
 * `SequenceColumnBinder` — server-set via `nextval()`, writes back to
   `event.Sequence` from the prepared-statement parameter.
@@ -159,18 +194,19 @@ Implementations live in [`Metadata/`](Metadata/):
 
 ## What still uses codegen
 
-The flag covers the entire **write** path. The **read** path
-(`ApplyReaderDataToEvent`, `ApplyReaderDataToEventAsync`) is still
-codegen-emitted in 9.0 — closing that out is a follow-up tracked on the
-Marten.SourceGenerator stream. `ClosedShapeEventDocumentStorage`
-inherits the read-side `ISelector<IEvent>` from
-`EventDocumentStorage`, which keeps using the existing per-event-type
-codegen.
+Nothing on this path. The flag covers the whole **write** path, and the
+**read** path was closed out too (#4411): `ApplyReaderDataToEvent` /
+`ApplyReaderDataToEventAsync` walk `IEventTableColumn.ReadValueSync` /
+`ReadValueAsync` over a column list derived from
+`EventsTable.SelectColumns()`, so no per-event-type codegen is emitted
+for event storage in either direction. (Document storage is a separate
+question; this note is only about the event store.)
 
 ## Cross-references
 
 * Parent epic — [#4410](https://github.com/JasperFx/marten/issues/4410) (closed by PR [#4431](https://github.com/JasperFx/marten/pull/4431)).
 * Source-gen compiled queries (the analogous LINQ-side work) — [#4405](https://github.com/JasperFx/marten/issues/4405).
+* #4821 extraction into `Weasel.Storage` and its remaining follow-up map — [#5339](https://github.com/JasperFx/marten/issues/5339).
 * Open follow-ups for v10:
-  * Read-side closed-shape (`ApplyReaderDataToEvent`) — Marten.SourceGenerator.
-  * Polecat SQL Server dialect implementation — pending `JasperFx.Storage` cut.
+  * Delete the three `[Obsolete]` codegen-era operation bases in `../Events/Operations/`.
+  * Flip `UseClosedShapeStorage` to default-on.

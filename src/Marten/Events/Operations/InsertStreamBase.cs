@@ -15,7 +15,19 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;
 
-// Leave public for codegen!
+/// <summary>
+/// Legacy base for the <c>mt_streams</c> insert operation, from the pre-#4821 runtime-codegen
+/// write path.
+/// </summary>
+/// <remarks>
+/// Superseded by <see cref="Weasel.Storage.InsertStreamOperationBase"/>. Its stream-id-collision
+/// translation now lives in <c>PostgresEventStoreDialect.MapInsertStreamException</c>, which the
+/// dialect installs on the descriptor as the neutral base's
+/// <c>TransformInsertStreamException</c> closure. This copy has no subclasses and no call sites
+/// left anywhere in Marten; it is retained only so that a 9.x consumer who subclassed it keeps
+/// compiling, and is slated for deletion in v10. See #5339.
+/// </remarks>
+[Obsolete("Superseded by Weasel.Storage.InsertStreamOperationBase, which the closed-shape event storage uses; the collision translation now lives in PostgresEventStoreDialect.MapInsertStreamException. This unused legacy base will be removed in Marten 10. See https://github.com/JasperFx/marten/issues/5339")]
 public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, NoDataReturnedCall
 {
     public InsertStreamBase(StreamAction stream)

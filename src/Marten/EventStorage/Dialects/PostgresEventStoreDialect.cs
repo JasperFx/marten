@@ -130,8 +130,10 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     /// #4821 event E3: the InsertStream ops moved onto the neutral
     /// <c>Weasel.Storage.InsertStreamOperationBase</c>, which can't carry the
     /// Postgres-specific exception translation. Supply it as the descriptor's
-    /// <c>TransformInsertStreamException</c> closure — mirrors the old
-    /// <c>Marten.Events.Operations.InsertStreamBase.TryTransform</c>: a
+    /// <c>TransformInsertStreamException</c> closure — this is now the sole
+    /// implementation of that translation (the old
+    /// <c>Marten.Events.Operations.InsertStreamBase.TryTransform</c> it was
+    /// lifted from is orphaned and <c>[Obsolete]</c>, see #5339): a
     /// unique-violation on <c>mt_streams</c> / <c>mt_streams_identity</c>
     /// becomes an <see cref="ExistingStreamIdCollisionException"/> (also
     /// unwrapping a <see cref="MartenCommandException"/>). Returns null when the
@@ -165,7 +167,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         // doesn't fire under UseArchivedStreamPartitioning, because the
         // active partition's unique index doesn't span partitions. The
         // resulting unique-violation surfaces with
-        // TableName = mt_streams_identity, which InsertStreamBase.matches()
+        // TableName = mt_streams_identity, which MatchesStreamCollision above
         // already translates into ExistingStreamIdCollisionException —
         // hence "implement the CTE; do not invent a new exception path."
         var (sqlPrefix, sqlSuffix) = graph.EnableStrictStreamIdentityEnforcement
@@ -253,7 +255,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     /// </code>
     /// The chained insert raises <c>UniqueViolation</c> with
     /// <c>TableName = mt_streams_identity</c> on collision, which
-    /// <c>InsertStreamBase.matches()</c> already maps to
+    /// <c>MatchesStreamCollision</c> already maps to
     /// <c>ExistingStreamIdCollisionException</c>. No new parameters — the
     /// CTE pipes the just-inserted identity through.
     /// </summary>
