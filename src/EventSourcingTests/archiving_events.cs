@@ -370,6 +370,53 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
     }
 
 
+    /// <summary>
+    /// #5347 / jasperfx#778: the same thing as the fact above, except the <c>Archived</c> marker
+    /// arrives <em>alone</em>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// That distinction is the whole test, and the blind spot it covers is this file's own: every
+    /// other archiving test here appends <c>new DEvent()</c> beside the marker, so not one of them
+    /// exercises the lone-marker case. It took a shared compliance fact to find it.
+    /// </para>
+    /// <para>
+    /// <b>Skipped deliberately, and not because the case is unimportant.</b> jasperfx#780 (in the
+    /// 2.65.0 bump this test arrives on) closed the inline <c>continue</c> in
+    /// <c>JasperFxSingleStreamProjectionBase.ApplyInline</c>, but that is not the gate that decides
+    /// this: <c>Archived</c> is absent from a single stream projection's <c>AllEventTypes</c>, since
+    /// an aggregate has no reason to declare an <c>Apply</c> for a stateless marker, so
+    /// <c>AppliesTo</c> answers false and the stream is screened out before the <c>continue</c> is
+    /// ever reached. jasperfx#784 is the commit that closes it, and it merged after the 2.65.0
+    /// version bump, so it is not in the published package. Measured on this bump rather than
+    /// assumed — this test and
+    /// <c>stream_archiving_compliance.capturing_an_archived_event_archives_a_string_identified_stream</c>
+    /// fail identically. Unskip on the JasperFx bump that carries jasperfx#784.
+    /// </para>
+    /// </remarks>
+    [Fact(Skip =
+        "Blocked on a JasperFx release carrying jasperfx#784 (gh-778). 2.65.0 has jasperfx#780, which is not the gate that decides this -- see the remarks. Unskip with that bump.")]
+    public async Task capture_a_lone_archived_event_with_inline_projection_will_archive_the_stream()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        // No handled event beside the marker -- the case the four tests around this one all miss.
+        theSession.Events.Append(streamId, new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId).ToListAsync();
+
+        events.ShouldNotBeEmpty();
+        events.All(x => x.IsArchived).ShouldBeTrue();
+    }
+
+
     [Fact]
     public async Task capture_archived_event_with_inline_custom_projection_will_archive_the_stream()
     {

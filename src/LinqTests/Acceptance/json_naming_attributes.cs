@@ -38,7 +38,9 @@ public class json_naming_attributes
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "atts";
-            opts.Serializer<SystemTextJsonSerializer>();
+            // Qualified since Weasel 9.30.0 lifted an STJ serializer of the same simple name into
+            // Weasel.Core (weasel#559); this test is about Marten's.
+            opts.Serializer<Marten.Services.SystemTextJsonSerializer>();
         });
 
         using var session = store.LightweightSession();

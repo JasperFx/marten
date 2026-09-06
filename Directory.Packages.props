@@ -447,16 +447,57 @@
          listener; jasperfx#762 adds facts to FetchLatestCompliance, StreamArchivingCompliance,
          EventDataMaskingCompliance and StrongTypedIdentityCompliance; jasperfx#774/#775 add the two
          FlatTableProjectionCompliance facts that pin Increment/Decrement onto a row that does not
-         exist yet => the increment half is marten#5342, already fixed on this branch's base. -->
-    <PackageVersion Include="JasperFx" Version="2.64.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.64.0" />
+         exist yet => the increment half is marten#5342, already fixed on this branch's base.
+
+         JasperFx 2.65.0 (marten#5347): the answer to what marten#5343's first-ever runtime run of
+         those suites found. One product fix Marten consumes directly plus two suite fixes, all in
+         jasperfx#780/#784, and no new API.
+
+         jasperfx#780, the product half: JasperFxSingleStreamProjectionBase.ApplyInline left
+         `transformed` null when an Archived event arrived with NO other handled event in the same
+         batch, so an early `continue` skipped maybeArchiveStream and the stream stayed live. The
+         tell that it was a bug rather than intent is that the ownership gate below it,
+         `ownsStream: snapshot != null || transformed != null`, had a DEAD disjunct — the only way
+         past the `continue` was `transformed != null` — and that disjunct documents exactly the
+         intent the `continue` defeated. Reproduced under both Guid and string stream identity, so
+         the identity in the failing fact's name is incidental.
+
+         BUT this does NOT close the archiving fact, and 2.65.0 is not the release that will.
+         Measured on this bump: stream_archiving_compliance.capturing_an_archived_event_archives_a_
+         string_identified_stream is still red, and a Marten-local reproduction of the lone-marker
+         case fails identically. jasperfx#784 (gh-778) says why in its own commit message — "#780
+         closed the inline `continue` ... and on Fisher that changed nothing: both of
+         StreamArchivingCompliance's archived-event facts still failed against it". Two gates sit
+         OUTSIDE the one #780 closed, and the outer one is decisive: Archived is not in a single
+         stream projection's AllEventTypes (an aggregate has no reason to declare an Apply for a
+         stateless marker), so AppliesTo answered false and ApplyInline's opening
+         `streams.Where(x => AppliesTo(...))` screened the stream out before the `continue` was ever
+         reached. #784 merged AFTER the 2.65.0 version-bump commit and is not in the published
+         package, so this fact stays red until a JasperFx release carries it. The Marten-local
+         regression is added on this bump in archiving_events.cs but SKIPPED with that reason, since
+         the blind spot that let this through is that every one of Marten's own archiving tests
+         appends a handled event beside the marker.
+
+         jasperfx#780, the suite half: the two ProjectionSideEffectCompliance rebuild facts asked
+         the daemon for nameof(ComplianceWatchtowerProjection), which silently assumed a store names
+         a projection after the PROJECTION type; Marten names it after the aggregated DOCUMENT type.
+         Neither convention is wrong, which is precisely why a shared suite must not depend on
+         either — the projection now pins its own Name. And AggregateToLinqOperatorCompliance's
+         can_aggregate_with_initial_state_asynchronously asserted a merge of creator output into
+         supplied state that no store performs; the over-tight assertion was dropped.
+
+         Not in 2.65.0: jasperfx#784 (gh-778), which is the commit that actually closes the archiving
+         fact — see above. Track it with the next JasperFx bump. -->
+
+    <PackageVersion Include="JasperFx" Version="2.65.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.65.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.64.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.65.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -475,11 +516,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.64.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.65.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.64.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.65.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -530,7 +571,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.29.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.31.0" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -679,9 +720,32 @@
          matters because a changed index expression makes Weasel drop and recreate the index.
          Also arriving: 9.28.0 (weasel#538) lets a rebuildable Invalid delta through
          AssertPatchingIsValid, and weasel#539/#540 are SQLite and foreign-key-cycle fixes with no
-         Marten surface. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.29.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.29.0" />
+         Marten surface.
+
+         9.31.0 (weasel#579/#580, raised from marten#5345): AssertStreamVersionOperation no longer
+         treats "no row came back" as an unconditional conflict. A stream with no row is at version
+         0, so that is a conflict only when the caller expected something other than 0 — and under
+         AlwaysEnforceConsistency on a never-created stream the caller expects exactly 0, which is
+         how the guard managed to throw "expected 0 but was 0". The operation is shared with Polecat,
+         which is why the fix belongs here rather than in Marten skipping the queue. Closes
+         always_enforce_consistency_compliance.with_the_flag_on_a_never_created_stream_commits with
+         no Marten change; the suite's own remark had named this as "the case a naive 'is there a
+         row?' implementation gets wrong".
+
+         This bump also skips 9.30.0, so more than one release of delta arrives. The one item with a
+         Marten-visible behaviour change is weasel#577/#578: ChangeTracker.DetectChanges no longer
+         falls back to JsonNode.DeepEquals when the ordinal string compare misses, unless
+         IStorageSession.UseSemanticJsonChangeDetection is turned on (a default interface member,
+         defaulting to false, so Marten needs no change to compile). The consequence for a dirty-
+         tracking session is that a document whose Dictionary/HashSet members were REORDERED without
+         changing content is now reported as changed. That can only ever cost a redundant,
+         semantically identical write — never a missed one — which is the safe direction for a
+         detector whose real hazard is dropping a user's edit. The rest of 9.30.0/9.31.0 is lifts and
+         allocation work with no Marten surface: streaming JSON column reads (weasel#576), the
+         flat-table decrement parameter fix already consumed via jasperfx#773, MasterTableTenancy and
+         EventLoaderBase lifts, and precomputed parameter names. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.31.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.31.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
