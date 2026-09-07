@@ -9,6 +9,9 @@
 //   LINQ                  QuerySession.StorageFor(Type) closed StorageFinder<T> reflectively.
 //   captured variable     LinqInternalExtensions.ReduceToConstant compiled a lambda with
 //                         FastExpressionCompiler, i.e. Reflection.Emit.
+//   captured enum         same method, but the enum-to-underlying Convert the C# compiler emits
+//                         for `x.Enum == captured` was not one of the shapes it could walk
+//                         reflectively, so it still reached Reflection.Emit (#5361).
 //   compiled query        CompiledQueryPlan.sortMembers closed PropertyQueryMember<T>
 //                         reflectively.
 //
@@ -49,8 +52,15 @@ try
 
     await using (var writing = store.LightweightSession())
     {
-        writing.Store(new Praktijk { Id = id, AgbCode = "01059910", Naam = "Praktijk Jansen" });
-        writing.Store(new Praktijk { Id = Guid.NewGuid(), AgbCode = "01059911", Naam = "Praktijk Pietersen" });
+        writing.Store(new Praktijk
+        {
+            Id = id, AgbCode = "01059910", Naam = "Praktijk Jansen", Soort = Soort.Huisarts,
+            OptioneleSoort = Soort.Huisarts
+        });
+        writing.Store(new Praktijk
+        {
+            Id = Guid.NewGuid(), AgbCode = "01059911", Naam = "Praktijk Pietersen", Soort = Soort.Apotheek
+        });
         await writing.SaveChangesAsync();
     }
 
@@ -74,6 +84,34 @@ try
     {
         var captured = "01059910";
         var found = await session.Query<Praktijk>().Where(x => x.AgbCode == captured).ToListAsync();
+        return found.Count == 1;
+    });
+
+    await Check("LINQ with an enum literal", async () =>
+    {
+        var found = await session.Query<Praktijk>().Where(x => x.Soort == Soort.Huisarts).ToListAsync();
+        return found.Count == 1;
+    });
+
+    // #5361 — this is the one that threw where the literal above did not.
+    await Check("LINQ with an enum in a captured variable", async () =>
+    {
+        var soort = Soort.Huisarts;
+        var found = await session.Query<Praktijk>().Where(x => x.Soort == soort).ToListAsync();
+        return found.Count == 1;
+    });
+
+    await Check("LINQ with a nullable enum in a captured variable", async () =>
+    {
+        Soort? soort = Soort.Huisarts;
+        var found = await session.Query<Praktijk>().Where(x => x.OptioneleSoort == soort).ToListAsync();
+        return found.Count == 1;
+    });
+
+    await Check("LINQ with an enum comparison operator", async () =>
+    {
+        var soort = Soort.Apotheek;
+        var found = await session.Query<Praktijk>().Where(x => x.Soort < soort).ToListAsync();
         return found.Count == 1;
     });
 
@@ -147,6 +185,14 @@ public class Praktijk
     public Guid Id { get; set; }
     public string AgbCode { get; set; } = "";
     public string Naam { get; set; } = "";
+    public Soort Soort { get; set; }
+    public Soort? OptioneleSoort { get; set; }
+}
+
+public enum Soort
+{
+    Huisarts,
+    Apotheek
 }
 
 public class PraktijkByAgb: ICompiledListQuery<Praktijk>

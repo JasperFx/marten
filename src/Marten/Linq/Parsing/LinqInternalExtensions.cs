@@ -2,9 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
@@ -205,12 +207,10 @@ public static class LinqInternalExtensions
         {
             if (m.Expression is ConstantExpression)
             {
-                var lambdaWithoutParameters =
-                    Expression.Lambda<Func<object>>(Expression.Convert(expression, typeof(object)));
-                var compiledLambda = FastExpressionCompiler.ExpressionCompiler.CompileFast(lambdaWithoutParameters);
-
-                var value = compiledLambda();
-                return new CommandParameter(value);
+                // #5361: this used to compile its own lambda. Going through ReduceToConstant instead
+                // means there is exactly one implementation of "evaluate a closed expression", so the
+                // reflective walk and the Native AOT fallback below cover this call site too.
+                return new CommandParameter(expression.ReduceToConstant().Value);
             }
 
             return collection.MemberFor(expression);
@@ -420,7 +420,7 @@ public static class LinqInternalExtensions
         }
 
         var lambdaWithoutParameters = Expression.Lambda<Func<object>>(Expression.Convert(expression, typeof(object)));
-        var compiledLambda = FastExpressionCompiler.ExpressionCompiler.CompileFast(lambdaWithoutParameters);
+        var compiledLambda = CompileValueReader(lambdaWithoutParameters);
 
         try
         {
@@ -436,18 +436,48 @@ public static class LinqInternalExtensions
     }
 
     /// <summary>
+    ///     Compile the parameter-less lambda that <see cref="ReduceToConstant" /> builds for the
+    ///     shapes <see cref="TryEvaluateWithoutCompiling" /> declines.
+    /// </summary>
+    /// <remarks>
+    ///     #5361: FastExpressionCompiler is Reflection.Emit underneath, so under Native AOT it threw
+    ///     <c>PlatformNotSupportedException</c> for every shape the reflective walk does not cover —
+    ///     leaving the parser one unrecognised expression shape away from a broken query. The BCL's
+    ///     own expression interpreter needs no dynamic code and evaluates the same tree, so it takes
+    ///     over wherever the platform cannot emit. FEC stays the default where it can run: this is on
+    ///     the query-parsing path and FEC is considerably faster than interpreting.
+    /// </remarks>
+    internal static Func<object> CompileValueReader(Expression<Func<object>> lambda)
+    {
+        return CompileValueReader(lambda, RuntimeFeature.IsDynamicCodeSupported);
+    }
+
+    /// <summary>
+    ///     Overload taking the platform capability explicitly so tests can exercise the interpreted
+    ///     path on a runtime that happens to support emitting.
+    /// </summary>
+    internal static Func<object> CompileValueReader(Expression<Func<object>> lambda, bool canEmit)
+    {
+        return canEmit
+            ? FastExpressionCompiler.ExpressionCompiler.CompileFast(lambda)
+            : lambda.Compile(preferInterpretation: true);
+    }
+
+    /// <summary>
     ///     Evaluate the closed expression shapes Marten sees most often — constants, field and
-    ///     property reads (instance or static), boxing/upcast conversions, and array literals of
-    ///     those — without compiling a delegate. Returns false for anything else so the caller can
-    ///     fall back to <c>FastExpressionCompiler</c>.
+    ///     property reads (instance or static), boxing/upcast and enum conversions, and array
+    ///     literals of those — without compiling a delegate. Returns false for anything else so the
+    ///     caller can fall back to <see cref="CompileValueReader(Expression{Func{object}})" />.
     /// </summary>
     /// <remarks>
     ///     #5328: <c>CompileFast</c> is Reflection.Emit under the covers, which Native AOT cannot
     ///     do. Every `where x.Member == captured` clause and every compiled-query parameter lands
-    ///     here, so without this the first non-literal filter throws
+    ///     here, so without this the first non-literal filter threw
     ///     <c>PlatformNotSupportedException: Dynamic code generation is not supported on this
     ///     platform</c>. Reflective member reads are AOT-safe as long as the declaring type
     ///     survives trimming, which it does for the consumer's own query and closure types.
+    ///     #5361 gave the remaining shapes an interpreted fallback, so this is now a fast path
+    ///     rather than the only thing standing between an AOT consumer and a broken query.
     /// </remarks>
     internal static bool TryEvaluateWithoutCompiling(Expression expression, out object? value)
     {
@@ -506,8 +536,29 @@ public static class LinqInternalExtensions
             {
                 NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked or ExpressionType.Quote or
                 ExpressionType.TypeAs
-            } unary when IsValuePreservingConversion(unary):
+            } unary when isValuePreservingConversion(unary):
                 return TryEvaluateWithoutCompiling(unary.Operand, out value);
+
+            // #5361: enum comparison is the one conversion ordinary C# forces through here. The
+            // compiler lowers `where x.Status == captured` to
+            //     Equal(Convert(x.Status, Int32), Convert(closure.captured, Int32))
+            // so the value side always arrives wrapped in an enum-to-underlying Convert. That changes
+            // the value's CLR type but not the number inside it, which makes it safe to do here — and
+            // doing it here is what keeps the most common non-literal filter off the emit path.
+            case UnaryExpression
+            {
+                NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked, Method: null
+            } unary when isEnumRepresentationConversion(unary):
+            {
+                if (!TryEvaluateWithoutCompiling(unary.Operand, out var enumValue))
+                {
+                    value = null;
+                    return false;
+                }
+
+                value = convertEnumRepresentation(enumValue, unary.Type);
+                return true;
+            }
 
             case NewArrayExpression { NodeType: ExpressionType.NewArrayInit } array:
             {
@@ -540,7 +591,7 @@ public static class LinqInternalExtensions
         }
     }
 
-    private static bool IsValuePreservingConversion(UnaryExpression unary)
+    private static bool isValuePreservingConversion(UnaryExpression unary)
     {
         if (unary.Method != null)
         {
@@ -552,6 +603,48 @@ public static class LinqInternalExtensions
         var to = unary.Type;
 
         return to.IsAssignableFrom(from) || Nullable.GetUnderlyingType(to) == from;
+    }
+
+    /// <summary>
+    ///     True for a conversion between an enum and something with the *same* integral
+    ///     representation: an enum to its own underlying type, back again, or between two enums that
+    ///     share one. Widening and narrowing stay out, so only the CLR type of the value changes here
+    ///     and never the number itself.
+    /// </summary>
+    private static bool isEnumRepresentationConversion(UnaryExpression unary)
+    {
+        var from = Nullable.GetUnderlyingType(unary.Operand.Type) ?? unary.Operand.Type;
+        var to = Nullable.GetUnderlyingType(unary.Type) ?? unary.Type;
+
+        if (!from.IsEnum && !to.IsEnum)
+        {
+            return false;
+        }
+
+        return representationOf(from) == representationOf(to);
+    }
+
+    private static object? convertEnumRepresentation(object? value, Type targetType)
+    {
+        // Only a Nullable<T> operand can be null here. Expression.Constant in the caller rejects it
+        // for a non-nullable target, which is the same failure the compiled path produces.
+        if (value == null)
+        {
+            return null;
+        }
+
+        var target = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        // Route through the shared integral representation rather than unboxing, so this reads the
+        // same for every enum underlying type rather than only for the int default.
+        var integral = Convert.ChangeType(value, representationOf(target), CultureInfo.InvariantCulture)!;
+
+        return target.IsEnum ? Enum.ToObject(target, integral) : integral;
+    }
+
+    private static Type representationOf(Type type)
+    {
+        return type.IsEnum ? Enum.GetUnderlyingType(type) : type;
     }
 
     /// <summary>
