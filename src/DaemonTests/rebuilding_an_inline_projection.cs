@@ -9,6 +9,8 @@ using Xunit;
 
 namespace DaemonTests;
 
+[Bobcat.BobcatFeature("Rebuilding an inline projection")]
+[BobcatScenario]
 public class rebuilding_an_inline_projection : DaemonContext
 {
     public rebuilding_an_inline_projection(ITestOutputHelper output) : base(output)
