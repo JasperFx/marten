@@ -2,6 +2,9 @@
 
     <PropertyGroup>
         <LangVersion>latest</LangVersion>
+        <!-- Interceptors are opted into per namespace; Bobcat.Generated is the constant the
+             generator emits into, identical in every project (JasperFx/bobcat#110). -->
+        <InterceptorsNamespaces>$(InterceptorsNamespaces);Bobcat.Generated</InterceptorsNamespaces>
 
         <!-- This suite has been swept for xUnit1051 (#5067): every call that accepts a
              CancellationToken is handed TestContext.Current.CancellationToken, so a hung
@@ -10,6 +13,8 @@
         <ThreadTestCancellationToken>true</ThreadTestCancellationToken>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="Bobcat" />
+        <PackageReference Include="Bobcat.Generators" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <PackageReference Include="Bogus" />
         <PackageReference Include="Confluent.Kafka" />
         <PackageReference Include="Lamar.Microsoft.DependencyInjection" />

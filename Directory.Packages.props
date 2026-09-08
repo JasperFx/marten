@@ -520,6 +520,9 @@
          fixed and must not be weakened to make it green. -->
 
 
+    <!-- Marker-step specifications (JasperFx/bobcat#110), shipped in Bobcat 0.15.0. -->
+    <PackageVersion Include="Bobcat" Version="0.15.0" />
+    <PackageVersion Include="Bobcat.Generators" Version="0.15.0" />
     <PackageVersion Include="JasperFx" Version="2.66.0" />
     <PackageVersion Include="JasperFx.Events" Version="2.66.0" />
     <!--

@@ -58,6 +58,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
 
     public ILogger<IProjection> Logger { get; }
 
+    [Bobcat.BobcatStep("the projection daemon is running", Keyword = "When")]
     internal async Task<IProjectionDaemon> StartDaemon()
     {
         var daemon = theStore.Tenancy.Default.Database.As<MartenDatabase>()
@@ -128,7 +129,8 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         return host;
     }
 
-    protected Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)
+    [Bobcat.BobcatStep("the {shardName} shard reports {action}", Keyword = "When")]
+    internal Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)
     {
         if (timeout == default)
         {
@@ -187,7 +189,8 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
     }
 
     // START HERE, NEEDS TO BE GENERALIZED
-    protected async Task CheckAllExpectedAggregatesAgainstActuals()
+    [Bobcat.BobcatStep("every expected aggregate matches the actual", Keyword = "Then")]
+    internal async Task CheckAllExpectedAggregatesAgainstActuals()
     {
         var actuals = await LoadAllAggregatesFromDatabase();
 
@@ -213,7 +216,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
-    protected async Task CheckAllExpectedGuidCentricAggregatesAgainstActuals<TDoc>(Func<TDoc, Guid> identifier) where TDoc : class
+    internal async Task CheckAllExpectedGuidCentricAggregatesAgainstActuals<TDoc>(Func<TDoc, Guid> identifier) where TDoc : class
     {
         var actuals = await LoadAllAggregatesFromDatabase<Guid, TDoc>(identifier);
 
@@ -239,7 +242,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
-    protected async Task CheckAllExpectedStringCentricAggregatesAgainstActuals<TDoc>(Func<TDoc, string> identifier) where TDoc : class
+    internal async Task CheckAllExpectedStringCentricAggregatesAgainstActuals<TDoc>(Func<TDoc, string> identifier) where TDoc : class
     {
         var actuals = await LoadAllAggregatesFromDatabase<string, TDoc>(identifier);
 
@@ -265,7 +268,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
-    protected async Task CheckAllExpectedAggregatesAgainstActuals(string tenantId)
+    internal async Task CheckAllExpectedAggregatesAgainstActuals(string tenantId)
     {
         var actuals = await LoadAllAggregatesFromDatabase(tenantId);
 
@@ -313,12 +316,13 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
-    protected async Task PublishSingleThreaded()
+    [Bobcat.BobcatStep("the events are published", Keyword = "Given")]
+    internal async Task PublishSingleThreaded()
     {
         await PublishSingleThreaded<Trip>();
     }
 
-    protected async Task PublishSingleThreaded<T>() where T : class
+    internal async Task PublishSingleThreaded<T>() where T : class
     {
         var groups = _streams.GroupBy(x => x.TenantId).ToArray();
         if (groups.Length > 1 || groups.Single().Key != StorageConstants.DefaultTenantId)
@@ -354,7 +358,8 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
-    protected Task PublishMultiThreaded(int threads)
+    [Bobcat.BobcatStep("the events are published on {threads} threads", Keyword = "Given")]
+    internal Task PublishMultiThreaded(int threads)
     {
         foreach (var stream in _streams)
         {

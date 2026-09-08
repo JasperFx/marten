@@ -20,6 +20,8 @@ using Xunit;
 
 namespace DaemonTests.Aggregations;
 
+[Bobcat.BobcatFeature("Building an aggregate projection")]
+[BobcatScenario]
 public class build_aggregate_projection: DaemonContext
 {
     public build_aggregate_projection(ITestOutputHelper output): base(output)
