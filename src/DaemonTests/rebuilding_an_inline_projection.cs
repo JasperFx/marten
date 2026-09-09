@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Bobcat.Xunit;
 using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
 using JasperFx.Events.Projections;
