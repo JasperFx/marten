@@ -16,6 +16,7 @@ using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Tags;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
@@ -279,18 +280,24 @@ public partial class DocumentStore
         var idx = 0;
         foreach (var (tagName, tagValue) in tags)
         {
-            var registration = registered.FirstOrDefault(r => string.Equals(r.TagType.Name, tagName, StringComparison.OrdinalIgnoreCase));
-            if (registration == null)
-            {
-                throw new ArgumentException(
-                    $"Tag type '{tagName}' is not registered on this event store. Registered tag types: {registered.Select(t => t.TagType.Name).Join(", ")}",
-                    nameof(tags));
-            }
+            // #5365 / jasperfx#801: name resolution and value comparison are contract, not local
+            // choices, so both go through the shared matcher. This path used to match the CLR type
+            // name ONLY and compare the value case-sensitively, while Polecat accepted either
+            // spelling and compared case-insensitively — so the same dictionary answered differently
+            // per store, and a caller holding a store descriptor had no way to discover which
+            // spelling to send. It went unnoticed because this overload has no compliance coverage;
+            // EventQuery.TagValues, which does, now shares the same two rules.
+            var registration = registered.RequireByTagName(tagName, nameof(tags));
 
             var tagTable = $"{schema}.mt_event_tag_{registration.TableSuffix}";
             var paramName = $"@tag_value_{idx}";
-            subqueries.Add($"e.seq_id in (select seq_id from {tagTable} where value::text = {paramName})");
-            parameters.Add(new NpgsqlParameter($"tag_value_{idx}", tagValue));
+
+            // Both sides lowered: Postgres renders a Guid lowercase through ::text and SQL Server
+            // renders it uppercase, so an operator's copy-pasted id must not depend on which store
+            // answered. Lowering rather than ILIKE, which would treat _ and % in a tag value as
+            // wildcards.
+            subqueries.Add($"e.seq_id in (select seq_id from {tagTable} where lower(value::text) = {paramName})");
+            parameters.Add(new NpgsqlParameter($"tag_value_{idx}", tagValue.ToLowerInvariant()));
             idx++;
         }
 

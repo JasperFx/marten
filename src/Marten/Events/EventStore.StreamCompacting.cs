@@ -153,23 +153,49 @@ internal static class StreamCompactingExecution
             ((IMartenSession)session).Options.EventGraph, request.StreamId, request.StreamKey, request.Version));
     }
 
+    /// <summary>
+    /// The fold used to build the <see cref="Compacted{T}"/> snapshot.
+    ///
+    /// <para>
+    /// #5366 / jasperfx#800: this used to call <c>TryFindAggregate</c>, the registration-only
+    /// lookup, and refuse anything not already registered as an aggregation projection. That made
+    /// Marten the odd store out — Fisher and Polecat both infer the fold — and imposed a constraint
+    /// nobody would infer from the API: a compaction policy could only ever target an aggregate the
+    /// application already snapshots. It is a portability gap rather than a safety property, and it
+    /// was invisible until runtime.
+    /// </para>
+    ///
+    /// <para>
+    /// <c>AggregatorFor&lt;T&gt;</c> is the on-demand lookup sitting right beside it on the shared
+    /// <c>ProjectionGraph</c>: registered projections first, then a live aggregator built from
+    /// <typeparamref name="T"/>'s own <c>Create</c>/<c>Apply</c> conventions and cached. Every other
+    /// aggregation path in Marten already calls it — <c>AggregateToExtensions</c>, the fetch plans,
+    /// <c>QueryEventStore</c>, <c>RehydrateAtVersionAsync</c> — so compaction was the outlier, most
+    /// likely by accident. The typed overload names <typeparamref name="T"/> outright, which is the
+    /// same declaration of intent a registration would be.
+    /// </para>
+    ///
+    /// <para>
+    /// A type with no aggregation conventions at all still fails, and must: compaction DELETES the
+    /// events it folds, so an empty snapshot would be the worst outcome available here. The refusal
+    /// now comes out of the aggregator build rather than from a registration check, so it is
+    /// rephrased to name what is actually missing.
+    /// </para>
+    /// </summary>
     private static IAggregator<T, IQuerySession> FindAggregator<T>(DocumentSessionBase session) where T : class
     {
-        if (!((IMartenSession)session).Options.Projections.TryFindAggregate(typeof(T), out var projection))
+        try
         {
-            throw new InvalidOperationException("Unable to find an Aggregation Projection for type " +
-                                                typeof(T).FullNameInCode());
+            return ((IMartenSession)session).Options.Projections.AggregatorFor<T>();
         }
-
-        var aggregator = projection as IAggregator<T, IQuerySession>;
-        if (aggregator == null)
+        catch (Exception e)
         {
             throw new InvalidOperationException(
-                $"Type {projection!.GetType().FullNameInCode()} does not implement interface " +
-                $"{typeof(IAggregator<T, IDocumentOperations>).FullNameInCode()}");
+                $"Unable to build an aggregation for type {typeof(T).FullNameInCode()} in order to compact this stream. " +
+                "Compaction folds the stream into a single Compacted<T> event and deletes the events it folded, so it " +
+                "cannot proceed without a usable aggregation. Give the type Create/Apply methods for its events, or " +
+                "register an aggregation projection for it.", e);
         }
-
-        return aggregator;
     }
 }
 
