@@ -60,6 +60,40 @@ public class stream_compacting : OneOffConfigurationsContext
 
     #endregion
 
+    /// <summary>
+    /// #5366 / jasperfx#800: compaction infers the fold, so an aggregate that was never registered
+    /// as a projection compacts like any other. The shared suite pins the happy path; this is the
+    /// Marten-local half — the type with NO aggregation conventions at all must still be refused,
+    /// and loudly.
+    /// </summary>
+    /// <remarks>
+    /// This is the one failure mode worth a dedicated test, because compaction DELETES the events it
+    /// folds. Silently writing an empty snapshot for a type Marten cannot fold would destroy the
+    /// stream's history and leave a plausible-looking Compacted&lt;T&gt; behind — strictly worse than
+    /// the pre-#5366 refusal it replaces. The message has to say what is missing, since the caller's
+    /// mistake is now "this type has no Create/Apply" rather than "I forgot to register it".
+    /// </remarks>
+    [Fact]
+    public async Task compacting_a_type_with_no_aggregation_conventions_is_refused()
+    {
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream(streamId, A(), A(), B());
+        await theSession.SaveChangesAsync();
+
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            await theSession.Events.CompactStreamAsync<NotAnAggregate>(streamId);
+            await theSession.SaveChangesAsync();
+        });
+
+        ex.Message.ShouldContain(nameof(NotAnAggregate));
+
+        // And the stream is untouched: a refusal that had already deleted rows would be the worst
+        // of both worlds.
+        var events = await theSession.Events.FetchStreamAsync(streamId);
+        events.Count.ShouldBe(3);
+    }
+
     [Fact]
     public async Task start_with_self_aggregate()
     {
@@ -396,6 +430,15 @@ public class stream_compacting : OneOffConfigurationsContext
     }
 }
 
+
+/// <summary>
+/// No Create, no Apply, no projection: nothing Marten can fold. The negative case for the #5366
+/// inference change.
+/// </summary>
+public class NotAnAggregate
+{
+    public Guid Id { get; set; }
+}
 
 public class Letters : IRevisioned
 {

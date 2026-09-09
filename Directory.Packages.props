@@ -517,21 +517,50 @@
          With #5354 merged it gets PAST that assertion and fails on
          `_outbox.CommittedBatches should be empty but had 1 item`, which is marten#5353, a genuine
          outbox bug. That transition is the evidence #5354 worked; the fact stays red until #5353 is
-         fixed and must not be weakened to make it green. -->
+         fixed and must not be weakened to make it green.
+
+         JasperFx 2.67.0: two changes Marten consumes directly, each with its own adoption issue.
+
+         jasperfx#801/#802 (marten#5365) adds EventQuery.TagValues, a Dictionary tag filter in the
+         lossy name/value form beside the rich EventTagQuerySpec form. Two traps. First, TagValues
+         joined EventQueryFilters.All, and QueryEventStore declares All, so this bump alone would
+         have Marten silently claim a filter it does not implement, which is the exact failure the
+         jasperfx#737 guard rail exists to prevent. It is implemented in the same PR rather than
+         subtracted. Second, the two spellings combine differently: TagValues entries AND, while
+         TagConditions conditions OR, so one cannot be implemented by delegating to the other.
+         Names resolve through the new shared TagTypeRegistrationExtensions.FindByTagName matcher
+         (CLR simple name or registered table suffix, case-insensitively) and values match the
+         string form of the stored tag value ordinal case-insensitively, because an engine renders
+         a Guid tag in its own casing and an operator's copy-pasted id must not depend on which
+         store answered.
+
+         jasperfx#800/#805 (marten#5366) settles CompactStreamAsync&lt;T&gt; in favour of inferring
+         the fold for an unregistered aggregate, which is what Fisher and Polecat already did.
+         Marten is the store that moves: compaction was calling ProjectionGraph.TryFindAggregate,
+         the registration-only lookup, while every other aggregation path in Marten already calls
+         AggregatorFor&lt;T&gt;, which falls back to building a live aggregator on demand.
+         StreamCompactingCompliance.compacting_infers_the_fold_for_an_unregistered_aggregate is red
+         until that swap lands.
+
+         Also arriving and inert for Marten: jasperfx#803/#804 fixes the event-query CLI's tags
+         flag, which used to manufacture a TypeDescriptor whose FullName was the bare tag name and
+         so threw against every real store. Marten gains the working flag through the package with
+         no Marten change, and EventQueryCompliance now runs the command's own output through the
+         store, which is the only place that gap was visible. -->
 
 
     <!-- Marker-step specifications (JasperFx/bobcat#110), shipped in Bobcat 0.15.0. -->
     <PackageVersion Include="Bobcat" Version="0.15.0" />
     <PackageVersion Include="Bobcat.Generators" Version="0.15.0" />
-    <PackageVersion Include="JasperFx" Version="2.66.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.66.0" />
+    <PackageVersion Include="JasperFx" Version="2.67.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.67.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.66.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.67.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -550,11 +579,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.66.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.67.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.66.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.67.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

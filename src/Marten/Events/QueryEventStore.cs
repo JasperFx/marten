@@ -376,6 +376,17 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.MatchesSql(tagSql, tagParameters));
         }
 
+        // jasperfx#801: the lossy name/value tag filter. Deliberately NOT expressed by folding into
+        // buildTagConditionsFilter — the two spellings combine differently (entries here AND, the
+        // conditions there OR), so delegating one to the other would answer the union where the
+        // caller asked for the intersection. AssertIsWellFormed, run by AssertFiltersAreSupported
+        // above, has already refused a query carrying both.
+        if (query.TagValues.Count > 0)
+        {
+            var (valuesSql, valuesParameters) = buildTagValuesFilter(query.TagValues);
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.MatchesSql(valuesSql, valuesParameters));
+        }
+
         var totalCount = await queryable.CountAsync(token).ConfigureAwait(false);
 
         var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
@@ -397,6 +408,99 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             PageNumber = pageNumber,
             PageSize = query.PageSize
         };
+    }
+
+    /// <summary>
+    /// Translate <see cref="EventQuery.TagValues"/> into a raw SQL fragment over the event query's
+    /// <c>d</c> alias (mt_events), AND'ing the entries. Same per-storage-mode shapes as
+    /// <see cref="buildTagConditionsFilter"/> — a correlated tag-table subquery in TagTables mode,
+    /// an hstore lookup in HStore mode — with two differences that are the whole point of the lossy
+    /// form (jasperfx#801):
+    ///
+    /// <list type="number">
+    /// <item>
+    /// <b>Names resolve through the shared matcher.</b> <c>RequireByTagName</c> accepts either the
+    /// tag type's CLR simple name or its registered table suffix, case-insensitively, and refuses an
+    /// unknown name with an <see cref="ArgumentException"/> listing what IS registered. A caller
+    /// holding only a store descriptor cannot discover which spelling an engine prefers, so the
+    /// matching is contract and lives upstream rather than here. An unknown name must never come
+    /// back as an empty answer: "that tag type does not exist here" and "no event carries that tag"
+    /// would read alike, and a caller with a typo would conclude the events are gone.
+    /// </item>
+    /// <item>
+    /// <b>Values match the STRING form, case-insensitively.</b> The rich form compares the typed CLR
+    /// value; this form exists for text a caller typed or forwarded. Postgres renders a Guid
+    /// lowercase through <c>::text</c> while SQL Server renders it uppercase, so a case-sensitive
+    /// comparison would make an operator's copy-pasted id depend on which store answered. Both sides
+    /// are lowered rather than using ILIKE, which would treat <c>_</c> and <c>%</c> in a tag value as
+    /// wildcards.
+    /// </item>
+    /// </list>
+    ///
+    /// <para>
+    /// Set semantics on both branches (<c>seq_id in (…)</c>, hstore lookup), so an event carrying
+    /// several of the queried tags is still counted and returned once — which is what makes
+    /// <c>TotalCount</c> a count of distinct matching events rather than of condition hits.
+    /// </para>
+    /// </summary>
+    private (string sql, object[] parameters) buildTagValuesFilter(IReadOnlyDictionary<string, string> tagValues)
+    {
+        var events = _store.Events;
+        var schema = events.DatabaseSchemaName;
+        var isHStore = events.DcbStorageMode == DcbStorageMode.HStore;
+        var isConjoined = events.TenancyStyle == TenancyStyle.Conjoined;
+
+        var sb = new System.Text.StringBuilder();
+        var parameters = new List<object>();
+
+        sb.Append('(');
+        var first = true;
+        foreach (var pair in tagValues)
+        {
+            if (!first)
+            {
+                sb.Append(" and ");
+            }
+
+            first = false;
+
+            var registration = events.TagTypes.RequireByTagName(pair.Key,
+                $"{nameof(EventQuery)}.{nameof(EventQuery.TagValues)}");
+
+            sb.Append('(');
+            if (isHStore)
+            {
+                // A missing key yields NULL, and NULL = anything is not true, so an event without
+                // the tag simply fails the predicate.
+                sb.Append("lower(d.tags -> ?) = ?");
+                parameters.Add(registration.TableSuffix);
+                parameters.Add(pair.Value.ToLowerInvariant());
+            }
+            else
+            {
+                // Under conjoined tenancy seq_id is not unique across tenants (per-tenant
+                // sequences), so the correlated subquery must also match tenant_id; the outer event
+                // query is already tenant-scoped. Mirrors HasTagParser / #4645.
+                sb.Append("d.seq_id in (select seq_id from ");
+                sb.Append(schema);
+                sb.Append(".mt_event_tag_");
+                sb.Append(registration.TableSuffix);
+                sb.Append(" where lower(value::text) = ?");
+                if (isConjoined)
+                {
+                    sb.Append(" and tenant_id = d.tenant_id");
+                }
+
+                sb.Append(')');
+                parameters.Add(pair.Value.ToLowerInvariant());
+            }
+
+            sb.Append(')');
+        }
+
+        sb.Append(')');
+
+        return (sb.ToString(), parameters.ToArray());
     }
 
     /// <summary>
