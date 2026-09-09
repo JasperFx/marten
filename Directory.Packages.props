@@ -605,7 +605,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.31.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.31.1" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -777,9 +777,24 @@
          detector whose real hazard is dropping a user's edit. The rest of 9.30.0/9.31.0 is lifts and
          allocation work with no Marten surface: streaming JSON column reads (weasel#576), the
          flat-table decrement parameter fix already consumed via jasperfx#773, MasterTableTenancy and
-         EventLoaderBase lifts, and precomputed parameter names. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.31.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.31.0" />
+         EventLoaderBase lifts, and precomputed parameter names.
+
+         9.31.1 (weasel#583/#584, raised from marten#5364): the managed partition registries are now
+         published as snapshots swapped copy-on-write, instead of a Dictionary mutated in place and
+         handed out through a ReadOnlyDictionary that WRAPS rather than copies it. One instance is
+         shared by every database in a store, and ManagedListPartitions.InitializeAsync used to
+         Clear() it while another database's parallel apply was mid-enumeration, surfacing as
+         "Collection was modified; enumeration operation may not execute" out of
+         DatabaseBase.assertValidIdentifiers (via PerTenantEventSequences.AllNames) during a
+         parallel db-apply, and silently as a torn partition set everywhere else, generated DDL and
+         partition deltas included. Hardening Marten's read side cannot fix this and was tried:
+         ToArray() over a dictionary growing underneath just trades the exception for "Destination
+         array is not long enough", so the write side had to change. Marten needs no product change,
+         only this bump. Bug_5364_concurrent_apply_partition_race is RED on 9.31.0 and GREEN here.
+         The same pass covers Weasel.SqlServer's ManagedTenantPartitions, which had the identical
+         shape, so Polecat gets it too. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.31.1" />
+    <PackageVersion Include="Weasel.Storage" Version="9.31.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
