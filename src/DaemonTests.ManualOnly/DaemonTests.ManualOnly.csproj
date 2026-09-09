@@ -10,18 +10,18 @@
 
     <PropertyGroup>
         <LangVersion>latest</LangVersion>
-
-        <!-- #5363 rendered DaemonTests as Bobcat specifications, which brought in the
-             Bobcat.Generators analyzer. It flows through to this project along the
-             ProjectReference to DaemonTests and emits BobcatStepInterceptors.g.cs here too, so
-             this project needs the same per-namespace interceptor opt-in DaemonTests declares.
-             Without it every generated interceptor is CS9137 and the whole Release compile fails,
-             which is what broke the 9.33.0 publish (this project is not built by any CI job).
-             Bobcat.Generated is the constant the generator emits into, identical in every project
-             (JasperFx/bobcat#110). -->
-        <InterceptorsNamespaces>$(InterceptorsNamespaces);Bobcat.Generated</InterceptorsNamespaces>
     </PropertyGroup>
     <ItemGroup>
+        <!-- #5363 rendered DaemonTests as Bobcat specifications. The generator reaches this
+             project along the ProjectReference to DaemonTests and emits BobcatStepInterceptors.g.cs
+             here too — but a NuGet package's build/ props are private to the project that
+             references it, so the interceptor opt-in that comes with the package does NOT arrive
+             the same way the analyzer does. Referencing the generator here is what makes this
+             project's opt-in its own, and it is the truthful declaration anyway: this project
+             compiles generated interceptor code. Without one or the other, every interceptor is
+             CS9137 and the whole Release compile fails — which is what broke the 9.33.0 publish,
+             since no CI job builds this project. -->
+        <PackageReference Include="Bobcat.Generators" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <PackageReference Include="Bogus" />
         <PackageReference Include="Confluent.Kafka" />
         <PackageReference Include="Lamar.Microsoft.DependencyInjection" />
