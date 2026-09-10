@@ -174,7 +174,7 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
         if (_dict.Count > 0)
         {
             builder.Append(", ");
-            builder.AppendParameter(_serializer.ToCleanJson(_dict), NpgsqlDbType.Jsonb);
+            builder.AppendParameter(JsonbPayload.ToJson(_serializer, _dict), NpgsqlDbType.Jsonb);
             ParameterName = builder.LastParameterName;
         }
 
@@ -351,7 +351,7 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
         {
             var payload = CompiledQueryDictionaryBuilder.Build(dictRef(), usagesRef(), query, default);
             parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
-            parameter.Value = payload is null ? DBNull.Value : (object)serializer.ToCleanJson(payload);
+            parameter.Value = payload is null ? DBNull.Value : JsonbPayload.ToJson(serializer, payload);
         };
     }
 

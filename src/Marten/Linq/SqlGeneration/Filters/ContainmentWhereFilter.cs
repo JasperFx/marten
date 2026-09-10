@@ -133,8 +133,8 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
     public void Apply(ICommandBuilder builder)
     {
         var json = Usage == ContainmentUsage.Singular
-            ? _serializer.ToCleanJson(_data)
-            : _serializer.ToCleanJson(new object[] { _data });
+            ? JsonbPayload.ToJson(_serializer, _data)
+            : JsonbPayload.ToJson(_serializer, new object[] { _data });
 
         if (IsNot)
         {
@@ -200,7 +200,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
             var dict = CompiledQueryDictionaryBuilder.Build(data, usages, query);
             var payload = wrapInArray ? (object)new object[] { dict } : dict;
             parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
-            parameter.Value = serializer.ToCleanJson(payload);
+            parameter.Value = JsonbPayload.ToJson(serializer, payload);
         };
     }
 
