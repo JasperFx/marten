@@ -14,13 +14,16 @@
     <ItemGroup>
         <!-- #5363 rendered DaemonTests as Bobcat specifications. The generator reaches this
              project along the ProjectReference to DaemonTests and emits BobcatStepInterceptors.g.cs
-             here too — but a NuGet package's build/ props are private to the project that
-             references it, so the interceptor opt-in that comes with the package does NOT arrive
-             the same way the analyzer does. Referencing the generator here is what makes this
-             project's opt-in its own, and it is the truthful declaration anyway: this project
-             compiles generated interceptor code. Without one or the other, every interceptor is
-             CS9137 and the whole Release compile fails — which is what broke the 9.33.0 publish,
-             since no CI job builds this project. -->
+             here too, so this project compiles generated interceptor code and declaring the
+             generator is simply the truth about it.
+
+             No longer load-bearing: Bobcat 0.17.1 ships the interceptor opt-in under
+             buildTransitive/ (JasperFx/bobcat#267), so it now reaches a project that gets the
+             generator second-hand and this builds clean without the reference. It was
+             load-bearing on 0.17.0, where the opt-in shipped under build/ and a package's build/
+             assets are private to the project that references it while an analyzer is not — 60
+             CS9137s, and the whole Release compile with them. That is the shape of failure that
+             broke the 9.33.0 publish, and no CI job builds this project to catch it. -->
         <PackageReference Include="Bobcat.Generators" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <PackageReference Include="Bogus" />
         <PackageReference Include="Confluent.Kafka" />

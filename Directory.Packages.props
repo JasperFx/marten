@@ -552,9 +552,9 @@
     <!-- Marker-step specifications (JasperFx/bobcat#110). Bobcat.Xunit is the shipped runner
          adapter, new in 0.17.0; before it, this repo hand-rolled one and it reported every
          scenario as a CleanPass whatever the test actually did. -->
-    <PackageVersion Include="Bobcat" Version="0.17.0" />
-    <PackageVersion Include="Bobcat.Generators" Version="0.17.0" />
-    <PackageVersion Include="Bobcat.Xunit" Version="0.17.0" />
+    <PackageVersion Include="Bobcat" Version="0.17.1" />
+    <PackageVersion Include="Bobcat.Generators" Version="0.17.1" />
+    <PackageVersion Include="Bobcat.Xunit" Version="0.17.1" />
     <PackageVersion Include="JasperFx" Version="2.67.0" />
     <PackageVersion Include="JasperFx.Events" Version="2.67.0" />
     <!--
