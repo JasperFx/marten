@@ -138,7 +138,7 @@ As of Marten 9.0.0-alpha:
 ### Works (AOT-clean)
 
 - **`UseSystemTextJsonForSerialization`** with the default `JsonSerializerOptions` or a user-supplied one. For best AOT results, pass a source-generated `JsonSerializerContext`.
-- **Document storage** — `Schema.For<TDoc>()` and the entire CRUD / LINQ surface for closed-shape document types (Guid / string / int / long / strong-typed Id strategies), including the containment and JSONPath filters a child-collection query compiles to (#5376).
+- **Document storage** — `Schema.For<TDoc>()` and the entire CRUD / LINQ surface for closed-shape document types (Guid / string / int / long / strong-typed Id strategies), including the containment and JSONPath filters a child-collection query compiles to (#5377).
 - **Event storage** — `StartStream`, `Append`, `FetchStream`, `FetchStreamStateAsync`, `AggregateStreamAsync`, `QueryAllRawEvents`, the async daemon. Reading an event needed a JIT until [#5373](https://github.com/JasperFx/marten/issues/5373): the events table closed its per-column reader over the column's member type at runtime.
 - **Projections** — registered either as a projection type (`Projections.Add<T>(...)`) or, for a self-aggregating type, through the identity-typed `LiveStreamAggregation<TDoc, TId>()` / `Snapshot<TDoc, TId>(...)` overloads: `SingleStreamProjection<TDoc, TId>`, `MultiStreamProjection<TDoc, TId>`, `EventProjection`, `CustomProjection`, and `EventApplier` — the JasperFx.Events source generator emits `[GeneratedEvolver]` dispatchers at compile time for each registration. Marten calls `Options.Projections.DiscoverGeneratedEvolvers(...)` at startup (`src/Marten/DocumentStore.cs:84`) to pick them up.
 - **Compiled queries** registered through `Marten.SourceGenerator` in an assembly marked `[JasperFxAssembly]`.
@@ -261,7 +261,7 @@ NotSupportedException: JsonTypeInfo metadata for type 'System.Object[]' was not 
 TypeInfoResolver of type 'MyApp.MyJsonContext'.
 ```
 
-Fixed by [#5376](https://github.com/JasperFx/marten/pull/5376) — upgrade rather than working around it.
+Fixed by [#5377](https://github.com/JasperFx/marten/pull/5377) — upgrade rather than working around it.
 A filter over a child collection (`x => x.Debtors.Any(d => d.Number == number)`) becomes a jsonb
 containment query, and Marten used to serialize that payload — its own dictionary of member names to the
 values you compared against — through *your* serializer. A source-generated resolver carries your
