@@ -98,6 +98,12 @@ builder.Services.AddMarten(opts =>
     opts.Schema.For<Invoice>();
     opts.Events.AddEventType<InvoiceCreated>();
     opts.Projections.Add<InvoiceSummaryProjection>(ProjectionLifecycle.Inline);
+
+    // Say the aggregate's identity type out loud. The single-parameter overloads read it off the
+    // document mapping and close SingleStreamProjection<,> with it at runtime, which a native
+    // binary has no code for.
+    opts.Projections.LiveStreamAggregation<Order, Guid>();
+    opts.Projections.Snapshot<Shipment, string>(SnapshotLifecycle.Inline);
 });
 
 using var host = builder.Build();
@@ -133,8 +139,8 @@ As of Marten 9.0.0-alpha:
 
 - **`UseSystemTextJsonForSerialization`** with the default `JsonSerializerOptions` or a user-supplied one. For best AOT results, pass a source-generated `JsonSerializerContext`.
 - **Document storage** — `Schema.For<TDoc>()` and the entire CRUD / LINQ surface for closed-shape document types (Guid / string / int / long / strong-typed Id strategies).
-- **Event storage** — `StartStream`, `Append`, `FetchStream`, `FetchStreamStateAsync`, the async daemon.
-- **Projections** — `SingleStreamProjection<TDoc, TId>`, `MultiStreamProjection<TDoc, TId>`, `EventProjection`, `CustomProjection`, and `EventApplier` — the JasperFx.Events source generator emits `[GeneratedEvolver]` dispatchers at compile time for each registration. Marten calls `Options.Projections.DiscoverGeneratedEvolvers(...)` at startup (`src/Marten/DocumentStore.cs:84`) to pick them up.
+- **Event storage** — `StartStream`, `Append`, `FetchStream`, `FetchStreamStateAsync`, `AggregateStreamAsync`, `QueryAllRawEvents`, the async daemon. Reading an event needed a JIT until [#5373](https://github.com/JasperFx/marten/issues/5373): the events table closed its per-column reader over the column's member type at runtime.
+- **Projections** — registered either as a projection type (`Projections.Add<T>(...)`) or, for a self-aggregating type, through the identity-typed `LiveStreamAggregation<TDoc, TId>()` / `Snapshot<TDoc, TId>(...)` overloads: `SingleStreamProjection<TDoc, TId>`, `MultiStreamProjection<TDoc, TId>`, `EventProjection`, `CustomProjection`, and `EventApplier` — the JasperFx.Events source generator emits `[GeneratedEvolver]` dispatchers at compile time for each registration. Marten calls `Options.Projections.DiscoverGeneratedEvolvers(...)` at startup (`src/Marten/DocumentStore.cs:84`) to pick them up.
 - **Compiled queries** registered through `Marten.SourceGenerator` in an assembly marked `[JasperFxAssembly]`.
 - **Secondary stores** registered via `services.AddMartenStore<TInterface>()` — Marten 9 builds the implementation type via `System.Reflection.Emit` (PR [#4459](https://github.com/JasperFx/marten/pull/4459)). The trimmer warning at the emit site carries a `[RequiresDynamicCode]` annotation; published apps that use this surface can either suppress or rely on the runtime fall-through to keep working.
 - **`Marten.AspNetCore`** streaming endpoints (`WriteArray`, `StreamMany`, `WriteSingle`, etc.) — clean.
@@ -247,6 +253,28 @@ Two shapes still need runtime code generation and therefore still need a JIT:
 - **A `where` clause whose value comes from a method call** — `x => x.Name == BuildName()`. Constants, captured locals, instance and static members, member chains and array literals are all evaluated reflectively; anything else falls back to expression compilation. Hoist the call into a local before the query.
 
 Compiled queries remain worth using under AOT for their own reasons — reference `Marten.SourceGenerator`, add `[assembly: JasperFx.JasperFxAssembly]`, and call `session.QueryAsync(compiledQueryInstance)` to dispatch through a source-generated handler instead of parsing the expression tree on every call. See [`Marten.SourceGenerator/README.md`](https://github.com/JasperFx/marten/blob/master/src/Marten.SourceGenerator/README.md) for the full surface. They are no longer a *workaround* for LINQ, though.
+
+### A child-collection filter throws `JsonTypeInfo metadata for type 'System.Object[]'`
+
+```text
+NotSupportedException: JsonTypeInfo metadata for type 'System.Object[]' was not provided by
+TypeInfoResolver of type 'MyApp.MyJsonContext'.
+```
+
+A filter over a child collection (`x => x.Debtors.Any(d => d.Number == number)`) becomes a jsonb
+containment query, and Marten serializes that payload — a `Dictionary<string, object>` of member
+names to the values you compared against — through *your* serializer. A source-generated resolver
+does not carry Marten's own shapes, so it throws before the query is ever sent.
+
+Until Marten writes that payload itself ([#5374](https://github.com/JasperFx/marten/issues/5374)),
+declare the shapes on your context, including every enum a filter like this compares:
+
+```csharp
+[JsonSerializable(typeof(object[]))]
+[JsonSerializable(typeof(Dictionary<string, object>))]
+[JsonSerializable(typeof(DebtorType))]
+public partial class MyJsonContext: JsonSerializerContext;
+```
 
 ### Secondary store throws `MissingMethodException` at boot
 

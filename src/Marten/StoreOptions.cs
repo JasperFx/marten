@@ -934,7 +934,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         // the affected type. Callers that genuinely need every mapping
         // materialized (codegen, full schema migration, type-enumeration
         // APIs) should call Storage.BuildAllMappings() explicitly.
-        Schema.For<DeadLetterEvent>().DatabaseSchemaName(Events.DatabaseSchemaName).SingleTenanted();
+        // The identity is named instead of discovered: DeadLetterEvent is ours, nothing in a
+        // consumer's code mentions its Id, and a trimmed build therefore has no Id member left to
+        // find - so every schema operation on an event store threw InvalidDocumentException.
+        Schema.For<DeadLetterEvent>().Identity(x => x.Id).DatabaseSchemaName(Events.DatabaseSchemaName)
+            .SingleTenanted();
 
         // Validate any mappings that were already materialized during
         // configuration (Schema.For<T>() with eager builder customization

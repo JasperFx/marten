@@ -148,6 +148,11 @@ public class SingleStreamProjection<TDoc, TId>:
     [JasperFxIgnore]
     public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
+        // BuilderFor<TDoc>() first, because TDoc is known here and FindMapping is not: without a
+        // builder registered for it, the Type-keyed path closes DocumentMappingBuilder<> at runtime and
+        // a Native AOT build throws for any aggregate that no Schema.For<T>() names.
+        options.Storage.BuilderFor<TDoc>();
+
         var mapping = options.Storage.FindMapping(typeof(TDoc)).Root.As<DocumentMapping>();
 
         foreach (var p in validateDocumentIdentity(options, mapping)) yield return p;

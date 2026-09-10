@@ -208,6 +208,53 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     }
 
     /// <summary>
+    ///     Register live stream aggregation, naming the aggregate's identity type so nothing has to be
+    ///     closed at runtime. The overload without <typeparamref name="TId" /> infers it from the
+    ///     document mapping, which a Native AOT build cannot do.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TId"></typeparam>
+    /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
+    /// <returns>The extended storage configuration for entity T</returns>
+    public MartenRegistry.DocumentMappingExpression<T> LiveStreamAggregation<T, TId>(
+        Action<AsyncOptions>? asyncConfiguration = null
+    ) where T : notnull where TId : notnull
+    {
+        var expression = register<T>(new SingleStreamProjection<T, TId>(), ProjectionLifecycle.Live, null,
+            asyncConfiguration);
+
+        // Hack to address https://github.com/JasperFx/marten/issues/2610
+        _options.Storage.MappingFor(typeof(T)).SkipSchemaGeneration = true;
+
+        return expression;
+    }
+
+    /// <summary>
+    ///     Perform automated snapshot on each event for selected entity type, naming the aggregate's
+    ///     identity type so nothing has to be closed at runtime. The overload without
+    ///     <typeparamref name="TId" /> infers it from the document mapping, which a Native AOT build
+    ///     cannot do.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="TId"></typeparam>
+    /// <param name="lifecycle">Override the snapshot lifecycle. The default is Inline</param>
+    /// <param name="configureProjection">Use it to further customize the projection.</param>
+    /// <param name="asyncConfiguration">
+    ///     Optional configuration including teardown instructions for the usage of this
+    ///     projection within the async projection daemon
+    /// </param>
+    /// <returns>The extended storage configuration for document T</returns>
+    public MartenRegistry.DocumentMappingExpression<T> Snapshot<T, TId>(
+        SnapshotLifecycle lifecycle,
+        Action<ProjectionBase>? configureProjection = null,
+        Action<AsyncOptions>? asyncConfiguration = null
+    ) where T : notnull where TId : notnull
+    {
+        return register<T>(new SingleStreamProjection<T, TId>(), lifecycle.Map(), configureProjection,
+            asyncConfiguration);
+    }
+
+    /// <summary>
     ///     Perform automated snapshot on each event for selected entity type
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -257,11 +304,25 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
                 $"This registration mechanism can only be used for an aggregate type that is 'self-aggregating'. Please use the Projections.Add() API instead to register {typeof(T).FullNameInCode()}");
         }
 
-        // Make sure there's a DocumentMapping for the aggregate
-        var expression = _options.Schema.For<T>();
+        // Make sure there's a DocumentMapping for the aggregate before its identity is read off one
+        _options.Schema.For<T>();
 
         var identityType = new DocumentMapping(typeof(T), _options).IdType;
         var source = typeof(SingleStreamProjection<,>).CloseAndBuildAs<ProjectionBase>(typeof(T), identityType);
+
+        return register<T>(source, lifecycle, configureProjection, asyncConfiguration);
+    }
+
+    private MartenRegistry.DocumentMappingExpression<T> register<T>(
+        ProjectionBase source,
+        ProjectionLifecycle lifecycle,
+        Action<ProjectionBase>? configureProjection,
+        Action<AsyncOptions>? asyncConfiguration
+    )
+    {
+        // Make sure there's a DocumentMapping for the aggregate
+        var expression = _options.Schema.For<T>();
+
         source.Lifecycle = lifecycle;
 
         configureProjection?.Invoke(source);

@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -78,9 +79,29 @@ internal static class EventColumnReaders
         var member = MemberFinder.Determine(memberExpression).Single();
         var memberType = member.GetMemberType()!;
 
-        // We call BuildAsyncImpl<T> with the right T via reflection (once,
-        // at startup). BuildAsyncImpl returns a delegate that's strongly
-        // typed and doesn't box.
+        // BuildAsyncImpl<T> is closed here, where the compiler emits the instantiation, rather than
+        // through MakeGenericMethod: every column the events table declares is one of these types, and
+        // under Native AOT a runtime-closed generic method has no native code -- so the reflective
+        // route below throws on the first event read, which is every AggregateStreamAsync,
+        // FetchForWriting and projection. Same shape of fix as #5328.
+        if (memberType == typeof(Guid)) return BuildAsyncImpl<Guid>(member);
+        if (memberType == typeof(Guid?)) return BuildAsyncImpl<Guid?>(member);
+        if (memberType == typeof(string)) return BuildAsyncImpl<string>(member);
+        if (memberType == typeof(long)) return BuildAsyncImpl<long>(member);
+        if (memberType == typeof(int)) return BuildAsyncImpl<int>(member);
+        if (memberType == typeof(bool)) return BuildAsyncImpl<bool>(member);
+        if (memberType == typeof(DateTimeOffset)) return BuildAsyncImpl<DateTimeOffset>(member);
+        if (memberType == typeof(DateTime)) return BuildAsyncImpl<DateTime>(member);
+
+        return BuildAsyncReflectively(memberType, member);
+    }
+
+    /// <summary>The escape hatch for a column type the closed set above does not name. Fine under a
+    /// JIT, and the only thing left that a Native AOT build cannot run.</summary>
+    [RequiresDynamicCode("Closes BuildAsyncImpl<T> with MethodInfo.MakeGenericMethod")]
+    private static Func<DbDataReader, int, IEvent, CancellationToken, Task> BuildAsyncReflectively(
+        Type memberType, MemberInfo member)
+    {
         var helper = typeof(EventColumnReaders)
             .GetMethod(nameof(BuildAsyncImpl), BindingFlags.NonPublic | BindingFlags.Static)!
             .MakeGenericMethod(memberType);

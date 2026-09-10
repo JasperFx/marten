@@ -14,6 +14,12 @@
 //                         reflectively, so it still reached Reflection.Emit (#5361).
 //   compiled query        CompiledQueryPlan.sortMembers closed PropertyQueryMember<T>
 //                         reflectively.
+//   event read            EventColumnReaders.BuildAsync closed BuildAsyncImpl<T> with
+//                         MethodInfo.MakeGenericMethod, so the first event any read brought back
+//                         threw - every AggregateStreamAsync, FetchForWriting and projection.
+//   live aggregation      Projections.LiveStreamAggregation<T>() closed SingleStreamProjection<,>
+//                         on an identity type only known at runtime, and validating it closed
+//                         DocumentMappingBuilder<> over the aggregate.
 //
 // Exits non-zero with the offending stack trace on the first failure, so CI reports the
 // specific read path that regressed.
@@ -22,6 +28,7 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using JasperFx;
+using JasperFx.Events;
 using Marten;
 using Marten.Linq;
 using Weasel.Core;
@@ -40,6 +47,15 @@ var store = DocumentStore.For(o =>
     o.AutoCreateSchemaObjects = AutoCreate.All;
     o.DatabaseSchemaName = "aot_runtime_smoke";
     o.Schema.For<Praktijk>().Index(x => x.AgbCode);
+
+    o.Events.StreamIdentity = StreamIdentity.AsString;
+    o.Events.AddEventType<DossierGeopend>();
+    o.Events.AddEventType<RegelToegevoegd>();
+
+    // The identity type is said out loud: the overload without it has to close
+    // SingleStreamProjection<,> at runtime. Dossier is deliberately not named by a Schema.For<T>()
+    // either, so this also covers the aggregate's mapping being built from a Type.
+    o.Projections.LiveStreamAggregation<Dossier, string>();
 });
 
 var failures = 0;
@@ -61,6 +77,8 @@ try
         {
             Id = Guid.NewGuid(), AgbCode = "01059911", Naam = "Praktijk Pietersen", Soort = Soort.Apotheek
         });
+        writing.Events.StartStream<Dossier>("dossier-1",
+            new DossierGeopend("dossier-1", "Dossier Jansen"), new RegelToegevoegd("12000"));
         await writing.SaveChangesAsync();
     }
 
@@ -142,6 +160,20 @@ try
         var found = await session.QueryAsync(new PraktijkByAgb { AgbCode = "01059910" });
         return found.Count() == 1;
     });
+
+    // Reading an event is a separate path from reading a document: the events table hands its
+    // columns to the event through reader delegates of its own.
+    await Check("event stream read + live aggregation", async () =>
+    {
+        var dossier = await session.Events.AggregateStreamAsync<Dossier>("dossier-1");
+        return dossier?.Naam == "Dossier Jansen" && dossier.Regels == 1;
+    });
+
+    await Check("raw event query", async () =>
+    {
+        var events = await session.Events.QueryAllRawEvents().ToListAsync();
+        return events.Count == 2 && events[0].StreamKey == "dossier-1";
+    });
 }
 catch (Exception e)
 {
@@ -156,7 +188,7 @@ if (failures > 0)
     return 1;
 }
 
-Console.WriteLine("Marten AOT runtime smoke OK — every document read path ran from a native binary.");
+Console.WriteLine("Marten AOT runtime smoke OK — every document and event read path ran from a native binary.");
 return 0;
 
 async Task Check(string description, Func<Task<bool>> check)
@@ -203,5 +235,23 @@ public class PraktijkByAgb: ICompiledListQuery<Praktijk>
         q => q.Where(x => x.AgbCode == AgbCode);
 }
 
+public class Dossier
+{
+    public string Id { get; set; } = "";
+    public string Naam { get; set; } = "";
+    public int Regels { get; set; }
+
+    public static Dossier Create(DossierGeopend geopend) => new() { Id = geopend.Nummer, Naam = geopend.Naam };
+
+    public static void Apply(RegelToegevoegd _, Dossier dossier) => dossier.Regels++;
+}
+
+public record DossierGeopend(string Nummer, string Naam);
+
+public record RegelToegevoegd(string Prestatiecode);
+
 [JsonSerializable(typeof(Praktijk))]
+[JsonSerializable(typeof(Dossier))]
+[JsonSerializable(typeof(DossierGeopend))]
+[JsonSerializable(typeof(RegelToegevoegd))]
 public partial class SmokeJson: JsonSerializerContext;
