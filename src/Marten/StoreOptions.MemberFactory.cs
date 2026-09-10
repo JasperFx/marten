@@ -68,7 +68,7 @@ public partial class StoreOptions
         {
             return serializer.EnumStorage == Weasel.Core.EnumStorage.AsInteger
                 ? new EnumAsIntegerMember(parent, serializer.Casing, member)
-                : new EnumAsStringMember(parent, serializer.Casing, member);
+                : new EnumAsStringMember(parent, serializer.Casing, member, serializer);
         }
 
         if (memberType == typeof(DateTime) || memberType == FSharpTypeHelper.MakeFSharpOptionType(typeof(DateTime)))
