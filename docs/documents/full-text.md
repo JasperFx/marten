@@ -230,7 +230,7 @@ public class BlogPost
 ## Text Search
 
 Postgres contains built in [Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). They enable the possibility to do more sophisticated searching through text fields. Marten gives possibility to define full text indexes and perform queries on them.
-Currently four types of full Text Search functions are supported:
+Five full text search operators are supported, one per PostgreSQL query function plus a prefix form built on `to_tsquery`:
 
 * regular Search (to_tsquery)
 
@@ -280,6 +280,24 @@ var posts = (await session.Query<BlogPost>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L345-L351' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_web_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+* prefix Search (to_tsquery with the `:*` prefix operator on every word)
+
+<!-- snippet: sample_prefix_search_in_query_sample -->
+<a id='snippet-sample_prefix_search_in_query_sample'></a>
+```cs
+var results = (await session.Query<BlogPost>()
+    .Where(x => x.PrefixSearch("Priced"))
+    .ToListAsync());
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L966-L970' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_prefix_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`PrefixSearch` rewrites the term before it reaches PostgreSQL: the words are split on spaces and each becomes a prefix, joined with `&`, so `"Priced idea"` is sent as `Priced:* & idea:*`. That is the difference from `Search("Priced")`, which asks for the whole lexeme and does not match `PricedIdeaScreening`. Reach for it when the indexed text is an identifier rather than prose: enum values stored as strings, concatenated codes, type-ahead over names. Because the words are joined with `&`, every word must prefix-match something in the document.
+
+Two things follow from the rewrite. A prefix is matched against the *stemmed* lexemes the index holds, so with the default `english` configuration `"screen"` matches `Screening` but a prefix that only exists in the unstemmed word may not. And the term reaches `to_tsquery` as query syntax, so a word containing `&`, `|`, `!`, `(`, `)` or `:` is a syntax error rather than a search for that character; strip or quote such input before calling it.
+
+Ranking a prefix search needs the rewritten form spelled out. `OrderByTextRank` takes the term and the query function as you would pass them to PostgreSQL, so pair `PrefixSearch("Priced idea")` with `OrderByTextRank("Priced:* & idea:*", TextSearchFunction.Raw)` (see [Ordering by relevance](#ordering-by-relevance) below).
+
 All types of Text Searches can be combined with other Linq queries
 
 <!-- snippet: sample_text_search_combined_with_other_query_sample -->
@@ -303,6 +321,18 @@ var posts = (await session.Query<BlogPost>()
     .ToListAsync());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L405-L411' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regconfig_sample' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Session shortcuts
+
+Each operator also has a one-call form on `IQuerySession` for the common case of "every document of a type matching this text": `SearchAsync<T>`, `PlainTextSearchAsync<T>`, `PhraseSearchAsync<T>`, `WebStyleSearchAsync<T>` and `PrefixSearchAsync<T>`, each taking the term, an optional `regConfig` (default `english`) and a cancellation token. They are exactly `Query<T>().Where(x => x.XxxSearch(term, regConfig)).ToListAsync()` and add nothing else, so switch to the LINQ form the moment you need another predicate, an ordering or a page.
+
+<!-- snippet: sample_prefix_search_async -->
+<a id='snippet-sample_prefix_search_async'></a>
+```cs
+var results = await session.PrefixSearchAsync<BlogPost>("Priced idea");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L994-L996' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_prefix_search_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Weighted Full Text Indexes and Relevance Ranking <Badge type="tip" text="9.31" />
@@ -398,7 +428,7 @@ var result = await session
     .Where(x => x.UserName.NgramSearch(term))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L67-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L69-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_ngram_search-1'></a>
 ```cs
 var store = DocumentStore.For(_ =>
@@ -432,7 +462,7 @@ var result = await session
     .Where(x => x.UserName.NgramSearch(term))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L82-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L84-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-1' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_ngram_search-2'></a>
 ```cs
 var result = await session
@@ -440,7 +470,7 @@ var result = await session
     .Where(x => x.Address.Line1.NgramSearch(term))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L147-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L149-L154' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: info
@@ -493,7 +523,7 @@ var result = await session
    .Where(x => x.UserName.NgramSearch("uðmu") || x.UserName.NgramSearch("øre"))
    .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L161-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search_unaccent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L163-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search_unaccent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: info
