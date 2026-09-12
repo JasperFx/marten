@@ -129,6 +129,18 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.VersionFor(document, session);
     }
 
+    // #5372: the mapped version/revision member is declared on the root document type and is
+    // readable from a subclass instance, so the root storage answers for both.
+    public Guid? MappedVersionFor(T document)
+    {
+        return _parent.MappedVersionFor(document);
+    }
+
+    public long? MappedRevisionFor(T document)
+    {
+        return _parent.MappedRevisionFor(document);
+    }
+
     public void Store(IStorageSession session, T document)
     {
         _parent.Store(session, document);
