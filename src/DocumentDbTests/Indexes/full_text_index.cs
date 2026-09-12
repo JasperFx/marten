@@ -963,9 +963,37 @@ public class full_text_index: OneOffConfigurationsContext
             noMatch.ShouldBeEmpty();
 
             // PrefixSearch DOES match because it uses the :* prefix operator
+            #region sample_prefix_search_in_query_sample
             var results = (await session.Query<BlogPost>()
                 .Where(x => x.PrefixSearch("Priced"))
                 .ToListAsync());
+            #endregion
+
+            results.Count.ShouldBe(1);
+            results[0].Id.ShouldBe(expectedId);
+        }
+    }
+
+    [Fact]
+    public async Task prefix_search_async_convenience_matches_the_linq_form()
+    {
+        StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+        var expectedId = Guid.NewGuid();
+
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(new BlogPost { Id = expectedId, EnglishText = "Priced Idea Screening" });
+            session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "Unrelated Content" });
+            await session.SaveChangesAsync();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            // every word is a prefix and every prefix must match: "Priced:* & idea:*"
+            #region sample_prefix_search_async
+            var results = await session.PrefixSearchAsync<BlogPost>("Priced idea");
+            #endregion
 
             results.Count.ShouldBe(1);
             results[0].Id.ShouldBe(expectedId);
