@@ -112,6 +112,72 @@ public class Bug_5374_containment_payload_json
         Apotheek
     }
 
+    // #5385: Newtonsoft's contract resolver sets ProcessDictionaryKeys = true for CamelCase and
+    // SnakeCase, so the old ToCleanJson path transformed *dictionary keys* as well as property names.
+    // The payload's own top-level keys survive that unchanged because they are already
+    // member.ToJsonKey(casing) — re-casing them is idempotent — which is exactly why the existing
+    // Newtonsoft test above passes and this gap went unnoticed. A nested dictionary is different: its
+    // keys come from the caller (DictionaryMember.PlaceValueInDictionaryForContainment copies the
+    // KeyValuePair the query supplied), so the serializer would case them and JsonbPayload would not.
+    //
+    // The top-level key here is deliberately already-lowercase so the only thing under test is the
+    // nested one. System.Text.Json is unaffected: Marten never sets DictionaryKeyPolicy.
+    [Theory]
+    [InlineData(Casing.Default)]
+    [InlineData(Casing.CamelCase)]
+    [InlineData(Casing.SnakeCase)]
+    public void writes_what_newtonsoft_wrote_for_a_nested_dictionary_key(Casing casing)
+    {
+        var serializer = new Marten.Services.JsonNetSerializer { Casing = casing };
+        var data = new Dictionary<string, object>
+        {
+            ["kenmerken"] = new Dictionary<string, string> { ["Kleur"] = "blauw" }
+        };
+
+        JsonNode.DeepEquals(
+                JsonNode.Parse(JsonbPayload.ToJson(serializer, data)),
+                JsonNode.Parse(serializer.ToCleanJson(data)))
+            .ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(Casing.Default)]
+    [InlineData(Casing.CamelCase)]
+    [InlineData(Casing.SnakeCase)]
+    public void writes_what_system_text_json_wrote_for_a_nested_dictionary_key(Casing casing)
+    {
+        var serializer = new MartenSystemTextJsonSerializer { Casing = casing };
+        var data = new Dictionary<string, object>
+        {
+            ["kenmerken"] = new Dictionary<string, string> { ["Kleur"] = "blauw" }
+        };
+
+        JsonbPayload.ToJson(serializer, data).ShouldBe(serializer.ToCleanJson(data));
+    }
+
+    // #5385: a byte array is IEnumerable, so without its own branch it came out as a list of numbers
+    // where both serializers write a base64 string.
+    [Fact]
+    public void writes_what_system_text_json_wrote_for_a_byte_array()
+    {
+        var serializer = new MartenSystemTextJsonSerializer();
+        var data = new Dictionary<string, object> { ["Inhoud"] = new byte[] { 1, 2, 3, 250 } };
+
+        JsonbPayload.ToJson(serializer, data).ShouldBe(serializer.ToCleanJson(data));
+    }
+
+    [Fact]
+    public void writes_what_newtonsoft_wrote_for_a_byte_array()
+    {
+        var serializer = new Marten.Services.JsonNetSerializer();
+        var data = new Dictionary<string, object> { ["Inhoud"] = new byte[] { 1, 2, 3, 250 } };
+
+        JsonNode.DeepEquals(
+                JsonNode.Parse(JsonbPayload.ToJson(serializer, data)),
+                JsonNode.Parse(serializer.ToCleanJson(data)))
+            .ShouldBeTrue();
+    }
+
     // A value the writer does not render itself falls through to the serializer, which is the only thing
     // that knows about a converter the consumer registered.
     [Fact]

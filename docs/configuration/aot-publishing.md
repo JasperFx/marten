@@ -267,6 +267,20 @@ containment query, and Marten used to serialize that payload — its own diction
 values you compared against — through *your* serializer. A source-generated resolver carries your
 documents, not that, so the query threw before it was ever sent. Marten now writes the payload itself.
 
+The split is by ownership: Marten writes the shapes that are its own (the payload dictionary, and the
+array a child-collection filter wraps it in) plus the scalar leaves, and hands everything that came out
+of your document — a typed nested dictionary, an enum, a record, a value object — back to your
+serializer, which has those types because they are part of a document.
+
+One consequence worth knowing, because it is the price of not needing your resolver for Marten's own
+shapes: the scalars written here do **not** go through your `JsonSerializerOptions`. A
+`NumberHandling` setting, or a custom converter for one of the scalar types (`decimal`,
+`DateTimeOffset`, `Guid`, …), will not affect how a *filter value* of that type is rendered, even
+though it affects how the document was stored. If you rely on one of those, compare through a member
+whose type Marten hands to the serializer rather than one it renders itself. A custom
+`JavaScriptEncoder` is not a concern: Postgres parses the payload into jsonb, where an escaped and an
+unescaped character are the same character.
+
 ### Secondary store throws `MissingMethodException` at boot
 
 `AddMartenStore<TInterface>` uses `System.Reflection.Emit` to materialize the implementation type at runtime (Marten 9 ripped out the Roslyn-emit subclass path in PR [#4459](https://github.com/JasperFx/marten/pull/4459)). Native AOT supports `Reflection.Emit` only on full-AOT runtimes that include the JIT; some trimming configurations strip it. If a secondary store throws `MissingMethodException` at boot, check:
