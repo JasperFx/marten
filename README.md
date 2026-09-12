@@ -63,29 +63,30 @@ PostgreSQL database connection string is explicitly configured following the ste
 
 Marten supports native patching since v7.x. you can refer to [patching api](https://martendb.io/documents/partial-updates-patching.html) for more details.
 
-### PLV8
-
-If you'd like to use [PLV8 Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
-
-Note that PLV8 patching will be deprecated in future versions and native patching is the drop in replacement for it. You can easily migrate to native patching, refer [here](https://martendb.io/documents/partial-updates-patching.html#patching-api) for more details.
+### Database Setup
 
 Ensure the following:
 
 - The login you are using to connect to your database is a member of the `postgres` role
 - An environment variable of `marten_testing_database` is set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about PostgreSQL connection strings ).
 
-_Help with PSQL/PLV8_
-
-- On Windows, see [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries of PLV8
-- On *nix, check [marten-local-db](https://github.com/eouw0o83hf/marten-local-db) for a Docker based PostgreSQL instance including PLV8.
+PLV8 is no longer part of developing Marten: the patching API it once backed was replaced by the
+native implementation linked above, and the compose image dropped the extension. If you are
+maintaining an older application that still uses it, it lives in the separate `Marten.PLv8` package.
 
 ### Test Config Customization
 
-Some of our tests are run against a particular PostgreSQL version. If you'd like to run different database versions, you can do it by setting `POSTGRES_IMAGE` env variables, for instance:
+`docker-compose.yml` builds its PostgreSQL image from `docker/postgres/Dockerfile`, which layers
+PostGIS 3 and pgvector onto the official `postgres:17` image so the Marten.PostGIS and Marten.PgVector
+test projects have the extensions they need. Both Debian packages are multi-arch, so this builds on
+Apple-silicon hosts without emulation.
 
-```bash
-POSTGRES_IMAGE=postgres:15.3-alpine docker compose up
-```
+To run against a different PostgreSQL version, point the test suite at your own database with the
+`marten_testing_database` environment variable rather than overriding the compose image — the service
+uses `build:`, so it has no image tag to override.
+
+Note that the async daemon requires **PostgreSQL 13 or later** (it calls `pg_current_snapshot()`); CI
+runs `postgres:15-alpine` and `postgres:latest`.
 
 Tests explorer should be able to detect database version automatically, but if it's not able to do it, you can enforce it by setting `postgresql_version` to a specific one (e.g.)
 
@@ -164,16 +165,19 @@ Refer to build commands section to look up the commands to open the StoryTeller 
 
 ### Current Build Matrix
 
-| CI              | .NET | Postgres  |        plv8        | Serializer | 
-|-----------------|:----:|:---------:|:------------------:|:----------:|
-| GitHub Actions  |  8   |   12.8    | :white_check_mark: |    STJ     | 
-| GitHub Actions  |  8   | 15-alpine |        :x:         | Newtonsoft | 
-| GitHub Actions  |  7   |   12.8    | :white_check_mark: |  JSON.NET  | 
-| GitHub Actions  |  7   |  latest   |        :x:         |    STJ     | 
-| Azure Pipelines |  6   |   12.8    | :white_check_mark: |  JSON.NET  | 
-| Azure Pipelines |  6   |   12.8    | :white_check_mark: |    STJ     | 
-| Azure Pipelines |  6   | 15-alpine |        :x:         |    STJ     | 
-| Azure Pipelines |  6   |  latest   |        :x:         | Newtonsoft | 
+CI is GitHub Actions only (`.github/workflows/tests.yml`). Each test suite is its own job, run
+against one of these two pairings:
+
+| .NET | Postgres           | Serializer |
+|:----:|:-------------------|:-----------|
+|  9   | `postgres:15-alpine` | Newtonsoft |
+|  10  | `postgres:latest`  | System.Text.Json |
+
+plv8 is no longer used or installed anywhere in CI.
+
+A few suites run against purpose-built images instead: PostGIS (`postgis:17-3.5`), PgVector
+(`pgvector:pg17`) and TimescaleDB (`timescaledb-ha:pg17`), plus a native `PublishAot` smoke run and a
+two-node replication pair for the multi-host tests.
 
 ## Documentation
 
