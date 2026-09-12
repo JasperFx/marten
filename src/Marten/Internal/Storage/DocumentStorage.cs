@@ -103,6 +103,34 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
         UseOptimisticConcurrency = document.UseOptimisticConcurrency;
         UseNumericRevisions = document.UseNumericRevisions;
 
+        // #5372: build the mapped version / revision accessors here, off the mapping, so the base
+        // retains no DocumentMapping (#4828). The gating mirrors ClosedShapeBulkLoader rather than
+        // the narrower UseNumericRevisions check: Metadata.Revision.Enabled is also set by
+        // Revision.MapTo(...) on its own, and a mapping cannot have both enabled -- they are the
+        // same physical mt_version column, which DocumentMapping.CompileAndValidate enforces.
+        if (document.UseNumericRevisions || document.Metadata.Revision.Enabled)
+        {
+            if (document.Metadata.Revision.Member is { } revisionMember)
+            {
+                // The column is bigint or integer, but the member is int (IRevisioned) or long
+                // (ILongVersioned). Widen an int member the way DocumentRevisionBinder narrows on
+                // the way back in, rather than relying on the compiler to convert for us.
+                if (revisionMember.GetRawMemberType() == typeof(int))
+                {
+                    var intGetter = LambdaBuilder.Getter<T, int>(revisionMember);
+                    _mappedRevisionGetter = doc => intGetter(doc);
+                }
+                else
+                {
+                    _mappedRevisionGetter = LambdaBuilder.Getter<T, long>(revisionMember);
+                }
+            }
+        }
+        else if (document.Metadata.Version.Member is { } versionMember)
+        {
+            _mappedVersionGetter = LambdaBuilder.Getter<T, Guid>(versionMember);
+        }
+
         _setter = LambdaBuilder.Setter<T, TId>(document.IdMember)!;
         if (typeof(TId) == typeof(Guid))
         {
@@ -288,6 +316,21 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
 
         return session.Versions.VersionFor<T, TId>(Identity(document));
     }
+
+    // #5372: compiled accessors for a version / revision member mapped with
+    // Metadata.Version.MapTo(...) / Metadata.Revision.MapTo(...). Built once in the ctor off the
+    // mapping (the #4828 pattern: read it there, retain no DocumentMapping) and left null when the
+    // mapping carries no such member. ClosedShapeBulkLoader already builds the same pair for the
+    // COPY path; these answer the Weasel 9.32.0 seam (weasel#590) so a session can seed the expected
+    // version for the write guard without a runtime type test on the storage.
+    private readonly Func<T, Guid>? _mappedVersionGetter;
+    private readonly Func<T, long>? _mappedRevisionGetter;
+
+    /// <inheritdoc />
+    public Guid? MappedVersionFor(T document) => _mappedVersionGetter?.Invoke(document);
+
+    /// <inheritdoc />
+    public long? MappedRevisionFor(T document) => _mappedRevisionGetter?.Invoke(document);
 
     public abstract void Store(IStorageSession session, T document);
     public abstract void Store(IStorageSession session, T document, Guid? version);

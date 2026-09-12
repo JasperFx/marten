@@ -119,6 +119,11 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
 
     public Guid? VersionFor(TDoc document, IStorageSession session) => Inner.VersionFor(document, session);
 
+    // #5372: the wrapped storage owns the mapping, so it owns the mapped version/revision member too.
+    public Guid? MappedVersionFor(TDoc document) => Inner.MappedVersionFor(document);
+
+    public long? MappedRevisionFor(TDoc document) => Inner.MappedRevisionFor(document);
+
     public void Store(IStorageSession session, TDoc document) => Inner.Store(session, document);
 
     public void Store(IStorageSession session, TDoc document, Guid? version) => Inner.Store(session, document, version);

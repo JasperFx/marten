@@ -517,11 +517,32 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
             case ILongVersioned longVersioned when longVersioned.Version != 0:
                 storage.Store(this, entity, longVersioned.Version);
                 return;
-            default:
-                // Put it in the identity map -- if necessary
-                storage.Store(this, entity);
-                break;
         }
+
+        // #5372: a member mapped with Metadata.Version.MapTo(...) / Metadata.Revision.MapTo(...)
+        // carries the expected version exactly as the marker interfaces above do, but the session
+        // sees the storage only as IDocumentStorage<T>. Weasel 9.32.0 (weasel#590) puts the question
+        // on that interface as a default member returning null, so this is virtual dispatch and not a
+        // type test on the storage: a decorator that forwards is correct by construction, and one
+        // that does not cannot silently answer on behalf of its inner storage.
+        //
+        // The marker cases stay first and keep their exact behaviour. They cannot disagree with the
+        // mapped member anyway -- VersionedPolicy sets Metadata.Version.Member to the interface's own
+        // property -- so this only reaches documents that map a member without implementing a marker.
+        if (storage.MappedVersionFor(entity) is { } mappedVersion && mappedVersion != Guid.Empty)
+        {
+            storage.Store(this, entity, mappedVersion);
+            return;
+        }
+
+        if (storage.MappedRevisionFor(entity) is { } mappedRevision && mappedRevision != 0)
+        {
+            storage.Store(this, entity, mappedRevision);
+            return;
+        }
+
+        // Put it in the identity map -- if necessary
+        storage.Store(this, entity);
     }
 
     public void EjectPatchedTypes(IUnitOfWork changes)
