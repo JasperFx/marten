@@ -24,7 +24,10 @@ internal class IsNotOneOf: IMethodCallParser
 
         if (queryableMember.MemberType.IsEnum)
         {
-            return new EnumIsNotOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
+            // #5376: see IsOneOf -- the declared name is not necessarily the stored one.
+            var serializer = options.Serializer();
+            return new EnumIsNotOneOfWhereFragment(values, serializer.EnumStorage, locator,
+                EnumMemberNames.RendererFor(serializer, queryableMember.MemberType));
         }
 
         return new WhereFragment($"NOT({locator} = ANY(?))", values);

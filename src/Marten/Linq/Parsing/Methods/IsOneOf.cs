@@ -35,7 +35,11 @@ internal class IsOneOf: IMethodCallParser
 
         if (queryableMember.MemberType.IsEnum)
         {
-            return new EnumIsOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
+            // #5376: the fragment renders each value with ToString() unless it is told otherwise, and
+            // that is the declared name rather than the one the serializer stored (weasel#591).
+            var serializer = options.Serializer();
+            return new EnumIsOneOfWhereFragment(values, serializer.EnumStorage, locator,
+                EnumMemberNames.RendererFor(serializer, queryableMember.MemberType));
         }
         else if (queryableMember.IsGenericInterfaceImplementation(typeof(IValueTypeMember<,>)))
         {

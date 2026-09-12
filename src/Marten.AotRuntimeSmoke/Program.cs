@@ -14,6 +14,10 @@
 //                         reflectively, so it still reached Reflection.Emit (#5361).
 //   compiled query        CompiledQueryPlan.sortMembers closed PropertyQueryMember<T>
 //                         reflectively.
+//   renamed enum          a query rendered the value with Enum.GetName, which is the declared name and
+//                         not what the serializer stored for a [JsonStringEnumMemberName] member. It
+//                         now asks the serializer - and asking reflection instead would pass here and
+//                         fail from a trimmed binary, which is the whole point of this project (#5376).
 //   event read            EventColumnReaders.BuildAsync closed BuildAsyncImpl<T> with
 //                         MethodInfo.MakeGenericMethod, so the first event any read brought back
 //                         threw - every AggregateStreamAsync, FetchForWriting and projection.
@@ -165,6 +169,8 @@ try
         return found.Count() == 1;
     });
 
+    await CheckRenamedEnumMemberAsync();
+
     // Reading an event is a separate path from reading a document: the events table hands its
     // columns to the event through reader delegates of its own.
     await Check("event stream read + live aggregation", async () =>
@@ -214,6 +220,55 @@ if (failures > 0)
 Console.WriteLine("Marten AOT runtime smoke OK — every document and event read path ran from a native binary.");
 return 0;
 
+// A store of its own, because the renamed member only differs from its declared name when enums are
+// stored as strings. #5376: the equality path and every in / Contains shape have to agree, and the
+// latter render through Weasel's EnumIsOneOf fragments rather than through EnumAsStringMember.
+async Task CheckRenamedEnumMemberAsync()
+{
+    await using var store = DocumentStore.For(o =>
+    {
+        o.Connection(connection);
+        o.UseSystemTextJsonForSerialization(EnumStorage.AsString,
+            configure: json => json.TypeInfoResolver = SmokeJson.Default);
+        o.AutoCreateSchemaObjects = AutoCreate.All;
+        o.DatabaseSchemaName = "aot_runtime_smoke_strings";
+        o.Schema.For<Aanlevering>();
+    });
+
+    await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Aanlevering));
+
+    var id = Guid.NewGuid();
+
+    await using (var writing = store.LightweightSession())
+    {
+        writing.Store(new Aanlevering { Id = id, Zorgvorm = Zorgvorm.Apotheek });
+        await writing.SaveChangesAsync();
+    }
+
+    await using var session = store.QuerySession();
+
+    await Check("query a renamed enum member", async () =>
+    {
+        var found = await session.Query<Aanlevering>().Where(x => x.Zorgvorm == Zorgvorm.Apotheek).ToListAsync();
+        return found.Count == 1 && found[0].Id == id;
+    });
+
+    await Check("in over a renamed enum member", async () =>
+    {
+        var found = await session.Query<Aanlevering>()
+            .Where(x => x.Zorgvorm.In(Zorgvorm.Apotheek)).ToListAsync();
+        return found.Count == 1 && found[0].Id == id;
+    });
+
+    await Check("Contains over a renamed enum member", async () =>
+    {
+        var wanted = new[] { Zorgvorm.Apotheek };
+        var found = await session.Query<Aanlevering>()
+            .Where(x => wanted.Contains(x.Zorgvorm)).ToListAsync();
+        return found.Count == 1 && found[0].Id == id;
+    });
+}
+
 async Task Check(string description, Func<Task<bool>> check)
 {
     try
@@ -257,6 +312,20 @@ public enum Soort
     Apotheek
 }
 
+public class Aanlevering
+{
+    public Guid Id { get; set; }
+    public Zorgvorm Zorgvorm { get; set; }
+}
+
+public enum Zorgvorm
+{
+    Huisarts,
+
+    [JsonStringEnumMemberName("apotheek-houdend")]
+    Apotheek
+}
+
 public class PraktijkByAgb: ICompiledListQuery<Praktijk>
 {
     public string AgbCode { get; set; } = "";
@@ -281,6 +350,7 @@ public record DossierGeopend(string Nummer, string Naam);
 public record RegelToegevoegd(string Prestatiecode);
 
 [JsonSerializable(typeof(Praktijk))]
+[JsonSerializable(typeof(Aanlevering))]
 [JsonSerializable(typeof(Dossier))]
 [JsonSerializable(typeof(DossierGeopend))]
 [JsonSerializable(typeof(RegelToegevoegd))]
