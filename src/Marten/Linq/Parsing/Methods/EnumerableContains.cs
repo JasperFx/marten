@@ -68,10 +68,13 @@ internal class EnumerableContains: IMethodCallParser
                     ? constant.Value
                     : ((IEnumerable)constant.Value).Cast<object>().ToArray();
 
+                // #5376: render each value as the serializer stored it, not as it is declared.
+                var serializer = options.Serializer();
                 return new EnumIsOneOfWhereFragment(
                     arrayValue,
-                    options.Serializer().EnumStorage,
-                    collectionMember.TypedLocator);
+                    serializer.EnumStorage,
+                    collectionMember.TypedLocator,
+                    EnumMemberNames.RendererFor(serializer, collectionMember.MemberType));
             }
 
             return new IsOneOfFilter(collectionMember, new CommandParameter(constant.Value));
@@ -133,10 +136,13 @@ internal class HashSetEnumerableContains: IMethodCallParser
                 // EnumIsOneOfWhereFragment requires a System.Array, and here the constant is a
                 // HashSet<TEnum> rather than one -- correctToArray does that conversion for the
                 // non-enum path below and is reused for exactly the same reason.
+                // #5376: render each value as the serializer stored it, not as it is declared.
+                var serializer = options.Serializer();
                 return new EnumIsOneOfWhereFragment(
                     (Array)correctToArray(constant.Value),
-                    options.Serializer().EnumStorage,
-                    collectionMember.TypedLocator);
+                    serializer.EnumStorage,
+                    collectionMember.TypedLocator,
+                    EnumMemberNames.RendererFor(serializer, collectionMember.MemberType));
             }
 
             return new WhereFragment($"{collectionMember.TypedLocator} = ANY(?)", correctToArray(constant.Value!));

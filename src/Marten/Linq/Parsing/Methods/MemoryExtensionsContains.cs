@@ -55,10 +55,13 @@ internal class MemoryExtensionsContains: IMethodCallParser
                     ? constant.Value
                     : ((IEnumerable)constant.Value).Cast<object>().ToArray();
 
+                // #5376: render each value as the serializer stored it, not as it is declared.
+                var serializer = options.Serializer();
                 return new EnumIsOneOfWhereFragment(
                     arrayValue,
-                    options.Serializer().EnumStorage,
-                    collectionMember.TypedLocator);
+                    serializer.EnumStorage,
+                    collectionMember.TypedLocator,
+                    EnumMemberNames.RendererFor(serializer, collectionMember.MemberType));
             }
 
             return new IsOneOfFilter(collectionMember, new CommandParameter(constant.Value));
