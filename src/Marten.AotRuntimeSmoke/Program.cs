@@ -20,6 +20,9 @@
 //   live aggregation      Projections.LiveStreamAggregation<T>() closed SingleStreamProjection<,>
 //                         on an identity type only known at runtime, and validating it closed
 //                         DocumentMappingBuilder<> over the aggregate.
+//   child collection      a containment filter serialized its jsonb payload through the consumer's
+//                         source-generated resolver, which carries documents and not object[],
+//                         Dictionary<string, object> or the enum being compared (#5374).
 //
 // Exits non-zero with the offending stack trace on the first failure, so CI reports the
 // specific read path that regressed.
@@ -71,7 +74,8 @@ try
         writing.Store(new Praktijk
         {
             Id = id, AgbCode = "01059910", Naam = "Praktijk Jansen", Soort = Soort.Huisarts,
-            OptioneleSoort = Soort.Huisarts
+            OptioneleSoort = Soort.Huisarts,
+            Regels = [new Regel { Prestatiecode = "12000", Soort = Soort.Huisarts }]
         });
         writing.Store(new Praktijk
         {
@@ -174,6 +178,25 @@ try
         var events = await session.Events.QueryAllRawEvents().ToListAsync();
         return events.Count == 2 && events[0].StreamKey == "dossier-1";
     });
+
+    // #5374 — a filter over a child collection is a jsonb containment query, and its payload is
+    // Marten's own dictionary rather than a document the consumer's resolver knows.
+    await Check("child collection filter", async () =>
+    {
+        var prestatiecode = "12000";
+        var found = await session.Query<Praktijk>()
+            .Where(x => x.Regels.Any(r => r.Prestatiecode == prestatiecode)).ToListAsync();
+        return found.Count == 1;
+    });
+
+    await Check("child collection filter over an enum", async () =>
+    {
+        var soort = Soort.Huisarts;
+        var found = await session.Query<Praktijk>()
+            .Where(x => x.Regels.Any(r => r.Soort == soort)).ToListAsync();
+        return found.Count == 1;
+    });
+
 }
 catch (Exception e)
 {
@@ -219,6 +242,13 @@ public class Praktijk
     public string Naam { get; set; } = "";
     public Soort Soort { get; set; }
     public Soort? OptioneleSoort { get; set; }
+    public List<Regel> Regels { get; set; } = [];
+}
+
+public class Regel
+{
+    public string Prestatiecode { get; set; } = "";
+    public Soort Soort { get; set; }
 }
 
 public enum Soort
