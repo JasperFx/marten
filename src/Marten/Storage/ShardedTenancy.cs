@@ -149,6 +149,72 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         return await findOrAssignTenantDatabaseAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// #5400 — the read-only counterpart to <see cref="FindOrCreateDatabase"/>: resolve an id that is
+    /// ALREADY known, and answer null for one that is not, without ever reaching
+    /// <c>findOrAssignTenantDatabaseAsync</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Deliberately does NOT call <c>BuildDatabases()</c> or <see cref="FindDatabaseForTenantAsync"/>:
+    /// both run <c>maybeApplyChanges()</c> / <c>maybeSeedDatabases()</c> first, which apply schema DDL and
+    /// seed the pool. A lookup made on behalf of a diagnostics read has to be a read all the way down, so
+    /// the two catalog queries below are issued directly instead.
+    /// </para>
+    /// <para>
+    /// The cold-store case is why the caches alone are not enough — <c>_databasesById</c> is populated only
+    /// by <c>AddDatabaseAsync</c> / <c>BuildDatabases</c>, so a store that has not yet read its pool would
+    /// report a perfectly real database as unknown.
+    /// </para>
+    /// <para>
+    /// The <c>disabled = false</c> gate mirrors #4607: a soft-deleted tenant stays unresolvable here, the
+    /// same as it is through <c>GetTenantAsync</c>, rather than reappearing through the explorer.
+    /// </para>
+    /// </remarks>
+    public async ValueTask<IMartenDatabase?> TryFindDatabase(string tenantIdOrDatabaseIdentifier)
+    {
+        tenantIdOrDatabaseIdentifier = _options.TenantIdStyle.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
+
+        if (_tenantToDatabase.TryFind(tenantIdOrDatabaseIdentifier, out var database))
+        {
+            return database;
+        }
+
+        if (_databasesById.TryFind(tenantIdOrDatabaseIdentifier, out database))
+        {
+            return database;
+        }
+
+        // Not cached. Ask the catalog directly — first as a tenant id, then as a database id — without
+        // the apply/seed side effects that BuildDatabases and FindDatabaseForTenantAsync carry.
+        var databaseId = await _dataSource.Value
+            .CreateCommand(
+                $"select database_id from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id and {MartenTenantAssignmentTable.DisabledColumn} = false")
+            .With("id", tenantIdOrDatabaseIdentifier)
+            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false) as string;
+
+        databaseId ??= tenantIdOrDatabaseIdentifier;
+
+        var connectionString = await _dataSource.Value
+            .CreateCommand(
+                $"select connection_string from {_schemaName}.{DatabasePoolTable.TableName} where database_id = :id")
+            .With("id", databaseId)
+            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false) as string;
+
+        if (connectionString.IsEmpty())
+        {
+            return null;
+        }
+
+        if (_databasesById.TryFind(databaseId, out database))
+        {
+            return database;
+        }
+
+        var corrected = _configuration.CorrectedConnectionString(connectionString);
+        return new MartenDatabase(_options, _options.NpgsqlDataSourceFactory.Create(corrected), databaseId);
+    }
+
     public async ValueTask<IMartenDatabase> FindDatabase(DatabaseId id)
     {
         var database = _databasesById.Enumerate().Select(x => x.Value).FirstOrDefault(x => x.Id == id);

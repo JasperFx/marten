@@ -68,6 +68,32 @@ public interface ITenancy: IDatabaseSource, IDisposable, IDatabaseUser
     }
 
     /// <summary>
+    ///     Find the named database WITHOUT creating or provisioning anything, returning null when the
+    ///     tenant id or database identifier resolves to nothing. This is the read-only counterpart to
+    ///     <see cref="FindOrCreateDatabase"/>, for diagnostics and monitoring reads that must not change
+    ///     what exists just by being called.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///     #5400. <see cref="FindOrCreateDatabase"/> is documented as "find or create" and several tenancy
+    ///     models take the second half literally: sharded tenancy assigns an unknown tenant to a shard and
+    ///     runs partition + sequence DDL for it, and single-server tenancy creates a whole PostgreSQL
+    ///     database named after the id. That is correct for real tenant traffic and wrong for an explorer
+    ///     read, where a typo'd or retired tenant id would silently bring a tenant into existence.
+    ///     </para>
+    ///     <para>
+    ///     The default implementation delegates to <see cref="FindOrCreateDatabase"/> so an existing custom
+    ///     tenancy keeps working exactly as before rather than breaking on an added member. That default is
+    ///     deliberately the permissive one: a tenancy that provisions will still provision until it
+    ///     overrides this, which is no worse than today. Marten's own tenancy models all override it.
+    ///     </para>
+    /// </remarks>
+    /// <param name="tenantIdOrDatabaseIdentifier"></param>
+    /// <returns>The database, or null when nothing is registered under that identifier.</returns>
+    async ValueTask<IMartenDatabase?> TryFindDatabase(string tenantIdOrDatabaseIdentifier)
+        => await FindOrCreateDatabase(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
+
+    /// <summary>
     ///  Asserts that the requested tenant id is part of the current database
     /// </summary>
     /// <param name="database"></param>
