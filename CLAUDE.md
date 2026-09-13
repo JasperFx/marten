@@ -19,6 +19,38 @@
 
 - **Naming:** Use PascalCasing for all `public` or `internal` members (types, methods, properties, fields, events). Use camelCasing for all `protected` and `private` members. (Private fields keep the conventional leading underscore, e.g. `_workTracker`.)
 
+## API compatibility — do not break binary compatibility
+
+**An assembly compiled against the previous Marten release must keep working when the new Marten is
+dropped underneath it, without being recompiled.** Source compatibility is not enough.
+
+**Never add an optional parameter to an existing public method.** Optional arguments are resolved by
+the compiler *at the call site*, so the caller's IL hard-codes the full signature. Adding a parameter
+changes the method's signature in metadata, and every caller that was not recompiled throws
+`MissingMethodException` at runtime — even though their source still compiles unchanged. This is
+only acceptable in a **major** version bump.
+
+It bites hardest where you cannot see it: a prebuilt assembly between the app and Marten — a
+Wolverine integration, CritterWatch, a company-internal extension package — compiled against the old
+version and never rebuilt. It breaks in production on what looked like a routine patch bump.
+
+Adding an optional parameter is also not additive at the source level. It changes **overload
+resolution**: C# prefers the candidate with no omitted optional parameters, so widening a
+parameterless overload steals calls from its single-argument sibling. In #5404, giving
+`AddMarten()` an optional `string` silently rebound every `AddMarten(connectionString)` call — the
+connection string landed in the new parameter and the store was left with no tenancy. It compiled
+clean, with no ambiguity error.
+
+Do this instead, in order of preference:
+
+1. **Put new configuration on `StoreOptions`.** Adding a member is binary compatible. This is how
+   `EventModelName` is configured — `opts.EventModelName = "Ledgers"`, not an `AddMarten` argument.
+2. **Add a new overload** and leave the existing signature in place, if it genuinely has to be an
+   argument. Check what the new overload does to resolution for every existing call shape first.
+
+When a change's binding is not obvious, settle it with a throwaway repro that prints which overload
+binds, rather than by reasoning about the spec.
+
 ## Project Structure
 
 ```

@@ -508,6 +508,44 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         set => _databaseSchemaName = value.ToLowerInvariant();
     }
 
+    private string? _eventModelName;
+
+    /// <summary>
+    ///     Name of the Event Model that this store's projections contribute their derived slices to.
+    ///     Leave null to contribute to the default model, <c>ProjectionEventModelSource.DefaultModelName</c>.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Set this to the same name a host passes to <c>AddEventModel("Something", …)</c>. Slices
+    ///         merge by model name, so leaving it null while the application named its own model
+    ///         assembles TWO models — the host's and this one — which surfaces as "expected exactly
+    ///         one assembled model" and names neither Marten nor the line that caused it (#5405).
+    ///     </para>
+    ///     <para>
+    ///         This lives on StoreOptions rather than as a parameter on <c>AddMarten</c> so that
+    ///         naming a model never changes a public method signature. It is read when the Event
+    ///         Model is assembled, not when the store is registered, so it does not matter whether
+    ///         <c>AddEventModel</c> runs before or after <c>AddMarten</c>.
+    ///     </para>
+    /// </remarks>
+    public string? EventModelName
+    {
+        get => _eventModelName;
+        set
+        {
+            // An empty string is a legal model name that reproduces the very bug this setting
+            // prevents, with a blank where the name should be. Null is how you say "the default".
+            if (value is not null && string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException(
+                    "The Event Model name cannot be empty or whitespace. Leave it null to contribute to the default model.",
+                    nameof(value));
+            }
+
+            _eventModelName = value;
+        }
+    }
+
     /// <summary>
     ///     Used to validate database object name lengths against Postgresql's NAMEDATALEN property to avoid
     ///     Marten getting confused when comparing database schemas against the configuration. See
