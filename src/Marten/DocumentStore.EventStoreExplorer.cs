@@ -450,6 +450,17 @@ public partial class DocumentStore
         var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
         var shardsAreTenantScoped = tenantId != null && !spansSeveralDatabases;
 
+        // #5382. A store with a database per tenant has no default tenant, so a tenant-less call has no
+        // single database to read and no session to open: MasterTableTenancy.Default and
+        // ShardedTenancy.Default both throw NotSupportedException outright. The registry is not per-database
+        // though — the registered projections and their shards are configuration, identical in every
+        // database — so answer that much rather than throwing. "Is this projection still registered?" is the
+        // only store-agnostic way to ask, and orphan detection in a monitoring console is built on it.
+        if (tenantId == null && spansSeveralDatabases)
+        {
+            return registryOnlyStatuses();
+        }
+
         await using var session = tenantId != null && spansSeveralDatabases
             ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
             : openExplorerSession();
@@ -488,6 +499,52 @@ public partial class DocumentStore
                         : ShardStatusState.Unknown,
                     ProcessedSequence: processed,
                     EventStoreSequence: headSequence,
+                    Error: null));
+            }
+
+            statuses.Add(new ProjectionStatus(source.Name, source.Lifecycle.ToString(), shardStatuses));
+        }
+
+        return statuses;
+    }
+
+    /// <summary>
+    /// #5382 — the projection registry with nothing read against it: every registered projection and its
+    /// shards, with zeroed sequences and <see cref="ShardStatusState.Unknown"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// For the tenant-less overload on a store spanning several databases, where no single database is the
+    /// right one to read and there is no default tenant to open a session against.
+    /// </para>
+    /// <para>
+    /// <b>The sequences are 0 because none was read — NOT because a shard has never run</b>, which is what a
+    /// 0 <c>ProcessedSequence</c> otherwise means. The two are indistinguishable to a caller, and that
+    /// ambiguity is the honest cost of answering here at all. The database-scoped overloads (#5383) are the
+    /// real fix: name a database and every field is read rather than defaulted.
+    /// </para>
+    /// <para>
+    /// State is Unknown rather than what <c>readAgentStatesAsync</c> would report. That lookup needs no
+    /// session and would answer, but a multi-database store runs a daemon per database over the SAME shard
+    /// identities, so its dictionary keeps an arbitrary one — last writer wins. Reporting it would name one
+    /// database's daemon as though it spoke for the store, and <see cref="ShardStatus.State"/> is explicit
+    /// that a wrong concrete state is worse than none: it is the reading an operator acts on.
+    /// </para>
+    /// </remarks>
+    private IReadOnlyList<ProjectionStatus> registryOnlyStatuses()
+    {
+        var statuses = new List<ProjectionStatus>();
+        foreach (var source in Options.Projections.All)
+        {
+            var shards = source.Shards();
+            var shardStatuses = new List<ShardStatus>(shards.Count);
+            foreach (var shard in shards)
+            {
+                shardStatuses.Add(new ShardStatus(
+                    shard.Name.Identity,
+                    State: ShardStatusState.Unknown,
+                    ProcessedSequence: 0,
+                    EventStoreSequence: 0,
                     Error: null));
             }
 
