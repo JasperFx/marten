@@ -106,7 +106,7 @@ public class ProductSearchProjection : VectorProjection
             e => e.Description,
             e => e.ProductId);
 
-        map.Delete<ProductDeleted>();
+        map.Delete<ProductDeleted>(e => e.ProductId);
     }
 }
 ```

@@ -37,7 +37,9 @@ public class ProductSearchProjection : VectorProjection
             e => e.Description,
             e => e.ProductId);
 
-        map.Delete<ProductDeleted>();
+        // The rows are keyed on the product, so the delete has to be too. Passing no selector here
+        // deletes by stream id, which is a row this projection never wrote.
+        map.Delete<ProductDeleted>(e => e.ProductId);
     }
 }
 
