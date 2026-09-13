@@ -16,6 +16,7 @@ using JasperFx.Events.EventModeling;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
 using Marten.Events.Daemon.Coordination;
+using Marten.Events.EventModeling;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Schema;
@@ -125,14 +126,13 @@ public static class MartenServiceCollectionExtensions
     ///         and configuring `NpqsqlDataSource` with `AddNpgsqlDataSource` from `Npgsql.DependencyInjection`
     ///     </para>
     ///     <para>
-    ///         This overload deliberately takes NO <c>eventModelName</c>, unlike every other
-    ///         <c>AddMarten</c> spelling. An optional <c>string</c> here is not additive -- it makes
-    ///         this overload a better match than <c>AddMarten(connectionString)</c> for a lone string
-    ///         argument, because C# prefers a candidate with no omitted optional parameters. Every
-    ///         existing <c>AddMarten("Host=...")</c> call in the wild would silently rebind to this
-    ///         method with the connection string landing in the model name, leaving the store with no
-    ///         tenancy at all. To name the model on this flow, use the <see cref="StoreOptions" />
-    ///         overload: <c>services.AddMarten(new StoreOptions(), "Ledgers")</c>.
+    ///         To name the Event Model these projections contribute to, set
+    ///         <see cref="StoreOptions.EventModelName" /> rather than looking for an argument here.
+    ///         An optional <c>string</c> parameter on this overload would not be additive: it would
+    ///         make this a better match than <c>AddMarten(connectionString)</c> for a lone string
+    ///         argument, because C# prefers a candidate with no omitted optional parameters, so every
+    ///         existing <c>AddMarten("Host=...")</c> call would silently rebind here with the
+    ///         connection string landing in the name (#5404). See "API compatibility" in CLAUDE.md.
     ///     </para>
     /// </remarks>
     /// <param name="services"></param>
@@ -150,21 +150,11 @@ public static class MartenServiceCollectionExtensions
     /// <param name="services"></param>
     /// <param name="connectionString">The connection string to your application's Postgresql database</param>
     /// <returns></returns>
-    /// <param name="eventModelName">
-    ///     The Event Model these projections contribute slices to. Defaults to
-    ///     <c>ProjectionEventModelSource.DefaultModelName</c>, which is right when the application
-    ///     never named a model of its own. <b>A host that calls <c>AddEventModel("Something", …)</c>
-    ///     has to pass the same name here</b>: slices merge by model name, so leaving it assembles
-    ///     TWO models — the host's and this one — which surfaces as "expected exactly one assembled
-    ///     model" and names neither Marten nor the line that caused it. The store cannot infer it,
-    ///     because <c>AddEventModel</c> may not have been called yet when this runs.
-    /// </param>
-    public static MartenConfigurationExpression AddMarten(this IServiceCollection services, string connectionString,
-        string? eventModelName = null)
+    public static MartenConfigurationExpression AddMarten(this IServiceCollection services, string connectionString)
     {
         var options = new StoreOptions();
         options.Connection(connectionString);
-        return services.AddMarten(options, eventModelName);
+        return services.AddMarten(options);
     }
 
     /// <summary>
@@ -174,17 +164,12 @@ public static class MartenServiceCollectionExtensions
     /// <param name="services"></param>
     /// <param name="options">The Marten configuration for this application</param>
     /// <returns></returns>
-    /// <param name="eventModelName">
-    ///     The Event Model these projections contribute slices to — see the same parameter on the
-    ///     other <c>AddMarten</c> overloads.
-    /// </param>
     public static MartenConfigurationExpression AddMarten(
         this IServiceCollection services,
-        StoreOptions options,
-        string? eventModelName = null
+        StoreOptions options
     )
     {
-        services.AddMarten(s => options, eventModelName);
+        services.AddMarten(s => options);
 
         // #4598 / jasperfx#413: when the configured tenancy is a dynamic source
         // (MasterTableTenancy or ShardedTenancy as of #4598), register it as
@@ -209,28 +194,6 @@ public static class MartenServiceCollectionExtensions
         return new MartenConfigurationExpression(services, options);
     }
 
-    /// <summary>
-    ///     #5405. Refuse an empty or whitespace Event Model name by name, before anything is
-    ///     registered.
-    /// </summary>
-    /// <remarks>
-    ///     An empty string is a perfectly legal model name, and it reproduces the exact bug the
-    ///     parameter exists to prevent -- two assembled models -- with a blank where the name should
-    ///     be, which is even harder to trace than "EventModel". Null is the documented way to say
-    ///     "the default model", so only a non-null blank is an error. Both registration methods add
-    ///     several singletons before they reach the model source, so the refusal comes first and
-    ///     leaves the IServiceCollection untouched.
-    /// </remarks>
-    private static void AssertEventModelName(string? eventModelName)
-    {
-        if (eventModelName is not null && string.IsNullOrWhiteSpace(eventModelName))
-        {
-            throw new ArgumentException(
-                "The Event Model name cannot be empty or whitespace. Pass null (or omit the argument) to contribute to the default model.",
-                nameof(eventModelName));
-        }
-    }
-
     private static IDynamicTenantSource<string>? TryGetDynamicTenantSource(StoreOptions options)
     {
         try
@@ -252,18 +215,11 @@ public static class MartenServiceCollectionExtensions
     /// </summary>
     /// <param name="optionSource">Func that will build out a StoreOptions with the applications IServiceProvider as the input</param>
     /// <returns></returns>
-    /// <param name="eventModelName">
-    ///     The Event Model these projections contribute slices to — see the same parameter on the
-    ///     other <c>AddMarten</c> overloads.
-    /// </param>
     public static MartenConfigurationExpression AddMarten(
         this IServiceCollection services,
-        Func<IServiceProvider, StoreOptions> optionSource,
-        string? eventModelName = null
+        Func<IServiceProvider, StoreOptions> optionSource
     )
     {
-        AssertEventModelName(eventModelName);
-
         services.AddJasperFx();
         // #4494: register the hosted service that drains IAsyncConfigureMarten so
         // bare AddSingleton<IAsyncConfigureMarten, T>() works the same way bare
@@ -280,8 +236,12 @@ public static class MartenServiceCollectionExtensions
         // The resolver is the whole reason this call exists here rather than in JasperFx: a store
         // registers itself under its own interface, and AddMarten is the only place that knows the
         // primary store's is IDocumentStore. AddMartenStore<T> registers its own with T.
-        services.AddProjectionEventModelSource(
-            s => [(IEventStore)s.GetRequiredService<IDocumentStore>()], eventModelName);
+        //
+        // #5405: the model NAME comes off the resolved store's StoreOptions at assembly time rather
+        // than being passed in here, so naming a model never changes an AddMarten signature and the
+        // ordering against AddEventModel(...) stops mattering.
+        services.AddEventModelSource(
+            new MartenProjectionEventModelSource(s => s.GetRequiredService<IDocumentStore>()));
         services.AddSingleton<IDocumentStoreUsageSource>(s =>
             (IDocumentStoreUsageSource)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IDocumentStoreDiagnostics>(s =>
@@ -370,20 +330,15 @@ public static class MartenServiceCollectionExtensions
     /// <param name="services"></param>
     /// <param name="configure"></param>
     /// <returns></returns>
-    /// <param name="eventModelName">
-    ///     The Event Model these projections contribute slices to — see the same parameter on the
-    ///     other <c>AddMarten</c> overloads.
-    /// </param>
     public static MartenConfigurationExpression AddMarten(
         this IServiceCollection services,
-        Action<StoreOptions> configure,
-        string? eventModelName = null
+        Action<StoreOptions> configure
     )
     {
         var options = new StoreOptions();
         configure(options);
 
-        return services.AddMarten(options, eventModelName);
+        return services.AddMarten(options);
     }
 
     /// <summary>
@@ -394,14 +349,9 @@ public static class MartenServiceCollectionExtensions
     /// <param name="configure"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    /// <param name="eventModelName">
-    ///     The Event Model these projections contribute slices to — see the same parameter on the
-    ///     other <c>AddMarten</c> overloads.
-    /// </param>
     public static MartenStoreExpression<T> AddMartenStore<T>(
         this IServiceCollection services,
-        Action<StoreOptions> configure,
-        string? eventModelName = null
+        Action<StoreOptions> configure
     ) where T : class, IDocumentStore
     {
         return services.AddMartenStore<T>(s =>
@@ -410,7 +360,7 @@ public static class MartenServiceCollectionExtensions
             configure(options);
 
             return options;
-        }, eventModelName);
+        });
     }
 
     /// <summary>
@@ -421,16 +371,9 @@ public static class MartenServiceCollectionExtensions
     /// <param name="configure"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    /// <param name="eventModelName">
-    ///     The Event Model these projections contribute slices to — see the same parameter on the
-    ///     other <c>AddMarten</c> overloads.
-    /// </param>
     public static MartenStoreExpression<T> AddMartenStore<T>(this IServiceCollection services,
-        Func<IServiceProvider, StoreOptions> configure, string? eventModelName = null)
-        where T : class, IDocumentStore
+        Func<IServiceProvider, StoreOptions> configure) where T : class, IDocumentStore
     {
-        AssertEventModelName(eventModelName);
-
         services.AddJasperFx();
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
 
@@ -445,7 +388,7 @@ public static class MartenServiceCollectionExtensions
         // for the same reason AddMarten's is: the marker is what says WHICH store, and only this
         // method knows it. Two sources emitting a slice for the same document type is harmless --
         // slices merge by name, which is what naming them after the document is for.
-        services.AddProjectionEventModelSource(s => [(IEventStore)s.GetRequiredService<T>()], eventModelName);
+        services.AddEventModelSource(new MartenProjectionEventModelSource(s => s.GetRequiredService<T>()));
 
         var instrument = new SetEventStoreInstrumentation<T>();
         services.AddSingleton<IConfigureMarten<T>>(instrument);

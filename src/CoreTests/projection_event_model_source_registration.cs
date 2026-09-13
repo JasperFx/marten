@@ -99,11 +99,15 @@ public class projection_event_model_source_registration: HostedStoreContext
                 opts.DisableNpgsqlLogging = true;
                 opts.DatabaseSchemaName = $"{SchemaName}_{schemaSuffix}";
                 opts.Projections.Snapshot<SignalTally>(SnapshotLifecycle.Inline);
-            }, eventModelName);
 
-            // Deliberately AFTER AddMarten. That is the ordering that makes inference impossible --
-            // there is nothing to read off the container when the store registers -- and it is why
-            // the name has to be a parameter rather than something the store looks up.
+                // #5405: on StoreOptions rather than an AddMarten argument, so naming a model never
+                // changes a public signature.
+                opts.EventModelName = eventModelName;
+            });
+
+            // Deliberately AFTER AddMarten, which used to be the ordering that made this impossible.
+            // The name is read off the resolved store when the model is assembled, not when the
+            // store is registered, so registration order no longer matters.
             services.AddEventModel(declaredModelName,
                 model => model.Slice(declaredSliceName).InDomain("Finance"));
         }).StartAsync();
@@ -164,30 +168,83 @@ public class projection_event_model_source_registration: HostedStoreContext
     }
 
     /// <summary>
-    /// #5405. An empty or whitespace name is refused by name, before anything is registered.
+    /// #5405. An empty or whitespace name is refused by the setter that takes it.
     /// </summary>
     /// <remarks>
-    /// An empty string is a legal model name that reproduces the very bug the parameter exists to
-    /// prevent, with a blank where the name should be. Both registration methods add several
-    /// singletons before they reach the model source, so the refusal has to come first -- which is
-    /// what the emptiness assertion pins.
+    /// An empty string is a legal model name that reproduces the very bug this setting exists to
+    /// prevent, with a blank where the name should be. Null is how you ask for the default model.
     /// </remarks>
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void a_blank_event_model_name_is_refused_before_anything_is_registered(string blank)
+    public void a_blank_event_model_name_is_refused(string blank)
+    {
+        Should.Throw<ArgumentException>(() => new StoreOptions().EventModelName = blank)
+            .ParamName.ShouldBe("value");
+    }
+
+    /// <summary>
+    /// On the primary store the refusal lands before anything at all is registered.
+    /// </summary>
+    /// <remarks>
+    /// <c>AddMarten(Action&lt;StoreOptions&gt;)</c> runs the configure callback eagerly, to build the
+    /// StoreOptions it hands on, so a blank name throws out of the callback while the
+    /// IServiceCollection is still untouched. That is what the emptiness assertion pins.
+    /// </remarks>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void a_blank_name_on_the_primary_store_is_refused_before_anything_is_registered(string blank)
     {
         var services = new ServiceCollection();
 
-        Should.Throw<ArgumentException>(() => services.AddMarten(
-                opts => opts.Connection(ConnectionSource.ConnectionString), blank))
-            .ParamName.ShouldBe("eventModelName");
-
-        Should.Throw<ArgumentException>(() => services.AddMartenStore<IEventModelAncillaryStore>(
-                opts => opts.Connection(ConnectionSource.ConnectionString), blank))
-            .ParamName.ShouldBe("eventModelName");
+        Should.Throw<ArgumentException>(() => services.AddMarten(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.EventModelName = blank;
+        }));
 
         services.ShouldBeEmpty();
+    }
+
+    /// <summary>
+    /// An ancillary store refuses it too, but when the store is BUILT rather than at registration.
+    /// </summary>
+    /// <remarks>
+    /// Both <c>AddMartenStore&lt;T&gt;</c> overloads wrap the caller's configuration in a
+    /// <c>Func&lt;IServiceProvider, StoreOptions&gt;</c> that only runs when the store is first
+    /// resolved, so there is no eager path here to refuse on — the guard fires on resolution
+    /// instead. Asserting registration-time refusal for an ancillary store would be asserting
+    /// something Marten does not do.
+    /// </remarks>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void a_blank_name_on_an_ancillary_store_is_refused_when_the_store_is_built(string blank)
+    {
+        var services = new ServiceCollection();
+
+        // Registration itself is lazy, so this does NOT throw.
+        services.AddMartenStore<IEventModelAncillaryStore>(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.EventModelName = blank;
+        });
+
+        using var provider = services.BuildServiceProvider();
+
+        Should.Throw<ArgumentException>(() => provider.GetRequiredService<IEventModelAncillaryStore>());
+    }
+
+    /// <summary>
+    /// Null is a legal value and means "the default model" — it must not trip the blank guard.
+    /// </summary>
+    [Fact]
+    public void a_null_event_model_name_is_accepted_as_the_default()
+    {
+        var options = new StoreOptions { EventModelName = null };
+
+        options.EventModelName.ShouldBeNull();
     }
 }
 
