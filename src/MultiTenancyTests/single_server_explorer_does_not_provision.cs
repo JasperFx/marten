@@ -61,17 +61,34 @@ public class single_server_explorer_does_not_provision: IAsyncLifetime
         return default;
     }
 
+    /// <summary>
+    /// The side effect on its own — any exception is swallowed so this fails on the CREATE DATABASE rather
+    /// than on the absence of a throw, and therefore demonstrates the defect on unmodified master.
+    /// </summary>
     [Fact]
     public async Task explorer_status_read_does_not_create_a_database_for_an_unknown_tenant()
     {
         (await DatabaseExists(NeverSeen)).ShouldBeFalse("precondition: the database must not exist yet");
 
-        await Should.ThrowAsync<UnknownTenantIdException>(async () =>
-            await ((IEventStore)_store).GetProjectionStatusesAsync(NeverSeen, CancellationToken.None));
+        try
+        {
+            await ((IEventStore)_store).GetProjectionStatusesAsync(NeverSeen, CancellationToken.None);
+        }
+        catch (UnknownTenantIdException)
+        {
+            // Expected after the fix, and pinned separately below.
+        }
 
-        // The assertion that matters. Before #5400 the explorer read ran CREATE DATABASE for this id.
+        // Before #5400 the explorer read ran CREATE DATABASE for this id.
         (await DatabaseExists(NeverSeen))
             .ShouldBeFalse("a diagnostics read must not create a PostgreSQL database");
+    }
+
+    [Fact]
+    public async Task explorer_status_read_throws_for_an_unknown_tenant()
+    {
+        await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+            await ((IEventStore)_store).GetProjectionStatusesAsync(NeverSeen, CancellationToken.None));
     }
 
     [Fact]

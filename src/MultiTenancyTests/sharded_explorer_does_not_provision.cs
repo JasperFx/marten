@@ -89,6 +89,12 @@ public class sharded_explorer_does_not_provision: IAsyncLifetime
         });
     }
 
+    /// <summary>
+    /// The side effect, asserted on its own. Any exception from the read is deliberately swallowed so this
+    /// test fails on the PROVISIONING rather than on the absence of a throw — otherwise a run against
+    /// unmodified master stops at the throw assertion and never demonstrates that the tenant was assigned,
+    /// which is the actual claim of #5400.
+    /// </summary>
     [Fact]
     public async Task explorer_status_read_does_not_assign_an_unknown_tenant()
     {
@@ -101,13 +107,29 @@ public class sharded_explorer_does_not_provision: IAsyncLifetime
         (await sharded.FindDatabaseForTenantAsync(NeverSeen, CancellationToken.None))
             .ShouldBeNull("precondition: the tenant must not be assigned before the explorer read");
 
-        await Should.ThrowAsync<UnknownTenantIdException>(async () =>
-            await ((IEventStore)_store).GetProjectionStatusesAsync(NeverSeen, CancellationToken.None));
+        try
+        {
+            await ((IEventStore)_store).GetProjectionStatusesAsync(NeverSeen, CancellationToken.None);
+        }
+        catch (UnknownTenantIdException)
+        {
+            // Expected after the fix, and pinned separately below.
+        }
 
-        // The assertion that matters. Before #5400 this call assigned the tenant to a shard and ran its
-        // partition + sequence DDL, so the row was here afterwards.
+        // Before #5400 this read assigned the tenant to a shard and ran its partition + sequence DDL,
+        // so the assignment row was here afterwards.
         (await sharded.FindDatabaseForTenantAsync(NeverSeen, CancellationToken.None))
             .ShouldBeNull("a diagnostics read must not assign a tenant to a shard");
+    }
+
+    [Fact]
+    public async Task explorer_status_read_throws_for_an_unknown_tenant()
+    {
+        CreateStore();
+        await _store.Options.Tenancy.BuildDatabases();
+
+        await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+            await ((IEventStore)_store).GetProjectionStatusesAsync(NeverSeen, CancellationToken.None));
     }
 
     [Fact]
