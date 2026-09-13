@@ -19,18 +19,34 @@ namespace Marten.Linq;
 ///     is a source-generated <c>JsonSerializerContext</c> — what the AOT guide asks for — and it carries
 ///     the consumer's documents, not <c>object[]</c>, not the dictionary, and not whichever enum a filter
 ///     happens to compare. An ordinary <c>.Any(x =&gt; x.Member == value)</c> therefore threw before the
-///     query was ever sent. The shape is ours, so we write it; only a value we cannot render identically
-///     goes through the serializer, and that is a document type the consumer has already declared.
+///     query was ever sent.
 ///     </para>
 ///     <para>
-///     Every branch here has to emit what the serializer emitted, and <c>Bug_5374_containment_payload_json</c>
-///     asserts exactly that, because a payload that differs by one character silently matches nothing.
-///     Two properties of the serializer's options matter and both are honoured: the naming policy is a
-///     <em>property</em> policy and Marten never sets <c>DictionaryKeyPolicy</c>, so these keys are written
-///     verbatim, and any value with a converter of its own — an enum included — goes back through the
-///     serializer. A custom
-///     <c>JavaScriptEncoder</c> is the one thing not carried across, and it cannot matter: Postgres parses
-///     the payload into jsonb, where an escaped and an unescaped character are the same character.
+///     So the split is by ownership. Two shapes are <em>Marten's</em> and are written here because the
+///     consumer's resolver has no reason to know them: the <c>Dictionary&lt;string, object&gt;</c> payload
+///     itself, and the <c>object[]</c> a child-collection filter wraps it in. Everything else is a value
+///     out of the consumer's document — including a <em>typed</em> nested dictionary such as the
+///     <c>Dictionary&lt;TKey, TValue&gt;</c> that <c>DictionaryMember</c> builds for a dictionary-member
+///     query — and goes back through the serializer, which both knows how it was written and has the type.
+///     </para>
+///     <para>
+///     Every branch here has to emit what the serializer emitted, because a payload that differs by one
+///     character silently matches nothing; <c>Bug_5374_containment_payload_json</c> asserts exactly that.
+///     Delegating typed dictionaries is #5385: Newtonsoft's contract resolver sets
+///     <c>ProcessDictionaryKeys = true</c> for CamelCase and SnakeCase, so it cases dictionary keys, and a
+///     nested dictionary carries the caller's own key rather than one Marten already cased. Writing those
+///     keys verbatim produced a payload that matched nothing under those two casings. The keys of the
+///     payload's own shape are safe precisely because they are already <c>member.ToJsonKey(casing)</c>, so
+///     re-casing them is idempotent. (System.Text.Json is unaffected either way: Marten never sets
+///     <c>DictionaryKeyPolicy</c>.)
+///     </para>
+///     <para>
+///     What this deliberately does <strong>not</strong> honour, because rendering the primitives here is
+///     the whole point under AOT: a consumer-configured <c>NumberHandling</c>, a custom converter for one
+///     of the scalar types written below, or a custom <c>JavaScriptEncoder</c>. The encoder cannot matter —
+///     Postgres parses the payload into jsonb, where an escaped and an unescaped character are the same
+///     character. The other two would, and a document relying on them should compare through a member
+///     Marten hands to the serializer instead.
 ///     </para>
 /// </remarks>
 internal static class JsonbPayload
@@ -55,21 +71,34 @@ internal static class JsonbPayload
                 writer.WriteNullValue();
                 return;
 
-            // The payload's own shape, and a nested Dictionary<TKey, TValue> where a query filtered a
-            // dictionary member.
-            case IDictionary dictionary:
+            // Marten's own payload shape, including the nested one a child-collection filter builds.
+            // The keys are already cased member names, so they are written as they stand.
+            case Dictionary<string, object> payload:
                 writer.WriteStartObject();
-                foreach (DictionaryEntry entry in dictionary)
+                foreach (var pair in payload)
                 {
-                    writer.WritePropertyName(key(entry.Key));
-                    write(writer, serializer, entry.Value);
+                    writer.WritePropertyName(pair.Key);
+                    write(writer, serializer, pair.Value);
                 }
 
                 writer.WriteEndObject();
                 return;
 
+            // #5385: any other dictionary is a typed member off the consumer's document, whose keys the
+            // serializer may case (Newtonsoft does) and whose key type it may have a converter for. It
+            // owns the whole shape, and its resolver has the type because it is part of a document.
+            case IDictionary:
+                writer.WriteRawValue(serializer.ToCleanJson(value));
+                return;
+
             case string text:
                 writer.WriteStringValue(text);
+                return;
+
+            // #5385: before IEnumerable, which would otherwise write a byte array as a list of numbers
+            // where both serializers write a base64 string.
+            case byte[] bytes:
+                writer.WriteBase64StringValue(bytes);
                 return;
 
             case bool flag:
@@ -160,14 +189,4 @@ internal static class JsonbPayload
                 return;
         }
     }
-
-    /// <summary>A dictionary key is a JSON property name, and System.Text.Json renders a non-string key
-    /// as its invariant text. An enum key is its member name whatever <see cref="ISerializer.EnumStorage" />
-    /// says — that setting is about values, and a key has its own converter.</summary>
-    private static string key(object value) => value switch
-    {
-        string text => text,
-        Enum => value.ToString()!,
-        _ => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty
-    };
 }
