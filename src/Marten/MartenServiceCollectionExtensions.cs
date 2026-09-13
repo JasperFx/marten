@@ -12,6 +12,7 @@ using JasperFx.CommandLine.Descriptions;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.EventModeling;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
 using Marten.Events.Daemon.Coordination;
@@ -214,6 +215,16 @@ public static class MartenServiceCollectionExtensions
         services.EnsureAsyncConfigureMartenApplicationIsRegistered();
         services.AddSingleton<ISystemPart, MartenSystemPart>();
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<IDocumentStore>());
+
+        // #5394 (jasperfx#825): the store-derived Event Model rung. One SlicePattern.View slice per
+        // registered projection -- the projection, the document it produces, and the events its
+        // Apply/Create/Evolve methods take -- so a View slice appears on an Event Model canvas without
+        // a human having written one down.
+        //
+        // The resolver is the whole reason this call exists here rather than in JasperFx: a store
+        // registers itself under its own interface, and AddMarten is the only place that knows the
+        // primary store's is IDocumentStore. AddMartenStore<T> registers its own with T.
+        services.AddProjectionEventModelSource(s => [(IEventStore)s.GetRequiredService<IDocumentStore>()]);
         services.AddSingleton<IDocumentStoreUsageSource>(s =>
             (IDocumentStoreUsageSource)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IDocumentStoreDiagnostics>(s =>
@@ -354,6 +365,13 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<T>());
         services.AddSingleton<IDocumentStoreUsageSource>(s => (IDocumentStoreUsageSource)s.GetRequiredService<T>());
         services.AddSingleton<IDocumentStoreDiagnostics>(s => (IDocumentStoreDiagnostics)s.GetRequiredService<T>());
+
+        // #5394 (jasperfx#825): an ancillary store derives its own View slices, resolved through its
+        // marker type. Registered per store rather than once over every IEventStore in the container
+        // for the same reason AddMarten's is: the marker is what says WHICH store, and only this
+        // method knows it. Two sources emitting a slice for the same document type is harmless --
+        // slices merge by name, which is what naming them after the document is for.
+        services.AddProjectionEventModelSource(s => [(IEventStore)s.GetRequiredService<T>()]);
 
         var instrument = new SetEventStoreInstrumentation<T>();
         services.AddSingleton<IConfigureMarten<T>>(instrument);
