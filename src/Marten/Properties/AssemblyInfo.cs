@@ -10,6 +10,7 @@ using JasperFx.Core.TypeScanning;
 [assembly: InternalsVisibleTo("Marten.Newtonsoft")]
 [assembly: InternalsVisibleTo("Marten.Testing")]
 [assembly: InternalsVisibleTo("Marten.CommandLine")]
+[assembly: InternalsVisibleTo("Marten.PgVector")]
 [assembly: InternalsVisibleTo("Marten.PLv8")]
 [assembly: InternalsVisibleTo("Marten.PLv8.Testing")]
 [assembly: InternalsVisibleTo("Marten.Schema.Testing")]

@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions;
+using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
 using Pgvector;
@@ -44,10 +45,15 @@ public static class PgVectorExtensions
         var store = (DocumentStore)session.DocumentStore;
         var tableName = ((IReadOnlyStoreOptions)store.Options).Schema.For<T>();
 
-        // Build a JSONB path to the vector property.
-        // Use the serializer to determine the correct JSON property name.
+        // Build a JSONB path to the vector property. ToJsonKey, not member.Name: the key has to be
+        // the one the serializer actually wrote, so it has to honour both the store's Casing and any
+        // [JsonPropertyName]/[JsonProperty] alias on the member. Reading member.Name lands on the
+        // right key only under Marten's default (Pascal-preserving) casing; under CamelCase every
+        // row's data->>'Embedding' is SQL NULL, the IS NOT NULL clause below filters all of them
+        // out, and this method returns an EMPTY LIST rather than throwing. Marten's patching code
+        // learned exactly this in #5290/#5295 — see PatchExpression.toPath.
         var member = GetMemberInfo(vectorProperty);
-        var jsonPath = member.Name;
+        var jsonPath = member.ToJsonKey(store.Options.Serializer().Casing);
 
         var op = distance.Operator();
         var dimensions = queryVector.ToArray().Length;

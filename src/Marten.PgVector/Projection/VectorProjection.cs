@@ -1,8 +1,11 @@
 using System.Security.Cryptography;
 using System.Text;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
+using Marten.Internal.Sessions;
 using Marten.Events.Projections;
 using Npgsql;
 using Pgvector;
@@ -24,7 +27,7 @@ public abstract class VectorProjection : IProjection
     private readonly IEmbeddingProvider _provider;
     private readonly string _tableName;
     private readonly List<IVectorEventMapping> _mappings = new();
-    private readonly List<Type> _deleteTypes = new();
+    private readonly Dictionary<Type, IVectorDeleteMapping> _deleteMappings = new();
 
     protected VectorProjection(string tableName, IEmbeddingProvider provider)
     {
@@ -32,6 +35,31 @@ public abstract class VectorProjection : IProjection
         _provider = provider;
 
         Configure(new VectorProjectionMapping(this));
+
+        AssertDeletesCanAddressTheRowsTheMapsWrote();
+    }
+
+    /// <summary>
+    ///     A projection whose rows are keyed on a member of the event has to delete by that same member.
+    ///     Falling back to the stream id there addresses a row that was never written, so the delete
+    ///     matches nothing and the document stays in the index forever — silently, because a DELETE that
+    ///     hits no row is not an error. Refuse it while the store is being built instead, which is the one
+    ///     moment the caller can still say which member it should have been.
+    /// </summary>
+    private void AssertDeletesCanAddressTheRowsTheMapsWrote()
+    {
+        if (!_mappings.Any(x => x.KeysOnTheEvent)) return;
+
+        var unqualified = _deleteMappings.Values.Where(x => !x.KeysOnTheEvent).ToArray();
+        if (unqualified.Length == 0) return;
+
+        throw new InvalidOperationException(
+            $"Vector projection '{GetType().FullNameInCode()}' maps "
+            + $"{_mappings.Where(x => x.KeysOnTheEvent).Select(x => x.EventType.Name).Join(", ")} "
+            + "to an id taken from the event, but deletes "
+            + $"{unqualified.Select(x => x.EventType.Name).Join(", ")} by stream id. The delete would "
+            + "address a row that was never written. Supply the same id selector to Delete<T>(), as in "
+            + $"map.Delete<{unqualified[0].EventType.Name}>(e => e.SomeId).");
     }
 
     /// <summary>
@@ -98,9 +126,12 @@ public abstract class VectorProjection : IProjection
 
         foreach (var @event in allEvents)
         {
-            if (_deleteTypes.Contains(@event.EventType))
+            if (_deleteMappings.TryGetValue(@event.EventType, out var deleteMapping))
             {
-                deletions.Add(@event.StreamId);
+                // The mapping's id, not @event.StreamId. A projection keyed on a member of the event
+                // deletes a row that was never written when this reads the stream id instead, so the
+                // retracted document stays in the index forever with nothing to report it.
+                deletions.Add(deleteMapping.ExtractId(@event));
                 continue;
             }
 
@@ -121,7 +152,12 @@ public abstract class VectorProjection : IProjection
 
         if (extractions.Count == 0 && deletions.Count == 0) return;
 
-        var database = store.Storage.Database;
+        // The SESSION's database, never store.Storage.Database — whose own doc comment says it is
+        // "the default database when *not* using database per tenant multi-tenancy". Reading it there
+        // wrote every tenant's embeddings into whichever database Tenancy.Default resolves to, while
+        // VectorProjectionSearchAsync reads from the session's. The two disagreed, so a search against
+        // the tenant that raised the events found nothing at all.
+        var database = operations.As<QuerySession>().Database;
         await using var conn = database.CreateConnection();
         await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
@@ -204,9 +240,9 @@ public abstract class VectorProjection : IProjection
         _mappings.Add(mapping);
     }
 
-    internal void AddDeleteType(Type eventType)
+    internal void AddDeleteMapping(IVectorDeleteMapping mapping)
     {
-        _deleteTypes.Add(eventType);
+        _deleteMappings[mapping.EventType] = mapping;
     }
 
     private static string ComputeHash(string content)
@@ -242,18 +278,46 @@ public class VectorProjectionMapping
     }
 
     /// <summary>
-    /// Register an event type that causes the embedding row to be deleted.
+    /// Register an event type that causes the embedding row to be deleted. Supply
+    /// <paramref name="idSelector" /> whenever the rows are keyed on something other than the stream,
+    /// exactly as <see cref="Map{TEvent}" /> does — the delete has to address the same row the map
+    /// wrote, and only the caller knows which member that is.
     /// </summary>
-    public VectorProjectionMapping Delete<TEvent>()
+    public VectorProjectionMapping Delete<TEvent>(Func<TEvent, Guid>? idSelector = null)
     {
-        _projection.AddDeleteType(typeof(TEvent));
+        _projection.AddDeleteMapping(new VectorDeleteMapping<TEvent>(idSelector));
         return this;
     }
+}
+
+internal interface IVectorDeleteMapping
+{
+    Type EventType { get; }
+    bool KeysOnTheEvent { get; }
+    Guid ExtractId(IEvent @event);
+}
+
+internal class VectorDeleteMapping<TEvent>: IVectorDeleteMapping
+{
+    private readonly Func<TEvent, Guid>? _idSelector;
+
+    public VectorDeleteMapping(Func<TEvent, Guid>? idSelector)
+    {
+        _idSelector = idSelector;
+    }
+
+    public Type EventType => typeof(TEvent);
+
+    public bool KeysOnTheEvent => _idSelector != null;
+
+    public Guid ExtractId(IEvent @event)
+        => _idSelector != null ? _idSelector((TEvent)@event.Data) : @event.StreamId;
 }
 
 internal interface IVectorEventMapping
 {
     Type EventType { get; }
+    bool KeysOnTheEvent { get; }
     Guid ExtractId(IEvent @event);
     string? ExtractContent(IEvent @event);
 }
@@ -271,6 +335,8 @@ internal class VectorEventMapping<TEvent> : IVectorEventMapping
 
     public Type EventType => typeof(TEvent);
 
+    public bool KeysOnTheEvent => _idSelector != null;
+
     public Guid ExtractId(IEvent @event)
     {
         if (_idSelector != null)
@@ -278,9 +344,10 @@ internal class VectorEventMapping<TEvent> : IVectorEventMapping
         return @event.StreamId;
     }
 
-    public string? ExtractContent(IEvent @event)
-    {
-        try { return _contentSelector((TEvent)@event.Data); }
-        catch { return null; }
-    }
+    // Deliberately NOT wrapped in a catch. A selector that throws is a bug in the projection, and
+    // swallowing it returned null — which this projection reads as "this event contributes no
+    // content", exactly the same as a legitimately empty mapping. The document then silently never
+    // reaches the index and nothing anywhere reports it. Let it fail the batch instead, which is
+    // what every other projection in Marten does with a broken Apply.
+    public string? ExtractContent(IEvent @event) => _contentSelector((TEvent)@event.Data);
 }
