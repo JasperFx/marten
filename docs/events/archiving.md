@@ -37,6 +37,11 @@ public async Task SampleArchive(IDocumentSession session, string streamId)
 As in all cases with an `IDocumentSession`, you need to call `SaveChanges()` to commit the
 unit of work.
 
+Archiving the same stream again preserves one archived copy of its stream and event rows,
+including when hot/cold partitioning is enabled. A single-stream projection with
+`IncludeArchivedEvents = true` can process the `Archived` marker after an inline projection
+has already archived the stream.
+
 ::: tip
 At this point, you will also have to manually delete any projected aggregates based on the event streams being
 archived if that is desirable

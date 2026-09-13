@@ -78,12 +78,15 @@ internal class ArchiveStreamFunction: Function
             .Append(IsArchivedColumn.ColumnName)
             .Join(", ");
 
+        // Serialize archives of the same active stream before copying it. Filtering alone lets
+        // concurrent calls select the same row and collide in the archived partition.
         writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {_events.DatabaseSchemaName}.{Name}({argList}) RETURNS VOID LANGUAGE plpgsql AS
 $function$
 BEGIN
-  insert into {_events.DatabaseSchemaName}.mt_streams ({streamInsertColumns}) select {streamColumnList}, TRUE from {_events.DatabaseSchemaName}.mt_streams where id = streamid {tenantWhere};
-  insert into {_events.DatabaseSchemaName}.mt_events ({eventInsertColumns}) select {eventColumnList}, TRUE from {_events.DatabaseSchemaName}.mt_events where stream_id = streamid {tenantWhere};
+  perform 1 from {_events.DatabaseSchemaName}.mt_streams where id = streamid and {IsArchivedColumn.ColumnName} = FALSE {tenantWhere} for update;
+  insert into {_events.DatabaseSchemaName}.mt_streams ({streamInsertColumns}) select {streamColumnList}, TRUE from {_events.DatabaseSchemaName}.mt_streams where id = streamid and {IsArchivedColumn.ColumnName} = FALSE {tenantWhere};
+  insert into {_events.DatabaseSchemaName}.mt_events ({eventInsertColumns}) select {eventColumnList}, TRUE from {_events.DatabaseSchemaName}.mt_events where stream_id = streamid and {IsArchivedColumn.ColumnName} = FALSE {tenantWhere};
   delete from {_events.DatabaseSchemaName}.mt_events where stream_id = streamid and {IsArchivedColumn.ColumnName} = FALSE {tenantWhere};
   delete from {_events.DatabaseSchemaName}.mt_streams where id = streamid and {IsArchivedColumn.ColumnName} = FALSE {tenantWhere};
 END;
