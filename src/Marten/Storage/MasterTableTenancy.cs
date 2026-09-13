@@ -204,6 +204,23 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
         return database;
     }
 
+    /// <summary>
+    /// #5400 — the null-returning form of <see cref="FindOrCreateDatabase"/>. This tenancy never
+    /// provisioned on a lookup (<c>tryFindTenantDatabase</c> is a single select against the tenant table),
+    /// so this only swaps the miss from a throw to a null for callers that want to answer "no such tenant"
+    /// themselves.
+    /// </summary>
+    public async ValueTask<IMartenDatabase?> TryFindDatabase(string tenantIdOrDatabaseIdentifier)
+    {
+        tenantIdOrDatabaseIdentifier = _options.TenantIdStyle.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
+        if (_databases.TryFind(tenantIdOrDatabaseIdentifier, out var database))
+        {
+            return database;
+        }
+
+        return await tryFindTenantDatabase(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
+    }
+
     public async ValueTask<IMartenDatabase> FindDatabase(DatabaseId id)
     {
         // Not worried about this being optimized at all

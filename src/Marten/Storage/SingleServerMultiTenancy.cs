@@ -167,6 +167,38 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
         return tenant.Database;
     }
 
+    /// <summary>
+    /// #5400 — resolve only what is already known, and never create a database on the way.
+    /// </summary>
+    /// <remarks>
+    /// This tenancy creates a PostgreSQL database per tenant, and on a cache miss
+    /// <see cref="GetTenantAsync"/> falls back to <c>databaseName = tenantId</c> before calling the base
+    /// <c>SingleServerDatabaseCollection.FindOrCreateDatabase</c>, which issues CREATE DATABASE for a name
+    /// that does not exist yet. So an unrecognized id reaching that path through a diagnostics read would
+    /// create a database named after the typo. Answer from the registered maps instead, and null otherwise.
+    /// <see cref="FindOrCreateDatabase"/> itself is untouched — create-on-demand is its documented job and
+    /// is pinned by <c>build_database_on_the_fly</c>.
+    /// </remarks>
+    public ValueTask<IMartenDatabase?> TryFindDatabase(string tenantIdOrDatabaseIdentifier)
+    {
+        var tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
+
+        if (_tenants.TryFind(tenantId, out var tenant))
+        {
+            return new ValueTask<IMartenDatabase?>(tenant.Database);
+        }
+
+        // Known tenant that has not been materialized yet, or the database name it was mapped onto.
+        if (_tenantToDatabase.ContainsKey(tenantId) || _tenantToDatabase.ContainsValue(tenantId))
+        {
+            return new ValueTask<IMartenDatabase?>(
+                _tenants.Enumerate().Select(x => x.Value.Database)
+                    .FirstOrDefault(x => x.Identifier.EqualsIgnoreCase(tenantId)));
+        }
+
+        return new ValueTask<IMartenDatabase?>((IMartenDatabase?)null);
+    }
+
     public Tenant Default
     {
         get

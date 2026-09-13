@@ -17,6 +17,7 @@ using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Tags;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
@@ -87,7 +88,7 @@ public partial class DocumentStore
         var scopeByColumn = tenantId != null && !spansSeveralDatabases;
 
         await using var session = tenantId != null && spansSeveralDatabases
-            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
             : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
@@ -158,7 +159,7 @@ public partial class DocumentStore
             $"order by version asc";
 
         await using var session = tenantId != null && spansSeveralDatabases
-            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
             : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
@@ -266,7 +267,7 @@ public partial class DocumentStore
         var scopeByColumn = tenantId != null && !spansSeveralDatabases;
 
         await using var session = tenantId != null && spansSeveralDatabases
-            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
             : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
@@ -462,7 +463,7 @@ public partial class DocumentStore
         }
 
         await using var session = tenantId != null && spansSeveralDatabases
-            ? openExplorerSession(await Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false))
+            ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
             : openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
@@ -1002,6 +1003,34 @@ public partial class DocumentStore
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// #5400 — resolve the database an explorer read was pointed at, WITHOUT provisioning one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// These four reads used to call <c>Tenancy.FindOrCreateDatabase(tenantId)</c>, and several tenancy
+    /// models take the "or create" literally: <see cref="ShardedTenancy"/> assigns an unknown tenant to a
+    /// shard and runs partition + sequence DDL for it, and <see cref="SingleServerMultiTenancy"/> issues
+    /// CREATE DATABASE for a name it has never seen. A monitoring console polling a retired or mistyped
+    /// tenant id would therefore bring that tenant into existence — a diagnostics read with a write for a
+    /// side effect, which is the same principle <see cref="ShardStatus.State"/> encodes for daemons:
+    /// reading must not change what is running.
+    /// </para>
+    /// <para>
+    /// An unresolvable id now throws <see cref="UnknownTenantIdException"/>, which is what
+    /// <c>StaticMultiTenancy</c> and <c>MasterTableTenancy</c> already did for an unknown id, so the
+    /// explorer answers the same way across every tenancy model instead of one per store. On the two
+    /// <c>IAsyncEnumerable</c> reads that surfaces at first enumeration rather than at the call, which is
+    /// inherent to an iterator method and not a difference in the rule being applied.
+    /// </para>
+    /// </remarks>
+    private async ValueTask<IMartenDatabase> findExplorerDatabaseAsync(string tenantIdOrDatabaseIdentifier)
+    {
+        var database = await Tenancy.TryFindDatabase(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
+
+        return database ?? throw new UnknownTenantIdException(tenantIdOrDatabaseIdentifier);
     }
 
     private DocumentSessionBase openExplorerSession()
