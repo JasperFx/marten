@@ -390,7 +390,12 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public ProjectionOptions Projections => _projections;
 
     // This would only be set for "additional" document stores
-    public string StoreName { get; set; } = "Main";
+    /// <summary>
+    ///     The name every store-level surface uses for "not named" — see <see cref="StoreName" />.
+    /// </summary>
+    public const string DefaultStoreName = "Main";
+
+    public string StoreName { get; set; } = DefaultStoreName;
 
     /// <summary>
     /// The main application assembly. Defaults to <see cref="Assembly.GetEntryAssembly"/>;

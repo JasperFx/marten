@@ -117,6 +117,13 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         }
 
         Identity = new(Options.StoreName.ToLowerInvariant(), "marten");
+
+        // #5409: Subject beside Identity, from the same StoreName, because they answer the same
+        // question and used to disagree. Subject was a property initializer holding the literal
+        // "marten://main" and was overwritten only for an ancillary store -- so naming a PRIMARY store
+        // moved its identity and left its subject on "main". An ancillary store still overrides this in
+        // SecondaryStoreConfig.Build, which resolves its marker type rather than the name (#5039).
+        Subject = Internal.StoreSubject.For(Options.StoreName);
     }
 
     public ITenancy Tenancy => Options.Tenancy;

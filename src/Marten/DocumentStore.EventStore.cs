@@ -691,7 +691,15 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         return usage;
     }
 
-    public Uri Subject { get; internal set; } = new Uri("marten://main");
+    /// <summary>
+    ///     Identifies this STORE, not the database behind it — see <c>Marten.Internal.StoreSubject</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Set from <c>StoreOptions.StoreName</c> in the constructor (#5409), and overwritten for an
+    ///     ancillary store by <c>SecondaryStoreConfig.Build</c>, which resolves the marker type instead.
+    ///     The initializer is the fallback for a store built by something that bypasses the constructor.
+    /// </remarks>
+    public Uri Subject { get; internal set; } = Internal.StoreSubject.For(StoreOptions.DefaultStoreName);
 
     IReadOnlyEventStore IEventStore.OpenReadOnlyEventStore()
     {

@@ -69,8 +69,18 @@ internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
             configureMarten.Configure(provider, options);
         }
 
-        options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
-        options.StoreName = typeof(T).Name;
+        // #5409: StoreName is assigned ONCE, above, before the IConfigureMarten<T> chain -- so a
+        // contribution that names the store is honoured. It used to be assigned a second time here,
+        // which silently reverted any such override to the marker type's name with nothing to say so.
+        // ReadJasperFxOptions never touches StoreName, so that reassignment guarded nothing.
+        //
+        // Polecat records the same ordering decision for the same reason (polecat#207: "Set before the
+        // IConfigurePolecat<T> chain so a user override still wins"), and Fisher seeds it into the
+        // options for the same purpose. Marten was the only one of the three that took the name back.
+        //
+        // The duplicate ReadJasperFxOptions call that stood between the two assignments went with them.
+        // It arrived in "Ongoing work for Marten 8" (d52a6d5e7) rather than deliberately, and the method
+        // is idempotent -- every branch is ??= or a guarded list-add -- so calling it once is the same.
         options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
         options.Projections.AttachServiceProvider(provider);
         options.Services = provider;
@@ -97,21 +107,5 @@ internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
     // CLR type name containing a backtick and arity ("IMartenStoreMarker`1"), which is not a
     // valid URI hostname and throws UriFormatException. Strip the arity and fold in the
     // (sanitized) generic argument names so distinct closed generics still map to distinct URIs.
-    internal static string SanitizeForUri(Type type)
-    {
-        var name = type.Name;
-        var tick = name.IndexOf('`');
-        if (tick >= 0)
-        {
-            name = name.Substring(0, tick);
-        }
-
-        if (type.IsGenericType)
-        {
-            var arguments = type.GetGenericArguments().Select(SanitizeForUri);
-            name = name + "-" + string.Join("-", arguments);
-        }
-
-        return name.ToLowerInvariant();
-    }
+    internal static string SanitizeForUri(Type type) => StoreSubject.Sanitize(type);
 }
