@@ -459,6 +459,12 @@ public partial class DocumentStore
         var headSequence = await readHeadSequenceAsync(session, schema, ct).ConfigureAwait(false);
         var progression = await readProgressionAsync(session, schema, ct).ConfigureAwait(false);
 
+        // #5392 (jasperfx#818). ShardStatus.State is a fact about the RUNNING DAEMON, which no
+        // progression table knows. A store that can reach one reports what it says; a store that
+        // cannot reports Unknown, which means "there is no daemon here to ask" and is a genuinely
+        // different operational situation from Stopped -- the reading an operator acts on.
+        var agentStates = await readAgentStatesAsync().ConfigureAwait(false);
+
         var statuses = new List<ProjectionStatus>();
         foreach (var source in Options.Projections.All)
         {
@@ -477,7 +483,9 @@ public partial class DocumentStore
                 var processed = progression.TryGetValue(effectiveName.Identity, out var seq) ? seq : 0L;
                 shardStatuses.Add(new ShardStatus(
                     effectiveName.Identity,
-                    State: "Unknown",
+                    State: agentStates.TryGetValue(effectiveName.Identity, out var agentState)
+                        ? ShardStatusState.From(agentState)
+                        : ShardStatusState.Unknown,
                     ProcessedSequence: processed,
                     EventStoreSequence: headSequence,
                     Error: null));
@@ -487,6 +495,91 @@ public partial class DocumentStore
         }
 
         return statuses;
+    }
+
+    /// <summary>
+    /// #5392 (jasperfx#818): the per-shard <c>AgentStatus</c> of whichever daemons are running against
+    /// THIS store, keyed by shard identity. Empty when no daemon is visible, which is why the caller
+    /// falls back to <see cref="ShardStatusState.Unknown" />.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Read through <c>IProjectionCoordinator.AllDaemonsAsync()</c> and never through
+    /// <c>DaemonForDatabase</c>, which is contractually allowed to go looking and <em>start</em> a
+    /// daemon. A projections page that starts one by being opened is a monitoring tool with a side
+    /// effect on the system it monitors — pinned upstream by
+    /// <c>reading_the_statuses_does_not_start_a_daemon</c>.
+    /// </para>
+    /// <para>
+    /// No coordinator means no daemon to ask, and that is the common case rather than an edge:
+    /// <c>DaemonMode.ExternallyManaged</c>, a monitoring console in another process, and a store built
+    /// by hand (<c>new DocumentStore(options)</c>, where Options.Services is null) all land here. The
+    /// answer for it is Unknown, which is a genuinely different operational situation from Stopped —
+    /// answering Stopped sends an operator looking for why a projection was stopped that was never
+    /// started.
+    /// </para>
+    /// <para>
+    /// Daemons are matched to this store by <c>IProjectionDaemon.StoreUri</c> against
+    /// <see cref="Subject" /> rather than by trusting whichever coordinator the container hands back.
+    /// An application with an ancillary store registers a coordinator per store and the non-generic
+    /// IProjectionCoordinator resolves the primary one, so without the check an ancillary store would
+    /// report the PRIMARY store's shard states as its own.
+    /// </para>
+    /// </remarks>
+    private async Task<Dictionary<string, AgentStatus>> readAgentStatesAsync()
+    {
+        var states = new Dictionary<string, AgentStatus>();
+
+        var services = Options.Services;
+        if (services == null)
+        {
+            return states;
+        }
+
+        var subject = Subject.ToString();
+
+        foreach (var coordinator in Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+                     .GetServices<JasperFx.Events.Daemon.IProjectionCoordinator>(services))
+        {
+            IReadOnlyList<JasperFx.Events.Daemon.IProjectionDaemon> daemons;
+
+            try
+            {
+                daemons = await coordinator.AllDaemonsAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // A coordinator that cannot enumerate its daemons is the same operational situation as
+                // there being none, and a diagnostics read must not throw on the way to saying so.
+                continue;
+            }
+
+            foreach (var daemon in daemons)
+            {
+                // A daemon built without a store reports no StoreUri (test scaffolding); anything with
+                // one that is not ours belongs to another store in the same host.
+                if (daemon.StoreUri != null && daemon.StoreUri != subject)
+                {
+                    continue;
+                }
+
+                foreach (var source in Options.Projections.All)
+                {
+                    foreach (var shard in source.Shards())
+                    {
+                        var identity = shard.Name.Identity;
+
+                        // StatusFor answers Stopped for a shard it has no agent for, which is a
+                        // daemon's own answer and legitimate once a daemon has been reached. It is
+                        // only wrong as a stand-in for "no daemon", which is why nothing calls this
+                        // when none was found.
+                        states[identity] = daemon.StatusFor(identity);
+                    }
+                }
+            }
+        }
+
+        return states;
     }
 
     /// <inheritdoc />

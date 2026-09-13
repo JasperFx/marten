@@ -463,6 +463,20 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         public IDocumentOperations OpenSession()
             => _host.Services.GetRequiredService<IDocumentStore>().LightweightSession();
 
+        /// <summary>
+        ///     jasperfx#818 (#5392). The hosted store as IEventStore -- the one store in the suite set
+        ///     with a genuinely discoverable running daemon, which is what makes the daemon-visible half
+        ///     of ProjectionStatusCompliance testable at all. The fixture's own store is built by hand
+        ///     and registers no coordinator, so asking it what state its shards are in can only ever
+        ///     answer "no daemon here", which is the case Unknown describes.
+        ///
+        ///     Cannot be resolved generically from <see cref="Services" />: no store registers itself as
+        ///     IEventStore under that name for a suite to find -- Marten registers IDocumentStore, and
+        ///     AddMarten's IEventStore registration is an adapter over it.
+        /// </summary>
+        public JasperFx.Events.IEventStore EventStore
+            => (JasperFx.Events.IEventStore)_host.Services.GetRequiredService<IDocumentStore>();
+
         public async ValueTask DisposeAsync()
         {
             // IHost.Dispose alone does not call StopAsync, and an abandoned daemon host leaks
