@@ -5,6 +5,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
+using Marten.Internal.Sessions;
 using Marten.Events.Projections;
 using Npgsql;
 using Pgvector;
@@ -151,7 +152,12 @@ public abstract class VectorProjection : IProjection
 
         if (extractions.Count == 0 && deletions.Count == 0) return;
 
-        var database = store.Storage.Database;
+        // The SESSION's database, never store.Storage.Database — whose own doc comment says it is
+        // "the default database when *not* using database per tenant multi-tenancy". Reading it there
+        // wrote every tenant's embeddings into whichever database Tenancy.Default resolves to, while
+        // VectorProjectionSearchAsync reads from the session's. The two disagreed, so a search against
+        // the tenant that raised the events found nothing at all.
+        var database = operations.As<QuerySession>().Database;
         await using var conn = database.CreateConnection();
         await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
