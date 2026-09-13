@@ -24,28 +24,23 @@ We try to limit the number of necessary setup to a minimum, but few steps are st
 
 Available [here](https://dotnet.microsoft.com/download)
 
-**2. PostgreSQL 12 or above database**
+**2. PostgreSQL 13 or above database**
+
+13 is a hard floor rather than a recommendation: the async daemon calls `pg_current_snapshot()`, which
+arrived in PostgreSQL 13, so an older server fails those tests with
+`42883: function pg_current_snapshot() does not exist`. CI runs `postgres:15-alpine` and
+`postgres:latest`.
 
 The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have Docker running on your local box, type:
-`docker-compose up`
-or
-`dotnet run --framework net6.0 -- init-db`
-at the command line to spin up a Postgresql database withThe default Marten test configuration tries to find this database if no
-PostgreSQL database connection string is explicitly configured following the steps below:
+`docker compose up`
+at the command line to spin up a PostgreSQL database. `docker-compose.yml` builds its image from
+`docker/postgres/Dockerfile`, which layers PostGIS 3 and pgvector onto the official `postgres:17`
+image so the extension test projects have what they need.
 
-**PLV8**
-
-If you'd like to use [Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
-
-Ensure the following:
-
-- The login you are using to connect to your database is a member of the `postgres` role
-- An environment variable of `marten_testing_database` is set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about PostgreSQL connection strings ).
-
-_Help with PSQL/PLV8_
-
-- On Windows, see [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries of PLV8
-- On *nix, check [marten-local-db](https://github.com/eouw0o83hf/marten-local-db) for a Docker based PostgreSQL instance including PLV8.
+The default Marten test configuration finds that database automatically. To use a different one, set
+the `marten_testing_database` environment variable to its connection string (see the
+[Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for the format),
+and make sure the login you connect with is a member of the `postgres` role.
 
 Once you have the codebase and the connection string file, run the [build command](https://github.com/JasperFx/marten#build-commands) or use the dotnet CLI to restore and build the solution.
 
