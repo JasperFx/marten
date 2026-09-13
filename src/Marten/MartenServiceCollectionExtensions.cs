@@ -120,24 +120,26 @@ public static class MartenServiceCollectionExtensions
     ///     defaults
     /// </summary>
     /// <remarks>
-    ///     You need to configure connection settings through DI, e.g. by calling `UseNpgsqlDataSource`
-    ///     and configuring `NpqsqlDataSource` with `AddNpgsqlDataSource` from `Npgsql.DependencyInjection`
+    ///     <para>
+    ///         You need to configure connection settings through DI, e.g. by calling `UseNpgsqlDataSource`
+    ///         and configuring `NpqsqlDataSource` with `AddNpgsqlDataSource` from `Npgsql.DependencyInjection`
+    ///     </para>
+    ///     <para>
+    ///         This overload deliberately takes NO <c>eventModelName</c>, unlike every other
+    ///         <c>AddMarten</c> spelling. An optional <c>string</c> here is not additive -- it makes
+    ///         this overload a better match than <c>AddMarten(connectionString)</c> for a lone string
+    ///         argument, because C# prefers a candidate with no omitted optional parameters. Every
+    ///         existing <c>AddMarten("Host=...")</c> call in the wild would silently rebind to this
+    ///         method with the connection string landing in the model name, leaving the store with no
+    ///         tenancy at all. To name the model on this flow, use the <see cref="StoreOptions" />
+    ///         overload: <c>services.AddMarten(new StoreOptions(), "Ledgers")</c>.
+    ///     </para>
     /// </remarks>
     /// <param name="services"></param>
     /// <returns></returns>
-    /// <param name="eventModelName">
-    ///     The Event Model these projections contribute slices to. Defaults to
-    ///     <c>ProjectionEventModelSource.DefaultModelName</c>, which is right when the application
-    ///     never named a model of its own. <b>A host that calls <c>AddEventModel("Something", …)</c>
-    ///     has to pass the same name here</b>: slices merge by model name, so leaving it assembles
-    ///     TWO models — the host's and this one — which surfaces as "expected exactly one assembled
-    ///     model" and names neither Marten nor the line that caused it. The store cannot infer it,
-    ///     because <c>AddEventModel</c> may not have been called yet when this runs.
-    /// </param>
-    public static MartenConfigurationExpression AddMarten(this IServiceCollection services,
-        string? eventModelName = null)
+    public static MartenConfigurationExpression AddMarten(this IServiceCollection services)
     {
-        return services.AddMarten(new StoreOptions(), eventModelName);
+        return services.AddMarten(new StoreOptions());
     }
 
     /// <summary>
@@ -182,7 +184,7 @@ public static class MartenServiceCollectionExtensions
         string? eventModelName = null
     )
     {
-        services.AddMarten(s => options);
+        services.AddMarten(s => options, eventModelName);
 
         // #4598 / jasperfx#413: when the configured tenancy is a dynamic source
         // (MasterTableTenancy or ShardedTenancy as of #4598), register it as
@@ -205,6 +207,28 @@ public static class MartenServiceCollectionExtensions
         }
 
         return new MartenConfigurationExpression(services, options);
+    }
+
+    /// <summary>
+    ///     #5405. Refuse an empty or whitespace Event Model name by name, before anything is
+    ///     registered.
+    /// </summary>
+    /// <remarks>
+    ///     An empty string is a perfectly legal model name, and it reproduces the exact bug the
+    ///     parameter exists to prevent -- two assembled models -- with a blank where the name should
+    ///     be, which is even harder to trace than "EventModel". Null is the documented way to say
+    ///     "the default model", so only a non-null blank is an error. Both registration methods add
+    ///     several singletons before they reach the model source, so the refusal comes first and
+    ///     leaves the IServiceCollection untouched.
+    /// </remarks>
+    private static void AssertEventModelName(string? eventModelName)
+    {
+        if (eventModelName is not null && string.IsNullOrWhiteSpace(eventModelName))
+        {
+            throw new ArgumentException(
+                "The Event Model name cannot be empty or whitespace. Pass null (or omit the argument) to contribute to the default model.",
+                nameof(eventModelName));
+        }
     }
 
     private static IDynamicTenantSource<string>? TryGetDynamicTenantSource(StoreOptions options)
@@ -238,6 +262,8 @@ public static class MartenServiceCollectionExtensions
         string? eventModelName = null
     )
     {
+        AssertEventModelName(eventModelName);
+
         services.AddJasperFx();
         // #4494: register the hosted service that drains IAsyncConfigureMarten so
         // bare AddSingleton<IAsyncConfigureMarten, T>() works the same way bare
@@ -403,6 +429,8 @@ public static class MartenServiceCollectionExtensions
         Func<IServiceProvider, StoreOptions> configure, string? eventModelName = null)
         where T : class, IDocumentStore
     {
+        AssertEventModelName(eventModelName);
+
         services.AddJasperFx();
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
 
