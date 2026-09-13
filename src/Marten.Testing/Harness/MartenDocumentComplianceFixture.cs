@@ -32,6 +32,17 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
 
     public override IDocumentSessionFactory Sessions => _store;
 
+    /// <summary>
+    /// jasperfx#819 (#5393). Marten implements Guid optimistic concurrency through the IVersioned
+    /// marker and <c>Schema.For&lt;T&gt;().UseOptimisticConcurrency(true)</c>, so
+    /// GuidOptimisticConcurrencyCompliance runs rather than skips.
+    /// </summary>
+    /// <remarks>
+    /// Flipping this is only half of the opt-in: the fixture must also replay
+    /// <c>DocumentComplianceConfig.OptimisticConcurrencyTypes</c>, which BuildStoreAsync below does.
+    /// </remarks>
+    public override bool SupportsOptimisticConcurrency => true;
+
     protected override async Task BuildStoreAsync(DocumentComplianceConfig config)
     {
         var options = new StoreOptions();
@@ -65,6 +76,21 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
         foreach (var valueType in config.ValueTypes)
         {
             options.RegisterValueType(valueType);
+        }
+
+        // jasperfx#819 (#5393). Load-bearing in the strongest sense, and NOT belt-and-braces like the
+        // two loops above: GuidOptimisticConcurrencyCompliance's document implements IVersioned *and*
+        // declares config.UseOptimisticConcurrency<T>(), because the stores disagree about whether the
+        // marker is itself the opt-in or merely supplies the member to guard on. A fixture that drops
+        // this does not make the suite skip -- on a store where the marker alone is not the opt-in,
+        // every guard fact fails instead.
+        //
+        // Set on the mapping rather than through Schema.For<T>() because the config hands over a Type
+        // and the fluent entry point is generic; Policies.ForAllDocuments(m => m.UseOptimisticConcurrency
+        // = true) is the same move one level up.
+        foreach (var type in config.OptimisticConcurrencyTypes)
+        {
+            options.Storage.MappingFor(type).UseOptimisticConcurrency = true;
         }
 
         // jasperfx#672 (#5249). The suite states the stream identity it needs and the fixture

@@ -85,6 +85,29 @@ public class pending_stream_actions_compliance
 public class document_commit_listener_compliance
     : DocumentCommitListenerCompliance<MartenDocumentComplianceFixture>;
 
+/*
+ * jasperfx#819 (#5393). The eighth suite, and the first shared coverage of Guid optimistic
+ * concurrency on ANY store -- the whole shared story of document concurrency was
+ * NumericRevisionCompliance, and grepping the 2.68.0 suites for IVersioned returned nothing.
+ *
+ * marten#5372 is what lived in that gap on this side: a member mapped with Metadata.Version.MapTo(...)
+ * was invisible to the session, so the upsert bound DBNull into its guard and reported every
+ * cross-session write as a violation. fisher#245 is the same field one route over. Two stores, the
+ * same failure mode, found independently and neither caught by anything shared.
+ *
+ * Gated on MartenDocumentComplianceFixture.SupportsOptimisticConcurrency, which also has to replay
+ * DocumentComplianceConfig.OptimisticConcurrencyTypes -- see the comment on that loop in the fixture
+ * for why dropping it fails every guard fact rather than skipping.
+ *
+ * In the collection like the rest even though it pins its own schema (compliance_concurrency) and so
+ * could safely run beside them: the fixture's CleanDocumentDataAsync is a store-wide document wipe
+ * called before every test, and keeping every document suite serialized locally is cheaper than
+ * reasoning about which ones happen not to share a schema today.
+ */
+[Collection(DocumentComplianceCollection.Name)]
+public class guid_optimistic_concurrency_compliance
+    : GuidOptimisticConcurrencyCompliance<MartenDocumentComplianceFixture>;
+
 public static class DocumentComplianceCollection
 {
     public const string Name = "document storage compliance";
