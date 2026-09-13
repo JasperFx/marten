@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Events.EventModeling;
 using JasperFx.Events.Projections;
 using Marten;
@@ -89,7 +90,8 @@ public class projection_event_model_source_registration: HostedStoreContext
     }
 
     private async Task<IHost> StartNamedHostAsync(string schemaSuffix, string? eventModelName,
-        string declaredModelName, string declaredSliceName)
+        string declaredModelName, string declaredSliceName,
+        Action<IServiceCollection>? configureServices = null)
     {
         return await Host.CreateDefaultBuilder().ConfigureServices(services =>
         {
@@ -110,6 +112,12 @@ public class projection_event_model_source_registration: HostedStoreContext
             // store is registered, so registration order no longer matters.
             services.AddEventModel(declaredModelName,
                 model => model.Slice(declaredSliceName).InDomain("Finance"));
+
+            // Also after AddMarten, and deliberately so: AddJasperFx appends each configure lambda to
+            // the options pipeline rather than replacing it, and ReadHostEnvironment (the PostConfigure
+            // that runs last) touches GeneratedCodeOutputPath and ApplicationAssembly but never
+            // ServiceName -- so a name set here survives to the point the model is assembled.
+            configureServices?.Invoke(services);
         }).StartAsync();
     }
 
@@ -143,25 +151,55 @@ public class projection_event_model_source_registration: HostedStoreContext
     }
 
     /// <summary>
-    /// #5405, the discriminating half: a store nobody names still contributes to the DEFAULT model.
+    /// #5408. A store nobody names contributes to the model named after the SERVICE, not to the
+    /// literal "EventModel".
     /// </summary>
     /// <remarks>
-    /// Asserting only that a named store lands on the named model would pass against a store that
-    /// ignored the parameter entirely and put everything on whichever name the host declared. This
-    /// is the behaviour that has to REMAIN for every host that never named a model.
+    /// Wolverine names its derived model after <c>JasperFxOptions.ServiceName</c>, and so does
+    /// Bobcat's spec assembly. Defaulting to the literal meant the overwhelmingly common host --
+    /// Wolverine plus one store -- assembled TWO models out of the box, which is what #5405 actually
+    /// was. The name is read off the container when the model is assembled, so an explicit
+    /// AddJasperFx after AddMarten still lands.
     /// </remarks>
     [Fact]
-    public async Task an_unnamed_store_still_contributes_to_the_default_model()
+    public async Task an_unnamed_store_contributes_to_the_model_named_after_the_service()
     {
-        using var host = await StartNamedHostAsync("unnamed", null, "Ledgers", "SomethingDeclared");
+        using var host = await StartNamedHostAsync("unnamed", null, "Ledgers", "SomethingDeclared",
+            services => services.AddJasperFx(opts => opts.ServiceName = "Ledgers"));
 
         var models = await EventModelDiscovery.AssembleAsync(host.Services, CancellationToken.None);
 
-        // Two models, on purpose: the host named its own, and the store was not told about it.
-        models.Select(x => x.Name).OrderBy(x => x)
-            .ShouldBe([ProjectionEventModelSource.DefaultModelName, "Ledgers"]);
+        // ONE model. The host declared "Ledgers" and the service is called "Ledgers", so the store's
+        // derived slices land on the same canvas without anyone restating the name on the store.
+        var model = models.ShouldHaveSingleItem();
+        model.Name.ShouldBe("Ledgers");
+        model.Slices.Select(x => x.Name).ShouldContain(nameof(SignalTally));
 
-        models.Single(x => x.Name == ProjectionEventModelSource.DefaultModelName)
+        await host.StopAsync();
+    }
+
+    /// <summary>
+    /// #5408, the discriminating half: the store follows the SERVICE name, not whatever name the
+    /// host happened to declare a model under.
+    /// </summary>
+    /// <remarks>
+    /// Asserting only the agreeing case would pass against a store that simply adopted the declared
+    /// model's name. Here the service and the declared model disagree on purpose, and the store has
+    /// to follow the service -- which is the rule that makes the agreeing case work rather than a
+    /// coincidence.
+    /// </remarks>
+    [Fact]
+    public async Task an_unnamed_store_follows_the_service_name_not_the_declared_model()
+    {
+        using var host = await StartNamedHostAsync("service", null, "Ledgers", "SomethingDeclared",
+            services => services.AddJasperFx(opts => opts.ServiceName = "Payments"));
+
+        var models = await EventModelDiscovery.AssembleAsync(host.Services, CancellationToken.None);
+
+        // Two models, and correctly so: the service is not what the host called its model.
+        models.Select(x => x.Name).OrderBy(x => x).ShouldBe(["Ledgers", "Payments"]);
+
+        models.Single(x => x.Name == "Payments")
             .Slices.Select(x => x.Name).ShouldContain(nameof(SignalTally));
 
         await host.StopAsync();

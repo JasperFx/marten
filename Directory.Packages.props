@@ -567,16 +567,35 @@
       rather than assuming: the EventSourcingTests inventory is identical either side of it
       (2219 test names before and after, nothing added or removed). A suite that quietly stops
       enrolling costs nothing in a run total, so the enrollment is diffed by name.
+
+      2.69.2 (jasperfx#832/#833) is the reason marten#5406 exists: codegen output is DETERMINISTIC
+      now. MethodFrameArranger.compileFrames walked an ImHashMap keyed by Frame, which does not
+      override GetHashCode, so step 3 followed identity hash codes — arbitrary per object and per
+      process — and two arrangements of the same logical method emitted the same statements in a
+      different order. It arrives INERT for Marten on master, which is worth stating because
+      marten#5406 asks for a regeneration that cannot happen here: #4438 and #4461 removed the
+      runtime code generation pipeline outright, deleted the generated providers and dropped the
+      TestCodeGen target, so master tracks no generated .cs at all — only two fingerprint.json. The
+      determinism fix still bites on the 8.0 branch, which tracks 14 generated providers, and in any
+      host running another JasperFx-family tool that still writes its own.
+
+      2.69.3 (jasperfx#836/#837) reaches Marten mostly through the package. EventModelSliceDescriptor
+      gains Origin, the contributing source's subject, so two stores projecting a document of the
+      same simple name now leave a SourceDisagreement hotspot naming both instead of one silently
+      winning. Marten needs no change for it: DocumentStore builds its usage as
+      EventStoreUsage(Subject, this), so every slice is attributed to the store's own subject —
+      which, as of #5410, finally follows StoreName. EventModelSetDescriptor pairs a service with
+      every model it hosts, which is the upstream half of marten#5408 below.
     -->
-    <PackageVersion Include="JasperFx" Version="2.69.1" />
-    <PackageVersion Include="JasperFx.Events" Version="2.69.1" />
+    <PackageVersion Include="JasperFx" Version="2.69.3" />
+    <PackageVersion Include="JasperFx.Events" Version="2.69.3" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.69.1" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.69.3" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -595,11 +614,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.69.1">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.69.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.69.1" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.69.3" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

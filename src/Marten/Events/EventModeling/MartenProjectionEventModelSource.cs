@@ -2,8 +2,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.EventModeling;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Marten.Events.EventModeling;
 
@@ -54,9 +56,22 @@ internal sealed class MartenProjectionEventModelSource: IEventModelDefinitionSou
     {
         var store = _store(services);
 
-        // A store that is not a DocumentStore (a test double, say) simply has no name to offer, and
-        // the default model is the right answer for it -- the same answer it got before #5405.
+        // #5408. The literal "EventModel" is the one default guaranteed to be wrong for every host.
+        // Wolverine names its derived model after the service name, and so does Bobcat's spec
+        // assembly, so a Wolverine-plus-Marten host -- the overwhelmingly common one -- assembled TWO
+        // models out of the box and had to restate a name it already declared. That is what #5405
+        // actually was; threading a name through was a fix for the symptom rather than the default.
+        //
+        // Resolved here rather than captured at registration for the same reason the model name is:
+        // JasperFxOptions is a container singleton, and this runs when the model is assembled.
+        var serviceName = services.GetService<JasperFxOptions>()?.ServiceName;
+        if (string.IsNullOrWhiteSpace(serviceName)) serviceName = null;
+
+        // An explicit EventModelName still wins -- that is what a modular monolith needs when a store
+        // is genuinely its own bounded context. A store that is not a DocumentStore (a test double,
+        // say) has no name of its own to offer and falls through to the service name as well.
         var modelName = (store as DocumentStore)?.Options.EventModelName
+                        ?? serviceName
                         ?? ProjectionEventModelSource.DefaultModelName;
 
         var inner = new ProjectionEventModelSource((IEventStore)store)
