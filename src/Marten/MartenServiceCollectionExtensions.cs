@@ -125,9 +125,19 @@ public static class MartenServiceCollectionExtensions
     /// </remarks>
     /// <param name="services"></param>
     /// <returns></returns>
-    public static MartenConfigurationExpression AddMarten(this IServiceCollection services)
+    /// <param name="eventModelName">
+    ///     The Event Model these projections contribute slices to. Defaults to
+    ///     <c>ProjectionEventModelSource.DefaultModelName</c>, which is right when the application
+    ///     never named a model of its own. <b>A host that calls <c>AddEventModel("Something", …)</c>
+    ///     has to pass the same name here</b>: slices merge by model name, so leaving it assembles
+    ///     TWO models — the host's and this one — which surfaces as "expected exactly one assembled
+    ///     model" and names neither Marten nor the line that caused it. The store cannot infer it,
+    ///     because <c>AddEventModel</c> may not have been called yet when this runs.
+    /// </param>
+    public static MartenConfigurationExpression AddMarten(this IServiceCollection services,
+        string? eventModelName = null)
     {
-        return services.AddMarten(new StoreOptions());
+        return services.AddMarten(new StoreOptions(), eventModelName);
     }
 
     /// <summary>
@@ -138,11 +148,21 @@ public static class MartenServiceCollectionExtensions
     /// <param name="services"></param>
     /// <param name="connectionString">The connection string to your application's Postgresql database</param>
     /// <returns></returns>
-    public static MartenConfigurationExpression AddMarten(this IServiceCollection services, string connectionString)
+    /// <param name="eventModelName">
+    ///     The Event Model these projections contribute slices to. Defaults to
+    ///     <c>ProjectionEventModelSource.DefaultModelName</c>, which is right when the application
+    ///     never named a model of its own. <b>A host that calls <c>AddEventModel("Something", …)</c>
+    ///     has to pass the same name here</b>: slices merge by model name, so leaving it assembles
+    ///     TWO models — the host's and this one — which surfaces as "expected exactly one assembled
+    ///     model" and names neither Marten nor the line that caused it. The store cannot infer it,
+    ///     because <c>AddEventModel</c> may not have been called yet when this runs.
+    /// </param>
+    public static MartenConfigurationExpression AddMarten(this IServiceCollection services, string connectionString,
+        string? eventModelName = null)
     {
         var options = new StoreOptions();
         options.Connection(connectionString);
-        return services.AddMarten(options);
+        return services.AddMarten(options, eventModelName);
     }
 
     /// <summary>
@@ -152,9 +172,14 @@ public static class MartenServiceCollectionExtensions
     /// <param name="services"></param>
     /// <param name="options">The Marten configuration for this application</param>
     /// <returns></returns>
+    /// <param name="eventModelName">
+    ///     The Event Model these projections contribute slices to — see the same parameter on the
+    ///     other <c>AddMarten</c> overloads.
+    /// </param>
     public static MartenConfigurationExpression AddMarten(
         this IServiceCollection services,
-        StoreOptions options
+        StoreOptions options,
+        string? eventModelName = null
     )
     {
         services.AddMarten(s => options);
@@ -203,9 +228,14 @@ public static class MartenServiceCollectionExtensions
     /// </summary>
     /// <param name="optionSource">Func that will build out a StoreOptions with the applications IServiceProvider as the input</param>
     /// <returns></returns>
+    /// <param name="eventModelName">
+    ///     The Event Model these projections contribute slices to — see the same parameter on the
+    ///     other <c>AddMarten</c> overloads.
+    /// </param>
     public static MartenConfigurationExpression AddMarten(
         this IServiceCollection services,
-        Func<IServiceProvider, StoreOptions> optionSource
+        Func<IServiceProvider, StoreOptions> optionSource,
+        string? eventModelName = null
     )
     {
         services.AddJasperFx();
@@ -224,7 +254,8 @@ public static class MartenServiceCollectionExtensions
         // The resolver is the whole reason this call exists here rather than in JasperFx: a store
         // registers itself under its own interface, and AddMarten is the only place that knows the
         // primary store's is IDocumentStore. AddMartenStore<T> registers its own with T.
-        services.AddProjectionEventModelSource(s => [(IEventStore)s.GetRequiredService<IDocumentStore>()]);
+        services.AddProjectionEventModelSource(
+            s => [(IEventStore)s.GetRequiredService<IDocumentStore>()], eventModelName);
         services.AddSingleton<IDocumentStoreUsageSource>(s =>
             (IDocumentStoreUsageSource)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IDocumentStoreDiagnostics>(s =>
@@ -313,15 +344,20 @@ public static class MartenServiceCollectionExtensions
     /// <param name="services"></param>
     /// <param name="configure"></param>
     /// <returns></returns>
+    /// <param name="eventModelName">
+    ///     The Event Model these projections contribute slices to — see the same parameter on the
+    ///     other <c>AddMarten</c> overloads.
+    /// </param>
     public static MartenConfigurationExpression AddMarten(
         this IServiceCollection services,
-        Action<StoreOptions> configure
+        Action<StoreOptions> configure,
+        string? eventModelName = null
     )
     {
         var options = new StoreOptions();
         configure(options);
 
-        return services.AddMarten(options);
+        return services.AddMarten(options, eventModelName);
     }
 
     /// <summary>
@@ -332,9 +368,14 @@ public static class MartenServiceCollectionExtensions
     /// <param name="configure"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    /// <param name="eventModelName">
+    ///     The Event Model these projections contribute slices to — see the same parameter on the
+    ///     other <c>AddMarten</c> overloads.
+    /// </param>
     public static MartenStoreExpression<T> AddMartenStore<T>(
         this IServiceCollection services,
-        Action<StoreOptions> configure
+        Action<StoreOptions> configure,
+        string? eventModelName = null
     ) where T : class, IDocumentStore
     {
         return services.AddMartenStore<T>(s =>
@@ -343,7 +384,7 @@ public static class MartenServiceCollectionExtensions
             configure(options);
 
             return options;
-        });
+        }, eventModelName);
     }
 
     /// <summary>
@@ -354,8 +395,13 @@ public static class MartenServiceCollectionExtensions
     /// <param name="configure"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    /// <param name="eventModelName">
+    ///     The Event Model these projections contribute slices to — see the same parameter on the
+    ///     other <c>AddMarten</c> overloads.
+    /// </param>
     public static MartenStoreExpression<T> AddMartenStore<T>(this IServiceCollection services,
-        Func<IServiceProvider, StoreOptions> configure) where T : class, IDocumentStore
+        Func<IServiceProvider, StoreOptions> configure, string? eventModelName = null)
+        where T : class, IDocumentStore
     {
         services.AddJasperFx();
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
@@ -371,7 +417,7 @@ public static class MartenServiceCollectionExtensions
         // for the same reason AddMarten's is: the marker is what says WHICH store, and only this
         // method knows it. Two sources emitting a slice for the same document type is harmless --
         // slices merge by name, which is what naming them after the document is for.
-        services.AddProjectionEventModelSource(s => [(IEventStore)s.GetRequiredService<T>()]);
+        services.AddProjectionEventModelSource(s => [(IEventStore)s.GetRequiredService<T>()], eventModelName);
 
         var instrument = new SetEventStoreInstrumentation<T>();
         services.AddSingleton<IConfigureMarten<T>>(instrument);
