@@ -164,6 +164,43 @@ public class projection_statuses_per_database: IAsyncLifetime
         shard.ProcessedSequence.ShouldBe(3);
     }
 
+    /// <summary>
+    /// #5382 — the TENANT-LESS overload on a database-per-tenant store. <c>MasterTableTenancy.Default</c>
+    /// throws <c>NotSupportedException</c>, so this call died in <c>openExplorerSession()</c> before reading
+    /// anything, and the registry was unreadable on the store shape that most needs it.
+    /// </summary>
+    /// <remarks>
+    /// Note that the sibling tests above already pass a tenant or database identifier successfully — that
+    /// overload resolves a database explicitly and never touches <c>Tenancy.Default</c>. Only the
+    /// argument-less form threw, contrary to what #5382 reported.
+    /// </remarks>
+    [Fact]
+    public async Task reads_the_projection_registry_with_no_tenant_on_a_database_per_tenant_store()
+    {
+        await AppendAsync("tenant-a", 5);
+        await RunDaemonAsync("tenant-a");
+
+        var store = (IEventStore)_store;
+
+        // Threw NotSupportedException("Default tenant does not supported") before the fix.
+        var statuses = await store.GetProjectionStatusesAsync(CancellationToken.None);
+
+        // The registry is configuration — identical in every database — so it answers in full.
+        var status = statuses.Single(x => x.ProjectionName == nameof(WidgetTally));
+        status.Lifecycle.ShouldBe(ProjectionLifecycle.Async.ToString());
+
+        var shard = status.Shards.ShouldHaveSingleItem();
+        shard.ShardName.ShouldBe("WidgetTally:All");
+
+        // Nothing per-database is claimed. tenant-a has 5 processed events, so reporting 5 here would mean
+        // one database had been silently picked to speak for the whole store. Zero means "not read", and
+        // Unknown means "no single daemon to ask" — one runs per database over these same shard identities.
+        shard.ProcessedSequence.ShouldBe(0);
+        shard.EventStoreSequence.ShouldBe(0);
+        shard.State.ShouldBe(ShardStatusState.Unknown);
+        shard.Error.ShouldBeNull();
+    }
+
     private static long SequenceFor(System.Collections.Generic.IReadOnlyList<ProjectionStatus> statuses)
         => statuses.Single(x => x.ProjectionName == nameof(WidgetTally)).Shards.Single().ProcessedSequence;
 
