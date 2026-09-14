@@ -45,7 +45,10 @@ internal class ReplaceEventOperation<T> : IStorageOperation, NoDataReturnedCall 
             session.Serializer.WriteTo(buffer, _eventBody);
             builder.AppendParameter(buffer.ToSizedArray(), NpgsqlDbType.Jsonb);
         }
-        builder.Append(", timestamp = now() at time zone 'utc', type = ");
+        // #5379: `now()` is what the column default uses. The previous `now() at time zone 'utc'`
+        // strips the offset to a naive timestamp that Postgres re-interprets in the session TimeZone
+        // on assignment to the timestamptz column, skewing the replaced event by the UTC offset.
+        builder.Append(", timestamp = now(), type = ");
         builder.AppendParameter(_eventTypeName, NpgsqlDbType.Varchar);
         builder.Append(", mt_dotnet_type = ");
         builder.AppendParameter(_dotNetType, NpgsqlDbType.Varchar);
