@@ -37,6 +37,64 @@ public static class PgVectorExtensions
     /// via a cast to the vector type.
     /// </summary>
     /// <summary>
+    ///     Declare an HNSW index over a document member's embedding, so
+    ///     <see cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, DistanceFunction)" />
+    ///     is served by an index rather than a sequential scan.
+    /// </summary>
+    /// <param name="dimensions">
+    ///     The embedding's length. Part of the cast and therefore part of the indexed expression, so it
+    ///     has to be the length the searches actually bind.
+    /// </param>
+    /// <param name="distance">
+    ///     ⚠️ <b>Must be the metric the searches use.</b> An index built for one metric is not used by a
+    ///     query in another — created without error, and a sequential scan forever. Declare one index per
+    ///     metric a member is actually searched by.
+    /// </param>
+    /// <param name="m">pgvector's <c>m</c> — max connections per layer. pgvector's default is 16.</param>
+    /// <param name="efConstruction">
+    ///     pgvector's <c>ef_construction</c> — candidate list size while building. pgvector's default
+    ///     is 64. Higher builds slower and recalls better.
+    /// </param>
+    /// <remarks>
+    ///     The index goes on the document's own mapping rather than into
+    ///     <c>StorageFeatures.ExtendedSchemaObjects</c>, so it is created with the table it indexes, is
+    ///     seen by Marten's delta detection, and is dropped with the table by the cleaner. A loose schema
+    ///     object would have to be ordered against a table it knows nothing about.
+    /// </remarks>
+    public static StoreOptions VectorIndex<T>(
+        this StoreOptions opts,
+        Expression<Func<T, object?>> vectorProperty,
+        int dimensions,
+        DistanceFunction distance = DistanceFunction.Cosine,
+        int? m = null,
+        int? efConstruction = null)
+    {
+        if (dimensions <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(dimensions),
+                "A vector index needs the embedding's length; it is part of the indexed expression.");
+        }
+
+        var member = GetMemberInfo(vectorProperty);
+        var mapping = opts.Storage.MappingFor(typeof(T));
+
+        // Named per (member, metric) rather than per member, because declaring the same member for two
+        // metrics is legitimate -- each serves queries the other cannot -- and two indexes cannot share
+        // a name.
+        var indexName =
+            $"idx_{mapping.TableName.Name}_{member.Name.ToLowerInvariant()}_{distance.ToString().ToLowerInvariant()}";
+
+        var index = new VectorIndexDefinition(opts, member, dimensions, distance, indexName);
+
+        if (m.HasValue) index.StorageParameters["m"] = m.Value;
+        if (efConstruction.HasValue) index.StorageParameters["ef_construction"] = efConstruction.Value;
+
+        mapping.Indexes.Add(index);
+
+        return opts;
+    }
+
+    /// <summary>
     ///     The nearest <paramref name="limit" /> documents to <paramref name="queryVector" />, closest
     ///     first.
     /// </summary>
