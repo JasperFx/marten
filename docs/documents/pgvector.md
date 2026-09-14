@@ -619,9 +619,22 @@ Register the table with the **options** rather than a schema name, and it is key
 opts.Storage.ExtendedSchemaObjects.Add(projection.BuildTable(opts));
 ```
 
-That single change is the whole registration-side story. The projection then writes, reads its
-content hashes, deletes and searches within the session's tenant, and `VectorProjectionSearchAsync`
-filters on it.
+That single change is the whole registration-side story. The projection then writes each event's
+embedding, reads its content hashes, and deletes within **the tenant that event was appended for**, and
+`VectorProjectionSearchAsync` filters on the session's tenant. That holds inline too, where one
+`SaveChangesAsync` can carry several tenants' events: an append through
+`session.ForTenant("tenant_b")` lands under `tenant_b`, not under the outer session's tenant
+([#5439](https://github.com/JasperFx/marten/issues/5439)).
+
+::: warning Upgrading an existing conjoined store
+If the table already exists from an earlier version, switching to `BuildTable(opts)` migrates it: the
+`tenant_id` column is added with the default `*DEFAULT*` and the table is re-keyed to `(tenant_id, id)`.
+Every row already in it, whichever tenant it really came from, becomes a `*DEFAULT*` row: invisible to
+every other tenant's search, and still returned to the default tenant's. **Truncate the table, then rebuild
+the projection** so each tenant's embeddings are written under their own tenant. A rebuild alone leaves the
+old `*DEFAULT*` rows beside the new ones. Content hashes are compared per tenant, so the rebuild calls the
+embedding provider again for every row.
+:::
 
 ::: warning
 Before 9.37 the table had no `tenant_id` column at all, and none of these paths filtered. On a
@@ -653,9 +666,9 @@ Since 9.37 the deletes and upserts are queued with `IDocumentOperations.QueueSql
 | -------------------------------------------------- | ---------------------------------------------- | ---------------------- |
 | `VectorSearchAsync`, `VectorSearchWithScoresAsync` | Filtered to the session's tenant               | Isolated by connection |
 | `HybridSearchAsync`, `HybridSearchWithScoresAsync` | Both searches filtered to the session's tenant | Isolated by connection |
-| `VectorProjection`, `VectorProjectionSearchAsync`  | Not supported                                  | Supported              |
+| `VectorProjection`, `VectorProjectionSearchAsync`  | Tenant-scoped, via `BuildTable(opts)`          | Isolated by connection |
 
-In a single-database store (`AllDocumentsAreMultiTenanted` plus a tenant-scoped session), document searches add a `tenant_id` filter whenever the session's tenant isn't the default tenant. Database-per-tenant setups are isolated at the connection level and need no extra filtering.
+Document searches apply the same filters a `Query<T>()` would, taken from the document's own storage: a document type that is conjoined is filtered to the session's tenant, the default tenant included, and a type that is not multi-tenanted gets no tenant filter at all. Database-per-tenant setups are isolated at the connection level and need no extra filtering.
 
 ## Other Critter Stack stores
 

@@ -225,6 +225,49 @@ public abstract class VectorProjection<TId>: IProjection, IValidatedProjection<S
 
         if (events.Count == 0) return;
 
+        var store = (DocumentStore)operations.DocumentStore;
+        var qualifiedTable = QualifiedTableName(store.Options.Events.DatabaseSchemaName);
+
+        if (store.Options.Events.TenancyStyle != TenancyStyle.Conjoined)
+        {
+            // Null tenant: the table has no tenant_id column, and every statement drops its tenant term.
+            await applyAsync(operations, events, qualifiedTable, null, cancellation).ConfigureAwait(false);
+            return;
+        }
+
+        // marten#5420 / marten#5439. ⚠️ The tenant comes from each EVENT, not from the session. The
+        // daemon does call this once per tenant with a tenant-scoped session, but inline it does not:
+        // one SaveChangesAsync hands over every stream in the unit of work under the OUTER session,
+        // and a ForTenant(...) session shares its parent's work tracker -- so a tenant_a session that
+        // appends through ForTenant("tenant_b") delivers tenant_b's events here with
+        // operations.TenantId == "tenant_a". Taking the session's tenant wrote them under the wrong
+        // tenant, and folding the page by id alone merged two tenants' streams that share an id.
+        //
+        // GroupBy keeps each group's events in their original order, which the fold depends on.
+        foreach (var group in events.GroupBy(e => e.TenantId.IsEmpty() ? operations.TenantId : e.TenantId))
+        {
+            var tenantOperations = group.Key == operations.TenantId
+                ? operations
+                : operations.ForTenant(group.Key);
+
+            await applyAsync(tenantOperations, group.ToList(), qualifiedTable, group.Key, cancellation)
+                .ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    ///     Embed and write one tenant's events, or every event when <paramref name="tenantId" /> is null
+    ///     because the store is not conjoined.
+    /// </summary>
+    /// <remarks>
+    ///     <paramref name="operations" /> is scoped to <paramref name="tenantId" />, which matters for
+    ///     <c>MapFromAggregate</c>: the stream it aggregates has to be read as that tenant's. The queued
+    ///     SQL names <c>tenant_id</c> explicitly, and a <c>ForTenant(...)</c> session queues into the
+    ///     parent's unit of work, so every tenant's writes still commit in one transaction.
+    /// </remarks>
+    private async Task applyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events,
+        string qualifiedTable, string? tenantId, CancellationToken cancellation)
+    {
         var plan = Neutral.VectorEmbeddingPlan<TId>.Build(_map, events);
 
         foreach (var id in plan.AggregateIds)
@@ -232,17 +275,6 @@ public abstract class VectorProjection<TId>: IProjection, IValidatedProjection<S
             var aggregate = await _aggregateLoader!.LoadAsync(operations, id, cancellation).ConfigureAwait(false);
             plan.ApplyAggregate(id, _map, aggregate);
         }
-
-        var store = (DocumentStore)operations.DocumentStore;
-        var qualifiedTable = QualifiedTableName(store.Options.Events.DatabaseSchemaName);
-
-        // marten#5420. The session's tenant is the right source and needs no per-event grouping:
-        // ApplyAsync is called once PER TENANT with a tenant-scoped session, because the daemon
-        // groups a page by TenantId and opens a session for each group before handing it over.
-        // Null under single tenancy, where every statement below drops its tenant term.
-        var tenantId = store.Options.Events.TenancyStyle == TenancyStyle.Conjoined
-            ? operations.TenantId
-            : null;
 
         foreach (var id in plan.Deletions)
         {
