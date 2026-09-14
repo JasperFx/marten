@@ -327,6 +327,43 @@ var posts = (await session.Query<BlogPost>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L405-L411' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regconfig_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### When no index matches the regConfig <Badge type="tip" text="9.37" />
+
+Every search operator takes a `regConfig`, defaulting to `english`, and it selects **which index the
+search runs against**. If the document has no index for that configuration, Marten does not fail — it
+falls back to `to_tsvector(regConfig, d.data)` over the whole stored document.
+
+The rows that come back are still correct. What changes is worth knowing about:
+
+* **No index can serve that expression**, so it is a sequential scan that re-parses every document's
+  JSON on every query. It is fine in development and degrades with table size.
+* **Every string in the document becomes matchable**, not just the members you indexed, so a term
+  occurring in an unrelated field now matches.
+
+Since 9.37 Marten logs a warning the first time this happens for a given document type and
+`regConfig`, naming both what it looked for and what is actually indexed:
+
+```text
+Full text search on BlogPost looked for a 'english' index and found none. Indexed
+configurations: italian. Falling back to an unindexed scan of the whole document, which
+cannot use any index and searches every string in the document rather than the indexed
+members. Register an index for 'english', or pass one of the configured values as the
+search's regConfig.
+```
+
+The usual cause is an index declared with one configuration and a search left on the default — easy
+to hit through `HybridSearchAsync`, whose `RegConfig` defaults to `english` and which callers rarely
+set explicitly.
+
+::: tip
+A document with **no** full text index at all does not warn. Searching the whole stored document is
+the intended behavior there, not a mistake, so warning about it would fire on correct code.
+:::
+
+The warning goes to the `ILogger` Marten was given — the one registered through `AddMarten()`'s
+service provider — and fires once per document type and `regConfig` for the life of the store, rather
+than on every query.
+
 ### Session shortcuts
 
 Each operator also has a one-call form on `IQuerySession` for the common case of "every document of a type matching this text": `SearchAsync<T>`, `PlainTextSearchAsync<T>`, `PhraseSearchAsync<T>`, `WebStyleSearchAsync<T>` and `PrefixSearchAsync<T>`, each taking the term, an optional `regConfig` (default `english`) and a cancellation token. They are exactly `Query<T>().Where(x => x.XxxSearch(term, regConfig)).ToListAsync()` and add nothing else, so switch to the LINQ form the moment you need another predicate, an ordering or a page.
