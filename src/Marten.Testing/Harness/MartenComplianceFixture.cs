@@ -16,6 +16,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Weasel.Postgresql;
+using Weasel.Postgresql.Migrations;
 
 namespace Marten.Testing.Harness;
 
@@ -30,10 +32,50 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
     public DocumentStore Store => _store;
 
+    /// <summary>
+    /// #5383 part 5 — true once the suite asked for tenant databases, which is what admits this
+    /// fixture to <c>DatabasePerTenantExplorerCompliance</c> and <c>ShardedTenancyExplorerCompliance</c>.
+    /// </summary>
+    /// <remarks>
+    /// Derived from the config rather than hardcoded: the same fixture type serves every suite, and
+    /// declaring true unconditionally would make the isolation facts pass VACUOUSLY on the
+    /// single-database configurations — the exact failure the arms exist to catch, and what their own
+    /// remarks warn about.
+    /// </remarks>
+    public override bool SupportsMultipleDatabases => _tenantDatabases.Count > 0;
+
+    /// <summary>
+    /// #5383 part 5 — the database a tenant's data lives in, through Marten's own tenancy rather than
+    /// a test-local map, so the suite exercises the resolution the product ships.
+    /// </summary>
+    public override async ValueTask<IEventDatabase> DatabaseForTenantAsync(string tenantId)
+        => (IEventDatabase)await _store.Options.Tenancy.FindOrCreateDatabase(tenantId).ConfigureAwait(false);
+
+    private readonly Dictionary<string, string> _tenantDatabases = new();
+
     protected override async Task BuildStoreAsync(ComplianceStoreConfig config)
     {
         var options = new StoreOptions();
-        options.Connection(connectionStringFor(config));
+
+        // #5383 part 5 — a tenant-to-database map turns this into a MULTI-DATABASE store, and which
+        // tenancy model it wants is derivable rather than a second flag: two tenants naming the same
+        // database is sharding (a pool of databases with tenants co-located), and one database each is
+        // database-per-tenant. The two arms differ on exactly that, so reading it off the map keeps the
+        // fixture honest about which store it built.
+        _tenantDatabases.Clear();
+        foreach (var (tenantId, databaseName) in config.TenantDatabases)
+        {
+            _tenantDatabases[tenantId] = databaseName;
+        }
+
+        if (_tenantDatabases.Count > 0)
+        {
+            await configureTenantDatabasesAsync(options, config).ConfigureAwait(false);
+        }
+        else
+        {
+            options.Connection(connectionStringFor(config));
+        }
         options.AutoCreateSchemaObjects = AutoCreate.All;
         options.DisableNpgsqlLogging = true;
         options.NameDataLength = 100;
@@ -87,9 +129,81 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         _store = new DocumentStore(options);
         _disposables.Add(_store);
 
+        // Sharded tenancy assigns tenants to shards through the store, so it can only happen once the
+        // store exists. Explicit assignment, never the hash distribution: the sharded arm's whole point
+        // is that acme and globex are CO-LOCATED, and letting an assigner place them would make the
+        // isolation facts depend on where it happened to put them.
+        if (_shardAssignments.Count > 0)
+        {
+            foreach (var (tenantId, shard) in _shardAssignments)
+            {
+                await _store.Advanced.AddTenantToShardAsync(tenantId, shard, CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+
         // Marten builds schema lazily, but the compliance suites clean between tests and some
         // of that cleaning is DDL-aware -- get the tables in place up front.
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
+    }
+
+    private readonly Dictionary<string, string> _shardAssignments = new();
+
+    /// <summary>
+    /// #5383 part 5 — build the physical databases the suite's tenant map names, then point Marten at
+    /// them with the tenancy model that map implies.
+    /// </summary>
+    private async Task configureTenantDatabasesAsync(StoreOptions options, ComplianceStoreConfig config)
+    {
+        _shardAssignments.Clear();
+
+        var connectionStrings = new Dictionary<string, string>();
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync().ConfigureAwait(false);
+            foreach (var databaseName in _tenantDatabases.Values.Distinct())
+            {
+                if (!await conn.DatabaseExists(databaseName).ConfigureAwait(false))
+                {
+                    await new DatabaseSpecification().BuildDatabase(conn, databaseName).ConfigureAwait(false);
+                }
+
+                connectionStrings[databaseName] = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+                {
+                    Database = databaseName
+                }.ConnectionString;
+            }
+        }
+
+        var coLocated = _tenantDatabases.GroupBy(x => x.Value).Any(g => g.Count() > 1);
+        if (coLocated)
+        {
+            // Several tenants share a database: that is sharded tenancy, and its events must be
+            // conjoined or the tenants in one shard cannot be told apart at all.
+            options.MultiTenantedWithShardedDatabases(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = "compliance_shards";
+                foreach (var (databaseName, connectionString) in connectionStrings)
+                {
+                    x.AddDatabase(databaseName, connectionString);
+                }
+            });
+
+            foreach (var (tenantId, databaseName) in _tenantDatabases)
+            {
+                _shardAssignments[tenantId] = databaseName;
+            }
+        }
+        else
+        {
+            options.MultiTenantedDatabases(x =>
+            {
+                foreach (var (tenantId, databaseName) in _tenantDatabases)
+                {
+                    x.AddSingleTenantDatabase(connectionStrings[databaseName], tenantId);
+                }
+            });
+        }
     }
 
     private static string connectionStringFor(ComplianceStoreConfig config)
