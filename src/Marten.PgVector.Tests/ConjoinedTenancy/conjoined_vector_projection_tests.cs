@@ -227,6 +227,78 @@ public class conjoined_vector_projection_tests: IAsyncLifetime
         (await searchAsync("tenant_a", "the fox in the snow")).Single().ContentText
             .ShouldBe("the fox in the snow");
     }
+
+    /// <summary>
+    ///     marten#5439: an inline projection sees every stream in the unit of work at once, under the
+    ///     OUTER session — including streams appended through <c>ForTenant(...)</c>, which share the
+    ///     parent's work tracker. The row has to land under the tenant the event was appended for.
+    /// </summary>
+    /// <remarks>
+    ///     ⚠️ Every test above writes through a session opened for one tenant, which is exactly the
+    ///     shape the daemon hands over and exactly why they passed while this was broken: taking the
+    ///     tenant from the session is right when the session only ever carries one.
+    /// </remarks>
+    [Fact]
+    public async Task an_append_through_for_tenant_lands_under_that_tenant()
+    {
+        var articleId = Guid.NewGuid();
+
+        await using (var session = _store.LightweightSession("tenant_a"))
+        {
+            session.ForTenant("tenant_b").Events
+                .StartStream(articleId, new ArticleWritten(articleId, "a heron at dusk"));
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        (await tenantsHoldingAsync(articleId)).ShouldBe(["tenant_b"]);
+
+        (await searchAsync("tenant_a", "a heron at dusk")).ShouldBeEmpty();
+        (await searchAsync("tenant_b", "a heron at dusk")).Single().ContentText.ShouldBe("a heron at dusk");
+    }
+
+    /// <summary>
+    ///     marten#5439: one save carrying the same stream id in two tenants. The page is folded to one
+    ///     text per id, so folding across tenants would merge the two into a single write.
+    /// </summary>
+    [Fact]
+    public async Task one_save_with_the_same_stream_id_in_two_tenants_writes_a_row_for_each()
+    {
+        var articleId = Guid.NewGuid();
+
+        await using (var session = _store.LightweightSession("tenant_a"))
+        {
+            session.Events.StartStream(articleId, new ArticleWritten(articleId, "the fox in the snow"));
+            session.ForTenant("tenant_b").Events
+                .StartStream(articleId, new ArticleWritten(articleId, "a heron at dusk"));
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        (await tenantsHoldingAsync(articleId)).ShouldBe(["tenant_a", "tenant_b"]);
+
+        (await searchAsync("tenant_a", "the fox in the snow")).Single().ContentText.ShouldBe("the fox in the snow");
+        (await searchAsync("tenant_b", "a heron at dusk")).Single().ContentText.ShouldBe("a heron at dusk");
+    }
+
+    /// <summary>
+    ///     marten#5439: a retraction appended through <c>ForTenant(...)</c> removes that tenant's row,
+    ///     not the outer session's.
+    /// </summary>
+    [Fact]
+    public async Task a_retraction_through_for_tenant_deletes_only_that_tenants_row()
+    {
+        var articleId = Guid.NewGuid();
+
+        await writeAsync("tenant_a", articleId, "the fox in the snow");
+        await writeAsync("tenant_b", articleId, "a heron at dusk");
+
+        await using (var session = _store.LightweightSession("tenant_a"))
+        {
+            session.ForTenant("tenant_b").Events.Append(articleId, new ArticleRetracted(articleId));
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        (await tenantsHoldingAsync(articleId)).ShouldBe(["tenant_a"]);
+    }
 }
 
 /// <summary>
