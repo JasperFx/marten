@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
@@ -741,6 +742,16 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     // This is used mostly for testing to provide *some* sort of logging
     // within the async daemon
     internal ILogger? DotNetLogger { get; set; }
+
+    /// <summary>
+    ///     Document type + regConfig pairs already warned about in #5425's unindexed full text fallback.
+    /// </summary>
+    /// <remarks>
+    ///     Per store rather than a static, so the warning fires once for a given store instead of once
+    ///     per process — which would make it depend on which store happened to be built first, and would
+    ///     be untestable.
+    /// </remarks>
+    internal ConcurrentDictionary<(Type, string), bool> WarnedFullTextFallbacks { get; } = new();
 
     /// <summary>
     ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created.
