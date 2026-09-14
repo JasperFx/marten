@@ -70,6 +70,19 @@ internal static class VectorSearchRunner
         var jsonPath = member.ToJsonKey(store.Options.Serializer().Casing);
 
         var op = ResolveDistance<T>(store.Options, member, distance).Operator();
+
+        // #5433 / jasperfx#842: refuse a wrong-length query vector by NAME, against the length the
+        // index DECLARED.
+        //
+        // ⚠️ The cast below is built from the QUERY's length, which is why this has to be checked
+        // here rather than left to Postgres. A two-element query against a three-dimensional member
+        // casts the stored embedding to vector(2) as well, so what comes back is either a Postgres
+        // error about dimensions -- a database's words for a caller's mistake -- or, over a table
+        // with no matching rows, NO error and an empty list, because the operator is never
+        // evaluated. The second is the one worth failing over: "no results" is exactly what a
+        // correct search over a sparse corpus looks like.
+        AssertQueryVectorLength<T>(store.Options, member, queryVector.Length);
+
         var dimensions = queryVector.Length;
         var expression = $"(d.data->>'{jsonPath}')::vector({dimensions}) {op} ";
 
@@ -222,6 +235,40 @@ internal static class VectorSearchRunner
                 + $"{string.Join(" and ", indexes)}, so there is no single metric the index 'declared'. "
                 + "Name the one this search should use.")
         };
+    }
+
+    /// <summary>
+    ///     Refuse a query vector whose length is not the one the member's index declared.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Silent when the member declares NO vector index, and deliberately so: Marten's searches
+    ///         work without one — the index is what makes them fast, not what makes them possible —
+    ///         so there is nothing to check a length against and refusing would break a legitimate
+    ///         call. A member with indexes for two metrics declares the same dimensions in each,
+    ///         since the length is part of the indexed expression.
+    ///     </para>
+    /// </remarks>
+    private static void AssertQueryVectorLength<T>(StoreOptions options, MemberInfo member, int length)
+    {
+        var declared = options.Storage.MappingFor(typeof(T)).Indexes
+            .OfType<VectorIndexDefinition>()
+            .Where(x => x.Member == member)
+            .Select(x => x.Dimensions)
+            .Distinct()
+            .ToArray();
+
+        if (declared.Length == 0 || Array.IndexOf(declared, length) >= 0)
+        {
+            return;
+        }
+
+        throw new ArgumentException(
+            $"The query vector has {length} dimensions, and "
+            + $"'{typeof(T).FullNameInCode()}.{member.Name}' declares "
+            + $"{string.Join(" or ", declared)}. A vector search compares lengths, so this cannot be "
+            + "answered: embed the query with the same model the stored embeddings came from.",
+            "queryVector");
     }
 
     /// <summary>

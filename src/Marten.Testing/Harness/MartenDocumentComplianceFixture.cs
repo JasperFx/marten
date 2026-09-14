@@ -130,6 +130,16 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
             options.AddCommitListener(listener);
         }
 
+        // The seam for a consumer that needs a store this project cannot build. jasperfx#842's
+        // search suite is the first: it reaches IDocumentReadOperations.Search, which core Marten
+        // leaves as a hole (StoreOptions.SearchOperations) for Marten.PgVector's UsePgVector() to
+        // fill -- and Marten.Testing cannot reference Marten.PgVector, because that is the
+        // dependency arrow backwards.
+        //
+        // A hook rather than a second copy of this fixture, so the ten-odd replay loops above stay
+        // stated once. Empty by default, so every existing suite is untouched.
+        Configure(options, config);
+
         _store = new DocumentStore(options);
 
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
@@ -148,4 +158,18 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
             await _store.DisposeAsync().ConfigureAwait(false);
         }
     }
+
+    /// <summary>
+    /// Last word on the options before the store is built, for a fixture in another test project
+    /// that needs configuration this one cannot name.
+    /// </summary>
+    /// <remarks>
+    /// See the call site: the reason it exists is that vector search ships in an optional package.
+    /// A subclass overriding this gets every replay loop above for free and adds only what is its
+    /// own.
+    /// </remarks>
+    protected virtual void Configure(StoreOptions options, DocumentComplianceConfig config)
+    {
+    }
+
 }
