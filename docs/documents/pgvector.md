@@ -298,7 +298,7 @@ Three things have to line up for PostgreSQL to use the index. None of them raise
 
 - **`dimensions` must equal the query vector's length.** The search casts to `vector(N)` using the query vector's length, and that cast is part of the indexed expression. A query vector of a different length is refused by name, against the length the index declared:
 
-  ```
+  ```text
   The query vector has 2 dimensions, and 'ProductWithVector.Embedding' declares 1536. A vector
   search compares lengths, so this cannot be answered: embed the query with the same model the
   stored embeddings came from.
