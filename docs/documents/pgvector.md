@@ -296,7 +296,15 @@ Three things have to line up for PostgreSQL to use the index. None of them raise
       distance: DistanceFunction.InnerProduct);
   ```
 
-- **`dimensions` must equal the query vector's length.** The search casts to `vector(N)` using the query vector's length, and that cast is part of the indexed expression.
+- **`dimensions` must equal the query vector's length.** The search casts to `vector(N)` using the query vector's length, and that cast is part of the indexed expression. A query vector of a different length is refused by name, against the length the index declared:
+
+  ```text
+  The query vector has 2 dimensions, and 'ProductWithVector.Embedding' declares 1536. A vector
+  search compares lengths, so this cannot be answered: embed the query with the same model the
+  stored embeddings came from.
+  ```
+
+  A member with **no** declared index is not length-checked, because there is no declared length to check against — the searches work without an index, which is what makes them fast rather than what makes them possible.
 - **The member must be the one you search.** The indexed expression is built from the same member path and serializer casing that `VectorSearchAsync` uses, so declaring it through `VectorIndex` keeps the two in step.
 
 ::: warning

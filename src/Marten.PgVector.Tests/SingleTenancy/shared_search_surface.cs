@@ -263,6 +263,67 @@ public class distance_default_is_the_index_metric: IAsyncLifetime
     }
 
     /// <summary>
+    ///     #5433: a query vector of the wrong length is refused by NAME, against the length the index
+    ///     DECLARED.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠️ <b>Asserted over an EMPTY result rather than over the corpus, because the empty case
+    ///         is the one that was silent.</b> The cast is built from the query's length, so a
+    ///         two-element query casts the STORED embedding to <c>vector(2)</c> as well — which
+    ///         Postgres rejects when it evaluates the operator, and never evaluates when no row
+    ///         survives the <c>WHERE</c>. So before this the call returned an empty list with no
+    ///         error, which is indistinguishable from a correct search over a sparse corpus. The
+    ///         predicate here matches nothing on purpose.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public async Task a_query_vector_of_the_wrong_length_is_refused()
+    {
+        await using var session = _store.QuerySession();
+
+        var ex = await Should.ThrowAsync<ArgumentException>(async () =>
+            await ((IDocumentReadOperations)session).Search.VectorSearchWithScoresAsync<Memo>(
+                x => x.Embedding, new float[] { 1.0f, 0.0f }, limit: 5,
+                filter: x => x.Name == "nothing-is-called-this"));
+
+        ex.Message.ShouldContain("has 2 dimensions");
+        ex.Message.ShouldContain("declares 3");
+    }
+
+    /// <summary>
+    ///     A member with no declared index is NOT refused: Marten's searches work without one — the
+    ///     index is what makes them fast, not what makes them possible — so there is no declared
+    ///     length to check against and refusing would break a legitimate call.
+    /// </summary>
+    [Fact]
+    public async Task a_member_with_no_declared_index_is_not_length_checked()
+    {
+        await using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = "pgvector_unindexed_length";
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
+            opts.UsePgVector();
+
+            // Registered up front so the table is in the migration below. Marten creates document
+            // storage on demand, and a search is a read — it would find no table rather than an
+            // empty one, which is a different failure from the one this fact is about.
+            opts.RegisterDocumentType<Memo>();
+        });
+
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using var session = store.QuerySession();
+
+        var hits = await ((IDocumentReadOperations)session).Search.VectorSearchWithScoresAsync<Memo>(
+            x => x.Embedding, new float[] { 1.0f, 0.0f }, limit: 5);
+
+        hits.ShouldBeEmpty();
+    }
+
+    /// <summary>
     ///     Two indexes over one member for two metrics is legitimate — each serves queries the other
     ///     cannot — but then there is no single metric "the index declared", so the caller is asked
     ///     rather than guessed at.

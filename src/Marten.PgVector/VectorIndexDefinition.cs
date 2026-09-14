@@ -73,6 +73,16 @@ internal class VectorIndexDefinition: IndexDefinition
     public System.Reflection.MemberInfo Member { get; }
 
     /// <summary>
+    ///     The embedding's declared length.
+    /// </summary>
+    /// <remarks>
+    ///     Read back by the searches so a query vector of the wrong length is refused BY NAME
+    ///     (jasperfx#842) rather than pushed into the cast, where it is either a Postgres error about
+    ///     dimensions or — over a table with no rows — no error at all and an empty result.
+    /// </remarks>
+    public int Dimensions => _dimensions;
+
+    /// <summary>
     ///     The metric this index was built for.
     /// </summary>
     /// <remarks>
