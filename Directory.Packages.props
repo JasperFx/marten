@@ -586,16 +586,28 @@
       EventStoreUsage(Subject, this), so every slice is attributed to the store's own subject —
       which, as of #5410, finally follows StoreName. EventModelSetDescriptor pairs a service with
       every model it hosts, which is the upstream half of marten#5408 below.
+      2.70.0 (jasperfx#846, marten#5429) moves the shared parts of vector and hybrid search into
+      JasperFx.Events.Vectors: HybridSearchOptions / HybridMatch<T> / HybridTextStyle, a public
+      ReciprocalRankFusion, IDocumentSearchOperations reached through a new
+      IDocumentReadOperations.Search accessor (throwing default, so additive), a `filter` predicate on
+      both search signatures, and VectorProjectionMap<TId> + VectorEmbeddingPlan<TId> as the
+      store-independent body of a vector projection. Marten.PgVector adopts all of it.
+
+      It also fixes ProjectionGraph.AssertValidity, which unwraps ProjectionWrapper before
+      OfType<IValidatedProjection<T>>(). A hand-written IProjection in a Marten application that also
+      implemented IValidatedProjection<StoreOptions> was never asked to validate before; after this
+      bump it is. That can surface configuration errors in applications that were silently passing —
+      a release-note item rather than a regression.
     -->
-    <PackageVersion Include="JasperFx" Version="2.69.3" />
-    <PackageVersion Include="JasperFx.Events" Version="2.69.3" />
+    <PackageVersion Include="JasperFx" Version="2.70.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.70.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.69.3" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.70.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -614,11 +626,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.69.3">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.70.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.69.3" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.70.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

@@ -52,6 +52,22 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
     // no compile error. Pinned by DocumentSessionEventsCompliance.
     JasperFx.Events.IQueryEventStore JasperFx.Events.Documents.IDocumentReadOperations.Events => Events;
 
+    // jasperfx#842: the store-agnostic route to vector and hybrid search. An ACCESSOR rather than
+    // members named VectorSearchWithScoresAsync / HybridSearchWithScoresAsync, because an instance
+    // member of those names would win overload resolution over Marten.PgVector's extension methods at
+    // every existing call site -- silently, with different behavior, since it is the extension that
+    // knows about tenancy and soft deletes.
+    //
+    // Explicit, following the Events precedent above, and resolved through StoreOptions rather than
+    // implemented here: the search itself is pgvector SQL living in an optional package that core
+    // Marten must not depend on.
+    JasperFx.Events.Vectors.IDocumentSearchOperations JasperFx.Events.Documents.IDocumentReadOperations.Search
+        => Options.SearchOperations?.Invoke(this)
+           ?? throw new NotSupportedException(
+               "This Marten store has no similarity search configured. Add the Marten.PgVector package "
+               + "and call StoreOptions.UsePgVector(), which is what supplies the implementation of "
+               + "IDocumentReadOperations.Search.");
+
     protected virtual IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
     {
         return new QueryEventStore(this, store, tenant);

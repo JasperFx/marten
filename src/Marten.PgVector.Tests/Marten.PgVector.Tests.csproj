@@ -14,6 +14,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- MapFromAggregate live-aggregates a stream, and the Apply/Create dispatcher for an
+             aggregate declared in THIS assembly is produced by the compile-time generator. A
+             ProjectReference to Marten does not carry the analyzer the NuGet package bundles, so it
+             is referenced explicitly here exactly as EventSourcingTests does. -->
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="Shouldly" />
         <PackageReference Include="xunit.v3" />

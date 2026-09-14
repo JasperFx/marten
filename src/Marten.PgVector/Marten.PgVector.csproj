@@ -19,6 +19,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- The search runner is internal because it is an implementation detail of two public
+             surfaces, but the metric-resolution rule it carries is behavior worth pinning directly
+             rather than only through a round trip to the database. -->
+        <InternalsVisibleTo Include="Marten.PgVector.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
 </Project>
