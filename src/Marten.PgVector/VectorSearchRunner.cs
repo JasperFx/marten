@@ -93,9 +93,13 @@ internal static class VectorSearchRunner
             new WhereFragment($"d.data->>'{jsonPath}' is not null"),
             filter);
 
+        var storage = ((IMartenSession)session).StorageFor<T>();
+        var fields = storage.SelectFields();
+
         var builder = new BatchBuilder { TenantId = session.TenantId };
 
-        builder.Append("select d.data, ");
+        // #5440. The storage's own columns, so its own selector can read the row -- see ReadAsync.
+        builder.Append($"select {string.Join(", ", fields)}, ");
         builder.Append(expression);
 
         // Bound as text and cast server-side rather than bound as a vector: the NpgsqlDataSource caches
@@ -115,17 +119,13 @@ internal static class VectorSearchRunner
         builder.AppendParameter(limit);
 
         var results = new List<Neutral.VectorMatch<T>>();
-        var serializer = store.Serializer;
 
         // #5419. An HNSW scan only ever considers hnsw.ef_search candidates, so a caller asking for
         // more than that got fewer rows than `limit` with no error at all.
         var efSearch = ResolveEfSearch<T>(store.Options, member, limit);
 
-        await foreach (var (json, extra) in ReadAsync(session, builder, efSearch, token).ConfigureAwait(false))
+        await foreach (var (doc, extra) in ReadAsync(session, storage, builder, efSearch, token).ConfigureAwait(false))
         {
-            var doc = serializer.FromJson<T>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json)));
-            if (doc is null) continue;
-
             results.Add(new Neutral.VectorMatch<T>(doc, extra));
         }
 
@@ -176,9 +176,11 @@ internal static class VectorSearchRunner
 
         var where = BuildWhere(session, new WhereFragment($"{vector} @@ {tsquery}", searchText), filter);
 
+        var storage = ((IMartenSession)session).StorageFor<T>();
+
         var builder = new BatchBuilder { TenantId = session.TenantId };
 
-        builder.Append($"select d.data, ts_rank({vector}, ");
+        builder.Append($"select {string.Join(", ", storage.SelectFields())}, ts_rank({vector}, ");
         builder.Append($"{queryFunction}('{regConfig}'::regconfig, ");
         builder.AppendParameter(searchText, NpgsqlDbType.Text);
         builder.Append($"))::float8 as rank from {tableName} d WHERE ");
@@ -187,12 +189,10 @@ internal static class VectorSearchRunner
         builder.AppendParameter(depth);
 
         var results = new List<T>();
-        var serializer = store.Serializer;
 
-        await foreach (var (json, _) in ReadAsync(session, builder, null, token).ConfigureAwait(false))
+        await foreach (var (doc, _) in ReadAsync(session, storage, builder, null, token).ConfigureAwait(false))
         {
-            var doc = serializer.FromJson<T>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json)));
-            if (doc is not null) results.Add(doc);
+            results.Add(doc);
         }
 
         return results;
@@ -341,12 +341,38 @@ internal static class VectorSearchRunner
         return (ISqlFragment)storage.FilterDocuments(combined, (IStorageSession)session);
     }
 
-    private static async IAsyncEnumerable<(string Json, double Extra)> ReadAsync(
+    /// <summary>
+    ///     Run a leg and materialise each row through the document storage's own selector, with the
+    ///     leg's score read from the column after the storage's.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠️ <b>The storage's selector, never <c>serializer.FromJson&lt;T&gt;</c></b> (#5440). Both
+    ///         legs used to select <c>d.data</c> alone and deserialise it as <c>T</c>, so a search over a
+    ///         document hierarchy's base type handed back every <c>Article</c> and <c>Video</c> as a
+    ///         plain <c>Content</c>, subclass members lost, where <c>Query&lt;Content&gt;()</c> resolves
+    ///         each row's concrete type from <c>mt_doc_type</c>. Selecting
+    ///         <see cref="IDocumentStorage.SelectFields" /> and resolving with
+    ///         <see cref="ISelectClause.BuildSelector" /> is exactly what LINQ does, so the searches pick
+    ///         up the discriminator, metadata columns, and the session's identity map the same way and
+    ///         cannot drift from it again.
+    ///     </para>
+    ///     <para>
+    ///         The score is the column immediately after the storage's, the shape
+    ///         <c>StatsSelectClause</c> already uses for its count. The selector reads its columns by
+    ///         ordinal from zero, so an extra column after them is never seen by it.
+    ///     </para>
+    /// </remarks>
+    private static async IAsyncEnumerable<(T Document, double Extra)> ReadAsync<T>(
         IQuerySession session,
+        IDocumentStorage<T> storage,
         BatchBuilder builder,
         int? efSearch,
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token)
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token) where T : notnull
     {
+        var selector = (ISelector<T>)storage.BuildSelector((IStorageSession)session);
+        var scoreOrdinal = storage.SelectFields().Length;
+
         var database = session.As<QuerySession>().Database;
         await using var conn = database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
@@ -376,9 +402,11 @@ internal static class VectorSearchRunner
         {
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-                var extra = await reader.GetFieldValueAsync<double>(1, token).ConfigureAwait(false);
-                yield return (json, extra);
+                var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+                var extra = await reader.GetFieldValueAsync<double>(scoreOrdinal, token).ConfigureAwait(false);
+
+                if (document is null) continue;
+                yield return (document, extra);
             }
         }
 
