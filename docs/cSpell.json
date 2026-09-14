@@ -121,6 +121,7 @@
     "pgcrypto",
     "partman",
     "pgvector",
+    "HNSW",
     "Ollama",
     "Jeremie",
     "Chassaing",

@@ -6,6 +6,10 @@ Full Text Indexes in Marten are built based on [GIN or GiST indexes](/documents/
 To use this feature, you will need to use PostgreSQL version 13 or above, as this is the minimum version supported by Marten - this is also the data type that Marten use to store it's data.
 :::
 
+::: tip
+Full text search matches words; it misses a paraphrase that shares none of them. To combine keyword relevance with embedding similarity, see [hybrid search](/documents/pgvector#hybrid-search) in the [pgvector support](/documents/pgvector) package. Its keyword half uses the full text indexes described on this page. The other Critter Stack stores have their own versions: [full text search in Polecat](https://polecat.jasperfx.net/documents/querying/full-text-search) and [full text search in Fisher](https://fisher.jasperfx.net/documents/querying/linq/full-text).
+:::
+
 ## Defining Full Text Index through Store options
 
 Full Text Indexes can be created using the fluent interface of `StoreOptions` like this:
