@@ -16,15 +16,19 @@ public class vector_column_tests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
+        #region sample_pgvector_use_pgvector
         _store = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "pgvector_tests";
             opts.AutoCreateSchemaObjects = JasperFx.AutoCreate.All;
 
+            // 1. Adds CREATE EXTENSION IF NOT EXISTS vector to every database Marten manages
+            // 2. Calls NpgsqlDataSourceBuilder.UseVector() so Pgvector.Vector round-trips through Npgsql
             opts.UsePgVector();
             opts.RegisterDocumentType<ProductWithVector>();
         });
+        #endregion
 
         await _store.Advanced.Clean.CompletelyRemoveAllAsync();
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -103,6 +107,7 @@ public class vector_column_tests : IAsyncLifetime
     }
 }
 
+#region sample_pgvector_document_with_embedding
 public class ProductWithVector
 {
     public Guid Id { get; set; }
@@ -114,3 +119,4 @@ public class ProductWithVector
     public float[]? Embedding { get; set; }
     public string Category { get; set; } = "";
 }
+#endregion

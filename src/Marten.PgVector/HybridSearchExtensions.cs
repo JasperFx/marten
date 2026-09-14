@@ -166,9 +166,11 @@ public static class HybridSearchExtensions
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Raw SQL rather than <c>Query&lt;T&gt;()</c>, because Marten has no relevance ordering for
-    ///         full-text search — <c>OrderByNgramRank</c> is ngram search's, and a text leg taken in an
-    ///         undefined order would make its RANK meaningless, which is the one thing RRF reads.
+    ///         Raw SQL, like the vector leg beside it. Marten's LINQ provider does have relevance ordering
+    ///         for full-text search — <c>OrderByTextRank</c>, since 9.31 — and it ranks over the same
+    ///         resolved tsvector. What this leg has to guarantee either way is an explicit
+    ///         <c>ts_rank</c> order: a text leg taken in an undefined order would make its RANK
+    ///         meaningless, and rank is the one thing RRF reads.
     ///     </para>
     ///     <para>
     ///         ⚠️ The tsvector expression comes from <see cref="FullTextIndexResolver.ResolveVector" />,

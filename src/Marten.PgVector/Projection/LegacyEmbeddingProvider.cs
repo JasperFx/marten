@@ -9,7 +9,7 @@ namespace Marten.PgVector.Projection;
 /// <remarks>
 ///     <para>
 ///         Kept so an existing provider implementation still compiles and can still be handed to
-///         <see cref="VectorProjection{TDoc, TId}" />. The shared
+///         <see cref="VectorProjection" />. The shared
 ///         <c>JasperFx.Events.Vectors.IEmbeddingProvider</c> is what new code should implement — it is
 ///         the one Polecat and Fisher also take, so a provider written against it works with all three.
 ///     </para>

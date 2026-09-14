@@ -30,14 +30,19 @@ public class hybrid_search_tests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
+        #region sample_pgvector_hybrid_search_setup
         _store = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "pgvector_hybrid_tests";
             opts.AutoCreateSchemaObjects = AutoCreate.All;
             opts.UsePgVector();
+
+            // The text leg searches through this index. Without one it still works,
+            // but over the whole document and without an index.
             opts.Schema.For<Article>().FullTextIndex();
         });
+        #endregion
 
         await _store.Advanced.Clean.CompletelyRemoveAllAsync();
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -90,10 +95,14 @@ public class hybrid_search_tests : IAsyncLifetime
     {
         await using var query = _store.QuerySession();
 
+        #region sample_pgvector_hybrid_search
+        // The search text feeds the full-text leg, the query vector feeds the vector leg,
+        // and the two rankings are fused with reciprocal rank fusion
         var results = await query.HybridSearchAsync<Article>(
             x => x.Embedding, "quantum", Query,
             limit: 2,
             options: new HybridSearchOptions(CandidateDepth: 2));
+        #endregion
 
         results[0].Name.ShouldBe("Both");
     }
@@ -124,7 +133,10 @@ public class hybrid_search_tests : IAsyncLifetime
     {
         await using var query = _store.QuerySession();
 
+        #region sample_pgvector_hybrid_search_with_scores
+        // Each HybridMatch<T> carries the document and its fused score. Larger is better.
         var scored = await query.HybridSearchWithScoresAsync<Article>(x => x.Embedding, "quantum", Query);
+        #endregion
 
         scored.Select(x => x.Score).ShouldBe(scored.Select(x => x.Score).OrderByDescending(s => s));
         scored.First().Score.ShouldBeGreaterThan(0);

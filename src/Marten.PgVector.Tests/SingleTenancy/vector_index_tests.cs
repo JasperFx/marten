@@ -42,7 +42,11 @@ public class vector_index_tests : IAsyncLifetime
             opts.UsePgVector();
             opts.RegisterDocumentType<IndexedDoc>();
 
+            #region sample_pgvector_vector_index
+            // An HNSW index over (data ->> 'Embedding')::vector(3) with vector_cosine_ops.
+            // distance defaults to Cosine; m and efConstruction default to pgvector's own defaults.
             opts.VectorIndex<IndexedDoc>(x => x.Embedding, dimensions: 3, m: 16, efConstruction: 64);
+            #endregion
         });
 
         await _store.Advanced.Clean.CompletelyRemoveAllAsync();
