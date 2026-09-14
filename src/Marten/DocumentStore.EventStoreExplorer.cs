@@ -49,6 +49,38 @@ public partial class DocumentStore
     /// </summary>
     private const int RecentStreamsCap = 1000;
 
+    /// <summary>
+    /// marten#5383 — whether a tenant-scoped explorer read has to filter rows by <c>tenant_id</c>, as
+    /// against merely opening the right database.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// These are <b>two independent axes</b>, and the explorer used to decide both from one:
+    /// <see cref="DatabaseCardinality"/> answers <i>which database do I open</i>, and the event
+    /// <see cref="TenancyStyle"/> answers <i>do I filter rows once I am there</i>. Deciding the second
+    /// from the first is right for the two configurations that were in mind when it was written —
+    /// conjoined single-database (filter, one database) and database-per-tenant (no filter, many
+    /// databases) — and wrong for the one that needs both.
+    /// </para>
+    /// <para>
+    /// <b>Sharded tenancy is that one.</b> It distributes tenants across a POOL of databases with
+    /// conjoined events, so many tenants share each database: opening the tenant's database narrows
+    /// the answer to its shard and no further. Reproduced before this was changed, in
+    /// <c>sharded_explorer_tenant_scoping_5383</c>: two tenants co-located on one shard, and
+    /// <c>GetRecentStreamsAsync(50, "alpha")</c> listed beta's stream, while
+    /// <c>ReadStreamAsync(id, "alpha")</c> returned <c>["alpha", "beta"]</c> events interleaved into a
+    /// single version-ordered sequence for a stream key both tenants use — which is worse than a leak,
+    /// because it is a coherent-looking document that never existed.
+    /// </para>
+    /// <para>
+    /// Filtering whenever events are conjoined is safe on every other layout: on a database-per-tenant
+    /// store with conjoined events every row in the opened database already carries that tenant id, so
+    /// the predicate is redundant rather than wrong, and on a non-conjoined store there is no
+    /// <c>tenant_id</c> to scope by in the first place.
+    /// </para>
+    /// </remarks>
+    private bool eventsAreConjoined => Options.Events.TenancyStyle == TenancyStyle.Conjoined;
+
     private static readonly JsonSerializerOptions ExplorerJson = new()
     {
         PropertyNamingPolicy = null
@@ -73,9 +105,12 @@ public partial class DocumentStore
     /// <item><b>Single database</b> (conjoined tenancy): the tenant is co-located in the one
     /// database, so the listing is bounded by a <c>tenant_id</c> predicate on the same
     /// <c>AllowAnyTenant</c> explorer session.</item>
-    /// <item><b>Database-per-tenant / sharded</b>: the argument names a physical database, so
-    /// the session is opened against that tenant's own database and no <c>tenant_id</c> filter
-    /// is needed — every stream in that database already belongs to the tenant.</item>
+    /// <item><b>Database-per-tenant</b>: the argument names a physical database, so the session is
+    /// opened against that tenant's own database.</item>
+    /// <item><b>Sharded</b>: BOTH — the tenant's database is opened <em>and</em> the
+    /// <c>tenant_id</c> predicate applies, because a shard holds many tenants (marten#5383). The
+    /// premise this list used to carry — "no tenant_id filter is needed, every stream in that
+    /// database already belongs to the tenant" — is true of database-per-tenant and false here.</item>
     /// </list>
     /// A null <paramref name="tenantId"/> preserves the store-global (across every tenant) listing.
     /// </remarks>
@@ -85,7 +120,7 @@ public partial class DocumentStore
         if (limit == 0) return Array.Empty<StreamSummary>();
 
         var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
-        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+        var scopeByColumn = tenantId != null && eventsAreConjoined;
 
         await using var session = tenantId != null && spansSeveralDatabases
             ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
@@ -148,7 +183,7 @@ public partial class DocumentStore
         string streamId, string? tenantId, [EnumeratorCancellation] CancellationToken ct)
     {
         var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
-        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+        var scopeByColumn = tenantId != null && eventsAreConjoined;
 
         var schema = Options.EventGraph.DatabaseSchemaName;
         var tenantFilter = scopeByColumn ? " and tenant_id = @tenant_id" : "";
@@ -264,7 +299,7 @@ public partial class DocumentStore
         if (tags == null) throw new ArgumentNullException(nameof(tags));
 
         var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
-        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+        var scopeByColumn = tenantId != null && eventsAreConjoined;
 
         await using var session = tenantId != null && spansSeveralDatabases
             ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
@@ -449,7 +484,7 @@ public partial class DocumentStore
         // rows we read. On a single-database store it selects a tenant living inside the one database, and only
         // then does the shard identity carry the tenant suffix.
         var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
-        var shardsAreTenantScoped = tenantId != null && !spansSeveralDatabases;
+        var shardsAreTenantScoped = tenantId != null && eventsAreConjoined;
 
         // #5382. A store with a database per tenant has no default tenant, so a tenant-less call has no
         // single database to read and no session to open: MasterTableTenancy.Default and
