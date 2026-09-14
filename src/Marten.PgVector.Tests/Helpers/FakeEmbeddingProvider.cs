@@ -1,3 +1,4 @@
+using JasperFx.Events.Vectors;
 using Marten.PgVector.Projection;
 using Pgvector;
 
@@ -16,12 +17,12 @@ public class FakeEmbeddingProvider : IEmbeddingProvider
         Dimensions = dimensions;
     }
 
-    public Task<Vector[]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default)
+    public Task<ReadOnlyMemory<float>[]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default)
     {
-        var results = new Vector[texts.Length];
+        var results = new ReadOnlyMemory<float>[texts.Length];
         for (int i = 0; i < texts.Length; i++)
         {
-            results[i] = GenerateVector(texts[i]);
+            results[i] = GenerateVector(texts[i]).Memory;
         }
         return Task.FromResult(results);
     }

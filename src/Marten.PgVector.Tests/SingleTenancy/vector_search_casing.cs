@@ -5,6 +5,7 @@ using Pgvector;
 using Shouldly;
 using Xunit;
 using System.Threading.Tasks;
+using JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 

@@ -11,6 +11,7 @@ using Npgsql;
 using Pgvector;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
+using JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Projection;
 
@@ -223,7 +224,15 @@ public abstract class VectorProjection : IProjection
                 $"ON CONFLICT (id) DO UPDATE SET embedding = $2::vector({dimensions}), content_text = $3, content_hash = $4, last_updated = now()";
 
             upsertCmd.Parameters.Add(new NpgsqlParameter { Value = id });
-            upsertCmd.Parameters.Add(new NpgsqlParameter { Value = embedding.ToString(), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text });
+            // ⚠️ new Vector(...).ToString(), NEVER embedding.ToString(). The provider contract returns
+            // ReadOnlyMemory<float> now (JasperFx.Events.Vectors), and ReadOnlyMemory's ToString() is
+            // "System.ReadOnlyMemory<System.Single>[768]" -- which compiles, binds, and is not a vector
+            // literal. Pgvector.Vector is what knows how to render "[0.1,0.2,...]", so the conversion
+            // happens here at the boundary rather than the contract carrying a Pgvector type.
+            upsertCmd.Parameters.Add(new NpgsqlParameter
+            {
+                Value = new Vector(embedding).ToString(), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text
+            });
             upsertCmd.Parameters.Add(new NpgsqlParameter { Value = content });
             upsertCmd.Parameters.Add(new NpgsqlParameter { Value = hash });
 
