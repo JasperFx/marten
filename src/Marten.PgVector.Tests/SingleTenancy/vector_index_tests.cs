@@ -183,6 +183,29 @@ public class vector_index_tests : IAsyncLifetime
             opts.VectorIndex<IndexedDoc>(x => x.Embedding, dimensions: 0);
         }));
     }
+
+    /// <summary>
+    ///     #5419: a search asking for more rows than <c>hnsw.ef_search</c> gets them.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠️ <b>This fact is only meaningful because the index is provably used</b> — see
+    ///         <c>the_planner_uses_the_index_for_the_search_statement</c> above. An HNSW scan only ever
+    ///         considers <c>hnsw.ef_search</c> candidates, which pgvector defaults to <b>40</b>, so a
+    ///         search for 100 returned 40 with no error. Over a sequential scan the same call returns
+    ///         100 and proves nothing, which is why this lives in the one file that pins the plan.
+    ///     </para>
+    /// </remarks>
+    [Fact]
+    public async Task a_search_returns_the_limit_it_asked_for_past_the_default_ef_search()
+    {
+        await using var session = _store.QuerySession();
+
+        var hits = await session.VectorSearchAsync<IndexedDoc>(
+            x => x.Embedding, new float[] { 1, 0, 0 }, limit: 100);
+
+        hits.Count.ShouldBe(100);
+    }
 }
 
 public class IndexedDoc

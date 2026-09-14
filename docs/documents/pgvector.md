@@ -307,8 +307,17 @@ Three things have to line up for PostgreSQL to use the index. None of them raise
   A member with **no** declared index is not length-checked, because there is no declared length to check against — the searches work without an index, which is what makes them fast rather than what makes them possible.
 - **The member must be the one you search.** The indexed expression is built from the same member path and serializer casing that `VectorSearchAsync` uses, so declaring it through `VectorIndex` keeps the two in step.
 
-::: warning
-HNSW is approximate, and pgvector caps how many rows one index scan returns with the `hnsw.ef_search` setting, which defaults to 40. With an index in place, `VectorSearchAsync(..., limit: 100)` returns at most 40 documents, and a tenant filter in a conjoined store is applied after that cap, so it can return fewer. Marten does not change the setting. Raise it on the connection, for example with `Options=-c hnsw.ef_search=100` in the Npgsql connection string, or on pgvector 0.8 and later enable iterative scans with `-c hnsw.iterative_scan=relaxed_order`. See [pgvector's query options](https://github.com/pgvector/pgvector#query-options).
+### Recall, and what Marten sets for you <Badge type="tip" text="9.37" />
+
+HNSW is approximate: one index scan only ever considers `hnsw.ef_search` candidates, and pgvector defaults that to **40**. Marten sizes it per search, so a search asking for 100 rows gets 100:
+
+- `hnsw.ef_search` is set to the number of rows the search needs — the `limit`, or a hybrid search's candidate depth — never below pgvector's default of 40 and **clamped to pgvector's ceiling of 1000**, which it enforces with an error rather than by rounding down.
+- On pgvector 0.8 and later, `hnsw.iterative_scan` is set to `strict_order`. That is what makes a **filtered** search return its limit: pgvector applies a predicate *after* the index scan, so without it a selective filter — a conjoined tenant id, a soft-delete predicate, your own `filter` — thins the candidates and the search under-returns however large `ef_search` is.
+
+Both are `SET LOCAL` inside the search's own transaction, so they never outlive the statement or leak onto a pooled connection. Neither is set at all when the member has no vector index, because an exact scan already returns everything asked for.
+
+::: tip
+`strict_order` rather than `relaxed_order` is deliberate. The faster setting may return rows slightly out of distance order, and `VectorMatch<T>` promises nearest-first. See [pgvector's query options](https://github.com/pgvector/pgvector#query-options) for the trade.
 :::
 
 ## Hybrid search

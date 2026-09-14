@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -9,6 +10,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema.Indexing.FullText;
+using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -115,7 +117,11 @@ internal static class VectorSearchRunner
         var results = new List<Neutral.VectorMatch<T>>();
         var serializer = store.Serializer;
 
-        await foreach (var (json, extra) in ReadAsync(session, builder, token).ConfigureAwait(false))
+        // #5419. An HNSW scan only ever considers hnsw.ef_search candidates, so a caller asking for
+        // more than that got fewer rows than `limit` with no error at all.
+        var efSearch = ResolveEfSearch<T>(store.Options, member, limit);
+
+        await foreach (var (json, extra) in ReadAsync(session, builder, efSearch, token).ConfigureAwait(false))
         {
             var doc = serializer.FromJson<T>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json)));
             if (doc is null) continue;
@@ -183,7 +189,7 @@ internal static class VectorSearchRunner
         var results = new List<T>();
         var serializer = store.Serializer;
 
-        await foreach (var (json, _) in ReadAsync(session, builder, token).ConfigureAwait(false))
+        await foreach (var (json, _) in ReadAsync(session, builder, null, token).ConfigureAwait(false))
         {
             var doc = serializer.FromJson<T>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json)));
             if (doc is not null) results.Add(doc);
@@ -338,22 +344,153 @@ internal static class VectorSearchRunner
     private static async IAsyncEnumerable<(string Json, double Extra)> ReadAsync(
         IQuerySession session,
         BatchBuilder builder,
+        int? efSearch,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token)
     {
         var database = session.As<QuerySession>().Database;
         await using var conn = database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
 
+        // #5419. The scan settings are SET LOCAL inside a transaction rather than SET on the
+        // connection, so they cannot outlive this one statement.
+        //
+        // ⚠️ That matters even though the connection is opened here and disposed below: it goes back
+        // to Npgsql's POOL, and a bare SET would ride the physical connection into whatever used it
+        // next. Npgsql does reset pooled connections by default, so a SET would usually be discarded
+        // -- "usually" being exactly the kind of thing that turns into a support issue on the store
+        // that turned the reset off.
+        await using var tx = efSearch.HasValue
+            ? await conn.BeginTransactionAsync(token).ConfigureAwait(false)
+            : null;
+
+        if (efSearch.HasValue)
+        {
+            await ApplyScanSettingsAsync(conn, tx!, database, efSearch.Value, token).ConfigureAwait(false);
+        }
+
         await using var batch = builder.Compile();
         batch.Connection = conn;
+        batch.Transaction = tx;
 
-        await using var reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false);
-        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        await using (var reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false))
         {
-            var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-            var extra = await reader.GetFieldValueAsync<double>(1, token).ConfigureAwait(false);
-            yield return (json, extra);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                var json = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+                var extra = await reader.GetFieldValueAsync<double>(1, token).ConfigureAwait(false);
+                yield return (json, extra);
+            }
         }
+
+        if (tx != null)
+        {
+            // Read-only, so this only releases the SET LOCAL scope.
+            await tx.CommitAsync(token).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    ///     How many candidates the HNSW scan has to consider for this search, or null when there is no
+    ///     HNSW index and the scan is exact (#5419).
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠️ <b>Clamped to 1000 because that is a HARD LIMIT, not a preference.</b> pgvector
+    ///         validates <c>hnsw.ef_search</c> against 1..1000 and <em>errors</em> outside it, so a
+    ///         search with <c>limit: 2000</c> would start throwing where it used to return a truncated
+    ///         list. Trading a silent truncation for an exception is not the fix this is.
+    ///     </para>
+    ///     <para>
+    ///         Never lowered below pgvector's own default of 40 either: a search for three rows should
+    ///         not get worse recall than it does today just because the number is small.
+    ///     </para>
+    ///     <para>
+    ///         Null when the member has no vector index, and that is the common case worth keeping
+    ///         cheap — without an index the scan is exact and already returns <c>limit</c> rows, so
+    ///         there is nothing to tune and no reason to pay for a transaction.
+    ///     </para>
+    /// </remarks>
+    internal static int? ResolveEfSearch<T>(StoreOptions options, MemberInfo member, int rowsNeeded)
+    {
+        var indexed = options.Storage.MappingFor(typeof(T)).Indexes
+            .OfType<VectorIndexDefinition>()
+            .Any(x => x.Member == member);
+
+        return indexed ? Math.Clamp(rowsNeeded, DefaultEfSearch, MaxEfSearch) : null;
+    }
+
+    /// <summary>pgvector's own default for <c>hnsw.ef_search</c>.</summary>
+    private const int DefaultEfSearch = 40;
+
+    /// <summary>pgvector validates <c>hnsw.ef_search</c> against 1..1000 and errors outside it.</summary>
+    private const int MaxEfSearch = 1000;
+
+    /// <summary>
+    ///     The pgvector versions known to have <c>hnsw.iterative_scan</c>, keyed by database.
+    /// </summary>
+    /// <remarks>
+    ///     Keyed by the database identifier because the answer is a property of the server rather than
+    ///     of a store, and looked up once so the detection costs one round trip per database for the
+    ///     life of the process.
+    /// </remarks>
+    private static readonly ConcurrentDictionary<string, bool> _supportsIterativeScan = new();
+
+    private static async Task ApplyScanSettingsAsync(NpgsqlConnection conn, NpgsqlTransaction tx,
+        IMartenDatabase database, int efSearch, CancellationToken token)
+    {
+        await using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = $"SET LOCAL hnsw.ef_search = {efSearch}";
+            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+
+        if (!await SupportsIterativeScanAsync(conn, tx, database, token).ConfigureAwait(false))
+        {
+            return;
+        }
+
+        // ⚠️ strict_order rather than relaxed_order, and the difference is not a preference here.
+        // relaxed_order may return rows slightly out of distance order, and VectorMatch<T> promises
+        // nearest-first -- DocumentSearchCompliance asserts the distances come back ascending. A
+        // faster search that breaks its own ordering contract is the wrong trade.
+        //
+        // This is what makes a FILTERED search return `limit` rows: pgvector applies a predicate AFTER
+        // the index scan, so without iterative scan a selective filter still under-returns however
+        // large ef_search is.
+        await using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = "SET LOCAL hnsw.iterative_scan = strict_order";
+            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    ///     Whether this server's pgvector has <c>hnsw.iterative_scan</c>, which arrived in 0.8.0.
+    /// </summary>
+    /// <remarks>
+    ///     Detected rather than attempted, because pgvector reserves the <c>hnsw</c> GUC prefix: setting
+    ///     a name it does not know is an ERROR, and an error inside the transaction this runs in would
+    ///     abort the search rather than degrade it.
+    /// </remarks>
+    private static async Task<bool> SupportsIterativeScanAsync(NpgsqlConnection conn, NpgsqlTransaction tx,
+        IMartenDatabase database, CancellationToken token)
+    {
+        if (_supportsIterativeScan.TryGetValue(database.Identifier, out var known))
+        {
+            return known;
+        }
+
+        await using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = "select extversion from pg_extension where extname = 'vector'";
+
+        var raw = await cmd.ExecuteScalarAsync(token).ConfigureAwait(false) as string;
+        var supported = Version.TryParse(raw, out var version) && version >= new Version(0, 8);
+
+        _supportsIterativeScan[database.Identifier] = supported;
+        return supported;
     }
 
     internal static MemberInfo GetMemberInfo<T>(Expression<Func<T, object?>> expression)
