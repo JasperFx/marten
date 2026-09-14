@@ -12,15 +12,11 @@ using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
-#region Test Events
+#region sample_pgvector_vector_projection
 
 public record ProductCreated(Guid ProductId, string Name, string Description);
 public record ProductUpdated(Guid ProductId, string Description);
 public record ProductDeleted(Guid ProductId);
-
-#endregion
-
-#region Test Projection
 
 public class ProductSearchProjection : VectorProjection
 {
@@ -59,6 +55,7 @@ public class vector_projection_tests : IAsyncLifetime
 
         var projection = new ProductSearchProjection(_embedder);
 
+        #region sample_pgvector_register_vector_projection
         _store = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
@@ -78,6 +75,7 @@ public class vector_projection_tests : IAsyncLifetime
             opts.Events.AddEventType<ProductUpdated>();
             opts.Events.AddEventType<ProductDeleted>();
         });
+        #endregion
 
         await _store.Advanced.Clean.CompletelyRemoveAllAsync();
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -99,12 +97,18 @@ public class vector_projection_tests : IAsyncLifetime
             new ProductCreated(productId, "Widget", "A fantastic widget for all purposes"));
         await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        // Query the projection table directly
+        #region sample_pgvector_vector_projection_search
+        // The shared IEmbeddingProvider returns ReadOnlyMemory<float>, but
+        // VectorProjectionSearchAsync takes a Pgvector.Vector, so wrap the embedding
+        var queryEmbedding = await _embedder.GenerateEmbeddingAsync(
+            "Widget A fantastic widget for all purposes", TestContext.Current.CancellationToken);
+
         var results = await session.VectorProjectionSearchAsync(
             "product_search_vectors",
-            _embedder.GenerateVector("Widget A fantastic widget for all purposes"),
+            new Vector(queryEmbedding),
             limit: 10,
             distance: Neutral.DistanceFunction.L2);
+        #endregion
 
         results.Count.ShouldBe(1);
         results[0].Id.ShouldBe(productId);

@@ -87,10 +87,16 @@ public class neutral_contract_search : IAsyncLifetime
     [Fact]
     public async Task a_scored_search_carries_the_distance_it_ordered_on()
     {
+        #region sample_pgvector_vector_search
         await using var query = _store.QuerySession();
 
+        // Query is a ReadOnlyMemory<float>, which is what IEmbeddingProvider hands back.
+        // Each VectorMatch<T> carries the document and its distance, smallest first.
         var scored = await query.VectorSearchWithScoresAsync<NeutralDoc>(x => x.Embedding, Query);
+
+        // Just the documents, in the same order
         var plain = await query.VectorSearchAsync<NeutralDoc>(x => x.Embedding, Query);
+        #endregion
 
         scored.Select(x => x.Document.Name).ShouldBe(plain.Select(x => x.Name));
         scored[0].Document.Name.ShouldBe("Near");
