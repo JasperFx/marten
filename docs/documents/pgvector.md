@@ -176,6 +176,8 @@ Without a [vector index](#hnsw-index), every search is an exact sequential scan 
 
 Both searches build their `WHERE` through the document's own Marten storage, so they apply exactly the predicates `Query<T>()` would: conjoined tenancy, a document hierarchy's discriminator, and — since 9.37 — **soft deletes**.
 
+They also read each row back through that storage, the way `Query<T>()` does. A search for a hierarchy's base type returns every match as its **concrete subtype**, with its subclass members populated, and a search for a subclass returns only that subclass. Before [#5440](https://github.com/JasperFx/marten/issues/5440), a base-type search deserialized every row as the base type.
+
 ::: warning
 Before 9.37 neither search had a soft-delete predicate, so a vector or hybrid search over a document type configured with `SoftDeleted()` returned deleted documents while the same code on Polecat and Fisher did not. If your application was filtering those out itself, that filter is now redundant rather than wrong.
 :::
