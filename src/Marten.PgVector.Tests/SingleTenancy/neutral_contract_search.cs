@@ -7,6 +7,7 @@ using Marten.Testing.Harness;
 using Pgvector;
 using Shouldly;
 using Xunit;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
@@ -16,7 +17,7 @@ namespace Marten.PgVector.Tests.SingleTenancy;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Marten.PgVector carried its own <c>IEmbeddingProvider</c> and <c>DistanceFunction</c>, which
+///         Marten.PgVector carried its own <c>IEmbeddingProvider</c> and <c>Neutral.DistanceFunction</c>, which
 ///         compiled perfectly well and made a store-agnostic caller pick a side. They are
 ///         <c>JasperFx.Events.Vectors</c>' now, so the same application code reads the same against
 ///         Marten, Polecat and Fisher — which is the whole point of the neutral contracts.
@@ -102,13 +103,13 @@ public class neutral_contract_search : IAsyncLifetime
     /// <summary>
     ///     ⚠️ Every metric is a DISTANCE — smaller is closer — including inner product, which pgvector
     ///     returns negated for exactly that reason. One ascending sort serves all three, which is the
-    ///     promise <see cref="DistanceFunction" /> makes on every store.
+    ///     promise <see cref="Neutral.DistanceFunction" /> makes on every store.
     /// </summary>
     [Theory]
-    [InlineData(DistanceFunction.Cosine)]
-    [InlineData(DistanceFunction.L2)]
-    [InlineData(DistanceFunction.InnerProduct)]
-    public async Task every_metric_comes_back_as_an_ascending_distance(DistanceFunction distance)
+    [InlineData(Neutral.DistanceFunction.Cosine)]
+    [InlineData(Neutral.DistanceFunction.L2)]
+    [InlineData(Neutral.DistanceFunction.InnerProduct)]
+    public async Task every_metric_comes_back_as_an_ascending_distance(Neutral.DistanceFunction distance)
     {
         await using var query = _store.QuerySession();
 

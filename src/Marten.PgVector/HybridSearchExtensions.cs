@@ -5,6 +5,7 @@ using JasperFx.Events.Vectors;
 using Marten.Internal.Sessions;
 using Marten.Schema.Indexing.FullText;
 using Npgsql;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector;
 
@@ -26,7 +27,7 @@ namespace Marten.PgVector;
 public sealed record HybridSearchOptions(
     int K = 60,
     int? CandidateDepth = null,
-    DistanceFunction Distance = DistanceFunction.Cosine,
+    Neutral.DistanceFunction Distance = Neutral.DistanceFunction.Cosine,
     HybridTextStyle TextStyle = HybridTextStyle.PlainText,
     string RegConfig = "english");
 

@@ -9,6 +9,7 @@ using Pgvector;
 using Pgvector.Npgsql;
 using Weasel.Postgresql;
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector;
 
@@ -38,7 +39,7 @@ public static class PgVectorExtensions
     /// </summary>
     /// <summary>
     ///     Declare an HNSW index over a document member's embedding, so
-    ///     <see cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, DistanceFunction)" />
+    ///     <see cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, Neutral.DistanceFunction)" />
     ///     is served by an index rather than a sequential scan.
     /// </summary>
     /// <param name="dimensions">
@@ -65,7 +66,7 @@ public static class PgVectorExtensions
         this StoreOptions opts,
         Expression<Func<T, object?>> vectorProperty,
         int dimensions,
-        DistanceFunction distance = DistanceFunction.Cosine,
+        Neutral.DistanceFunction distance = Neutral.DistanceFunction.Cosine,
         int? m = null,
         int? efConstruction = null)
     {
@@ -108,7 +109,7 @@ public static class PgVectorExtensions
         Expression<Func<T, object?>> vectorProperty,
         ReadOnlyMemory<float> queryVector,
         int limit = 10,
-        DistanceFunction distance = DistanceFunction.Cosine) where T : class
+        Neutral.DistanceFunction distance = Neutral.DistanceFunction.Cosine) where T : class
     {
         var matches = await session
             .VectorSearchWithScoresAsync(vectorProperty, queryVector, limit, distance)
@@ -117,14 +118,14 @@ public static class PgVectorExtensions
         return matches.Select(x => x.Document).ToList();
     }
 
-    /// <inheritdoc cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, DistanceFunction)" />
+    /// <inheritdoc cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, Neutral.DistanceFunction)" />
     /// <remarks>The Pgvector-typed spelling, kept so existing call sites still compile.</remarks>
     public static Task<IReadOnlyList<T>> VectorSearchAsync<T>(
         this IQuerySession session,
         Expression<Func<T, object?>> vectorProperty,
         Vector queryVector,
         int limit = 10,
-        DistanceFunction distance = DistanceFunction.Cosine) where T : class
+        Neutral.DistanceFunction distance = Neutral.DistanceFunction.Cosine) where T : class
         => session.VectorSearchAsync(vectorProperty, queryVector.Memory, limit, distance);
 
     /// <summary>
@@ -148,7 +149,7 @@ public static class PgVectorExtensions
         Expression<Func<T, object?>> vectorProperty,
         ReadOnlyMemory<float> queryVector,
         int limit = 10,
-        DistanceFunction distance = DistanceFunction.Cosine) where T : class
+        Neutral.DistanceFunction distance = Neutral.DistanceFunction.Cosine) where T : class
     {
         var store = (DocumentStore)session.DocumentStore;
         var tableName = ((IReadOnlyStoreOptions)store.Options).Schema.For<T>();

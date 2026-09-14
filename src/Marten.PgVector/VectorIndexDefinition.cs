@@ -1,6 +1,7 @@
 using JasperFx.Events.Vectors;
 using Marten.Util;
 using Weasel.Postgresql.Tables;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector;
 
@@ -51,7 +52,7 @@ internal class VectorIndexDefinition: IndexDefinition
         StoreOptions options,
         System.Reflection.MemberInfo member,
         int dimensions,
-        DistanceFunction distance,
+        Neutral.DistanceFunction distance,
         string indexName)
     {
         _options = options;

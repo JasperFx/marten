@@ -1,9 +1,10 @@
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector;
 
 /// <summary>
-///     How a <see cref="DistanceFunction" /> is spelled in pgvector — the operator a query orders by,
+///     How a <see cref="Neutral.DistanceFunction" /> is spelled in pgvector — the operator a query orders by,
 ///     and the operator class an index has to be built with.
 /// </summary>
 /// <remarks>
@@ -17,18 +18,18 @@ namespace Marten.PgVector;
 ///     <para>
 ///         ⚠️ <b>Every metric is a DISTANCE, so smaller is closer, including inner product.</b> pgvector's
 ///         <c>&lt;#&gt;</c> returns the NEGATIVE inner product for exactly that reason, so one
-///         <c>ORDER BY … ASC</c> serves all three and the promise <see cref="DistanceFunction" /> makes
+///         <c>ORDER BY … ASC</c> serves all three and the promise <see cref="Neutral.DistanceFunction" /> makes
 ///         on every store holds here without a special case.
 ///     </para>
 /// </remarks>
 internal static class DistanceFunctionExtensions
 {
     /// <summary>The pgvector operator that measures this distance.</summary>
-    public static string Operator(this DistanceFunction f) => f switch
+    public static string Operator(this Neutral.DistanceFunction f) => f switch
     {
-        DistanceFunction.L2 => "<->",
-        DistanceFunction.Cosine => "<=>",
-        DistanceFunction.InnerProduct => "<#>",
+        Neutral.DistanceFunction.L2 => "<->",
+        Neutral.DistanceFunction.Cosine => "<=>",
+        Neutral.DistanceFunction.InnerProduct => "<#>",
         _ => throw new ArgumentOutOfRangeException(nameof(f))
     };
 
@@ -40,11 +41,11 @@ internal static class DistanceFunctionExtensions
     ///     pgvector matches an index to a query by its operator. That silence is why the index DDL and
     ///     the query operator are both derived from the same enum here rather than spelled separately.
     /// </remarks>
-    public static string OpsClass(this DistanceFunction f) => f switch
+    public static string OpsClass(this Neutral.DistanceFunction f) => f switch
     {
-        DistanceFunction.L2 => "vector_l2_ops",
-        DistanceFunction.Cosine => "vector_cosine_ops",
-        DistanceFunction.InnerProduct => "vector_ip_ops",
+        Neutral.DistanceFunction.L2 => "vector_l2_ops",
+        Neutral.DistanceFunction.Cosine => "vector_cosine_ops",
+        Neutral.DistanceFunction.InnerProduct => "vector_ip_ops",
         _ => throw new ArgumentOutOfRangeException(nameof(f))
     };
 }

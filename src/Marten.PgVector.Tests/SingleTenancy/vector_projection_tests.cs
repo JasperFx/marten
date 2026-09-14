@@ -8,6 +8,7 @@ using Shouldly;
 using Xunit;
 using System.Threading.Tasks;
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
@@ -23,7 +24,7 @@ public record ProductDeleted(Guid ProductId);
 
 public class ProductSearchProjection : VectorProjection
 {
-    public ProductSearchProjection(IEmbeddingProvider provider)
+    public ProductSearchProjection(Neutral.IEmbeddingProvider provider)
         : base("product_search_vectors", provider)
     {
     }
@@ -103,7 +104,7 @@ public class vector_projection_tests : IAsyncLifetime
             "product_search_vectors",
             _embedder.GenerateVector("Widget A fantastic widget for all purposes"),
             limit: 10,
-            distance: DistanceFunction.L2);
+            distance: Neutral.DistanceFunction.L2);
 
         results.Count.ShouldBe(1);
         results[0].Id.ShouldBe(productId);
@@ -136,7 +137,7 @@ public class vector_projection_tests : IAsyncLifetime
             "product_search_vectors",
             _embedder.GenerateVector("Updated description"),
             limit: 10,
-            distance: DistanceFunction.L2);
+            distance: Neutral.DistanceFunction.L2);
 
         results.Count.ShouldBe(1);
         results[0].ContentText.ShouldBe("Updated description");
@@ -214,7 +215,7 @@ public class vector_projection_tests : IAsyncLifetime
             "product_search_vectors",
             _embedder.GenerateVector("anything"),
             limit: 10,
-            distance: DistanceFunction.L2);
+            distance: Neutral.DistanceFunction.L2);
 
         results.Count.ShouldBe(0);
     }
@@ -241,7 +242,7 @@ public class vector_projection_tests : IAsyncLifetime
             "product_search_vectors",
             _embedder.GenerateVector("Red Shoes Bright red running shoes"),
             limit: 10,
-            distance: DistanceFunction.L2);
+            distance: Neutral.DistanceFunction.L2);
 
         results.Count.ShouldBe(3);
         // First result should be exact match
@@ -253,12 +254,12 @@ public class vector_projection_tests : IAsyncLifetime
 /// <summary>
 /// Wrapper that counts embedding API calls for testing content hash skipping.
 /// </summary>
-internal class CallCountingEmbeddingProvider : IEmbeddingProvider
+internal class CallCountingEmbeddingProvider : Neutral.IEmbeddingProvider
 {
-    private readonly IEmbeddingProvider _inner;
+    private readonly Neutral.IEmbeddingProvider _inner;
     private readonly Action _onCall;
 
-    public CallCountingEmbeddingProvider(IEmbeddingProvider inner, Action onCall)
+    public CallCountingEmbeddingProvider(Neutral.IEmbeddingProvider inner, Action onCall)
     {
         _inner = inner;
         _onCall = onCall;

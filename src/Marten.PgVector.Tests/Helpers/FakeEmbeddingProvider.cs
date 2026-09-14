@@ -1,6 +1,7 @@
 using JasperFx.Events.Vectors;
 using Marten.PgVector.Projection;
 using Pgvector;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.Helpers;
 
@@ -8,7 +9,7 @@ namespace Marten.PgVector.Tests.Helpers;
 /// Deterministic fake embedding provider for testing.
 /// Generates a simple hash-based vector from the input text.
 /// </summary>
-public class FakeEmbeddingProvider : IEmbeddingProvider
+public class FakeEmbeddingProvider : Neutral.IEmbeddingProvider
 {
     public int Dimensions { get; }
 

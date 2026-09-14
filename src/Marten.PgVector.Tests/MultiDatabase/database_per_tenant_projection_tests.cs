@@ -12,6 +12,7 @@ using Weasel.Postgresql.Migrations;
 using Xunit;
 using System.Threading.Tasks;
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.MultiDatabase;
 
@@ -124,7 +125,7 @@ public class database_per_tenant_projection_tests: IAsyncLifetime
         await using (var query = _store.QuerySession("pgvector_proj_t2"))
         {
             var found = await query.VectorProjectionSearchAsync("article_search_vectors",
-                _embedder.GenerateVector("a tenanted article"), 10, DistanceFunction.L2);
+                _embedder.GenerateVector("a tenanted article"), 10, Neutral.DistanceFunction.L2);
 
             found.Single().Id.ShouldBe(articleId);
         }
@@ -133,7 +134,7 @@ public class database_per_tenant_projection_tests: IAsyncLifetime
         await using (var query = _store.QuerySession("pgvector_proj_t1"))
         {
             var found = await query.VectorProjectionSearchAsync("article_search_vectors",
-                _embedder.GenerateVector("a tenanted article"), 10, DistanceFunction.L2);
+                _embedder.GenerateVector("a tenanted article"), 10, Neutral.DistanceFunction.L2);
 
             found.ShouldBeEmpty();
         }

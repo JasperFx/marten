@@ -6,6 +6,7 @@ using Shouldly;
 using Xunit;
 using System.Threading.Tasks;
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
@@ -71,7 +72,7 @@ public class vector_search_casing : IAsyncLifetime
             x => x.Embedding,
             new Vector(new[] { 1.0f, 0.0f, 0.0f }),
             limit: 10,
-            distance: DistanceFunction.L2);
+            distance: Neutral.DistanceFunction.L2);
 
         // Without the fix this is an empty list: every row is filtered out by the IS NOT NULL clause
         // because the path is the CLR member name and the stored key is camelCase.
