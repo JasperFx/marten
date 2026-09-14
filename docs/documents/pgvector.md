@@ -6,13 +6,14 @@ What it gives you:
 
 - a one-line `UsePgVector()` opt-in that registers the `vector` extension on every database Marten manages (including per-tenant databases)
 - `VectorSearchAsync` and `VectorSearchWithScoresAsync` on `IQuerySession` for nearest-neighbor searches against an embedding stored on a document
+- a store-neutral `session.Search` accessor carrying the same two searches plus an optional LINQ `filter`, so retrieval code can be written without naming Marten
 - `VectorIndex<T>()` to declare an HNSW index that Marten creates and migrates along with the document table
 - `HybridSearchAsync` and `HybridSearchWithScoresAsync`, which fuse a full text ranking and a vector ranking into one result list
-- a `VectorProjection` base class for event-sourced projections that maintain an embedding table alongside your streams, with content-hash skipping so unchanged content is not re-embedded
+- a `VectorProjection<TId>` base class for event-sourced projections that maintain an embedding table alongside your streams, with content-hash skipping so unchanged content is not re-embedded
 - no embedding model of its own: implement the shared `IEmbeddingProvider` contract (the same one Polecat and Fisher take) or adapt any Microsoft.Extensions.AI embedding generator
 
 ::: tip
-This page describes Marten.PgVector 9.36.0 and later. Code written against earlier versions still compiles, with obsolete warnings. See [Upgrading from the pre-9.36 API](#upgrading-from-the-pre-9-36-api).
+This page describes Marten.PgVector 9.37.0 and later. Code written against earlier versions still compiles, with obsolete warnings. See [Upgrading from the pre-9.36 API](#upgrading-from-the-pre-9-36-api) and [What changed in 9.37](#what-changed-in-9-37).
 :::
 
 ## Installation
@@ -171,6 +172,16 @@ An overload of `VectorSearchAsync` that takes a `Pgvector.Vector` is kept for ex
 
 Without a [vector index](#hnsw-index), every search is an exact sequential scan that computes the distance for every row. That's fine for thousands of documents and slow for millions.
 
+### What a search filters for you
+
+Both searches build their `WHERE` through the document's own Marten storage, so they apply exactly the predicates `Query<T>()` would: conjoined tenancy, a document hierarchy's discriminator, and — since 9.37 — **soft deletes**.
+
+::: warning
+Before 9.37 neither search had a soft-delete predicate, so a vector or hybrid search over a document type configured with `SoftDeleted()` returned deleted documents while the same code on Polecat and Fisher did not. If your application was filtering those out itself, that filter is now redundant rather than wrong.
+:::
+
+Use `MaybeDeleted()` in a [`filter`](#store-neutral-search) if you genuinely want deleted documents back.
+
 ### Distance functions
 
 `DistanceFunction` is `JasperFx.Events.Vectors.DistanceFunction`, shared with Polecat and Fisher. **Every member is a distance, so smaller is closer, including inner product.** pgvector's `<#>` operator returns the *negative* inner product for exactly that reason, so results always come back in ascending order.
@@ -182,6 +193,64 @@ Without a [vector index](#hnsw-index), every search is an exact sequential scan 
 | `InnerProduct`     | `<#>`             | `vector_ip_ops`      | The negative inner product; more negative is closer |
 
 Use the metric your embedding model was trained for. For most text embedding models that is cosine. Inner product gives the same ranking as cosine for unit-length vectors and is cheaper to compute, but it only ranks meaningfully when the vectors are normalized.
+
+## Store-neutral search {#store-neutral-search}
+
+The extension methods above are the Marten-flavored entry point. The same two searches are also reachable through `IDocumentReadOperations.Search`, the store-agnostic session contract shared with Polecat and Fisher, so a library or a retrieval helper can run a vector search without referencing any store package:
+
+<!-- snippet: sample_pgvector_neutral_search_accessor -->
+<a id='snippet-sample_pgvector_neutral_search_accessor'></a>
+```cs
+// IDocumentReadOperations is JasperFx's store-agnostic session contract — no Marten type
+// appears in this code, so the same method body runs against Polecat or Fisher.
+IDocumentReadOperations operations = session;
+
+var matches = await operations.Search.VectorSearchWithScoresAsync<Memo>(
+    x => x.Embedding, Query, limit: 2);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PgVector.Tests/SingleTenancy/shared_search_surface.cs#L70-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_pgvector_neutral_search_accessor' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`Search` is an **accessor** rather than a set of members on the session, and deliberately so: an instance method named `VectorSearchWithScoresAsync` would win overload resolution over Marten.PgVector's extension method of the same name at every existing call site, silently and with different behavior. Behind an accessor the collision cannot happen.
+
+`UsePgVector()` is what supplies the implementation. A session from a store that never called it throws `NotSupportedException` from `Search` rather than returning an empty list.
+
+### The `filter` predicate
+
+Both signatures on `IDocumentSearchOperations` take an optional `Expression<Func<T, bool>>`:
+
+```csharp
+Task<IReadOnlyList<VectorMatch<T>>> VectorSearchWithScoresAsync<T>(
+    Expression<Func<T, object?>> member,
+    ReadOnlyMemory<float> query,
+    int limit = 10,
+    DistanceFunction? distance = null,
+    Expression<Func<T, bool>>? filter = null,
+    CancellationToken token = default) where T : notnull;
+```
+
+The predicate is parsed by the same `WhereClauseParser` Marten's LINQ provider uses and spliced into the search's own SQL, so it **supports and refuses what `Query<T>().Where(...)` does** — including predicates over child collections.
+
+<!-- snippet: sample_pgvector_search_filter -->
+<a id='snippet-sample_pgvector_search_filter'></a>
+```cs
+var matches = await ((IDocumentReadOperations)session).Search.VectorSearchWithScoresAsync<Memo>(
+    x => x.Embedding, Query, limit: 1, filter: x => x.Category == "blue");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PgVector.Tests/SingleTenancy/shared_search_surface.cs#L114-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_pgvector_search_filter' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+**The filter is applied before the limit**, not after, so the result is the top-k of the filtered set rather than the filtered remains of the top-k. In a hybrid search it reaches both halves, before each half's `CandidateDepth` — otherwise rows the caller is about to discard would consume the depth and the fused order would be a ranking of a set that includes them.
+
+::: warning Recall under a selective filter
+pgvector applies the `WHERE` **after** the HNSW index scan, and that scan is bounded by `hnsw.ef_search` (default 40). A selective filter can therefore return **fewer than `limit`** rows even though more matching documents exist — the filter discarded rows the index had already chosen. Raising `ef_search` on the connection, or dropping the index so the search is an exact scan, are the two ways to widen it. Stores that do an exact scan (Fisher) have no such bound; see [marten#5419](https://github.com/JasperFx/marten/issues/5419).
+:::
+
+### `distance: null` means the index's metric
+
+`distance` on the neutral contract is `DistanceFunction?`, and **null means "the metric the `VectorIndex` for that member declared"**, falling back to `Cosine` when the member has no index. If a member has two indexes for two metrics, there is no single answer and the search throws rather than guessing — name the metric you want.
+
+The `distance` parameter on the `VectorSearchAsync` / `VectorSearchWithScoresAsync` **extension methods** is unchanged and still defaults to `DistanceFunction.Cosine`, so no call written before 9.37 changes behavior.
 
 ## HNSW index
 
@@ -310,6 +379,7 @@ Hybrid search uses reciprocal rank fusion (RRF). Each document scores `1 / (K + 
 - **The union is fused.** A document found by only one of the two searches still scores. That is the point: what keyword search alone finds is exactly what vector search is bad at.
 - **Larger is better.** `HybridMatch<T>.Score` runs the opposite way from `VectorMatch<T>.Distance`. The absolute value is small (at most `2 / (K + 1)`, about 0.033 with the default `K`) and is only useful for comparing results of the same query or applying a floor.
 - **Ties are broken deterministically**: by score, then by each document's best rank in either search, then by id, so the same query returns the same page every time.
+- **The implementation is shared.** `ReciprocalRankFusion.Fuse` in `JasperFx.Events.Vectors` is one implementation for all three stores. It fuses **by key**, so the legs need not be the same document type — which is what lets you fuse a snapshot document carrying the tsvector with a separate embedding document, the shape a vector projection writes.
 - **It is two statements, not one.** The text search and the vector search are separate queries, each reading `CandidateDepth` rows, and they are fused in memory. There is no offset or paging. The vector half is `VectorSearchWithScoresAsync`, so it uses a `VectorIndex` built for `options.Distance`, and it is subject to the `hnsw.ef_search` cap described [above](#hnsw-index).
 
 ### Options
@@ -324,11 +394,19 @@ var options = new HybridSearchOptions(CandidateDepth: 100, TextStyle: HybridText
 | ---------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `K`              | `60`                        | The RRF smoothing constant. Must be at least 1. Lowering it gives a first-place finish more weight.                                                                    |
 | `CandidateDepth` | `max(limit × 4, 50)`        | How many rows each search reads before fusing. Must be at least `limit`. A document ranked 40th by one search and 1st by the other is the result hybrid search is for. |
-| `Distance`       | `DistanceFunction.Cosine`   | The metric for the vector search. Match it to your `VectorIndex`.                                                                                                      |
+| `Distance`       | `null`                      | The metric for the vector search. **Null means the metric the member's `VectorIndex` declared**, and `Cosine` when there is none. See the warning below.               |
 | `TextStyle`      | `HybridTextStyle.PlainText` | `PlainText` uses `plainto_tsquery` (every word, no syntax). `WebStyle` uses `websearch_to_tsquery` (quoted phrases, `or`, a leading `-` to exclude).                   |
-| `RegConfig`      | `"english"`                 | The PostgreSQL text search configuration. It also selects which full text index the text search uses.                                                                  |
+| `RegConfig`      | `null`                      | The PostgreSQL text search configuration; null means `"english"`. It also selects which full text index the text search uses.                                          |
 
 Both text styles are safe to feed raw search-box input. Raw `to_tsquery` syntax is deliberately not offered, because a malformed query would fail the whole fused search.
+
+::: warning Behavior change in 9.37
+`HybridSearchOptions` is now `JasperFx.Events.Vectors.HybridSearchOptions`, shared with Polecat and Fisher, and its `Distance` **defaults to `null` instead of `Cosine`**.
+
+Marten's own copy defaulted to `Cosine` while the other two stores had no such default, so the same code over an index declared for `L2` produced a cosine ordering on Marten and an L2 ordering elsewhere — with nothing reported, and with the HNSW index silently unused, because pgvector matches an index to a query by its operator.
+
+If your index is cosine, nothing moves. **If your index is `L2` or `InnerProduct` and you were relying on the old default, your hybrid searches now return a different order** — the one your index was built for. Pass `Distance: DistanceFunction.Cosine` explicitly to keep the old behavior.
+:::
 
 ### The text leg
 
@@ -340,7 +418,11 @@ The text search runs `WHERE <tsvector> @@ <tsquery> ORDER BY ts_rank(<tsvector>,
 
 ## Event-sourced vector projection
 
-`VectorProjection` is a base class for projections that maintain an embedding table alongside your streams. It maps events to text, hashes the text, calls your `IEmbeddingProvider` for anything new or changed, and writes the embeddings. When content hasn't changed, it skips the call to the model.
+`VectorProjection<TId>` is a base class for projections that maintain an embedding table alongside your streams. It maps events to text, hashes the text, calls your `IEmbeddingProvider` for anything new or changed, and writes the embeddings. When content hasn't changed, it skips the call to the model.
+
+Since 9.37 the body of that — folding a page of events down to one text per document, hashing it, comparing against the stored hash, and batching the model call — is `VectorProjectionMap<TId>` and `VectorEmbeddingPlan<TId>` in `JasperFx.Events.Vectors`, shared with Polecat and Fisher. Marten supplies only the read of the current hashes and the write of the rows.
+
+The non-generic `VectorProjection` is `VectorProjection<Guid>` with the pre-9.37 fluent `VectorProjectionMapping` API, kept so existing projections compile and behave the same.
 
 <!-- snippet: sample_pgvector_vector_projection -->
 <a id='snippet-sample_pgvector_vector_projection'></a>
@@ -422,7 +504,14 @@ The created table has this shape:
 
 ### Querying the projection table
 
-`VectorProjectionSearchAsync` runs an ordered-by-distance query against the projection table and returns each row's `Guid` id, distance, and original content text. It takes a `Pgvector.Vector` rather than `ReadOnlyMemory<float>`, so wrap your provider's embedding in `new Vector(...)`:
+`VectorProjectionSearchAsync<TId>` runs an ordered-by-distance query against the projection table and returns each row's id, distance, and original content text as a `VectorProjectionMatch<TId>`. It takes a `ReadOnlyMemory<float>`, which is what `IEmbeddingProvider` hands back:
+
+```csharp
+var matches = await session.VectorProjectionSearchAsync<string>(
+    "note_vectors", queryVector, limit: 10);
+```
+
+The pre-9.37 overload taking a `Pgvector.Vector` and returning `VectorSearchResult` (with a `Guid` `Id` and a `float` `Distance`) is kept for existing call sites:
 
 <!-- snippet: sample_pgvector_vector_projection_search -->
 <a id='snippet-sample_pgvector_vector_projection_search'></a>
@@ -441,13 +530,88 @@ var results = await session.VectorProjectionSearchAsync(
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PgVector.Tests/SingleTenancy/vector_projection_tests.cs#L100-L111' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_pgvector_vector_projection_search' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The table name is unqualified; Marten looks for it in the event store's schema. Results are `VectorSearchResult` objects (`Id`, a `float` `Distance`, and `ContentText`), not documents, so load whatever the ids refer to yourself. `VectorIndex` applies to document tables only, and the projection table has no vector index, so these searches are sequential scans.
+The table name is unqualified; Marten looks for it in the event store's schema. Results are rows, not documents, so load whatever the ids refer to yourself. `VectorIndex` applies to document tables only, and the projection table has no vector index, so these searches are sequential scans.
+
+### Keying on something other than a `Guid`
+
+`VectorProjection<TId>` is open over its identity, and the table's primary key is typed from `TId`, so a string-identified store can use it. Declare the map with `VectorProjectionMap<TId>`, whose content selector receives the `IEvent<T>` wrapper rather than the bare body — so stream identity, timestamp and headers are in reach as well as the payload:
+
+<!-- snippet: sample_pgvector_generic_vector_projection -->
+<a id='snippet-sample_pgvector_generic_vector_projection'></a>
+```cs
+/// <summary>
+///     Keyed on the stream KEY rather than a Guid, which the pre-9.37 projection could not express at
+///     all — its id was hardcoded to <see cref="Guid" /> (marten#5424).
+/// </summary>
+public class NoteVectorProjection(Neutral.IEmbeddingProvider provider)
+    : VectorProjection<string>("note_vectors", provider)
+{
+    protected override void Configure(Neutral.VectorProjectionMap<string> map)
+    {
+        // The shared map's selector sees the IEvent<T> wrapper, so stream identity and metadata are
+        // in reach as well as the body.
+        map.Map<NoteWritten>(e => e.Data.Body, e => e.Data.NoteKey);
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PgVector.Tests/SingleTenancy/vector_projection_shared_core.cs#L99-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_pgvector_generic_vector_projection' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+There is deliberately **no `Delete<TEvent>()` overload without an id selector**. A projection keyed on a member of the event that deletes by stream id addresses a row that was never written, so the delete matches nothing and the document stays in the index forever — silently, because a `DELETE` that hits no row is not an error. `map.Delete<T>(e => e.StreamId)` is the explicit spelling of the old default.
+
+A content selector that throws is **not** caught. A swallowed exception returned `null`, which reads as "this event contributes no content", so a selector with a bug dropped the document out of the index with nothing reported anywhere. It now faults the shard, which is what the daemon's error handling is for.
+
+### Building content from aggregate state
+
+A selector that sees only one event cannot keep an embedding correct across a partial-update event. Given `NoteTitled { Title = "..." }`, returning the new title re-embeds the note *without* its body, and returning `null` leaves the embedding stale. `MapFromAggregate<TAggregate>` is the third answer — the text is built from the aggregate as it stands after the page's events:
+
+<!-- snippet: sample_pgvector_map_from_aggregate -->
+<a id='snippet-sample_pgvector_map_from_aggregate'></a>
+```cs
+public class Note
+{
+    public string Id { get; set; } = "";
+    public string Title { get; set; } = "";
+    public string Body { get; set; } = "";
+
+    public void Apply(NoteWritten e) => Body = e.Body;
+    public void Apply(NoteTitled e) => Title = e.Title;
+}
+
+/// <summary>
+///     ⚠️ A content selector that sees only one event cannot keep an embedding correct across a
+///     partial-update event: given <c>NoteTitled</c>, returning the new title re-embeds the note
+///     without its body, and returning null leaves the embedding stale. Building the text from the
+///     aggregate's CURRENT STATE is the third answer.
+/// </summary>
+public class NoteAggregateVectorProjection(Neutral.IEmbeddingProvider provider)
+    : VectorProjection<string>("note_aggregate_vectors", provider)
+{
+    protected override void Configure(Neutral.VectorProjectionMap<string> map)
+    {
+        map.MapFromAggregate<Note>(
+            note => $"{note.Title} {note.Body}".Trim(),
+            (typeof(NoteWritten), e => e.StreamKey!),
+            (typeof(NoteTitled), e => e.StreamKey!));
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PgVector.Tests/SingleTenancy/vector_projection_shared_core.cs#L118-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_pgvector_map_from_aggregate' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Marten builds the aggregate by **live aggregation** over the stream, which reads committed events. That makes `MapFromAggregate` an **async-lifecycle** feature: registered `Inline`, the aggregation would run before the page it is reacting to has been committed and would miss the very event that triggered it. It costs one stream read per affected document per page; content hashing does the rest, so a trigger that turns out not to change the built text costs no model call at all.
+
+Live aggregation identifies a stream by `Guid` or by string, so `TId` has to be one of those when an aggregate mapping is declared.
 
 ### Projection limitations
 
-- **`Guid` ids only.** The table's primary key is a `uuid`, and id selectors return `Guid`. Streams keyed by string identity are not supported.
 - **No conjoined tenancy.** The table has no `tenant_id` column, and `VectorProjectionSearchAsync` doesn't filter by tenant, so in a conjoined store every tenant's rows share one table and a search returns all of them. Database-per-tenant works: rows are written to the database the events came from, and searches read from the session's database.
 - **Async execution.** The synchronous `IProjection.Apply` overload throws; the projection only runs through its async path.
+- **The hash read opens its own connection.** Marten's daemon session refuses `IQuerySession.Connection` outright — "sticky" connections inside a projection are not supported — so the read of the current content hashes cannot ride the session. The *writes* do (see below).
+
+### Writes ride the unit of work
+
+Since 9.37 the deletes and upserts are queued with `IDocumentOperations.QueueSqlCommand`, so they commit in the same transaction as the shard's progression. Before that the projection opened its own connection and executed them immediately, which meant an embedding survived a page the daemon rolled back — leaving the index describing events the store does not have.
 
 ## Multi-tenancy
 
@@ -461,10 +625,40 @@ In a single-database store (`AllDocumentsAreMultiTenanted` plus a tenant-scoped 
 
 ## Other Critter Stack stores
 
-`IEmbeddingProvider`, `DistanceFunction`, and `VectorMatch<T>` are shared with the other Critter Stack document stores, so embedding code and metric choices carry across. `HybridSearchOptions` and `HybridMatch<T>` are Marten.PgVector's own types. Each store documents its own details and limits:
+`IEmbeddingProvider`, `DistanceFunction`, `VectorMatch<T>`, `HybridSearchOptions`, `HybridMatch<T>`, `HybridTextStyle`, `ReciprocalRankFusion`, `IDocumentSearchOperations`, `VectorProjectionMap<TId>` and `VectorEmbeddingPlan<TId>` all live in `JasperFx.Events.Vectors` and are shared with the other Critter Stack document stores, so retrieval code, metric choices and projection declarations carry across. Each store documents its own details and limits:
 
 - Polecat (SQL Server 2025): [full text search](https://polecat.jasperfx.net/documents/querying/full-text-search), [vector search](https://polecat.jasperfx.net/documents/querying/vector-search), [hybrid search](https://polecat.jasperfx.net/documents/querying/hybrid-search)
 - Fisher (SQLite): [full text search](https://fisher.jasperfx.net/documents/querying/linq/full-text), [vector search](https://fisher.jasperfx.net/documents/querying/vector-search), [hybrid search](https://fisher.jasperfx.net/documents/querying/hybrid-search), [vector projections](https://fisher.jasperfx.net/events/projections/vector)
+
+## What changed in 9.37 {#what-changed-in-9-37}
+
+9.37 moves the rest of Marten.PgVector's search surface onto `JasperFx.Events.Vectors` ([marten#5429](https://github.com/JasperFx/marten/issues/5429)). Almost all of it is additive; three things are worth reading before you upgrade.
+
+**1. `HybridSearchOptions.Distance` no longer defaults to `Cosine`.** It defaults to `null`, meaning the metric the member's `VectorIndex` declared. If your index is cosine nothing moves; if it is `L2` or `InnerProduct`, hybrid searches that passed no metric now return the order your index was built for instead of a cosine one. This is the reason the type is shared — the old default made the same code mean different things on Marten, Polecat and Fisher. The `VectorSearchAsync` extension methods are **not** changed.
+
+**2. Vector and hybrid search now exclude soft-deleted documents.** They did not before; Polecat and Fisher did.
+
+**3. `HybridSearchOptions`, `HybridMatch<T>` and `HybridTextStyle` moved namespace.** They were declared in `Marten.PgVector` in 9.36.0 and are now `JasperFx.Events.Vectors`' — the same three shapes, shared with Polecat and Fisher, which is what makes point 1 one default instead of three. Sharing the option record is not expressible as an overload, and `HybridMatch<T>` is a *return* type, so this is a source break for code written against 9.36.0. The fix is one line:
+
+```csharp
+using JasperFx.Events.Vectors;   // add this
+```
+
+Nothing else about the calls changes — the record's positional order is unchanged, `RegConfig` is still last, and every construction site compiles as written.
+
+**4. A hand-written `IProjection` that also implements `IValidatedProjection<StoreOptions>` is now actually asked to validate.** `ProjectionGraph.AssertValidity` used to look at the `ProjectionWrapper` a bare `IProjection` is registered through, so the wrapped projection's own checks never ran ([jasperfx#845](https://github.com/JasperFx/jasperfx/issues/845)). Configuration errors that were silently passing can now fail when the store is built. That is the check doing its job, but it is a new failure at an old call site.
+
+Additive in the same release:
+
+| New                                       | What it is                                                                 |
+| ----------------------------------------- | -------------------------------------------------------------------------- |
+| [`session.Search`](#store-neutral-search) | Vector and hybrid search from the store-agnostic `IDocumentReadOperations` |
+| [`filter`](#the-filter-predicate)         | A LINQ predicate on both searches, applied before the limit                |
+| `VectorProjection<TId>`                   | A vector projection keyed on something other than a `Guid`                 |
+| `MapFromAggregate<TAggregate>`            | Embedded text built from aggregate state rather than from one event        |
+| `VectorProjectionSearchAsync<TId>`        | The generic form of the projection-table search                            |
+
+The content hash stored beside each embedding is now spelled by `VectorEmbeddingPlan<TId>.HashOf` — lowercase hex SHA-256 of the UTF-8 text, where Marten wrote **uppercase** hex of the same bytes. The projection lowercases what it reads back, so **rows written by an earlier version still compare equal and nothing is re-embedded**. No migration is needed and no embedding provider is billed for the upgrade.
 
 ## Upgrading from the pre-9.36 API {#upgrading-from-the-pre-9-36-api}
 
@@ -503,6 +697,6 @@ Files that import only `Marten.PgVector` are unaffected; they keep binding to th
 
 ## Notes & limitations
 
-- The search methods run raw SQL on their own connection to the session's database. They don't go through Marten's LINQ provider or compiled-query cache, can't be combined with `Where` clauses, and don't see changes a session hasn't committed yet. Documents are deserialized with the store's serializer and are not tracked by the session.
+- The search methods run raw SQL on their own connection to the session's database. They don't go through Marten's LINQ provider or compiled-query cache and don't see changes a session hasn't committed yet. Documents are deserialized with the store's serializer and are not tracked by the session. A `Where` clause is expressible through the [`filter`](#the-filter-predicate) on `session.Search`, which is parsed by Marten's own LINQ where-clause parser and spliced into the statement.
 - Only simple member access expressions are supported in the vector property selector (`x => x.Embedding`), matching the Marten LINQ conventions.
-- `VectorSearchAsync` and `VectorSearchWithScoresAsync` don't take a `CancellationToken`.
+- The `VectorSearchAsync` and `VectorSearchWithScoresAsync` extension methods don't take a `CancellationToken`. The `session.Search` forms do.

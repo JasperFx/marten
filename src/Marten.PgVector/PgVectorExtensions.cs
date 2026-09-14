@@ -29,6 +29,13 @@ public static class PgVectorExtensions
         // This ensures CREATE EXTENSION IF NOT EXISTS vector runs on every database.
         opts.Storage.ExtendedSchemaObjects.Add(new Extension("vector"));
 
+        // The store-agnostic route to search (jasperfx#842). Core Marten declares
+        // IDocumentReadOperations.Search and holds this seam; the pgvector SQL that satisfies it lives
+        // here, in the optional package, so core takes no dependency on it. Without this line a session
+        // opened by this store answers Search with a NotSupportedException, which is the correct answer
+        // for a store that has no vector search.
+        opts.SearchOperations = session => new PgVectorSearchOperations(session);
+
         return opts;
     }
 
@@ -144,94 +151,15 @@ public static class PgVectorExtensions
     ///         and recomputing it client-side would mean re-reading every embedding.
     ///     </para>
     /// </remarks>
-    public static async Task<IReadOnlyList<VectorMatch<T>>> VectorSearchWithScoresAsync<T>(
+    public static Task<IReadOnlyList<VectorMatch<T>>> VectorSearchWithScoresAsync<T>(
         this IQuerySession session,
         Expression<Func<T, object?>> vectorProperty,
         ReadOnlyMemory<float> queryVector,
         int limit = 10,
         Neutral.DistanceFunction distance = Neutral.DistanceFunction.Cosine) where T : class
-    {
-        var store = (DocumentStore)session.DocumentStore;
-        var tableName = ((IReadOnlyStoreOptions)store.Options).Schema.For<T>();
-
-        var member = GetMemberInfo(vectorProperty);
-
-        // Build a JSONB path to the vector property. ToJsonKey, not member.Name: the key has to be
-        // spelled the way the serializer wrote it, or the path matches nothing and the search returns
-        // an empty list with no error.
-        var jsonPath = member.ToJsonKey(store.Options.Serializer().Casing);
-
-        var op = distance.Operator();
-        var dimensions = queryVector.Length;
-
-        var whereClause = $"d.data->>'{jsonPath}' IS NOT NULL";
-        var tenantId = session.TenantId;
-        var isSingleDatabase = store.Options.Tenancy.Cardinality == JasperFx.Descriptors.DatabaseCardinality.Single;
-        var hasTenantFilter = isSingleDatabase
-            && !string.IsNullOrEmpty(tenantId)
-            && tenantId != JasperFx.StorageConstants.DefaultTenantId;
-
-        if (hasTenantFilter)
-        {
-            whereClause += " AND d.tenant_id = $3";
-        }
-
-        // The distance is SELECTED as well as ordered by, so the score comes back with the row rather
-        // than being recomputed. Npgsql can bind a Vector directly, but the data source caches pg_type
-        // the first time it opens a connection -- if the "vector" extension is created later (e.g. by
-        // Marten's schema migration on the same data source), the cache is stale and parameter
-        // resolution throws "Cannot resolve 'vector' to a fully qualified datatype name." Routing
-        // through text + an explicit cast makes this race-immune.
-        var vectorSql = $"(d.data->>'{jsonPath}')::vector({dimensions}) {op} $1::vector({dimensions})";
-        var sql = $"select d.data, {vectorSql} as distance from {tableName} d " +
-                  $"WHERE {whereClause} " +
-                  $"ORDER BY {vectorSql} LIMIT $2";
-
-        var results = new List<VectorMatch<T>>();
-
-        var database = session.As<QuerySession>().Database;
-        await using var conn = database.CreateConnection();
-        await conn.OpenAsync().ConfigureAwait(false);
-
-        await using var cmd = conn.CreateCommand();
-        cmd.CommandText = sql;
-        cmd.Parameters.Add(new NpgsqlParameter
-        {
-            Value = new Vector(queryVector).ToString(), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text
-        });
-        cmd.Parameters.Add(new NpgsqlParameter { Value = limit });
-        if (hasTenantFilter)
-        {
-            cmd.Parameters.Add(new NpgsqlParameter { Value = tenantId });
-        }
-
-        await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        var serializer = store.Serializer;
-
-        while (await reader.ReadAsync().ConfigureAwait(false))
-        {
-            var json = await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
-            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-            var doc = serializer.FromJson<T>(new MemoryStream(bytes));
-            if (doc == null) continue;
-
-            var distanceValue = await reader.GetFieldValueAsync<double>(1).ConfigureAwait(false);
-            results.Add(new VectorMatch<T>(doc, distanceValue));
-        }
-
-        return results;
-    }
+        => VectorSearchRunner.VectorLegAsync<T>(
+            session, vectorProperty, queryVector, limit, distance, filter: null, CancellationToken.None);
 
     private static MemberInfo GetMemberInfo<T>(Expression<Func<T, object?>> expression)
-    {
-        var body = expression.Body;
-        if (body is UnaryExpression { NodeType: ExpressionType.Convert } unary)
-            body = unary.Operand;
-
-        return body switch
-        {
-            MemberExpression memberExpr => memberExpr.Member,
-            _ => throw new ArgumentException("Expression must be a simple property or field access")
-        };
-    }
+        => VectorSearchRunner.GetMemberInfo(expression);
 }
