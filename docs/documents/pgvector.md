@@ -611,9 +611,35 @@ Marten builds the aggregate by **live aggregation** over the stream, which reads
 
 Live aggregation identifies a stream by `Guid` or by string, so `TId` has to be one of those when an aggregate mapping is declared.
 
+### Conjoined tenancy <Badge type="tip" text="9.37" />
+
+Register the table with the **options** rather than a schema name, and it is keyed `(tenant_id, id)`:
+
+```csharp
+opts.Storage.ExtendedSchemaObjects.Add(projection.BuildTable(opts));
+```
+
+That single change is the whole registration-side story. The projection then writes, reads its
+content hashes, deletes and searches within the session's tenant, and `VectorProjectionSearchAsync`
+filters on it.
+
+::: warning
+Before 9.37 the table had no `tenant_id` column at all, and none of these paths filtered. On a
+conjoined store that meant one tenant's search returned another's rows and `content_text`; two
+tenants owning a stream with the same id shared **one** row, so the later write replaced the
+earlier tenant's embedding through `ON CONFLICT (id)`; and a delete in one tenant removed the
+other's row. Nothing failed loudly. See [#5420](https://github.com/JasperFx/marten/issues/5420).
+
+`BuildTable(schemaName)` still builds the single-tenant shape, which is correct for a single-tenant
+store and what every existing registration is doing. On a **conjoined** store it is now refused when
+the store is built, naming the overload to use — rather than leaking silently.
+:::
+
+Database-per-tenant was never affected and is unchanged: rows are written to the database the events
+came from, and searches read from the session's database.
+
 ### Projection limitations
 
-- **No conjoined tenancy.** The table has no `tenant_id` column, and `VectorProjectionSearchAsync` doesn't filter by tenant, so in a conjoined store every tenant's rows share one table and a search returns all of them. Database-per-tenant works: rows are written to the database the events came from, and searches read from the session's database.
 - **Async execution.** The synchronous `IProjection.Apply` overload throws; the projection only runs through its async path.
 - **The hash read opens its own connection.** Marten's daemon session refuses `IQuerySession.Connection` outright — "sticky" connections inside a projection are not supported — so the read of the current content hashes cannot ride the session. The *writes* do (see below).
 

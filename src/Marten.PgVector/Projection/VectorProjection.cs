@@ -1,4 +1,8 @@
 using System.Reflection;
+using JasperFx;
+using JasperFx.Core;
+using System.Collections.Generic;
+using System.Linq;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
@@ -42,10 +46,10 @@ namespace Marten.PgVector.Projection;
 ///         Register with
 ///         <c>opts.Projections.Add(new MyVectorProjection(provider), ProjectionLifecycle.Async)</c> and
 ///         create the table with
-///         <c>opts.Storage.ExtendedSchemaObjects.Add(projection.BuildTable(schemaName))</c>.
+///         <c>opts.Storage.ExtendedSchemaObjects.Add(projection.BuildTable(opts))</c>.
 ///     </para>
 /// </remarks>
-public abstract class VectorProjection<TId>: IProjection where TId : notnull
+public abstract class VectorProjection<TId>: IProjection, IValidatedProjection<StoreOptions> where TId : notnull
 {
     private readonly Neutral.IEmbeddingProvider _provider;
     private readonly string _tableName;
@@ -93,9 +97,54 @@ public abstract class VectorProjection<TId>: IProjection where TId : notnull
     ///     (marten#5424). A string-identified store could not use this projection at all before, because
     ///     its document ids do not fit in a <c>uuid</c> column and there was no way to say so.
     /// </remarks>
-    public virtual Table BuildTable(string schemaName)
+    public virtual Table BuildTable(string schemaName) => BuildTable(schemaName, TenancyStyle.Single);
+
+    /// <summary>
+    ///     The Weasel table this projection writes to, built for the store's own tenancy
+    ///     (marten#5420). <b>This is the overload to use.</b>
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Reads both the schema name and the tenancy style off the options, so a conjoined store
+    ///         cannot get a single-tenant table by omission:
+    ///         <c>opts.Storage.ExtendedSchemaObjects.Add(projection.BuildTable(opts))</c>.
+    ///     </para>
+    /// </remarks>
+    public Table BuildTable(StoreOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        return BuildTable(options.Events.DatabaseSchemaName, options.Events.TenancyStyle);
+    }
+
+    /// <summary>
+    ///     The table, keyed by <c>(tenant_id, id)</c> under conjoined tenancy and by <c>id</c> alone
+    ///     otherwise.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠️ <b>The primary key is what makes the upsert safe, not just the read.</b> A stream id
+    ///         is only unique per tenant under conjoined tenancy — <c>mt_streams</c> is keyed
+    ///         <c>(tenant_id, id)</c> — so with <c>id</c> alone as the key, two tenants' embeddings for
+    ///         the same stream collide: <c>ON CONFLICT (id)</c> makes the later write REPLACE the
+    ///         earlier tenant's embedding and text rather than insert beside it. Content-hash skipping
+    ///         then hides it further, because a tenant whose content hashes the same as another's is
+    ///         skipped and never gets a row at all.
+    ///     </para>
+    ///     <para>
+    ///         Following <c>StreamsTable</c>, which puts <c>tenant_id</c> first in the key for the same
+    ///         reason.
+    ///     </para>
+    /// </remarks>
+    public virtual Table BuildTable(string schemaName, TenancyStyle tenancy)
     {
         var table = new Table(new PostgresqlObjectName(schemaName, _tableName));
+
+        if (tenancy == TenancyStyle.Conjoined)
+        {
+            table.AddColumn<string>("tenant_id").NotNull()
+                .DefaultValueByString(StorageConstants.DefaultTenantId).AsPrimaryKey();
+        }
+
         table.AddColumn<TId>("id").AsPrimaryKey();
         table.AddColumn("embedding", $"vector({_provider.Dimensions})").NotNull();
         table.AddColumn<string>("content_text");
@@ -107,6 +156,52 @@ public abstract class VectorProjection<TId>: IProjection where TId : notnull
 
     /// <summary>The qualified table name for use in queries.</summary>
     public string QualifiedTableName(string schemaName) => $"{schemaName}.{_tableName}";
+
+    /// <summary>
+    ///     Refuse a conjoined store whose projection table was built without <c>tenant_id</c>
+    ///     (marten#5420).
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠️ <b>Every failure this catches is otherwise silent</b>, which is why it is worth
+    ///         failing the store build over. A conjoined store registering
+    ///         <c>BuildTable(schemaName)</c> gets a table keyed on <c>id</c> alone: one tenant's search
+    ///         returns another's rows, one tenant's write replaces another's through
+    ///         <c>ON CONFLICT (id)</c>, and one tenant's delete removes another's. Nothing throws and
+    ///         the projection reports healthy throughout.
+    ///     </para>
+    ///     <para>
+    ///         Checked against the table the consumer actually REGISTERED rather than against the one
+    ///         this class would build, because the registration is the thing that can be wrong — and
+    ///         a subclass is free to override <see cref="BuildTable(string, TenancyStyle)" />. A
+    ///         projection whose table was never registered at all is not reported here; that is a
+    ///         different mistake and it fails loudly on the first write.
+    ///     </para>
+    /// </remarks>
+    IEnumerable<string> IValidatedProjection<StoreOptions>.ValidateConfiguration(StoreOptions options)
+    {
+        if (options.Events.TenancyStyle != TenancyStyle.Conjoined)
+        {
+            yield break;
+        }
+
+        var registered = options.Storage.ExtendedSchemaObjects
+            .OfType<Table>()
+            .FirstOrDefault(x => x.Identifier.Name.EqualsIgnoreCase(_tableName));
+
+        if (registered is null || registered.Columns.Any(x => x.Name.EqualsIgnoreCase("tenant_id")))
+        {
+            yield break;
+        }
+
+        yield return
+            $"{GetType().FullNameInCode()} writes to '{_tableName}', which was registered without a "
+            + "tenant_id column on a store using TenancyStyle.Conjoined. Every tenant's embeddings "
+            + "would share one table keyed on id alone, so a search returns other tenants' rows and a "
+            + "write replaces them. Register the table with "
+            + "opts.Storage.ExtendedSchemaObjects.Add(projection.BuildTable(opts)), which takes the "
+            + "tenancy from the store.";
+    }
 
     #region IProjection
 
@@ -141,13 +236,30 @@ public abstract class VectorProjection<TId>: IProjection where TId : notnull
         var store = (DocumentStore)operations.DocumentStore;
         var qualifiedTable = QualifiedTableName(store.Options.Events.DatabaseSchemaName);
 
+        // marten#5420. The session's tenant is the right source and needs no per-event grouping:
+        // ApplyAsync is called once PER TENANT with a tenant-scoped session, because the daemon
+        // groups a page by TenantId and opens a session for each group before handing it over.
+        // Null under single tenancy, where every statement below drops its tenant term.
+        var tenantId = store.Options.Events.TenancyStyle == TenancyStyle.Conjoined
+            ? operations.TenantId
+            : null;
+
         foreach (var id in plan.Deletions)
         {
-            operations.QueueSqlCommand($"DELETE FROM {qualifiedTable} WHERE id = ?", id);
+            if (tenantId is null)
+            {
+                operations.QueueSqlCommand($"DELETE FROM {qualifiedTable} WHERE id = ?", id);
+            }
+            else
+            {
+                operations.QueueSqlCommand(
+                    $"DELETE FROM {qualifiedTable} WHERE id = ? AND tenant_id = ?", id, tenantId);
+            }
         }
 
         var writes = await plan
-            .ResolveAsync(_provider, (ids, token) => ReadHashesAsync(operations, qualifiedTable, ids, token),
+            .ResolveAsync(_provider,
+                (ids, token) => ReadHashesAsync(operations, qualifiedTable, tenantId, ids, token),
                 cancellation)
             .ConfigureAwait(false);
 
@@ -163,16 +275,36 @@ public abstract class VectorProjection<TId>: IProjection where TId : notnull
             // searches do it: the NpgsqlDataSource caches pg_type on its first connection, so a data
             // source that opened before Marten's migration created the "vector" extension cannot resolve
             // the type and throws.
-            operations.QueueSqlCommand(
-                $"INSERT INTO {qualifiedTable} (id, embedding, content_text, content_hash, last_updated) "
-                + $"VALUES (?, ?::vector({_provider.Dimensions}), ?, ?, now()) "
-                + "ON CONFLICT (id) DO UPDATE SET embedding = excluded.embedding, "
-                + "content_text = excluded.content_text, content_hash = excluded.content_hash, "
-                + "last_updated = now()",
-                write.Id,
-                new Vector(write.Embedding).ToString(),
-                write.Content,
-                write.ContentHash);
+            if (tenantId is null)
+            {
+                operations.QueueSqlCommand(
+                    $"INSERT INTO {qualifiedTable} (id, embedding, content_text, content_hash, last_updated) "
+                    + $"VALUES (?, ?::vector({_provider.Dimensions}), ?, ?, now()) "
+                    + "ON CONFLICT (id) DO UPDATE SET embedding = excluded.embedding, "
+                    + "content_text = excluded.content_text, content_hash = excluded.content_hash, "
+                    + "last_updated = now()",
+                    write.Id,
+                    new Vector(write.Embedding).ToString(),
+                    write.Content,
+                    write.ContentHash);
+            }
+            else
+            {
+                // ON CONFLICT names the WHOLE key. Leaving it as (id) here would still overwrite the
+                // other tenant's row -- the conflict target has to match the primary key the table
+                // was built with, or the statement either errors or resolves against the wrong one.
+                operations.QueueSqlCommand(
+                    $"INSERT INTO {qualifiedTable} (tenant_id, id, embedding, content_text, content_hash, last_updated) "
+                    + $"VALUES (?, ?, ?::vector({_provider.Dimensions}), ?, ?, now()) "
+                    + "ON CONFLICT (tenant_id, id) DO UPDATE SET embedding = excluded.embedding, "
+                    + "content_text = excluded.content_text, content_hash = excluded.content_hash, "
+                    + "last_updated = now()",
+                    tenantId,
+                    write.Id,
+                    new Vector(write.Embedding).ToString(),
+                    write.Content,
+                    write.ContentHash);
+            }
         }
     }
 
@@ -202,7 +334,8 @@ public abstract class VectorProjection<TId>: IProjection where TId : notnull
     ///     </para>
     /// </remarks>
     private static async Task<IReadOnlyDictionary<TId, string>> ReadHashesAsync(
-        IDocumentOperations operations, string qualifiedTable, IReadOnlyList<TId> ids, CancellationToken token)
+        IDocumentOperations operations, string qualifiedTable, string? tenantId, IReadOnlyList<TId> ids,
+        CancellationToken token)
     {
         var hashes = new Dictionary<TId, string>();
         if (ids.Count == 0) return hashes;
@@ -211,8 +344,19 @@ public abstract class VectorProjection<TId>: IProjection where TId : notnull
         await conn.OpenAsync(token).ConfigureAwait(false);
 
         await using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"SELECT id, content_hash FROM {qualifiedTable} WHERE id = ANY($1)";
+
+        // marten#5420. The hash is what decides whether the model is called at all, so reading it
+        // across tenants is not merely a leak: another tenant's matching hash makes this tenant's
+        // write look unnecessary, and it is SKIPPED -- leaving that tenant with no row of its own and
+        // nothing to report it.
+        cmd.CommandText = tenantId is null
+            ? $"SELECT id, content_hash FROM {qualifiedTable} WHERE id = ANY($1)"
+            : $"SELECT id, content_hash FROM {qualifiedTable} WHERE id = ANY($1) AND tenant_id = $2";
         cmd.Parameters.Add(new NpgsqlParameter { Value = ids.ToArray() });
+        if (tenantId is not null)
+        {
+            cmd.Parameters.Add(new NpgsqlParameter { Value = tenantId });
+        }
 
         await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))

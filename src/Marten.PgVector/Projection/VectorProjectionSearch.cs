@@ -41,10 +41,19 @@ public static class VectorProjectionSearchExtensions
     ///     Search a vector projection's embedding table by similarity.
     /// </summary>
     /// <remarks>
-    ///     ⚠️ <b>This table is not a Marten document table</b>, so there is no tenancy or soft-delete
-    ///     predicate to apply and none is applied. A projection written per tenant lives in that
-    ///     tenant's database, which is why this reads the SESSION's database rather than the store's
-    ///     default one.
+    ///     <para>
+    ///         ⚠️ <b>This table is not a Marten document table</b>, so none of Marten's implicit
+    ///         predicates apply automatically — soft deletes and document hierarchies have no meaning
+    ///         here. <b>Tenancy does</b>, and used not to be applied (marten#5420): under conjoined
+    ///         tenancy every tenant's embeddings share one table, and this returned all of them,
+    ///         <c>content_text</c> included. It now filters on the session's tenant, the way
+    ///         <c>VectorSearchWithScoresAsync</c> already did for documents.
+    ///     </para>
+    ///     <para>
+    ///         Database-per-tenant was never affected and still works the same way: a projection
+    ///         written per tenant lives in that tenant's database, which is why this reads the
+    ///         SESSION's database rather than the store's default one.
+    ///     </para>
     /// </remarks>
     public static async Task<IReadOnlyList<VectorProjectionMatch<TId>>> VectorProjectionSearchAsync<TId>(
         this IQuerySession session,
@@ -62,11 +71,21 @@ public static class VectorProjectionSearchExtensions
         var op = distance.Operator();
         var dimensions = queryVector.Length;
 
+        // marten#5420. Null under single tenancy, where the table has no tenant_id column at all.
+        var tenantId = store.Options.Events.TenancyStyle == TenancyStyle.Conjoined
+            ? session.TenantId
+            : null;
+
         // See VectorSearchRunner — bind the query vector as its text form and cast to vector(N)
         // server-side, because the NpgsqlDataSource type-info cache is stale when the "vector" extension
         // was created at migration time on the same data source.
+        // ⚠️ The predicate goes in the WHERE, not into a post-filter over the top-k. Filtering after
+        // the ORDER BY would return fewer than `limit` rows for the asking tenant whenever another
+        // tenant's embeddings happen to be nearer -- the same jasperfx#843 rule the document search
+        // follows.
         var sql = $"SELECT id, (embedding {op} $1::vector({dimensions}))::float8 as distance, content_text " +
                   $"FROM {qualifiedTable} " +
+                  (tenantId is null ? "" : "WHERE tenant_id = $3 ") +
                   $"ORDER BY embedding {op} $1::vector({dimensions}) LIMIT $2";
 
         var results = new List<VectorProjectionMatch<TId>>();
@@ -82,6 +101,10 @@ public static class VectorProjectionSearchExtensions
             Value = new Vector(queryVector).ToString(), NpgsqlDbType = NpgsqlDbType.Text
         });
         cmd.Parameters.Add(new NpgsqlParameter { Value = limit });
+        if (tenantId is not null)
+        {
+            cmd.Parameters.Add(new NpgsqlParameter { Value = tenantId });
+        }
 
         await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
 
