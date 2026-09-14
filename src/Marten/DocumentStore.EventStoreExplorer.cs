@@ -49,6 +49,38 @@ public partial class DocumentStore
     /// </summary>
     private const int RecentStreamsCap = 1000;
 
+    /// <summary>
+    /// marten#5383 — whether a tenant-scoped explorer read has to filter rows by <c>tenant_id</c>, as
+    /// against merely opening the right database.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// These are <b>two independent axes</b>, and the explorer used to decide both from one:
+    /// <see cref="DatabaseCardinality"/> answers <i>which database do I open</i>, and the event
+    /// <see cref="TenancyStyle"/> answers <i>do I filter rows once I am there</i>. Deciding the second
+    /// from the first is right for the two configurations that were in mind when it was written —
+    /// conjoined single-database (filter, one database) and database-per-tenant (no filter, many
+    /// databases) — and wrong for the one that needs both.
+    /// </para>
+    /// <para>
+    /// <b>Sharded tenancy is that one.</b> It distributes tenants across a POOL of databases with
+    /// conjoined events, so many tenants share each database: opening the tenant's database narrows
+    /// the answer to its shard and no further. Reproduced before this was changed, in
+    /// <c>sharded_explorer_tenant_scoping_5383</c>: two tenants co-located on one shard, and
+    /// <c>GetRecentStreamsAsync(50, "alpha")</c> listed beta's stream, while
+    /// <c>ReadStreamAsync(id, "alpha")</c> returned <c>["alpha", "beta"]</c> events interleaved into a
+    /// single version-ordered sequence for a stream key both tenants use — which is worse than a leak,
+    /// because it is a coherent-looking document that never existed.
+    /// </para>
+    /// <para>
+    /// Filtering whenever events are conjoined is safe on every other layout: on a database-per-tenant
+    /// store with conjoined events every row in the opened database already carries that tenant id, so
+    /// the predicate is redundant rather than wrong, and on a non-conjoined store there is no
+    /// <c>tenant_id</c> to scope by in the first place.
+    /// </para>
+    /// </remarks>
+    private bool eventsAreConjoined => Options.Events.TenancyStyle == TenancyStyle.Conjoined;
+
     private static readonly JsonSerializerOptions ExplorerJson = new()
     {
         PropertyNamingPolicy = null
@@ -73,23 +105,78 @@ public partial class DocumentStore
     /// <item><b>Single database</b> (conjoined tenancy): the tenant is co-located in the one
     /// database, so the listing is bounded by a <c>tenant_id</c> predicate on the same
     /// <c>AllowAnyTenant</c> explorer session.</item>
-    /// <item><b>Database-per-tenant / sharded</b>: the argument names a physical database, so
-    /// the session is opened against that tenant's own database and no <c>tenant_id</c> filter
-    /// is needed — every stream in that database already belongs to the tenant.</item>
+    /// <item><b>Database-per-tenant</b>: the argument names a physical database, so the session is
+    /// opened against that tenant's own database.</item>
+    /// <item><b>Sharded</b>: BOTH — the tenant's database is opened <em>and</em> the
+    /// <c>tenant_id</c> predicate applies, because a shard holds many tenants (marten#5383). The
+    /// premise this list used to carry — "no tenant_id filter is needed, every stream in that
+    /// database already belongs to the tenant" — is true of database-per-tenant and false here.</item>
     /// </list>
     /// A null <paramref name="tenantId"/> preserves the store-global (across every tenant) listing.
     /// </remarks>
     async Task<IReadOnlyList<StreamSummary>> IEventStore.GetRecentStreamsAsync(int count, string? tenantId, CancellationToken ct)
     {
+        // #5383 part 3 — a store-global listing on a multi-database store used to answer from whichever
+        // database the default session resolved, which is indistinguishable from a complete answer. A
+        // listing HAS a well-defined union, so it fans out and merges rather than refusing.
+        if (tenantId == null && Options.Tenancy.Cardinality != DatabaseCardinality.Single)
+        {
+            return await recentStreamsAcrossDatabasesAsync(count, ct).ConfigureAwait(false);
+        }
+
+        return await recentStreamsAsync(null, count, tenantId, ct).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// #5383 / jasperfx#810 — the listing from ONE database, so a tool can enumerate
+    /// <c>AllDatabases()</c> and attribute every row to the database it came from.
+    /// </remarks>
+    Task<IReadOnlyList<StreamSummary>> IEventStore.GetRecentStreamsAsync(
+        IEventDatabase database, int count, string? tenantId, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(database);
+        return recentStreamsAsync(database, count, tenantId, ct);
+    }
+
+    /// <summary>
+    /// #5383 part 3 — every database's most recent streams, merged newest-first and capped.
+    /// </summary>
+    /// <remarks>
+    /// Exact rather than approximate: each database is asked for the same <paramref name="count"/> and
+    /// the merge keeps the newest of the union, so no database can hide a stream newer than one this
+    /// returns. The cost is one query per database, which is the honest price of the question — the
+    /// alternative that was here before cost one query and answered for one database.
+    /// </remarks>
+    private async Task<IReadOnlyList<StreamSummary>> recentStreamsAcrossDatabasesAsync(int count, CancellationToken ct)
+    {
         var limit = Math.Clamp(count, 0, RecentStreamsCap);
         if (limit == 0) return Array.Empty<StreamSummary>();
 
-        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
-        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+        // IMartenDatabase does not itself extend IEventDatabase — only the concrete MartenDatabase does
+        // (#4570) — so this projects the same way IEventStore.AllDatabases() does, and a tool that
+        // enumerated AllDatabases() sees exactly the set this merged.
+        var merged = new List<StreamSummary>();
+        foreach (var database in (await Tenancy.BuildDatabases().ConfigureAwait(false)).OfType<IEventDatabase>())
+        {
+            merged.AddRange(await recentStreamsAsync(database, limit, null, ct).ConfigureAwait(false));
+        }
 
-        await using var session = tenantId != null && spansSeveralDatabases
-            ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
-            : openExplorerSession();
+        return merged
+            .OrderByDescending(x => x.LastUpdatedAt)
+            .Take(limit)
+            .ToList();
+    }
+
+    private async Task<IReadOnlyList<StreamSummary>> recentStreamsAsync(
+        IEventDatabase? database, int count, string? tenantId, CancellationToken ct)
+    {
+        var limit = Math.Clamp(count, 0, RecentStreamsCap);
+        if (limit == 0) return Array.Empty<StreamSummary>();
+
+        var scopeByColumn = tenantId != null && eventsAreConjoined;
+
+        await using var session = await openExplorerSessionAsync(database, tenantId).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         // The leading six columns deliberately mirror IEventStorage.StreamStateSelectSql
@@ -144,11 +231,33 @@ public partial class DocumentStore
     /// the tenant's own database session for a database-per-tenant / sharded store. Null preserves
     /// the store-global read.
     /// </remarks>
-    async IAsyncEnumerable<EventRecord> IEventStore.ReadStreamAsync(
-        string streamId, string? tenantId, [EnumeratorCancellation] CancellationToken ct)
+    IAsyncEnumerable<EventRecord> IEventStore.ReadStreamAsync(
+        string streamId, string? tenantId, CancellationToken ct)
     {
-        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
-        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
+        // #5383 part 3 — a single-stream read has ONE answer, and a stream id is unique within a
+        // database rather than across them, so there is no union to take. Refuse instead of answering
+        // from whichever database the default session resolved.
+        if (tenantId == null && Options.Tenancy.Cardinality != DatabaseCardinality.Single)
+        {
+            throw storeGlobalReadNotSupported(nameof(IEventStore.ReadStreamAsync));
+        }
+
+        return readStreamAsync(null, streamId, tenantId, ct);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>#5383 / jasperfx#810 — one stream, read from the database the caller names.</remarks>
+    IAsyncEnumerable<EventRecord> IEventStore.ReadStreamAsync(
+        IEventDatabase database, string streamId, string? tenantId, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(database);
+        return readStreamAsync(database, streamId, tenantId, ct);
+    }
+
+    private async IAsyncEnumerable<EventRecord> readStreamAsync(
+        IEventDatabase? database, string streamId, string? tenantId, [EnumeratorCancellation] CancellationToken ct)
+    {
+        var scopeByColumn = tenantId != null && eventsAreConjoined;
 
         var schema = Options.EventGraph.DatabaseSchemaName;
         var tenantFilter = scopeByColumn ? " and tenant_id = @tenant_id" : "";
@@ -158,9 +267,7 @@ public partial class DocumentStore
             $"where stream_id = @stream_id{tenantFilter} " +
             $"order by version asc";
 
-        await using var session = tenantId != null && spansSeveralDatabases
-            ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
-            : openExplorerSession();
+        await using var session = await openExplorerSessionAsync(database, tenantId).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         var cmd = new NpgsqlCommand(sql);
@@ -184,9 +291,54 @@ public partial class DocumentStore
     /// per-stream; future work could surface the union of tags applied to the stream's
     /// events. Returns <see langword="null"/> when no row exists for the requested id.
     /// </remarks>
-    async Task<StreamMetadata?> IEventStore.GetStreamMetadataAsync(string streamId, CancellationToken ct)
+    Task<StreamMetadata?> IEventStore.GetStreamMetadataAsync(string streamId, CancellationToken ct)
     {
-        await using var session = openExplorerSession();
+        // #5383 part 3 — one answer, and a stream id is unique within a database rather than across
+        // them. Refuse rather than answer from whichever database the default session resolved.
+        if (Options.Tenancy.Cardinality != DatabaseCardinality.Single)
+        {
+            throw storeGlobalReadNotSupported(nameof(IEventStore.GetStreamMetadataAsync));
+        }
+
+        return streamMetadataAsync(null, streamId, null, ct);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// #5383 part 4 — the tenant-scoped read this sibling never had.
+    /// <para>
+    /// 🩸 It also closes a defect of its own: the SQL was <c>where id = @stream_id limit 1</c> with no
+    /// tenant predicate, and under conjoined tenancy <c>mt_streams</c> holds one row per
+    /// <c>(tenant_id, id)</c> — so a store where two tenants share a stream id returned whichever row
+    /// the scan reached first, with nothing saying which tenant it belonged to. Polecat fixed the same
+    /// thing outright in polecat#593.
+    /// </para>
+    /// </remarks>
+    Task<StreamMetadata?> IEventStore.GetStreamMetadataAsync(string streamId, string? tenantId, CancellationToken ct)
+    {
+        if (tenantId == null && Options.Tenancy.Cardinality != DatabaseCardinality.Single)
+        {
+            throw storeGlobalReadNotSupported(nameof(IEventStore.GetStreamMetadataAsync));
+        }
+
+        return streamMetadataAsync(null, streamId, tenantId, ct);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>#5383 / jasperfx#810 — one stream's metadata, from the database the caller names.</remarks>
+    Task<StreamMetadata?> IEventStore.GetStreamMetadataAsync(
+        IEventDatabase database, string streamId, string? tenantId, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(database);
+        return streamMetadataAsync(database, streamId, tenantId, ct);
+    }
+
+    private async Task<StreamMetadata?> streamMetadataAsync(
+        IEventDatabase? database, string streamId, string? tenantId, CancellationToken ct)
+    {
+        var scopeByColumn = tenantId != null && eventsAreConjoined;
+
+        await using var session = await openExplorerSessionAsync(database, tenantId).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         // Same shared-column-ordering story as GetRecentStreamsAsync — the leading
@@ -194,16 +346,18 @@ public partial class DocumentStore
         // ordinals are addressed off StreamStateColumnCount so any future change to
         // the shared selector's column count surfaces here as a single update site.
         var schema = Options.EventGraph.DatabaseSchemaName;
+        var tenantFilter = scopeByColumn ? " and tenant_id = @tenant_id" : "";
         var cmd = new NpgsqlCommand(
             $"select id, version, type, timestamp, created, is_archived, tenant_id from {schema}.mt_streams " +
-            "where id = @stream_id limit 1");
+            $"where id = @stream_id{tenantFilter} limit 1");
         cmd.Parameters.AddWithValue("stream_id", parseStreamId(streamId));
+        if (scopeByColumn) cmd.Parameters.AddWithValue("tenant_id", tenantId!);
 
         await using var reader = await session.ExecuteReaderAsync(cmd, ct).ConfigureAwait(false);
         if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
 
         var row = await readStreamRowAsync(reader, ct).ConfigureAwait(false);
-        var tenantId = await reader.IsDBNullAsync(StreamStateColumnCount, ct).ConfigureAwait(false)
+        var rowTenantId = await reader.IsDBNullAsync(StreamStateColumnCount, ct).ConfigureAwait(false)
             ? null
             : reader.GetString(StreamStateColumnCount);
 
@@ -218,7 +372,7 @@ public partial class DocumentStore
             LastSnapshotAt: null,
             LastSnapshotVersion: null,
             row.IsArchived,
-            tenantId,
+            rowTenantId,
             new Dictionary<string, string>(0));
     }
 
@@ -256,19 +410,55 @@ public partial class DocumentStore
     /// </list>
     /// A null <paramref name="tenantId"/> preserves the store-global (across every tenant) query.
     /// </remarks>
-    async IAsyncEnumerable<EventRecord> IEventStore.QueryByTagsAsync(
+    IAsyncEnumerable<EventRecord> IEventStore.QueryByTagsAsync(
+        IReadOnlyDictionary<string, string> tags,
+        string? tenantId,
+        CancellationToken ct)
+    {
+        if (tags == null) throw new ArgumentNullException(nameof(tags));
+
+        // #5383 part 3 — a tag query is a LISTING, so a union across databases is well defined and it
+        // fans out rather than refusing, the same call the recent-streams listing makes.
+        return tenantId == null && Options.Tenancy.Cardinality != DatabaseCardinality.Single
+            ? queryByTagsAcrossDatabasesAsync(tags, ct)
+            : queryByTagsAsync(null, tags, tenantId, ct);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>#5383 / jasperfx#810 — the tag query against one named database.</remarks>
+    IAsyncEnumerable<EventRecord> IEventStore.QueryByTagsAsync(
+        IEventDatabase database,
+        IReadOnlyDictionary<string, string> tags,
+        string? tenantId,
+        CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(database);
+        if (tags == null) throw new ArgumentNullException(nameof(tags));
+
+        return queryByTagsAsync(database, tags, tenantId, ct);
+    }
+
+    private async IAsyncEnumerable<EventRecord> queryByTagsAcrossDatabasesAsync(
+        IReadOnlyDictionary<string, string> tags, [EnumeratorCancellation] CancellationToken ct)
+    {
+        foreach (var database in (await Tenancy.BuildDatabases().ConfigureAwait(false)).OfType<IEventDatabase>())
+        {
+            await foreach (var record in queryByTagsAsync(database, tags, null, ct).WithCancellation(ct).ConfigureAwait(false))
+            {
+                yield return record;
+            }
+        }
+    }
+
+    private async IAsyncEnumerable<EventRecord> queryByTagsAsync(
+        IEventDatabase? database,
         IReadOnlyDictionary<string, string> tags,
         string? tenantId,
         [EnumeratorCancellation] CancellationToken ct)
     {
-        if (tags == null) throw new ArgumentNullException(nameof(tags));
+        var scopeByColumn = tenantId != null && eventsAreConjoined;
 
-        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
-        var scopeByColumn = tenantId != null && !spansSeveralDatabases;
-
-        await using var session = tenantId != null && spansSeveralDatabases
-            ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
-            : openExplorerSession();
+        await using var session = await openExplorerSessionAsync(database, tenantId).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         if (tags.Count == 0) yield break;
@@ -449,7 +639,6 @@ public partial class DocumentStore
         // rows we read. On a single-database store it selects a tenant living inside the one database, and only
         // then does the shard identity carry the tenant suffix.
         var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
-        var shardsAreTenantScoped = tenantId != null && !spansSeveralDatabases;
 
         // #5382. A store with a database per tenant has no default tenant, so a tenant-less call has no
         // single database to read and no session to open: MasterTableTenancy.Default and
@@ -462,9 +651,28 @@ public partial class DocumentStore
             return registryOnlyStatuses();
         }
 
-        await using var session = tenantId != null && spansSeveralDatabases
-            ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
-            : openExplorerSession();
+        return await projectionStatusesAsync(null, tenantId, ct).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// #5383 / jasperfx#810 — real per-database progression, which is what the tenant-less registry
+    /// answer (#5382) deliberately cannot give: that one reports every sequence as 0 because it reads
+    /// nothing, and this is the read that reports what the named database actually holds.
+    /// </remarks>
+    Task<IReadOnlyList<ProjectionStatus>> IEventStore.GetProjectionStatusesAsync(
+        IEventDatabase database, string? tenantId, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(database);
+        return projectionStatusesAsync(database, tenantId, ct);
+    }
+
+    private async Task<IReadOnlyList<ProjectionStatus>> projectionStatusesAsync(
+        IEventDatabase? database, string? tenantId, CancellationToken ct)
+    {
+        var shardsAreTenantScoped = tenantId != null && eventsAreConjoined;
+
+        await using var session = await openExplorerSessionAsync(database, tenantId).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         var schema = Options.EventGraph.DatabaseSchemaName;
@@ -1032,6 +1240,58 @@ public partial class DocumentStore
 
         return database ?? throw new UnknownTenantIdException(tenantIdOrDatabaseIdentifier);
     }
+
+    /// <summary>
+    /// #5383 — the session an explorer read runs on, given the scope the caller named.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Three cases, in the order they are decided: an explicit <paramref name="database"/> wins (the
+    /// database-scoped overloads, jasperfx#810); otherwise a tenant on a multi-database store resolves
+    /// to the database that tenant lives in; otherwise the store's default session.
+    /// </para>
+    /// <para>
+    /// Note this answers only <em>which database</em>. Whether the SQL also carries a
+    /// <c>tenant_id</c> predicate is the independent question <see cref="eventsAreConjoined"/> answers —
+    /// see its remarks for the sharded case that needs both.
+    /// </para>
+    /// </remarks>
+    private async ValueTask<DocumentSessionBase> openExplorerSessionAsync(IEventDatabase? database, string? tenantId)
+    {
+        if (database is not null) return openExplorerSession(requireMartenDatabase(database));
+
+        var spansSeveralDatabases = Options.Tenancy.Cardinality != DatabaseCardinality.Single;
+
+        return tenantId != null && spansSeveralDatabases
+            ? openExplorerSession(await findExplorerDatabaseAsync(tenantId).ConfigureAwait(false))
+            : openExplorerSession();
+    }
+
+    /// <summary>
+    /// #5383 — the Marten database behind an <see cref="IEventDatabase"/> handed to a database-scoped
+    /// read. Every database this store hands out through <c>AllDatabases()</c> is one; anything else is
+    /// a caller mixing stores, which is worth saying plainly rather than a cast exception.
+    /// </summary>
+    private static IMartenDatabase requireMartenDatabase(IEventDatabase database) =>
+        database as IMartenDatabase
+        ?? throw new ArgumentOutOfRangeException(nameof(database),
+            $"'{database.GetType().FullName}' is not a Marten database. Pass one of the databases this "
+            + "store returns from AllDatabases().");
+
+    /// <summary>
+    /// #5383 part 3 — the refusal a STORE-GLOBAL single-answer read gives on a multi-database store.
+    /// </summary>
+    /// <remarks>
+    /// A stream id is unique WITHIN a database and not across them, so there is no merge that produces
+    /// the one answer these signatures return. Answering from whichever database the default session
+    /// resolved is the one option that is indistinguishable from a complete answer, which is the whole
+    /// of jasperfx#810. Listings are different and fan out instead — a union is well defined there.
+    /// </remarks>
+    private NotSupportedException storeGlobalReadNotSupported(string member) =>
+        new($"Store-global {member} cannot answer on this Marten store, whose DatabaseCardinality is "
+            + $"{Options.Tenancy.Cardinality} — it spans several databases, and a stream id is unique "
+            + "within one of them rather than across them. Enumerate AllDatabases() and call the "
+            + $"IEventDatabase overload of {member} per database, or pass a tenant id.");
 
     private DocumentSessionBase openExplorerSession()
     {
