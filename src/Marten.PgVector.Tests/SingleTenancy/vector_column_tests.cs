@@ -5,6 +5,7 @@ using Shouldly;
 using Xunit;
 using System.Threading.Tasks;
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
@@ -82,7 +83,7 @@ public class vector_column_tests : IAsyncLifetime
 
         await using var querySession = _store.QuerySession();
         var results = await querySession.VectorSearchAsync<ProductWithVector>(
-            x => x.Embedding, queryVector, limit: 2, distance: DistanceFunction.L2);
+            x => x.Embedding, queryVector, limit: 2, distance: Neutral.DistanceFunction.L2);
 
         results.Count.ShouldBe(2);
         results[0].Name.ShouldBe("A");

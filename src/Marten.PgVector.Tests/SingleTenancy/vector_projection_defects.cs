@@ -8,6 +8,7 @@ using Shouldly;
 using Xunit;
 using System.Threading.Tasks;
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
@@ -34,7 +35,7 @@ public record ArticleWithABadSelector(Guid ArticleId);
 /// </remarks>
 public class ArticleSearchProjection: VectorProjection
 {
-    public ArticleSearchProjection(IEmbeddingProvider provider)
+    public ArticleSearchProjection(Neutral.IEmbeddingProvider provider)
         : base("article_search_vectors", provider)
     {
     }
@@ -55,7 +56,7 @@ public class ArticleSearchProjection: VectorProjection
 /// </summary>
 public class MismatchedDeleteProjection: VectorProjection
 {
-    public MismatchedDeleteProjection(IEmbeddingProvider provider)
+    public MismatchedDeleteProjection(Neutral.IEmbeddingProvider provider)
         : base("mismatched_vectors", provider)
     {
     }
@@ -119,7 +120,7 @@ public class vector_projection_defects: IAsyncLifetime
         await using (var session = _store.LightweightSession())
         {
             var written = await session.VectorProjectionSearchAsync("article_search_vectors",
-                _embedder.GenerateVector("the body of the article"), 10, DistanceFunction.L2);
+                _embedder.GenerateVector("the body of the article"), 10, Neutral.DistanceFunction.L2);
             written.Single().Id.ShouldBe(articleId);
 
             session.Events.Append(streamId, new ArticleRetracted(articleId));
@@ -128,7 +129,7 @@ public class vector_projection_defects: IAsyncLifetime
 
         await using var query = _store.QuerySession();
         var remaining = await query.VectorProjectionSearchAsync("article_search_vectors",
-            _embedder.GenerateVector("the body of the article"), 10, DistanceFunction.L2);
+            _embedder.GenerateVector("the body of the article"), 10, Neutral.DistanceFunction.L2);
 
         // Without the fix the delete runs against the STREAM id, matches no row, and the retracted
         // article stays in the index forever.

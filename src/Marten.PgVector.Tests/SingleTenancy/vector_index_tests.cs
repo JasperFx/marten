@@ -7,6 +7,7 @@ using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Xunit;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
@@ -132,7 +133,7 @@ public class vector_index_tests : IAsyncLifetime
     ///     The index here is <c>vector_cosine_ops</c>. Asking the same expression for L2 distance
     ///     (<c>&lt;-&gt;</c>) falls back to a sequential scan, with no error anywhere — which is exactly
     ///     what a hand-written index declaration gets wrong, and why the operator class and the query
-    ///     operator are both derived from <see cref="DistanceFunction" />.
+    ///     operator are both derived from <see cref="Neutral.DistanceFunction" />.
     /// </remarks>
     [Fact]
     public async Task an_index_for_another_metric_does_not_serve_this_query()

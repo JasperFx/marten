@@ -4,6 +4,7 @@ using Npgsql;
 using NpgsqlTypes;
 using Pgvector;
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Projection;
 
@@ -27,7 +28,7 @@ public static class VectorProjectionSearchExtensions
         string projectionTableName,
         Vector queryVector,
         int limit = 10,
-        DistanceFunction distance = DistanceFunction.Cosine)
+        Neutral.DistanceFunction distance = Neutral.DistanceFunction.Cosine)
     {
         var store = (DocumentStore)session.DocumentStore;
         var schemaName = store.Options.Events.DatabaseSchemaName;

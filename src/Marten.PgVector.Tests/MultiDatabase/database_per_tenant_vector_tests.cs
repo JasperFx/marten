@@ -10,6 +10,7 @@ using Weasel.Postgresql.Migrations;
 using Xunit;
 using System.Threading.Tasks;
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.MultiDatabase;
 
@@ -203,7 +204,7 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
         // Search tenant1 — should only find tenant1's documents
         await using var q1 = _store.QuerySession(TenantDatabases[0]);
         var results1 = await q1.VectorSearchAsync<ProductWithVector>(
-            x => x.Embedding, queryVector, limit: 10, distance: DistanceFunction.L2);
+            x => x.Embedding, queryVector, limit: 10, distance: Neutral.DistanceFunction.L2);
 
         results1.Count.ShouldBe(2);
         results1.ShouldAllBe(r => r.Name.StartsWith("T1-"));
@@ -212,7 +213,7 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
         // Search tenant2 — should only find tenant2's documents
         await using var q2 = _store.QuerySession(TenantDatabases[1]);
         var results2 = await q2.VectorSearchAsync<ProductWithVector>(
-            x => x.Embedding, queryVector, limit: 10, distance: DistanceFunction.L2);
+            x => x.Embedding, queryVector, limit: 10, distance: Neutral.DistanceFunction.L2);
 
         results2.Count.ShouldBe(1);
         results2[0].Name.ShouldBe("T2-Near");

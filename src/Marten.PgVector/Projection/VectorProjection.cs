@@ -11,7 +11,7 @@ using Npgsql;
 using Pgvector;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
-using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Projection;
 
@@ -25,12 +25,33 @@ namespace Marten.PgVector.Projection;
 /// </summary>
 public abstract class VectorProjection : IProjection
 {
-    private readonly IEmbeddingProvider _provider;
+    private readonly Neutral.IEmbeddingProvider _provider;
     private readonly string _tableName;
     private readonly List<IVectorEventMapping> _mappings = new();
     private readonly Dictionary<Type, IVectorDeleteMapping> _deleteMappings = new();
 
+    /// <summary>
+    ///     ⚠️ The bare name <c>IEmbeddingProvider</c> is aliased to the SHARED contract throughout this
+    ///     file. Marten.PgVector's own legacy interface of that name lives in this very namespace, so an
+    ///     unaliased reference would silently bind to it — and the two differ in what they return, which
+    ///     the compiler catches here and would not catch in a signature.
+    /// </summary>
+    /// <summary>
+    ///     The pre-9.36 constructor, taking Marten.PgVector's own embedding provider.
+    /// </summary>
+    /// <remarks>
+    ///     Adapted onto the shared contract rather than kept as a second embedding path, so there is one
+    ///     place that turns text into vectors and one place that binds them.
+    /// </remarks>
+    [Obsolete(
+        "Supply a JasperFx.Events.Vectors.IEmbeddingProvider instead. This constructor still works and "
+        + "adapts.")]
     protected VectorProjection(string tableName, IEmbeddingProvider provider)
+        : this(tableName, new LegacyEmbeddingProviderAdapter(provider))
+    {
+    }
+
+    protected VectorProjection(string tableName, Neutral.IEmbeddingProvider provider)
     {
         _tableName = tableName;
         _provider = provider;

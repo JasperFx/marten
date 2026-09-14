@@ -7,6 +7,7 @@ using Shouldly;
 using Xunit;
 using System.Threading.Tasks;
 using JasperFx.Events.Vectors;
+using Neutral = JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.ConjoinedTenancy;
 
@@ -120,7 +121,7 @@ public class conjoined_vector_tests : IAsyncLifetime
 
         await using var qa = _store.QuerySession("search_a");
         var resultsA = await qa.VectorSearchAsync<ProductWithVector>(
-            x => x.Embedding, queryVector, limit: 10, distance: DistanceFunction.L2);
+            x => x.Embedding, queryVector, limit: 10, distance: Neutral.DistanceFunction.L2);
 
         // Should only find tenant A's documents
         resultsA.Count.ShouldBe(2);
@@ -129,7 +130,7 @@ public class conjoined_vector_tests : IAsyncLifetime
         // Search tenant B
         await using var qb = _store.QuerySession("search_b");
         var resultsB = await qb.VectorSearchAsync<ProductWithVector>(
-            x => x.Embedding, queryVector, limit: 10, distance: DistanceFunction.L2);
+            x => x.Embedding, queryVector, limit: 10, distance: Neutral.DistanceFunction.L2);
 
         resultsB.Count.ShouldBe(1);
         resultsB[0].Name.ShouldBe("B-Close");
