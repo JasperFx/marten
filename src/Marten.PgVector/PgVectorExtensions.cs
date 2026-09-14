@@ -8,6 +8,7 @@ using NpgsqlTypes;
 using Pgvector;
 using Pgvector.Npgsql;
 using Weasel.Postgresql;
+using JasperFx.Events.Vectors;
 
 namespace Marten.PgVector;
 
@@ -35,33 +36,76 @@ public static class PgVectorExtensions
     /// The vector data is stored as a float array in the JSONB document and queried
     /// via a cast to the vector type.
     /// </summary>
+    /// <summary>
+    ///     The nearest <paramref name="limit" /> documents to <paramref name="queryVector" />, closest
+    ///     first.
+    /// </summary>
+    /// <remarks>
+    ///     Takes <see cref="ReadOnlyMemory{T}" /> rather than a Pgvector type, so the same call reads the
+    ///     same against Marten, Polecat and Fisher — it is what
+    ///     <see cref="JasperFx.Events.Vectors.IEmbeddingProvider" /> hands back.
+    /// </remarks>
     public static async Task<IReadOnlyList<T>> VectorSearchAsync<T>(
         this IQuerySession session,
         Expression<Func<T, object?>> vectorProperty,
+        ReadOnlyMemory<float> queryVector,
+        int limit = 10,
+        DistanceFunction distance = DistanceFunction.Cosine) where T : class
+    {
+        var matches = await session
+            .VectorSearchWithScoresAsync(vectorProperty, queryVector, limit, distance)
+            .ConfigureAwait(false);
+
+        return matches.Select(x => x.Document).ToList();
+    }
+
+    /// <inheritdoc cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, DistanceFunction)" />
+    /// <remarks>The Pgvector-typed spelling, kept so existing call sites still compile.</remarks>
+    public static Task<IReadOnlyList<T>> VectorSearchAsync<T>(
+        this IQuerySession session,
+        Expression<Func<T, object?>> vectorProperty,
         Vector queryVector,
+        int limit = 10,
+        DistanceFunction distance = DistanceFunction.Cosine) where T : class
+        => session.VectorSearchAsync(vectorProperty, queryVector.Memory, limit, distance);
+
+    /// <summary>
+    ///     The nearest <paramref name="limit" /> documents, each with the distance it matched at.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠️ <b>Every metric is a DISTANCE — smaller is closer — including inner product.</b>
+    ///         pgvector's <c>&lt;#&gt;</c> returns the negative inner product for exactly that reason, so
+    ///         the number handed back is directly comparable across the three metrics' orderings and one
+    ///         ascending sort serves all of them.
+    ///     </para>
+    ///     <para>
+    ///         The score is what a caller needs to fuse this leg with another one — a reciprocal-rank
+    ///         fusion reads the ordinal position, but a threshold or a confidence cut needs the value,
+    ///         and recomputing it client-side would mean re-reading every embedding.
+    ///     </para>
+    /// </remarks>
+    public static async Task<IReadOnlyList<VectorMatch<T>>> VectorSearchWithScoresAsync<T>(
+        this IQuerySession session,
+        Expression<Func<T, object?>> vectorProperty,
+        ReadOnlyMemory<float> queryVector,
         int limit = 10,
         DistanceFunction distance = DistanceFunction.Cosine) where T : class
     {
         var store = (DocumentStore)session.DocumentStore;
         var tableName = ((IReadOnlyStoreOptions)store.Options).Schema.For<T>();
 
-        // Build a JSONB path to the vector property. ToJsonKey, not member.Name: the key has to be
-        // the one the serializer actually wrote, so it has to honour both the store's Casing and any
-        // [JsonPropertyName]/[JsonProperty] alias on the member. Reading member.Name lands on the
-        // right key only under Marten's default (Pascal-preserving) casing; under CamelCase every
-        // row's data->>'Embedding' is SQL NULL, the IS NOT NULL clause below filters all of them
-        // out, and this method returns an EMPTY LIST rather than throwing. Marten's patching code
-        // learned exactly this in #5290/#5295 — see PatchExpression.toPath.
         var member = GetMemberInfo(vectorProperty);
+
+        // Build a JSONB path to the vector property. ToJsonKey, not member.Name: the key has to be
+        // spelled the way the serializer wrote it, or the path matches nothing and the search returns
+        // an empty list with no error.
         var jsonPath = member.ToJsonKey(store.Options.Serializer().Casing);
 
         var op = distance.Operator();
-        var dimensions = queryVector.ToArray().Length;
+        var dimensions = queryVector.Length;
 
-        // Build WHERE clause with optional tenant filtering for conjoined tenancy
         var whereClause = $"d.data->>'{jsonPath}' IS NOT NULL";
-        // Apply tenant_id filtering only for conjoined tenancy (shared table with tenant_id column).
-        // For database-per-tenant, isolation is handled by connecting to the tenant's database.
         var tenantId = session.TenantId;
         var isSingleDatabase = store.Options.Tenancy.Cardinality == JasperFx.Descriptors.DatabaseCardinality.Single;
         var hasTenantFilter = isSingleDatabase
@@ -73,19 +117,18 @@ public static class PgVectorExtensions
             whereClause += " AND d.tenant_id = $3";
         }
 
-        // Pass the query vector as its text form ([f1,f2,…]) and cast to vector(N)
-        // server-side instead of binding a Pgvector.Vector parameter. UseVector()
-        // registers a Pgvector.Vector ↔ "vector" OID mapping on the NpgsqlDataSource,
-        // but the data source caches pg_type the first time it opens a connection —
-        // if the "vector" extension is created later (e.g. by Marten's schema
-        // migration on the same data source), the cache is stale and parameter
-        // resolution throws "Cannot resolve 'vector' to a fully qualified datatype
-        // name." Routing through text + an explicit cast makes this race-immune.
-        var sql = $"select d.data from {tableName} d " +
+        // The distance is SELECTED as well as ordered by, so the score comes back with the row rather
+        // than being recomputed. Npgsql can bind a Vector directly, but the data source caches pg_type
+        // the first time it opens a connection -- if the "vector" extension is created later (e.g. by
+        // Marten's schema migration on the same data source), the cache is stale and parameter
+        // resolution throws "Cannot resolve 'vector' to a fully qualified datatype name." Routing
+        // through text + an explicit cast makes this race-immune.
+        var vectorSql = $"(d.data->>'{jsonPath}')::vector({dimensions}) {op} $1::vector({dimensions})";
+        var sql = $"select d.data, {vectorSql} as distance from {tableName} d " +
                   $"WHERE {whereClause} " +
-                  $"ORDER BY (d.data->>'{jsonPath}')::vector({dimensions}) {op} $1::vector({dimensions}) LIMIT $2";
+                  $"ORDER BY {vectorSql} LIMIT $2";
 
-        var results = new List<T>();
+        var results = new List<VectorMatch<T>>();
 
         var database = session.As<QuerySession>().Database;
         await using var conn = database.CreateConnection();
@@ -93,7 +136,10 @@ public static class PgVectorExtensions
 
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
-        cmd.Parameters.Add(new NpgsqlParameter { Value = queryVector.ToString(), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text });
+        cmd.Parameters.Add(new NpgsqlParameter
+        {
+            Value = new Vector(queryVector).ToString(), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text
+        });
         cmd.Parameters.Add(new NpgsqlParameter { Value = limit });
         if (hasTenantFilter)
         {
@@ -108,7 +154,10 @@ public static class PgVectorExtensions
             var json = await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
             var bytes = System.Text.Encoding.UTF8.GetBytes(json);
             var doc = serializer.FromJson<T>(new MemoryStream(bytes));
-            if (doc != null) results.Add(doc);
+            if (doc == null) continue;
+
+            var distanceValue = await reader.GetFieldValueAsync<double>(1).ConfigureAwait(false);
+            results.Add(new VectorMatch<T>(doc, distanceValue));
         }
 
         return results;

@@ -9,6 +9,7 @@ using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 using Xunit;
 using System.Threading.Tasks;
+using JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.MultiDatabase;
 

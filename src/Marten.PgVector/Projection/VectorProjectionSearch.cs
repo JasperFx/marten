@@ -3,6 +3,7 @@ using Marten.Internal.Sessions;
 using Npgsql;
 using NpgsqlTypes;
 using Pgvector;
+using JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Projection;
 

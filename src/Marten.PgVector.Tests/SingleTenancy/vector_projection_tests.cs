@@ -7,6 +7,7 @@ using Pgvector;
 using Shouldly;
 using Xunit;
 using System.Threading.Tasks;
+using JasperFx.Events.Vectors;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
@@ -265,7 +266,7 @@ internal class CallCountingEmbeddingProvider : IEmbeddingProvider
 
     public int Dimensions => _inner.Dimensions;
 
-    public Task<Vector[]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default)
+    public Task<ReadOnlyMemory<float>[]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default)
     {
         _onCall();
         return _inner.GenerateEmbeddingsAsync(texts, ct);
