@@ -10,7 +10,6 @@ using Marten.Internal.Storage;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema.Indexing.FullText;
-using Marten.Storage;
 using Marten.Util;
 using Npgsql;
 using NpgsqlTypes;
@@ -96,7 +95,12 @@ internal static class VectorSearchRunner
         var storage = ((IMartenSession)session).StorageFor<T>();
         var fields = storage.SelectFields();
 
-        var builder = new BatchBuilder { TenantId = session.TenantId };
+        // #5419. An HNSW scan only ever considers hnsw.ef_search candidates, so a caller asking for
+        // more than that got fewer rows than `limit` with no error at all. Resolved BEFORE the
+        // statement is built, because the settings ride in front of it in the same batch.
+        var efSearch = ResolveEfSearch<T>(store.Options, member, limit);
+
+        var builder = await StartBatchAsync(session, efSearch, token).ConfigureAwait(false);
 
         // #5440. The storage's own columns, so its own selector can read the row -- see ReadAsync.
         builder.Append($"select {string.Join(", ", fields)}, ");
@@ -120,11 +124,7 @@ internal static class VectorSearchRunner
 
         var results = new List<Neutral.VectorMatch<T>>();
 
-        // #5419. An HNSW scan only ever considers hnsw.ef_search candidates, so a caller asking for
-        // more than that got fewer rows than `limit` with no error at all.
-        var efSearch = ResolveEfSearch<T>(store.Options, member, limit);
-
-        await foreach (var (doc, extra) in ReadAsync(session, storage, builder, efSearch, token).ConfigureAwait(false))
+        await foreach (var (doc, extra) in ReadAsync(session, storage, builder, token).ConfigureAwait(false))
         {
             results.Add(new Neutral.VectorMatch<T>(doc, extra));
         }
@@ -190,7 +190,7 @@ internal static class VectorSearchRunner
 
         var results = new List<T>();
 
-        await foreach (var (doc, _) in ReadAsync(session, storage, builder, null, token).ConfigureAwait(false))
+        await foreach (var (doc, _) in ReadAsync(session, storage, builder, token).ConfigureAwait(false))
         {
             results.Add(doc);
         }
@@ -342,10 +342,80 @@ internal static class VectorSearchRunner
     }
 
     /// <summary>
+    ///     A batch with this search's HNSW scan settings already in front of it, so the statement the
+    ///     caller appends next runs under them.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         ⚠️ <b>The <c>SET LOCAL</c>s are statements in the SAME batch as the search, and that is
+    ///         the whole reason the search can run on the session's connection at all</b> (#5423
+    ///         over #5419). They cannot be separate round trips: <c>SET LOCAL</c> outside a transaction
+    ///         block is a <c>WARNING</c> and no effect, which would silently put the 40-row truncation
+    ///         #5438 fixed straight back. Postgres runs every statement Npgsql sends between two
+    ///         <c>Sync</c> messages in an <b>implicit transaction block</b>, so a batch is a
+    ///         transaction whether or not the session opened one — the settings take effect for the
+    ///         statement behind them and are discarded when the batch ends. Verified against
+    ///         PostgreSQL 17 / pgvector 0.8.5, and pinned by
+    ///         <c>the_scan_settings_do_not_outlive_the_search</c>.
+    ///     </para>
+    ///     <para>
+    ///         When the session <em>does</em> own a transaction — <c>SessionOptions.ForTransaction</c>,
+    ///         or anything past <c>BeginTransaction</c> — the settings are scoped to THAT transaction
+    ///         instead, so they outlive the statement and end at the session's commit or rollback.
+    ///         That is deliberate and is the safe direction: neither GUC affects anything but an HNSW
+    ///         index scan, a later search sets its own <c>ef_search</c>, and a leftover
+    ///         <c>iterative_scan</c> can only make another scan return MORE of what it was asked for.
+    ///         What matters is that no spelling of this can ride a pooled connection out of the
+    ///         session, which a bare <c>SET</c> would.
+    ///     </para>
+    /// </remarks>
+    private static async Task<BatchBuilder> StartBatchAsync(
+        IQuerySession session, int? efSearch, CancellationToken token)
+    {
+        var builder = new BatchBuilder { TenantId = session.TenantId };
+
+        if (!efSearch.HasValue)
+        {
+            return builder;
+        }
+
+        // Interpolated rather than bound, because a GUC assignment takes a literal -- and it is an
+        // int that Math.Clamp produced, never anything a caller spelled.
+        builder.Append($"SET LOCAL hnsw.ef_search = {efSearch.Value}");
+        builder.StartNewCommand();
+
+        if (await SupportsIterativeScanAsync(session, token).ConfigureAwait(false))
+        {
+            // ⚠️ strict_order rather than relaxed_order, and the difference is not a preference here.
+            // relaxed_order may return rows slightly out of distance order, and VectorMatch<T> promises
+            // nearest-first -- DocumentSearchCompliance asserts the distances come back ascending. A
+            // faster search that breaks its own ordering contract is the wrong trade.
+            //
+            // This is what makes a FILTERED search return `limit` rows: pgvector applies a predicate
+            // AFTER the index scan, so without iterative scan a selective filter still under-returns
+            // however large ef_search is.
+            builder.Append("SET LOCAL hnsw.iterative_scan = strict_order");
+            builder.StartNewCommand();
+        }
+
+        return builder;
+    }
+
+    /// <summary>
     ///     Run a leg and materialise each row through the document storage's own selector, with the
     ///     leg's score read from the column after the storage's.
     /// </summary>
     /// <remarks>
+    ///     <para>
+    ///         ⚠️ <b>Executed through the SESSION rather than a connection of its own</b> (#5423). A
+    ///         search used to open a second pooled connection, which meant it could not see the
+    ///         session's own uncommitted writes — a caller inside <c>SessionOptions.ForTransaction</c>
+    ///         could <c>Store</c> a document, <c>SaveChangesAsync</c>, and then fail to find it with a
+    ///         search on that same session, while <c>Query&lt;T&gt;()</c> found it. Going through
+    ///         <see cref="QuerySession.ExecuteReaderAsync(NpgsqlBatch, CancellationToken)" /> also
+    ///         picks up the session's command timeout, resilience pipeline and
+    ///         <see cref="IMartenSessionLogger" />, none of which a hand-opened connection had.
+    ///     </para>
     ///     <para>
     ///         ⚠️ <b>The storage's selector, never <c>serializer.FromJson&lt;T&gt;</c></b> (#5440). Both
     ///         legs used to select <c>d.data</c> alone and deserialise it as <c>T</c>, so a search over a
@@ -367,53 +437,31 @@ internal static class VectorSearchRunner
         IQuerySession session,
         IDocumentStorage<T> storage,
         BatchBuilder builder,
-        int? efSearch,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken token) where T : notnull
     {
         var selector = (ISelector<T>)storage.BuildSelector((IStorageSession)session);
         var scoreOrdinal = storage.SelectFields().Length;
 
-        var database = session.As<QuerySession>().Database;
-        await using var conn = database.CreateConnection();
-        await conn.OpenAsync(token).ConfigureAwait(false);
-
-        // #5419. The scan settings are SET LOCAL inside a transaction rather than SET on the
-        // connection, so they cannot outlive this one statement.
-        //
-        // ⚠️ That matters even though the connection is opened here and disposed below: it goes back
-        // to Npgsql's POOL, and a bare SET would ride the physical connection into whatever used it
-        // next. Npgsql does reset pooled connections by default, so a SET would usually be discarded
-        // -- "usually" being exactly the kind of thing that turns into a support issue on the store
-        // that turned the reset off.
-        await using var tx = efSearch.HasValue
-            ? await conn.BeginTransactionAsync(token).ConfigureAwait(false)
-            : null;
-
-        if (efSearch.HasValue)
-        {
-            await ApplyScanSettingsAsync(conn, tx!, database, efSearch.Value, token).ConfigureAwait(false);
-        }
-
         await using var batch = builder.Compile();
-        batch.Connection = conn;
-        batch.Transaction = tx;
 
-        await using (var reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false))
+        await using var reader = await session.As<QuerySession>()
+            .ExecuteReaderAsync(batch, token).ConfigureAwait(false);
+
+        // The scan settings StartBatchAsync put in front of the search return no rows, and Npgsql
+        // lands the reader on the first statement that does. Advancing past any field-less result set
+        // rather than trusting that is one line, and it is the difference between this breaking
+        // loudly and returning nothing at all if Npgsql ever surfaces them.
+        while (reader.FieldCount == 0 && await reader.NextResultAsync(token).ConfigureAwait(false))
         {
-            while (await reader.ReadAsync(token).ConfigureAwait(false))
-            {
-                var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
-                var extra = await reader.GetFieldValueAsync<double>(scoreOrdinal, token).ConfigureAwait(false);
-
-                if (document is null) continue;
-                yield return (document, extra);
-            }
         }
 
-        if (tx != null)
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            // Read-only, so this only releases the SET LOCAL scope.
-            await tx.CommitAsync(token).ConfigureAwait(false);
+            var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+            var extra = await reader.GetFieldValueAsync<double>(scoreOrdinal, token).ConfigureAwait(false);
+
+            if (document is null) continue;
+            yield return (document, extra);
         }
     }
 
@@ -463,58 +511,44 @@ internal static class VectorSearchRunner
     /// </remarks>
     private static readonly ConcurrentDictionary<string, bool> _supportsIterativeScan = new();
 
-    private static async Task ApplyScanSettingsAsync(NpgsqlConnection conn, NpgsqlTransaction tx,
-        IMartenDatabase database, int efSearch, CancellationToken token)
-    {
-        await using (var cmd = conn.CreateCommand())
-        {
-            cmd.Transaction = tx;
-            cmd.CommandText = $"SET LOCAL hnsw.ef_search = {efSearch}";
-            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-        }
-
-        if (!await SupportsIterativeScanAsync(conn, tx, database, token).ConfigureAwait(false))
-        {
-            return;
-        }
-
-        // ⚠️ strict_order rather than relaxed_order, and the difference is not a preference here.
-        // relaxed_order may return rows slightly out of distance order, and VectorMatch<T> promises
-        // nearest-first -- DocumentSearchCompliance asserts the distances come back ascending. A
-        // faster search that breaks its own ordering contract is the wrong trade.
-        //
-        // This is what makes a FILTERED search return `limit` rows: pgvector applies a predicate AFTER
-        // the index scan, so without iterative scan a selective filter still under-returns however
-        // large ef_search is.
-        await using (var cmd = conn.CreateCommand())
-        {
-            cmd.Transaction = tx;
-            cmd.CommandText = "SET LOCAL hnsw.iterative_scan = strict_order";
-            await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-        }
-    }
-
     /// <summary>
     ///     Whether this server's pgvector has <c>hnsw.iterative_scan</c>, which arrived in 0.8.0.
     /// </summary>
     /// <remarks>
-    ///     Detected rather than attempted, because pgvector reserves the <c>hnsw</c> GUC prefix: setting
-    ///     a name it does not know is an ERROR, and an error inside the transaction this runs in would
-    ///     abort the search rather than degrade it.
+    ///     <para>
+    ///         Detected rather than attempted, because pgvector reserves the <c>hnsw</c> GUC prefix:
+    ///         setting a name it does not know is an ERROR, and an error inside the batch this decides
+    ///         the shape of would abort the search rather than degrade it.
+    ///     </para>
+    ///     <para>
+    ///         It has to be its own round trip because its answer is what decides whether the
+    ///         <c>SET LOCAL</c> goes into the search's batch at all — but only ever ONE round trip per
+    ///         database for the life of the process, which is why the result is cached by database
+    ///         identifier rather than by store. That is what the old connection-owned version cost
+    ///         too; it simply spent it inside the search's own transaction.
+    ///     </para>
     /// </remarks>
-    private static async Task<bool> SupportsIterativeScanAsync(NpgsqlConnection conn, NpgsqlTransaction tx,
-        IMartenDatabase database, CancellationToken token)
+    private static async Task<bool> SupportsIterativeScanAsync(IQuerySession session, CancellationToken token)
     {
+        var database = session.As<QuerySession>().Database;
+
         if (_supportsIterativeScan.TryGetValue(database.Identifier, out var known))
         {
             return known;
         }
 
-        await using var cmd = conn.CreateCommand();
-        cmd.Transaction = tx;
-        cmd.CommandText = "select extversion from pg_extension where extname = 'vector'";
+        await using var cmd = new NpgsqlCommand("select extversion from pg_extension where extname = 'vector'");
 
-        var raw = await cmd.ExecuteScalarAsync(token).ConfigureAwait(false) as string;
+        string? raw = null;
+        await using (var reader = await session.ExecuteReaderAsync(cmd, token).ConfigureAwait(false))
+        {
+            if (await reader.ReadAsync(token).ConfigureAwait(false) &&
+                !await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
+            {
+                raw = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+            }
+        }
+
         var supported = Version.TryParse(raw, out var version) && version >= new Version(0, 8);
 
         _supportsIterativeScan[database.Identifier] = supported;

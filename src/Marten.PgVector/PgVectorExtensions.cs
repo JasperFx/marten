@@ -106,15 +106,32 @@ public static class PgVectorExtensions
     ///     same against Marten, Polecat and Fisher — it is what
     ///     <see cref="JasperFx.Events.Vectors.IEmbeddingProvider" /> hands back.
     /// </remarks>
-    public static async Task<IReadOnlyList<T>> VectorSearchAsync<T>(
+    public static Task<IReadOnlyList<T>> VectorSearchAsync<T>(
         this IQuerySession session,
         Expression<Func<T, object?>> vectorProperty,
         ReadOnlyMemory<float> queryVector,
         int limit = 10,
         Neutral.DistanceFunction distance = Neutral.DistanceFunction.Cosine) where T : class
+        => session.VectorSearchAsync(vectorProperty, queryVector, limit, distance, CancellationToken.None);
+
+    /// <inheritdoc cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, Neutral.DistanceFunction)" />
+    /// <remarks>
+    ///     ⚠️ <b>A new overload rather than a defaulted <c>token</c> on the one above</b> (#5423). An
+    ///     optional argument is baked into the CALLER's IL, so widening a shipped signature breaks every
+    ///     assembly that was not recompiled with <c>MissingMethodException</c> — see CLAUDE.md. The
+    ///     already-shipped shape keeps all of its defaults and this one takes none, which is also what
+    ///     stops a four-argument call from becoming ambiguous.
+    /// </remarks>
+    public static async Task<IReadOnlyList<T>> VectorSearchAsync<T>(
+        this IQuerySession session,
+        Expression<Func<T, object?>> vectorProperty,
+        ReadOnlyMemory<float> queryVector,
+        int limit,
+        Neutral.DistanceFunction distance,
+        CancellationToken token) where T : class
     {
         var matches = await session
-            .VectorSearchWithScoresAsync(vectorProperty, queryVector, limit, distance)
+            .VectorSearchWithScoresAsync(vectorProperty, queryVector, limit, distance, token)
             .ConfigureAwait(false);
 
         return matches.Select(x => x.Document).ToList();
@@ -129,6 +146,17 @@ public static class PgVectorExtensions
         int limit = 10,
         Neutral.DistanceFunction distance = Neutral.DistanceFunction.Cosine) where T : class
         => session.VectorSearchAsync(vectorProperty, queryVector.Memory, limit, distance);
+
+    /// <inheritdoc cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, Neutral.DistanceFunction, CancellationToken)" />
+    /// <remarks>The Pgvector-typed spelling, with a cancellation token.</remarks>
+    public static Task<IReadOnlyList<T>> VectorSearchAsync<T>(
+        this IQuerySession session,
+        Expression<Func<T, object?>> vectorProperty,
+        Vector queryVector,
+        int limit,
+        Neutral.DistanceFunction distance,
+        CancellationToken token) where T : class
+        => session.VectorSearchAsync(vectorProperty, queryVector.Memory, limit, distance, token);
 
     /// <summary>
     ///     The nearest <paramref name="limit" /> documents, each with the distance it matched at.
@@ -154,6 +182,21 @@ public static class PgVectorExtensions
         Neutral.DistanceFunction distance = Neutral.DistanceFunction.Cosine) where T : class
         => VectorSearchRunner.VectorLegAsync<T>(
             session, vectorProperty, queryVector, limit, distance, filter: null, CancellationToken.None);
+
+    /// <inheritdoc cref="VectorSearchWithScoresAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, Neutral.DistanceFunction)" />
+    /// <remarks>
+    ///     The cancellable spelling. A new overload rather than a defaulted <c>token</c>, for the binary
+    ///     compatibility reason spelled out on <see cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, Neutral.DistanceFunction, CancellationToken)" />.
+    /// </remarks>
+    public static Task<IReadOnlyList<VectorMatch<T>>> VectorSearchWithScoresAsync<T>(
+        this IQuerySession session,
+        Expression<Func<T, object?>> vectorProperty,
+        ReadOnlyMemory<float> queryVector,
+        int limit,
+        Neutral.DistanceFunction distance,
+        CancellationToken token) where T : class
+        => VectorSearchRunner.VectorLegAsync<T>(
+            session, vectorProperty, queryVector, limit, distance, filter: null, token);
 
     private static MemberInfo GetMemberInfo<T>(Expression<Func<T, object?>> expression)
         => VectorSearchRunner.GetMemberInfo(expression);
