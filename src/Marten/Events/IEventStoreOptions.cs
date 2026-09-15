@@ -638,6 +638,7 @@ namespace Marten.Events
         /// </summary>
         bool BuildHStoreTagIndexConcurrently { get; set; }
 
+
         /// <summary>
         /// When enabled, adds heartbeat, agent_status, pause_reason, running_on_node, and
         /// warning/critical-behind-threshold columns to the event progression table for

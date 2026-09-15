@@ -189,7 +189,7 @@ internal class EventsTable: Table
 
         if (events.EnableEventTypeIndex)
         {
-            Indexes.Add(new IndexDefinition("idx_mt_events_event_type_seq_id")
+            Indexes.Add(new IndexDefinition(EventGraph.EventTypeIndexName)
             {
                 Columns = ["type", "seq_id"]
             });
