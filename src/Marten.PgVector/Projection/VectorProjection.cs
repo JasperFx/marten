@@ -43,6 +43,28 @@ namespace Marten.PgVector.Projection;
 ///         same transaction as the shard's progression, so they land together or not at all.
 ///     </para>
 ///     <para>
+///         <b>Both <c>ProjectionLifecycle.Async</c> and <c>ProjectionLifecycle.Inline</c> work</b>, and
+///         <b>Async is the one to prefer in production</b>: embedding is a network round trip to a
+///         model, and inline puts it inside the caller's <c>SaveChangesAsync</c> — lengthening a user's
+///         transaction by however long the provider takes. Inline is correct, not merely tolerated: the
+///         writes are queued onto the caller's unit of work, so they commit with the events or not at
+///         all, and each event is written under its own tenant even when one save spans several
+///         (marten#5439).
+///     </para>
+///     <para>
+///         ⚠️ <b><see cref="Neutral.VectorProjectionMap{TId}.MapFromAggregate{TAggregate}" /> is the
+///         exception and requires Async.</b> It builds its text by aggregating the stream live, which
+///         reads COMMITTED events — inline, that runs before the page it is reacting to has committed
+///         and misses the very event that triggered it.
+///     </para>
+///     <para>
+///         ⚠️ Only the SYNCHRONOUS <see cref="IProjection.Apply" /> overload is unsupported, and that is
+///         a statement about Marten's own plumbing rather than about lifecycles: a model call is
+///         awaitable and there is nothing sensible to do on a thread that cannot await it. Marten routes
+///         both lifecycles through <c>ApplyAsync</c>, so this is not a restriction a user can hit by
+///         choosing Inline.
+///     </para>
+///     <para>
 ///         Register with
 ///         <c>opts.Projections.Add(new MyVectorProjection(provider), ProjectionLifecycle.Async)</c> and
 ///         create the table with
@@ -207,10 +229,15 @@ public abstract class VectorProjection<TId>: IProjection, IValidatedProjection<S
 
     public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
     {
+        // ⚠️ This is about the SYNCHRONOUS overload, not about Inline. Marten routes both lifecycles
+        // through ApplyAsync, so a user choosing Inline never reaches here -- the old message told
+        // them to switch lifecycle, which would not have been the problem and is not the fix.
         throw new NotSupportedException(
-            $"{GetType().FullNameInCode()} calls an embedding model, which is a network round trip, so "
-            + "it runs from the async daemon rather than inline on a caller's transaction. Register it "
-            + "with ProjectionLifecycle.Async.");
+            $"{GetType().FullNameInCode()} calls an embedding model, which is awaitable, so it "
+            + "implements ApplyAsync and not the synchronous IProjection.Apply. Marten calls "
+            + "ApplyAsync for both Inline and Async lifecycles, so if you are seeing this the "
+            + "projection is being driven by something other than Marten's own projection "
+            + "execution.");
     }
 
     public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
