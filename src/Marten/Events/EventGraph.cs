@@ -63,6 +63,20 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </remarks>
     public const string HStoreTagIndexName = "idx_mt_events_tags";
 
+    /// <summary>
+    ///     The name of the composite index over <c>(type, seq_id)</c> added by
+    ///     <see cref="EnableEventTypeIndex" />. Pass it to <see cref="IgnoreIndex" /> to keep the index
+    ///     out of schema migrations and build it yourself.
+    /// </summary>
+    /// <remarks>
+    ///     Same trade as <see cref="HStoreTagIndexName" />: the default <c>CREATE INDEX</c> holds ACCESS
+    ///     EXCLUSIVE on <c>mt_events</c> for the whole build, which on the large event store this option
+    ///     exists for is a write outage rather than a migration — and under
+    ///     <see cref="UseTenantPartitionedEvents" /> there is no <c>CONCURRENTLY</c> to fall back on by
+    ///     hand either, because PostgreSQL refuses it on a partitioned parent.
+    /// </remarks>
+    public const string EventTypeIndexName = "idx_mt_events_event_type_seq_id";
+
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
 
@@ -685,6 +699,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     ///     </para>
     /// </remarks>
     public bool BuildHStoreTagIndexConcurrently { get; set; }
+
 
     /// <summary>
     /// How Dynamic Consistency Boundary (DCB) tags are physically stored. Default is

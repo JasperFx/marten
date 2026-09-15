@@ -275,6 +275,26 @@ This index adds storage overhead and slightly increases write latency on every e
 Only enable it if you experience slow projection rebuilds with type-filtered projections.
 :::
 
+### What it costs to add on a store that already has events
+
+The `CREATE INDEX` above holds `ACCESS EXCLUSIVE` on `mt_events` for the whole build — and the event
+stores this option exists for are the ones with the most rows to scan. On a small store that is a
+moment; on a large one it is a write outage rather than a migration, and it lands during whatever runs
+your schema changes rather than at a time you chose.
+
+Under [tenant-partitioned events](/events/multitenancy) there is no `CREATE INDEX CONCURRENTLY` to
+reach for by hand either: PostgreSQL refuses `CONCURRENTLY` against a partitioned parent outright, and
+the sequence it does accept is three steps — the index created on `ONLY` the parent, one concurrent
+index per partition, and each attached, with the parent staying invalid until the last attach.
+
+So on a large event store, add it deliberately. If you would rather own the index yourself, its name is
+a constant and Marten will then leave it out of the schema diff:
+
+```cs
+opts.Events.EnableEventTypeIndex = true;
+opts.Events.IgnoreIndex(EventGraph.EventTypeIndexName);
+```
+
 Even without the index, the async daemon automatically adapts when event loading times out.
 It will fall back to progressively simpler query strategies:
 
