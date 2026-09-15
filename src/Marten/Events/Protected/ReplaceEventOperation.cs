@@ -45,7 +45,11 @@ internal class ReplaceEventOperation<T> : IStorageOperation, NoDataReturnedCall 
             session.Serializer.WriteTo(buffer, _eventBody);
             builder.AppendParameter(buffer.ToSizedArray(), NpgsqlDbType.Jsonb);
         }
-        builder.Append(", timestamp = now() at time zone 'utc', type = ");
+        // marten#5379 / marten#5136: bare now(), never `now() at time zone 'utc'`. The latter strips
+        // the offset and the naive result is re-read in the session's TimeZone, so on a non-UTC
+        // database a compacted event is re-stamped at the wrong instant. mt_streams.timestamp already
+        // used bare now(); this column is now consistent with it.
+        builder.Append(", timestamp = now(), type = ");
         builder.AppendParameter(_eventTypeName, NpgsqlDbType.Varchar);
         builder.Append(", mt_dotnet_type = ");
         builder.AppendParameter(_dotNetType, NpgsqlDbType.Varchar);
