@@ -191,6 +191,44 @@ public class hybrid_search_tests : IAsyncLifetime
             await query.HybridSearchAsync<Article>(
                 x => x.Embedding, "quantum", Query, options: new HybridSearchOptions(K: 0)));
     }
+
+    /// <summary>
+    ///     ⚠️ #5446 / jasperfx#854: <c>ColumnWeights</c> is REFUSED here rather than ignored.
+    /// </summary>
+    /// <remarks>
+    ///     Marten weights full-text columns at INDEX time through <c>WeightedFullTextIndex</c>, so
+    ///     there is nothing a per-call weight could be applied to. Ignoring it is the dangerous
+    ///     option: a caller who weighted their title column and silently got an unweighted ranking has
+    ///     no way to find out, because the search still returns plausible documents in a plausible
+    ///     order — the same failure shape as the <c>Distance</c> default the shared options record was
+    ///     created to fix.
+    /// </remarks>
+    [Fact]
+    public async Task column_weights_are_refused_by_name_rather_than_ignored()
+    {
+        await using var query = _store.QuerySession();
+
+        var ex = await Should.ThrowAsync<NotSupportedException>(async () =>
+            await query.HybridSearchAsync<Article>(
+                x => x.Embedding, "quantum", Query,
+                options: new HybridSearchOptions(ColumnWeights: [3.0, 1.0])));
+
+        ex.Message.ShouldContain("Marten");
+        ex.Message.ShouldContain("ColumnWeights");
+        ex.Message.ShouldContain("WeightedFullTextIndex");
+    }
+
+    /// <summary>The default is untouched — only a NON-NULL value is refused.</summary>
+    [Fact]
+    public async Task the_default_of_no_column_weights_is_unaffected()
+    {
+        await using var query = _store.QuerySession();
+
+        var results = await query.HybridSearchAsync<Article>(
+            x => x.Embedding, "quantum", Query, options: new HybridSearchOptions(K: 30));
+
+        results.ShouldNotBeEmpty();
+    }
 }
 
 public class Article

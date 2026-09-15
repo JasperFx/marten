@@ -103,6 +103,17 @@ internal static class HybridSearchRunner
         // cannot quietly stop applying one, and the messages cannot drift.
         var depth = options.ResolveCandidateDepth(limit);
 
+        // ⚠️ REFUSED rather than ignored (#5446, jasperfx#854). Marten weights full-text columns at
+        // INDEX time through WeightedFullTextIndex, so there is nothing a per-call weight could be
+        // applied to here. Ignoring it is the one option that is actually dangerous: a caller who
+        // weighted their title column and silently got an unweighted ranking has no way to find out,
+        // because the search still returns plausible documents in a plausible order — the same failure
+        // shape as the Distance default the shared record was created to fix.
+        options.AssertColumnWeightsAreNotSupported(
+            "Marten",
+            "Weight full-text columns at index time with WeightedFullTextIndex instead. Fisher is the "
+            + "store that honours per-call column weights.");
+
         var textLeg = await VectorSearchRunner
             .TextLegAsync(session, searchText, options, depth, filter, token)
             .ConfigureAwait(false);
