@@ -40,11 +40,6 @@ public static class PgVectorExtensions
     }
 
     /// <summary>
-    /// Search for documents by vector similarity using a dedicated vector column.
-    /// The vector data is stored as a float array in the JSONB document and queried
-    /// via a cast to the vector type.
-    /// </summary>
-    /// <summary>
     ///     Declare an HNSW index over a document member's embedding, so
     ///     <see cref="VectorSearchAsync{T}(IQuerySession, Expression{Func{T, object}}, ReadOnlyMemory{float}, int, Neutral.DistanceFunction)" />
     ///     is served by an index rather than a sequential scan.
