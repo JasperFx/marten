@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
@@ -662,6 +663,29 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     [IgnoreDescription]
     public Dictionary<Type, Func<IQuerySession, string, object>> CustomProjectionStorageProviders { get; } = new();
 
+    /// <summary>
+    /// Builds the similarity-search API a session exposes through
+    /// <see cref="JasperFx.Events.Documents.IDocumentReadOperations.Search" />. Null until an optional
+    /// package supplies one — <c>Marten.PgVector</c>'s <c>UsePgVector()</c> is the only one today.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The seam exists because vector search ships in an optional package while the contract it
+    /// satisfies is reached from core Marten's session (jasperfx#842). Core Marten can name
+    /// <see cref="JasperFx.Events.Vectors.IDocumentSearchOperations" /> — it lives in JasperFx.Events,
+    /// which Marten already references — but it cannot name pgvector's implementation without taking a
+    /// dependency on the extension package, which is backwards. So core holds the hole and the package
+    /// fills it, the same shape <see cref="CustomProjectionStorageProviders" /> uses for EF Core.
+    /// </para>
+    /// <para>
+    /// Deliberately a factory over the session rather than a single instance: a search needs the
+    /// session's tenant, its database and its serializer, and a store-wide singleton would have none of
+    /// them.
+    /// </para>
+    /// </remarks>
+    [IgnoreDescription]
+    public Func<IQuerySession, JasperFx.Events.Vectors.IDocumentSearchOperations>? SearchOperations { get; set; }
+
     private int _applyChangesLockId = 4004;
     private bool _shouldApplyChangesOnStartup = false;
     private bool _shouldAssertDatabaseMatchesConfigurationOnStartup = false;
@@ -718,6 +742,16 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     // This is used mostly for testing to provide *some* sort of logging
     // within the async daemon
     internal ILogger? DotNetLogger { get; set; }
+
+    /// <summary>
+    ///     Document type + regConfig pairs already warned about in #5425's unindexed full text fallback.
+    /// </summary>
+    /// <remarks>
+    ///     Per store rather than a static, so the warning fires once for a given store instead of once
+    ///     per process — which would make it depend on which store happened to be built first, and would
+    ///     be untestable.
+    /// </remarks>
+    internal ConcurrentDictionary<(Type, string), bool> WarnedFullTextFallbacks { get; } = new();
 
     /// <summary>
     ///     Configure Marten to create databases for tenants in case databases do not exist or need to be dropped & re-created.

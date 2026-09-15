@@ -18,8 +18,20 @@ public class FakeEmbeddingProvider : Neutral.IEmbeddingProvider
         Dimensions = dimensions;
     }
 
+    /// <summary>
+    ///     Every text handed to the model, in order, across all calls.
+    /// </summary>
+    /// <remarks>
+    ///     A model call is the expensive thing a vector projection does, so "how many times was this
+    ///     embedded" is a fact worth asserting — see marten#5422, where a page holding two writes for one
+    ///     id should cost one call rather than two.
+    /// </remarks>
+    public List<string> RequestedTexts { get; } = [];
+
     public Task<ReadOnlyMemory<float>[]> GenerateEmbeddingsAsync(string[] texts, CancellationToken ct = default)
     {
+        RequestedTexts.AddRange(texts);
+
         var results = new ReadOnlyMemory<float>[texts.Length];
         for (int i = 0; i < texts.Length; i++)
         {

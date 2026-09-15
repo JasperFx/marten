@@ -4,6 +4,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Util;
+using Microsoft.Extensions.Logging;
 using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten.Schema.Indexing.FullText;
@@ -85,9 +86,84 @@ internal static class FullTextIndexResolver
             return index.IndexedTsVector.ApplyTableAliasToDataColumn("d");
         }
 
+        if (index == null)
+        {
+            WarnAboutUnindexedFallback(mapping, regConfig);
+        }
+
         var dataConfig = (index?.DocumentConfig ?? FullTextIndexDefinition.DataDocumentConfig)
             .ApplyTableAliasToDataColumn("d");
 
         return $"to_tsvector('{regConfig}'::regconfig, {dataConfig})";
+    }
+
+    /// <summary>
+    ///     Warn, once per document type and regConfig, when a search falls back to an unindexed
+    ///     <c>to_tsvector</c> over the whole document despite the type having full text indexes (#5425).
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <b>The fallback is correct and quiet, which is the problem.</b> The rows that come back are
+    ///         right; what changes is the query plan — no index can serve
+    ///         <c>to_tsvector(cfg, d.data)</c>, so it becomes a sequential scan that re-parses every
+    ///         document's JSON on every query — and the matching SCOPE, because the whole document is
+    ///         searched rather than the indexed members. It works in development and degrades with table
+    ///         size.
+    ///     </para>
+    ///     <para>
+    ///         ⚠️ <b>Only when the type HAS full text indexes and none of them matched.</b> A type with no
+    ///         index at all is <c>Search()</c> over the whole document, which is a documented, intended
+    ///         Marten feature — warning about it would fire on correct code. The narrow case is almost
+    ///         always a mistake instead: an index registered with one <c>regConfig</c> and a search
+    ///         defaulting to <c>english</c>, which is easiest to hit through
+    ///         <c>HybridSearchAsync</c> where the caller never names a regConfig at all.
+    ///     </para>
+    ///     <para>
+    ///         A warning rather than an exception, deliberately. The searches that take this path work
+    ///         today; failing them would break running applications for a performance defect, on a minor
+    ///         version. Compare <see cref="FindIndex" />, which DOES throw — that case is ambiguous rather
+    ///         than merely slow, and has no correct answer to fall back to.
+    ///     </para>
+    ///     <para>
+    ///         Deduplicated per store rather than globally, so the warning is deterministic for a given
+    ///         store rather than a function of which test ran first.
+    ///     </para>
+    /// </remarks>
+    private static void WarnAboutUnindexedFallback(DocumentMapping? mapping, string regConfig)
+    {
+        if (mapping == null)
+        {
+            return;
+        }
+
+        var declared = mapping.Indexes.OfType<FullTextIndexDefinition>().ToArray();
+        if (declared.Length == 0)
+        {
+            return;
+        }
+
+        var options = mapping.StoreOptions;
+        if (!options.WarnedFullTextFallbacks.TryAdd((mapping.DocumentType, regConfig), true))
+        {
+            return;
+        }
+
+        var logger = options.DotNetLogger
+            ?? options.LogFactory?.CreateLogger(typeof(FullTextIndexResolver));
+
+        if (logger == null || !logger.IsEnabled(LogLevel.Warning))
+        {
+            return;
+        }
+
+        var configured = declared.Select(x => x.RegConfig).Distinct().OrderBy(x => x).Join(", ");
+
+        logger.LogWarning(
+            "Full text search on {DocumentType} looked for a '{RegConfig}' index and found none. "
+            + "Indexed configurations: {Configured}. Falling back to an unindexed scan of the whole "
+            + "document, which cannot use any index and searches every string in the document rather "
+            + "than the indexed members. Register an index for '{RegConfig}', or pass one of the "
+            + "configured values as the search's regConfig.",
+            mapping.DocumentType.FullNameInCode(), regConfig, configured, regConfig);
     }
 }

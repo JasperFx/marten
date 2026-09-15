@@ -45,7 +45,6 @@ namespace Marten.PgVector;
 internal class VectorIndexDefinition: IndexDefinition
 {
     private readonly StoreOptions _options;
-    private readonly System.Reflection.MemberInfo _member;
     private readonly int _dimensions;
 
     public VectorIndexDefinition(
@@ -56,8 +55,9 @@ internal class VectorIndexDefinition: IndexDefinition
         string indexName)
     {
         _options = options;
-        _member = member;
+        Member = member;
         _dimensions = dimensions;
+        Distance = distance;
 
         Name = indexName;
 
@@ -69,6 +69,30 @@ internal class VectorIndexDefinition: IndexDefinition
         Mask = $"? {distance.OpsClass()}";
     }
 
+    /// <summary>The member whose embedding this index covers.</summary>
+    public System.Reflection.MemberInfo Member { get; }
+
+    /// <summary>
+    ///     The embedding's declared length.
+    /// </summary>
+    /// <remarks>
+    ///     Read back by the searches so a query vector of the wrong length is refused BY NAME
+    ///     (jasperfx#842) rather than pushed into the cast, where it is either a Postgres error about
+    ///     dimensions or — over a table with no rows — no error at all and an empty result.
+    /// </remarks>
+    public int Dimensions => _dimensions;
+
+    /// <summary>
+    ///     The metric this index was built for.
+    /// </summary>
+    /// <remarks>
+    ///     Read back by the searches so a caller who passes no metric gets the one the index declared
+    ///     (jasperfx#840) rather than a constant that happens to be right for most corpora. Passing
+    ///     <c>Cosine</c> by default over an <c>L2</c> index is not a slow query, it is a DIFFERENT
+    ///     ordering — and the index is not used either.
+    /// </remarks>
+    public Neutral.DistanceFunction Distance { get; }
+
     /// <summary>
     ///     The indexed expression, built at DDL time from the serializer's casing — see the remarks on
     ///     the class for why this cannot be computed in the constructor.
@@ -77,7 +101,7 @@ internal class VectorIndexDefinition: IndexDefinition
     {
         get
         {
-            var jsonPath = _member.ToJsonKey(_options.Serializer().Casing);
+            var jsonPath = Member.ToJsonKey(_options.Serializer().Casing);
             return [$"((data ->> '{jsonPath}')::vector({_dimensions}))"];
         }
         set

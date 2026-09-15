@@ -154,8 +154,13 @@ public class LegacyProviderProjection : VectorProjection
 
     protected override void Configure(VectorProjectionMapping map)
     {
+        // A mapping is required now: a projection that declares none would read every event and write
+        // nothing, which JasperFx.Events.Vectors' shared map asks a store to refuse rather than run.
+        map.Map<LegacyDocNamed>(e => e.Name);
     }
 }
+
+public record LegacyDocNamed(string Name);
 #pragma warning restore CS0618
 
 public class LegacyDoc
