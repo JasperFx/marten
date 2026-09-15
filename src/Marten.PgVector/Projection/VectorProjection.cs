@@ -35,12 +35,15 @@ namespace Marten.PgVector.Projection;
 ///         of its table, and write the rows.
 ///     </para>
 ///     <para>
-///         ⚠️ <b>The writes go through the session's unit of work, not a connection of this
-///         projection's own</b> (marten#5421). The old code opened its own <c>NpgsqlConnection</c> and
-///         executed the upserts immediately, so an embedding was committed even when the daemon rolled
-///         the page back — leaving the index describing events the store does not have. Queueing them
-///         with <see cref="IDocumentOperations.QueueSqlCommand(string, object[])" /> puts them in the
-///         same transaction as the shard's progression, so they land together or not at all.
+///         ⚠️ <b>Every statement this projection issues goes through the session, not a connection of
+///         its own</b> (marten#5421). The old code opened its own <c>NpgsqlConnection</c> and executed
+///         the upserts immediately, so an embedding was committed even when the daemon rolled the page
+///         back — leaving the index describing events the store does not have. Queueing them with
+///         <see cref="IDocumentOperations.QueueSqlCommand(string, object[])" /> puts them in the same
+///         transaction as the shard's progression, so they land together or not at all; the hash read
+///         that decides whether the model is called at all runs through
+///         <see cref="IQuerySession.ExecuteReaderAsync" /> on the same session — see
+///         <c>ReadHashesAsync</c> for why that is possible even inside the daemon.
 ///     </para>
 ///     <para>
 ///         <b>Both <c>ProjectionLifecycle.Async</c> and <c>ProjectionLifecycle.Inline</c> work</b>, and
@@ -384,12 +387,30 @@ public abstract class VectorProjection<TId>: IProjection, IValidatedProjection<S
     ///         rows converge to lowercase as their content genuinely changes.
     ///     </para>
     ///     <para>
-    ///         ⚠️ <b>The read opens its own connection while the WRITES ride the session's unit of
-    ///         work, and the asymmetry is forced.</b> Marten's daemon session refuses
-    ///         <c>IQuerySession.Connection</c> outright — "sticky" connections inside a projection are
-    ///         not supported — so a read has nowhere else to go. It is safe: the hashes being compared
-    ///         were committed by earlier pages, and a page's own writes are deduplicated by id before
-    ///         they get here.
+    ///         ⚠️ <b>Read through the SESSION, not a connection of its own</b> (marten#5421). The
+    ///         obvious reading of Marten's daemon session is that a projection cannot read through it
+    ///         at all: <c>ProjectionDocumentSession</c> overrides <c>IQuerySession.Connection</c> to
+    ///         throw outright, because "sticky" connections inside a projection are not supported.
+    ///         That refusal is only of the CONNECTION — <see cref="IQuerySession.ExecuteReaderAsync" />
+    ///         is not overridden and works, so a read has somewhere to go after all and the last
+    ///         hand-opened connection in this class is gone.
+    ///     </para>
+    ///     <para>
+    ///         What that buys differs by lifecycle, and the INLINE half is the one with teeth. Inline,
+    ///         <paramref name="operations" /> is the caller's own session, so the read now runs on the
+    ///         connection its writes are enlisted in: a caller inside
+    ///         <c>SessionOptions.ForTransaction</c> who calls <c>SaveChangesAsync</c> twice used to
+    ///         have the second pass read from a connection that could not see the first pass's
+    ///         embeddings, so every one of them was re-embedded at the provider's meter. Under the
+    ///         async daemon the session's lifetime opens a connection per read regardless, so nothing
+    ///         moves there except that the read now carries the session's command timeout, resilience
+    ///         pipeline and <c>IMartenSessionLogger</c>.
+    ///     </para>
+    ///     <para>
+    ///         It still cannot see this page's OWN writes, which are queued on the unit of work and not
+    ///         yet flushed — and it does not need to: a page is deduplicated by id in event order by
+    ///         <see cref="Neutral.VectorEmbeddingPlan{TId}.Build" /> before it gets here, so there is no
+    ///         torn state of its own page to miss.
     ///     </para>
     /// </remarks>
     private static async Task<IReadOnlyDictionary<TId, string>> ReadHashesAsync(
@@ -399,25 +420,21 @@ public abstract class VectorProjection<TId>: IProjection, IValidatedProjection<S
         var hashes = new Dictionary<TId, string>();
         if (ids.Count == 0) return hashes;
 
-        await using var conn = operations.Database.CreateConnection();
-        await conn.OpenAsync(token).ConfigureAwait(false);
-
-        await using var cmd = conn.CreateCommand();
-
         // marten#5420. The hash is what decides whether the model is called at all, so reading it
         // across tenants is not merely a leak: another tenant's matching hash makes this tenant's
         // write look unnecessary, and it is SKIPPED -- leaving that tenant with no row of its own and
         // nothing to report it.
-        cmd.CommandText = tenantId is null
+        await using var cmd = new NpgsqlCommand(tenantId is null
             ? $"SELECT id, content_hash FROM {qualifiedTable} WHERE id = ANY($1)"
-            : $"SELECT id, content_hash FROM {qualifiedTable} WHERE id = ANY($1) AND tenant_id = $2";
+            : $"SELECT id, content_hash FROM {qualifiedTable} WHERE id = ANY($1) AND tenant_id = $2");
+
         cmd.Parameters.Add(new NpgsqlParameter { Value = ids.ToArray() });
         if (tenantId is not null)
         {
             cmd.Parameters.Add(new NpgsqlParameter { Value = tenantId });
         }
 
-        await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+        await using var reader = await operations.ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             var id = await reader.GetFieldValueAsync<TId>(0, token).ConfigureAwait(false);
