@@ -665,11 +665,16 @@ came from, and searches read from the session's database.
 ### Projection limitations
 
 - **Async execution.** The synchronous `IProjection.Apply` overload throws; the projection only runs through its async path.
-- **The hash read opens its own connection.** Marten's daemon session refuses `IQuerySession.Connection` outright — "sticky" connections inside a projection are not supported — so the read of the current content hashes cannot ride the session. The *writes* do (see below).
 
-### Writes ride the unit of work
+### Everything rides the session <Badge type="tip" text="9.37" />
 
-Since 9.37 the deletes and upserts are queued with `IDocumentOperations.QueueSqlCommand`, so they commit in the same transaction as the shard's progression. Before that the projection opened its own connection and executed them immediately, which meant an embedding survived a page the daemon rolled back — leaving the index describing events the store does not have.
+The deletes and upserts are queued with `IDocumentOperations.QueueSqlCommand`, so they commit in the same transaction as the shard's progression. Before that the projection opened its own connection and executed them immediately, which meant an embedding survived a page the daemon rolled back — leaving the index describing events the store does not have.
+
+The read of the current content hashes — the one thing that decides whether your embedding provider is called at all — goes through the same session. Marten's daemon session refuses `IQuerySession.Connection` outright, because "sticky" connections inside a projection are not supported, but that refusal is only of the connection: `IQuerySession.ExecuteReaderAsync` works, so the read has somewhere to go.
+
+Inline, that means the hash read runs on the connection your writes are enlisted in. If you call `SaveChangesAsync` more than once inside a transaction you opened yourself (`SessionOptions.ForTransaction`), a later pass now sees the embeddings an earlier one wrote and skips them, where a read on a separate connection could not see them and re-embedded every one at your provider's meter. Under the async daemon nothing moves — that session opens a connection per read regardless — except that the read now carries the session's command timeout, resilience pipeline and `IMartenSessionLogger`.
+
+The read never sees the page it is part of, and does not need to: a page is folded down to one write per id, in event order, before the hashes are read.
 
 ## Multi-tenancy
 
