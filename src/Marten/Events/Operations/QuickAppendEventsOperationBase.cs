@@ -44,6 +44,17 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
 
         if (pg is { SqlState: OptimisticVersionMismatchSqlState })
         {
+            // #5454: PrepareEvents sets ExpectedVersionOnServer 0 for a Start, so MT003 there means the id is
+            // already in use — the condition the dedicated mt_streams INSERT reported as a 23505, surfaced as
+            // the same exception type. Non-partitioned only: StartStream_duplicate_id_within_tenant_collides
+            // pins the partitioned path's EventStreamUnexpectedMaxEventIdException on purpose.
+            if (Stream.ActionType == StreamActionType.Start && Events?.UseTenantPartitionedEvents != true)
+            {
+                transformed = new ExistingStreamIdCollisionException(
+                    (object)Stream.Key ?? Stream.Id, Stream.AggregateType);
+                return true;
+            }
+
             transformed = new EventStreamUnexpectedMaxEventIdException(
                 Stream.Key ?? (object)Stream.Id,
                 Stream.AggregateType,

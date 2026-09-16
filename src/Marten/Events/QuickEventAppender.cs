@@ -58,7 +58,24 @@ internal class QuickEventAppender: IEventAppender
             // pick, so partitioning forces the bulk function for every shape.
             var forceBulkFunction = eventGraph.UseTenantPartitionedEvents;
 
-            if (!forceBulkFunction && stream.ActionType == StreamActionType.Start)
+            // #5454: a StartStream's per-event INSERTs draw nextval() without reading it back, so the events
+            // keep Sequence 0 and TryCreateTombstoneBatch skips them — a failure later in the same batch then
+            // leaves a permanent gap, which an append to an EXISTING stream never does because the bulk
+            // function returns its sequences. Routing Start through it closes that asymmetry.
+            //
+            // Three things still need the dedicated mt_streams INSERT, and keep the per-event route:
+            //   * AppendMode.Quick — the function stamps (now() at time zone 'utc') and takes no timestamps
+            //     array, so a Start routed through it drops a caller's IEvent.Timestamp, which
+            //     override_timestamp_on_start(mode: Quick) pins.
+            //   * UseArchivedStreamPartitioning — the INSERT routes the row to mt_streams_default, which is
+            //     what makes reuse of an archived stream id legal.
+            //   * EnableStrictStreamIdentityEnforcement — its CTE writes the mt_streams_identity row.
+            var startNeedsDedicatedStreamInsert = eventGraph.AppendMode == EventAppendMode.Quick
+                                                  || eventGraph.UseArchivedStreamPartitioning
+                                                  || eventGraph.EnableStrictStreamIdentityEnforcement;
+
+            if (!forceBulkFunction && startNeedsDedicatedStreamInsert &&
+                stream.ActionType == StreamActionType.Start)
             {
                 // New-stream StartStream stays on the per-event InsertStream +
                 // QuickAppendEventWithVersion route. This is deliberate and NOT
