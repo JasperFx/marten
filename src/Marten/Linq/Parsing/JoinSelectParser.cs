@@ -247,6 +247,14 @@ internal class JoinSelectParser: ExpressionVisitor
 
         if (expression is MemberExpression memberExpr)
         {
+            // Whole side through the GroupJoin result: temp.c — the document itself, not a member of
+            // it. Without this the navigation falls through unchanged and MemberFor() resolves a
+            // member named after the anonymous type's field ("c"), which every row answers as null.
+            if (memberExpr.Expression == _selectManyGroupParam)
+            {
+                return null;
+            }
+
             // Direct access on inner param: o.Name
             if (memberExpr.Expression == _selectManyElementParam)
             {
@@ -450,7 +458,7 @@ internal sealed class AnonProjectionExpander: ExpressionVisitor
     // Set for (x, c) => c, where the projection *is* one of the join's sides. There is nothing to
     // index then, so without this CanExpand is false and every post-SelectMany Where()/OrderBy() is
     // silently dropped rather than routed to a side.
-    private readonly ParameterExpression? _identitySource;
+    private readonly Expression? _identitySource;
 
     public AnonProjectionExpander(LambdaExpression flattenedResultSelector)
     {
@@ -458,6 +466,14 @@ internal sealed class AnonProjectionExpander: ExpressionVisitor
         if (flattenedResultSelector.Body is ParameterExpression identity)
         {
             _identitySource = identity;
+        }
+        else if (flattenedResultSelector.Body is MemberExpression { Expression: ParameterExpression } sideNavigation
+                 && flattenedResultSelector.Parameters.Contains(sideNavigation.Expression))
+        {
+            // (x, _) => x.c — the projection is one whole side reached through the GroupJoin result.
+            // Same case as the bare parameter above: there is nothing to index, but z.Member still has
+            // a source, so post-SelectMany Where()/OrderBy() can be expanded onto that side.
+            _identitySource = sideNavigation;
         }
         else
         {
