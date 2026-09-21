@@ -90,7 +90,7 @@ public abstract class EfCoreMultiStreamProjection<
     }
 
     [JasperFxIgnore]
-    public override ValueTask<(TDoc?, ActionType)> DetermineActionAsync(
+    public override async ValueTask<(TDoc?, ActionType)> DetermineActionAsync(
         IQuerySession session,
         TDoc? snapshot,
         TId identity,
@@ -98,27 +98,40 @@ public abstract class EfCoreMultiStreamProjection<
         IReadOnlyList<IEvent> events,
         CancellationToken cancellation)
     {
-        // Extract the DbContext from the EfCoreProjectionStorage if available
-        TDbContext? dbContext = null;
+        // The projection's own storage already owns a DbContext for this tenant and batch, and the
+        // participant registered alongside it owns its disposal.
         if (identitySetter is EfCoreProjectionStorage<TDoc, TId, TDbContext> efStorage)
         {
-            dbContext = efStorage.DbContext;
+            return await ApplyEventsAsync(snapshot, identity, events, session, efStorage.DbContext,
+                cancellation).ConfigureAwait(false);
         }
 
-        // Fallback: create a DbContext directly (e.g., for Live aggregation)
-        if (dbContext == null)
+        // Fallback: no EF-backed storage arrived, so build a DbContext just for this call.
+        var (dbContext, initialConnection) =
+            session.Database.Create<TDbContext>(ConfigureDbContext, _schemaName);
+
+        if (session is ITransactionParticipantRegistrar registrar)
         {
-            var (ctx, initialConnection) = session.Database.Create<TDbContext>(ConfigureDbContext, _schemaName);
-            dbContext = ctx;
+            registrar.AddTransactionParticipant(
+                new DbContextTransactionParticipant<TDbContext>(dbContext, initialConnection, _schemaName));
 
-            if (session is ITransactionParticipantRegistrar registrar)
-            {
-                registrar.AddTransactionParticipant(
-                    new DbContextTransactionParticipant<TDbContext>(dbContext, initialConnection, _schemaName));
-            }
+            return await ApplyEventsAsync(snapshot, identity, events, session, dbContext, cancellation)
+                .ConfigureAwait(false);
         }
 
-        return ApplyEventsAsync(snapshot, identity, events, session, dbContext, cancellation);
+        // #5457: see the matching comment in EfCoreSingleStreamProjection -- a session that is not
+        // an ITransactionParticipantRegistrar leaves nobody to release the eagerly-opened
+        // connection, so this branch owns what it created.
+        try
+        {
+            return await ApplyEventsAsync(snapshot, identity, events, session, dbContext, cancellation)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            await dbContext.DisposeAsync().ConfigureAwait(false);
+            await initialConnection.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     /// <summary>

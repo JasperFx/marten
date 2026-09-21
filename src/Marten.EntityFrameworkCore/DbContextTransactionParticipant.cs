@@ -37,6 +37,7 @@ internal class DbContextTransactionParticipant<TDbContext>: ITransactionParticip
     private readonly NpgsqlConnection _initialConnection;
     private readonly string? _schemaName;
     private bool _released;
+    private bool _disposed;
 
     public DbContextTransactionParticipant(TDbContext dbContext, NpgsqlConnection initialConnection,
         string? schemaName = null)
@@ -73,17 +74,52 @@ internal class DbContextTransactionParticipant<TDbContext>: ITransactionParticip
         await ReleaseAsync().ConfigureAwait(false);
     }
 
-    public ValueTask DisposeAsync() => ReleaseAsync();
-
-    public void Dispose()
+    /// <summary>
+    /// #5457: the DbContext is disposed here, and only here. It is created once per tenant per
+    /// batch by the EF Core projection's storage factory, and nothing in Marten, the daemon or
+    /// JasperFx ever disposed it -- <c>IProjectionStorage&lt;,&gt;</c> declares no disposal contract at
+    /// all, so the storage that owns the context has nothing to hook. The participant is the one
+    /// object in this graph whose lifetime already matches the context's: the daemon drains
+    /// <c>ProjectionUpdateBatch._transactionParticipants</c> in its <c>DisposeAsync</c>, on the
+    /// success path and the failure path alike, exactly once per batch.
+    ///
+    /// <para>
+    /// Deliberately NOT released eagerly at the end of <see cref="BeforeCommitAsync"/> the way the
+    /// placeholder connection is. The connection is provably finished with at that point -- it has
+    /// just been swapped out of the context -- whereas the context itself is still reachable by an
+    /// inline projection whose session has not finished, so tearing it down there would be a
+    /// behaviour change rather than a leak fix.
+    /// </para>
+    /// </summary>
+    public async ValueTask DisposeAsync()
     {
-        if (_released)
+        if (_disposed)
         {
             return;
         }
 
-        _released = true;
-        _initialConnection.Dispose();
+        _disposed = true;
+
+        await ReleaseAsync().ConfigureAwait(false);
+        await DbContext.DisposeAsync().ConfigureAwait(false);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (!_released)
+        {
+            _released = true;
+            _initialConnection.Dispose();
+        }
+
+        DbContext.Dispose();
     }
 
     private async ValueTask ReleaseAsync()

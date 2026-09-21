@@ -90,7 +90,7 @@ public abstract class EfCoreSingleStreamProjection<
     }
 
     [JasperFxIgnore]
-    public sealed override ValueTask<(TDoc?, ActionType)> DetermineActionAsync(
+    public sealed override async ValueTask<(TDoc?, ActionType)> DetermineActionAsync(
         IQuerySession session,
         TDoc? snapshot,
         TId identity,
@@ -98,27 +98,43 @@ public abstract class EfCoreSingleStreamProjection<
         IReadOnlyList<IEvent> events,
         CancellationToken cancellation)
     {
-        // Extract the DbContext from the EfCoreProjectionStorage if available
-        TDbContext? dbContext = null;
+        // The projection's own storage already owns a DbContext for this tenant and batch, and the
+        // participant registered alongside it owns its disposal.
         if (identitySetter is EfCoreProjectionStorage<TDoc, TId, TDbContext> efStorage)
         {
-            dbContext = efStorage.DbContext;
+            return await ApplyEventsAsync(snapshot, identity, events, session, efStorage.DbContext,
+                cancellation).ConfigureAwait(false);
         }
 
-        // Fallback: create a DbContext directly (e.g., for Live aggregation)
-        if (dbContext == null)
+        // Fallback: no EF-backed storage arrived, so build a DbContext just for this call. Live
+        // aggregation takes this route on every AggregateStreamAsync, with a NulloIdentitySetter.
+        var (dbContext, initialConnection) =
+            session.Database.Create<TDbContext>(ConfigureDbContext, _schemaName);
+
+        if (session is ITransactionParticipantRegistrar registrar)
         {
-            var (ctx, initialConnection) = session.Database.Create<TDbContext>(ConfigureDbContext, _schemaName);
-            dbContext = ctx;
+            registrar.AddTransactionParticipant(
+                new DbContextTransactionParticipant<TDbContext>(dbContext, initialConnection, _schemaName));
 
-            if (session is ITransactionParticipantRegistrar registrar)
-            {
-                registrar.AddTransactionParticipant(
-                    new DbContextTransactionParticipant<TDbContext>(dbContext, initialConnection, _schemaName));
-            }
+            return await ApplyEventsAsync(snapshot, identity, events, session, dbContext, cancellation)
+                .ConfigureAwait(false);
         }
 
-        return ApplyEventsAsync(snapshot, identity, events, session, dbContext, cancellation);
+        // #5457: a plain IQuerySession is NOT an ITransactionParticipantRegistrar, so on that route
+        // the participant above would have had no owner and nothing would ever have released these.
+        // Create opens the connection eagerly whenever a schema name is configured -- which it always
+        // is, DatabaseSchemaName defaulting to "public" -- so an unowned context here is a backend
+        // per live aggregation. We created them, so we dispose them.
+        try
+        {
+            return await ApplyEventsAsync(snapshot, identity, events, session, dbContext, cancellation)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            await dbContext.DisposeAsync().ConfigureAwait(false);
+            await initialConnection.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     /// <summary>
