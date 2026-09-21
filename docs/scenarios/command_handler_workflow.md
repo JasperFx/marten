@@ -6,6 +6,11 @@ Wolverine [Aggregate Handler Workflow](https://wolverinefx.net/guide/durability/
 the `FetchForWriting()` API under the covers that is introduced in this topic.
 :::
 
+::: tip
+A command handler that takes an `IEventStream<T>` can be unit tested against a `StubEventStream<T>`
+with no database at all — see [Unit Testing Event Handlers](/testing/unit-testing-event-handlers).
+:::
+
 So you're using Marten's event sourcing functionality within some kind architecture (CQRS maybe?) where your business logic needs to emit events modeling
 business state changes based on external inputs (commands). These commands are most likely working on a single event stream at one time. Your business logic
 will probably need to evaluate the incoming command against the current state of the event stream to either decide what events should be created, or to reject
