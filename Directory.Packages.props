@@ -613,15 +613,28 @@
          all_exceptions_should_derive_from_MartenException keeps Marten on its own hierarchy until
          Marten 10, and C# has single inheritance. The lift is inert here, which is the intent.
          Also jasperfx#790, a daemon race in the shared compliance suites. -->
-    <PackageVersion Include="JasperFx" Version="2.72.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.72.0" />
+    <!-- JasperFx 2.73.2 (from 2.72.0, spanning 2.73.0 and 2.73.1). Marten takes this bump for one
+         thing it consumes directly:
+         (a) jasperfx#858/#862 - JasperFx.Events.StubEventStream&lt;T&gt;, a store-agnostic unit-test
+         stand-in for IEventStream&lt;T&gt;. marten#5455/#5458 document it, and Marten's own
+         Marten.Events.StubEventStream&lt;T&gt; is now a thin subclass of it so there is one
+         implementation rather than two types of the same name behaving slightly differently.
+         ⚠️ Do NOT pin 2.73.0: jasperfx#859/#863 dropped EventModelClaim's two-argument constructor
+         there and restored it in 2.73.1. Nothing in Marten binds that type today, but the floor is
+         2.73.1 for anyone who does.
+         Also rides along, inert here: jasperfx#859/#861 (an event-model source disagreement names
+         the source, not just the rung), jasperfx#853/#860 (ModelCollapse carries its service and
+         model names as structured data) and wolverine#4486 (a `codegen test` fix for AotRoots
+         naming a sibling generated type). -->
+    <PackageVersion Include="JasperFx" Version="2.73.2" />
+    <PackageVersion Include="JasperFx.Events" Version="2.73.2" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.72.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.73.2" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -640,11 +653,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.72.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.73.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.72.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.73.2" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

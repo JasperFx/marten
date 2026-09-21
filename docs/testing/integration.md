@@ -1,5 +1,10 @@
 # Integration testing
 
+::: tip
+For the other half of the suite — testing what a command handler *decides*, with no database at
+all — see [Unit Testing Event Handlers](/testing/unit-testing-event-handlers).
+:::
+
 This documentation aims to guide you through the process of performing integration tests with Marten. We will go through setting up the host using [Alba](https://jasperfx.github.io/alba/), integrating with [Wolverine](https://wolverinefx.net), and testing event projections. The examples provided will leverage [Alba](https://jasperfx.github.io/alba/) and [xUnit](https://xunit.net/) for testing, but integration testing should be perfectly possible using Microsoft's [WebapplicationFactory](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests) and other testing frameworks like NUnit.
 
 ## Setting Up The Database Using Docker

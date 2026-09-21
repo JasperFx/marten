@@ -1,27 +1,28 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using JasperFx.Events;
-
 namespace Marten.Events;
 
 /// <summary>
 /// A testing standin fake for IEventStream that might be helpful in
-/// unit testing
+/// unit testing.
 /// </summary>
-/// <typeparam name="T"></typeparam>
-public class StubEventStream<T> : IEventStream<T> where T : notnull
+/// <remarks>
+/// <para>
+/// #5458: this is now a thin subclass of <see cref="JasperFx.Events.StubEventStream{T}" />, which
+/// reads identically across Marten, Polecat and Fisher. Everything except the
+/// <see cref="StoreOptions" /> overload below is inherited, so existing tests keep compiling and
+/// there is one implementation to maintain. New tests should prefer the JasperFx type directly
+/// unless they need Marten-specific event type aliases; this one is expected to be marked obsolete
+/// on the next major.
+/// </para>
+/// </remarks>
+/// <typeparam name="T">The aggregate type</typeparam>
+public class StubEventStream<T>: JasperFx.Events.StubEventStream<T> where T : notnull
 {
     /// <summary>
-    /// Start from an existing aggregate -- or null
+    /// Start from an existing aggregate -- or null for a stream that does not exist yet
     /// </summary>
     /// <param name="aggregate"></param>
-    public StubEventStream(T? aggregate)
+    public StubEventStream(T? aggregate): base(aggregate, new StoreOptions().EventGraph)
     {
-        Aggregate = aggregate;
-
-        EventGraph = new EventGraph(new StoreOptions());
     }
 
     /// <summary>
@@ -31,51 +32,14 @@ public class StubEventStream<T> : IEventStream<T> where T : notnull
     /// </summary>
     /// <param name="aggregate"></param>
     /// <param name="options"></param>
-    public StubEventStream(T? aggregate, StoreOptions options)
+    /// <remarks>
+    /// #5458: this used to build a brand new <see cref="EventGraph" /> from the options, which has
+    /// its own empty event type cache -- so an alias registered through
+    /// <c>options.Events.MapEventType&lt;T&gt;("...")</c> never reached the stream, and
+    /// <see cref="JasperFx.Events.StubEventStream{T}.Events" /> reported the conventional name
+    /// anyway. It now uses the options' own graph, which is the one the aliases were configured on.
+    /// </remarks>
+    public StubEventStream(T? aggregate, StoreOptions options): base(aggregate, options.EventGraph)
     {
-        Aggregate = aggregate;
-
-        EventGraph = new EventGraph(options);
-    }
-
-    internal EventGraph EventGraph { get; }
-
-    public void AppendOne(object @event)
-    {
-        EventsAppended.Add(@event);
-    }
-
-    public void AppendMany(params object[] events)
-    {
-        EventsAppended.AddRange(events);
-    }
-
-    public void AppendMany(IEnumerable<object> events)
-    {
-        EventsAppended.AddRange(events);
-    }
-
-    /// <summary>
-    /// A record of any events appended to this stream
-    /// </summary>
-    public List<object> EventsAppended { get; } = new();
-
-    public T? Aggregate { get; }
-    public long? StartingVersion { get; set; }
-    public long? CurrentVersion { get; set; }
-    public CancellationToken Cancellation { get; } = default;
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public string Key { get; set; } = Guid.NewGuid().ToString();
-
-    public bool AlwaysEnforceConsistency { get; set; }
-
-    public IReadOnlyList<IEvent> Events => EventsAppended.Select(x => EventGraph.BuildEvent(x)).ToList();
-
-    /// <summary>
-    /// No-op in the stub. This method is provided to satisfy the interface contract.
-    /// </summary>
-    public void TryFastForwardVersion()
-    {
-        // Intentionally does nothing in the stub
     }
 }
