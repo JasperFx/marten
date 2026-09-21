@@ -205,6 +205,35 @@ public abstract class VectorProjection<TId>: IProjection, IValidatedProjection<S
     /// </remarks>
     IEnumerable<string> IValidatedProjection<StoreOptions>.ValidateConfiguration(StoreOptions options)
     {
+        // #5451: the class remarks have always said MapFromAggregate requires Async, and nothing
+        // enforced it. Registered Inline, the live aggregation runs inside the caller's
+        // SaveChangesAsync and reads only COMMITTED events, so it cannot see the page it is reacting
+        // to. Measured on an unfixed build: the first save writes NO ROW (the stream has no committed
+        // events yet, so the aggregate is null), and the second writes the text as of the FIRST
+        // event. The embedding and content_text lag one change behind for the life of the stream, the
+        // content hash records that stale text as current, and nothing anywhere fails.
+        //
+        // Only MapFromAggregate is refused. An event-mapped projection takes its text from the event
+        // it was handed, which Inline has in full -- that shape is deliberately supported, and the
+        // class remarks call it "correct, not merely tolerated".
+        if (_map.AggregateType is not null)
+        {
+            foreach (var source in options.Projections.All)
+            {
+                if (source.Lifecycle == ProjectionLifecycle.Async) continue;
+                if (!ReferenceEquals((source as IProjectionWrapper)?.InnerProjection, this)) continue;
+
+                yield return
+                    $"'{source.Name}' is a VectorProjection declaring MapFromAggregate<"
+                    + $"{_map.AggregateType.NameInCode()}>, registered {source.Lifecycle}. That mapping "
+                    + "builds its text by aggregating the stream live, which reads committed events "
+                    + "only -- so inline it runs before the page it is reacting to has committed and "
+                    + "misses the very event that triggered it, leaving the embedding and content_text "
+                    + "one change behind with no error. Register it with ProjectionLifecycle.Async, or "
+                    + "map the text from the event itself with map.Map<TEvent>(...).";
+            }
+        }
+
         if (options.Events.TenancyStyle != TenancyStyle.Conjoined)
         {
             yield break;
