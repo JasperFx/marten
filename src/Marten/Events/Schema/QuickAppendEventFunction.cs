@@ -211,11 +211,18 @@ DECLARE
 	index int;
 	seq {intType};
     actual_tenant varchar;
+    is_new_stream boolean := false;
 	return_value {returnType};{sequenceDecl}
 BEGIN{sequenceResolveUpFront}{expectedVersionCheck}
 	if event_version IS NULL then
 		event_version = 0;
-		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, 0, now(), tenantid);
+		is_new_stream := true;
+		-- #5456 follow-up: insert the FINAL version straight away rather than 0 plus a
+		-- trailing UPDATE of the row we just wrote in this same transaction. That UPDATE
+		-- is a second heap tuple + WAL record per stream creation for no observable gain
+		-- -- nothing outside this transaction can see the intermediate 0. The trailing
+		-- UPDATE below is skipped for this branch via is_new_stream.
+		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, COALESCE(array_length(event_ids, 1), 0), now(), tenantid);
     else
         if stream_is_archived then
             RAISE EXCEPTION 'Attempted to append event to archived stream with Id ''%''.', stream USING ERRCODE = 'MT001';
@@ -258,7 +265,11 @@ BEGIN{sequenceResolveUpFront}{expectedVersionCheck}
 		index := index + 1;
 	end loop;
 
-	update {databaseSchema}.mt_streams set version = event_version, timestamp = now() where {streamsWhere};
+	-- A brand-new stream already carries its final version from the insert above, so the
+	-- UPDATE is only needed when we appended onto a stream that already existed.
+	if not is_new_stream then
+		update {databaseSchema}.mt_streams set version = event_version, timestamp = now() where {streamsWhere};
+	end if;
 
 	return return_value;
 END
