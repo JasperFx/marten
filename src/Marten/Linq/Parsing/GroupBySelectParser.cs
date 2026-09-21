@@ -18,7 +18,7 @@ namespace Marten.Linq.Parsing;
 internal class GroupBySelectParser: ExpressionVisitor
 {
     private readonly ISerializer _serializer;
-    private readonly IQueryableMemberCollection _collection;
+    private readonly Func<Expression, IQueryableMember> _memberFor;
     private readonly LambdaExpression _keySelector;
     private readonly ParameterExpression _groupingParameter;
 
@@ -38,15 +38,21 @@ internal class GroupBySelectParser: ExpressionVisitor
     public ISqlFragment ScalarFragment { get; private set; }
     public bool IsScalar { get; private set; }
 
+    /// <param name="memberFor">
+    /// How a member expression becomes a locator. Defaults to the document's own member collection; a
+    /// GroupJoin hands in a resolver that addresses each side through its CTE alias, because "d." means
+    /// nothing once the FROM is a join of two CTEs.
+    /// </param>
     public GroupBySelectParser(
         ISerializer serializer,
         IQueryableMemberCollection collection,
         LambdaExpression keySelector,
         Expression selectBody,
-        ParameterExpression groupingParameter)
+        ParameterExpression groupingParameter,
+        Func<Expression, IQueryableMember> memberFor = null)
     {
         _serializer = serializer;
-        _collection = collection;
+        _memberFor = memberFor ?? (expression => collection.MemberFor(expression));
         _keySelector = keySelector;
         _groupingParameter = groupingParameter;
 
@@ -66,7 +72,7 @@ internal class GroupBySelectParser: ExpressionVisitor
             var parameters = newExpr.Constructor!.GetParameters();
             for (var i = 0; i < parameters.Length; i++)
             {
-                var member = _collection.MemberFor(newExpr.Arguments[i]);
+                var member = _memberFor(newExpr.Arguments[i]);
                 _keyMembers[parameters[i].Name!] = member;
                 GroupByColumns.Add(member.TypedLocator);
             }
@@ -77,7 +83,7 @@ internal class GroupBySelectParser: ExpressionVisitor
             _isCompositeKey = true;
             foreach (var binding in memberInit.Bindings.OfType<MemberAssignment>())
             {
-                var member = _collection.MemberFor(binding.Expression);
+                var member = _memberFor(binding.Expression);
                 _keyMembers[binding.Member.Name] = member;
                 GroupByColumns.Add(member.TypedLocator);
             }
@@ -86,7 +92,7 @@ internal class GroupBySelectParser: ExpressionVisitor
         {
             // Simple key: x => x.Color
             _isCompositeKey = false;
-            _simpleKeyMember = _collection.MemberFor(body);
+            _simpleKeyMember = _memberFor(body);
             GroupByColumns.Add(_simpleKeyMember.TypedLocator);
         }
     }
@@ -239,7 +245,7 @@ internal class GroupBySelectParser: ExpressionVisitor
                 var selectorLambda = ExtractLambda(node.Arguments[1]);
                 if (selectorLambda != null)
                 {
-                    var member = _collection.MemberFor(selectorLambda.Body);
+                    var member = _memberFor(selectorLambda.Body);
                     var sqlOp = methodName == "Average" ? "avg" : methodName.ToLowerInvariant();
                     return $"{sqlOp}({member.TypedLocator})";
                 }
@@ -296,7 +302,7 @@ internal class GroupBySelectParser: ExpressionVisitor
         }
 
         // Simple predicate support: x => x.Flag
-        var member = _collection.MemberFor(lambda.Body);
+        var member = _memberFor(lambda.Body);
         return $"{member.TypedLocator} = True";
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -214,6 +215,35 @@ internal class JoinSelectParser: ExpressionVisitor
     }
 
     /// <summary>
+    /// Resolves a member access in the join's (x, c) space to the member of its own side, addressed
+    /// through that side's CTE alias. Null when the expression is not a member of either side, or is a
+    /// whole side rather than a member of one — neither can be a GROUP BY key or an aggregate argument.
+    /// </summary>
+    public IQueryableMember ResolveAliasedMember(Expression expression)
+    {
+        while (expression is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.TypeAs } unary)
+        {
+            expression = unary.Operand;
+        }
+
+        var classification = ClassifyMemberAccess(expression);
+        if (classification == null)
+        {
+            return null;
+        }
+
+        var isOuter = classification.Value.isOuter;
+        var memberExpr = StripGroupJoinNavigation(expression, isOuter);
+        if (memberExpr == null)
+        {
+            return null;
+        }
+
+        var member = (isOuter ? _outerMembers : _innerMembers).MemberFor(memberExpr);
+        return new CteAliasedMember(member, isOuter ? _outerCteAlias : _innerCteAlias);
+    }
+
+    /// <summary>
     /// Resolves a member access to an ISqlFragment with the correct CTE alias.
     /// </summary>
     private ISqlFragment ResolveMember(Expression expression, bool isOuter)
@@ -391,22 +421,23 @@ internal class CteAliasedFragment: ISqlFragment
 {
     private readonly string _sql;
 
-    public CteAliasedFragment(string cteAlias, string originalLocator)
+    /// <summary>Rewrites the "d." prefix of an IQueryableMember locator to a CTE alias.</summary>
+    public static string Rewrite(string cteAlias, string originalLocator)
     {
-        // Replace the "d." prefix used by IQueryableMember locators with the CTE alias
         if (originalLocator.StartsWith("d."))
         {
-            _sql = cteAlias + "." + originalLocator.Substring(2);
+            return cteAlias + "." + originalLocator.Substring(2);
         }
-        else if (originalLocator.Contains("d."))
-        {
-            // For expressions like CAST(d.data ->> 'X' as type)
-            _sql = originalLocator.Replace("d.", cteAlias + ".");
-        }
-        else
-        {
-            _sql = cteAlias + "." + originalLocator;
-        }
+
+        // For expressions like CAST(d.data ->> 'X' as type)
+        return originalLocator.Contains("d.")
+            ? originalLocator.Replace("d.", cteAlias + ".")
+            : cteAlias + "." + originalLocator;
+    }
+
+    public CteAliasedFragment(string cteAlias, string originalLocator)
+    {
+        _sql = Rewrite(cteAlias, originalLocator);
     }
 
     public void Apply(ICommandBuilder builder)
@@ -684,4 +715,51 @@ internal sealed class GroupJoinOuterNavigationStripper: ExpressionVisitor
 
         return base.VisitMember(node);
     }
+}
+
+
+/// <summary>
+/// One side's member, addressed through that side's CTE alias. A GroupJoin renders its sides as CTEs,
+/// so every locator a downstream clause reuses — a GROUP BY key, an aggregate argument — has to say
+/// which CTE it means instead of the default "d.".
+/// </summary>
+internal sealed class CteAliasedMember: IQueryableMember
+{
+    private readonly IQueryableMember _inner;
+    private readonly string _cteAlias;
+
+    public CteAliasedMember(IQueryableMember inner, string cteAlias)
+    {
+        _inner = inner;
+        _cteAlias = cteAlias;
+        TypedLocator = CteAliasedFragment.Rewrite(cteAlias, inner.TypedLocator);
+        RawLocator = CteAliasedFragment.Rewrite(cteAlias, inner.RawLocator);
+        JSONBLocator = CteAliasedFragment.Rewrite(cteAlias, inner.JSONBLocator);
+        NullTestLocator = CteAliasedFragment.Rewrite(cteAlias, inner.NullTestLocator);
+        LocatorForIncludedDocumentId = CteAliasedFragment.Rewrite(cteAlias, inner.LocatorForIncludedDocumentId);
+    }
+
+    public Type MemberType => _inner.MemberType;
+    public string JsonPathSegment => _inner.JsonPathSegment;
+    public string MemberName => _inner.MemberName;
+    public string TypedLocator { get; }
+    public string RawLocator { get; }
+    public string JSONBLocator { get; }
+    public IQueryableMember[] Ancestors => _inner.Ancestors;
+    public string LocatorForIncludedDocumentId { get; }
+    public string NullTestLocator { get; }
+
+    public string BuildOrderingExpression(Ordering ordering, CasingRule casingRule) =>
+        CteAliasedFragment.Rewrite(_cteAlias, _inner.BuildOrderingExpression(ordering, casingRule));
+
+    public Dictionary<string, object> FindOrPlaceChildDictionaryForContainment(Dictionary<string, object> dict) =>
+        _inner.FindOrPlaceChildDictionaryForContainment(dict);
+
+    public void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict, ConstantExpression constant) =>
+        _inner.PlaceValueInDictionaryForContainment(dict, constant);
+
+    public string SelectorForDuplication(string pgType) =>
+        CteAliasedFragment.Rewrite(_cteAlias, _inner.SelectorForDuplication(pgType));
+
+    public void Apply(ICommandBuilder builder) => builder.Append(TypedLocator);
 }

@@ -109,6 +109,13 @@ public class Bug_groupjoin_outer_projection_and_grouping: BugIntegrationContext
     }
 
     // ---- 2. Grouping over the join ---------------------------------------------------
+    //
+    // Skipped, not deleted: these two pin the shape a GROUP BY over a join has to answer, and they
+    // are what the follow-up work turns green. SelectorStatement already renders GROUP BY generically
+    // after SelectClause.Apply, so the join statement is the right place for it; what is missing is
+    // that CompileGroupJoin never sweeps GroupByData off the Inner chain, and GroupBySelectParser
+    // resolves every member as d.<locator> through its IQueryableMemberCollection where a join needs
+    // <cte alias>.<locator>. See the PR description for the sketch.
 
     [Fact]
     public async Task group_by_over_the_join_counts_and_sums_the_joined_rows()
