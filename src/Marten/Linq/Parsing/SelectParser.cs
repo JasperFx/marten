@@ -420,6 +420,16 @@ public interface ISelectableMember
     void Apply(ICommandBuilder builder, ISerializer serializer);
 }
 
+/// <summary>
+/// #5461: marks a SELECT-list fragment that resolves to SQL NULL when the stored document simply
+/// does not have the underlying key -- as opposed to one that can only be null because the document
+/// really does hold a null there. <see cref="NewObject"/> strips those pairs back out of the
+/// constructed object so an absent key stays absent instead of becoming an explicit JSON null.
+/// </summary>
+internal interface IOmittedWhenNull
+{
+}
+
 internal class NewObject : ISqlFragment
 {
     private readonly ISerializer _serializer;
@@ -457,10 +467,78 @@ internal class NewObject : ISqlFragment
 
     public void Apply(ICommandBuilder builder)
     {
-        builder.Append(" jsonb_build_object(");
-
         var pairs = Members.ToArray();
-        for (int i = 0; i < pairs.Length - 1; i++)
+
+        // #5461: a document that simply does not have the key -- a property added to the document
+        // type after those documents were written -- locates as SQL NULL, and jsonb_build_object()
+        // has no way to leave a pair out. The projection therefore gains a key the stored document
+        // never had, holding an explicit null, and deserializing that null into a non-nullable
+        // value type (bool, int, Guid, an enum) throws -- while the very same document loads fine
+        // as a whole document and projects fine as a bare scalar. jsonb_strip_nulls() puts the
+        // absence back, but it also recurses into object and array values, which would quietly drop
+        // meaningful nulls out of a projected Dictionary<string, T?> or nested document. So only
+        // the pairs that locate a scalar go through the strip; every other pair is built exactly as
+        // it was before.
+        var omitted = pairs.Where(x => isOmittedWhenNull(x.Value)).ToArray();
+        if (omitted.Length == 0)
+        {
+            builder.Append(' ');
+            writeObject(builder, pairs);
+            builder.Append(' ');
+            return;
+        }
+
+        if (omitted.Length == pairs.Length)
+        {
+            builder.Append(" jsonb_strip_nulls(");
+            writeObject(builder, omitted);
+            builder.Append(") ");
+            return;
+        }
+
+        builder.Append(" (");
+        writeObject(builder, pairs.Where(x => !isOmittedWhenNull(x.Value)).ToArray());
+        builder.Append(" || jsonb_strip_nulls(");
+        writeObject(builder, omitted);
+        builder.Append(")) ");
+    }
+
+    /// <summary>
+    /// #5461: true for a fragment whose SQL NULL means "the stored document has no such key" rather
+    /// than "the stored document holds a null here", and whose value is a scalar -- so removing the
+    /// pair cannot reach inside a nested object or array. Collection and child document members are
+    /// deliberately excluded: their values ARE objects and arrays.
+    /// </summary>
+    private static bool isOmittedWhenNull(ISqlFragment fragment)
+    {
+        if (fragment is IOmittedWhenNull)
+        {
+            return true;
+        }
+
+        if (fragment is not IQueryableMember member)
+        {
+            return false;
+        }
+
+        if (fragment is ICollectionMember or IQueryableMemberCollection)
+        {
+            return false;
+        }
+
+        // A null can only break deserialization when the projected member is a non-nullable value
+        // type. Leaving strings and nullable members alone keeps this fix to the case that throws.
+        // Synthetic members -- an array index, say -- carry no MemberType at all, and those keep
+        // the behavior they already had rather than guessing.
+        var memberType = member.MemberType;
+        return memberType is { IsValueType: true } && Nullable.GetUnderlyingType(memberType) == null;
+    }
+
+    private void writeObject(ICommandBuilder builder, KeyValuePair<string, ISqlFragment>[] pairs)
+    {
+        builder.Append("jsonb_build_object(");
+
+        for (var i = 0; i < pairs.Length - 1; i++)
         {
             writeMember(builder, pairs[i]);
             builder.Append(", ");
@@ -468,7 +546,7 @@ internal class NewObject : ISqlFragment
 
         writeMember(builder, pairs.Last());
 
-        builder.Append(") ");
+        builder.Append(")");
     }
 
     private void writeMember(ICommandBuilder builder, KeyValuePair<string, ISqlFragment> pair)

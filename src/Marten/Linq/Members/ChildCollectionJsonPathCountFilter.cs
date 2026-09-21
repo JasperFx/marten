@@ -24,7 +24,7 @@ namespace Marten.Linq.Members;
 /// same scalar on its own, so the expression lives here and the filter composes it.
 /// </para>
 /// </summary>
-internal class ChildCollectionJsonPathCount: ISqlFragment, ICompiledQueryAwareFilter
+internal class ChildCollectionJsonPathCount: ISqlFragment, ICompiledQueryAwareFilter, IOmittedWhenNull
 {
     private readonly ICollectionAware[] _filters;
     private readonly ICollectionMember _member;
