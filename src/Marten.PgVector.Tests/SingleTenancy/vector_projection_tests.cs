@@ -98,14 +98,14 @@ public class vector_projection_tests : IAsyncLifetime
         await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         #region sample_pgvector_vector_projection_search
-        // The shared IEmbeddingProvider returns ReadOnlyMemory<float>, but
-        // VectorProjectionSearchAsync takes a Pgvector.Vector, so wrap the embedding
+        // VectorProjectionSearchAsync<TId> takes the ReadOnlyMemory<float> the shared
+        // IEmbeddingProvider already hands back, so there is nothing to wrap
         var queryEmbedding = await _embedder.GenerateEmbeddingAsync(
             "Widget A fantastic widget for all purposes", TestContext.Current.CancellationToken);
 
-        var results = await session.VectorProjectionSearchAsync(
+        var results = await session.VectorProjectionSearchAsync<Guid>(
             "product_search_vectors",
-            new Vector(queryEmbedding),
+            queryEmbedding,
             limit: 10,
             distance: Neutral.DistanceFunction.L2);
         #endregion

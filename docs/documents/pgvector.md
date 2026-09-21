@@ -245,7 +245,16 @@ var matches = await ((IDocumentReadOperations)session).Search.VectorSearchWithSc
 **The filter is applied before the limit**, not after, so the result is the top-k of the filtered set rather than the filtered remains of the top-k. In a hybrid search it reaches both halves, before each half's `CandidateDepth` — otherwise rows the caller is about to discard would consume the depth and the fused order would be a ranking of a set that includes them.
 
 ::: warning Recall under a selective filter
-pgvector applies the `WHERE` **after** the HNSW index scan, and that scan is bounded by `hnsw.ef_search` (default 40). A selective filter can therefore return **fewer than `limit`** rows even though more matching documents exist — the filter discarded rows the index had already chosen. Raising `ef_search` on the connection, or dropping the index so the search is an exact scan, are the two ways to widen it. Stores that do an exact scan (Fisher) have no such bound; see [marten#5419](https://github.com/JasperFx/marten/issues/5419).
+pgvector applies the `WHERE` **after** the HNSW index scan, so a selective filter can discard rows the index had already chosen and the search returns fewer than `limit`. On an indexed member, Marten handles this for you on pgvector 0.8 and later by setting `hnsw.iterative_scan`, and it sizes `hnsw.ef_search` to the rows each search needs — see [Recall, and what Marten sets for you](#recall-and-what-marten-sets-for-you).
+
+Two cases remain, and in both the filtered search can still under-return:
+
+- **pgvector before 0.8**, which has no `hnsw.iterative_scan`. Raising `ef_search` on the connection widens it.
+- **A search needing more than 1000 rows**, pgvector's hard ceiling for `ef_search`. That is a `limit` above 1000 for a plain search, but a hybrid search asks for its [`CandidateDepth`](#options) instead, which defaults to `max(limit × 4, 50)` — so a hybrid `limit` above 250 already reaches the ceiling. Marten clamps rather than throwing, so the search comes back short without an error.
+
+In both cases, dropping the index so the search is an exact scan removes the bound entirely.
+
+Stores that do an exact scan (Fisher) have no such bound; see [marten#5419](https://github.com/JasperFx/marten/issues/5419).
 :::
 
 ### `distance: null` means the index's metric
@@ -309,7 +318,7 @@ Three things have to line up for PostgreSQL to use the index. None of them raise
   A member with **no** declared index is not length-checked, because there is no declared length to check against — the searches work without an index, which is what makes them fast rather than what makes them possible.
 - **The member must be the one you search.** The indexed expression is built from the same member path and serializer casing that `VectorSearchAsync` uses, so declaring it through `VectorIndex` keeps the two in step.
 
-### Recall, and what Marten sets for you <Badge type="tip" text="9.37" />
+### Recall, and what Marten sets for you <Badge type="tip" text="9.37" /> {#recall-and-what-marten-sets-for-you}
 
 HNSW is approximate: one index scan only ever considers `hnsw.ef_search` candidates, and pgvector defaults that to **40**. Marten sizes it per search, so a search asking for 100 rows gets 100:
 
@@ -399,7 +408,7 @@ Hybrid search uses reciprocal rank fusion (RRF). Each document scores `1 / (K + 
 - **Larger is better.** `HybridMatch<T>.Score` runs the opposite way from `VectorMatch<T>.Distance`. The absolute value is small (at most `2 / (K + 1)`, about 0.033 with the default `K`) and is only useful for comparing results of the same query or applying a floor.
 - **Ties are broken deterministically**: by score, then by each document's best rank in either search, then by id, so the same query returns the same page every time.
 - **The implementation is shared.** `ReciprocalRankFusion.Fuse` in `JasperFx.Events.Vectors` is one implementation for all three stores. It fuses **by key**, so the legs need not be the same document type — which is what lets you fuse a snapshot document carrying the tsvector with a separate embedding document, the shape a vector projection writes.
-- **It is two statements, not one.** The text search and the vector search are separate queries, each reading `CandidateDepth` rows, and they are fused in memory. There is no offset or paging. The vector half is `VectorSearchWithScoresAsync`, so it uses a `VectorIndex` built for `options.Distance`, and it is subject to the `hnsw.ef_search` cap described [above](#hnsw-index).
+- **It is two statements, not one.** The text search and the vector search are separate queries, each reading `CandidateDepth` rows, and they are fused in memory. There is no offset or paging. The vector half is `VectorSearchWithScoresAsync`, so it uses a `VectorIndex` built for `options.Distance`, and Marten sizes `hnsw.ef_search` to that candidate depth — see [Recall, and what Marten sets for you](#recall-and-what-marten-sets-for-you).
 
 ### Options
 
@@ -530,24 +539,26 @@ var matches = await session.VectorProjectionSearchAsync<string>(
     "note_vectors", queryVector, limit: 10);
 ```
 
-The pre-9.37 overload taking a `Pgvector.Vector` and returning `VectorSearchResult` (with a `Guid` `Id` and a `float` `Distance`) is kept for existing call sites:
+A `Guid`-keyed projection, naming the metric rather than taking the `Cosine` default:
 
 <!-- snippet: sample_pgvector_vector_projection_search -->
 <a id='snippet-sample_pgvector_vector_projection_search'></a>
 ```cs
-// The shared IEmbeddingProvider returns ReadOnlyMemory<float>, but
-// VectorProjectionSearchAsync takes a Pgvector.Vector, so wrap the embedding
+// VectorProjectionSearchAsync<TId> takes the ReadOnlyMemory<float> the shared
+// IEmbeddingProvider already hands back, so there is nothing to wrap
 var queryEmbedding = await _embedder.GenerateEmbeddingAsync(
     "Widget A fantastic widget for all purposes", TestContext.Current.CancellationToken);
 
-var results = await session.VectorProjectionSearchAsync(
+var results = await session.VectorProjectionSearchAsync<Guid>(
     "product_search_vectors",
-    new Vector(queryEmbedding),
+    queryEmbedding,
     limit: 10,
     distance: Neutral.DistanceFunction.L2);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.PgVector.Tests/SingleTenancy/vector_projection_tests.cs#L100-L111' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_pgvector_vector_projection_search' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+The pre-9.37 overload taking a `Pgvector.Vector` and returning `VectorSearchResult` (a `Guid` `Id`, a `float` `Distance`, and the same `ContentText`) is kept for existing call sites, and delegates to the generic one.
 
 The table name is unqualified; Marten looks for it in the event store's schema. Results are rows, not documents, so load whatever the ids refer to yourself. `VectorIndex` applies to document tables only, and the projection table has no vector index, so these searches are sequential scans.
 
