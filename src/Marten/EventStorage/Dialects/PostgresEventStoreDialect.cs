@@ -94,6 +94,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             MetadataBindersWithoutSequence = metadataBindersWithoutSequence,
             ConfigureInsertStreamCommand = Adapt(BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid)),
             TransformInsertStreamException = MapInsertStreamException,
+            // #5473 / weasel#596. Rich only — see MapAppendEventException.
+            TransformAppendEventException = MapAppendEventException,
             ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
         };
     }
@@ -148,6 +150,53 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             return new ExistingStreamIdCollisionException((object?)stream.Key ?? stream.Id, stream.AggregateType);
 
         return null;
+    }
+
+    /// <summary>
+    ///     #5473 / weasel#596. The rich append path detects a lost optimistic-concurrency race in the
+    ///     database: the event row insert violates the <c>(stream_id, version)</c> unique key on
+    ///     <c>mt_events</c>. Before this closure existed, the only translation was the store-GLOBAL
+    ///     <c>EventStreamUnexpectedMaxEventIdExceptionTransform</c>, which sees the
+    ///     <see cref="PostgresException" /> and nothing else — so it recovered the stream id by regex
+    ///     over <c>Detail</c>, which Npgsql redacts unless the connection string carries
+    ///     <c>Include Error Detail=true</c> (which a production connection string generally should
+    ///     not), and it could never populate <c>AggregateType</c> at all because it never had the
+    ///     <see cref="StreamAction" />.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The operation knows all of it. <c>Id</c>/<c>Key</c>, <c>AggregateType</c> and
+    ///         <c>ExpectedVersionOnServer</c> come off the stream, so they are correct regardless of
+    ///         redaction. Only <c>actual</c> still depends on the detail: recovering the stream's real
+    ///         current version after the fact would need a second connection, because the transaction
+    ///         is already aborted when the 23505 is raised. Polecat and Fisher avoid that by reading
+    ///         the version in-session before appending, which is the design to copy if Marten ever
+    ///         wants <c>actual</c> here — not a post-hoc query.
+    ///     </para>
+    ///     <para>
+    ///         Installed on the RICH descriptor only. The quick paths raise MT003 from
+    ///         <c>mt_quick_append_events</c> and <c>QuickAppendEventsOperationBase.TryTransform</c>
+    ///         already builds the exception from the <c>StreamAction</c> there.
+    ///     </para>
+    /// </remarks>
+    private static Exception? MapAppendEventException(Exception original, StreamAction stream)
+    {
+        // Unwrap the same way MapInsertStreamException does — the batch may have wrapped it.
+        var pg = original as PostgresException
+                 ?? (original as MartenCommandException)?.InnerException as PostgresException;
+
+        if (pg is null || !EventVersionConstraint.IsVersionCollision(pg))
+        {
+            return null;
+        }
+
+        var (_, actual) = EventVersionConstraint.ReadDetail(pg);
+
+        return new EventStreamUnexpectedMaxEventIdException(
+            (object?)stream.Key ?? stream.Id,
+            stream.AggregateType,
+            stream.ExpectedVersionOnServer ?? -1,
+            actual);
     }
 
     private static bool MatchesStreamCollision(Exception e)
