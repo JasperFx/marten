@@ -96,6 +96,11 @@ internal class TextRankFragment: ISqlFragment
     public TextRankFragment(string vector, string regConfig, TextSearchFunction function, string searchTerm,
         OrderingDirection direction)
     {
+        // GHSA-frqq-p5g3-8jq5. Validate at construction as well as in ResolveVector, so the failure
+        // is raised while the query is being built rather than while its SQL is being written, and so
+        // this fragment is safe even if it is ever constructed with a vector from somewhere else.
+        RegConfigValidation.Validate(regConfig);
+
         _vector = vector;
         _regConfig = regConfig;
         _function = function;
@@ -105,9 +110,13 @@ internal class TextRankFragment: ISqlFragment
 
     public void Apply(ICommandBuilder builder)
     {
-        // regConfig is interpolated rather than parameterized, matching FullTextWhereFragment: it ruins
-        // the query plan as a parameter, and it is validated against a strict identifier pattern before
-        // it reaches here. The search TERM is the user value, and it is bound.
+        // regConfig is interpolated rather than parameterized, matching FullTextWhereFragment: binding
+        // it ruins the query plan. It is validated by RegConfigValidation in this fragment's
+        // constructor and again in FullTextIndexResolver.ResolveVector. The search TERM is the user
+        // value, and it is bound.
+        //
+        // This comment used to make that claim while NO validation existed on this path
+        // (GHSA-frqq-p5g3-8jq5) -- it is only true as of the constructor call above.
         var direction = _direction == OrderingDirection.Desc ? " desc" : " asc";
         var sql =
             $"ts_rank({_vector}, {TextRankOrdering.ToSqlFunction(_function)}('{_regConfig}'::regconfig, ?)){direction}";

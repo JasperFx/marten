@@ -105,6 +105,12 @@ public class WeightedFullTextIndexExpression<T>
     /// </summary>
     internal string BuildTsVectorExpression(DocumentMapping mapping, string regConfig)
     {
+        // Defence in depth for the GHSA-frqq-p5g3-8jq5 class. This one is DDL built from an index
+        // registration, so regConfig is normally a compile-time constant and not attacker-reachable
+        // -- but it is still a raw interpolation into SQL, and "normally" is what the ts_rank path
+        // was assumed to be too. Cheap to close, so close it.
+        RegConfigValidation.Validate(regConfig);
+
         return _members
             .Select(m =>
             {

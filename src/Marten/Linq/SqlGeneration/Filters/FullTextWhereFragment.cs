@@ -17,17 +17,6 @@ namespace Marten.Linq.SqlGeneration.Filters;
 
 internal class FullTextWhereFragment: ISqlFragment
 {
-    // PostgreSQL text-search configuration names are stored as identifiers in
-    // pg_ts_config (see https://www.postgresql.org/docs/current/textsearch-configuration.html).
-    // We allow simple unquoted identifiers — optionally schema-qualified — so values
-    // like "english", "french", or "pg_catalog.english" pass through, while anything
-    // containing whitespace, quotes, semicolons, or other punctuation is rejected.
-    // This is a security-critical check: regConfig is interpolated into SQL by Sql below,
-    // so any value that escapes this pattern would be a SQL injection sink.
-    private static readonly Regex _regConfigPattern = new(
-        @"^[a-zA-Z_][a-zA-Z0-9_]{0,62}(\.[a-zA-Z_][a-zA-Z0-9_]{0,62})?$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
     private readonly string _vector;
     private readonly string _regConfig;
     private readonly FullTextSearchFunction _searchFunction;
@@ -36,30 +25,14 @@ internal class FullTextWhereFragment: ISqlFragment
     public FullTextWhereFragment(DocumentMapping? mapping, FullTextSearchFunction searchFunction, string searchTerm,
         string regConfig = FullTextIndexDefinition.DefaultRegConfig)
     {
-        ValidateRegConfig(regConfig);
+        // GHSA-vmw2-qwm8-x84c / GHSA-frqq-p5g3-8jq5: shared with every other regConfig sink.
+        RegConfigValidation.Validate(regConfig);
 
         _regConfig = regConfig;
 
         _vector = FullTextIndexResolver.ResolveVector(mapping, regConfig);
         _searchFunction = searchFunction;
         _searchTerm = searchTerm;
-    }
-
-    private static void ValidateRegConfig(string regConfig)
-    {
-        if (regConfig is null)
-        {
-            throw new ArgumentNullException(nameof(regConfig));
-        }
-
-        if (!_regConfigPattern.IsMatch(regConfig))
-        {
-            throw new ArgumentException(
-                $"Invalid PostgreSQL text-search configuration name '{regConfig}'. " +
-                "regConfig must be a simple PostgreSQL identifier (optionally schema-qualified), " +
-                "matching ^[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)?$.",
-                nameof(regConfig));
-        }
     }
 
     // don't parameterize full-text search config as it ruins the performance with the query plan in PG

@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -570,16 +569,16 @@ internal static class VectorSearchRunner
         };
     }
 
-    private static void AssertRegConfig(string regConfig)
-    {
-        if (!Regex.IsMatch(regConfig, @"^[a-zA-Z_][a-zA-Z0-9_]{0,62}(\.[a-zA-Z_][a-zA-Z0-9_]{0,62})?$"))
-        {
-            throw new ArgumentException(
-                $"Invalid PostgreSQL text-search configuration name '{regConfig}'. It is interpolated "
-                + "into SQL rather than bound, because binding it ruins the query plan, so it has to be "
-                + "a simple identifier.", nameof(regConfig));
-        }
-    }
+    /// <summary>
+    ///     Delegates to the one validator rather than carrying a second copy of the pattern.
+    /// </summary>
+    /// <remarks>
+    ///     GHSA-frqq-p5g3-8jq5 happened because this check lived as a private copy inside
+    ///     <c>FullTextWhereFragment</c> and a new code path could not reuse it, so it simply went
+    ///     unguarded. This assembly had a third copy — identical regex, so not vulnerable, but one
+    ///     edit away from drifting from the original. There is now one pattern, in one place.
+    /// </remarks>
+    private static void AssertRegConfig(string regConfig) => RegConfigValidation.Validate(regConfig);
 
     private sealed class SimpleWhereFragmentHolder: IWhereFragmentHolder
     {
