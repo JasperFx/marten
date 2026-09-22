@@ -33,29 +33,58 @@ var store = DocumentStore.For(opts =>
 {
     // Marten will create any new objects that are missing,
     // attempt to update tables if it can, but drop and replace
-    // tables that it cannot patch.
+    // tables that it cannot patch. The only mode that can lose
+    // a whole table's data.
     opts.AutoCreateSchemaObjects = AutoCreate.All;
 
-    // Marten will create any new objects that are missing or
-    // attempt to update tables if it can. Will *never* drop
-    // any existing objects, so no data loss
+    // Marten will create any new objects that are missing and
+    // update tables in place where it can. It never drops a whole
+    // table -- but the update delta DOES drop columns, indexes and
+    // foreign keys that the configuration no longer declares. For
+    // example, removing a [DuplicateField] drops that column and
+    // the data in it.
     opts.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
 
     // Marten will create missing objects on demand, but
     // will not change any existing schema objects
     opts.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
 
-    // Marten will not create or update any schema objects
-    // and throws an exception in the case of a schema object
-    // not reflecting the Marten configuration
+    // Marten will neither create nor update any schema object --
+    // and will not validate one either. The lazy storage check
+    // simply returns, so a missing or stale table surfaces later
+    // as a raw PostgreSQL error ("42P01 relation does not exist").
+    // Use db-assert / AssertDatabaseMatchesConfigurationAsync()
+    // for the validation. Note that db-apply, "resources setup"
+    // and ApplyAllConfiguredChangesToDatabaseAsync() deliberately
+    // treat None as CreateOrUpdate and migrate anyway.
     opts.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L56-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L58-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As long as you're using a permissive auto creation mode (i.e., not _None_), you should be able to code in your application model
 and let Marten change your development database as needed behind the scenes to match the active configuration.
+
+::: warning
+Two things about these modes are commonly misread, and both matter for choosing a production setting:
+
+* **`CreateOrUpdate` is not "no data loss".** It never drops a whole table, but the update delta drops columns, indexes and
+  foreign keys that the configuration no longer declares on a table it does know about. Removing a `[DuplicateField]` under
+  `CreateOrUpdate` drops that column and the data in it.
+* **`None` does not validate anything.** The lazy `EnsureStorageExistsAsync()` path returns without touching the database, so a
+  missing or stale table surfaces later as a raw PostgreSQL error (`42P01 relation does not exist`) rather than as a Marten
+  message about configuration drift. Validation is a separate, explicit call: `AssertDatabaseMatchesConfigurationAsync()` or the
+  `db-assert` command. And `None` does not block the _apply_ commands either —
+  `ApplyAllConfiguredChangesToDatabaseAsync()`, `db-apply` and `resources setup` deliberately treat `None` as `CreateOrUpdate`
+  and migrate anyway, on the reasoning that you only run those when you mean to.
+:::
+
+::: tip
+`AutoCreateSchemaObjects` defaults to `CreateOrUpdate`. If you never set it, Marten falls back to
+`JasperFxOptions.ActiveProfile.ResourceAutoCreate` — whose **Production** profile also defaults to `CreateOrUpdate`. Nothing
+switches your store to `None` in production unless your application does it explicitly.
+:::
 
 :::tip
 In all of the usages shown below, the database migration functionality is able to function across the databases in a
