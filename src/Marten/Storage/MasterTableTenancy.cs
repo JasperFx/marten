@@ -144,7 +144,10 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
         return list;
     }
 
-    public Tenant Default => throw new NotSupportedException("Default tenant does not supported");
+    // #5479. Was "Default tenant does not supported". The sharded twin
+    // (ShardedTenancy.cs) already had the sentence this one should have had.
+    public Tenant Default => throw new NotSupportedException(
+        "The default tenant is not supported with master-table multi-tenancy. All operations require a tenant id.");
     public IDocumentCleaner Cleaner { get; }
 
     public Tenant GetTenant(string tenantId)
