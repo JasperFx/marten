@@ -987,12 +987,24 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         return value;
     }
 
+    /// <summary>
+    ///     #5474. Thrown when a Guid stream overload is reached on a store configured for string
+    ///     identity, and vice versa. Both messages name the setting that decides it and the overloads
+    ///     to use instead, matching Fisher's wording — the old text stated the fact and left the
+    ///     reader to find both on their own.
+    /// </summary>
+    internal const string GuidIdentityMismatchMessage =
+        "This Marten event store is configured for Guid stream identity (opts.Events.StreamIdentity = StreamIdentity.AsGuid). Use the Guid stream id overloads, or set opts.Events.StreamIdentity = StreamIdentity.AsString if streams should be keyed by string.";
+
+    /// <inheritdoc cref="GuidIdentityMismatchMessage" />
+    internal const string StringIdentityMismatchMessage =
+        "This Marten event store is configured for string stream identity (opts.Events.StreamIdentity = StreamIdentity.AsString). Use the string stream key overloads, or set opts.Events.StreamIdentity = StreamIdentity.AsGuid if streams should be keyed by Guid.";
+
     internal IEventStorage EnsureAsStringStorage(IMartenSession session)
     {
         if (StreamIdentity == StreamIdentity.AsGuid)
         {
-            throw new InvalidOperationException(
-                "This Marten event store is configured to identify streams with Guids");
+            throw new InvalidOperationException(GuidIdentityMismatchMessage);
         }
 
         return session.EventStorage();
@@ -1002,8 +1014,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     {
         if (StreamIdentity == StreamIdentity.AsString)
         {
-            throw new InvalidOperationException(
-                "This Marten event store is configured to identify streams with strings");
+            throw new InvalidOperationException(StringIdentityMismatchMessage);
         }
 
         return session.EventStorage();

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -48,7 +49,7 @@ public class stream_compacting_identity_mismatch: OneOffConfigurationsContext
         var ex = await Should.ThrowAsync<InvalidOperationException>(
             () => session.Events.CompactStreamAsync<Letters>(streamId.ToString()));
 
-        ex.Message.ShouldBe("This Marten event store is configured to identify streams with Guids");
+        ex.Message.ShouldBe(EventGraph.GuidIdentityMismatchMessage);
     }
 
     [Fact]
@@ -69,7 +70,7 @@ public class stream_compacting_identity_mismatch: OneOffConfigurationsContext
         var ex = await Should.ThrowAsync<InvalidOperationException>(
             () => session.Events.CompactStreamAsync<LetterCountsByString>(Guid.NewGuid()));
 
-        ex.Message.ShouldBe("This Marten event store is configured to identify streams with strings");
+        ex.Message.ShouldBe(EventGraph.StringIdentityMismatchMessage);
     }
 
     /// <summary>
@@ -114,7 +115,7 @@ public class stream_compacting_identity_mismatch: OneOffConfigurationsContext
         var ex = await Should.ThrowAsync<InvalidOperationException>(
             () => ((IEventStore)theStore).CompactStreamAsync(streamId.ToString(), CancellationToken.None));
 
-        ex.Message.ShouldBe("This Marten event store is configured to identify streams with Guids");
+        ex.Message.ShouldBe(EventGraph.GuidIdentityMismatchMessage);
     }
 
     [Fact]
@@ -133,7 +134,7 @@ public class stream_compacting_identity_mismatch: OneOffConfigurationsContext
         var ex = await Should.ThrowAsync<InvalidOperationException>(
             () => ((IEventStore)theStore).CompactStreamAsync(Guid.NewGuid(), CancellationToken.None));
 
-        ex.Message.ShouldBe("This Marten event store is configured to identify streams with strings");
+        ex.Message.ShouldBe(EventGraph.StringIdentityMismatchMessage);
     }
 
     /// <summary>
