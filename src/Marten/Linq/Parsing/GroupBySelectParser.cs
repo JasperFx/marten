@@ -373,26 +373,26 @@ internal class HavingExpressionResolver
                 $"Unsupported comparison operator '{binary.NodeType}' in GroupBy HAVING clause")
         };
 
-        var leftSql = ResolveOperand(binary.Left);
-        var rightSql = ResolveOperand(binary.Right);
+        var leftOperand = ResolveOperand(binary.Left);
+        var rightOperand = ResolveOperand(binary.Right);
 
-        return new HavingComparisonFragment(leftSql, op, rightSql);
+        return new HavingComparisonFragment(leftOperand, op, rightOperand);
     }
 
-    private string ResolveOperand(Expression expr)
+    private HavingOperand ResolveOperand(Expression expr)
     {
         // Aggregate call: g.Count(), g.Sum(x => x.Number)
         if (expr is MethodCallExpression method)
         {
-            return ResolveAggregateCall(method)
-                   ?? throw new BadLinqExpressionException(
-                       $"Unsupported method '{method.Method.Name}' in GroupBy HAVING clause");
+            return HavingOperand.ForSql(ResolveAggregateCall(method)
+                                        ?? throw new BadLinqExpressionException(
+                                            $"Unsupported method '{method.Method.Name}' in GroupBy HAVING clause"));
         }
 
         // Constant
         if (expr is ConstantExpression constant)
         {
-            return constant.Value?.ToString() ?? "NULL";
+            return HavingOperand.ForValue(constant.Value);
         }
 
         // Key access: g.Key
@@ -404,13 +404,13 @@ internal class HavingExpressionResolver
                     "Cannot use composite key directly in HAVING clause");
             }
 
-            return _simpleKeyMember!.TypedLocator;
+            return HavingOperand.ForSql(_simpleKeyMember!.TypedLocator);
         }
 
         // Try to evaluate as constant
         if (expr.TryToParseConstant(out var c))
         {
-            return c.Value?.ToString() ?? "NULL";
+            return HavingOperand.ForValue(c.Value);
         }
 
         throw new BadLinqExpressionException(
@@ -447,13 +447,64 @@ internal class HavingExpressionResolver
     }
 }
 
+/// <summary>
+///     One side of a HAVING comparison: either SQL text Marten itself derived from the document model
+///     (an aggregate call, or the group key's locator), or a runtime VALUE captured from the caller's
+///     expression.
+/// </summary>
+/// <remarks>
+///     GHSA-q4xm-rhx9-xjm4. The two used to be the same thing — a <c>string</c> — and a captured value
+///     reached the SQL through <c>ToString()</c> and a raw <c>builder.Append</c>. Marten put no quotes
+///     around it, so a string operand from untrusted input did not even need a quote to break out of:
+///     it supplied the entire literal, and everything after it. Keeping the two cases apart in the type
+///     is what makes the parameterized path the only path a value can take.
+/// </remarks>
+internal readonly struct HavingOperand
+{
+    private HavingOperand(string? sql, object? value, bool isValue)
+    {
+        Sql = sql;
+        Value = value;
+        IsValue = isValue;
+    }
+
+    internal string? Sql { get; }
+    internal object? Value { get; }
+    internal bool IsValue { get; }
+
+    /// <summary>SQL Marten derived from the document model. Never caller text.</summary>
+    internal static HavingOperand ForSql(string sql) => new(sql, null, false);
+
+    /// <summary>A runtime value from the caller's expression. Always parameterized.</summary>
+    internal static HavingOperand ForValue(object? value) => new(null, value, true);
+
+    internal void Apply(ICommandBuilder builder)
+    {
+        if (!IsValue)
+        {
+            builder.Append(Sql!);
+            return;
+        }
+
+        // A null constant cannot be parameterized into `= ?` and still mean anything, so it keeps
+        // rendering as the NULL literal exactly as before. `NULL` is a keyword, not caller text.
+        if (Value is null)
+        {
+            builder.Append("NULL");
+            return;
+        }
+
+        builder.AppendParameter(Value);
+    }
+}
+
 internal class HavingComparisonFragment: ISqlFragment
 {
-    private readonly string _left;
+    private readonly HavingOperand _left;
     private readonly string _op;
-    private readonly string _right;
+    private readonly HavingOperand _right;
 
-    public HavingComparisonFragment(string left, string op, string right)
+    public HavingComparisonFragment(HavingOperand left, string op, HavingOperand right)
     {
         _left = left;
         _op = op;
@@ -462,11 +513,11 @@ internal class HavingComparisonFragment: ISqlFragment
 
     public void Apply(ICommandBuilder builder)
     {
-        builder.Append(_left);
+        _left.Apply(builder);
         builder.Append(" ");
         builder.Append(_op);
         builder.Append(" ");
-        builder.Append(_right);
+        _right.Apply(builder);
     }
 }
 
