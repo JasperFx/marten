@@ -75,6 +75,27 @@ var events = await theSession.Events.QueryAllRawEvents()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L265-L270' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_maybe_archived_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Appending to an Archived Stream
+
+An archived stream is closed to new events. Appending to one fails the transaction with
+`Marten.Exceptions.InvalidStreamOperationException` and the message
+`Attempted to append event to archived stream with Id '{id}'.` — in Rich append mode the stream state is read before the
+append and the check happens in Marten (`RichEventAppender`), and in Quick append mode the `mt_quick_append_events` function
+raises SQLSTATE `MT001` which Marten translates into the same exception. Either way you get one exception type and one
+message, so this does not change with `EventAppendMode`.
+
+There is no un-archive API in Marten. Archiving is a terminal step for a stream — a stream that should keep receiving events
+should not have been archived. Recovering one means flipping `is_archived` back with SQL on both `mt_streams` and
+`mt_events` (and, under [hot/cold partitioning](/events/archiving.html#hot-cold-storage-partitioning), moving the rows back
+out of the archived partitions), which is exactly the kind of direct manipulation the warning at the top of this page
+cautions about.
+
+Note that `StartStream` against an archived stream's id is a **different** failure. The id is still in use, so it is an
+identity collision (`ExistingStreamIdCollisionException`), not an archived-stream error — except under
+`UseArchivedStreamPartitioning`, where the archived row lives in a different partition and the reuse is silently allowed
+unless you also set `EnableStrictStreamIdentityEnforcement`. See
+[Strict Stream Identity After Archive](/events/archiving.html#strict-stream-identity-after-archive) below.
+
 ## Hot/Cold Storage Partitioning <Badge type="tip" text="7.25" />
 
 ::: warning
