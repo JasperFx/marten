@@ -61,13 +61,17 @@ public class StoreOptionsTests
         {
             // Marten will create any new objects that are missing,
             // attempt to update tables if it can, but drop and replace
-            // tables that it cannot patch.
+            // tables that it cannot patch. The only mode that can lose
+            // a whole table's data.
             opts.AutoCreateSchemaObjects = AutoCreate.All;
 
 
-            // Marten will create any new objects that are missing or
-            // attempt to update tables if it can. Will *never* drop
-            // any existing objects, so no data loss
+            // Marten will create any new objects that are missing and
+            // update tables in place where it can. It never drops a whole
+            // table -- but the update delta DOES drop columns, indexes and
+            // foreign keys that the configuration no longer declares. For
+            // example, removing a [DuplicateField] drops that column and
+            // the data in it.
             opts.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
 
 
@@ -75,9 +79,14 @@ public class StoreOptionsTests
             // will not change any existing schema objects
             opts.AutoCreateSchemaObjects = AutoCreate.CreateOnly;
 
-            // Marten will not create or update any schema objects
-            // and throws an exception in the case of a schema object
-            // not reflecting the Marten configuration
+            // Marten will neither create nor update any schema object --
+            // and will not validate one either. The lazy storage check
+            // simply returns, so a missing or stale table surfaces later
+            // as a raw PostgreSQL error ("42P01 relation does not exist").
+            // Use db-assert / AssertDatabaseMatchesConfigurationAsync()
+            // for the validation. Note that db-apply, "resources setup"
+            // and ApplyAllConfiguredChangesToDatabaseAsync() deliberately
+            // treat None as CreateOrUpdate and migrate anyway.
             opts.AutoCreateSchemaObjects = AutoCreate.None;
         });
 
