@@ -26,7 +26,7 @@ public class UnknownEventTypeException: MartenException, IEventFailureContext
     ///     stopped it instead of only its alias.
     /// </summary>
     public UnknownEventTypeException(string eventTypeName, long sequence): base(
-        $"Unknown event type name alias '{eventTypeName}.' You may need to register this event type through StoreOptions.Events.AddEventType(type)")
+        $"Unknown event type name alias '{eventTypeName}'. You may need to register this event type through StoreOptions.Events.AddEventType(type), or set StoreOptions.Projections.Errors.SkipUnknownEvents = true if the daemon should skip events this deployment does not know about")
     {
         EventTypeName = eventTypeName;
         Sequence = sequence;
