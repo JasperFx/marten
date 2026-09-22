@@ -351,7 +351,7 @@ internal static class DocumentStorageDescriptorBuilder
 
         foreach (var b in binders)
         {
-            columns.Add(b.ColumnName);
+            columns.Add($"\"{b.ColumnName}\"");
             if (mode == ConcurrencyMode.Numeric && b is DocumentRevisionBinder<TDoc>)
             {
                 if (mapping.UseVersionFromMatchingStream)
@@ -462,7 +462,7 @@ internal static class DocumentStorageDescriptorBuilder
             }
             else
             {
-                updateAssignments.Add($"{b.ColumnName} = excluded.{b.ColumnName}");
+                updateAssignments.Add($"\"{b.ColumnName}\" = excluded.\"{b.ColumnName}\"");
             }
         }
 
@@ -569,7 +569,7 @@ internal static class DocumentStorageDescriptorBuilder
             }
             else
             {
-                setAssignments.Add($"{b.ColumnName} = {b.ValueSql}");
+                setAssignments.Add($"\"{b.ColumnName}\" = {b.ValueSql}");
             }
         }
 
@@ -585,7 +585,7 @@ internal static class DocumentStorageDescriptorBuilder
         // collides with the first.
         foreach (var pk in partitionPkBinders)
         {
-            whereClauses.Add($"{pk.ColumnName} = ?");
+            whereClauses.Add($"\"{pk.ColumnName}\" = ?");
         }
         if (mode == ConcurrencyMode.Optimistic)
         {

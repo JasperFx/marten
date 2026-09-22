@@ -124,7 +124,7 @@ internal sealed class ClosedShapeBulkLoader<TDoc, TId>: BulkLoader<TDoc, TId>
         var assignments = new List<string>(8) { "data = excluded.data" };
         foreach (var b in _descriptor.WriteBinders)
         {
-            assignments.Add($"{b.ColumnName} = excluded.{b.ColumnName}");
+            assignments.Add($"\"{b.ColumnName}\" = excluded.\"{b.ColumnName}\"");
         }
 
         // When the temp table carries an extra mt_expected_version column
@@ -166,7 +166,7 @@ internal sealed class ClosedShapeBulkLoader<TDoc, TId>: BulkLoader<TDoc, TId>
         var setColumns = new List<string>(8) { "data = source.data" };
         foreach (var b in _descriptor.WriteBinders)
         {
-            setColumns.Add($"{b.ColumnName} = source.{b.ColumnName}");
+            setColumns.Add($"\"{b.ColumnName}\" = source.\"{b.ColumnName}\"");
         }
 
         var join = _descriptor.IsConjoined
