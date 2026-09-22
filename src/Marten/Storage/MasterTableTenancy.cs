@@ -283,10 +283,13 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
     async ValueTask<string> ITenantedSource<string>.FindAsync(string tenantId)
     {
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
-        var connectionString = (string)await _dataSource.Value
-            .CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id and {TenantTable.DisabledColumn} = false")
-            .With("id", tenantId)
-            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false);
+        var (connectionString, disabled) = await readTenantRow(tenantId).ConfigureAwait(false);
+
+        // #5479: a disabled tenant is a tenant this store knows about and is refusing on purpose.
+        if (disabled)
+        {
+            throw new DisabledTenantException(tenantId);
+        }
 
         if (connectionString.IsEmpty())
         {
@@ -447,13 +450,29 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
         _hasAppliedDefaults = true;
     }
 
+    /// <summary>
+    ///     #5479. Returns null when the tenant has no row at all, and throws
+    ///     <see cref="DisabledTenantException" /> when it has one that is disabled. The two used to
+    ///     be indistinguishable here — the query filtered <c>disabled = false</c>, so a tenant that
+    ///     an operator had deliberately switched off came back as "no row" and every caller reported
+    ///     it as <see cref="UnknownTenantIdException" />: "Unknown tenant id 'acme'" about a tenant
+    ///     that is still there, with its data untouched.
+    /// </summary>
+    /// <remarks>
+    ///     Reading the <c>disabled</c> column instead of filtering on it costs nothing — it is the
+    ///     same single round trip, on the same primary key — and <see cref="DisabledTenantException" />
+    ///     derives from <see cref="UnknownTenantIdException" /> (jasperfx#882), so an existing
+    ///     <c>catch (UnknownTenantIdException)</c> keeps catching a disabled tenant.
+    /// </remarks>
     private async Task<MartenDatabase?> tryFindTenantDatabase(string tenantId)
     {
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
-        var connectionString = (string)await _dataSource.Value
-            .CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id and {TenantTable.DisabledColumn} = false")
-            .With("id", tenantId)
-            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false);
+        var (connectionString, disabled) = await readTenantRow(tenantId).ConfigureAwait(false);
+
+        if (disabled)
+        {
+            throw new DisabledTenantException(tenantId);
+        }
 
         if (connectionString.IsEmpty())
         {
@@ -472,6 +491,31 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     One round trip for both facts the callers need: the connection string, and whether the
+    ///     row exists but is switched off. A missing row reads as <c>(null, false)</c>.
+    /// </summary>
+    private async Task<(string? ConnectionString, bool Disabled)> readTenantRow(string tenantId)
+    {
+        await using var reader = await _dataSource.Value
+            .CreateCommand(
+                $"select connection_string, {TenantTable.DisabledColumn} from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
+            .With("id", tenantId)
+            .ExecuteReaderAsync(CancellationToken.None).ConfigureAwait(false);
+
+        if (!await reader.ReadAsync(CancellationToken.None).ConfigureAwait(false))
+        {
+            return (null, false);
+        }
+
+        var connectionString = await reader.IsDBNullAsync(0, CancellationToken.None).ConfigureAwait(false)
+            ? null
+            : await reader.GetFieldValueAsync<string>(0, CancellationToken.None).ConfigureAwait(false);
+        var disabled = await reader.GetFieldValueAsync<bool>(1, CancellationToken.None).ConfigureAwait(false);
+
+        return (connectionString, disabled);
     }
 
     internal class TenantLookupDatabase: PostgresqlDatabase

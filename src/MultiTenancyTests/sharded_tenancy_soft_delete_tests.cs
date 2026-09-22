@@ -82,7 +82,7 @@ public class sharded_tenancy_soft_delete_tests : IAsyncLifetime
     // ---- DisableTenantAsync ----
 
     [Fact]
-    public async Task disabled_tenant_resolution_throws_UnknownTenantIdException()
+    public async Task disabled_tenant_resolution_throws_DisabledTenantException()
     {
         CreateStore();
         var source = (IDynamicTenantSource<string>)_store.Options.Tenancy;
@@ -93,8 +93,17 @@ public class sharded_tenancy_soft_delete_tests : IAsyncLifetime
 
         await source.DisableTenantAsync("tenant-a");
 
-        await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+        // #5479: DisabledTenantException, not the bare UnknownTenantIdException. The assertion is
+        // written on the base type first so this fact still proves the non-breaking half -- an
+        // existing catch(UnknownTenantIdException) keeps catching a disabled tenant -- and then
+        // tightens to the narrower type and its message.
+        var ex = await Should.ThrowAsync<UnknownTenantIdException>(async () =>
             await _store.Options.Tenancy.GetTenantAsync("tenant-a"));
+
+        ex.ShouldBeOfType<DisabledTenantException>();
+        ex.TenantId.ShouldBe("tenant-a");
+        ex.Message.ShouldContain("registered but disabled");
+        ex.Message.ShouldNotContain("Unknown tenant id");
     }
 
     [Fact]
@@ -114,7 +123,7 @@ public class sharded_tenancy_soft_delete_tests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task auto_assign_on_a_disabled_tenant_throws_UnknownTenantIdException_not_resurrects()
+    public async Task auto_assign_on_a_disabled_tenant_throws_DisabledTenantException_not_resurrects()
     {
         // The dangerous case: without the under-lock disabled-check, auto-assign would
         // create a fresh assignment for a disabled tenant — silently undoing the
@@ -127,8 +136,9 @@ public class sharded_tenancy_soft_delete_tests : IAsyncLifetime
         var originalDbId = await source.AddTenantAsync("tenant-c", CancellationToken.None);
         await source.DisableTenantAsync("tenant-c");
 
-        await Should.ThrowAsync<UnknownTenantIdException>(async () =>
-            await sharded.GetTenantAsync("tenant-c"));
+        (await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+            await sharded.GetTenantAsync("tenant-c")))
+            .ShouldBeOfType<DisabledTenantException>(); // #5479
 
         // No reassignment happened — the disabled row still points at the original shard.
         var rawAssignment = await readRawAssignment(_store, "tenant-c");
