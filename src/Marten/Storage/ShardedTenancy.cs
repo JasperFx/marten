@@ -915,9 +915,12 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         {
             // #4607: under the lock, distinguish three cases:
             //   (a) tenant has an active assignment   → use it
-            //   (b) tenant has a DISABLED assignment  → throw UnknownTenantIdException
+            //   (b) tenant has a DISABLED assignment  → throw DisabledTenantException
             //       (mirrors MasterTableTenancy; auto-assigning here would silently
-            //       resurrect the soft-deleted tenant, possibly onto a different shard)
+            //       resurrect the soft-deleted tenant, possibly onto a different shard).
+            //       #5479: was UnknownTenantIdException, which told the operator who just ran
+            //       DisableTenantAsync that the tenant does not exist. DisabledTenantException
+            //       derives from it (jasperfx#882), so existing catch blocks still fire.
             //   (c) no assignment at all              → fall through to auto-assign
             var existingState = await ((DbCommand)conn
                 .CreateCommand(
@@ -942,7 +945,7 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
             if (existingDisabled)
             {
-                throw new UnknownTenantIdException(tenantId);
+                throw new DisabledTenantException(tenantId);
             }
 
             if (existingDbId != null && _databasesById.TryFind(existingDbId, out database))

@@ -182,7 +182,7 @@ public class projection_statuses_per_database: IAsyncLifetime
 
         var store = (IEventStore)_store;
 
-        // Threw NotSupportedException("Default tenant does not supported") before the fix.
+        // Threw NotSupportedException from MasterTableTenancy.Default before the fix.
         var statuses = await store.GetProjectionStatusesAsync(CancellationToken.None);
 
         // The registry is configuration — identical in every database — so it answers in full.

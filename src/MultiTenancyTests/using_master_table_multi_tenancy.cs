@@ -497,6 +497,80 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
         });
     }
 
+    /// <summary>
+    ///     #5479. A tenant that exists and was switched off used to be indistinguishable from one
+    ///     that was never registered: the lookup filtered <c>disabled = false</c>, so the operator
+    ///     who had just run <c>DisableTenantAsync</c> read "Unknown tenant id 'tenant1'" about a
+    ///     tenant whose data is sitting right there.
+    /// </summary>
+    [Fact]
+    public async Task a_disabled_tenant_is_reported_as_disabled_not_unknown()
+    {
+        var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
+
+        await tenancy.AddDatabaseRecordAsync("tenant1", tenant1ConnectionString);
+        await tenancy.BuildDatabases();
+
+        // Sanity: resolvable before the soft-delete.
+        (await tenancy.GetTenantAsync("tenant1")).TenantId.ShouldBe("tenant1");
+
+        await tenancy.DisableTenantAsync("tenant1");
+
+        // Caught on the BASE type on purpose — that is the non-breaking half. DisabledTenantException
+        // derives from UnknownTenantIdException (jasperfx#882), so every existing catch still fires.
+        var ex = await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+        {
+            await tenancy.GetTenantAsync("tenant1");
+        });
+
+        ex.ShouldBeOfType<DisabledTenantException>();
+        ex.TenantId.ShouldBe("tenant1");
+        ex.Message.ShouldContain("registered but disabled");
+        ex.Message.ShouldNotContain("Unknown tenant id");
+    }
+
+    /// <summary>
+    ///     #5479. A tenant that genuinely has no row must keep reporting the broader type, or the
+    ///     new exception would be telling operators that every typo is a disabled tenant.
+    /// </summary>
+    [Fact]
+    public async Task an_unregistered_tenant_is_still_plain_unknown()
+    {
+        var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
+
+        await tenancy.AddDatabaseRecordAsync("tenant1", tenant1ConnectionString);
+        await tenancy.BuildDatabases();
+
+        var ex = await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+        {
+            await tenancy.GetTenantAsync("never-registered");
+        });
+
+        ex.ShouldNotBeOfType<DisabledTenantException>();
+    }
+
+    /// <summary>
+    ///     #5479. Re-enabling must go back to resolving, so the new throw cannot be a one-way door.
+    /// </summary>
+    [Fact]
+    public async Task re_enabling_a_disabled_tenant_resolves_again()
+    {
+        var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
+
+        await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
+        await tenancy.BuildDatabases();
+
+        await tenancy.DisableTenantAsync("tenant2");
+        await Should.ThrowAsync<DisabledTenantException>(async () =>
+        {
+            await tenancy.GetTenantAsync("tenant2");
+        });
+
+        await tenancy.EnableTenantAsync("tenant2");
+
+        (await tenancy.GetTenantAsync("tenant2")).TenantId.ShouldBe("tenant2");
+    }
+
     [Fact]
     public async Task get_tenant_miss_dynamic_hit()
     {
