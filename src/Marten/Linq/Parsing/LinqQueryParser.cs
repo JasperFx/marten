@@ -109,6 +109,7 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
             return Visit(node.Arguments[0]);
         }
 
-        throw new BadLinqExpressionException($"Marten does not (yet) support Linq operator '{node.Method.Name}'");
+        throw new BadLinqExpressionException(
+            $"Marten does not (yet) support Linq operator '{node.Method.Name}'.{LinqRefusals.EscapeHatches}");
     }
 }
