@@ -126,6 +126,20 @@ public async Task start_stream_with_guid_stream_identifiers(IDocumentSession ses
 For stream identity (strings vs. Guids), see [event store configuration](/events/configuration).
 
 Note that `StartStream` checks for an existing stream and throws `ExistingStreamIdCollisionException` if a matching stream already exists.
+The remedy is in the exception message: `StartStream` needs a _new_ id, so to add events to a stream that may already exist, use
+`Append()` (which starts the stream when it is missing) or `FetchForWriting()`, and make create commands idempotent on the stream id.
+
+::: warning
+Under [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning) (`opts.Events.UseTenantPartitionedEvents()`), a duplicate `StartStream`
+surfaces as `EventStreamUnexpectedMaxEventIdException`, **not** `ExistingStreamIdCollisionException`. On that path `StartStream`
+is routed through the bulk `mt_quick_append_events` function with an expected version of 0 — "this is a new stream" — so an id
+that already exists fails the version assertion rather than the stream-insert uniqueness check. This is deliberate and pinned by
+test, but it means a `catch (ExistingStreamIdCollisionException)` written against a non-partitioned store does not fire once
+tenant partitioning is switched on.
+
+Note also that the same stream id under two _different_ tenants is not a collision at all — it is two independent streams in two
+partitions.
+:::
 
 ## Appending Events
 
@@ -185,6 +199,13 @@ This causes a couple side effects that **force stricter usage of Marten**:
 
 1. Marten will throw a `StreamTypeMissingException` exception if you call a `StartStream()` overload that doesn't include the stream type
 2. Marten will throw a `NonExistentStreamException` if you try to append events to a stream that does not already exist
+
+That second effect is the one that surprises people, because it is the **only** place where plain `Append()` is not
+start-or-append. Everywhere else, `Append()` on an unknown stream id quietly starts the stream (see the tip under
+[Appending Events](#appending-events) above); with `UseMandatoryStreamTypeDeclaration` turned on, the stream must have been
+started with a type first. `AppendOptimistic()` and `AppendExclusive()` throw `NonExistentStreamException` for a missing
+stream regardless of this setting — they read the stream's current version before appending, so there has to be one, and they
+look only within the session's tenant.
 
 ## `Append(streamId, expectedVersion, events)` requires Rich mode
 
