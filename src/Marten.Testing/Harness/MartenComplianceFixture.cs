@@ -656,6 +656,14 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             ComplianceExceptionKind.StreamLocked => typeof(Marten.Exceptions.StreamLockedException),
             ComplianceExceptionKind.DefaultTenantUsageDisabled =>
                 typeof(Marten.Exceptions.DefaultTenantUsageDisabledException),
+            // #5476 / jasperfx#871/#878 lifted a canonical ArchivedStreamException in
+            // JasperFx.Events 2.74.0. Marten still refuses an append to an archived stream with the
+            // generic InvalidStreamOperationException, from RichEventAppender and from the MT001
+            // translation in QuickAppendEventsOperationBase. Adopting the lifted type is BREAKING
+            // twice over -- it changes what an existing catch(InvalidStreamOperationException) sees,
+            // and a Marten subclass cannot also derive from MartenException -- so it is on the 10.0
+            // milestone with the rest of the reparenting, and this nominates what Marten throws today.
+            ComplianceExceptionKind.ArchivedStream => typeof(Marten.Exceptions.InvalidStreamOperationException),
             _ => base.ExceptionTypeFor(kind)
         };
 
