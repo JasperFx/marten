@@ -3,6 +3,7 @@ using System.Linq;
 using JasperFx;
 using Marten;
 using Marten.Linq;
+using Marten.Schema.Indexing.FullText;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -113,6 +114,102 @@ public class full_text_regconfig_sql_injection
             .ToCommand(FetchType.FetchMany)
             .CommandText;
 
+        sql.ShouldContain(regConfig);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // GHSA-frqq-p5g3-8jq5.
+    //
+    // The relevance-ORDERING overloads (#5298, 9.31.0) also take a regConfig, and they were never
+    // added to the theory above. They route through TextRankOrdering / FullTextIndexResolver rather
+    // than FullTextWhereFragment, where the validator did not exist -- so this file asserted "every
+    // overload that takes a user-controllable regConfig" while two of them were unguarded.
+    //
+    // The fix moves the check into a shared RegConfigValidation and calls it from
+    // FullTextIndexResolver.ResolveVector, the sink every search path funnels through. These facts
+    // are the part that stops the gap reopening: a new regConfig-taking overload has to be added
+    // here, and it inherits the guard automatically.
+    // ---------------------------------------------------------------------------------------------
+
+    public static TheoryData<string, Func<IQueryable<Article>, string, IQueryable<Article>>> OrderingOverloads => new()
+    {
+        {
+            nameof(QueryableExtensions.OrderByTextRank),
+            (q, rc) => q.Where(x => x.PlainTextSearch("term")).OrderByTextRank("term", TextSearchFunction.Plain, rc)
+        },
+        {
+            nameof(QueryableExtensions.ThenByTextRank),
+            (q, rc) => q.Where(x => x.PlainTextSearch("term")).OrderBy(x => x.Title)
+                .ThenByTextRank("term", TextSearchFunction.Plain, rc)
+        },
+    };
+
+    [Theory]
+    [MemberData(nameof(OrderingOverloads))]
+    public void rejects_injection_payloads_in_ordering_regConfig(
+        string overloadName,
+        Func<IQueryable<Article>, string, IQueryable<Article>> apply)
+    {
+        _ = overloadName;
+        using var store = BuildStore();
+        using var session = store.LightweightSession();
+
+        foreach (var payload in InjectionPayloads)
+        {
+            string? sql = null;
+            try
+            {
+                sql = apply(session.Query<Article>(), payload).ToCommand(FetchType.FetchMany).CommandText;
+            }
+            catch (ArgumentException)
+            {
+                // Preferred outcome: refused before any SQL was generated.
+                continue;
+            }
+
+            sql.ShouldNotContain("pg_sleep", Case.Insensitive);
+            sql.ShouldNotContain("DROP TABLE", Case.Insensitive);
+            sql.ShouldNotContain("SELECT version", Case.Insensitive);
+            sql.ShouldNotContain("--");
+        }
+    }
+
+    /// <summary>
+    ///     The payload from the report, which breaks out of the literal and appends a subquery to the
+    ///     ORDER BY rather than using a semicolon — so it is not stopped by Npgsql's refusal of
+    ///     multi-statement command text.
+    /// </summary>
+    [Fact]
+    public void rejects_the_reported_order_by_subquery_payload()
+    {
+        using var store = BuildStore();
+        using var session = store.LightweightSession();
+
+        var payload = "simple'::regconfig, plainto_tsquery('simple','x')) DESC, " +
+                      "(SELECT CASE WHEN (SELECT current_setting('is_superuser'))='on' THEN 1 ELSE 0 END) --";
+
+        Should.Throw<ArgumentException>(() => session.Query<Article>()
+            .Where(x => x.PlainTextSearch("x"))
+            .OrderByTextRank("x", TextSearchFunction.Plain, payload)
+            .ToCommand(FetchType.FetchMany));
+    }
+
+    [Theory]
+    [InlineData("english")]
+    [InlineData("simple")]
+    [InlineData("pg_catalog.english")]
+    public void ordering_accepts_known_safe_regConfig_values(string regConfig)
+    {
+        using var store = BuildStore();
+        using var session = store.LightweightSession();
+
+        var sql = session.Query<Article>()
+            .Where(x => x.PlainTextSearch("term", regConfig))
+            .OrderByTextRank("term", TextSearchFunction.Plain, regConfig)
+            .ToCommand(FetchType.FetchMany)
+            .CommandText;
+
+        sql.ShouldContain("ts_rank");
         sql.ShouldContain(regConfig);
     }
 }

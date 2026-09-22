@@ -79,6 +79,12 @@ internal static class FullTextIndexResolver
     /// </remarks>
     public static string ResolveVector(DocumentMapping? mapping, string regConfig)
     {
+        // GHSA-frqq-p5g3-8jq5. This method interpolates regConfig into a `'...'::regconfig` literal
+        // below, and it is the sink EVERY full-text path funnels through -- the WHERE fragment, the
+        // ts_rank ordering, and anything added later. Validating here is what makes a future caller
+        // safe by construction instead of by remembering to add a call.
+        RegConfigValidation.Validate(regConfig);
+
         var index = FindIndex(mapping, regConfig);
 
         if (index?.TsVectorExpression != null)
