@@ -264,8 +264,8 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         // #5344: only assert the store's stream identity when TId is actually being used to address
         // a *stream*. A [NaturalKey] whose type happens to be Guid or string is not a stream id, and
         // asserting here refused a primitive `string` natural key on a Guid-identity store outright
-        // ("This Marten event store is configured to identify streams with Guids") before any
-        // planner got a look at it. A wrapped natural key never hit this because it is neither Guid
+        // (EventGraph.GuidIdentityMismatchMessage) before any planner got a look at it. A wrapped
+        // natural key never hit this because it is neither Guid
         // nor string, which is why only the primitive case was broken.
         if (!IsNaturalKeyIdentity<TDoc, TId>(options))
         {

@@ -468,7 +468,7 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
             var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
         });
 
-        ex.Message.ShouldBe("This Marten event store is configured to identify streams with strings");
+        ex.Message.ShouldBe(EventGraph.StringIdentityMismatchMessage);
     }
 
     [Fact]
@@ -483,7 +483,7 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
             var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
         });
 
-        ex.Message.ShouldBe("This Marten event store is configured to identify streams with Guids");
+        ex.Message.ShouldBe(EventGraph.GuidIdentityMismatchMessage);
     }
 
     [Fact]
