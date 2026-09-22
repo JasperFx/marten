@@ -626,15 +626,35 @@
          the source, not just the rung), jasperfx#853/#860 (ModelCollapse carries its service and
          model names as structured data) and wolverine#4486 (a `codegen test` fix for AotRoots
          naming a sibling generated type). -->
-    <PackageVersion Include="JasperFx" Version="2.73.2" />
-    <PackageVersion Include="JasperFx.Events" Version="2.73.2" />
+    <!-- JasperFx 2.74.0 (marten#5490). Three of the four things here have a Marten adoption issue
+         already open, because they were filed FROM Marten during the 2026-09-22 exception sweep:
+         jasperfx#871/#878 lifts a canonical JasperFx.Events.ArchivedStreamException. Marten throws
+         the generic InvalidStreamOperationException for an append to an archived stream today
+         (RichEventAppender and the MT001 translation in QuickAppendEventsOperationBase), so it
+         carries no Id and names no remedy. Adoption is marten#5476 — still BREAKING, because a
+         Marten subclass cannot also derive from MartenException and the switch changes what an
+         existing catch(InvalidStreamOperationException) sees; it stays on the 10.0 milestone.
+         ⚠️ The canonical message names UnArchiveStream "which every store implements" and MARTEN
+         DOES NOT — see MartenComplianceFixture.SupportsUnarchiveStream. Overriding the message is
+         part of that adoption. Raised on jasperfx#878.
+         jasperfx#875/#882 lifts JasperFx.MultiTenancy.DisabledTenantException, and it derives from
+         UnknownTenantIdException on purpose, so a store can start throwing it WITHOUT breaking an
+         existing catch. That is what makes marten#5479 shippable on the 9.x line rather than 10.0.
+         jasperfx#879 gives the canonical stream exception messages a remedy, and jasperfx#880
+         corrects the AutoCreate XML comments (the JasperFx half of marten#5478). Both are inert
+         here while Marten keeps its own six exception types and its own snippet comments.
+         Also rides along, inert for Marten: jasperfx#881 (StaticTenantSource throws
+         UnknownTenantIdException with the known-tenant list), jasperfx#883 (tenant-id casing docs)
+         and jasperfx#884 (RuntimeCompiler's CodeGenerationException derives from the shared one). -->
+    <PackageVersion Include="JasperFx" Version="2.74.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.74.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.73.2" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.74.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -653,11 +673,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.73.2">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.74.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.73.2" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.74.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -708,7 +728,7 @@
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
          Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.32.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.33.0" />
     <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
          9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
          out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
@@ -906,8 +926,31 @@
          EnumIsNotOneOfWhereFragment gain an optional stored-name renderer, because both rendered an
          enum value with ToString(), which is the declared member name and stops being the stored name
          as soon as the member is renamed with [JsonStringEnumMemberName] or [EnumMember]. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.32.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.32.0" />
+    <!-- 9.33.0 (marten#5490). The one Marten consumes directly is weasel#596/#604, raised from
+         marten#5473: AppendEventOperationBase now implements IExceptionTransform and delegates to
+         an optional TransformAppendEventException on the descriptor, mirroring the
+         TransformInsertStreamException hook InsertStreamOperationBase already had. That is the
+         seam PostgresEventStoreDialect needs to build EventStreamUnexpectedMaxEventIdException
+         from the StreamAction on the rich append path instead of by regex over a Postgres Detail
+         field that Npgsql redacts in production. The two-argument constructor still installs no
+         transform, so the bump alone changes nothing.
+         Behaviour changes worth knowing about, none of which Marten opts into here:
+         weasel#595/#603 — the numeric closed-shape Upsert/Update operations now always carry the
+         "you may need to call UpdateRevision()" hint, not only when the document implements
+         IRevisioned/ILongVersioned. Same "Optimistic concurrency check failed for {type} #{id}"
+         opening, so message assertions that use ShouldStartWith/ShouldContain are unaffected.
+         weasel#600/#608 — AutoCreate.All's drop-and-recreate branch now logs DestructiveChange
+         before it runs, deltas can say WHY they are Invalid, and Migrator.RefuseDestructiveChanges
+         (default OFF) can turn that branch into a refusal. Opt-in; nothing changes unless set.
+         weasel#601/#609 — AssertDatabaseMatchesConfigurationAsync now always throws
+         DatabaseValidationException. It used to escape with a SchemaMigrationException when a
+         delta was Invalid and not rebuildable, which is exactly the worst drift, so
+         catch(DatabaseValidationException) missed it. db-assert reports it properly now.
+         weasel#602/#610 and weasel#598/#606 are message fixes (including a literal '$' in
+         SchemaUtils.DropSchema, the same defect class as marten#5481), and weasel#597/#605 is the
+         Weasel half of marten#5478. weasel#599/#607 is SqlServer sp_getapplock — inert here. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.33.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.33.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
