@@ -133,6 +133,34 @@ public class closed_shape_duplicated_fields_tests: BugIntegrationContext
         loaded.Name.ShouldBe("indexed");
     }
 
+    [Fact]
+    public async Task duplicated_column_named_after_reserved_keyword_is_quoted_on_write()
+    {
+        var store = StoreOptions(opts =>
+        {
+            opts.Schema.For<DfReservedDoc>().Duplicate(x => x.Offset);
+        });
+
+        var id = Guid.NewGuid();
+        await using (var session = store.LightweightSession())
+        {
+            session.Store(new DfReservedDoc { Id = id, Offset = 1 });
+            await session.SaveChangesAsync();
+
+            // second save exercises the UPDATE / ON CONFLICT DO UPDATE paths
+            session.Store(new DfReservedDoc { Id = id, Offset = 2 });
+            await session.SaveChangesAsync();
+        }
+
+        await store.BulkInsertAsync(new[] { new DfReservedDoc { Id = id, Offset = 3 } },
+            BulkInsertMode.OverwriteExisting);
+        await store.BulkInsertAsync(new[] { new DfReservedDoc { Id = id, Offset = 4 } },
+            BulkInsertMode.IgnoreDuplicates);
+
+        await using var query = store.QuerySession();
+        var found = await query.Query<DfReservedDoc>().Where(x => x.Offset == 3).SingleAsync();
+        found.Id.ShouldBe(id);
+    }
 }
 
 public class DfDoc
@@ -158,4 +186,10 @@ public class DfEnumDoc
 {
     public Guid Id { get; set; }
     public DfColor Color { get; set; }
+}
+
+public class DfReservedDoc
+{
+    public Guid Id { get; set; }
+    public int Offset { get; set; }
 }
