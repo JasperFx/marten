@@ -104,7 +104,7 @@ public class WhereClauseParser: ExpressionVisitor
         if (parser == null)
         {
             throw new NotSupportedException(
-                $"Marten does not (yet) support Linq queries using the {node.Method.DeclaringType.FullName}.{node.Method.Name}() method");
+                $"Marten does not (yet) support Linq queries using the {node.Method.DeclaringType.FullName}.{node.Method.Name}() method.{LinqRefusals.EscapeHatches}");
         }
 
         var fragment = parser.Parse(_members, _options, node);

@@ -27,8 +27,12 @@ internal class KeyValuePairMemberCollection<TKey, TValue> : IQueryableMemberColl
         if (member.Name == _key.MemberName) return _key;
         if (member.Name == _value.MemberName) return _value;
 
+        // #5481. This used to read "Marten does not support whatever in the world you just tried to
+        // do with querying through a Dictionary", which is funny in a commit and useless in a
+        // support ticket. Name the member that could not be resolved, the two that can be, and the
+        // dictionary operations that do translate.
         throw new BadLinqExpressionException(
-            "Marten does not support whatever in the world you just tried to do with querying through a Dictionary");
+            $"Marten cannot translate the member '{member.DeclaringType?.Name}.{member.Name}' inside a Dictionary<{typeof(TKey).Name}, {typeof(TValue).Name}> sub-query: only '{_key.MemberName}' and '{_value.MemberName}' are addressable on the pair. Supported dictionary operations are ContainsKey(), Count, Any(), indexer equality (x.Dict[\"key\"] == value), Keys.Contains(), Values.Contains(), and Any(pair => ...) over simple comparisons of the pair's Key and Value. Use MatchesSql() with the PostgreSQL '#>' / '?' operators for anything else.");
     }
 
     public void ReplaceMember(MemberInfo member, IQueryableMember queryableMember)

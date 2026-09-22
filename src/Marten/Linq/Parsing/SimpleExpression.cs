@@ -443,6 +443,6 @@ internal class SimpleExpression: ExpressionVisitor
         }
 
         throw new BadLinqExpressionException(
-            $"$Simple expression '{_expression}' does not refer to either a simple queryable member or a constant value");
+            $"Simple expression '{_expression}' does not refer to either a simple queryable member or a constant value");
     }
 }
