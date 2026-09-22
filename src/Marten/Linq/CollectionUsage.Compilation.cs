@@ -384,8 +384,28 @@ public partial class CollectionUsage
         CollectionUsage? postSmSelectCarrier = null;
         var postSmWheres = new List<(CollectionUsage Carrier, Expression Where)>();
 
+        // A GroupBy after the SelectMany is not a projection of the joined row but an aggregation over
+        // it: its own Select() is the grouping projection and its Where()s are HAVING. Both are taken
+        // out of the sweep below and rendered on the join statement itself further down.
+        CollectionUsage? groupByUsage = null;
         for (var sweep = Inner; sweep != null; sweep = sweep.Inner)
         {
+            if (sweep.GroupByData != null)
+            {
+                groupByUsage = sweep;
+                break;
+            }
+        }
+
+        var groupingUsage = groupByUsage?.Inner;
+
+        for (var sweep = Inner; sweep != null; sweep = sweep.Inner)
+        {
+            if (sweep == groupByUsage || sweep == groupingUsage)
+            {
+                continue;
+            }
+
             if (postSmSelect == null && sweep.SelectExpression != null)
             {
                 postSmSelect = sweep.SelectExpression;
@@ -500,11 +520,59 @@ public partial class CollectionUsage
             groupJoin.ResultSelector,
             effectiveResultSelector);
 
+        // 4b. A GroupBy over the joined rows. The keys and the aggregate arguments are written in the
+        // post-SelectMany projection's terms, so they are expanded back into the join's (x, c) space
+        // first and then resolved against whichever side's CTE they came from. The GROUP BY itself is
+        // rendered by SelectorStatement, which writes it right after the join's own SELECT ... FROM.
+        GroupBySelectParser? groupByParser = null;
+        if (groupByUsage != null)
+        {
+            if (groupingUsage?.SelectExpression == null)
+            {
+                throw new BadLinqExpressionException(
+                    "GroupBy must be followed by a Select() projection. Marten does not support returning IGrouping<K,T> directly.");
+            }
+
+            if (!expander.CanExpand)
+            {
+                throw new BadLinqExpressionException(
+                    "Marten cannot translate a GroupBy() applied after GroupJoin(...).SelectMany(...) for this "
+                    + "projection. Project the SelectMany into an anonymous type, a record, or one whole side.");
+            }
+
+            var groupBy = groupByUsage.GroupByData!;
+            var keySelector = Expression.Lambda(
+                expander.Expand(groupBy.KeySelector.Body), groupBy.KeySelector.Parameters);
+
+            groupByParser = new GroupBySelectParser(
+                _options.Serializer(),
+                outerCollection,
+                keySelector,
+                expander.Expand(groupingUsage.SelectExpression),
+                FindGroupingParameter(groupingUsage.SelectExpression),
+                joinParser.ResolveAliasedMember);
+
+            if (groupByParser.IsScalar)
+            {
+                throw new BadLinqExpressionException(
+                    "Marten does not yet support a scalar GroupBy() projection over a GroupJoin. Project the "
+                    + "grouping into an anonymous type or a record.");
+            }
+
+            if (groupingUsage.WhereExpressions.Any())
+            {
+                throw new BadLinqExpressionException(
+                    "Marten does not yet support HAVING (a Where() on the IGrouping) over a GroupJoin.");
+            }
+        }
+
         // 5. Create the JoinSelectClause and final SelectorStatement
         // 9.0 (#4308): use GenericFactoryCache's object[] overload — the
         // 6-arg ctor doesn't fit the fixed-arity overloads, so we pay an
         // array allocation per call in exchange for skipping MakeGenericType.
-        var resultType = effectiveResultSelector.ReturnType;
+        var resultType = groupByParser != null
+            ? groupingUsage!.SelectExpression!.Type
+            : effectiveResultSelector.ReturnType;
 
         // Sum()/Min()/Max()/Average() over a bare scalar projection cannot aggregate the
         // to_jsonb(...) form (Postgres has no sum/min/max/avg for jsonb). For those, render the
@@ -520,7 +588,9 @@ public partial class CollectionUsage
             resultType,
             new object[]
             {
-                scalarAggregate ? joinParser.ScalarRawProjection : joinParser.Projection,
+                groupByParser != null
+                    ? groupByParser.NewObject
+                    : scalarAggregate ? joinParser.ScalarRawProjection : joinParser.Projection,
                 outerCteAlias,
                 innerCteAlias,
                 groupJoin.IsLeftJoin,
@@ -533,6 +603,14 @@ public partial class CollectionUsage
         {
             SelectClause = joinSelectClause
         };
+
+        if (groupByParser != null)
+        {
+            foreach (var column in groupByParser.GroupByColumns)
+            {
+                joinStatement.GroupByColumns.Add(column);
+            }
+        }
 
         // Chain the join statement after the inner CTE
         innerStatement.InsertAfter(joinStatement);
