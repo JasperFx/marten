@@ -58,8 +58,31 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
             return true;
         }
 
-        transformed = new EventStreamUnexpectedMaxEventIdException(postgresException.MessageText);
+        transformed = new EventStreamUnexpectedMaxEventIdException(BuildDetaillessMessage(postgresException));
         return true;
+    }
+
+    /// <summary>
+    ///     #5473. Without a usable <c>Detail</c> this transform knows nothing but the constraint that
+    ///     fired, and passing <see cref="PostgresException.MessageText" /> straight through handed the
+    ///     user Postgres's own sentence — <c>duplicate key value violates unique constraint
+    ///     "pk_mt_events_stream_and_version"</c> — which names neither the stream nor the versions and
+    ///     does not read as a concurrency failure at all. Npgsql redacts <c>Detail</c> unless the
+    ///     connection string carries <c>Include Error Detail=true</c>, which a production connection
+    ///     string generally should not, so this is the message most deployments actually see.
+    /// </summary>
+    internal static string BuildDetaillessMessage(PostgresException postgresException)
+    {
+        // This is only reached when Detail is empty or is exactly Npgsql's redaction sentinel, so a
+        // non-empty Detail here means redaction and nothing else.
+        var redacted = !string.IsNullOrEmpty(postgresException.Detail);
+
+        return
+            "Optimistic concurrency failure appending to an event stream: the expected version did not match the stream's current version. " +
+            (redacted
+                ? "The stream id and version were redacted by Npgsql; add 'Include Error Detail=true' to the connection string (development and test only) to include them. "
+                : "PostgreSQL reported no detail for the violation, so the stream id and version are not available here. ") +
+            $"The underlying violation was on '{postgresException.ConstraintName}'.";
     }
 
     /// <summary>
