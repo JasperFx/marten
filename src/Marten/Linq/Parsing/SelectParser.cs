@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
@@ -249,12 +250,14 @@ internal class SelectParser: ExpressionVisitor
     public void ReadBinding(MemberAssignment binding)
     {
         _currentField = binding.Member.Name;
+        NewObject.MemberTypes[_currentField] = binding.Member.GetRawMemberType();
         Visit(binding.Expression);
     }
 
     protected override MemberBinding VisitMemberBinding(MemberBinding node)
     {
         _currentField = node.Member.Name;
+        NewObject.MemberTypes[_currentField] = node.Member.GetRawMemberType();
 
         return base.VisitMemberBinding(node);
     }
@@ -370,6 +373,11 @@ internal class SelectParser: ExpressionVisitor
         for (var i = 0; i < parameters.Length; i++)
         {
             _currentField = ResolveFieldName(node, parameters, i);
+
+            // #5499: for an anonymous type or a positional record the constructor parameter IS the
+            // projected member, so its type is the one the JSON deserializes into.
+            NewObject.MemberTypes[_currentField] = parameters[i].ParameterType;
+
             Visit(node.Arguments[i]);
         }
 
@@ -442,6 +450,14 @@ internal class NewObject : ISqlFragment
     public Dictionary<string, ISqlFragment> Members { get; } = new();
 
     /// <summary>
+    /// #5499: the declared type of each projected member on the TARGET type, keyed the same as
+    /// <see cref="Members" />. Recorded by <see cref="SelectParser" /> wherever it names a target
+    /// member, because that -- not the document member the value came from -- is the type the
+    /// projected JSON has to deserialize into. See <see cref="isOmittedWhenNull" />.
+    /// </summary>
+    public Dictionary<string, Type> MemberTypes { get; } = new();
+
+    /// <summary>
     /// #5233: every fragment in this projection, nested objects included. Compiled-query parameter
     /// discovery needs to see these, because a fragment that carries a query member's value inside
     /// a composite parameter (a jsonpath vars payload) can only be re-bound through its own
@@ -479,7 +495,7 @@ internal class NewObject : ISqlFragment
         // meaningful nulls out of a projected Dictionary<string, T?> or nested document. So only
         // the pairs that locate a scalar go through the strip; every other pair is built exactly as
         // it was before.
-        var omitted = pairs.Where(x => isOmittedWhenNull(x.Value)).ToArray();
+        var omitted = pairs.Where(isOmittedWhenNull).ToArray();
         if (omitted.Length == 0)
         {
             builder.Append(' ');
@@ -497,41 +513,72 @@ internal class NewObject : ISqlFragment
         }
 
         builder.Append(" (");
-        writeObject(builder, pairs.Where(x => !isOmittedWhenNull(x.Value)).ToArray());
+        writeObject(builder, pairs.Where(x => !isOmittedWhenNull(x)).ToArray());
         builder.Append(" || jsonb_strip_nulls(");
         writeObject(builder, omitted);
         builder.Append(")) ");
     }
 
     /// <summary>
-    /// #5461: true for a fragment whose SQL NULL means "the stored document has no such key" rather
-    /// than "the stored document holds a null here", and whose value is a scalar -- so removing the
-    /// pair cannot reach inside a nested object or array. Collection and child document members are
+    /// #5461: true for a pair whose SQL NULL means "the stored document has no such key" rather than
+    /// "the stored document holds a null here", and whose value is a scalar -- so removing the pair
+    /// cannot reach inside a nested object or array. Collection and child document members are
     /// deliberately excluded: their values ARE objects and arrays.
+    ///
+    /// #5499: the decision is made from the type the projection is deserialized INTO -- the target's
+    /// own member, recorded in <see cref="MemberTypes" /> -- and not from the document member the
+    /// value was read from. Those two are usually the same type, which is why reading the source
+    /// member looked like it worked, but each direction of the mismatch is a real defect:
+    ///
+    ///   * Select(x => new Target { End = x.End }) over a nullable DateOnly? drops a genuine stored
+    ///     null, because a source member's MemberType has already been unwrapped from Nullable&lt;T&gt;
+    ///     by GetMemberType(). A duplicated field or a CTE-aliased member delegates MemberType to the
+    ///     member underneath and hides the declared type just as thoroughly, so reading the source's
+    ///     raw MemberInfo fixes only the plainest shape of this.
+    ///   * Select(x => new Target { Count = x.Count.Value }) projects a nullable source into a
+    ///     non-nullable int, and an absent key has to be stripped or the target cannot deserialize
+    ///     it -- which is #5461 all over again.
+    ///
+    /// The target type answers both, and it answers them without having to know what kind of
+    /// IQueryableMember produced the value.
     /// </summary>
-    private static bool isOmittedWhenNull(ISqlFragment fragment)
+    private bool isOmittedWhenNull(KeyValuePair<string, ISqlFragment> pair)
     {
-        if (fragment is IOmittedWhenNull)
-        {
-            return true;
-        }
+        var fragment = pair.Value;
 
-        if (fragment is not IQueryableMember member)
+        if (fragment is not IOmittedWhenNull)
         {
-            return false;
-        }
+            if (fragment is not IQueryableMember)
+            {
+                return false;
+            }
 
-        if (fragment is ICollectionMember or IQueryableMemberCollection)
-        {
-            return false;
+            if (fragment is ICollectionMember or IQueryableMemberCollection)
+            {
+                return false;
+            }
         }
 
         // A null can only break deserialization when the projected member is a non-nullable value
         // type. Leaving strings and nullable members alone keeps this fix to the case that throws.
-        // Synthetic members -- an array index, say -- carry no MemberType at all, and those keep
-        // the behavior they already had rather than guessing.
-        var memberType = member.MemberType;
-        return memberType is { IsValueType: true } && Nullable.GetUnderlyingType(memberType) == null;
+        var targetType = targetTypeFor(pair);
+        return targetType is { IsValueType: true } && Nullable.GetUnderlyingType(targetType) == null;
+    }
+
+    /// <summary>
+    /// The declared type of the member this pair is projected into. Every expression shape that names
+    /// a target member records it (an object initializer's binding, a constructor parameter of an
+    /// anonymous type or record), so the fallback is only reached by a pair whose key was not written
+    /// by one of those -- and it keeps the pre-#5499 reading of the source member for those.
+    /// </summary>
+    private Type targetTypeFor(KeyValuePair<string, ISqlFragment> pair)
+    {
+        if (MemberTypes.TryGetValue(pair.Key, out var declared))
+        {
+            return declared;
+        }
+
+        return pair.Value is IQueryableMember member ? member.MemberType : null;
     }
 
     private void writeObject(ICommandBuilder builder, KeyValuePair<string, ISqlFragment>[] pairs)
