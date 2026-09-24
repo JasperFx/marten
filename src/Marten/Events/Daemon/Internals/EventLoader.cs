@@ -241,9 +241,16 @@ internal sealed class EventLoader: IEventLoader
     /// <summary>
     /// Standard query: seq_id range + type filter + ORDER BY seq_id LIMIT batch_size
     /// </summary>
-    private async Task<EventPage> loadNormalAsync(EventRequest request, CancellationToken token)
+    private async Task<EventPage> loadNormalAsync(EventRequest request, CancellationToken token,
+        long? pageFloor = null)
     {
-        var page = new EventPage(request.Floor);
+        // #5501: skip-ahead runs its query from an ADJUSTED floor (just before the first matching
+        // event) but the page has to keep reporting the floor the caller asked for. JasperFx turns
+        // page.Floor into EventRange.SequenceFloor, which is the key of the store's optimistic
+        // progression update -- "set last_seq_id = ceiling where last_seq_id = floor". The stored
+        // last_seq_id is still the requested floor, so an adjusted floor matches no rows. The
+        // window-step loader already keeps the original floor for the same reason.
+        var page = new EventPage(pageFloor ?? request.Floor);
 
         await using var session = (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(Database));
         _floor.Value = request.Floor;
@@ -435,8 +442,9 @@ internal sealed class EventLoader: IEventLoader
         _floor.Value = adjustedRequest.Floor;
         _ceiling.Value = adjustedRequest.HighWater;
 
-        // Use the normal loading path with the adjusted floor
-        return await loadNormalAsync(adjustedRequest, token).ConfigureAwait(false);
+        // Use the normal loading path with the adjusted floor for the QUERY, but report the page
+        // against the floor the caller asked for (#5501).
+        return await loadNormalAsync(adjustedRequest, token, request.Floor).ConfigureAwait(false);
     }
 
     /// <summary>
