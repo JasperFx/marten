@@ -93,6 +93,14 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     // TODO -- make this private
     public Block<Weasel.Storage.IStorageOperation> Queue { get; }
 
+    /// <summary>
+    ///     The key under which an operation that could not be configured is named on the faulting
+    ///     exception's <see cref="Exception.Data" />. Deliberately <c>static readonly</c> rather than
+    ///     <c>const</c>: a const is inlined into the caller's IL, so an assembly compiled against one
+    ///     value would keep reading that key after Marten started writing another.
+    /// </summary>
+    public static readonly string FailedOperationDataKey = "Marten.FailedOperation";
+
     public async ValueTask DisposeAsync()
     {
         Queue.Complete();
@@ -426,10 +434,57 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         {
             // #5497: the page now holds a half-configured command. Keep the exception and fault the
             // batch in WaitForCompletion, before any page runs; the queue itself would only log it.
+            describeFailedOperation(operation, e);
             _operationFailure = ExceptionDispatchInfo.Capture(e);
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// #5497 follow up: say which operation could not be configured. The exception reaches the daemon
+    /// from <see cref="WaitForCompletion" /> and is logged there against the shard and event range, but
+    /// a failure raised inside a serializer names neither the document type nor the operation that was
+    /// writing it -- the reader is left to infer both from a stack frame. The description goes onto
+    /// <see cref="Exception.Data" />, the channel MartenExceptionTransformer already uses to carry the
+    /// NpgsqlCommand, and onto the session log next to the failure.
+    ///
+    /// The exception is deliberately NOT wrapped. The daemon decides whether a shard failure is a real
+    /// failure or a shutdown side effect by inspecting the exception, and the skip-poison-pill options
+    /// key off exception type as well; a wrapper would change what both of those see for the sake of a
+    /// better message.
+    /// </summary>
+    private void describeFailedOperation(Weasel.Storage.IStorageOperation operation, Exception e)
+    {
+        var description = describe(operation);
+
+        try
+        {
+            e.Data[FailedOperationDataKey] = description;
+
+            // A disposed batch has already released the session, and the captured exception is the
+            // one that matters -- neither a null session nor a logger that throws may replace it.
+            _session?.Logger.LogFailure(e,
+                $"Unable to configure the {description} while building a projection update batch. The batch will not be executed.");
+        }
+        catch (Exception)
+        {
+        }
+    }
+
+    private static string describe(Weasel.Storage.IStorageOperation operation)
+    {
+        var operationType = operation.GetType().FullNameInCode();
+
+        try
+        {
+            return $"{operation.Role()} operation {operationType} for document type {operation.DocumentType?.FullNameInCode() ?? "unknown"}";
+        }
+        catch (Exception)
+        {
+            // An operation too broken to configure may well be too broken to describe
+            return operationType;
+        }
     }
 
     private void applyOperation(Weasel.Storage.IStorageOperation operation)
