@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
@@ -530,7 +531,11 @@ internal class NewObject : ISqlFragment
         // type. Leaving strings and nullable members alone keeps this fix to the case that throws.
         // Synthetic members -- an array index, say -- carry no MemberType at all, and those keep
         // the behavior they already had rather than guessing.
-        var memberType = member.MemberType;
+        // #5499: MemberType is already unwrapped from Nullable<T>, so only the declared type can say
+        // whether the member may hold a null the stored document really has.
+        var memberType = member is QueryableMember { Member: { } info }
+            ? info.GetRawMemberType() ?? member.MemberType
+            : member.MemberType;
         return memberType is { IsValueType: true } && Nullable.GetUnderlyingType(memberType) == null;
     }
 
