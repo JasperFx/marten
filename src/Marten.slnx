@@ -16,6 +16,10 @@
     <Project Path="EventStoreMigrations/EventStoreMigrations.csproj" />
     <Project Path="MultiDatabaseCommandLineRunner/MultiDatabaseCommandLineRunner.csproj" />
   </Folder>
+  <Folder Name="/EntityFrameworkCore/">
+    <Project Path="Marten.EntityFrameworkCore.Tests/Marten.EntityFrameworkCore.Tests.csproj" />
+    <Project Path="Marten.EntityFrameworkCore/Marten.EntityFrameworkCore.csproj" />
+  </Folder>
   <Folder Name="/MemoryPack/">
     <Project Path="Marten.MemoryPack.Tests/Marten.MemoryPack.Tests.csproj" />
     <Project Path="Marten.MemoryPack/Marten.MemoryPack.csproj" />
@@ -57,6 +61,10 @@
     <File Path="../README.md" />
     <File Path=".editorconfig" />
   </Folder>
+  <Folder Name="/SourceGenerator/">
+    <Project Path="Marten.SourceGenerator.Tests/Marten.SourceGenerator.Tests.csproj" />
+    <Project Path="Marten.SourceGenerator/Marten.SourceGenerator.csproj" />
+  </Folder>
   <Folder Name="/Testing/">
     <Project Path="CompiledQueryTests/CompiledQueryTests.csproj" />
     <Project Path="ContainerScopedProjectionTests/ContainerScopedProjectionTests.csproj" />
@@ -69,19 +77,19 @@
     <Project Path="FSharpTypes/FSharpTypes.fsproj" />
     <Project Path="LinqTests/LinqTests.csproj" />
     <Project Path="LinqTestsTypes/LinqTestsTypes.csproj" />
+    <Project Path="Marten.ScaleTesting/Marten.ScaleTesting.csproj" />
     <Project Path="Marten.Testing.OtherAssembly/Marten.Testing.OtherAssembly.csproj" />
     <Project Path="Marten.Testing.ThirdAssembly/Marten.Testing.ThirdAssembly.csproj" />
     <Project Path="Marten.Testing/Marten.Testing.csproj" />
+    <Project Path="MemoryUsageChecker/MemoryUsageChecker.csproj" />
     <Project Path="ModularConfigTests.SatelliteA/ModularConfigTests.SatelliteA.csproj" />
     <Project Path="ModularConfigTests.SatelliteB/ModularConfigTests.SatelliteB.csproj" />
     <Project Path="ModularConfigTests/ModularConfigTests.csproj" />
-    <!-- #5096: was the one test project missing from the solution as well as from CI, so not even
-         a solution-wide build touched it. Its job in tests.yml brings up the primary/standby pair
-         in src/MultiHostTests/docker-compose.yaml. -->
     <Project Path="MultiHostTests/MultiHostTests.csproj" />
     <Project Path="MultiTenancyTests/MultiTenancyTests.csproj" />
     <Project Path="PatchingTests/PatchingTests.csproj" />
     <Project Path="StressTests/StressTests.csproj" />
+    <Project Path="TenantPartitionedEventsTests/TenantPartitionedEventsTests.csproj" />
     <Project Path="ValueTypeTests/ValueTypeTests.csproj" />
   </Folder>
   <Folder Name="/TimescaleDB/">
@@ -89,15 +97,8 @@
   </Folder>
   <Project Path="../build/build.csproj" />
   <Project Path="EventAppenderPerfTester/EventAppenderPerfTester.csproj" />
-  <Project Path="Marten.ScaleTesting/Marten.ScaleTesting.csproj" />
-  <Project Path="Marten.AotSmoke/Marten.AotSmoke.csproj" />
   <Project Path="Marten.AotRuntimeSmoke/Marten.AotRuntimeSmoke.csproj" />
-  <Project Path="Marten.EntityFrameworkCore.Tests/Marten.EntityFrameworkCore.Tests.csproj" />
-  <Project Path="Marten.EntityFrameworkCore/Marten.EntityFrameworkCore.csproj" />
+  <Project Path="Marten.AotSmoke/Marten.AotSmoke.csproj" />
   <Project Path="Marten.Newtonsoft/Marten.Newtonsoft.csproj" />
-  <Project Path="Marten.SourceGenerator/Marten.SourceGenerator.csproj" />
-  <Project Path="Marten.SourceGenerator.Tests/Marten.SourceGenerator.Tests.csproj" />
   <Project Path="Marten/Marten.csproj" />
-  <Project Path="MemoryUsageChecker/MemoryUsageChecker.csproj" />
-  <Project Path="TenantPartitionedEventsTests/TenantPartitionedEventsTests.csproj" />
 </Solution>
