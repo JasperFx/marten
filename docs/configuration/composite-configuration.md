@@ -10,7 +10,9 @@ Each satellite assembly:
 
 1. Carries `[assembly: JasperFx.JasperFxAssembly]` in an `AssemblyInfo.cs` file.
 2. Declares its projection classes as `partial`.
-3. References `JasperFx.Events.SourceGenerator` as an analyzer-only `PackageReference` so `[GeneratedEvolver]` attributes are emitted at compile time for the satellite's own projection types:
+3. Runs the `JasperFx.Events.SourceGenerator` analyzer, so `[GeneratedEvolver]` attributes are emitted at compile time for the satellite's own projection types. A plain `<PackageReference Include="Marten" />` is normally enough: [#4557](https://github.com/JasperFx/marten/issues/4557) bundles the analyzer inside the Marten package itself, and it reaches satellites that pick Marten up transitively through a `ProjectReference` as well as ones that reference the package directly.
+
+   Wire the analyzer in explicitly only when the satellite has no Marten reference to inherit it from — see [When the analyzer does not reach a satellite](#when-the-analyzer-does-not-reach-a-satellite) below:
 
    ```xml
    <PackageReference Include="JasperFx.Events.SourceGenerator"
@@ -93,8 +95,33 @@ Pin test: `src/ModularConfigTests/AsyncComposeTests.cs`.
 | --- | --- |
 | `[assembly: JasperFx.JasperFxAssembly]` in an `AssemblyInfo.cs` | Forward-compat with Critter Stack scanning surfaces |
 | Projection classes marked `partial` | Post-#276, the SG-emitted dispatcher merges into the projection class via partial; non-partial silently skips SG emission and the runtime fail-fast at `AssembleAndAssertValidity` throws |
-| `JasperFx.Events.SourceGenerator` as analyzer-only `PackageReference` | Marten's own csproj sets `PrivateAssets="all"` on the SG so the analyzer doesn't flow transitively. Each satellite that declares its own projection types needs the analyzer wired locally |
+| The `JasperFx.Events.SourceGenerator` analyzer runs in the satellite | The runtime looks up `[GeneratedEvolver]` in the assembly that *declares* the aggregate, so the analyzer has to run there. A normal Marten `PackageReference` anywhere in the satellite's reference chain carries it; an analyzer-only `PackageReference` is the fallback when it doesn't |
 | Satellite ProjectReference'd from the main host (or referenced via type) | `AppDomain.CurrentDomain.GetAssemblies()` only returns LOADED assemblies. A `typeof(SatelliteType)` reference or an `IConfigureMarten` singleton registration is enough to force the load |
+
+## When the analyzer does not reach a satellite
+
+The symptom is always the same runtime exception, thrown the first time something needs the dispatcher:
+
+```text
+JasperFx.Events.Projections.InvalidProjectionException : No source-generated dispatcher found for
+Marten.Events.Aggregation.SingleStreamProjection<MySatellite.OrderSummary, System.Guid>. ...
+```
+
+Two configurations cut the analyzer off from a satellite while leaving the build perfectly green:
+
+* An intermediate project references Marten with `PrivateAssets="all"`, hiding it from everything downstream.
+* Anything in the chain — including a repo-wide `Directory.Build.props` — sets `ExcludeAssets="analyzers"` on Marten.
+
+Both are silent, and the reason is worth understanding: aggregate types are usually plain POCOs that name no Marten type at all, so a project declaring nothing but aggregates compiles cleanly with **0 warnings, 0 errors, and 0 generated evolvers**. The most common place this bites is a test project whose aggregates are defined alongside the tests while Marten is referenced only by the library under test. See [#5495](https://github.com/JasperFx/marten/issues/5495).
+
+To check whether the generator actually ran in a given project, look for it on the compiler command line:
+
+```bash
+dotnet build path/to/Satellite.csproj -v:n | grep -o '/analyzer:[^ ]*JasperFx[^ ]*'
+```
+
+or set `<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>` and inspect
+`obj/Debug/<tfm>/generated/JasperFx.Events.SourceGenerator/`. Empty output from either means the generator never ran, and the fix is a Marten or analyzer-only `PackageReference` on that project — not a change to the aggregate.
 
 ## Out of scope
 
