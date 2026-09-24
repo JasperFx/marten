@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Blocks;
@@ -38,6 +39,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     private DocumentSessionBase _session;
     private readonly RebuildBulkCopyBuffer? _bulkCopy;
     private bool _bulkCopyParticipantRegistered;
+    private ExceptionDispatchInfo? _operationFailure;
 
     internal ProjectionUpdateBatch(ProjectionOptions settings,
         DocumentSessionBase? session, ShardExecutionMode mode, CancellationToken token)
@@ -365,6 +367,8 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     {
         await Queue.WaitForCompletionAsync().ConfigureAwait(false);
 
+        _operationFailure?.Throw();
+
         foreach (var patch in _patches) applyOperation(patch);
 
         if (_streams.Any())
@@ -402,7 +406,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     private Task processOperationAsync(Weasel.Storage.IStorageOperation operation, CancellationToken _)
     {
-        if (_token.IsCancellationRequested)
+        if (_token.IsCancellationRequested || _operationFailure != null)
         {
             return Task.CompletedTask;
         }
@@ -414,7 +418,16 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             return Task.CompletedTask;
         }
 
-        applyOperation(operation);
+        try
+        {
+            applyOperation(operation);
+        }
+        catch (Exception e)
+        {
+            // #5497: the page now holds a half-configured command. Keep the exception and fault the
+            // batch in WaitForCompletion, before any page runs; the queue itself would only log it.
+            _operationFailure = ExceptionDispatchInfo.Capture(e);
+        }
 
         return Task.CompletedTask;
     }
