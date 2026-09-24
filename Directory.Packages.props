@@ -12,7 +12,7 @@
          reported as flaky rather than laundered into a clean pass. See
          build/SupervisedTests.cs. Bobcat.Supervisor pulls in Bobcat (the
          Bobcat.Resilience types) transitively. -->
-    <PackageVersion Include="Bobcat.Supervisor" Version="0.6.1" />
+    <PackageVersion Include="Bobcat.Supervisor" Version="0.27.3" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="Confluent.Kafka" Version="2.3.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
@@ -552,9 +552,9 @@
     <!-- Marker-step specifications (JasperFx/bobcat#110). Bobcat.Xunit is the shipped runner
          adapter, new in 0.17.0; before it, this repo hand-rolled one and it reported every
          scenario as a CleanPass whatever the test actually did. -->
-    <PackageVersion Include="Bobcat" Version="0.17.1" />
-    <PackageVersion Include="Bobcat.Generators" Version="0.17.1" />
-    <PackageVersion Include="Bobcat.Xunit" Version="0.17.1" />
+    <PackageVersion Include="Bobcat" Version="0.27.3" />
+    <PackageVersion Include="Bobcat.Generators" Version="0.27.3" />
+    <PackageVersion Include="Bobcat.Xunit" Version="0.27.3" />
     <!--
       2.69.1 (jasperfx#828 and jasperfx#830): two fixes on top of 2.69.0, and the first lands
       directly on what marten#5394 registered a release earlier. ProjectionEventModelSource no
@@ -726,231 +726,9 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
-    <!-- 9.16.2: the hold at 9.2.1 (were newer builds actually being published?) is resolved —
-         Weasel.EntityFrameworkCore is on nuget.org, so it tracks the rest of the Weasel line. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.33.0" />
-    <!-- Weasel.Postgresql 9.1.x: managed LIST partitions under multi-database (sharded) apply.
-         9.1.2 (marten#4706): managed-partition tables are no longer destructively rebuilt — the
-         out-of-band AddPartitionToAllTables path creates partitions while the generic schema diff
-         leaves managed tables alone (Marten sets IgnorePartitionsInMigration on them; see DocumentTable).
-         9.1.5 (marten#4713): the additive reconcile now SAVES/RESTORES IgnorePartitionsInMigration
-         instead of permanently clearing it on the shared DocumentTable singleton, so a re-apply after
-         tenant provisioning stays idempotent (no 42P07 / no rebuild). -->
-    <!-- 9.3.0 (marten#4779 / weasel#318): RANGE partition bound round-trip fix so date-keyed (and
-         quoted/integer) partitions no longer drift into a destructive rebuild on every migration. -->
-    <!-- 9.4.0 (marten#4811 / weasel#321 + #322): lifts the closed-shape IIdentification identity
-         family into Weasel.Core.Identity (with the ISequenceSource sequence seam) so Marten and
-         Polecat share it; Weasel.Core 9.4.0 flows in transitively. -->
-    <!-- 9.5.0 (weasel#323): adds a shared Weasel.Core.ISerializer base for the Critter Stack
-         dedupe. Weasel.Core 9.5.0 flows in transitively. -->
-    <!-- 9.6.0 (weasel#324): adds DbParameter[]-returning AppendWithDbParameters to the non-generic
-         ICommandBuilder, unblocking the closed-shape operation param path (#4821/#4828). Weasel.Core
-         9.6.0 flows in transitively. -->
-    <!-- 9.7.0 (weasel#327): shared Weasel.Core SQL-gen contract (neutral ICommandBuilder +
-         ISqlFragment) that the Postgres/SqlServer ones derive from. Marten disambiguates the new
-         simple-name collision via a GlobalUsings alias to the Weasel.Postgresql types (API-preserving). -->
-    <!-- 9.8.0 (marten#4830 / weasel#329): new Weasel.Storage package holds the 5 neutral closed-shape
-         storage contracts (IStorageDialect, StorageColumnType, BulkColumnValue, IStorageSerializer,
-         IVersionTracker) lifted out of Marten so Marten and Polecat share them. -->
-    <!-- 9.14.0 (weasel#339): dialect-neutral grouped-parameter seam (Weasel.Core.IGroupedParameterBuilder
-         + ICommandBuilder.CreateGroupedParameterBuilder/AppendParameter(object)) + StorageColumnType.Binary,
-         so the closed-shape EVENT binders + per-event ops drop their direct Npgsql reference (#4821 event E1). -->
-    <!-- 9.15.0 (weasel#341): closed-shape EVENT descriptor core moved into Weasel.Storage — the 3
-         descriptors, IEventMetadataBinder + 5 metadata binders, IEventStoreSqlDialect — so Marten and
-         Polecat share them (#4821 event E2). -->
-    <!-- 9.16.0 (weasel#343): closed-shape EVENT storage hierarchy + operations + new neutral op
-         bases moved into Weasel.Storage — EventStorage<TId>, the 3 storages, EventStorageBuilder,
-         and the per-event/insert/update/assert ops — so Marten and Polecat share them (#4821 event E3). -->
-    <!-- 9.16.1: latest Weasel patch consumed for the 9.13.0-alpha.3 Marten alpha. Also carries
-         weasel#345/#346: PostgresqlDatabase.DisposeAsync() honors an OwnsDataSource flag so a
-         caller-owned NpgsqlDataSource is not disposed on the async teardown path — the Weasel
-         sibling of marten#4874 (the sync path was guarded Marten-side by #4903).
-         9.16.2 (weasel#349/#350, marten#4874 case B): AdvisoryLock guards against a disposed
-         NpgsqlDataSource during shutdown — a disposing flag short-circuits TryAttainLockAsync and
-         disposed-pool ObjectDisposedException is swallowed to a non-acquire, so the HotCold cold-node
-         leadership poll no longer aborts OpenAsync against a data source being disposed. Pairs with
-         JasperFx 2.24.1 (jasperfx#499).
-         9.16.3 (weasel#354, marten#4915): the ObjectDisposedException catch in AdvisoryLock.TryAttainLockAsync
-         now latches the disposed flag AND rethrows instead of swallowing to a non-acquire. 9.16.2's swallow
-         made jasperfx#500's terminate-on-ODE catch in ProjectionCoordinatorBase unreachable, so the HotCold
-         cold-node leadership loop re-polled a dead pool forever; rethrowing lets the coordinator terminate.
-         9.16.4 (weasel#356/#359): db-apply bounds its connection usage over many databases and extends the
-         pool-release/retry to SqlServer, MySql and Oracle.
-         9.17.0 (weasel#360): archive/tombstone/progression seams added to Weasel.Storage.Events. Additive for
-         Marten — bumped to stay current on the Weasel line (compile-verified).
-         9.20.1 (weasel#396/#397, marten#5090): AdvisoryLock can no longer strand a handle acquired after
-         DisposeAsync drained. TryAttainLockAsync checked _disposed only at method entry and then stored the
-         winning handle unconditionally, so an acquire in flight during disposal put its handle where nothing
-         would ever dispose it — with the default transaction-scoped leadership lock that is a backend left
-         'idle in transaction' on pg_try_advisory_xact_lock until the process exits, which the #4953 gap
-         detection then reads as a live pre-gap reserver and never advances past. The store now happens under
-         the same lock the drain latches under, a displaced handle (lock lost in monitored mode, re-attained)
-         is disposed rather than overwritten, and HasLock/ReleaseLockAsync move under that lock too.
-         9.20.2 (weasel#399/#400, found here): REQUIRED to move off 9.17.0. Weasel 9.18.0's computed-column
-         delta detection (weasel#373) routed every column through TableColumn.MatchesForDelta, where a bare
-         Equals(actual) binds to the protected NON-virtual Equals(TableColumn) overload and silently bypasses
-         subclass overrides of Equals(object). That override is exactly how RevisionColumn declares an
-         existing bigint mt_version acceptable for an integer-desired column instead of emitting a lossy
-         narrowing cast (#4614/#4742), so on 9.18.0–9.20.1 the column landed in Columns.Different, the table
-         was classified Update, and AssertDatabaseMatchesConfigurationAsync threw with an EMPTY change set —
-         Bug_4614_revision_column_int_for_IRevisioned's assert-check test fails on every version in that
-         range. 9.18/9.19/9.20 are otherwise additive for Marten and ride along (compile-verified).
-         9.21.0 (weasel#401, marten#5093): ManagedRangePartitions — the RANGE analogue of
-         ManagedListPartitions. A RollingWindowPolicy (period size, periods ahead, periods retained)
-         attached through RangePartitioning.UsePartitionManager makes the partition set a pure function
-         of the clock, so RangePartitioning.CreateDelta turns purely ADDITIVE instead of resolving a
-         rolled-forward window to PartitionDelta.Rebuild. That is what lets Marten own a time-series
-         document table's partitions end to end (PartitioningExpression.ByRollingRange) rather than
-         pushing users onto ByExternallyManagedRangePartitions, which also opts them out of Weasel's
-         ordering and dependency management (see JasperFx/CritterWatch#886).
-         9.21.1 (weasel#416): partition bound VALUES are now escaped. FormatSqlValue doubles an embedded
-         single quote, and no longer returns an already-quote-wrapped string verbatim — that short-circuit
-         existed for idempotency but meant a quote-wrapped value skipped escaping entirely. Marten reaches
-         this with a raw tenant id as the partition value on every provisioning path
-         (ShardedTenancy.createPartitionsForTenant, AddMartenManagedTenantsAsync), and Marten's own
-         DatabaseScopedTenantPartitions.Partitions() override only covered the schema-apply delta, not the
-         runtime resolveBuckets path. REQUIRED alongside the tenant-id identifier escaping in this commit.
-         9.22.0: carries the JasperFx 2.37.0 floor (weasel#417) so this matrix stays coherent rather
-         than resolving transitively.
-         9.23.0 (weasel#416): AssertValidIdentifier now rejects a quote or semicolon outright. This is
-         the belt to 9.21.1's braces — 9.21.1 made partition bound VALUES escape correctly, and this
-         closes the identifier side of the same surface.
-         9.23.1 (weasel#420/#422): the same weasel#416 identifier validation extended to the other
-         provider migrators (SQL Server previously validated nothing at all; Oracle, MySQL and Sqlite
-         each missed their own quoting characters), with the PostgreSQL check folded onto the shared
-         Weasel.Core helper so the providers cannot drift apart again.
-         9.23.2 (weasel#424/#425): Sqlite and MySql implement the non-generic
-         Weasel.Core.ICommandBuilder (weasel#423), and the JasperFx line moves to 2.38.0 so this
-         matrix stays coherent with the JasperFx pins above rather than resolving transitively.
-         9.25.0: "the identifier release" (see weasel docs/release-9-25.md). Most of it lands on the
-         other providers — SQL Server bracketing, MySQL identifier normalization, the SQLite rebuild
-         fix — but two things reach Marten. weasel#462 makes PostgreSQL quote for SHAPE as well as for
-         case and keywords, and weasel#458 stops TableColumn silently rewriting a space in a column
-         name to an underscore. Both are no-ops for conventional lowercase schemas, which is every
-         name Marten generates itself; a user-supplied duplicated-field column containing a space
-         would now be emitted quoted rather than folded. weasel#468 also widens identifier validation
-         to every identifier a table writes rather than only the ones naming objects, which is the
-         same surface as the 9.21.1/9.23.x hardening and matters most to the per-tenant partition
-         names. Verified against the schema-heavy suites rather than assumed — see the bump commit.
-         9.25.1 (weasel#485/#487, found here): REQUIRED to move off 9.24.0 — do not pin 9.25.0. That
-         weasel#468 widening ran local identifiers through AssertValidIdentifier, which also enforces
-         the 63-character limit, so a long primary key CONSTRAINT name was refused where PostgreSQL
-         had always just truncated it. Weasel's own TableDelta compares those names through
-         TruncatedNameIdentifier precisely so a truncated one matches, so the two halves disagreed.
-         9.25.1 adds Migrator.AssertValidLocalIdentifier: same safety rules, no length limit.
-         It cost two Marten failures on 9.25.0, and the second is the one to remember — the same
-         rejection aborted a projection's schema application and surfaced as a 23505 on
-         pk_mt_event_progression during per-tenant catch-up, an error naming a table with nothing to
-         do with identifiers. A validation failure on this path does not only throw where you can
-         see it.
-         Requires JasperFx.Events >= 2.46.0; this matrix is already at 2.47.0.
-         9.26.0 (weasel#502, for marten#5268): a non-blocking index on a PARTITIONED table.
-         IndexDefinition.IsConcurrent used to emit CREATE INDEX CONCURRENTLY, which PostgreSQL refuses
-         on a partitioned parent outright, so an index on mt_events under UseTenantPartitionedEvents
-         could only be built with an ACCESS EXCLUSIVE lock held for the whole build. IndexDefinition
-         now renders the supported three-step sequence instead (CREATE INDEX ON ONLY parent → CREATE
-         INDEX CONCURRENTLY per partition → ALTER INDEX ... ATTACH PARTITION), split into separate
-         commands on the IndexCreationBeginComment markers because step 2 cannot run inside a
-         transaction. That is what lets EventsTable mark the DCB hstore tag index concurrent.
-         Also in this bump: weasel#508 now reports an INVALID index as drift, so a CONCURRENTLY build
-         that failed halfway is repaired by the next apply rather than sitting there unused; and
-         weasel#500 makes DbObjectName.Schema/.Name hold the UNDELIMITED name. The latter changes
-         meaning for anything comparing those properties against a literal carrying quotes — Marten
-         carries none (verified), and all emitted DDL is byte-identical.
-         9.27.0 (weasel#520/#522, found here): REQUIRED for the tenant-partitioned half of marten#5268.
-         9.26.0 shipped the three-step sequence but built it from ListPartitioning.PartitionTableNames,
-         which read the table's DECLARED partitions and did not consult the PartitionManager the way
-         CreateDelta and WriteCreateStatement already did. UsePartitionManager also clears
-         EnableDefaultPartition, so under UseTenantPartitionedEvents — where every partition is
-         manager-owned — that enumeration returned the EMPTY sequence, not a short one. Only step 1
-         rendered, and the parent index was created permanently INVALID: unusable by the planner, and
-         reported as drift by every later apply thanks to weasel#508. All three call sites now resolve
-         through one expectedPartitions() helper, which is why RangePartitioning never had the bug.
-
-         9.29.0 (weasel#541, raised from marten#5298): FullTextIndexDefinition can index an expression
-         that is ALREADY a tsvector, via TsVectorExpression and the ForTsVector factory. That is what
-         makes per-member setweight() weighting expressible at all. PostgreSQL's setweight labels a
-         vector, so weighting concatenates the VECTORS rather than the text, and the old unconditional
-         to_tsvector wrapping turned that into a type error rather than a weighted index. IndexedTsVector
-         is the single property both the DDL and Marten's query-side filter read, so the indexed vector
-         and the searched vector cannot drift apart. Left unset it is byte-identical to before, which
-         matters because a changed index expression makes Weasel drop and recreate the index.
-         Also arriving: 9.28.0 (weasel#538) lets a rebuildable Invalid delta through
-         AssertPatchingIsValid, and weasel#539/#540 are SQLite and foreign-key-cycle fixes with no
-         Marten surface.
-
-         9.31.0 (weasel#579/#580, raised from marten#5345): AssertStreamVersionOperation no longer
-         treats "no row came back" as an unconditional conflict. A stream with no row is at version
-         0, so that is a conflict only when the caller expected something other than 0 — and under
-         AlwaysEnforceConsistency on a never-created stream the caller expects exactly 0, which is
-         how the guard managed to throw "expected 0 but was 0". The operation is shared with Polecat,
-         which is why the fix belongs here rather than in Marten skipping the queue. Closes
-         always_enforce_consistency_compliance.with_the_flag_on_a_never_created_stream_commits with
-         no Marten change; the suite's own remark had named this as "the case a naive 'is there a
-         row?' implementation gets wrong".
-
-         This bump also skips 9.30.0, so more than one release of delta arrives. The one item with a
-         Marten-visible behaviour change is weasel#577/#578: ChangeTracker.DetectChanges no longer
-         falls back to JsonNode.DeepEquals when the ordinal string compare misses, unless
-         IStorageSession.UseSemanticJsonChangeDetection is turned on (a default interface member,
-         defaulting to false, so Marten needs no change to compile). The consequence for a dirty-
-         tracking session is that a document whose Dictionary/HashSet members were REORDERED without
-         changing content is now reported as changed. That can only ever cost a redundant,
-         semantically identical write — never a missed one — which is the safe direction for a
-         detector whose real hazard is dropping a user's edit. The rest of 9.30.0/9.31.0 is lifts and
-         allocation work with no Marten surface: streaming JSON column reads (weasel#576), the
-         flat-table decrement parameter fix already consumed via jasperfx#773, MasterTableTenancy and
-         EventLoaderBase lifts, and precomputed parameter names.
-
-         9.31.1 (weasel#583/#584, raised from marten#5364): the managed partition registries are now
-         published as snapshots swapped copy-on-write, instead of a Dictionary mutated in place and
-         handed out through a ReadOnlyDictionary that WRAPS rather than copies it. One instance is
-         shared by every database in a store, and ManagedListPartitions.InitializeAsync used to
-         Clear() it while another database's parallel apply was mid-enumeration, surfacing as
-         "Collection was modified; enumeration operation may not execute" out of
-         DatabaseBase.assertValidIdentifiers (via PerTenantEventSequences.AllNames) during a
-         parallel db-apply, and silently as a torn partition set everywhere else, generated DDL and
-         partition deltas included. Hardening Marten's read side cannot fix this and was tried:
-         ToArray() over a dictionary growing underneath just trades the exception for "Destination
-         array is not long enough", so the write side had to change. Marten needs no product change,
-         only this bump. Bug_5364_concurrent_apply_partition_race is RED on 9.31.0 and GREEN here.
-         The same pass covers Weasel.SqlServer's ManagedTenantPartitions, which had the identical
-         shape, so Polecat gets it too. -->
-    <!-- 9.32.0 (weasel#592, closing weasel#590 and weasel#591, raised from marten#5372 and
-         marten#5376): two additive seams, both defaulting to the previous behaviour, so this bump
-         changes nothing until Marten adopts them. IDocumentStorage&lt;T&gt; gains MappedVersionFor /
-         MappedRevisionFor as default interface members, letting a session seed the expected version
-         off a Metadata.Version.MapTo(...) member through virtual dispatch rather than a runtime type
-         test on the storage; a decorator that forwards is then correct by construction, and one that
-         does not cannot silently answer for its inner storage. EnumIsOneOfWhereFragment and
-         EnumIsNotOneOfWhereFragment gain an optional stored-name renderer, because both rendered an
-         enum value with ToString(), which is the declared member name and stops being the stored name
-         as soon as the member is renamed with [JsonStringEnumMemberName] or [EnumMember]. -->
-    <!-- 9.33.0 (marten#5490). The one Marten consumes directly is weasel#596/#604, raised from
-         marten#5473: AppendEventOperationBase now implements IExceptionTransform and delegates to
-         an optional TransformAppendEventException on the descriptor, mirroring the
-         TransformInsertStreamException hook InsertStreamOperationBase already had. That is the
-         seam PostgresEventStoreDialect needs to build EventStreamUnexpectedMaxEventIdException
-         from the StreamAction on the rich append path instead of by regex over a Postgres Detail
-         field that Npgsql redacts in production. The two-argument constructor still installs no
-         transform, so the bump alone changes nothing.
-         Behaviour changes worth knowing about, none of which Marten opts into here:
-         weasel#595/#603 — the numeric closed-shape Upsert/Update operations now always carry the
-         "you may need to call UpdateRevision()" hint, not only when the document implements
-         IRevisioned/ILongVersioned. Same "Optimistic concurrency check failed for {type} #{id}"
-         opening, so message assertions that use ShouldStartWith/ShouldContain are unaffected.
-         weasel#600/#608 — AutoCreate.All's drop-and-recreate branch now logs DestructiveChange
-         before it runs, deltas can say WHY they are Invalid, and Migrator.RefuseDestructiveChanges
-         (default OFF) can turn that branch into a refusal. Opt-in; nothing changes unless set.
-         weasel#601/#609 — AssertDatabaseMatchesConfigurationAsync now always throws
-         DatabaseValidationException. It used to escape with a SchemaMigrationException when a
-         delta was Invalid and not rebuildable, which is exactly the worst drift, so
-         catch(DatabaseValidationException) missed it. db-assert reports it properly now.
-         weasel#602/#610 and weasel#598/#606 are message fixes (including a literal '$' in
-         SchemaUtils.DropSchema, the same defect class as marten#5481), and weasel#597/#605 is the
-         Weasel half of marten#5478. weasel#599/#607 is SqlServer sp_getapplock — inert here. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.33.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.33.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.34.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.34.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.34.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
