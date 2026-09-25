@@ -200,6 +200,11 @@ public partial class MartenDatabase : IEventDatabase
             var raw = await conn.CreateCommand(sql).With("timestamp", timestamp.ToUniversalTime(), NpgsqlDbType.TimestampTz).ExecuteScalarAsync(token).ConfigureAwait(false);
             return raw is DBNull ? null : (long?)raw;
         }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(FindEventStoreFloorAtTimeAsync));
+            return null;
+        }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
@@ -237,6 +242,11 @@ public partial class MartenDatabase : IEventDatabase
                 .ExecuteScalarAsync(token).ConfigureAwait(false);
             return raw is null or DBNull ? null : (long?)raw;
         }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(FindEventStoreFloorAtTimeAsync));
+            return null;
+        }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
@@ -273,6 +283,11 @@ public partial class MartenDatabase : IEventDatabase
 
             return highest;
         }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(FetchHighestEventSequenceNumber));
+            return 0;
+        }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
@@ -296,6 +311,11 @@ public partial class MartenDatabase : IEventDatabase
                 .ExecuteScalarAsync(token).ConfigureAwait(false);
 
             return raw is null or DBNull ? null : (long?)raw;
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(FetchMaxEventSequenceAsync));
+            return null;
         }
         finally
         {
@@ -363,6 +383,12 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
 
             return statistics;
         }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(FetchEventStoreStatistics));
+            // Zeroed counts, which is the true shape of an event store with no tables.
+            return new EventStoreStatistics();
+        }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
@@ -371,13 +397,58 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
 
 
     /// <summary>
-    ///     Under <see cref="AutoCreate.None" /> a store with no event type and no projection has nothing that
-    ///     provisions or migrates its event tables: db-apply skips an inactive event store (the same gate that
-    ///     keeps <see cref="DeadLetterEvent" /> out of its schema, #4303) and <c>EnsureStorageExistsAsync</c>
-    ///     creates nothing. Whatever progression or dead-letter table exists there is not Marten's to read.
+    ///     #5511: every diagnostic read of the event-store tables answers "nothing" rather than throwing when
+    ///     the storage it reads is not there. A store with no event type and no projection has nothing that
+    ///     provisions or migrates its event tables — db-apply skips an inactive event store (the same gate that
+    ///     keeps <see cref="DeadLetterEvent" /> out of its schema, #4303) and under
+    ///     <see cref="AutoCreate.None" /> <c>EnsureStorageExistsAsync</c> creates nothing — so a monitor that
+    ///     polls every <see cref="IEventStore" /> in a container used to hit 42P01 on a table that was never
+    ///     created, or 42703 on a leftover three-column <c>mt_event_progression</c> (#5509).
+    ///     <para>
+    ///     This is deliberately a check on the <em>exception</em> and not on configuration. #5510 inferred
+    ///     emptiness from <c>AutoCreate.None &amp;&amp; !IsActive</c>, which got the answer right for #5509 and
+    ///     wrong everywhere else: it reported no rows for a diagnostics store pointed at a fully provisioned
+    ///     database, it read the store-wide <see cref="StoreOptions.AutoCreateSchemaObjects" /> rather than
+    ///     this database's own settable <c>AutoCreate</c>, and because <see cref="EventGraph.IsActive" /> is
+    ///     derived from a lazily-populated cache it flipped mid-process — the first event appended or read
+    ///     registers its type, and the next poll threw the very error the guard existed to prevent.
+    ///     Asking Postgres is the only input that is true at the moment of the read.
+    ///     </para>
+    ///     <para>
+    ///     A missing schema reports 42P01 too (verified on PG 17: <c>select 1 from no_such_schema.t</c> is
+    ///     "relation does not exist"), so those two codes are the whole set. The chain is walked because the
+    ///     Marten LINQ path — which the dead-letter reads use — wraps every <see cref="NpgsqlException" /> in a
+    ///     <see cref="Marten.Exceptions.MartenCommandException" /> (see <c>MartenExceptionTransformer</c>), so
+    ///     the outer exception is not the Postgres one.
+    ///     </para>
     /// </summary>
-    private bool eventStorageIsUnmanaged =>
-        Options.AutoCreateSchemaObjects == AutoCreate.None && !Options.EventGraph.IsActive(Options);
+    private static bool isMissingEventStorage(Exception e)
+    {
+        for (var current = e; current != null; current = current.InnerException)
+        {
+            if (current is PostgresException
+                {
+                    SqlState: PostgresErrorCodes.UndefinedTable or PostgresErrorCodes.UndefinedColumn
+                })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Debug rather than warning on purpose: the caller is typically a monitor polling on a timer, and the
+    ///     condition is steady-state for a store that will never have event storage. It is logged at all so the
+    ///     answer is traceable to "could not read" instead of being indistinguishable from "nothing to report".
+    /// </summary>
+    private void logMissingEventStorage(Exception e, string operation)
+    {
+        Logger.LogDebug(e,
+            "Event storage backing {Operation} does not exist in database {Database}, so no results are reported. This is expected for a store with no event types and no projections; if this store does use the event store, its schema has not been migrated.",
+            operation, Identifier);
+    }
 
     /// <summary>
     ///     Check the current progress of all asynchronous projections
@@ -401,8 +472,6 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     /// </summary>
     public async Task<IReadOnlyList<ShardState>> AllProjectionProgress(string? tenantId, CancellationToken token = default)
     {
-        if (eventStorageIsUnmanaged) return [];
-
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var statement = new ProjectionProgressStatement(Options.EventGraph) { TenantId = tenantId };
@@ -422,6 +491,11 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             var states = await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
 
             return tenantId == null ? states : states.Where(x => belongsToTenant(x, tenantId)).ToList();
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(AllProjectionProgress));
+            return [];
         }
         finally
         {
@@ -469,8 +543,6 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     public async ValueTask<ProjectionProgressRow?> ReadProjectionProgressAsync(
         string projectionName, string? tenantId, CancellationToken token)
     {
-        if (eventStorageIsUnmanaged) return null;
-
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var extended = Options.EventGraph.EnableExtendedProgressionTracking;
@@ -529,6 +601,11 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
                 ? null
                 : new ProjectionProgressRow(projectionName, tenantId, bestSequence, bestStatus, bestHeartbeat);
         }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(ReadProjectionProgressAsync));
+            return null;
+        }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
@@ -566,8 +643,6 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     public async ValueTask<ProjectionProgressRow?> ReadProjectionProgressAsync(
         ShardName name, CancellationToken token)
     {
-        if (eventStorageIsUnmanaged) return null;
-
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var extended = Options.EventGraph.EnableExtendedProgressionTracking;
@@ -601,6 +676,11 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
 
             return new ProjectionProgressRow(name.Name, name.TenantId, sequence, status, heartbeat);
         }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(ReadProjectionProgressAsync));
+            return null;
+        }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
@@ -625,13 +705,23 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     {
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-        var sessionOptions = SessionOptions.ForDatabase(this);
-        sessionOptions.AllowAnyTenant = true;
-        await using var session = Options.EventGraph.Store.LightweightSession(sessionOptions);
+        try
+        {
+            var sessionOptions = SessionOptions.ForDatabase(this);
+            sessionOptions.AllowAnyTenant = true;
+            await using var session = Options.EventGraph.Store.LightweightSession(sessionOptions);
 
-        session.QueueOperation(new DeleteProjectionProgress(Options.EventGraph, shardIdentity));
+            session.QueueOperation(new DeleteProjectionProgress(Options.EventGraph, shardIdentity));
 
-        await session.SaveChangesAsync(token).ConfigureAwait(false);
+            await session.SaveChangesAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            // #5511: this method already documents a non-existent identity as a clean no-op. A whole
+            // missing progression table is the same answer for the same reason -- there is no orphan row
+            // to eject -- so it must not be the one call on this surface that throws.
+            logMissingEventStorage(e, nameof(DeleteProjectionProgressByShardNameAsync));
+        }
     }
 
     /// <summary>
@@ -644,16 +734,22 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     /// </summary>
     public async Task<long> CountDeadLetterEventsAsync(ShardName shard, CancellationToken token = default)
     {
-        if (eventStorageIsUnmanaged) return 0;
-
         await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
 
-        // DeadLetterEvent is a Marten document, so query it with LINQ — the JSONB
-        // member paths (and serializer Casing) are handled by Marten.
-        await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
-        return await session.Query<DeadLetterEvent>()
-            .Where(x => x.ProjectionName == shard.Name && x.ShardName == shard.ShardKey)
-            .CountAsync(token).ConfigureAwait(false);
+        try
+        {
+            // DeadLetterEvent is a Marten document, so query it with LINQ — the JSONB
+            // member paths (and serializer Casing) are handled by Marten.
+            await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
+            return await session.Query<DeadLetterEvent>()
+                .Where(x => x.ProjectionName == shard.Name && x.ShardName == shard.ShardKey)
+                .CountAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(CountDeadLetterEventsAsync));
+            return 0;
+        }
     }
 
     /// <summary>
@@ -664,19 +760,25 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     /// </summary>
     public async Task<IReadOnlyList<DeadLetterShardCount>> FetchDeadLetterCountsAsync(CancellationToken token = default)
     {
-        if (eventStorageIsUnmanaged) return [];
-
         await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
 
-        await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
-        var rows = await session.Query<DeadLetterEvent>()
-            .GroupBy(x => new { x.ProjectionName, x.ShardName })
-            .Select(g => new { g.Key.ProjectionName, g.Key.ShardName, Count = g.Count() })
-            .ToListAsync(token).ConfigureAwait(false);
+        try
+        {
+            await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
+            var rows = await session.Query<DeadLetterEvent>()
+                .GroupBy(x => new { x.ProjectionName, x.ShardName })
+                .Select(g => new { g.Key.ProjectionName, g.Key.ShardName, Count = g.Count() })
+                .ToListAsync(token).ConfigureAwait(false);
 
-        return rows
-            .Select(x => new DeadLetterShardCount(x.ProjectionName, x.ShardName, x.Count))
-            .ToList();
+            return rows
+                .Select(x => new DeadLetterShardCount(x.ProjectionName, x.ShardName, x.Count))
+                .ToList();
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(FetchDeadLetterCountsAsync));
+            return [];
+        }
     }
 
     /// <summary>
@@ -694,20 +796,26 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             return await FetchDeadLetterCountsAsync(token).ConfigureAwait(false);
         }
 
-        if (eventStorageIsUnmanaged) return [];
-
         await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
 
-        await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
-        var rows = await session.Query<DeadLetterEvent>()
-            .Where(x => x.TenantId == tenantId)
-            .GroupBy(x => new { x.ProjectionName, x.ShardName })
-            .Select(g => new { g.Key.ProjectionName, g.Key.ShardName, Count = g.Count() })
-            .ToListAsync(token).ConfigureAwait(false);
+        try
+        {
+            await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
+            var rows = await session.Query<DeadLetterEvent>()
+                .Where(x => x.TenantId == tenantId)
+                .GroupBy(x => new { x.ProjectionName, x.ShardName })
+                .Select(g => new { g.Key.ProjectionName, g.Key.ShardName, Count = g.Count() })
+                .ToListAsync(token).ConfigureAwait(false);
 
-        return rows
-            .Select(x => new DeadLetterShardCount(x.ProjectionName, x.ShardName, x.Count, tenantId))
-            .ToList();
+            return rows
+                .Select(x => new DeadLetterShardCount(x.ProjectionName, x.ShardName, x.Count, tenantId))
+                .ToList();
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(FetchDeadLetterCountsAsync));
+            return [];
+        }
     }
 
     /// <summary>
@@ -721,26 +829,32 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     {
         await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
 
-        await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
-        var query = session.Query<DeadLetterEvent>()
-            .Where(x => x.ProjectionName == shard.Name && x.ShardName == shard.ShardKey);
-
-        if (tenantId != null)
+        try
         {
-            query = query.Where(x => x.TenantId == tenantId);
-        }
+            await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
+            var query = session.Query<DeadLetterEvent>()
+                .Where(x => x.ProjectionName == shard.Name && x.ShardName == shard.ShardKey);
 
-        return await query
-            .OrderByDescending(x => x.EventSequence)
-            .Skip(offset)
-            .Take(limit)
-            .ToListAsync(token).ConfigureAwait(false);
+            if (tenantId != null)
+            {
+                query = query.Where(x => x.TenantId == tenantId);
+            }
+
+            return await query
+                .OrderByDescending(x => x.EventSequence)
+                .Skip(offset)
+                .Take(limit)
+                .ToListAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(QueryDeadLetterEventsAsync));
+            return [];
+        }
     }
 
     public async Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names, CancellationToken token = default)
     {
-        if (eventStorageIsUnmanaged) return [];
-
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
@@ -757,6 +871,11 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
 
             await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
             return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(FetchProjectionProgressFor));
+            return [];
         }
         finally
         {
@@ -779,8 +898,6 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     public async Task<long> ProjectionProgressFor(ShardName name,
         CancellationToken token = default)
     {
-        if (eventStorageIsUnmanaged) return 0;
-
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var statement = new ProjectionProgressStatement(Options.EventGraph) { Name = name };
@@ -800,6 +917,11 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             var state = await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
 
             return state?.Sequence ?? 0;
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            logMissingEventStorage(e, nameof(ProjectionProgressFor));
+            return 0;
         }
         finally
         {
