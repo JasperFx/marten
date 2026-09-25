@@ -707,6 +707,29 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         return (IReadOnlyEventStore)session.Events;
     }
 
+    /// <summary>
+    ///     jasperfx#885 / marten#5513. Until this overload existed the read-only event store tier could
+    ///     only ever be opened on the DEFAULT session, so on a store with
+    ///     <c>Advanced.DefaultTenantUsageEnabled = false</c> — the automatic state once database-per-tenant
+    ///     tenancy is configured — the whole surface was unreachable: the session is refused before any
+    ///     tenant scope is applied, which is why <c>QueryStreamStates(tenantId)</c>'s own parameter could
+    ///     not work around it and the stream-compaction policy selector could not select streams at all.
+    /// </summary>
+    /// <remarks>
+    ///     The returned reader is bound to a tenant-scoped session, so its tenant-LESS members
+    ///     (<c>FetchStreamAsync</c>, <c>FetchStreamStateAsync</c>) answer within that tenant, which is the
+    ///     contract JasperFx states for this overload. Tenant id casing runs through
+    ///     <c>TenantIdStyle.MaybeCorrectTenantId</c> exactly as every other <c>QuerySession(tenantId)</c>
+    ///     call does. A null tenant keeps today's store-global behavior.
+    /// </remarks>
+    IReadOnlyEventStore IEventStore.OpenReadOnlyEventStore(string? tenantId)
+    {
+        // Mirrors the tenant-less overload in holding the session alive behind the returned reader —
+        // IReadOnlyEventStore exposes no disposal, so the session's lifetime is the reader's either way.
+        var session = tenantId == null ? QuerySession() : QuerySession(tenantId);
+        return (IReadOnlyEventStore)session.Events;
+    }
+
     // #5153 lifted both CompactStreamAsync<T> overloads off Marten.Events.IEventStoreOperations and
     // onto JasperFx.Events.IEventStoreOperations, which left the reflective lookup here resolving to
     // null on every call. Type.GetMethod does not walk an interface's base interfaces, and its
