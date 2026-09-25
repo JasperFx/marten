@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
@@ -370,6 +371,15 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
 
 
     /// <summary>
+    ///     Under <see cref="AutoCreate.None" /> a store with no event type and no projection has nothing that
+    ///     provisions or migrates its event tables: db-apply skips an inactive event store (the same gate that
+    ///     keeps <see cref="DeadLetterEvent" /> out of its schema, #4303) and <c>EnsureStorageExistsAsync</c>
+    ///     creates nothing. Whatever progression or dead-letter table exists there is not Marten's to read.
+    /// </summary>
+    private bool eventStorageIsUnmanaged =>
+        Options.AutoCreateSchemaObjects == AutoCreate.None && !Options.EventGraph.IsActive(Options);
+
+    /// <summary>
     ///     Check the current progress of all asynchronous projections
     ///     within this database
     /// </summary>
@@ -391,6 +401,8 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     /// </summary>
     public async Task<IReadOnlyList<ShardState>> AllProjectionProgress(string? tenantId, CancellationToken token = default)
     {
+        if (eventStorageIsUnmanaged) return [];
+
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var statement = new ProjectionProgressStatement(Options.EventGraph) { TenantId = tenantId };
@@ -457,6 +469,8 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     public async ValueTask<ProjectionProgressRow?> ReadProjectionProgressAsync(
         string projectionName, string? tenantId, CancellationToken token)
     {
+        if (eventStorageIsUnmanaged) return null;
+
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var extended = Options.EventGraph.EnableExtendedProgressionTracking;
@@ -552,6 +566,8 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     public async ValueTask<ProjectionProgressRow?> ReadProjectionProgressAsync(
         ShardName name, CancellationToken token)
     {
+        if (eventStorageIsUnmanaged) return null;
+
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var extended = Options.EventGraph.EnableExtendedProgressionTracking;
@@ -628,6 +644,8 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     /// </summary>
     public async Task<long> CountDeadLetterEventsAsync(ShardName shard, CancellationToken token = default)
     {
+        if (eventStorageIsUnmanaged) return 0;
+
         await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
 
         // DeadLetterEvent is a Marten document, so query it with LINQ — the JSONB
@@ -646,6 +664,8 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     /// </summary>
     public async Task<IReadOnlyList<DeadLetterShardCount>> FetchDeadLetterCountsAsync(CancellationToken token = default)
     {
+        if (eventStorageIsUnmanaged) return [];
+
         await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
 
         await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
@@ -673,6 +693,8 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
         {
             return await FetchDeadLetterCountsAsync(token).ConfigureAwait(false);
         }
+
+        if (eventStorageIsUnmanaged) return [];
 
         await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
 
@@ -717,6 +739,8 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
 
     public async Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names, CancellationToken token = default)
     {
+        if (eventStorageIsUnmanaged) return [];
+
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
@@ -755,6 +779,8 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     public async Task<long> ProjectionProgressFor(ShardName name,
         CancellationToken token = default)
     {
+        if (eventStorageIsUnmanaged) return 0;
+
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
         var statement = new ProjectionProgressStatement(Options.EventGraph) { Name = name };
