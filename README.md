@@ -4,8 +4,7 @@
 
 [![Discord](https://img.shields.io/discord/1074998995086225460?color=blue&label=Chat%20on%20Discord)](https://discord.gg/WMxrvegf8H)
 ![Twitter Follow](https://img.shields.io/twitter/follow/marten_lib?logo=Twitter&style=flat-square)
-[![Windows Build Status](https://ci.appveyor.com/api/projects/status/va5br63j7sbx74cm/branch/master?svg=true)](https://ci.appveyor.com/project/jasper-ci/marten/branch/master)
-[![Linux Build status](https://dev.azure.com/jasperfx-marten/marten/_apis/build/status/marten?branchName=master)](https://dev.azure.com/jasperfx-marten/marten/_build/latest?definitionId=1&branchName=master)
+[![Tests](https://github.com/JasperFx/marten/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/JasperFx/marten/actions/workflows/tests.yml)
 [![Nuget Package](https://badgen.net/nuget/v/marten)](https://www.nuget.org/packages/Marten/)
 [![Nuget](https://img.shields.io/nuget/dt/marten)](https://www.nuget.org/packages/Marten/)
 
@@ -44,187 +43,261 @@ While Marten is open source, [JasperFx Software offers paid support and consulti
 
 ## Working with the Code
 
-Before getting started you will need the following in your environment:
+### Prerequisites
 
-### 1. .NET SDK 8.0+
+- [.NET SDK](https://dotnet.microsoft.com/download) 9.0 **and** 10.0 — the libraries and test projects
+  multi-target `net9.0;net10.0`
+- [Docker](https://www.docker.com/) (recommended) or your own PostgreSQL 13+ server
+- [Node.js](https://nodejs.org/en/) 22+ — only needed to work on the documentation website
 
-Available [here](https://dotnet.microsoft.com/download)
+The build is driven by [Nuke](https://nuke.build/) (`build/build.cs`). `build.sh`, `build.ps1` and
+`build.cmd` are thin wrappers, so any target below can be run as `./build.sh <target>` on Linux/macOS,
+`.\build.ps1 <target>` in PowerShell, or `build.cmd <target>` on Windows.
 
-### 2. PostgreSQL 13 or above database
-
-The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have Docker running on your local box, type:
-`docker-compose up`
-or
-`dotnet run --framework net6.0 -- init-db`
-at the command line to spin up a Postgresql database withThe default Marten test configuration tries to find this database if no
-PostgreSQL database connection string is explicitly configured following the steps below:
-
-### Native Partial Updates/Patching
-
-Marten supports native patching since v7.x. you can refer to [patching api](https://martendb.io/documents/partial-updates-patching.html) for more details.
-
-### Database Setup
-
-Ensure the following:
-
-- The login you are using to connect to your database is a member of the `postgres` role
-- An environment variable of `marten_testing_database` is set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about PostgreSQL connection strings ).
-
-PLV8 is no longer part of developing Marten: the patching API it once backed was replaced by the
-native implementation linked above, and the compose image dropped the extension. If you are
-maintaining an older application that still uses it, it lives in the separate `Marten.PLv8` package.
-
-### Test Config Customization
-
-`docker-compose.yml` builds its PostgreSQL image from `docker/postgres/Dockerfile`, which layers
-PostGIS 3 and pgvector onto the official `postgres:17` image so the Marten.PostGIS and Marten.PgVector
-test projects have the extensions they need. Both Debian packages are multi-arch, so this builds on
-Apple-silicon hosts without emulation.
-
-To run against a different PostgreSQL version, point the test suite at your own database with the
-`marten_testing_database` environment variable rather than overriding the compose image — the service
-uses `build:`, so it has no image tag to override.
-
-Note that the async daemon requires **PostgreSQL 13 or later** (it calls `pg_current_snapshot()`); CI
-runs `postgres:15-alpine` and `postgres:latest`.
-
-Tests explorer should be able to detect database version automatically, but if it's not able to do it, you can enforce it by setting `postgresql_version` to a specific one (e.g.)
-
-```shell
-postgresql_version=15.3
+```bash
+./build.sh compile     # restore and build src/Marten.slnx (the default target)
 ```
 
-Once you have the codebase and the connection string file, run the [build command](https://github.com/JasperFx/marten#build-commands) or use the dotnet CLI to restore and build the solution.
+### PostgreSQL
 
-You are now ready to contribute to Marten.
+Marten supports **PostgreSQL 13 or later**; the async daemon relies on `pg_current_snapshot()`,
+which first shipped in 13.
 
-See more in [Contribution Guidelines](CONTRIBUTING.md).
+The quickest way to get a test database is the Docker Compose file at the repository root:
 
-### Tooling
+```bash
+docker compose up -d          # or: ./build.sh init-db  (starts it and waits until it is ready)
+```
 
-* Unit Tests rely on [xUnit](http://xunit.github.io/) and [Shouldly](https://github.com/shouldly/shouldly)
-* [Bullseye](https://github.com/adamralph/bullseye) is used for build automation.
-* [Node.js](https://nodejs.org/en/) runs our Mocha specs.
-* [Storyteller](http://storyteller.github.io) for some of the data intensive automated tests
+`docker-compose.yml` builds its image from `docker/postgres/Dockerfile`, which layers **PostGIS 3** and
+**pgvector** onto the official `postgres:17` image, so the Marten.PostGIS and Marten.PgVector test
+projects have the extensions they need. Both packages are multi-arch, so this builds natively on
+Apple-silicon machines. It listens on port 5432 with the `postgres`/`postgres` login and a
+`marten_testing` database. `./build.sh rebuild-db` tears the container down and starts it again.
 
-### Build Commands
+A few suites need something other than the standard database:
 
-| Description                         | Windows Commandline      | PowerShell               | Linux Shell             | DotNet CLI                                                |
-|-------------------------------------|--------------------------|--------------------------|-------------------------|-----------------------------------------------------------|
-| Run restore, build and test         | `build.cmd`              | `build.ps1`              | `build.sh`              | `dotnet build src/Marten.slnx`                            |
-| Run all tests including mocha tests | `build.cmd test`         | `build.ps1 test`         | `build.sh test`         | `dotnet run --project build/build.csproj -- test`         |
-| Run just mocha tests                | `build.cmd mocha`        | `build.ps1 mocha`        | `build.sh mocha`        | `dotnet run --project build/build.csproj -- mocha`        |
-| Run StoryTeller tests               | `build.cmd storyteller`  | `build.ps1 storyteller`  | `build.sh storyteller`  | `dotnet run --project build/build.csproj -- storyteller`  |
-| Open StoryTeller editor             | `build.cmd open_st`      | `build.ps1 open_st`      | `build.sh open_st`      | `dotnet run --project build/build.csproj -- open_st`      |
-| Run docs website locally            | `build.cmd docs`         | `build.ps1 docs`         | `build.sh docs`         | `dotnet run --project build/build.csproj -- docs`         |
-| Publish docs                        | `build.cmd publish-docs` | `build.ps1 publish-docs` | `build.sh publish-docs` | `dotnet run --project build/build.csproj -- publish-docs` |
-| Run benchmarks                      | `build.cmd benchmarks`   | `build.ps1 benchmarks`   | `build.sh benchmarks`   | `dotnet run --project build/build.csproj -- benchmarks`   |
+| Suite                 | Database                                                                                                   |
+|-----------------------|------------------------------------------------------------------------------------------------------------|
+| Marten.TimescaleDB    | `docker compose -f docker-compose.timescaledb.yml up -d` (TimescaleDB on port 5433 — point `marten_testing_database` at it) |
+| MultiHostTests        | `docker compose -f src/MultiHostTests/docker-compose.yaml up -d` (primary/standby pair on ports 5440/5441) |
 
-> Note: You should have a running Postgres instance while running unit tests or StoryTeller tests.
+PLV8 is no longer part of developing Marten — the patching API it once backed has been replaced by
+[native partial updates](https://martendb.io/documents/partial-updates-patching.html), and neither the
+compose image nor CI installs the extension. Older applications that still depend on it can use the
+separate `Marten.PLv8` package.
 
-### xUnit.Net Specs
+### Test configuration
 
-The tests for the main library are now broken into three testing projects:
+By default the tests connect to:
 
-1. `CoreTests` -- basic services like retries, schema management basics
-1. `DocumentDbTests` -- anything specific to the document database features of Marten
-1. `EventSourcingTests` -- anything specific to the event sourcing features of Marten
+```text
+Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres
+```
 
-To aid in integration testing, Marten.Testing has a couple reusable base classes that can be use
-to make integration testing through Postgresql be more efficient and allow the xUnit.Net tests
-to run in parallel for better throughput.
+To use a different server or PostgreSQL version, set environment variables rather than editing the
+compose file:
 
-- `IntegrationContext` -- if most of the tests will use an out of the box configuration
-  (i.e., no fluent interface configuration of any document types), use this base type. Warning though,
-  this context type will **not** clean out the main `public` database schema between runs,
-  but will delete any existing data
-- `DestructiveIntegrationContext` -- similar to `IntegrationContext`, but will wipe out any and all
-  Postgresql schema objects in the `public` schema between tests. Use this sparingly please.
-- `OneOffConfigurationsContext` -- if a test suite will need to frequently re-configure
-  the `DocumentStore`, this context is appropriate. You do *not* need to decorate any of these
-  test classes with the `[Collection]` attribute. This fixture will use an isolated schema using the name of the
-  test fixture type as the schema name
-- `BugIntegrationContext` -- the test harnesses for bugs tend to require custom `DocumentStore`
-  configuration, and this context is a specialization of `OneOffConfigurationsContext` for
-  the *bugs* schema.
-- `StoreFixture` and `StoreContext` are helpful if a series of tests use the same custom
-  `DocumentStore` configuration. You'd need to write a subclass of `StoreFixture`, then use
-  `StoreContext<YourNewStoreFixture>` as the base class to share the `DocumentStore` between
-  test runs with xUnit.Net's shared context (`IClassFixture<T>`)
+| Variable                       | Purpose                                                                        |
+|--------------------------------|--------------------------------------------------------------------------------|
+| `marten_testing_database`      | Connection string for the test database (the login needs the `postgres` role) |
+| `DEFAULT_SERIALIZER`           | `Newtonsoft` (default) or `SystemTextJson`                                     |
+| `DISABLE_TEST_PARALLELIZATION` | `true` to run test collections serially, as CI does                           |
 
-### Mocha Specs
+### Running the tests
 
-Refer to the build commands section to look up the commands to run Mocha tests. There is also `npm run tdd` to run the mocha specifications
-in a watched mode with growl turned on.
+The test suites use [xUnit.net v3](https://xunit.net/) and [Shouldly](https://github.com/shouldly/shouldly),
+and are split across many test projects under `src/`. There is one build target per test project:
 
-> Note: remember to run `npm install`
+| Target                                         | Project                                       |
+|------------------------------------------------|-----------------------------------------------|
+| `test-base-lib`                                | `Marten.Testing` (shared harness)             |
+| `test-core`                                    | `CoreTests` — schema management, retries, core services |
+| `test-document-db`                             | `DocumentDbTests` — document storage features |
+| `test-event-sourcing`                          | `EventSourcingTests` — events and projections |
+| `test-daemon`                                  | `DaemonTests` — async projection daemon       |
+| `test-linq`                                    | `LinqTests` — LINQ-to-SQL translation         |
+| `test-patching`                                | `PatchingTests` — partial document updates    |
+| `test-multi-tenancy`                           | `MultiTenancyTests`                           |
+| `test-tenant-partitioned-events`               | `TenantPartitionedEventsTests`                |
+| `test-value-types`                             | `ValueTypeTests` — strong-typed identifiers   |
+| `test-modular-config`                          | `ModularConfigTests`                          |
+| `test-container-scoped-projections`            | `ContainerScopedProjectionTests`              |
+| `test-compiled-queries`                        | `CompiledQueryTests`                          |
+| `test-source-generator`                        | `Marten.SourceGenerator.Tests` (no database)  |
+| `test-aot-runtime`                             | Native AOT smoke test                         |
+| `test-stress`                                  | `StressTests` (not run in CI)                 |
+| `test-multi-host`                              | `MultiHostTests` (needs its own compose file) |
+| `test-noda-time`, `test-aspnetcore`, `test-postgis`, `test-pgvector`, `test-timescaledb`, `test-entity-framework-core`, `test-memory-pack` | The extension packages |
 
-### Storyteller Specs
+Aggregate targets:
 
-Refer to build commands section to look up the commands to open the StoryTeller editor or run the StoryTeller specs.
+```bash
+./build.sh test              # every core suite against the standard database
+./build.sh test-extensions   # NodaTime, AspNetCore, PostGIS, PgVector, TimescaleDB, EF Core, MemoryPack
+```
 
-### Current Build Matrix
+Useful options for any test target:
 
-CI is GitHub Actions only (`.github/workflows/tests.yml`). Each test suite is its own job, run
-against one of these two pairings:
+```bash
+./build.sh test-event-sourcing --framework net10.0       # one TFM instead of every built TFM
+./build.sh test-core --configuration Release
+./build.sh test-core --disable-test-retry                # see a suite's real stability
+```
 
-| .NET | Postgres           | Serializer |
-|:----:|:-------------------|:-----------|
-|  9   | `postgres:15-alpine` | Newtonsoft |
-|  10  | `postgres:latest`  | System.Text.Json |
+Test targets don't shell out to `dotnet test`. They run each project through the
+[Bobcat](https://github.com/JasperFx/bobcat) test supervisor (`build/SupervisedTests.cs`): a failing
+test is retried in a **fresh process**, and a test that only passes on a retry is reported as
+**flaky** — in the console, in the GitHub job summary and in a JSON ledger under
+`artifacts/test-ledger/` — rather than being counted as a clean pass. For a genuinely racy test,
+`[Trait("Retry", "3")]` raises its attempt limit and `[Trait("Isolated", "true")]` runs it in its own
+process.
 
-plv8 is no longer used or installed anywhere in CI.
+While you're iterating, you can also run a project or a single test directly from your IDE's test
+runner or with the dotnet CLI:
 
-A few suites run against purpose-built images instead: PostGIS (`postgis:17-3.5`), PgVector
-(`pgvector:pg17`) and TimescaleDB (`timescaledb-ha:pg17`), plus a native `PublishAot` smoke run and a
-two-node replication pair for the multi-host tests.
+```bash
+dotnet test src/DocumentDbTests/DocumentDbTests.csproj --framework net10.0
+```
+
+Every test project must import `src/Tests.props`, which sets up xUnit v3 and the Microsoft Testing
+Platform host the supervisor relies on.
+
+#### Integration test harness
+
+`src/Marten.Testing/Harness` has base classes that make integration tests against PostgreSQL efficient
+and parallel-friendly:
+
+- `IntegrationContext` — a shared, default-configured `DocumentStore`. Data is **not** cleared
+  between tests, so if your assertions depend on a document type only holding what your test wrote,
+  override `ClearedBeforeEachTest` to list those types.
+- `DestructiveIntegrationContext` — like `IntegrationContext`, but wipes the `public` schema between
+  tests. Use it sparingly.
+- `OneOffConfigurationsContext` — for tests that configure their own store through
+  `StoreOptions(...)`. Each fixture gets an isolated schema named after the test class.
+- `BugIntegrationContext` — a `OneOffConfigurationsContext` that puts every bug-reproduction test in
+  the shared `bugs` schema.
+- `StoreFixture` / `StoreContext<T>` — share one custom-configured `DocumentStore` across a class
+  through xUnit's `IClassFixture<T>`.
+
+### Continuous integration
+
+CI runs on GitHub Actions only ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)). Each
+test project is a separate job on its own runner and database, and the core suites run against both
+supported combinations:
+
+| .NET | PostgreSQL           | Serializer       |
+|:----:|:---------------------|:-----------------|
+|  9   | `postgres:15-alpine` | Newtonsoft       |
+|  10  | `postgres:latest`    | System.Text.Json |
+
+The extension suites use purpose-built images — `postgis/postgis:17-3.5`, `pgvector/pgvector:pg17` and
+`timescale/timescaledb-ha:pg17` — and there are extra jobs for the Native AOT smoke test and for the
+two-node replication pair used by `MultiHostTests`. A final `flakiness` job rolls up every job's retry
+ledger. Tests run in Release with parallelization disabled.
+
+**Adding a test project takes two changes:** a target in `build/build.cs` *and* a matrix entry in
+`tests.yml`. A project with no CI entry isn't being run.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow and PR guidelines.
+
+### Other build targets
+
+| Target                   | Description                                               |
+|--------------------------|-----------------------------------------------------------|
+| `compile`                | Restore and build the solution (default)                  |
+| `init-db` / `rebuild-db` | Start (or restart) the Docker Compose PostgreSQL database |
+| `docs`                   | Run the documentation website locally (see below)         |
+| `docs-build`             | Build the static documentation site                       |
+| `clear-inline-samples`   | Strip generated snippet bodies out of the docs Markdown   |
+| `benchmarks`             | Run the BenchmarkDotNet suite in `MartenBenchmarks`       |
+| `pack`                   | Build the NuGet packages                                  |
 
 ## Documentation
 
-All the documentation is written in Markdown and the docs are published as a static site hosted in Netlify. v4.x and v3.x use different documentation tools hence are detailed below in separate sub-sections.
+The documentation at [martendb.io](https://martendb.io/) is written in Markdown under [`/docs`](docs),
+built with [VitePress](https://vitepress.dev/), and hosted on Netlify. Code samples are pulled into the
+Markdown from compiling, tested source code by [MarkdownSnippets](https://github.com/SimonCropp/MarkdownSnippets),
+and search is provided by [Algolia DocSearch](https://docsearch.algolia.com/).
 
-### v4.x and above
+### Running the docs locally
 
-[VitePress](https://vitepress.vuejs.org/) is used as documentation tool. Along with this, [MarkdownSnippets](https://github.com/SimonCropp/MarkdownSnippets) is used for adding code snippets to docs from source code and [Algolia DocSearch](https://docsearch.algolia.com/) is used for searching the docs via the search box.
+```bash
+dotnet tool restore   # installs the pinned mdsnippets tool from .config/dotnet-tools.json
+npm install
+npm run docs
+```
 
-The documentation content is the Markdown files in the `/docs` directory directly under the project root. To run the docs locally use `npm run docs` with auto-refresh on any changes.
+`npm run docs` first runs `mdsnippets` to refresh every code snippet in the Markdown, then starts the
+VitePress dev server at <http://localhost:5050> with hot reload. `./build.sh docs` does the same thing
+and installs the npm packages and the `mdsnippets` tool for you.
 
-To add code samples/snippets from the tests in docs, follow the steps below:
+Other scripts:
 
-Use C# named regions to mark a code block as described in the sample below
+| Command              | Description                                          |
+|----------------------|------------------------------------------------------|
+| `npm run mdsnippets` | Refresh the code snippets in the Markdown only       |
+| `npm run docs-build` | Refresh snippets, then build the static site         |
+| `npm run vitepress-dev` | Start VitePress without refreshing snippets       |
+
+To add a new page, create the Markdown file under `docs/` and add it to the sidebar in
+[`docs/.vitepress/config.mts`](docs/.vitepress/config.mts).
+
+### Code samples with MarkdownSnippets
+
+Don't paste C# into the Markdown. Instead, mark the code in the source — usually in a test, so the
+sample is compiled and exercised by the build — with a named region whose name starts with `sample_`:
 
 ```csharp
-#region sample_my-snippet
-// code sample/snippet
-// ...
+#region sample_my_snippet
+var user = new User { FirstName = "Han" };
+session.Store(user);
+await session.SaveChangesAsync();
 #endregion
 ```
 
-All code snippet identifier starts with `sample_` as a convention to clearly identify that the region block corresponds to a sample code/snippet used in docs. Recommend to use kebab case for the identifiers with words in lower case.
+Then reference it from a docs page with an empty snippet block:
 
-Use the below to include the code snippet in a docs page
+```markdown
+<!-- snippet: sample_my_snippet -->
+<!-- endSnippet -->
+```
 
-<pre>
-&#60;!-- snippet: sample_my-snippet -->
-&#60;!-- endSnippet -->
-</pre>
+When `mdsnippets` runs (as part of `npm run docs`), it fills the block in place with the code and a
+link back to the source file on GitHub (see [`mdsnippets.json`](mdsnippets.json)). Search the
+repository for `sample_` or `snippet:` to find plenty of examples.
 
-Note that when you run the docs locally, the above placeholder block in the Markdown file will get updated inline with the actual code snippet from the source code. Please commit the changes with the auto-generated inline code snippet as-is after you preview the docs page. This helps with easier change tracking when you send PR's.
+A few rules:
 
-Few gotchas:
+- **Edit the source, not the Markdown.** The generated code between the snippet markers is overwritten
+  on every run, so change the `#region` in the C# file.
+- **Commit the regenerated Markdown** with your change, so reviewers can see the actual docs content
+  in the PR.
+- **Snippet names are unique across the repository** and a missing snippet fails the run
+  (`TreatMissingAsWarning` is `false`).
+- Some directories, including the core `src/Marten` library, are excluded as snippet sources in
+  `mdsnippets.json` — put samples in test or sample projects.
 
-- Any changes to the code snippets will need to done in the source code. Do not edit/update any of the auto-generated inline code snippet directly in the Markdown files.
-- The latest snippet are always pulled into the docs while we publish the docs. Hence do not worry about the inline code snippet in Markdown file getting out of sync with the snippet in source code.
+### Linting
 
-### v3.x
+Pull requests that touch `docs/` run markdownlint and cspell
+([`.github/workflows/docs-prs.yml`](.github/workflows/docs-prs.yml)). Run them locally first:
 
-[stdocs](https://www.nuget.org/packages/dotnet-stdocs/) is used as documentation tool. The documentation content is the markdown files in the `/documentation` directory directly under the project root. Any updates to v3.x docs will need to done in [3.14 branch](https://github.com/JasperFx/marten/tree/3.14). To run the documentation website locally with auto-refresh, refer to the build commands section above.
+```bash
+npx --yes markdownlint-cli@latest --disable MD009 -- "docs/**/*.md"
+npx --yes cspell --config ./docs/cSpell.json "docs/**/*.md"
+```
 
-If you wish to insert code samples/snippet to a documentation page from the tests, wrap the code you wish to insert with
-`// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
-Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
+Add legitimate technical terms to the `words` list in `docs/cSpell.json`.
 
-> Note: content is published to the `gh-pages` branch of this repository. Refer to build commands section to lookup the command for publishing docs.
+### Publishing
+
+The docs are deployed to Netlify by the manually triggered
+[Docs build and deploy](.github/workflows/docs.yml) workflow (`./build.sh publish-docs`, or
+`publish-docs-preview` for a preview deploy).
+
+> The Marten 3.x documentation lived in the `/documentation` folder and used a different tool; it is
+> maintained only on the [3.14 branch](https://github.com/JasperFx/marten/tree/3.14).
 
 ## License
 
