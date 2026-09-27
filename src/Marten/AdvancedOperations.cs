@@ -849,6 +849,12 @@ public class AdvancedOperations
     /// <returns></returns>
     public Task DeleteAllTenantDataAsync(string tenantId, CancellationToken token)
     {
+        // #5516: the cleaner uses this id as a DELETE ... WHERE tenant_id = :p parameter, not just to
+        // resolve a database, so a raw id deletes NOTHING and still reports success. That is the worst
+        // shape this bug class takes -- the caller is usually honouring an erasure request. Every other
+        // tenant-id entry point on this class already corrects the id first.
+        tenantId = _store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+
         var cleaner = new TenantDataCleaner(tenantId, _store);
         return cleaner.ExecuteAsync(token);
     }
