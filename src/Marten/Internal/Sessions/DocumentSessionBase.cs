@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
@@ -425,6 +426,12 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     /// <returns></returns>
     public new ITenantOperations ForTenant(string tenantId)
     {
+        // #5516: before anything keys off it. Untouched, the raw id became the cache key, the argument to
+        // IsTenantStoredInCurrentDatabase, AND the Tenant the nested session stamps its writes with — so
+        // ForTenant("RED") under ForceLowerCase wrote tenant_id = 'RED' rows that LightweightSession("RED")
+        // could never read back, because that path does normalise.
+        tenantId = DocumentStore.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+
         _byTenant ??= new Dictionary<string, NestedTenantSession>();
 
         if (_byTenant.TryGetValue(tenantId, out var tenantSession))
