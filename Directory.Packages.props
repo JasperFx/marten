@@ -646,15 +646,89 @@
          Also rides along, inert for Marten: jasperfx#881 (StaticTenantSource throws
          UnknownTenantIdException with the known-tenant list), jasperfx#883 (tenant-id casing docs)
          and jasperfx#884 (RuntimeCompiler's CodeGenerationException derives from the shared one). -->
-    <PackageVersion Include="JasperFx" Version="2.74.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.74.0" />
+    <!-- JasperFx 2.75.0. Three of the seven changes here are the answer to marten#5495, where a user
+         whose aggregates compiled with no dispatcher got a nine-line runtime paragraph that could not
+         tell them which of its causes they had.
+         jasperfx#887/#890 has the source generator emit [assembly: JasperFxSourceGeneratorApplied]
+         from RegisterPostInitializationOutput, so the marker lands even in an assembly with zero
+         candidates. The runtime can finally separate "the generator never ran here" (a csproj
+         problem) from "the generator ran and declined your type" (a code-shape problem) and say which
+         — SourceGeneratorMarker.DescribeGeneratorReach. Absence still is not proof: an assembly built
+         by a pre-marker generator carries none either, which is why the third state is called
+         Unconfirmed and the wording never claims more than it knows.
+         jasperfx#891/#895 dedupes the analyzer. Marten bundles JasperFx.Events.SourceGenerator.dll
+         into its own package (marten#4557), so a project that ALSO references the standalone analyzer
+         package hands csc two copies of one generator. Both emit identical file paths, the
+         file-scoped evolvers mangle to the same name, and the build fails with `CS0433: The type
+         'XEvolver' exists in both 'YourAssembly' and 'YourAssembly'` — the same assembly named twice,
+         which is the signature of one generator running twice rather than of two packages. The SDK's
+         own conflict resolution masks this whenever the two copies differ in version, so it bites
+         only when they match exactly, which is what made it look like something else on marten#5495.
+         The fix is a target in JasperFx.Events's buildTransitive folder, and it does reach Marten's
+         consumers even though Marten's dependency on JasperFx.Events carries exclude="Build,Analyzers"
+         — verified by packing a store-shaped package and building a consumer against it.
+         jasperfx#892/#896 adds the opt-in JasperFxEventsRequireSourceGenerator property, turning "the
+         analyzer never reached this project" into build error JFXEVT900 instead of a runtime failure
+         at the first FetchForWriting. Opt-in on purpose: nothing in the build can distinguish a
+         project that SHOULD declare aggregates from one that has none.
+         ⚠️ jasperfx#889 is a behaviour change, and the only thing in this bump that can alter what a
+         working application already does: the source-generated DetermineAction now decides one action
+         per BATCH rather than per event, which changes what an archiving projection does when a batch
+         mixes an archive with later events for the same stream. StreamArchivingCompliance grew facts
+         for it, and Marten is enrolled in that suite.
+         jasperfx#888 adds IEventStore.OpenReadOnlyEventStore(string? tenantId) as a DEFAULT interface
+         member that throws, so this bump does not force Marten to implement it. Adoption is
+         marten#5513.
+         Also rides along: jasperfx#897 (wording for the two #886 compliance facts) and
+         jasperfx#898/#899, which add the ConjoinedEventTenancyCompliance and
+         DocumentConjoinedTenancyCompliance suites. Both are source-only and enrolled per store, so
+         Marten gains nothing from them until it opts in. -->
+    <!-- JasperFx 2.75.1, three changes on top of 2.75.0.
+         jasperfx#905 is the reason to take this patch: it repairs two compliance facts that 2.75.0
+         shipped wrong. The tenanted-concurrency fact contradicted itself, and the phantom-delete fact
+         passed without discriminating — it would have gone green against a store that did the wrong
+         thing. StreamArchivingCompliance and DocumentConjoinedTenancyCompliance both move, and Marten
+         IS enrolled in StreamArchivingCompliance, so this is the one part of the patch with teeth
+         here. Taking 2.75.0 without it means trusting a fact that cannot fail.
+         jasperfx#900/#904 stops a Block worker from inheriting Activity.Current as captured when the
+         block was CONSTRUCTED, which otherwise parents every span a worker emits under whatever
+         activity happened to be open at construction time. Marten's daemon runs on Blocks, so this
+         changes span parentage in daemon traces — compare with marten#5465, which was the same class
+         of wrong-grandparent bug seen from Marten's side.
+         jasperfx#887/#901 adds the double-load test case the marker fact could not reach (an assembly
+         with no aggregates at all). Test-only.
+         ⚠️ Still NOT fixed in 2.75.1: AggregateApplication.MissingDispatcherMessage() is
+         byte-identical there, so the inverted "DID run" verdict for Snapshot<T> /
+         SingleStreamProjection<T, TId> — where the projection type is Marten's own generic and
+         Marten.dll always carries the marker — stood. Filed as jasperfx#906 and fixed in 2.75.2. -->
+    <!-- JasperFx 2.75.2, and this is the one that finally makes the #887 marker tell the truth for
+         Marten's commonest registration shapes.
+         jasperfx#906/#907 stops the verdict being inverted. The evidence list now excludes a
+         CONSTRUCTED GENERIC projection type, so Snapshot<T>() / SingleStreamProjection<T, TId> /
+         AggregateStream<T> no longer let Marten.dll's own marker answer a question about the USER's
+         build. Note the fix deliberately keeps the Any quantifier rather than switching to All: a
+         user-declared MyProjection : SingleStreamProjection<Agg, Guid> really does get its evolver
+         emitted into its own assembly, so confirmation there is genuine even when the aggregate's
+         assembly carries no marker. The exclusion applies to a closed generic whoever owns it —
+         there is no user declaration for the generator to hang an evolver on either way. This is what
+         unblocks marten#5495.
+         jasperfx#902/#907 also separates DIAGNOSING the double analyzer load from FIXING it. With two
+         copies present and JasperFxEventsDedupeSourceGeneratorAnalyzers=false, the build now warns
+         JFXEVT902 naming both paths, the CS0433 to expect and its fingerprint (one assembly named
+         twice). Silent when there is one copy or when the dedupe handled it. The generated marker file
+         also carries a header explaining the CS0433, which is the only thing that reaches a
+         compilation running none of our targets.
+         jasperfx#908/#909 imports and exercises the shipped MSBuild targets in JasperFx's own CI, so
+         the targets Marten consumers depend on are no longer only design-reasoned. -->
+    <PackageVersion Include="JasperFx" Version="2.75.2" />
+    <PackageVersion Include="JasperFx.Events" Version="2.75.2" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.74.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.75.2" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -673,11 +747,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.74.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.75.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.74.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.75.2" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -726,9 +800,9 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.34.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.34.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.34.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.35.2" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.35.2" />
+    <PackageVersion Include="Weasel.Storage" Version="9.35.2" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
