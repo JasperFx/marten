@@ -1,8 +1,12 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.ComplianceTests;
 using JasperFx.Events.Documents;
+using Marten.Storage;
 
 namespace Marten.Testing.Harness;
 
@@ -42,6 +46,44 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     /// <c>DocumentComplianceConfig.OptimisticConcurrencyTypes</c>, which BuildStoreAsync below does.
     /// </remarks>
     public override bool SupportsOptimisticConcurrency => true;
+
+    /// <summary>
+    /// #5517 / jasperfx#898. Marten's conjoined tenancy, opted into per document type with
+    /// <c>MultiTenanted()</c> — which BuildStoreAsync replays from
+    /// <c>DocumentComplianceConfig.ConjoinedDocuments</c>. Flipping this without that replay does not
+    /// make the suite skip; it makes its isolation facts fail, because a single-tenanted store folds
+    /// both tenants into one row.
+    /// </summary>
+    /// <summary>
+    /// #5517. Marten implements numeric revisions through <c>Schema.For&lt;T&gt;().UseNumericRevisions()</c>
+    /// and <c>Metadata.Revision</c>, so the per-tenant revision fact runs rather than skipping.
+    /// BuildStoreAsync replays <c>DocumentComplianceConfig.NumericRevisionTypes</c> to match.
+    /// </summary>
+    public override bool SupportsNumericRevisions => true;
+
+    public override bool SupportsConjoinedDocuments => true;
+
+    /// <summary>
+    /// #5517. Separate gate from <see cref="SupportsConjoinedDocuments" /> on purpose — a store can
+    /// have conjoined storage and no cross-tenant escape — and Marten has both.
+    /// </summary>
+    public override bool SupportsCrossTenantQueries => true;
+
+    /// <summary>
+    /// Marten spells the cross-tenant escapes as element predicates INSIDE the <c>Where</c>, which the
+    /// LINQ parser recognizes from the extension method's declaring type. That is why these are seam
+    /// members rather than shared source: built anywhere else, the expression carries a
+    /// <c>MethodInfo</c> the parser does not match, and it would fail at translation rather than
+    /// compile time.
+    /// </summary>
+    public override async Task<IReadOnlyList<T>> QueryAllTenantsAsync<T>(
+        IDocumentReadOperations session, CancellationToken token)
+        => await ((IQuerySession)session).Query<T>().Where(x => x.AnyTenant()).ToListAsync(token);
+
+    /// <inheritdoc cref="QueryAllTenantsAsync{T}" />
+    public override async Task<IReadOnlyList<T>> QueryTenantsAsync<T>(
+        IDocumentReadOperations session, string[] tenantIds, CancellationToken token)
+        => await ((IQuerySession)session).Query<T>().Where(x => x.TenantIsOneOf(tenantIds)).ToListAsync(token);
 
     protected override async Task BuildStoreAsync(DocumentComplianceConfig config)
     {
@@ -91,6 +133,34 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
         foreach (var type in config.OptimisticConcurrencyTypes)
         {
             options.Storage.MappingFor(type).UseOptimisticConcurrency = true;
+        }
+
+        // #5517. Replayed so DocumentConjoinedTenancyCompliance's per-tenant revision fact runs rather
+        // than skipping -- it declares UseNumericRevisions<ComplianceLedgerEntry>() and is gated on
+        // SupportsNumericRevisions below.
+        //
+        // Sets the same three fields the fluent UseNumericRevisions(true) sets, not just the flag: the
+        // revision metadata column has to be enabled or nothing reads the value back, and the competing
+        // Guid flavour has to be cleared because BOTH map to mt_version. That mutual exclusion is why
+        // this loop runs AFTER the OptimisticConcurrencyTypes loop above and not before -- a type in
+        // both lists is a contradiction, and last-writer-wins on the numeric side matches the fluent
+        // API's own precedence rather than leaving the mapping with both flags set.
+        foreach (var type in config.NumericRevisionTypes)
+        {
+            var mapping = options.Storage.MappingFor(type);
+            mapping.UseNumericRevisions = true;
+            mapping.UseOptimisticConcurrency = false;
+            mapping.Metadata.Revision.Enabled = true;
+            mapping.Metadata.Version.Enabled = false;
+        }
+
+        // #5517 / jasperfx#898. NOT optional, and not a skip if dropped: a single-tenanted store folds
+        // both tenants' writes into one row, so DocumentConjoinedTenancyCompliance's isolation facts
+        // FAIL rather than skip. MultiTenanted() is the conjoined opt-in per document type; the suite
+        // names the types and the fixture replays them, exactly as with OptimisticConcurrencyTypes.
+        foreach (var type in config.ConjoinedDocuments)
+        {
+            options.Storage.MappingFor(type).TenancyStyle = TenancyStyle.Conjoined;
         }
 
         // jasperfx#672 (#5249). The suite states the stream identity it needs and the fixture

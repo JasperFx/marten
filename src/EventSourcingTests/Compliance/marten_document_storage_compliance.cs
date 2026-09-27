@@ -108,6 +108,26 @@ public class document_commit_listener_compliance
 public class guid_optimistic_concurrency_compliance
     : GuidOptimisticConcurrencyCompliance<MartenDocumentComplianceFixture>;
 
+/*
+ * #5517 (jasperfx#898/#899). The ninth suite, 10 facts, and the first document coverage of conjoined
+ * tenancy on any store. Opt-in through TWO fixture gates rather than one: SupportsConjoinedDocuments
+ * for the storage style and SupportsCrossTenantQueries for the AnyTenant / TenantIsOneOf escapes,
+ * which genuinely come apart -- a store can have conjoined storage and no cross-tenant escape.
+ *
+ * Three fixture obligations, and the first is the one that bites. Replaying
+ * DocumentComplianceConfig.ConjoinedDocuments as a Conjoined TenancyStyle is NOT optional: drop it and
+ * the isolation facts FAIL rather than skip, because a single-tenanted store folds both tenants'
+ * writes into one row and each tenant reads the other's. Second, the two cross-tenant seam members --
+ * Marten spells both escapes as element predicates inside the Where, recognized by the LINQ parser
+ * from the extension method's declaring type, so they cannot be written in shared source at all.
+ * Third, the suite opens tenant-scoped sessions through IDocumentSessionFactory, which needed the
+ * explicit forwarders added to IDocumentStore in this change -- without them the suite calls the
+ * contract's throwing defaults on tenancy that is entirely correct.
+ */
+[Collection(DocumentComplianceCollection.Name)]
+public class document_conjoined_tenancy_compliance
+    : DocumentConjoinedTenancyCompliance<MartenDocumentComplianceFixture>;
+
 public static class DocumentComplianceCollection
 {
     public const string Name = "document storage compliance";
