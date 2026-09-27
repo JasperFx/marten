@@ -296,8 +296,14 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     public async Task BulkInsertEventsAsync(string tenantId, IReadOnlyList<StreamAction> streams,
         int batchSize = 1000, CancellationToken cancellation = default)
     {
-        var tenant = await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
-            .ConfigureAwait(false);
+        // #5516: normalise ONCE, at the boundary, so the id used to resolve the tenant is the same id
+        // that gets stamped. Correcting it only for the lookup routed the write to the right database or
+        // partition and then wrote the RAW id into tenant_id -- a row that no normalised read can see
+        // under conjoined tenancy, and the wrong key inside the right partition under
+        // UseTenantPartitionedEvents.
+        tenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+
+        var tenant = await Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
 
         await ensureBulkInsertSchemaAsync(tenant.Database, cancellation).ConfigureAwait(false);
 
@@ -358,8 +364,11 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         IReadOnlyList<BulkEventStreamHeader> streamHeaders, IAsyncEnumerable<IEvent> orderedEvents,
         BulkEventSequenceMode sequenceMode, int batchSize = 1000, CancellationToken cancellation = default)
     {
-        var tenant = await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
-            .ConfigureAwait(false);
+        // #5516, same as BulkInsertEventsAsync above: the corrected id resolved the tenant while the raw
+        // one was handed to the appender and stamped on every row.
+        tenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+
+        var tenant = await Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
 
         // Deliberately NO schema work here — provisioning is the caller's contract: apply the base schema
         // at startup and register the tenant first (AddMartenManagedTenantsAsync / the sharded
