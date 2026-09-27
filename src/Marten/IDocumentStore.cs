@@ -35,6 +35,27 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
 
     IDocumentReadOperations IDocumentSessionFactory.QuerySession() => QuerySession();
 
+    // #5517 / jasperfx#898: the same covariance trap as the parameterless pair above, for the
+    // tenant-scoped overloads the contract added. LightweightSession(string, IsolationLevel) has a
+    // defaulted second parameter rather than being a genuine one-argument method, so it satisfies
+    // neither contract member on its own; QuerySession(string) is exact, so it binds the generic
+    // member and needs only the non-generic forwarder. Without these the shared compliance suites
+    // fail on tenancy that is entirely correct, because they would be calling the throwing defaults.
+    //
+    // Deliberately NOT accompanied by a public `LightweightSession(string tenantId)` for symmetry,
+    // even though the shape is asymmetric with QuerySession. C# prefers the candidate with no omitted
+    // optional parameters, so adding it would steal every existing LightweightSession("tenant") call
+    // from the two-argument overload -- the overload-resolution hazard CLAUDE.md records from #5404.
+    // The two are behaviourally identical today, which is exactly what would make such a change look
+    // safe and make a later divergence between them silent.
+    IDocumentSession IDocumentSessionFactory<IDocumentSession, IQuerySession>.LightweightSession(string tenantId)
+        => LightweightSession(tenantId);
+
+    IDocumentSessionOperations IDocumentSessionFactory.LightweightSession(string tenantId)
+        => LightweightSession(tenantId);
+
+    IDocumentReadOperations IDocumentSessionFactory.QuerySession(string tenantId) => QuerySession(tenantId);
+
     /// <summary>
     ///     Information about the current configuration of this IDocumentStore
     /// </summary>

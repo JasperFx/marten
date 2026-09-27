@@ -46,6 +46,21 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsMultipleDatabases => _tenantDatabases.Count > 0;
 
     /// <summary>
+    /// #5517 / jasperfx#898. Marten has the switch — <c>Advanced.DefaultTenantUsageEnabled</c>, which
+    /// database-per-tenant tenancy flips on its own — so
+    /// <c>with_the_default_tenant_disabled_every_read_route_is_reachable_through_a_tenant_scope</c>
+    /// runs rather than skips. BuildStoreAsync replays
+    /// <c>ComplianceStoreConfig.DisableDefaultTenantUsage</c> to make it true of the store.
+    /// </summary>
+    /// <remarks>
+    /// The fact is mostly about REACHABILITY, not the refusal: it walks a tenant session,
+    /// OpenReadOnlyEventStore(tenantId), EventQuery.TenantId and QueryStreamStates(tenantId) before
+    /// asserting the tenant-less refusal last. The tenant-scoped read-only overload it needs is #5513,
+    /// which is why this gate could not be flipped before that landed.
+    /// </remarks>
+    public override bool SupportsDisablingDefaultTenant => true;
+
+    /// <summary>
     /// #5383 part 5 — the database a tenant's data lives in, through Marten's own tenancy rather than
     /// a test-local map, so the suite exercises the resolution the product ships.
     /// </summary>
@@ -123,6 +138,15 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             // Every earlier conjoined suite registered no projection, so this pairing first appears
             // with NaturalKeyCompliance's tenanted configuration.
             options.Policies.AllDocumentsAreMultiTenanted();
+        }
+
+        // #5517 / jasperfx#898. Marten's own switch, which database-per-tenant tenancy also flips
+        // automatically (StoreOptions.cs:1122/1147). Paired with the SupportsDisablingDefaultTenant
+        // gate above; the gate without this replay would leave the fact asserting a refusal that never
+        // happens.
+        if (config.DisableDefaultTenantUsage)
+        {
+            options.Advanced.DefaultTenantUsageEnabled = false;
         }
 
         // jasperfx#893, and load-bearing as of jasperfx#905. The suite hands its listener to the
