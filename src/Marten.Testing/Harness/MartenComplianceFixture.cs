@@ -11,6 +11,7 @@ using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Tags;
 using Marten.Events;
+using Marten.Services;
 using Marten.Services.BatchQuerying;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -122,6 +123,19 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             // Every earlier conjoined suite registered no projection, so this pairing first appears
             // with NaturalKeyCompliance's tenanted configuration.
             options.Policies.AllDocumentsAreMultiTenanted();
+        }
+
+        // jasperfx#893, and load-bearing as of jasperfx#905. The suite hands its listener to the
+        // config and then asserts on what the listener saw, so a fixture that never installs one
+        // makes every commit-listener fact vacuous rather than failing: "no phantom deletion was
+        // reported" is trivially true of a store that reports nothing at all. 2.75.1 added the
+        // control half that turns that silence into a failure, which is how this gap surfaced.
+        // DI registration (services.AddSingleton<IDocumentCommitListener>) is the path a real
+        // application uses; this store is hand-built with no container, so the adapter Marten would
+        // have wrapped it in is applied directly.
+        foreach (var listener in config.CommitListeners)
+        {
+            options.Listeners.Add(new DocumentCommitListenerAdapter(listener));
         }
 
         config.ApplyTo(new MartenComplianceRegistrar(options));
@@ -533,6 +547,13 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
                 config.ApplyTo(new MartenComplianceRegistrar(options));
             })
             .AddAsyncDaemon(DaemonMode.Solo);
+
+        // The hosted store has a container, so the listeners go in the way an application registers
+        // them and Marten does its own adapting. See the note in BuildStoreAsync.
+        foreach (var listener in config.CommitListeners)
+        {
+            builder.Services.AddSingleton(listener);
+        }
 
         if (includeAncillaryStore)
         {
