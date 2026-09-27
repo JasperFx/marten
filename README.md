@@ -258,10 +258,15 @@ await session.SaveChangesAsync();
 
 Then reference it from a docs page with an empty snippet block:
 
-```markdown
-<!-- snippet: sample_my_snippet -->
-<!-- endSnippet -->
-```
+<!-- The markers below are deliberately written as HTML entities inside a <pre> block rather than in a
+     fenced code block. mdsnippets scans EVERY .md file in the repository for `snippet:` markers and
+     does not skip fenced code blocks, so a literal marker here is a real reference to a snippet that
+     does not exist -- which fails the docs build with "Missing snippets" and no obvious culprit.
+     See #5519. Keep it escaped. -->
+<pre>
+&#60;!-- snippet: sample_my_snippet --&#62;
+&#60;!-- endSnippet --&#62;
+</pre>
 
 When `mdsnippets` runs (as part of `npm run docs`), it fills the block in place with the code and a
 link back to the source file on GitHub (see [`mdsnippets.json`](mdsnippets.json)). Search the
