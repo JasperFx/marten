@@ -56,6 +56,13 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     // adapter converge on this same flag (see SetEventStoreInstrumentation).
     bool IEventStore.ExtendedProgressionEnabled => Options.EventGraph.EnableExtendedProgressionTracking;
 
+    /// <summary>
+    ///     jasperfx#914 — Marten's own <c>EventGraph.IsActive</c>: any registered event type other than
+    ///     <c>Archived</c>, or any projection or subscription. Computed on every read, never cached: an
+    ///     event type registered lazily on first append makes a store that started document-only active.
+    /// </summary>
+    bool IEventStore.HasEventStore => Options.EventGraph.IsActive(Options);
+
     bool IEventStore.HasMultipleTenants
     {
         get

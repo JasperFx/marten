@@ -193,6 +193,30 @@ public class reading_the_event_store_with_the_default_tenant_disabled : OneOffCo
     }
 }
 
+/// <summary>
+/// jasperfx#914 — IEventStore.HasEventStore is Marten's EventGraph.IsActive, made reachable. The
+/// document-only case is the one that matters: the interface default is true, so an unimplemented
+/// member would pass every other fact and fail only that one.
+/// </summary>
+public class has_event_store : OneOffConfigurationsContext
+{
+    [Fact]
+    public void a_document_only_store_has_no_event_store()
+    {
+        StoreOptions(opts => opts.Schema.For<DefaultTenantDisabledAggregate>());
+
+        ((IEventStore)theStore).HasEventStore.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void a_registered_event_type_is_an_event_store()
+    {
+        StoreOptions(opts => opts.Events.AddEventType<DefaultTenantDisabledEvent>());
+
+        ((IEventStore)theStore).HasEventStore.ShouldBeTrue();
+    }
+}
+
 public record DefaultTenantDisabledEvent(string Name);
 
 public class DefaultTenantDisabledAggregate
