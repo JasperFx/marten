@@ -1,5 +1,24 @@
 # Migration Guide
 
+## Key Changes in 9.41.0
+
+### `UseAdvisoryLockTransaction` now defaults to `false`
+
+The async daemon's `HotCold` leadership lock is now session-scoped (`pg_try_advisory_lock`) by
+default instead of transaction-scoped (`pg_try_advisory_xact_lock`). The leader no longer keeps a
+transaction open on its lock connection for as long as it holds leadership, so that connection stops
+showing up as `idle in transaction` in `pg_stat_activity`.
+
+No schema change is involved. The one deployment that needs action is a daemon running behind
+PgBouncer in transaction pooling mode, which can hand a session-scoped lock's server connection to
+another client. Restore the previous behavior there:
+
+```cs
+opts.Events.UseAdvisoryLockTransaction = true;
+```
+
+See [Solo vs. HotCold](/events/projections/async-daemon#solo-vs-hotcold) for details.
+
 ## Key Changes in 9.21.0
 
 ### Optional function update — `mt_quick_append_events` <Badge type="tip" text="no action required" />

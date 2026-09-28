@@ -192,8 +192,8 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync(TestContext.Curr
     /// #5125 — no restart and no third-party session needed. The store is already gapped before any
     /// daemon has ever run (events appended then deleted; a rolled-back append leaves the same state),
     /// so no fence can be established by construction. The only open transaction is the daemon's OWN
-    /// HotCold leadership lock, which is transaction-scoped by default and therefore sits
-    /// idle-in-transaction for its entire tenure — and gap detection counts it as a possible reserver
+    /// HotCold leadership lock, which is transaction-scoped here (UseAdvisoryLockTransaction) and therefore
+    /// sits idle-in-transaction for its entire tenure — and gap detection counts it as a possible reserver
     /// of the very gap it is trying to skip.
     /// </summary>
     [Fact]
@@ -221,7 +221,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync(TestContext.Curr
         await PublishSingleThreaded();
         var ceiling = await highestCommittedSequenceAsync();
 
-        using var host = await StartDaemonInHotColdMode();
+        using var host = await StartDaemonInHotColdMode(opts => opts.Events.UseAdvisoryLockTransaction = true);
         await host.Daemon().Tracker.WaitForHighWaterMark(ceiling, 60.Seconds());
 
         (await currentHighWaterMarkAsync()).ShouldBe(ceiling);

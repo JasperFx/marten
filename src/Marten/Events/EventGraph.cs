@@ -276,7 +276,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool UseMandatoryStreamTypeDeclaration { get; set; }
     public bool UseMonitoredAdvisoryLock { get; set; } = true;
 
-    public bool UseAdvisoryLockTransaction { get; set; } = true;
+    public bool UseAdvisoryLockTransaction { get; set; }
 
     public bool EnableAdvancedAsyncTracking { get; set; }
     public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }

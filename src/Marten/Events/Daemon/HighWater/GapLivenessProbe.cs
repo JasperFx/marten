@@ -96,7 +96,7 @@ with quiescent as (
      and a.state in ('idle in transaction', 'idle in transaction (aborted)')
      and a.state_change < :fence
 ),
--- #5125: the daemon's OWN HotCold leadership lock. With the default transaction-scoped advisory
+-- #5125: the daemon's OWN HotCold leadership lock. With a transaction-scoped advisory
 -- lock it sits 'idle in transaction' for the whole of its leadership tenure, so it satisfies the
 -- open-transaction clause forever — including on a store that was already gapped before any daemon
 -- ran, where no allocation fence can ever be established and the quiescent CTE above is therefore
