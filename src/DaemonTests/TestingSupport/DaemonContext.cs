@@ -82,7 +82,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         return daemon;
     }
 
-    internal async Task<IHost> StartDaemonInHotColdMode()
+    internal async Task<IHost> StartDaemonInHotColdMode(Action<StoreOptions> configure = null)
     {
         var host = await Host.CreateDefaultBuilder()
             .UseLamar(services =>
@@ -96,6 +96,8 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
                     opts.Projections.DaemonLockId = lockId;
 
                     opts.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
+
+                    configure?.Invoke(opts);
                 }).AddAsyncDaemon(DaemonMode.HotCold);
             }).StartAsync();
 

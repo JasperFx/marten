@@ -91,18 +91,23 @@ As of right now, the daemon can run as one of two modes:
 1. *HotCold* -- the daemon will use a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function individually for each
    projection on each tenant database and **ensure that each projection is running on exactly one running process**.
 
-::: tip
-When running in `HotCold` mode, Marten will monitor the Postgres advisory lock by running a `SELECT pg_catalog.pg_sleep(60)` query to detect if the database restarts or fails-over.
-Without this monitoring, Marten will not be aware of the lock loss and multiple async daemons can start running concurrently across multiple nodes, causing application failure.
+By default the `HotCold` leadership lock is session-scoped (`pg_try_advisory_lock`), so the session
+holding it keeps no transaction open while it is the leader. Set
+`options.Events.UseAdvisoryLockTransaction` to true to use a transaction-scoped lock
+(`pg_try_advisory_xact_lock`) instead. That is the better fit behind PgBouncer in transaction pooling
+mode, which can hand a session-scoped lock's server connection to another client, but it means the
+leader keeps a transaction open for as long as it holds leadership.
 
-Some monitoring tools erroneously report this query as "load", however this query simply sleeps for 60 seconds and **does not** consume any database resources. 
-If this monitoring is undesirable for your scenario, you can opt-out by setting `options.Events.UseMonitoredAdvisoryLock` to false when configuring Marten.
-:::
+```cs
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(connectionString);
 
-By default the `HotCold` leadership lock is transaction-scoped (`pg_try_advisory_xact_lock`), which
-means the session holding it keeps a transaction open for as long as it is the leader. Set
-`options.Events.UseAdvisoryLockTransaction` to false to use a session-scoped lock instead, which holds
-no open transaction.
+    // Opt into the transaction-scoped leadership lock
+    opts.Events.UseAdvisoryLockTransaction = true;
+})
+.AddAsyncDaemon(DaemonMode.HotCold);
+```
 
 ::: tip
 Marten's gap detection recognizes its own leadership lock connections and never counts them as

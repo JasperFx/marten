@@ -115,7 +115,7 @@ public interface IReadOnlyEventStoreOptions
     public bool UseMonitoredAdvisoryLock { get; set; }
 
     /// <summary>
-    /// Uses a transaction-scoped advisory lock instead of a session-scoped one. This improves compatibility with PGBouncer and suppresses some irrelevant warning spam in Postgres logs. Enabled by default.
+    /// Uses a transaction-scoped advisory lock for HotCold leadership instead of a session-scoped one. This improves compatibility with PgBouncer in transaction pooling mode, but keeps a transaction open on the leader's connection for as long as it holds leadership. Disabled by default.
     /// </summary>
     public bool UseAdvisoryLockTransaction { get; set; }
 
