@@ -180,7 +180,7 @@ builder.Services.AddMarten(opts =>
 
 It's pretty involved, but the key takeaway is that _if_ you are using lightweight sessions for a performance optimization
 -- and you probably should even though that's not a Marten default! -- and _also_ using `FetchForWriting<T>()` with `Inline` projections, this optimizes your system to make fewer network round trips to the database and reuse the data
-you already fetched when applying the `Inline` projection. **Marten 9 ships this flag at `true` by default** (see the [Marten 9 defaults section in the migration guide](../migration-guide.md#flipped-defaults-in-marten-9--read-this-section)) — the prior V8 default was `false`.
+you already fetched when applying the `Inline` projection. **Marten 9 ships this flag at `true` by default** (see the [Marten 9 defaults section in the migration guide](../migration-guide.md#changed-defaults)) — the prior V8 default was `false`.
 
 ::: warning Aggregate mutations leak under `UseIdentityMapForAggregates = true`
 This optimization assumes the **decider pattern**: your handler returns events, the inline projection rebuilds aggregate state from those events on save, and you do _not_ mutate fields on the `stream.Aggregate` instance returned by `FetchForWriting()`. The optimization works by stashing the fetched aggregate in the session's identity map and re-reading it from there when the inline projection applies the new events.
