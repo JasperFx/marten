@@ -20,7 +20,7 @@ var records = new dynamic[]
     new {detector = "aisle-1", timestamp = "2020-01-21 11:14:19.100", temperature = -1.0}
 };
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L23-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-records' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L26-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-records' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To store and later read back these records, we create a wrapper type with a `dynamic` property to present our record.
@@ -58,5 +58,5 @@ var temperatures = tempsFromDb.Select(x => (decimal)x.Values.temperature);
 Assert.Equal(15.675m, temperatures.Average());
 Assert.Equal(4, tempsFromDb.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L36-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-insertandquery' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L39-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-insertandquery' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

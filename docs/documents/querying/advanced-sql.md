@@ -40,7 +40,7 @@ var name = (await session.AdvancedSql.QueryAsync<string>(
     $"select data ->> 'Name' from {schema.For<DocWithMeta>()} limit 1",
     CancellationToken.None)).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L26-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_single_scalar' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L32-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_single_scalar' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or for multiple scalars returned as a tuple:
@@ -52,7 +52,7 @@ var (number,text, boolean) = (await session.AdvancedSql.QueryAsync<int, string, 
     "select row(5), row('foo'), row(true) from (values(1)) as dummy",
     CancellationToken.None)).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L39-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_multiple_scalars' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L45-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_multiple_scalars' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also query for any arbitrary JSON that will get deserialized:
@@ -64,7 +64,7 @@ var result = (await session.AdvancedSql.QueryAsync<Foo, Bar>(
     "select row(json_build_object('Name', 'foo')), row(json_build_object('Name', 'bar')) from (values(1)) as dummy",
     CancellationToken.None)).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L53-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_json_object' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L59-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_json_object' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Querying for documents requires to return the correct columns:
@@ -77,7 +77,7 @@ var docs = await session.AdvancedSql.QueryAsync<DocWithoutMeta>(
     $"select id, data from {schema.For<DocWithoutMeta>()} order by data ->> 'Name'",
     CancellationToken.None);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L69-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L75-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If metadata are available, remember to add the correct metadata columns to the result. The order of the columns is
@@ -91,7 +91,7 @@ var doc = (await session.AdvancedSql.QueryAsync<DocWithMeta>(
     $"select id, data, mt_version from {schema.For<DocWithMeta>()} where data ->> 'Name' = 'Max'",
     CancellationToken.None)).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L87-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents_with_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L93-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents_with_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also query for multiple related documents and scalar, e.g. for paging:
@@ -136,7 +136,7 @@ results[0].detail.Detail.ShouldBe("Hates soap operas");
 results[1].doc.Name.ShouldBe("Beatrix");
 results[1].detail.Detail.ShouldBe("Likes to cook");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L103-L140' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L109-L146' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 All `AdvancedSql` methods also support parameters:
@@ -158,7 +158,7 @@ var name2 = (await session.AdvancedSql.QueryAsync<string>(
     CancellationToken.None,
     "Name")).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L151-L166' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_parameters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L157-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_parameters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 When you need to query for large datasets, the `AdvancedSql.StreamAsync<>(...)` methods can be used. They will return
@@ -202,7 +202,7 @@ await foreach (var result in asyncEnumerable)
     collectedResults.Add(result);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L177-L212' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_stream_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L183-L218' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_stream_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Using this you can resolve schemas:

@@ -46,6 +46,11 @@ Marten supplies the following functionality to retrieve the raw JSON strings:
 [Fact]
 public async Task when_get_json_then_raw_json_should_be_returned()
 {
+    // Its sibling already does this. Both tests store an "Issue 1" and then call
+    // ToJsonSingle(), which requires exactly one match, so whichever runs second
+    // fails without a reset.
+    await theStore.Advanced.ResetAllData();
+
     var issue = new Issue { Title = "Issue 1" };
 
     theSession.Store(issue);
@@ -59,7 +64,7 @@ public async Task when_get_json_then_raw_json_should_be_returned()
     json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/get_raw_json_Tests.cs#L13-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get-raw-json' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/get_raw_json_Tests.cs#L13-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get-raw-json' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the asynchronous version:
@@ -84,7 +89,7 @@ public async Task when_get_json_then_raw_json_should_be_returned_async()
     json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/get_raw_json_Tests.cs#L31-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get-raw-json-async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/get_raw_json_Tests.cs#L36-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get-raw-json-async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using AsJson() with Select() Transforms

@@ -339,7 +339,7 @@ public async Task happy_path_test_with_inline_projection()
     }, TestContext.Current.CancellationToken);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projection_scenario_tests.cs#L17-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_projection_scenario' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projection_scenario_tests.cs#L18-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_projection_scenario' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The scenario works with any projection lifecycle. If the store has any asynchronous projections registered, the

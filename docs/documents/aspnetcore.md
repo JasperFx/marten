@@ -329,7 +329,7 @@ app.MapGet("/minimal/order/{id:guid}/state",
     (Guid id, IQuerySession session)
         => new StreamEventState(session, id));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/StreamingMinimalEndpoints.cs#L128-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_minimal_api_stream_event_state' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/StreamingMinimalEndpoints.cs#L183-L189' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_minimal_api_stream_event_state' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A constructor overload accepts a `string` stream key for stores configured with string-keyed
@@ -363,7 +363,7 @@ app.MapGet("/minimal/order/{id:guid}/events",
     (Guid id, IQuerySession session)
         => new StreamEvents(session, id));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/StreamingMinimalEndpoints.cs#L142-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_minimal_api_stream_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/StreamingMinimalEndpoints.cs#L197-L203' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_minimal_api_stream_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `StreamEvents` carries the same optional `version`, `timestamp`, and `fromVersion` filters as
@@ -413,7 +413,7 @@ app.MapGet("/minimal/order/{id:guid}/events/from/{fromVersion:long}",
             OnEmptyStatus = StatusCodes.Status200OK
         });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/StreamingMinimalEndpoints.cs#L154-L164' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_minimal_api_stream_events_from_version' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/StreamingMinimalEndpoints.cs#L209-L219' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_minimal_api_stream_events_from_version' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Sharing a query plan with a batched query

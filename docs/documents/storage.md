@@ -221,7 +221,7 @@ opts.Schema.For<MetricsSample>()
     .PartitionOn(x => x.BucketEnd,
         x => x.ByRollingRange(PartitionPeriod.Month, periodsAhead: 3, periodsBehind: 12));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/rolling_range_partitioning.cs#L36-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_partitioning_document_by_rolling_range' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/rolling_range_partitioning.cs#L38-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_partitioning_document_by_rolling_range' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The window — periods retained behind, the current period, periods provisioned ahead — is a pure function
@@ -259,7 +259,7 @@ especially — run the pass yourself on whatever cadence the period size demands
 // aged past their retention floor. Idempotent, and safe to run from several nodes at once.
 await store.Advanced.ApplyRollingPartitionsAsync(token);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/rolling_range_partitioning.cs#L50-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_applying_rolling_partitions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/rolling_range_partitioning.cs#L52-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_applying_rolling_partitions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning

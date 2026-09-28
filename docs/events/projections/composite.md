@@ -82,7 +82,7 @@ opts.Projections.CompositeProjectionFor("TeleHealth", projection =>
     projection.Add<AppointmentByExternalIdentifierProjection>(2);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L244-L268' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_defining_a_composite_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L243-L267' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_defining_a_composite_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 First, let's just look at the simple `ProviderShiftProjection`:

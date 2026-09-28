@@ -274,7 +274,7 @@ public interface IConfigureMarten: JasperFx.IConfigureStore<StoreOptions>
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1028-L1038' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1093-L1103' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're working with multiple databases class like so:
@@ -337,7 +337,7 @@ public interface IAsyncConfigureMarten: JasperFx.IAsyncConfigureStore<StoreOptio
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1040-L1051' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1105-L1116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As an example from the tests, here's a custom version that uses the Feature Management service:
@@ -363,7 +363,7 @@ public class FeatureManagementUsingExtension: IAsyncConfigureMarten
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L122-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_featuremanagementusingextension' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L105-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_featuremanagementusingextension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And lastly, these extensions can be registered directly against `IServiceCollection` like so:
@@ -373,7 +373,7 @@ And lastly, these extensions can be registered directly against `IServiceCollect
 ```cs
 services.ConfigureMartenWithServices<FeatureManagementUsingExtension>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L42-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_async_config_marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/configuring_marten_with_async_extensions.cs#L37-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_async_config_marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using Lightweight Sessions 

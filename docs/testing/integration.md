@@ -50,7 +50,7 @@ public class AppFixture: IAsyncLifetime
     private string SchemaName { get; } = "sch" + Guid.NewGuid().ToString().Replace("-", string.Empty);
     public IAlbaHost Host { get; private set; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // This is bootstrapping the actual application using
         // its implied Program.Main() set up
@@ -74,7 +74,7 @@ public class AppFixture: IAsyncLifetime
         });
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
         {
             await Host.DisposeAsync();
         }
@@ -111,7 +111,7 @@ public abstract class IntegrationContext : IAsyncLifetime
     public IAlbaHost Host { get; }
     public IDocumentStore Store { get; }
      
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Using Marten, wipe out all data and reset the state
         await Store.Advanced.ResetAllData();
@@ -120,9 +120,9 @@ public abstract class IntegrationContext : IAsyncLifetime
     // This is required because of the IAsyncLifetime 
     // interface. Note that I do *not* tear down database
     // state after the test. That's purposeful
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return default;
     }
 }
 ```
@@ -147,7 +147,7 @@ public abstract class SimplifiedIntegrationContext : IAsyncLifetime
     public IAlbaHost Host { get; }
     public IDocumentStore Store { get; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Using Marten, wipe out all data and reset the state
         await Store.Advanced.ResetAllData();
@@ -161,9 +161,9 @@ public abstract class SimplifiedIntegrationContext : IAsyncLifetime
     // This is required because of the IAsyncLifetime
     // interface. Note that I do *not* tear down database
     // state after the test. That's purposeful
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return default;
     }
 }
 ```
@@ -194,7 +194,7 @@ public abstract class MultipleMartenDatabasesIntegrationContext: IAsyncLifetime
     public IDocumentStore Store { get; }
     public IInvoicingStore InvoicingStore { get; }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         // Using Marten, wipe out all data and reset the state
         await Store.Advanced.ResetAllData();
@@ -203,9 +203,9 @@ public abstract class MultipleMartenDatabasesIntegrationContext: IAsyncLifetime
     // This is required because of the IAsyncLifetime
     // interface. Note that I do *not* tear down database
     // state after the test. That's purposeful
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        return Task.CompletedTask;
+        return default;
     }
 }
 ```
@@ -330,6 +330,10 @@ services.AddMarten(sp =>
         options.DatabaseSchemaName = martenSettings.SchemaName;
     }
 
+    // A document type with version metadata disabled — used to prove StreamOne emits
+    // no ETag when there is no mt_version column to derive one from.
+    options.Schema.For<VersionlessDoc>().Metadata(m => m.Version.Enabled = false);
+
     if (martenSettings.UseStringStreamIdentity)
     {
         options.Events.StreamIdentity = StreamIdentity.AsString;
@@ -337,13 +341,20 @@ services.AddMarten(sp =>
     }
     else
     {
+        // NOTE: Order is only a projection target under Guid stream identity, so the
+        // /minimal/order-doc endpoint only carries a revision-derived ETag on hosts built
+        // from this branch. Tests asserting that ETag must use the Guid-identity fixture.
         options.Projections.Snapshot<Order>(SnapshotLifecycle.Inline);
+
+        // An EventProjection (not an aggregate projection) so its output document is NOT
+        // swept into numeric revisions by ProjectionDocumentPolicy.
+        options.Projections.Add<OrderTouchProjection>(ProjectionLifecycle.Inline);
     }
 
     return options;
 }).UseLightweightSessions();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L35-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_use_scheme_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L36-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_use_scheme_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning

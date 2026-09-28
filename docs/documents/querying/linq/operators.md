@@ -322,7 +322,7 @@ Do note that the `Distinct()` keyword can be used with `Select()` transforms as 
 <!-- snippet: sample_get_distinct_numbers -->
 <a id='snippet-sample_get_distinct_numbers'></a>
 ```cs
-[SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
+[Fact]
 public async Task get_distinct_numbers()
 {
     theSession.Store(new Target {Number = 1, Decimal = 1.0M});

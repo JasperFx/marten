@@ -103,7 +103,7 @@ using var host = await Host.CreateDefaultBuilder()
 
 await host.ResetAllMartenDataAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/reset_all_data_usage_ihost.cs#L28-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reset_all_data_ihost' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/reset_all_data_usage_ihost.cs#L27-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reset_all_data_ihost' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you're working with [multiple Marten databases](/configuration/hostbuilder#working-with-multiple-marten-databases), you can use `IHost.ResetAllMartenDataAsync<TStore>()` to reset all data in a specific database:
@@ -128,5 +128,5 @@ using var host = await Host.CreateDefaultBuilder()
 
 await host.ResetAllMartenDataAsync<IInvoicingStore>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/reset_all_data_usage_ihost.cs#L54-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reset_all_data_ihost_specific_database' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/reset_all_data_usage_ihost.cs#L52-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reset_all_data_ihost_specific_database' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

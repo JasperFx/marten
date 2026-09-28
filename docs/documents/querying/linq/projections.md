@@ -29,6 +29,7 @@ When you wish to retrieve certain properties and transform them into another typ
 <!-- snippet: sample_other_type_projection -->
 <a id='snippet-sample_other_type_projection'></a>
 ```cs
+// #5068: confirmed to fail under System.Text.Json.
 [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
 public async Task use_select_with_multiple_fields_to_other_type()
 {
@@ -50,7 +51,7 @@ public async Task use_select_with_multiple_fields_to_other_type()
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/select_clause_usage.cs#L209-L231' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_other_type_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/select_clause_usage.cs#L209-L232' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_other_type_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 When you wish to retrieve certain properties and transform them into an anonymous type:
@@ -96,7 +97,7 @@ public async Task transform_with_deep_properties()
     actual.ShouldHaveTheSameElementsAs(expected);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/select_clause_usage.cs#L321-L336' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep_properties_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/select_clause_usage.cs#L324-L339' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep_properties_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Server-Side JSON Projections <Badge type="tip" text="9.18" />
