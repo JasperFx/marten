@@ -757,9 +757,34 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
-    async Task IEventStore.CompactStreamAsync(Guid streamId, CancellationToken token)
+    Task IEventStore.CompactStreamAsync(Guid streamId, CancellationToken token)
+        => compactUntypedAsync(streamId, null, token);
+
+    Task IEventStore.CompactStreamAsync(string streamKey, CancellationToken token)
+        => compactUntypedAsync(streamKey, null, token);
+
+    /// <summary>
+    ///     jasperfx#910 — the untyped compaction run in one tenant's scope: the stream-state read and the
+    ///     compaction both run on a session opened for <paramref name="tenantId" />.
+    /// </summary>
+    /// <remarks>
+    ///     The action-side twin of <c>OpenReadOnlyEventStore(tenantId)</c> (marten#5513). A compaction
+    ///     policy selects a tenant's streams through that reader; the tenant-less overload then opened the
+    ///     DEFAULT session, which a store with <c>DefaultTenantUsageEnabled = false</c> refuses outright,
+    ///     and which on any conjoined store reads stream state where that tenant's stream is not. Tenant id
+    ///     casing runs through <c>TenantIdStyle</c> exactly as every other <c>LightweightSession(tenantId)</c>
+    ///     call does; a null tenant keeps today's store-global behavior.
+    /// </remarks>
+    Task IEventStore.CompactStreamAsync(Guid streamId, string? tenantId, CancellationToken token)
+        => compactUntypedAsync(streamId, tenantId, token);
+
+    /// <inheritdoc cref="IEventStore.CompactStreamAsync(Guid, string?, CancellationToken)" />
+    Task IEventStore.CompactStreamAsync(string streamKey, string? tenantId, CancellationToken token)
+        => compactUntypedAsync(streamKey, tenantId, token);
+
+    private async Task compactUntypedAsync(Guid streamId, string? tenantId, CancellationToken token)
     {
-        await using var session = LightweightSession();
+        await using var session = tenantId == null ? LightweightSession() : LightweightSession(tenantId);
 
         // Assert the identity BEFORE looking the stream up, because FetchStreamStateAsync does not
         // guard on StreamIdentity itself and neither pre-existing outcome named the actual mistake:
@@ -780,9 +805,9 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await ((Task)genericMethod.Invoke(null, [session, streamId, token])!).ConfigureAwait(false);
     }
 
-    async Task IEventStore.CompactStreamAsync(string streamKey, CancellationToken token)
+    private async Task compactUntypedAsync(string streamKey, string? tenantId, CancellationToken token)
     {
-        await using var session = LightweightSession();
+        await using var session = tenantId == null ? LightweightSession() : LightweightSession(tenantId);
 
         // See the Guid overload above.
         Options.EventGraph.EnsureAsStringStorage((IMartenSession)session);
