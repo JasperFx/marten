@@ -29,9 +29,57 @@ internal partial class BatchedQuery: IBatchedQuery
     // exclusive fetches the batch holds, and awaited by Execute() before the batch is sent.
     private Task? _transactionStart;
 
+    // Set when a handler that brackets its own SQL in `begin transaction … end` is enlisted. Such a
+    // handler COMMITS the session's transaction when its `end` runs, so it cannot share a batch with
+    // an exclusive fetch, whose row lock has to survive until SaveChangesAsync. See assertNoTransactionConflict.
+    private bool _holdsSelfTransactingItem;
+
+    private const string MixedBatchMessage =
+        "A batched FetchForExclusiveWriting cannot share a batch with a non-exclusive FetchForWriting for an "
+        + "aggregate projected with ProjectionLifecycle.Async. The non-exclusive fetch wraps its reads in "
+        + "'begin transaction isolation level repeatable read read only' … 'end' so they share one snapshot, and "
+        + "that 'end' commits the session's transaction — releasing the exclusive fetch's row lock before "
+        + "SaveChangesAsync can use it. Use separate batches, or fetch both exclusively.";
+
+    /// <summary>
+    ///     #5532 follow-up. Refuse the combination at the call that creates it, rather than letting it
+    ///     surface later as <c>InvalidOperationException: This NpgsqlTransaction has completed</c> out of
+    ///     <c>SaveChangesAsync</c> — an Npgsql message several layers from the mistake, naming nothing the
+    ///     caller wrote.
+    /// </summary>
+    /// <remarks>
+    ///     This combination has never worked. Before #5532 the warm path already failed this way and the
+    ///     cold path silently ran the whole batch in autocommit, committing with no lock held at all; #5532
+    ///     made the cold path fail like the warm one. So refusing it takes nothing away that functioned —
+    ///     it only replaces the diagnosis.
+    /// </remarks>
+    private void assertNoTransactionConflict()
+    {
+        if (_holdsSelfTransactingItem && _transactionStart != null)
+        {
+            throw new InvalidOperationException(MixedBatchMessage);
+        }
+    }
+
     private void startTransaction()
     {
-        _transactionStart ??= Parent.BeginTransactionAsync(CancellationToken.None).AsTask();
+        if (_transactionStart == null)
+        {
+            _transactionStart = Parent.BeginTransactionAsync(CancellationToken.None).AsTask();
+
+            // Only Execute() awaits this task, so a batch abandoned after enlisting an exclusive fetch --
+            // a second fetch faulting out of FindFetchPlan and the caller returning without calling
+            // Execute() -- would never observe it. An unobserved faulted Task escalates at finalization
+            // through TaskScheduler.UnobservedTaskException, and fatally in a host that sets
+            // ThrowUnobservedTaskExceptions. Observing the fault here is harmless for the normal path:
+            // Execute()'s await still sees the same exception.
+            _ = _transactionStart.ContinueWith(static t => _ = t.Exception,
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+        }
+
+        assertNoTransactionConflict();
     }
 
     public BatchedQuery(QuerySession parent)
@@ -104,11 +152,26 @@ internal partial class BatchedQuery: IBatchedQuery
             return;
         }
 
+        // Refuse the batch here as well as at enlist time. The enlist-time check throws SYNCHRONOUSLY only
+        // when the non-exclusive fetch is added second, because FetchForExclusiveWriting is async and an
+        // exception in an async method's body arrives as a faulted task instead. In that ordering the
+        // caller following the documented shape -- enlist, Execute(), then await the items -- would reach
+        // Execute() before observing anything, and without this the bad batch would be sent.
+        assertNoTransactionConflict();
+
         // An exclusive fetch's row lock is only held if its `for update` runs inside the session's
         // transaction, and starting that transaction may still be in flight (see FetchForExclusiveWriting).
         if (_transactionStart != null)
         {
             await _transactionStart.ConfigureAwait(false);
+
+            // #5532 follow-up, and a latency fix rather than a correctness one -- measured, not assumed.
+            // The wait itself deliberately does NOT observe the token, because abandoning a transaction
+            // start would let it reassign the session's connection behind us later. So a cancelled request
+            // sat here for as long as opening a connection takes (the Npgsql Timeout, 15s by default) before
+            // anything noticed. The SQL was never actually issued either way -- ExecuteReaderAsync below
+            // observes the token -- so this only stops the pointless wait on the work after it.
+            token.ThrowIfCancellationRequested();
         }
 
         foreach (var type in _documentTypes.Distinct())
@@ -145,6 +208,15 @@ internal partial class BatchedQuery: IBatchedQuery
 
     public Task<T> AddItem<T>(IQueryHandler<T> handler)
     {
+        if (handler is IOpensItsOwnTransaction { OpensItsOwnTransaction: true })
+        {
+            _holdsSelfTransactingItem = true;
+
+            // Catches the ordering where the non-exclusive fetch is enlisted SECOND. The exclusive
+            // overloads call startTransaction(), which checks the other direction.
+            assertNoTransactionConflict();
+        }
+
         var item = new BatchQueryItem<T>(handler);
         _items.Add(item);
 
