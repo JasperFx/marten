@@ -140,6 +140,81 @@ public class reading_the_event_store_with_the_default_tenant_disabled : OneOffCo
         state.ShouldNotBeNull();
         state.Version.ShouldBe(1);
     }
+
+    /// <summary>
+    /// jasperfx#910 — the action one call after the selector. A compaction policy could select tenant
+    /// A's streams through <c>OpenReadOnlyEventStore(tenantId)</c> and then compact none of them: the
+    /// untyped <c>CompactStreamAsync</c> opened the default session, refused on this store.
+    /// </summary>
+    [Fact]
+    public async Task the_untyped_compaction_runs_in_the_tenants_scope()
+    {
+        ConfigureTenancy();
+
+        var streamId = Guid.NewGuid();
+
+        // One stream id under two tenants, so a compaction that ignored its tenant could not pass by
+        // compacting "some" stream with this id.
+        await using (var session = theStore.LightweightSession(TenantA))
+        {
+            session.Events.StartStream<DefaultTenantDisabledAggregate>(streamId,
+                new DefaultTenantDisabledEvent("a1"), new DefaultTenantDisabledEvent("a2"),
+                new DefaultTenantDisabledEvent("a3"));
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.LightweightSession(TenantB))
+        {
+            session.Events.StartStream<DefaultTenantDisabledAggregate>(streamId,
+                new DefaultTenantDisabledEvent("b1"), new DefaultTenantDisabledEvent("b2"));
+            await session.SaveChangesAsync();
+        }
+
+        await ((IEventStore)theStore).CompactStreamAsync(streamId, TenantA);
+
+        var forA = await ((IEventStore)theStore).OpenReadOnlyEventStore(TenantA).FetchStreamAsync(streamId);
+        forA.ShouldHaveSingleItem().Data.ShouldBeOfType<Compacted<DefaultTenantDisabledAggregate>>()
+            .Snapshot.Count.ShouldBe(3);
+
+        // Tenant B's stream of the same id is untouched.
+        (await ((IEventStore)theStore).OpenReadOnlyEventStore(TenantB).FetchStreamAsync(streamId)).Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task the_tenant_less_untyped_compaction_is_still_refused()
+    {
+        ConfigureTenancy();
+
+        var streamId = await AppendAsync(TenantA, new DefaultTenantDisabledEvent("one"));
+
+        // As with the reader: a store-global compaction genuinely has nowhere to go here.
+        await Should.ThrowAsync<DefaultTenantUsageDisabledException>(
+            () => ((IEventStore)theStore).CompactStreamAsync(streamId));
+    }
+}
+
+/// <summary>
+/// jasperfx#914 — IEventStore.HasEventStore is Marten's EventGraph.IsActive, made reachable. The
+/// document-only case is the one that matters: the interface default is true, so an unimplemented
+/// member would pass every other fact and fail only that one.
+/// </summary>
+public class has_event_store : OneOffConfigurationsContext
+{
+    [Fact]
+    public void a_document_only_store_has_no_event_store()
+    {
+        StoreOptions(opts => opts.Schema.For<DefaultTenantDisabledAggregate>());
+
+        ((IEventStore)theStore).HasEventStore.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void a_registered_event_type_is_an_event_store()
+    {
+        StoreOptions(opts => opts.Events.AddEventType<DefaultTenantDisabledEvent>());
+
+        ((IEventStore)theStore).HasEventStore.ShouldBeTrue();
+    }
 }
 
 public record DefaultTenantDisabledEvent(string Name);
