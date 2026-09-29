@@ -173,6 +173,65 @@ public class batched_exclusive_fetch_followups: OneOffConfigurationsContext
     }
 
     /// <summary>
+    /// #5535, which is independent of the exclusive-fetch interaction above and bites with no exclusive fetch
+    /// involved. A non-exclusive <c>FetchForWriting</c> for an Async-snapshot aggregate wraps its reads in
+    /// <c>begin transaction isolation level repeatable read read only</c> … <c>end</c>, and PostgreSQL only
+    /// accepts that as the FIRST statement in a transaction. Enlisted after anything else it failed at
+    /// <c>Execute()</c> with <c>25001: SET TRANSACTION ISOLATION LEVEL must be called before any query</c> —
+    /// naming an isolation level the caller never mentioned and saying nothing about ordering, while nothing
+    /// about <c>CreateBatchQuery()</c> suggests one of its members has to go first.
+    /// </summary>
+    [Fact]
+    public async Task an_async_snapshot_fetch_for_writing_must_be_first_in_its_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Connection(Unpooled);
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
+        });
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent());
+        await theSession.SaveChangesAsync();
+
+        await using var session = theStore.LightweightSession();
+        var batch = session.CreateBatchQuery();
+
+        // Anything at all ahead of it is enough; a plain document load will do.
+        _ = batch.Load<SimpleAggregate>(streamId);
+
+        var ex = Should.Throw<InvalidOperationException>(
+            () => batch.Events.FetchForWriting<SimpleAggregate>(streamId));
+
+        ex.Message.ShouldContain("FIRST operation in its batch");
+        ex.Message.ShouldContain("repeatable read read only");
+    }
+
+    /// <summary>
+    /// The position that does work keeps working — the fix is about ordering, not about forbidding the call.
+    /// </summary>
+    [Fact]
+    public async Task an_async_snapshot_fetch_for_writing_is_fine_first_in_its_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Connection(Unpooled);
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
+        });
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        await using var session = theStore.LightweightSession();
+        var batch = session.CreateBatchQuery();
+        var item = batch.Events.FetchForWriting<SimpleAggregate>(streamId);
+        await batch.Execute();
+
+        (await item).CurrentVersion.ShouldBe(2);
+    }
+
+    /// <summary>
     /// A regression guard, not a bug fix — and it passes against the merged code too, which is the point
     /// worth recording. The SQL was never sent for a cancelled token even before the follow-up, because
     /// <c>ExecuteReaderAsync(command, token)</c> observes it. What was wrong was only the <em>timing</em>:

@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -153,6 +154,22 @@ public abstract partial class DocumentSessionBase
         public List<Exception> Exceptions { get; } = new();
     }
 
+    /// <summary>
+    ///     #5528. True when this session's isolation level makes replaying a computed unit of work unsound.
+    /// </summary>
+    /// <remarks>
+    ///     <c>ReadCommitted</c> (the default) and <c>ReadUncommitted</c> take a fresh snapshot per statement, so a
+    ///     replay re-reads whatever it needs and the precomputed SQL means the same thing it did the first time.
+    ///     From <c>RepeatableRead</c> upwards the transaction is pinned to one snapshot -- Marten even begins it
+    ///     eagerly at session construction for <c>Serializable</c> -- so a replay in a fresh transaction commits
+    ///     work derived from a snapshot that no longer exists. <c>Unspecified</c>/<c>Chaos</c> are not in the list
+    ///     because they are not levels Marten sets a transaction to.
+    /// </remarks>
+    internal bool retriesAreUnsoundForThisSession() =>
+        SessionOptions.IsolationLevel is IsolationLevel.RepeatableRead
+            or IsolationLevel.Serializable
+            or IsolationLevel.Snapshot;
+
     internal async Task ExecuteBatchAsync(IUpdateBatch batch, CancellationToken token)
     {
         // TODO -- double check this isn't getting done multiple times
@@ -206,8 +223,29 @@ public abstract partial class DocumentSessionBase
                 // #5262: the WRITE pipeline, not the general one. A unit of work carries event appends
                 // and is not idempotent, so it may only be replayed when the previous attempt is known
                 // to have left nothing behind. See WriteRetryClassifier.
-                await Options.WriteResiliencePipeline.ExecuteAsync(
-                    static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t, e.Participants)), execution, token).ConfigureAwait(false);
+                //
+                // #5528: and at RepeatableRead or above, NO replay is sound, so the pipeline is skipped
+                // entirely rather than consulted. Marten replays the operations it already computed, not
+                // the application code that computed them, and at these isolation levels the session's
+                // transaction took its snapshot at the first read -- so any successful replay commits
+                // decisions derived from a snapshot the server has since rejected or discarded. That is
+                // exactly the lost update #5528 fixed for 40001, and 40P01 (deadlock) had the same flaw
+                // for the same structural reason. Deliberately broader than refusing those two SQLSTATEs:
+                // 53xxx/55xxx/57P03/58xxx abort a transaction that already held a snapshot too, so
+                // singling out class 40 would leave the same hole open one error code over. Marten never
+                // asks for these levels itself, so the async daemon and every default ReadCommitted
+                // session keep the full retry behaviour.
+                if (retriesAreUnsoundForThisSession())
+                {
+                    await execution.Connection
+                        .ExecuteBatchPagesAsync(execution.Pages, execution.Exceptions, token, execution.Participants)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    await Options.WriteResiliencePipeline.ExecuteAsync(
+                        static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t, e.Participants)), execution, token).ConfigureAwait(false);
+                }
 
                 await executeAfterCommitListeners(batch).ConfigureAwait(false);
             }

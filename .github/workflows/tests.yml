@@ -47,7 +47,12 @@ env:
   pg_db: marten_testing
   pg_user: postgres
   CONFIGURATION: Release
-  DISABLE_TEST_PARALLELIZATION: true
+  # DISABLE_TEST_PARALLELIZATION was removed here (#5529): NOTHING in the repository read it. It appeared
+  # only in comments, so setting it did nothing and reading it as a control cost real debugging time --
+  # it was used to "rule out" in-process parallelism as the cause of five CoreTests failures, which it
+  # could not, because parallelism was already off for an unrelated reason. Parallelisation is actually
+  # disabled by [assembly: CollectionBehavior(DisableTestParallelization = true)] in
+  # src/CoreTests/AssemblyInfo.cs and src/Marten.Testing/AssemblyInfo.cs. Change it there.
   NUKE_TELEMETRY_OPTOUT: true
 
 concurrency:

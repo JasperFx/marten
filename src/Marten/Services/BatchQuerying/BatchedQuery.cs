@@ -53,6 +53,19 @@ internal partial class BatchedQuery: IBatchedQuery
     ///     made the cold path fail like the warm one. So refusing it takes nothing away that functioned —
     ///     it only replaces the diagnosis.
     /// </remarks>
+    /// <summary>
+    ///     Names the offending call in terms the caller wrote, not the internal handler type.
+    /// </summary>
+    private static string describeSelfTransactingHandler(object handler)
+    {
+        // The only implementor today is FetchAsyncPlan's non-exclusive handler, and its own name is
+        // ForUpdateQueryHandler -- actively misleading here, since this IS the not-for-update case.
+        var aggregate = handler.GetType().DeclaringType?.GenericTypeArguments.FirstOrDefault();
+        return aggregate == null
+            ? "FetchForWriting for an aggregate projected with ProjectionLifecycle.Async"
+            : $"FetchForWriting<{aggregate.Name}> (projected with ProjectionLifecycle.Async)";
+    }
+
     private void assertNoTransactionConflict()
     {
         if (_holdsSelfTransactingItem && _transactionStart != null)
@@ -210,11 +223,33 @@ internal partial class BatchedQuery: IBatchedQuery
     {
         if (handler is IOpensItsOwnTransaction { OpensItsOwnTransaction: true })
         {
+            // Set BEFORE either check can throw, so Execute()'s own guard stays armed even if a caller
+            // swallows the exception raised here.
             _holdsSelfTransactingItem = true;
 
-            // Catches the ordering where the non-exclusive fetch is enlisted SECOND. The exclusive
-            // overloads call startTransaction(), which checks the other direction.
+            // Order matters. Both conditions can hold at once -- an exclusive fetch enlisted first is also
+            // "something already in the batch" -- and the mixed-batch one is the more specific and the more
+            // dangerous of the two (a silently dropped row lock rather than a refused batch), so it wins.
+            // Catches the ordering where the non-exclusive fetch is enlisted SECOND; the exclusive overloads
+            // call startTransaction(), which checks the other direction.
             assertNoTransactionConflict();
+
+            // #5535. `begin transaction isolation level repeatable read read only` is only legal as the
+            // FIRST statement in a transaction, so this handler can only be the first item in its batch.
+            // Enlisted after anything else it failed at Execute() with PostgreSQL's
+            // `25001: SET TRANSACTION ISOLATION LEVEL must be called before any query`, which names an
+            // isolation level the caller never mentioned and says nothing about ordering. Nothing about
+            // CreateBatchQuery() suggests one of its members has to go first, so refuse it where the
+            // ordering is actually decided.
+            if (_items.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"A batched {describeSelfTransactingHandler(handler)} has to be the FIRST operation in its "
+                    + $"batch, but {_items.Count} operation(s) are already enlisted. It wraps its reads in "
+                    + "'begin transaction isolation level repeatable read read only' … 'end' so they share one "
+                    + "snapshot, and PostgreSQL only accepts that as the first statement in a transaction. "
+                    + "Enlist it first, or give it its own batch.");
+            }
         }
 
         var item = new BatchQueryItem<T>(handler);

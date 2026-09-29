@@ -197,9 +197,14 @@ can pick up rows written by an entirely different project.
 | Variable | Purpose |
 |----------|---------|
 | `marten_testing_database` | Override test connection string |
-| `DEFAULT_SERIALIZER` | `SystemTextJson` or `Newtonsoft` (default) |
-| `DISABLE_TEST_PARALLELIZATION` | `true` to disable parallel test execution |
+| `DEFAULT_SERIALIZER` | `SystemTextJson` or `Newtonsoft`. Note this is the **test harness** default (`TestsSettings.cs`), not the product's — Marten itself defaults to System.Text.Json, and Newtonsoft is the opt-in `Marten.Newtonsoft` package |
 | `postgresql_version` | Enforce specific PostgreSQL version detection |
+
+There is deliberately **no** `DISABLE_TEST_PARALLELIZATION` here (#5529). It used to be listed and set in
+CI, and nothing in the repository ever read it — so it looked like a control and was not one, which cost
+real debugging time when it was used to wrongly rule out in-process parallelism as a cause. Parallel
+execution is disabled by `[assembly: CollectionBehavior(DisableTestParallelization = true)]` in
+`src/CoreTests/AssemblyInfo.cs` and `src/Marten.Testing/AssemblyInfo.cs`.
 
 ## CI
 

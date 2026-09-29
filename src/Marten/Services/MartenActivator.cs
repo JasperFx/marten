@@ -34,30 +34,44 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
 
     public DocumentStore Store { get; }
 
+    /// <summary>
+    ///     Poll for the apply-changes advisory lock until <see cref="StoreOptions.ApplyChangesLockTimeout" />
+    ///     expires.
+    /// </summary>
+    /// <remarks>
+    ///     #5529. Was a fixed 50 / 100 / 250ms ladder, so a store had ~400ms to win the lock. That covers the
+    ///     multi-replica rolling deploy the lock was built for — the loser waits out a peer's already-finished
+    ///     migration — but not more than one store sharing a database inside one host, where the loser has to
+    ///     wait out a migration that is still running.
+    ///     <para>
+    ///     Still <c>pg_try_advisory_lock</c> in a loop rather than the blocking <c>pg_advisory_lock</c>, on
+    ///     purpose: a blocking acquire ignores the cancellation token and cannot be bounded, so a peer that dies
+    ///     mid-migration would hang startup instead of failing it.
+    ///     </para>
+    /// </remarks>
     public async Task<AttainLockResult> TryAttainLock(NpgsqlConnection conn, CancellationToken ct = default)
     {
-        var result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct)
-            .ConfigureAwait(false);
+        var deadline = DateTimeOffset.UtcNow + Store.Options.ApplyChangesLockTimeout;
+        var delay = 50;
 
-        if (result.Succeeded || result.ShouldReconnect)
-            return result;
+        while (true)
+        {
+            var result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct)
+                .ConfigureAwait(false);
 
-        await Task.Delay(50, ct).ConfigureAwait(false);
-        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct).ConfigureAwait(false);
+            // ShouldReconnect is the caller's business: Weasel opens a fresh connection and calls back in.
+            if (result.Succeeded || result.ShouldReconnect)
+                return result;
 
-        if (result.Succeeded || result.ShouldReconnect)
-            return result;
+            if (DateTimeOffset.UtcNow >= deadline)
+                return result;
 
-        await Task.Delay(100, ct).ConfigureAwait(false);
-        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct).ConfigureAwait(false);
+            await Task.Delay(delay, ct).ConfigureAwait(false);
 
-        if (result.Succeeded || result.ShouldReconnect)
-            return result;
-
-        await Task.Delay(250, ct).ConfigureAwait(false);
-        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct).ConfigureAwait(false);
-
-        return result;
+            // Backs off to a 250ms ceiling — the last rung of the original ladder. A migration holding the
+            // lock runs for seconds, so polling faster than that only adds round trips.
+            delay = Math.Min(delay * 2, 250);
+        }
     }
 
     public Task ReleaseLock(NpgsqlConnection conn, CancellationToken ct = default)

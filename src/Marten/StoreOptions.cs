@@ -357,6 +357,31 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     internal ResiliencePipeline WriteResiliencePipeline { get; set; }
 
     /// <summary>
+    ///     How long <c>ApplyAllDatabaseChangesOnStartup()</c> waits for the advisory lock named by
+    ///     <see cref="ApplyChangesLockId" /> before giving up. Default 10 seconds.
+    /// </summary>
+    /// <remarks>
+    ///     #5529. This used to be a fixed ladder of three retries — 50ms, 100ms, 250ms — giving a store about
+    ///     400ms to win the lock or fail startup. That is ample for the multi-replica rolling deploy the lock
+    ///     was designed for, where the loser only has to outlast a peer's <em>finished</em> migration. It is not
+    ///     enough when the loser has to outlast a migration that is still running, which is what happens when
+    ///     more than one store shares a database inside one host.
+    ///     <para>
+    ///     Raised on evidence rather than suspicion, and the order mattered. While weasel#659 was unfixed the
+    ///     lock was stranded permanently by any migration that threw, and a longer wait provably changed
+    ///     nothing — every loser simply waited out the whole budget. Once Weasel 9.37.0 released the lock on
+    ///     the failure path, the residue showed up as a genuine race: Bobcat's retry ledger recorded
+    ///     <c>Bug_4187_ancillary_store_isolation</c> failing attempt 1 with "Unable to attain the global lock in
+    ///     time" and passing attempt 2, which is a budget problem rather than a strand.
+    ///     </para>
+    ///     <para>
+    ///     Raise it further for a host with many stores on one database, or a large schema. Lowering it trades
+    ///     waiting for a refused startup.
+    ///     </para>
+    /// </remarks>
+    public TimeSpan ApplyChangesLockTimeout { get; set; } = 10.Seconds();
+
+    /// <summary>
     ///     Advisory lock id is used by the ApplyChangesOnStartup() option to serialize access to making
     ///     schema changes from multiple application nodes
     /// </summary>
@@ -506,12 +531,46 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     IReadOnlyAdvancedOptions IReadOnlyStoreOptions.Advanced => Advanced;
 
     /// <summary>
+    ///     PostgreSQL's identifier limit, <c>NAMEDATALEN - 1</c>. Compile-time in the server, so 63 for every
+    ///     stock build — note that setting a <c>NAMEDATALEN</c> environment variable does nothing.
+    /// </summary>
+    internal const int MaxIdentifierLength = 63;
+
+    /// <summary>
     ///     Sets the database default schema name used to store the documents.
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         #5536. Truncated to <see cref="MaxIdentifierLength" /> here, because PostgreSQL truncates it
+    ///         anyway and Marten has to look for its objects under the name the <em>server</em> stored. Left
+    ///         whole, the two disagreed: Marten kept querying for the full name, found nothing, concluded every
+    ///         object was missing, and re-issued DDL that the server resolved against the truncated schema where
+    ///         those objects already existed. The first apply passed and the second failed with
+    ///         <c>42710: constraint "fkey_mt_events_stream_id" for relation "mt_events" already exists</c> — an
+    ///         error naming nothing to do with the schema name, on a migration that could never settle.
+    ///     </para>
+    ///     <para>
+    ///         Truncating rather than throwing is deliberate. An over-long name is already truncated by the
+    ///         server today, so this changes nothing about <em>where</em> anyone's data lives — it only makes
+    ///         Marten agree with reality. Refusing the name instead would have been a breaking change for every
+    ///         application that has such a name and never happened to re-apply, and it broke dozens of tests in
+    ///         this repository whose schema is derived from a long class name.
+    ///     </para>
+    ///     <para>
+    ///         Two distinct long names that share their first 63 characters still collide — but they collide in
+    ///         PostgreSQL today for exactly the same reason, so this neither introduces nor worsens that.
+    ///     </para>
+    /// </remarks>
     public string DatabaseSchemaName
     {
         get => _databaseSchemaName;
-        set => _databaseSchemaName = value.ToLowerInvariant();
+        set
+        {
+            var lowered = value.ToLowerInvariant();
+            _databaseSchemaName = lowered.Length > MaxIdentifierLength
+                ? lowered[..MaxIdentifierLength]
+                : lowered;
+        }
     }
 
     private string? _eventModelName;
