@@ -12,6 +12,7 @@ using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
+using Marten.Services.BatchQuerying;
 using Npgsql;
 using Weasel.Postgresql;
 using JasperFx.Events.Fetching;
@@ -256,12 +257,19 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         return new ForUpdateQueryHandler(this, id, forUpdate);
     }
 
-    public class ForUpdateQueryHandler: IQueryHandler<IEventStream<TDoc>>
+    public class ForUpdateQueryHandler: IQueryHandler<IEventStream<TDoc>>, IOpensItsOwnTransaction
     {
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
         private readonly bool _forUpdate;
         private readonly LoadByIdHandler<TDoc,TId> _loadHandler;
+
+        /// <summary>
+        ///     True exactly when <see cref="ConfigureCommand" /> below brackets its reads in
+        ///     <c>begin transaction … end</c>, which is the non-exclusive case. See
+        ///     <see cref="IOpensItsOwnTransaction" /> for why a batch needs to know.
+        /// </summary>
+        public bool OpensItsOwnTransaction => !_forUpdate;
 
         public ForUpdateQueryHandler(FetchAsyncPlan<TDoc,TId> parent, TId id, bool forUpdate)
         {
