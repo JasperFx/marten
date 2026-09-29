@@ -93,6 +93,27 @@ internal static class ResilientPipelineBuilderExtensions
 ///         a batch. One is safe to replay and one is not, and they are the same object graph, so the allowlist
 ///         below is the only honest place to draw the line.
 ///     </para>
+///     <para>
+///         <b>"Nothing was left behind" is necessary but not sufficient (#5528).</b> <c>40001</c>
+///         <c>serialization_failure</c> satisfies it perfectly -- the server rolled the transaction back and said
+///         so -- and retrying it was still wrong, because Marten replays the <i>already-computed</i> operations
+///         rather than re-running the application code that produced them. A serialization failure means precisely
+///         that the snapshot those operations were computed from is no longer a valid basis for them. The replay
+///         opens a NEW transaction with a FRESH snapshot, so the conflict PostgreSQL correctly detected is gone and
+///         the write lands -- converting a caught conflict into a silent lost update. Observed as exactly that: two
+///         <c>Serializable</c> sessions each loading a document at 100, one committing 100-500, the other
+///         committing 100-350 on top of it and reporting success. Only the application can resolve a 40001, by
+///         re-reading and recomputing, so it is surfaced as <c>ConcurrentUpdateException</c>.
+///     </para>
+///     <para>
+///         Note this reasoning is about the <i>snapshot</i>, not about isolation levels as such, which is why
+///         <c>40P01</c> <c>deadlock_detected</c> stays retryable: a deadlock aborts over lock ordering, not over a
+///         snapshot the server has rejected, and replaying it is the textbook remedy at Marten's default
+///         <c>ReadCommitted</c>. A deadlock retry under <c>Serializable</c> replays stale-snapshot work for the
+///         same structural reason 40001 did, and the honest fix there is to recompute rather than replay -- but
+///         that needs the isolation level plumbed into this classifier, and no one has observed it biting, so it is
+///         left as a known gap rather than guessed at here.
+///     </para>
 /// </remarks>
 internal static class WriteRetryClassifier
 {
@@ -103,7 +124,7 @@ internal static class WriteRetryClassifier
     private static readonly FrozenSet<string> s_retryable = new[]
     {
         // Class 40 -- transaction rollback. The server rolled it back and said so.
-        PostgresErrorCodes.SerializationFailure,          // 40001
+        // NOTE 40001 is deliberately NOT here; see s_staleSnapshot below.
         PostgresErrorCodes.DeadlockDetected,              // 40P01
         PostgresErrorCodes.TransactionRollback,           // 40000
 
@@ -130,7 +151,17 @@ internal static class WriteRetryClassifier
         PostgresErrorCodes.IoError                        // 58030
     }.ToFrozenSet(StringComparer.Ordinal);
 
-    /// <summary>The three things a failed commit can tell us about the transaction it left behind.</summary>
+    /// <summary>
+    ///     SQLSTATEs where the server rolled the transaction back <i>because the snapshot the work was computed
+    ///     from is no longer valid</i>. "Nothing was left behind" is true here and still not a licence to replay:
+    ///     see <see cref="Outcome.StaleSnapshot" />.
+    /// </summary>
+    private static readonly FrozenSet<string> s_staleSnapshot = new[]
+    {
+        PostgresErrorCodes.SerializationFailure // 40001
+    }.ToFrozenSet(StringComparer.Ordinal);
+
+    /// <summary>The four things a failed commit can tell us about the transaction it left behind.</summary>
     private enum Outcome
     {
         /// <summary>Known to be rolled back, and the cause may not recur. Replay is safe.</summary>
@@ -138,6 +169,12 @@ internal static class WriteRetryClassifier
 
         /// <summary>Known to be rolled back, but a replay reproduces it exactly. Retrying is waste.</summary>
         Deterministic,
+
+        /// <summary>
+        ///     Known to be rolled back, and a replay would most likely <b>succeed</b> — which is exactly why it
+        ///     must not be replayed. See the remarks on <see cref="WriteRetryClassifier" />.
+        /// </summary>
+        StaleSnapshot,
 
         /// <summary>The wire failed. The transaction may have committed and we cannot find out.</summary>
         Unknown
@@ -151,6 +188,7 @@ internal static class WriteRetryClassifier
         var sawPostgresError = false;
         var everyPostgresErrorIsRetryable = true;
         var sawRetryableMartenFailure = false;
+        var sawStaleSnapshot = false;
 
         foreach (var node in Flatten(exception))
         {
@@ -159,6 +197,11 @@ internal static class WriteRetryClassifier
                 // Must precede NpgsqlException -- PostgresException derives from it.
                 case PostgresException pg:
                     sawPostgresError = true;
+                    if (pg.SqlState is { } staleState && s_staleSnapshot.Contains(staleState))
+                    {
+                        sawStaleSnapshot = true;
+                    }
+
                     if (pg.SqlState is not { } state || !s_retryable.Contains(state))
                     {
                         everyPostgresErrorIsRetryable = false;
@@ -190,6 +233,10 @@ internal static class WriteRetryClassifier
 
         // Any single unknown outcome poisons the batch, no matter what else failed cleanly alongside it.
         if (sawWireFailure) return Outcome.Unknown;
+
+        // Likewise one stale-snapshot failure: the whole unit of work was computed from that snapshot, so a
+        // sibling page failing "retryably" says nothing useful about replaying this one.
+        if (sawStaleSnapshot) return Outcome.StaleSnapshot;
 
         if (sawPostgresError)
         {

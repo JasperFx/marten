@@ -14,16 +14,51 @@ namespace CoreTests;
 /// #5262: pins the classification behind <see cref="StoreOptions.WriteResiliencePipeline" />. A commit is one
 /// transaction carrying document writes and event appends, and appends are not idempotent — so the question is
 /// not "was this transient" but "do we know the previous attempt left nothing behind".
+///
+/// #5528 added the second half of that question: knowing nothing was left behind is necessary but NOT
+/// sufficient. A replay re-issues the operations already computed, so an error meaning "the snapshot those
+/// operations came from is no longer valid" must not be replayed even though the rollback is certain.
 /// </summary>
 public class write_retry_classification
 {
     private static PostgresException Postgres(string sqlState)
         => new("boom", "ERROR", "ERROR", sqlState);
 
+    /// <summary>
+    /// #5528. The server rolled these back and said so, so they pass the "left nothing behind" test — and they
+    /// still must not be replayed, because a replay opens a new transaction with a FRESH snapshot and therefore
+    /// SUCCEEDS. That turns a conflict PostgreSQL correctly detected into a silent lost update.
+    /// </summary>
+    public static TheoryData<string> StaleSnapshotStates => new()
+    {
+        PostgresErrorCodes.SerializationFailure
+    };
+
+    [Theory]
+    [MemberData(nameof(StaleSnapshotStates))]
+    public void a_stale_snapshot_failure_is_never_replayed(string sqlState)
+    {
+        WriteRetryClassifier.IsSafeToRetry(Postgres(sqlState)).ShouldBeFalse();
+    }
+
+    /// <summary>
+    /// The batch is one unit of work computed from one snapshot, so a sibling page failing "retryably" tells us
+    /// nothing that would make replaying this one safe.
+    /// </summary>
+    [Fact]
+    public void one_stale_snapshot_failure_poisons_an_otherwise_retryable_aggregate()
+    {
+        var mixed = new AggregateException(
+            Postgres(PostgresErrorCodes.DeadlockDetected),
+            Postgres(PostgresErrorCodes.SerializationFailure));
+
+        WriteRetryClassifier.IsSafeToRetry(mixed).ShouldBeFalse();
+    }
+
     public static TheoryData<string> RetryableStates => new()
     {
-        // Class 40 — the server rolled the transaction back and said so.
-        PostgresErrorCodes.SerializationFailure,
+        // Class 40 — the server rolled the transaction back and said so. 40001 is NOT here; see
+        // StaleSnapshotStates below for why "rolled back" was not enough on its own.
         PostgresErrorCodes.DeadlockDetected,
         PostgresErrorCodes.TransactionRollback,
         // Class 53 — resource pressure that may pass.
@@ -141,14 +176,17 @@ public class write_retry_classification
     [Fact]
     public void an_aggregate_retries_only_when_every_inner_failure_is_safe()
     {
+        // #5528: was SerializationFailure + DeadlockDetected, which is no longer "all safe" — 40001 is a
+        // stale-snapshot failure. DeadlockDetected + LockNotAvailable makes the same point about aggregation
+        // without relying on the state whose classification changed.
         var allSafe = new AggregateException(
-            Postgres(PostgresErrorCodes.SerializationFailure),
-            Postgres(PostgresErrorCodes.DeadlockDetected));
+            Postgres(PostgresErrorCodes.DeadlockDetected),
+            Postgres(PostgresErrorCodes.LockNotAvailable));
         WriteRetryClassifier.IsSafeToRetry(allSafe).ShouldBeTrue();
 
         // One unknown outcome poisons the whole batch — the safe inners tell us nothing about it.
         var mixed = new AggregateException(
-            Postgres(PostgresErrorCodes.SerializationFailure),
+            Postgres(PostgresErrorCodes.DeadlockDetected),
             new NpgsqlException("stream", new TimeoutException()));
         WriteRetryClassifier.IsSafeToRetry(mixed).ShouldBeFalse();
 
