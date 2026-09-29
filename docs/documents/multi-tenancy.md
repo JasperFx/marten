@@ -213,6 +213,13 @@ using (var session = store.QuerySession())
 
 In some cases, You may want to disable using the default tenant for storing documents, set `StoreOptions.Advanced.DefaultTenantUsageEnabled` to `false`. With this option disabled, Tenant (non-default tenant) should be passed via method argument or `SessionOptions` when creating a session using document store. Marten will throw an exception `DefaultTenantUsageDisabledException` if a session is created using default tenant.
 
+::: warning
+`Marten.Exceptions.DefaultTenantUsageDisabledException` now derives from
+`JasperFx.Events.DefaultTenantUsageDisabledException` rather than from `MartenException`, so code that
+handles this refusal across Critter Stack stores can catch the one shared type. If you were relying on a
+broad `catch (MartenException)` to handle it, catch the exception itself — or the JasperFx base — instead.
+:::
+
 ## Querying Multi-Tenanted Documents
 
 Inside the LINQ provider, when you open a session for a specific tenant like so:
