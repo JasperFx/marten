@@ -809,15 +809,34 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
-    <!-- Weasel 9.36.0 is mostly a drift release for stores Marten does not use (MySQL, Oracle, SQL
-         Server), but it takes JasperFx 2.76.0 as its floor and implements jasperfx#913's
-         IAdvisoryLock.FindHolderAsync for Postgres (weasel#650) — which is what lets a Marten HotCold
-         double-runner be named rather than only detected. The one PostgreSQL behaviour change is
-         weasel#638: changing a computed column's definition now drops and recreates the dependent
-         indexes instead of silently dropping them. Must stay >= 9.20.2 (weasel#399). -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.36.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.36.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.36.0" />
+    <!-- Weasel 9.37.0, and the reason for the bump is weasel#659:
+         ApplyAllConfiguredChangesToDatabaseAsync released the global migration lock only on its
+         SUCCESS paths, so a migration that threw left the lock held and locked every other replica out
+         of migrating — while the node that stranded it reported nothing. Disposing the connection was
+         not enough, because Npgsql resets a pooled connection when it is NEXT USED, not when it is
+         returned, so the session lock outlived the apply for as long as that connection sat idle.
+         That is marten#5529. Measured by running CoreTests twice against ONE database (the shape that
+         reproduces it), fresh database per side: 9.36.0 gave pass 2 five failures, 9.37.0 gives one.
+         The four that went away were always collateral — tests locked out because an earlier test's
+         migration threw while holding the lock.
+         The survivor is marten#5536 and is NOT a 9.37.0 regression: `42710: constraint
+         "fkey_mt_events_stream_id" for relation "mt_events" already exists`, a re-apply re-adding the
+         default event-store FK. A/B'd across both Weasel versions rather than attributed on suspicion,
+         because 9.37.0 genuinely does change two migrations — it is present on 9.36.0 too and was
+         merely invisible underneath the lock strand.
+         Also in 9.37.0, none of it Marten's concern but two of it changes migration output: weasel#661
+         reads SQL Server 2025 JSON indexes through sys.json_indexes (previously emitted as DROP INDEX
+         on every apply), weasel#660 fixes Oracle descending indexes and co-migrated views, weasel#658
+         makes TableDelta.HasChanges() answer instead of throwing for a table that does not exist yet,
+         and weasel#664 stops the reconnection loop abandoning a connection per attempt.
+         9.36.0 before it carried jasperfx#913's IAdvisoryLock.FindHolderAsync for Postgres
+         (weasel#650) — which is what lets a Marten HotCold double-runner be named rather than only
+         detected — and weasel#638, where changing a computed column's definition now drops and
+         recreates the dependent indexes instead of silently dropping them.
+         Must stay >= 9.20.2 (weasel#399), and >= 9.36.0's own floor of JasperFx 2.76.0. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.37.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.37.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.37.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

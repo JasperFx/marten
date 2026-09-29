@@ -58,9 +58,14 @@ print(c[-1] if c else '')
 
 resolve_version() {
   # Returns the version all packages agree on, or empty if any is missing.
-  local want="$1" agreed=""
+  #
+  # `found` is declared HERE, once, and never re-declared inside the loop. In zsh a bare
+  # `local found` on an already-set variable PRINTS `found=<value>` to stdout, and inside a command
+  # substitution that lands in the caller's variable -- which turned $VERSION into a four-line string
+  # and produced "'found=9.37.0 … 9.37.0' is not a valid version string" from NuGet.
+  local want="$1" agreed="" found=""
   for p in "${PACKAGES[@]}"; do
-    local found
+    found=""
     if [[ -n "$want" ]]; then
       curl -fsS "https://api.nuget.org/v3-flatcontainer/${p:l}/index.json" 2>/dev/null \
         | python3 -c "import json,sys; sys.exit(0 if '$want' in json.load(sys.stdin)['versions'] else 1)" 2>/dev/null \
@@ -90,6 +95,15 @@ while true; do
   echo "   $(date '+%H:%M:%S') not yet; sleeping ${POLL_SECONDS}s"
   sleep "$POLL_SECONDS"
 done
+
+# Belt and braces after the zsh `local` incident: refuse anything that is not a bare version number
+# before it reaches Directory.Packages.props. A corrupted value used to sail into the file and only fail
+# at restore, with the props already edited.
+if [[ ! "$VERSION" =~ ^9\.37\.[0-9]+$ ]]; then
+  echo "REFUSING: resolved version is not a bare 9.37.x number:"
+  printf '  >>%s<<\n' "$VERSION"
+  exit 1
+fi
 
 echo "== Weasel $VERSION is live for every pinned package =="
 say_it "Weasel $VERSION is out. Upgrading."
