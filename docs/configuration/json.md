@@ -224,6 +224,21 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L178-L196' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_advanced' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: warning Newtonsoft date parsing
+`Marten.Newtonsoft` reads JSON with `DateParseHandling.None`, so a date token stays a string until the
+serializer converts it to whatever the target member actually is. This is deliberate: `JsonTextReader`
+otherwise converts every date token to a `DateTime` _before_ the target type is known, and a
+`DateTimeOffset` member was then rebuilt from that `DateTime` and silently picked up the **host
+machine's** UTC offset. The same instant, the wrong offset — and because a `DateTimeOffset` duplicated
+column is `timestamp with time zone`, which Npgsql accepts only at offset zero, storing a loaded
+document then failed outright on any machine not running in UTC.
+
+One consequence to know about: a member declared as `object` or `dynamic` holding an ISO-8601 string
+comes back as a `string` rather than a `DateTime`, because nothing declares that it is a date. Members
+declared as `DateTime` are unaffected and keep their exact `Kind`. If you depend on the old behaviour
+for `object`-typed members, convert explicitly at the point of use.
+:::
+
 ::: warning WARNING
 You should not override the Newtonsoft.Json `ContractResolver` with `CamelCasePropertyNamesContractResolver` for Json Serialization. Newtonsoft.Json by default respects the casing used in property / field names which is typically PascalCase.
 This can be overridden to serialize the names to camelCase and Marten will store the JSON in the database as specified by the Newtonsoft.Json settings. However, Marten uses the property / field names casing for its SQL queries and queries are case sensitive and as such, querying will not work correctly.

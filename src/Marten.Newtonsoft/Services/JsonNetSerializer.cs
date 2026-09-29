@@ -366,13 +366,56 @@ public class JsonNetSerializer: ISerializer
         return JObject.Load(jsonReader);
     }
 
+    /// <summary>
+    ///     #5530. <c>DateParseHandling.None</c> is load-bearing: leave the token as a string and let the
+    ///     serializer convert it to whatever the target member actually is.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <see cref="JsonTextReader" /> defaults to <c>DateParseHandling.DateTime</c>, and because Marten
+    ///         constructs the reader itself the reader's default wins over anything on the settings. The reader
+    ///         therefore converted every date token to a <see cref="DateTime" /> <b>before</b> the serializer
+    ///         saw the target type, so a <see cref="DateTimeOffset" /> member was rebuilt from a
+    ///         <c>DateTime</c> and silently acquired the HOST's local offset. Same instant, wrong offset:
+    ///         <c>2026-03-15T08:30:00+00:00</c> read back as <c>+00:00</c> on a UTC machine and
+    ///         <c>-05:00</c> on a machine in US Central.
+    ///     </para>
+    ///     <para>
+    ///         That is a data-fidelity bug on its own, and it also breaks writes: a <c>DateTimeOffset</c>
+    ///         duplicated column is <c>timestamp with time zone</c>, which Npgsql will only accept at offset
+    ///         zero, so storing a loaded document threw <c>Cannot write DateTimeOffset with Offset=-05:00:00</c>
+    ///         on any non-UTC host.
+    ///     </para>
+    ///     <para>
+    ///         ⚠️ <b>Known cost, not yet resolved.</b> For <c>object</c>- and <c>dynamic</c>-typed members an
+    ///         ISO-8601 string no longer materialises as a <see cref="DateTime" />, because nothing declares
+    ///         that it is one — it arrives as a <see cref="string" />. That <em>breaks a deliberate
+    ///         compatibility guarantee</em>: <c>SystemObjectNewtonsoftCompatibleConverter</c> exists precisely
+    ///         so <c>SystemTextJsonSerializer</c> returns a <c>DateTime</c> here, to match Newtonsoft. Measured,
+    ///         not assumed — STJ returns <c>DateTime</c> and this change makes Newtonsoft return <c>string</c>,
+    ///         so it diverges the two rather than converging them. Closing that needs a Newtonsoft counterpart
+    ///         to that converter. Every <em>declared</em> <c>DateTime</c> member keeps its exact kind and ticks;
+    ///         only the undeclared case changes.
+    ///     </para>
+    ///     <para>
+    ///         A <c>JsonConverter</c> cannot substitute for this. By the time <c>ReadJson</c> runs, the reader
+    ///         has already turned the token into a <c>DateTime</c> and the original offset is gone.
+    ///     </para>
+    /// </remarks>
     private JsonTextReader GetJsonTextReader(Stream stream)
     {
-        return new(stream.GetStreamReader()) { ArrayPool = _jsonArrayPool, CloseInput = false };
+        return new(stream.GetStreamReader())
+        {
+            ArrayPool = _jsonArrayPool, CloseInput = false, DateParseHandling = DateParseHandling.None
+        };
     }
 
+    /// <inheritdoc cref="GetJsonTextReader(Stream)" />
     private JsonTextReader GetJsonTextReader(TextReader textReader)
     {
-        return new(textReader) { ArrayPool = _jsonArrayPool, CloseInput = false };
+        return new(textReader)
+        {
+            ArrayPool = _jsonArrayPool, CloseInput = false, DateParseHandling = DateParseHandling.None
+        };
     }
 }
