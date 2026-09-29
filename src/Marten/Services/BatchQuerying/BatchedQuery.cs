@@ -25,6 +25,15 @@ internal partial class BatchedQuery: IBatchedQuery
     private readonly List<Type> _documentTypes = new();
     private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
 
+    // The session transaction an exclusive fetch in this batch needs. Started once, however many
+    // exclusive fetches the batch holds, and awaited by Execute() before the batch is sent.
+    private Task? _transactionStart;
+
+    private void startTransaction()
+    {
+        _transactionStart ??= Parent.BeginTransactionAsync(CancellationToken.None).AsTask();
+    }
+
     public BatchedQuery(QuerySession parent)
     {
         Parent = parent;
@@ -93,6 +102,13 @@ internal partial class BatchedQuery: IBatchedQuery
         if (!_items.Any())
         {
             return;
+        }
+
+        // An exclusive fetch's row lock is only held if its `for update` runs inside the session's
+        // transaction, and starting that transaction may still be in flight (see FetchForExclusiveWriting).
+        if (_transactionStart != null)
+        {
+            await _transactionStart.ConfigureAwait(false);
         }
 
         foreach (var type in _documentTypes.Distinct())

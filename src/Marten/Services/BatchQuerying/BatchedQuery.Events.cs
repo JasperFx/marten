@@ -132,18 +132,17 @@ internal partial class BatchedQuery: IBatchEvents
 
     public async Task<IEventStream<T>> FetchForExclusiveWriting<T>(Guid id) where T : class
     {
-        // Enlist synchronously BEFORE the first await so the item is in _items
-        // by the time control returns to the caller. A subsequent Execute() is
-        // then guaranteed to see and process the item.
+        // Enlist synchronously so the Execute() that follows sees the item (#4590), and START the
+        // session's transaction here without awaiting it: Execute() awaits it before sending anything.
+        // The method stays async so an error while enlisting still arrives as a faulted task; its only
+        // await is on the item, so control returns to the caller with the item enlisted.
         //
-        // Previously, `await Parent.BeginTransactionAsync(...)` ran first. Under
-        // concurrency BeginTransactionAsync does not complete synchronously
-        // (AutoClosingLifetime.StartAsync performs a real socket round-trip in
-        // NpgsqlConnection.OpenAsync), so the method yielded before AddItem ran.
-        // The codegen pattern `var t = batch.Events.FetchForExclusiveWriting(id);
-        // await batch.Execute(ct); var s = await t;` then called Execute with an
-        // empty _items list, returned immediately, and the item.Result was never
-        // populated — causing the awaiter on `t` to wedge forever.
+        // Awaiting it here instead handed control back to the caller while the transaction was still
+        // starting whenever BeginTransactionAsync had to open a physical connection (a cold or
+        // exhausted pool). The codegen pattern `var t = batch.Events.FetchForExclusiveWriting(id);
+        // await batch.Execute(ct); var s = await t;` then sent the `for update` on the session's
+        // auto-closing connection, outside any transaction, so the row lock was released as soon as
+        // the read finished instead of being held until SaveChangesAsync.
         _documentTypes.Add(typeof(IEvent));
         var plan = Parent.Events.As<EventStore>().FindFetchPlan<T, Guid>();
         if (plan.Lifecycle != ProjectionLifecycle.Live)
@@ -152,15 +151,13 @@ internal partial class BatchedQuery: IBatchEvents
         }
         var handler = plan.BuildQueryHandler(Parent, id, true);
         var resultTask = AddItem(handler);
-
-        await Parent.BeginTransactionAsync(CancellationToken.None).ConfigureAwait(false);
+        startTransaction();
         return await resultTask.ConfigureAwait(false);
     }
 
     public async Task<IEventStream<T>> FetchForExclusiveWriting<T>(string key) where T : class
     {
-        // See the Guid overload above for the explanation — enlist synchronously
-        // before the first await to avoid the async-vs-sync-enlistment race.
+        // See the Guid overload above.
         _documentTypes.Add(typeof(IEvent));
         var plan = Parent.Events.As<EventStore>().FindFetchPlan<T, string>();
         if (plan.Lifecycle != ProjectionLifecycle.Live)
@@ -169,8 +166,7 @@ internal partial class BatchedQuery: IBatchEvents
         }
         var handler = plan.BuildQueryHandler(Parent, key, true);
         var resultTask = AddItem(handler);
-
-        await Parent.BeginTransactionAsync(CancellationToken.None).ConfigureAwait(false);
+        startTransaction();
         return await resultTask.ConfigureAwait(false);
     }
 
