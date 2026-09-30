@@ -729,15 +729,34 @@
          Also in 2.76.0, and NOT Marten's to implement: jasperfx#913's IAdvisoryLock.FindHolderAsync
          (Weasel implements it for Postgres in weasel#650, below) and jasperfx#912's classified
          ShardStartException reason. -->
-    <PackageVersion Include="JasperFx" Version="2.76.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.76.0" />
+    <!-- JasperFx 2.77.0 carries three pieces, and unlike 2.76.0 one of them makes the bump a
+         COMPILE break rather than a silently-vacuous default, which is why this pin cannot land on
+         its own:
+         jasperfx#870/#927 grows IDocumentStoreDiagnostics — Subject, LoadDocumentAsync returning a
+         StoredDocument, DocumentQueryResult.Documents, the criteria surface and the new
+         IDocumentStoreDiagnosticsWriter sibling. The new members are ABSTRACT on purpose so that
+         Marten, Polecat and Fisher all land in the same wave instead of quietly returning
+         unfiltered pages. marten#5543 is Marten's half.
+         jasperfx#924/#926 adds ShardState.LastUpdated and ProjectionProgressRow.LastUpdated — the
+         progression row's own last_updated, which is LIVENESS and not progress. Default-implemented
+         and therefore vacuous until a store selects the column, so marten#5541 pairs with it.
+         jasperfx#917/#925 adds IComplianceCompositeBuilder.Add(ProjectionBase, int) with a throwing
+         default plus the async-daemon phantom-deletion fact. Compliance-only; enrolled separately in
+         marten#5540 so this PR is not carrying three enrollments at once.
+         Also in 2.77.0 and riding the source generator rather than the runtime: jasperfx#923
+         (marten#3942) keeps a simple-typed single-argument constructor out of the generated
+         EventTypes, so a `record` aggregate whose only constructor takes its own string Id is no
+         longer mistaken for an event-accepting Create. That is why the two SourceGenerator pins move
+         with the family this time. -->
+    <PackageVersion Include="JasperFx" Version="2.77.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.77.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.76.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.77.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -756,11 +775,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.75.2">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.77.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.75.2" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.77.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

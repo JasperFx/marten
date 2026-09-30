@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Descriptors;
 using JasperFx.Documents;
 using JasperFx.Events;
+using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -39,6 +41,13 @@ public class DiagCat: DiagAnimal { }
 /// <see cref="DocumentMappingDescriptor"/> enrichment (SubClasses + structured Partitioning) that
 /// feeds the CritterWatch Document Database Explorer.
 /// </summary>
+/// <remarks>
+/// #5543 / jasperfx#870 grew that surface and defined its semantics. The semantics themselves are pinned
+/// cross-store by <c>DocumentStoreDiagnosticsCompliance</c> (soft deletes, hierarchies, tenancy, id
+/// conversion, criteria refusal, and the write sibling), so what is added here is only what is Marten's
+/// own: the writer's DI registration, the serializer-casing and index/duplicated-field descriptors, and
+/// the rule that a diagnostic read must never PROVISION a tenant's database.
+/// </remarks>
 public class document_store_diagnostics_tests: HostedStoreContext
 {
     [Fact]
@@ -217,6 +226,100 @@ public class document_store_diagnostics_tests: HostedStoreContext
 
         descriptor.PartitioningStrategy.ShouldBeNull();
         descriptor.Partitioning.ShouldBeNull();
+    }
+
+    // -----------------------------------------------------------------------------------------------
+    // #5543 / jasperfx#870. The cross-store semantics live in DocumentStoreDiagnosticsCompliance; what
+    // is Marten's alone goes here.
+    // -----------------------------------------------------------------------------------------------
+
+    [Fact]
+    public async Task the_writer_is_registered_in_the_container()
+    {
+        var host = await BuildHost("writer_di", opts => opts.Schema.For<DiagWidget>());
+
+        host.Services.GetService<IDocumentStoreDiagnosticsWriter>().ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task usage_advertises_the_serializer_casing()
+    {
+        var host = await BuildHost("casing", opts =>
+        {
+            opts.Schema.For<DiagWidget>();
+            opts.UseSystemTextJsonForSerialization(casing: Casing.CamelCase);
+        });
+
+        var usage = await GetUsageAsync(host);
+
+        // jasperfx#870 §5: without this a console cannot tell "the document has no Status member" from
+        // "the document stores it as `status`" -- both read as a miss against the same path.
+        usage.SerializerCasing.ShouldBe(nameof(Casing.CamelCase));
+    }
+
+    [Fact]
+    public async Task mapping_descriptor_carries_duplicated_fields_and_indexes()
+    {
+        var host = await BuildHost("duplicated", opts =>
+            opts.Schema.For<Target>().Duplicate(x => x.Number));
+
+        var usage = await GetUsageAsync(host);
+        var descriptor = usage.Documents.Single(d => d.Alias == "target");
+
+        var duplicated = descriptor.DuplicatedFields.ShouldHaveSingleItem();
+        duplicated.MemberPath.ShouldBe(nameof(Target.Number));
+        duplicated.ColumnName.ShouldBe("number");
+        duplicated.DbType.ShouldNotBeNullOrWhiteSpace();
+
+        // Duplicating a member also indexes it, and the index is the reason the structured list exists:
+        // a console asking "can I filter on Number cheaply?" gets an answer without parsing Ddl. The
+        // member path comes back too, which it can only do for a duplicated field's own column.
+        var index = descriptor.Indexes.ShouldHaveSingleItem();
+        index.Columns.ShouldContain("number");
+        index.Members.ShouldContain(nameof(Target.Number));
+        index.Name.ShouldNotBeNullOrWhiteSpace();
+        index.Method.ShouldBe("btree");
+    }
+
+    [Fact]
+    public async Task a_query_for_an_unknown_tenant_does_not_provision_anything()
+    {
+        // The trap #5400 recorded on the event-store explorer, in the same shape: Tenancy's
+        // FindOrCreateDatabase is not a lookup -- on SingleServerMultiTenancy it issues CREATE DATABASE.
+        // A read-only console question about a tenant that does not exist must not bring that tenant into
+        // being, so diagnostics goes through TryFindDatabase and answers with an empty page.
+        var schema = $"{SchemaName}_unknown_tenant";
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.DropSchemaAsync(schema);
+            await conn.RunSqlAsync("drop database if exists diag_unknown_tenant_probe with (force)");
+        }
+
+        using var host = await StartHostAsync(opts =>
+        {
+            opts.DatabaseSchemaName = schema;
+            opts.MultiTenantedDatabases(x =>
+                x.AddSingleTenantDatabase(ConnectionSource.ConnectionString, "diag_known"));
+            opts.Schema.For<DiagWidget>();
+        });
+
+        var diagnostics = (IDocumentStoreDiagnostics)host.Services.GetRequiredService<IDocumentStore>();
+        var typeName = typeof(DiagWidget).FullName!;
+
+        // An unknown TENANT is refused rather than read as empty, and the two really are different
+        // questions: "this tenant has no rows of that type" is an answer, "there is no such tenant" is a
+        // mistake the operator should see. That matches findExplorerDatabaseAsync on the event-store side.
+        // An unknown TYPE still reads as empty -- that one the contract does specify.
+        await Should.ThrowAsync<UnknownTenantIdException>(() => diagnostics.QueryDocumentsAsync(typeName,
+            new DocumentQueryOptions(1, 10) { TenantId = "diag_unknown_tenant_probe" }));
+
+        await Should.ThrowAsync<UnknownTenantIdException>(() => diagnostics.LoadDocumentAsync(
+            typeName, Guid.NewGuid().ToString(), "diag_unknown_tenant_probe"));
+
+        await using var check = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await check.OpenAsync();
+        (await check.DatabaseExists("diag_unknown_tenant_probe")).ShouldBeFalse();
     }
 
     private async Task<IHost> BuildHost(string suffix, Action<StoreOptions> configure)

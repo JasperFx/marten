@@ -656,6 +656,20 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     ///     enrolled here skipping wholesale -- which keeps it compiling and running -- and the flag
     ///     flips in the node that moves Marten's read path onto the shared registry.
     /// </summary>
+    /// <summary>
+    ///     #5541 / jasperfx#924. Marten selects <c>last_updated</c> in every variant of
+    ///     <c>ProjectionProgressStatement</c> and hydrates it onto <c>ShardState.LastUpdated</c>, and its
+    ///     high-water detector now restamps the <c>HighWaterMark</c> row on an idle cycle, so both facts run.
+    /// </summary>
+    /// <remarks>
+    ///     The second fact — <c>the_high_water_rows_last_updated_moves_on_an_idle_daemon</c> — is the one that
+    ///     needed a product change rather than a column in a select list. Before #5541 an idle
+    ///     <c>persistDetectedMarkAsync</c> returned without issuing any SQL, so the row's stamp froze at the
+    ///     last real mark advance and the column was useless as a liveness signal on exactly the store you
+    ///     most want to ask about.
+    /// </remarks>
+    public override bool SupportsProgressionLastUpdated => true;
+
     public override bool SupportsUpcasting => false;
 
     /// <summary>

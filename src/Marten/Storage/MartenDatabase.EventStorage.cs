@@ -555,7 +555,12 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             var builder = new CommandBuilder();
             // The trailing ':' guards against a projection whose name is a prefix of another
             // (e.g. "Orders" must not match "OrdersHistory:All").
-            var columns = extended ? "name, last_seq_id, agent_status, heartbeat" : "name, last_seq_id";
+            // #5541 / jasperfx#924: last_updated is in the fixed head rather than the `extended` tail,
+            // because the column is unconditional on the table -- see the note in
+            // ProjectionProgressStatement. Ordinals 2 and 3 therefore move by one.
+            var columns = extended
+                ? "name, last_seq_id, last_updated, agent_status, heartbeat"
+                : "name, last_seq_id, last_updated";
             builder.Append(
                 $"select {columns} from {Options.EventGraph.DatabaseSchemaName}.mt_event_progression where name like ");
             builder.AppendParameter(projectionName + ":%");
@@ -564,6 +569,7 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             var bestSequence = 0L;
             string? bestStatus = null;
             DateTimeOffset? bestHeartbeat = null;
+            DateTimeOffset? bestLastUpdated = null;
 
             await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
             while (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -587,11 +593,13 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
                 {
                     best = shard;
                     bestSequence = sequence;
+                    bestLastUpdated = await readNullableStructAsync<DateTimeOffset>(reader, 2, token)
+                        .ConfigureAwait(false);
 
                     if (extended)
                     {
-                        bestStatus = await readNullableAsync<string>(reader, 2, token).ConfigureAwait(false);
-                        bestHeartbeat = await readNullableStructAsync<DateTimeOffset>(reader, 3, token)
+                        bestStatus = await readNullableAsync<string>(reader, 3, token).ConfigureAwait(false);
+                        bestHeartbeat = await readNullableStructAsync<DateTimeOffset>(reader, 4, token)
                             .ConfigureAwait(false);
                     }
                 }
@@ -599,7 +607,10 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
 
             return best is null
                 ? null
-                : new ProjectionProgressRow(projectionName, tenantId, bestSequence, bestStatus, bestHeartbeat);
+                : new ProjectionProgressRow(projectionName, tenantId, bestSequence, bestStatus, bestHeartbeat)
+                {
+                    LastUpdated = bestLastUpdated
+                };
         }
         catch (Exception e) when (isMissingEventStorage(e))
         {
@@ -638,7 +649,9 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     /// row exists for that identity. <see cref="ProjectionProgressRow.AgentStatus"/> and
     /// <see cref="ProjectionProgressRow.LastHeartbeat"/> carry the persisted values when
     /// <see cref="EventGraph.EnableExtendedProgressionTracking"/> is on, and stay null when it is off and
-    /// the columns do not exist (#5172).
+    /// the columns do not exist (#5172). <see cref="ProjectionProgressRow.LastUpdated"/> is unconditional
+    /// (#5541): the column exists on every progression table, and unlike the heartbeat it says when the ROW
+    /// was last written rather than when an agent last reported in.
     /// </summary>
     public async ValueTask<ProjectionProgressRow?> ReadProjectionProgressAsync(
         ShardName name, CancellationToken token)
@@ -653,7 +666,10 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             await conn.OpenAsync(token).ConfigureAwait(false);
 
             var builder = new CommandBuilder();
-            var columns = extended ? "last_seq_id, agent_status, heartbeat" : "last_seq_id";
+            // #5541 / jasperfx#924: as in the sibling overload, last_updated rides the fixed head.
+            var columns = extended
+                ? "last_seq_id, last_updated, agent_status, heartbeat"
+                : "last_seq_id, last_updated";
             builder.Append(
                 $"select {columns} from {Options.EventGraph.DatabaseSchemaName}.mt_event_progression where name = ");
             builder.AppendParameter(name.Identity);
@@ -665,16 +681,23 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             }
 
             var sequence = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            var lastUpdated = await readNullableStructAsync<DateTimeOffset>(reader, 1, token).ConfigureAwait(false);
 
             if (!extended)
             {
-                return new ProjectionProgressRow(name.Name, name.TenantId, sequence, null, null);
+                return new ProjectionProgressRow(name.Name, name.TenantId, sequence, null, null)
+                {
+                    LastUpdated = lastUpdated
+                };
             }
 
-            var status = await readNullableAsync<string>(reader, 1, token).ConfigureAwait(false);
-            var heartbeat = await readNullableStructAsync<DateTimeOffset>(reader, 2, token).ConfigureAwait(false);
+            var status = await readNullableAsync<string>(reader, 2, token).ConfigureAwait(false);
+            var heartbeat = await readNullableStructAsync<DateTimeOffset>(reader, 3, token).ConfigureAwait(false);
 
-            return new ProjectionProgressRow(name.Name, name.TenantId, sequence, status, heartbeat);
+            return new ProjectionProgressRow(name.Name, name.TenantId, sequence, status, heartbeat)
+            {
+                LastUpdated = lastUpdated
+            };
         }
         catch (Exception e) when (isMissingEventStorage(e))
         {

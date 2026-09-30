@@ -798,6 +798,7 @@ select coalesce(
     {
         if (!statistics.HasChanged)
         {
+            await refreshHighWaterFreshnessAsync(token).ConfigureAwait(false);
             return;
         }
 
@@ -833,6 +834,45 @@ select coalesce(
         {
             var current = await loadCurrentStatistics(token).ConfigureAwait(false);
             statistics.LastUpdated = current.LastUpdated;
+        }
+    }
+
+    // #5541 / jasperfx#924: on a caught-up store the mark cannot move, so persistDetectedMarkAsync used to
+    // return without issuing any SQL at all -- mt_mark_event_progression was never called and the
+    // HighWaterMark row's last_updated froze at the last moment the mark actually advanced. That makes the
+    // column read as "abandoned weeks ago" on a perfectly healthy idle store, which is the exact confusion
+    // CritterWatch#1359 hit and the reason ShardState.LastUpdated has to be LIVENESS rather than progress:
+    // a monitor cannot otherwise tell "caught up, nothing new" from "no longer maintained".
+    //
+    // Deliberately a bare UPDATE of the one column on the one row:
+    //   * last_seq_id is untouched, so this can never nudge the mark -- the whole safety property of the
+    //     detector is that the mark only moves through the paths that proved it may;
+    //   * `where name =` and no upsert, so an idle poll before the mark has ever been written creates
+    //     nothing. The row appears when the first real mark does, and a no-op UPDATE of zero rows is the
+    //     correct answer until then;
+    //   * the store-global row only. The per-tenant rows under UseTenantPartitionedEvents are already
+    //     rewritten by MarkHighWaterForTenantAsync on every vectorized poll, and projection shard rows
+    //     are UpdateProjectionProgress's business, not the detector's.
+    //
+    // Once per SlowPollingTime (1s by default) on an idle daemon, and cheap: it is one HOT update of a
+    // single row in a cycle that already upserts the allocation fence row unconditionally.
+    private async Task refreshHighWaterFreshnessAsync(CancellationToken token)
+    {
+        try
+        {
+            await using var cmd = new NpgsqlCommand(
+                $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_updated = transaction_timestamp() where name = '{HighWaterShardIdentity.StoreGlobal}'");
+
+            await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (!token.IsCancellationRequested)
+        {
+            // A liveness stamp is strictly an observability aid on top of a mark that has not moved.
+            // Losing it costs a monitor its freshness signal and nothing else, so it must never be
+            // allowed to fail a poll -- same reasoning as the allocation fence below.
+            _logger.LogDebug(e,
+                "Unable to refresh the high water mark's last_updated stamp for database {Database}",
+                DatabaseIdentity);
         }
     }
 
