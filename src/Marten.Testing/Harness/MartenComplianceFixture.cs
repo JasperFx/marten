@@ -670,6 +670,19 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     /// </remarks>
     public override bool SupportsProgressionLastUpdated => true;
 
+    /// <summary>
+    ///     #5540 / jasperfx#917. Marten's <c>CompositeProjection.Add(IProjectionSource, stage)</c> takes an
+    ///     already-constructed projection, which the composite builder adapter below now forwards to, so
+    ///     <c>StreamArchivingCompliance</c>'s async phantom-deletion fact runs rather than skipping.
+    /// </summary>
+    /// <remarks>
+    ///     The gate is not belt-and-braces: the shared <c>IComplianceCompositeBuilder.Add</c> ships with a
+    ///     THROWING default, and composites are assembled during store <em>construction</em>, so an ungated
+    ///     fact would fail on the default rather than skip. Flipping this without the adapter below would
+    ///     therefore break the whole configuration, not just the one fact.
+    /// </remarks>
+    public override bool SupportsAddingProjectionsToComposites => true;
+
     public override bool SupportsUpcasting => false;
 
     /// <summary>
@@ -858,6 +871,21 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
             public void Snapshot<TDoc>(int stageNumber) where TDoc : notnull
                 => _composite.Snapshot<TDoc>(stageNumber);
+
+            /// <summary>
+            ///     #5540 / jasperfx#917. The same forward-plus-cast shape as
+            ///     <see cref="MartenComplianceRegistrar.AddProjection" />, and for the same reason: the shared
+            ///     builder interface is not generic over the session pair, so it can only hand over a
+            ///     <see cref="ProjectionBase" /> and leave the downcast to Marten's own projection source type
+            ///     here.
+            /// </summary>
+            /// <remarks>
+            ///     Needed because a <see cref="Snapshot{TDoc}" /> member cannot express what the phantom-deletion
+            ///     fact's stage 2 has to be — a projection that RECORDS the synthetic
+            ///     <c>ProjectionDeleted&lt;TDoc,TId&gt;</c> events stage 1 hands downstream.
+            /// </remarks>
+            public void Add(ProjectionBase projection, int stageNumber)
+                => _composite.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, stageNumber);
         }
     }
 
