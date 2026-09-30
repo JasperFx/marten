@@ -748,15 +748,23 @@
          EventTypes, so a `record` aggregate whose only constructor takes its own string Id is no
          longer mistaken for an event-accepting Create. That is why the two SourceGenerator pins move
          with the family this time. -->
-    <PackageVersion Include="JasperFx" Version="2.77.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.77.0" />
+    <!-- JasperFx 2.78.0 carries exactly one change, and it is the other half of a behaviour Marten
+         deliberately REMOVED in 2.77.0: jasperfx#928/#929 adds DocumentQueryOptions.AllTenants.
+         Before #5543, Marten answered a null tenant with every tenant's rows, so CritterWatch's
+         Document Explorer "All tenants" worked by accident. #5543 narrowed a blank tenant to the
+         DEFAULT tenant, which is correct and which left no way to ask for all of them — this flag is
+         the explicit replacement, and marten#5544 is Marten's half. Also adds
+         DocumentQueryOptions.AssertValidTenantScope(), which every store must call before it reads.
+         Nothing else ships in 2.78.0. -->
+    <PackageVersion Include="JasperFx" Version="2.78.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.78.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.77.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.78.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -775,11 +783,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.77.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.78.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.77.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.78.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

@@ -87,6 +87,19 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     public override bool SupportsDocumentDiagnosticCriteria => false;
 
     /// <summary>
+    /// #5544 / jasperfx#928. This fixture builds a single-database conjoined store, which is the shape
+    /// Marten reads every tenant from: dropping the <c>tenant_id</c> predicate answers all of them in one
+    /// query, ordered by tenant then id so paging cannot repeat a row.
+    /// </summary>
+    /// <remarks>
+    /// A store spanning several databases is REFUSED rather than answered from the default one — see
+    /// <c>allTenantsDatabase</c>. That refusal is the contract, not a gap being hidden: returning the
+    /// default tenant's rows as though they were every tenant's is the one failure the flag exists to
+    /// prevent, and a console cannot tell it apart from a store with a single tenant.
+    /// </remarks>
+    public override bool SupportsDocumentDiagnosticAllTenants => true;
+
+    /// <summary>
     /// #5543. Marten soft-deletes per document type through <c>Schema.For&lt;T&gt;().SoftDeleted()</c>, which
     /// BuildStoreAsync replays from <c>DocumentComplianceConfig.SoftDeletedDocuments</c>. Flipping this
     /// without that replay does not make the soft-delete facts skip — it hard-deletes the rows and every one

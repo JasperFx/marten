@@ -62,6 +62,12 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
     async Task<DocumentQueryResult> IDocumentStoreDiagnostics.QueryDocumentsAsync(
         string documentTypeName, DocumentQueryOptions options, CancellationToken token)
     {
+        // #5544 / jasperfx#928: the request's own shape first, before anything about this store. One read
+        // cannot be scoped to one tenant AND to all of them, and a store must not pick -- so this is an
+        // ArgumentException on every store, asserted by the compliance suite whether or not the store can
+        // honour AllTenants at all.
+        options.AssertValidTenantScope();
+
         // Refused BEFORE anything else, including resolving the type: silently returning the unfiltered
         // page is the one answer a console cannot tell apart from a filter that matched every row
         // (jasperfx#870 §1). Marten will apply these once jasperfx#869's Dynamic LINQ translation lands.
@@ -76,13 +82,16 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             return emptyPage(pageNumber, pageSize);
         }
 
-        var database = await findDiagnosticsDatabaseAsync(options.TenantId).ConfigureAwait(false);
+        var database = options.AllTenants
+            ? allTenantsDatabase()
+            : await findDiagnosticsDatabaseAsync(options.TenantId).ConfigureAwait(false);
+
         if (database == null)
         {
             return emptyPage(pageNumber, pageSize);
         }
 
-        var predicate = new DiagnosticsPredicate(target, options.TenantId);
+        var predicate = new DiagnosticsPredicate(target, options.TenantId, options.AllTenants);
         if (options.IdEquals != null && !predicate.TryMatchId(options.IdEquals))
         {
             // An id that cannot be converted to the stored identity type matches nothing, which is the
@@ -112,7 +121,7 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         await using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText =
-                $"select {reader.SelectList} from {target.Table}{predicate.Sql} order by id limit {pageSize} offset {offset}";
+                $"select {reader.SelectList} from {target.Table}{predicate.Sql} order by {predicate.OrderBy} limit {pageSize} offset {offset}";
             predicate.Bind(cmd);
 
             await using var dbReader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
@@ -198,6 +207,35 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
     /// pattern this follows — except that a diagnostics read answers "nothing here" rather than throwing,
     /// which is how the rest of this contract treats something it cannot find.
     /// </remarks>
+    /// <summary>
+    /// #5544 / jasperfx#928: the one database an all-tenants read can be answered from, or a refusal.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Conjoined tenancy keeps every tenant in one database behind a <c>tenant_id</c> column, so dropping
+    /// the tenant predicate reads all of them in one query — which is the shape CritterWatch's Document
+    /// Explorer actually asks for (CritterWatch#1304).
+    /// </para>
+    /// <para>
+    /// A store that spans several databases is <b>refused</b> rather than answered from the default one.
+    /// The contract is explicit that returning the default tenant's rows as though they were every
+    /// tenant's is the one failure this flag exists to prevent, and a console cannot tell that apart from
+    /// a store with one tenant. Fanning out across the tenant databases is honest but is a different piece
+    /// of work — the paging has to stay deterministic across N databases, which means either ordering the
+    /// union in the client or a per-database cursor, and neither belongs in the same change as the flag.
+    /// </para>
+    /// </remarks>
+    private IMartenDatabase allTenantsDatabase()
+    {
+        if (Tenancy.Cardinality != DatabaseCardinality.Single)
+        {
+            throw new DocumentCriteriaNotSupportedException(nameof(DocumentQueryOptions.AllTenants),
+                "this store spreads its tenants across several databases, and Marten does not fan a diagnostic document query out across them yet. Query one tenant at a time with DocumentQueryOptions.TenantId.");
+        }
+
+        return Tenancy.Default.Database;
+    }
+
     private async ValueTask<IMartenDatabase?> findDiagnosticsDatabaseAsync(string? tenantId)
     {
         if (Tenancy.Cardinality == DatabaseCardinality.Single)
@@ -292,11 +330,13 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         private readonly DiagnosticsTarget _target;
         private readonly List<string> _conditions = new();
         private readonly List<Action<NpgsqlCommand>> _parameters = new();
+        private readonly bool _allTenants;
         private object? _id;
 
-        public DiagnosticsPredicate(DiagnosticsTarget target, string? tenantId)
+        public DiagnosticsPredicate(DiagnosticsTarget target, string? tenantId, bool allTenants = false)
         {
             _target = target;
+            _allTenants = allTenants;
 
             // NormalizeTenantId is the one definition every store applies: null, empty and whitespace all
             // mean the DEFAULT tenant. Not "every tenant" (what Marten did before #5543, so a console with
@@ -304,7 +344,10 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             // (CritterWatch#1304 measured that reading zero rows on conjoined Marten).
             TenantId = DocumentQueryOptions.NormalizeTenantId(tenantId) ?? StorageConstants.DefaultTenantId;
 
-            if (target.IsConjoined)
+            // #5544 / jasperfx#928: AllTenants drops the predicate rather than widening it. A
+            // single-tenanted mapping has no tenant_id column at all, so it reads exactly as it would with
+            // no tenant -- which is what the contract says a single-tenanted type does under AllTenants.
+            if (target.IsConjoined && !allTenants)
             {
                 _conditions.Add("tenant_id = @tenant");
                 var tenant = TenantId;
@@ -414,6 +457,19 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
                 return conditions.Count > 0 ? " where " + string.Join(" and ", conditions) : "";
             }
         }
+
+        /// <summary>
+        /// #5544 / jasperfx#928: tenant first, then the store's own stable order, so an all-tenants page can
+        /// never repeat a row another page already returned.
+        /// </summary>
+        /// <remarks>
+        /// Ordering by <c>id</c> alone is NOT enough once several tenants are in play: the same id legitimately
+        /// exists in every tenant, so <c>limit/offset</c> over a non-unique sort key can show one tenant's copy
+        /// on two pages and another's on none. <c>(tenant_id, id)</c> is the conjoined table's primary key, so
+        /// it is both total and index-ordered.
+        /// </remarks>
+        public string OrderBy
+            => _allTenants && _target.IsConjoined ? $"{TenantIdColumn.Name}, id" : "id";
 
         public void Bind(NpgsqlCommand command)
         {

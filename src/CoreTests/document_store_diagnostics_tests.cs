@@ -322,6 +322,67 @@ public class document_store_diagnostics_tests: HostedStoreContext
         (await check.DatabaseExists("diag_unknown_tenant_probe")).ShouldBeFalse();
     }
 
+    [Fact]
+    public async Task all_tenants_across_several_databases_is_refused_not_narrowed()
+    {
+        // #5544 / jasperfx#928. The compliance suite cannot reach this: its fixture builds a
+        // single-database conjoined store, which is the arm Marten DOES answer. A store spreading tenants
+        // over several databases is the arm Marten refuses, and the refusal is the contract rather than a
+        // gap -- answering from the default database would hand a console the default tenant's rows as
+        // though they were every tenant's, and nothing in the result would say otherwise.
+        var schema = $"{SchemaName}_alltenants_refused";
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.DropSchemaAsync(schema);
+        }
+
+        using var host = await StartHostAsync(opts =>
+        {
+            opts.DatabaseSchemaName = schema;
+            opts.MultiTenantedDatabases(x =>
+                x.AddSingleTenantDatabase(ConnectionSource.ConnectionString, "diag_alltenants"));
+            opts.Schema.For<DiagWidget>();
+        });
+
+        var diagnostics = (IDocumentStoreDiagnostics)host.Services.GetRequiredService<IDocumentStore>();
+
+        var refused = await Should.ThrowAsync<DocumentCriteriaNotSupportedException>(
+            () => diagnostics.QueryDocumentsAsync(typeof(DiagWidget).FullName!,
+                new DocumentQueryOptions(1, 10) { AllTenants = true }));
+
+        refused.Criterion.ShouldBe(nameof(DocumentQueryOptions.AllTenants));
+    }
+
+    [Fact]
+    public async Task all_tenants_combined_with_a_named_tenant_is_rejected_before_the_store_is_consulted()
+    {
+        // Asserted on the multi-database store deliberately: the contradiction has to be caught by
+        // AssertValidTenantScope BEFORE Marten decides whether it can honour AllTenants at all, or a store
+        // that refuses the fan-out would report the wrong complaint -- DocumentCriteriaNotSupportedException
+        // for a request that is malformed rather than unsupported.
+        var schema = $"{SchemaName}_alltenants_contradiction";
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.DropSchemaAsync(schema);
+        }
+
+        using var host = await StartHostAsync(opts =>
+        {
+            opts.DatabaseSchemaName = schema;
+            opts.MultiTenantedDatabases(x =>
+                x.AddSingleTenantDatabase(ConnectionSource.ConnectionString, "diag_contradiction"));
+            opts.Schema.For<DiagWidget>();
+        });
+
+        var diagnostics = (IDocumentStoreDiagnostics)host.Services.GetRequiredService<IDocumentStore>();
+
+        await Should.ThrowAsync<ArgumentException>(
+            () => diagnostics.QueryDocumentsAsync(typeof(DiagWidget).FullName!,
+                new DocumentQueryOptions(1, 10) { AllTenants = true, TenantId = "diag_contradiction" }));
+    }
+
     private async Task<IHost> BuildHost(string suffix, Action<StoreOptions> configure)
     {
         // Start from a clean schema so the data-bearing tests get a deterministic row count
