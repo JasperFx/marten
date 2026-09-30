@@ -164,6 +164,11 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
         config.ApplyTo(new MartenComplianceRegistrar(options));
 
+        // #5540: a daemon from an earlier configuration holds the store it was built from, so it has to be
+        // stopped before that store is replaced -- otherwise it keeps polling the same schema against a
+        // store nothing else is using, and the next fact's data disappears under it.
+        await stopRunningDaemonsAsync().ConfigureAwait(false);
+
         _store = new DocumentStore(options);
         _disposables.Add(_store);
 
@@ -310,14 +315,62 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         await _store.Advanced.Clean.DeleteAllDocumentsAsync().ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///     #5540. Stops whatever daemon this fixture started last before starting another, rather than only
+    ///     collecting it for teardown.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         This was a real defect, and #5540's new fact is what exposed it. Daemons used to accumulate:
+    ///         each call built one, dropped it in <c>_disposables</c>, and left it RUNNING until the fixture
+    ///         was torn down at the end of the class. Two facts in the same suite that each start a daemon
+    ///         therefore overlapped — the earlier one still polling the same schema while the later one's
+    ///         <c>CleanEventDataAsync</c> wiped data underneath it and its assertions ran.
+    ///     </para>
+    ///     <para>
+    ///         <c>StreamArchivingCompliance</c> is the first suite with TWO daemon-starting facts, so it is
+    ///         the first place this could bite. It presented as a load-dependent failure of the new fact's
+    ///         CONTROL assertions on one CI lane only (net9/Newtonsoft failed, net10/STJ passed, and the fact
+    ///         passed 10/10 in isolation) — which is what a race between two daemons looks like, since which
+    ///         fact runs first is not fixed.
+    ///     </para>
+    ///     <para>
+    ///         Stopping is not the same as disposing, which is why collecting them was not enough:
+    ///         <c>IProjectionDaemon.StopAllAsync</c> is what releases the shard agents and their advisory
+    ///         locks. They stay in <c>_disposables</c> as well so teardown still disposes them.
+    ///     </para>
+    /// </remarks>
     public override async Task<IProjectionDaemon> StartDaemonAsync()
     {
+        await stopRunningDaemonsAsync().ConfigureAwait(false);
+
         var daemon = await _store.BuildProjectionDaemonAsync().ConfigureAwait(false);
         _disposables.Add(daemon);
+        _daemons.Add(daemon);
 
         await daemon.StartAllAsync().ConfigureAwait(false);
 
         return daemon;
+    }
+
+    private readonly List<IProjectionDaemon> _daemons = new();
+
+    private async Task stopRunningDaemonsAsync()
+    {
+        foreach (var daemon in _daemons)
+        {
+            try
+            {
+                await daemon.StopAllAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // A daemon whose store has already been replaced can fault on the way down. It is on its
+                // way out either way, and failing here would mask the fact that actually matters.
+            }
+        }
+
+        _daemons.Clear();
     }
 
     public override Task WaitForNonStaleProjectionDataAsync(TimeSpan timeout)
