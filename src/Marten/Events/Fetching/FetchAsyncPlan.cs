@@ -86,6 +86,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
             builder.Append(" and d.tenant_id = ");
             builder.AppendParameter(builder.TenantId);
         }
+
+        builder.Append(" order by d.seq_id");
     }
 
     /// <summary>
@@ -108,6 +110,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
             builder.Append(" and d.tenant_id = ");
             builder.AppendParameter(builder.TenantId);
         }
+
+        builder.Append(" order by d.seq_id");
     }
 
     /// <summary>
