@@ -1,0 +1,158 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using JasperFx.Events;
+using JasperFx.Events.Fetching;
+using JasperFx.Events.Projections;
+using Marten;
+using Marten.Events.Fetching;
+using Marten.Testing.Harness;
+using Npgsql;
+using Shouldly;
+using Weasel.Postgresql;
+using Xunit;
+
+namespace EventSourcingTests.FetchForWriting;
+
+public class fetch_async_plan_orders_events: OneOffConfigurationsContext
+{
+    private const string ForceHeapScan =
+        "-c enable_indexscan=off -c enable_indexonlyscan=off -c enable_bitmapscan=off -c enable_tidscan=off";
+
+    private readonly MartenTestAggregateWriteCache _cache = new();
+
+    private void configure(bool useCache)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Connection(heapScanConnectionString());
+            opts.Projections.Snapshot<WidgetAggregate>(SnapshotLifecycle.Async);
+            if (useCache)
+            {
+                opts.Events.AggregateWriteCaching.Cache = _cache;
+                opts.Events.CacheAggregatesForWriting<WidgetAggregate>();
+            }
+        });
+    }
+
+    [Fact]
+    public async Task fetch_for_writing_applies_events_in_sequence_order_when_heap_order_differs()
+    {
+        configure(false);
+
+        var streamId = System.Guid.NewGuid();
+        theSession.Events.StartStream<WidgetAggregate>(streamId,
+            new WidgetChanged(1), new WidgetChanged(2), new WidgetChanged(3));
+        await theSession.SaveChangesAsync();
+
+        await moveVersionToEndOfHeapAndForceSequentialScan(streamId, 1, 2, 3, 1);
+
+        await using var session = theStore.LightweightSession();
+        var stream = await session.Events.FetchForWriting<WidgetAggregate>(streamId);
+
+        stream.Aggregate.ShouldNotBeNull();
+        stream.Aggregate.Steps.ShouldBe(new[] { 1, 2, 3 });
+    }
+
+    [Fact]
+    public async Task cache_hit_applies_delta_events_in_sequence_order_when_heap_order_differs()
+    {
+        configure(true);
+
+        var streamId = System.Guid.NewGuid();
+        theSession.Events.StartStream<WidgetAggregate>(streamId, new WidgetChanged(1));
+        await theSession.SaveChangesAsync();
+
+        await using (var warmup = theStore.LightweightSession())
+        {
+            await warmup.Events.FetchForWriting<WidgetAggregate>(streamId);
+        }
+
+        await using (var append = theStore.LightweightSession())
+        {
+            append.Events.Append(streamId, new WidgetChanged(2), new WidgetChanged(3));
+            await append.SaveChangesAsync();
+        }
+
+        await moveVersionToEndOfHeapAndForceSequentialScan(streamId, 2, 1, 3, 2);
+
+        await using var session = theStore.LightweightSession();
+        var stream = await session.Events.FetchForWriting<WidgetAggregate>(streamId);
+
+        stream.Aggregate.ShouldNotBeNull();
+        stream.Aggregate.Steps.ShouldBe(new[] { 1, 2, 3 });
+    }
+
+    private async Task moveVersionToEndOfHeapAndForceSequentialScan(System.Guid streamId, long versionToMove,
+        params long[] expectedPhysicalOrder)
+    {
+        await using (var connection = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await connection.OpenAsync();
+
+            await using (var command = connection.CreateCommand())
+            {
+                command.CommandText =
+                    $"update {SchemaName}.mt_events set timestamp = timestamp where stream_id = @stream and version = @version";
+                command.Parameters.AddWithValue("stream", streamId);
+                command.Parameters.AddWithValue("version", versionToMove);
+                await command.ExecuteNonQueryAsync();
+            }
+
+            var physicalOrder = new List<long>();
+            await using (var command = connection.CreateCommand())
+            {
+                command.CommandText =
+                    $"select version from {SchemaName}.mt_events where stream_id = @stream order by ctid";
+                command.Parameters.AddWithValue("stream", streamId);
+                await using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    physicalOrder.Add(reader.GetInt64(0));
+                }
+            }
+
+            physicalOrder.ShouldBe(expectedPhysicalOrder);
+        }
+
+        var plan = new List<string>();
+        await using (var connection = new NpgsqlConnection(heapScanConnectionString()))
+        {
+            await connection.OpenAsync();
+            await using (var command = connection.CreateCommand())
+            {
+                command.CommandText =
+                    $"explain (costs off) select d.seq_id from {SchemaName}.mt_events as d where d.stream_id = @stream and d.version > 0";
+                command.Parameters.AddWithValue("stream", streamId);
+                await using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    plan.Add(reader.GetString(0));
+                }
+            }
+        }
+
+        string.Join("\n", plan).ShouldContain("Seq Scan");
+    }
+
+    private static string heapScanConnectionString()
+    {
+        return new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+        {
+            Options = ForceHeapScan
+        }.ToString();
+    }
+}
+
+public record WidgetChanged(int Step);
+
+public class WidgetAggregate
+{
+    public System.Guid Id { get; set; }
+
+    public List<int> Steps { get; set; } = new();
+
+    public void Apply(WidgetChanged @event)
+    {
+        Steps.Add(@event.Step);
+    }
+}
