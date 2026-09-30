@@ -164,6 +164,11 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
         config.ApplyTo(new MartenComplianceRegistrar(options));
 
+        // #5540: a daemon from an earlier configuration holds the store it was built from, so it has to be
+        // stopped before that store is replaced -- otherwise it keeps polling the same schema against a
+        // store nothing else is using, and the next fact's data disappears under it.
+        await stopRunningDaemonsAsync().ConfigureAwait(false);
+
         _store = new DocumentStore(options);
         _disposables.Add(_store);
 
@@ -310,14 +315,62 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         await _store.Advanced.Clean.DeleteAllDocumentsAsync().ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///     #5540. Stops whatever daemon this fixture started last before starting another, rather than only
+    ///     collecting it for teardown.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         This was a real defect, and #5540's new fact is what exposed it. Daemons used to accumulate:
+    ///         each call built one, dropped it in <c>_disposables</c>, and left it RUNNING until the fixture
+    ///         was torn down at the end of the class. Two facts in the same suite that each start a daemon
+    ///         therefore overlapped — the earlier one still polling the same schema while the later one's
+    ///         <c>CleanEventDataAsync</c> wiped data underneath it and its assertions ran.
+    ///     </para>
+    ///     <para>
+    ///         <c>StreamArchivingCompliance</c> is the first suite with TWO daemon-starting facts, so it is
+    ///         the first place this could bite. It presented as a load-dependent failure of the new fact's
+    ///         CONTROL assertions on one CI lane only (net9/Newtonsoft failed, net10/STJ passed, and the fact
+    ///         passed 10/10 in isolation) — which is what a race between two daemons looks like, since which
+    ///         fact runs first is not fixed.
+    ///     </para>
+    ///     <para>
+    ///         Stopping is not the same as disposing, which is why collecting them was not enough:
+    ///         <c>IProjectionDaemon.StopAllAsync</c> is what releases the shard agents and their advisory
+    ///         locks. They stay in <c>_disposables</c> as well so teardown still disposes them.
+    ///     </para>
+    /// </remarks>
     public override async Task<IProjectionDaemon> StartDaemonAsync()
     {
+        await stopRunningDaemonsAsync().ConfigureAwait(false);
+
         var daemon = await _store.BuildProjectionDaemonAsync().ConfigureAwait(false);
         _disposables.Add(daemon);
+        _daemons.Add(daemon);
 
         await daemon.StartAllAsync().ConfigureAwait(false);
 
         return daemon;
+    }
+
+    private readonly List<IProjectionDaemon> _daemons = new();
+
+    private async Task stopRunningDaemonsAsync()
+    {
+        foreach (var daemon in _daemons)
+        {
+            try
+            {
+                await daemon.StopAllAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // A daemon whose store has already been replaced can fault on the way down. It is on its
+                // way out either way, and failing here would mask the fact that actually matters.
+            }
+        }
+
+        _daemons.Clear();
     }
 
     public override Task WaitForNonStaleProjectionDataAsync(TimeSpan timeout)
@@ -670,6 +723,19 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     /// </remarks>
     public override bool SupportsProgressionLastUpdated => true;
 
+    /// <summary>
+    ///     #5540 / jasperfx#917. Marten's <c>CompositeProjection.Add(IProjectionSource, stage)</c> takes an
+    ///     already-constructed projection, which the composite builder adapter below now forwards to, so
+    ///     <c>StreamArchivingCompliance</c>'s async phantom-deletion fact runs rather than skipping.
+    /// </summary>
+    /// <remarks>
+    ///     The gate is not belt-and-braces: the shared <c>IComplianceCompositeBuilder.Add</c> ships with a
+    ///     THROWING default, and composites are assembled during store <em>construction</em>, so an ungated
+    ///     fact would fail on the default rather than skip. Flipping this without the adapter below would
+    ///     therefore break the whole configuration, not just the one fact.
+    /// </remarks>
+    public override bool SupportsAddingProjectionsToComposites => true;
+
     public override bool SupportsUpcasting => false;
 
     /// <summary>
@@ -858,6 +924,21 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
             public void Snapshot<TDoc>(int stageNumber) where TDoc : notnull
                 => _composite.Snapshot<TDoc>(stageNumber);
+
+            /// <summary>
+            ///     #5540 / jasperfx#917. The same forward-plus-cast shape as
+            ///     <see cref="MartenComplianceRegistrar.AddProjection" />, and for the same reason: the shared
+            ///     builder interface is not generic over the session pair, so it can only hand over a
+            ///     <see cref="ProjectionBase" /> and leave the downcast to Marten's own projection source type
+            ///     here.
+            /// </summary>
+            /// <remarks>
+            ///     Needed because a <see cref="Snapshot{TDoc}" /> member cannot express what the phantom-deletion
+            ///     fact's stage 2 has to be — a projection that RECORDS the synthetic
+            ///     <c>ProjectionDeleted&lt;TDoc,TId&gt;</c> events stage 1 hands downstream.
+            /// </remarks>
+            public void Add(ProjectionBase projection, int stageNumber)
+                => _composite.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, stageNumber);
         }
     }
 
