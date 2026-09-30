@@ -246,6 +246,12 @@ public static class MartenServiceCollectionExtensions
             (IDocumentStoreUsageSource)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IDocumentStoreDiagnostics>(s =>
             (IDocumentStoreDiagnostics)s.GetRequiredService<IDocumentStore>());
+        // #5543 / jasperfx#870 §6. Registered beside the reader rather than behind an opt-in, because the
+        // two are separate INTERFACES for the benefit of a host that wants to hand out only one -- the
+        // console asks for what it needs, and a host that does not want diagnostic writes removes this
+        // registration. Nothing here is reachable without the console already holding the container.
+        services.AddSingleton<IDocumentStoreDiagnosticsWriter>(s =>
+            (IDocumentStoreDiagnosticsWriter)s.GetRequiredService<IDocumentStore>());
 
         var instrument = new SetEventStoreInstrumentation();
         services.AddSingleton<IConfigureMarten>(instrument);
@@ -382,6 +388,9 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<T>());
         services.AddSingleton<IDocumentStoreUsageSource>(s => (IDocumentStoreUsageSource)s.GetRequiredService<T>());
         services.AddSingleton<IDocumentStoreDiagnostics>(s => (IDocumentStoreDiagnostics)s.GetRequiredService<T>());
+        // #5543: an ancillary store carries its own Subject, so a console holding several
+        // IDocumentStoreDiagnosticsWriter instances can still tell which store each one writes to.
+        services.AddSingleton<IDocumentStoreDiagnosticsWriter>(s => (IDocumentStoreDiagnosticsWriter)s.GetRequiredService<T>());
 
         // #5394 (jasperfx#825): an ancillary store derives its own View slices, resolved through its
         // marker type. Registered per store rather than once over every IEventStore in the container

@@ -43,21 +43,28 @@ internal class ProjectionProgressStatement: Statement
         const string extendedColumns =
             "heartbeat, agent_status, pause_reason, running_on_node, failure_category, failure_event_sequence, failure_event_type, failure_event_tenant_id";
 
+        // #5541 / jasperfx#924: last_updated rides in the FIXED head of every variant, immediately after
+        // last_seq_id, rather than trailing one of the optional blocks. It is the only column here that is
+        // unconditional on the table (EventProgressionTable declares it NOT NULL with a
+        // transaction_timestamp() default, while the mode/extended columns are gated on the feature flags),
+        // so putting it behind a flag would make ShardState.LastUpdated null on the default store — which
+        // is every store that has not opted into extended tracking, and the case CritterWatch#1359 was
+        // actually looking at.
         if (_events.UseOptimizedProjectionRebuilds && _events.EnableExtendedProgressionTracking)
         {
-            builder.Append($"select name, last_seq_id, mode, rebuild_threshold, assigned_node, {extendedColumns} from {_events.DatabaseSchemaName}.mt_event_progression");
+            builder.Append($"select name, last_seq_id, last_updated, mode, rebuild_threshold, assigned_node, {extendedColumns} from {_events.DatabaseSchemaName}.mt_event_progression");
         }
         else if (_events.UseOptimizedProjectionRebuilds)
         {
-            builder.Append($"select name, last_seq_id, mode, rebuild_threshold, assigned_node from {_events.DatabaseSchemaName}.mt_event_progression");
+            builder.Append($"select name, last_seq_id, last_updated, mode, rebuild_threshold, assigned_node from {_events.DatabaseSchemaName}.mt_event_progression");
         }
         else if (_events.EnableExtendedProgressionTracking)
         {
-            builder.Append($"select name, last_seq_id, {extendedColumns} from {_events.DatabaseSchemaName}.mt_event_progression");
+            builder.Append($"select name, last_seq_id, last_updated, {extendedColumns} from {_events.DatabaseSchemaName}.mt_event_progression");
         }
         else
         {
-            builder.Append($"select name, last_seq_id from {_events.DatabaseSchemaName}.mt_event_progression");
+            builder.Append($"select name, last_seq_id, last_updated from {_events.DatabaseSchemaName}.mt_event_progression");
         }
 
 

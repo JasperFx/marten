@@ -23,7 +23,14 @@ internal class ShardStateSelector: ISelector<ShardState>
         var name = reader.GetFieldValue<string>(0);
         var sequence = reader.GetFieldValue<long>(1);
 
-        return new ShardState(name, sequence);
+        var state = new ShardState(name, sequence);
+
+        if (!reader.IsDBNull(2))
+        {
+            state.LastUpdated = reader.GetFieldValue<DateTimeOffset>(2);
+        }
+
+        return state;
     }
 
     public async Task<ShardState> ResolveAsync(DbDataReader reader, CancellationToken token)
@@ -32,7 +39,21 @@ internal class ShardStateSelector: ISelector<ShardState>
         var sequence = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
         var state = new ShardState(name, sequence);
 
-        var nextIndex = 2;
+        // #5541 / jasperfx#924: the progression row's own last_updated, which is LIVENESS rather than
+        // progress -- "this row is still being maintained", as against Sequence's "this is how far it
+        // got". A caught-up shard and an abandoned one have the same Sequence forever, and that is the
+        // distinction CritterWatch#1359 could not draw.
+        //
+        // Read as DateTimeOffset because the column is `timestamp with time zone`; reading a zone-less
+        // column as local time is the failure mode the compliance fact's +/- 5 minute window exists to
+        // catch. NOT NULL with a transaction_timestamp() default on the table, so the DBNull guard is
+        // belt-and-braces for a row written by an older Marten -- never the expected path.
+        if (!await reader.IsDBNullAsync(2, token).ConfigureAwait(false))
+        {
+            state.LastUpdated = await reader.GetFieldValueAsync<DateTimeOffset>(2, token).ConfigureAwait(false);
+        }
+
+        var nextIndex = 3;
 
         if (_events.UseOptimizedProjectionRebuilds)
         {

@@ -128,6 +128,29 @@ public class guid_optimistic_concurrency_compliance
 public class document_conjoined_tenancy_compliance
     : DocumentConjoinedTenancyCompliance<MartenDocumentComplianceFixture>;
 
+/*
+ * #5543 (jasperfx#870/#927). The tenth suite, 32 facts, and the first cross-store coverage of the
+ * surface a monitoring console browses documents through. Unlike the nine above it is not really
+ * testing a capability Marten was missing -- IDocumentStoreDiagnostics has shipped since #545 -- it is
+ * testing SEMANTICS that were never agreed. jasperfx#870 read Marten, Polecat and Fisher side by side
+ * and found all three disagreeing on soft deletes, hierarchies, a missing tenant and how an id is
+ * matched; Marten answered wrongly on every one, which is what #5543 fixes.
+ *
+ * Four fixture obligations. The two capability gates (SupportsDocumentDiagnostics /
+ * SupportsDocumentDiagnosticWrites) hand over the reader and writer. The two config replays --
+ * SoftDeletedDocuments and SubClasses -- are the same kind of load-bearing as ConjoinedDocuments above:
+ * drop them and the facts fail rather than skip, because a hard-deleting type and a sub-class in its own
+ * table are configurations where the behaviour under test cannot be observed at all.
+ *
+ * SupportsDocumentDiagnosticCriteria is deliberately left FALSE and is not a skip: with it false the
+ * suite asserts Where / OrderBy are REFUSED with DocumentCriteriaNotSupportedException. That refusal is
+ * the contract for a store with no predicate translation, because a console cannot tell an ignored
+ * filter apart from one that matched every row. It flips when jasperfx#869's Dynamic LINQ lands.
+ */
+[Collection(DocumentComplianceCollection.Name)]
+public class document_store_diagnostics_compliance
+    : DocumentStoreDiagnosticsCompliance<MartenDocumentComplianceFixture>;
+
 public static class DocumentComplianceCollection
 {
     public const string Name = "document storage compliance";

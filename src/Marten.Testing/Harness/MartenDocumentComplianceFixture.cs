@@ -3,9 +3,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Documents;
 using JasperFx.Events;
 using JasperFx.Events.ComplianceTests;
 using JasperFx.Events.Documents;
+using Marten.Schema;
 using Marten.Storage;
 
 namespace Marten.Testing.Harness;
@@ -62,6 +64,44 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     public override bool SupportsNumericRevisions => true;
 
     public override bool SupportsConjoinedDocuments => true;
+
+    /// <summary>
+    /// #5543 / jasperfx#870. Marten's <c>DocumentStore</c> implements both halves of the diagnostics
+    /// contract, so <c>DocumentStoreDiagnosticsCompliance</c> runs rather than skipping.
+    /// </summary>
+    public override bool SupportsDocumentDiagnostics => true;
+
+    public override IDocumentStoreDiagnostics DocumentDiagnostics => _store;
+
+    public override bool SupportsDocumentDiagnosticWrites => true;
+
+    public override IDocumentStoreDiagnosticsWriter DocumentDiagnosticsWriter => _store;
+
+    /// <summary>
+    /// Left FALSE, and it is the flag doing the work rather than hiding a gap: Marten has no Dynamic LINQ
+    /// translation yet (jasperfx#869), so with this false the suite asserts that <c>Where</c> and
+    /// <c>OrderBy</c> are REFUSED with a <c>DocumentCriteriaNotSupportedException</c> rather than silently
+    /// ignored — which is the contract for a store without predicate support, and a real assertion rather
+    /// than a skip. It flips in the node that applies the criteria.
+    /// </summary>
+    public override bool SupportsDocumentDiagnosticCriteria => false;
+
+    /// <summary>
+    /// #5543. Marten soft-deletes per document type through <c>Schema.For&lt;T&gt;().SoftDeleted()</c>, which
+    /// BuildStoreAsync replays from <c>DocumentComplianceConfig.SoftDeletedDocuments</c>. Flipping this
+    /// without that replay does not make the soft-delete facts skip — it hard-deletes the rows and every one
+    /// of them fails.
+    /// </summary>
+    public override bool SupportsSoftDeletedDocuments => true;
+
+    /// <summary>
+    /// #5543. Marten keeps a sub-class in its root's table with an <c>mt_doc_type</c> discriminator, opted
+    /// into with <c>Schema.For&lt;TRoot&gt;().AddSubClass&lt;TSub&gt;()</c> — replayed from
+    /// <c>DocumentComplianceConfig.SubClasses</c>. Same warning as above: without the replay each sub-class
+    /// gets its own table and "filter to the requested type" has nothing to exclude, so the facts fail
+    /// rather than skip.
+    /// </summary>
+    public override bool SupportsDocumentHierarchies => true;
 
     /// <summary>
     /// #5517. Separate gate from <see cref="SupportsConjoinedDocuments" /> on purpose — a store can
@@ -161,6 +201,24 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
         foreach (var type in config.ConjoinedDocuments)
         {
             options.Storage.MappingFor(type).TenancyStyle = TenancyStyle.Conjoined;
+        }
+
+        // #5543 / jasperfx#870. What Schema.For<T>().SoftDeleted() sets, reached through the mapping because
+        // the config hands over a Type and the fluent entry point is generic. NOT optional: a dropped replay
+        // hard-deletes the rows, so "a soft-deleted row is excluded by default" passes vacuously while
+        // "it comes back flagged when asked for" fails -- the worst of both.
+        foreach (var type in config.SoftDeletedDocuments)
+        {
+            options.Storage.MappingFor(type).DeleteStyle = DeleteStyle.SoftDelete;
+        }
+
+        // #5543 / jasperfx#870. Schema.For<TRoot>().AddSubClass<TSub>() one level down. Registered on the
+        // ROOT's mapping, which is what puts the sub-class in the root's table with an mt_doc_type
+        // discriminator instead of a table of its own -- and a table of its own is exactly the shape that
+        // makes "naming a sub-class returns only that sub-class" trivially true and therefore no test at all.
+        foreach (var declaration in config.SubClasses)
+        {
+            options.Storage.MappingFor(declaration.Root).SubClasses.Add(declaration.SubClass);
         }
 
         // jasperfx#672 (#5249). The suite states the stream identity it needs and the fixture

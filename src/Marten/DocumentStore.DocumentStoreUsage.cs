@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -32,6 +33,12 @@ public partial class DocumentStore : IDocumentStoreUsageSource
             DatabaseSchemaName = Options.DatabaseSchemaName,
             AutoCreateSchemaObjects = Options.AutoCreateSchemaObjects.ToString(),
             EnumStorage = Options.EnumStorage.ToString(),
+
+            // #5543 / jasperfx#870 §5. A console building a member path into the raw JSON, or explaining why
+            // a filter on `Status` matched nothing in a document stored as `status`, cannot work it out from
+            // the JSON alone -- absence of a member and a differently-cased member look the same. The three
+            // values Casing spells (Default, CamelCase, SnakeCase) are exactly the three the contract names.
+            SerializerCasing = Serializer.Casing.ToString(),
         };
 
         // Per-document-type mappings — Documents collection. Skip mappings that
@@ -94,7 +101,68 @@ public partial class DocumentStore : IDocumentStoreUsageSource
             PartitioningStrategy = mapping.Partitioning?.GetType().Name,
             Partitioning = BuildPartitioning(mapping.Partitioning),
             Ddl = ddl,
+            DuplicatedFields = BuildDuplicatedFields(mapping),
+            Indexes = BuildIndexes(mapping),
         };
+    }
+
+    /// <summary>
+    /// #5543 / jasperfx#870 §5: the duplicated fields in structured form, so a console can say that a filter
+    /// on this member reads a real column rather than the JSON body.
+    /// </summary>
+    /// <remarks>
+    /// <c>OnlyForSearching</c> fields are included deliberately, unlike in <see cref="DocumentTable"/>: they
+    /// have no column of their own there, but they ARE the members Marten can index and search efficiently,
+    /// which is the question this list exists to answer.
+    /// </remarks>
+    private static List<DuplicatedFieldDescriptor> BuildDuplicatedFields(DocumentMapping mapping)
+        => mapping.DuplicatedFields
+            .Select(x => new DuplicatedFieldDescriptor
+            {
+                MemberPath = string.Join(".", x.Members.Select(m => m.Name)),
+                ColumnName = x.ColumnName,
+                DbType = x.PgType
+            })
+            .ToList();
+
+    /// <summary>
+    /// #5543 / jasperfx#870 §5: the table's indexes in structured form, so a console can tell whether a
+    /// filter on a member can use one without parsing <c>Ddl</c>, which stays the canonical view.
+    /// </summary>
+    /// <remarks>
+    /// <c>Members</c> is populated only where Marten genuinely knows the mapping from column back to member —
+    /// a duplicated field's own column. Marten's other indexes are declared over columns or jsonb
+    /// expressions, and inventing a member path for one would be worse than the empty array the contract
+    /// defines for "the implementation hasn't populated it".
+    /// </remarks>
+    private static List<DocumentIndexDescriptor> BuildIndexes(DocumentMapping mapping)
+    {
+        var membersByColumn = mapping.DuplicatedFields
+            .GroupBy(x => x.ColumnName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key,
+                g => string.Join(".", g.First().Members.Select(m => m.Name)),
+                StringComparer.OrdinalIgnoreCase);
+
+        return mapping.Indexes
+            .Select(index =>
+            {
+                var columns = index.Columns ?? Array.Empty<string>();
+
+                return new DocumentIndexDescriptor
+                {
+                    Name = index.Name,
+                    Columns = columns,
+                    Members = columns
+                        .Select(c => membersByColumn.TryGetValue(c, out var member) ? member : null)
+                        .Where(x => x != null)
+                        .Select(x => x!)
+                        .ToArray(),
+                    IsUnique = index.IsUnique,
+                    Method = index.Method.ToString().ToLowerInvariant(),
+                    Predicate = index.Predicate
+                };
+            })
+            .ToList();
     }
 
     private static PartitioningDescriptor? BuildPartitioning(IPartitionStrategy? partitioning)
