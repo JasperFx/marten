@@ -267,8 +267,24 @@ BEGIN{sequenceResolveUpFront}{expectedVersionCheck}
 
 	-- A brand-new stream already carries its final version from the insert above, so the
 	-- UPDATE is only needed when we appended onto a stream that already existed.
-	if not is_new_stream then
-		update {databaseSchema}.mt_streams set version = event_version, timestamp = now() where {streamsWhere};
+	--
+	-- #5539: and only when we actually appended something. With ZERO events this was a BLIND write-back
+	-- of the version read at the top of the function, and under READ COMMITTED that is a lost update: the
+	-- UPDATE waits on a concurrent appender's row lock, the winner commits, the WHERE clause is
+	-- re-evaluated against the new row, and `set version = <the stale value>` lands -- leaving
+	-- mt_streams.version BELOW the stream's own events. Every later append then computes a version that
+	-- already exists and dies on pk_mt_events_stream_and_version, forever, until the row is repaired by
+	-- hand. A non-empty call cannot do this: its first INSERT collides with the winner on that same
+	-- primary key and rolls the whole thing back, which is why only the empty case was exposed.
+	--
+	-- Two independent guards, because either alone would have been enough and the cost of both is nil:
+	--   * the append count -- appending nothing has nothing to write, so the correct number of statements
+	--     is zero rather than one that happens to be harmless;
+	--   * greatest(), so the write-back can never LOWER a stream's version whoever calls it. An append
+	--     only ever moves a version forward, so this is a no-op on every correct path and a backstop on
+	--     any future caller that reads the version and then writes it back.
+	if not is_new_stream and COALESCE(array_length(event_ids, 1), 0) > 0 then
+		update {databaseSchema}.mt_streams set version = greatest(version, event_version), timestamp = now() where {streamsWhere};
 	end if;
 
 	return return_value;
