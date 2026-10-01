@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing.Operators;
@@ -307,31 +308,91 @@ internal class GroupBySelectParser: ExpressionVisitor
         return $"{member.TypedLocator} = True";
     }
 
+    /// <summary>
+    ///     Resolves an <c>OrderBy</c> applied AFTER a GroupBy projection, where the ordering addresses the
+    ///     projected shape rather than the document.
+    /// </summary>
+    /// <remarks>
+    ///     The ordering has to be re-expressed against what the projection actually selected, because
+    ///     <c>x</c> in <c>.Select(g =&gt; new {...}).OrderBy(x =&gt; x.Total)</c> is the projected DTO and
+    ///     has no locator of its own. Ordering by anything the projection did not select cannot be
+    ///     translated: Postgres has no such column to sort on.
+    /// </remarks>
     public ISqlFragment BuildOrderingFragment(Ordering ordering)
     {
-        var memberName = ordering.MemberName ?? GetProjectedMemberName(ordering.Expression);
+        // OrderBySql() carries raw SQL and neither a member name nor an expression, so it passes
+        // through exactly as it would on an ungrouped query rather than being parsed as a member.
+        if (ordering.Literal.IsNotEmpty())
+        {
+            return new LiteralOrdering(ordering.Literal!);
+        }
+
+        // A scalar projection -- .Select(g => g.Key) or .Select(g => g.Count()) -- selects a single
+        // unnamed value and populates ScalarFragment rather than NewObject.Members, so there is no
+        // member to look up. OrderBy(x => x) can only mean that one value.
+        if (IsScalar)
+        {
+            if (ordering.MemberName == null && isTheProjectionItself(ordering.Expression))
+            {
+                return orderingFor(ScalarFragment, ordering, "the projected value");
+            }
+
+            throw new BadLinqExpressionException(
+                "Cannot order a scalar GroupBy projection by anything but the projected value itself. " +
+                "Use OrderBy(x => x), or project an object with Select(g => new { ... }) and order by one of its members.");
+        }
+
+        var memberName = ordering.MemberName ?? getProjectedMemberName(ordering.Expression);
         if (!NewObject.Members.TryGetValue(memberName, out var projection))
         {
             throw new BadLinqExpressionException(
                 $"Cannot order a GroupBy projection by '{memberName}' because it is not a projected member");
         }
 
-        if (projection is IQueryableMember member)
-        {
-            return new LiteralOrdering(member.BuildOrderingExpression(ordering, ordering.CasingRule));
-        }
+        return orderingFor(projection, ordering, memberName);
+    }
 
-        if (projection is LiteralSql literal)
+    private static ISqlFragment orderingFor(ISqlFragment projection, Ordering ordering, string description)
+    {
+        switch (projection)
         {
-            var direction = ordering.Direction == OrderingDirection.Desc ? " desc" : string.Empty;
-            return new LiteralOrdering(literal.Text + direction);
+            // A key member knows how to order itself, including the case-insensitive and
+            // value-type-aware forms, so it is asked rather than string-concatenated.
+            case IQueryableMember member:
+                return new LiteralOrdering(member.BuildOrderingExpression(ordering, ordering.CasingRule));
+
+            // An aggregate is already a SQL expression. Postgres accepts the aggregate itself in
+            // ORDER BY against a grouped query, so it is repeated rather than aliased.
+            case LiteralSql literal:
+                var direction = ordering.Direction == OrderingDirection.Desc ? " desc" : string.Empty;
+                return new LiteralOrdering(literal.Text + direction);
+
+            default:
+                throw new BadLinqExpressionException(
+                    $"Cannot order a GroupBy projection by '{description}' because its SQL expression is not sortable");
+        }
+    }
+
+    /// <summary>Whether the ordering selects the projected value itself, as in <c>OrderBy(x =&gt; x)</c>.</summary>
+    private static bool isTheProjectionItself(Expression expression)
+        => unwrapOrdering(expression) is ParameterExpression;
+
+    private static string getProjectedMemberName(Expression expression)
+    {
+        if (unwrapOrdering(expression) is MemberExpression { Expression: ParameterExpression } member)
+        {
+            return member.Member.Name;
         }
 
         throw new BadLinqExpressionException(
-            $"Cannot order a GroupBy projection by '{memberName}' because its SQL expression is not sortable");
+            $"Invalid OrderBy() expression '{expression}' after a GroupBy projection");
     }
 
-    private static string GetProjectedMemberName(Expression expression)
+    /// <summary>
+    ///     Strips the quoting and boxing conversions the compiler wraps an ordering selector in, leaving
+    ///     the member access or parameter underneath.
+    /// </summary>
+    private static Expression unwrapOrdering(Expression expression)
     {
         while (expression is UnaryExpression { NodeType: ExpressionType.Quote or ExpressionType.Convert } unary)
         {
@@ -348,13 +409,7 @@ internal class GroupBySelectParser: ExpressionVisitor
             expression = conversion.Operand;
         }
 
-        if (expression is MemberExpression member && member.Expression is ParameterExpression)
-        {
-            return member.Member.Name;
-        }
-
-        throw new BadLinqExpressionException(
-            $"Invalid OrderBy() expression '{expression}' after a GroupBy projection");
+        return expression;
     }
 }
 
