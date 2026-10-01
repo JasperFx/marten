@@ -273,9 +273,10 @@ public partial class MartenDatabase : IEventDatabase
             // Callers use this as a high-water ceiling (e.g. the composite single-pass replay
             // executor); reading the stale 1 made composite shards replay only events 0..1 and
             // stall. Read the real maximum from the events table instead in that mode.
+            // A sequence nothing has drawn from reports last_value = 1 with is_called = false, so read 0 then.
             var sql = Options.Events.UseTenantPartitionedEvents
                 ? $"select coalesce(max(seq_id), 0) from {Options.Events.DatabaseSchemaName}.mt_events;"
-                : $"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;";
+                : $"select case when is_called then last_value else 0 end from {Options.Events.DatabaseSchemaName}.mt_events_sequence;";
 
             var highest = (long)(await conn
                 .CreateCommand(sql)
