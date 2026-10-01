@@ -111,6 +111,35 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
                    out var fSharpDiscriminatedUnionIdGeneration);
     }
 
+    /// <summary>
+    ///     Accepts exactly what <see cref="IsValidIdentityType" /> accepts, but registers nothing and
+    ///     constructs nothing.
+    /// </summary>
+    /// <remarks>
+    ///     Identity resolution has to test every property and field to find the one id, and
+    ///     <see cref="IsValidIdentityType" /> is not free to ask: its strong-typed-id arm registers the
+    ///     probed type on the global <see cref="PostgresqlProvider" /> singleton and closes an open
+    ///     generic to build a select clause. Asking it about every member therefore remapped ordinary
+    ///     single-value structs process-wide -- an <c>Optional&lt;string&gt;</c> property turning the
+    ///     type into <c>varchar</c> for everything -- and brought Native AOT startup down on the generic
+    ///     construction. So the traversal asks this, and the effectful question is put only to the member
+    ///     actually chosen, by the <see cref="IdMember" /> setter. See #5562.
+    /// </remarks>
+    internal static bool IsPlausibleIdentityType([NotNullWhen(true)]Type? identityType)
+    {
+        if (identityType == null)
+            return false;
+
+        if (identityType.IsGenericType && identityType.IsNullable())
+        {
+            identityType = identityType.GetGenericArguments()[0];
+        }
+
+        return identityType.IsOneOf(ValidIdTypes) ||
+               ValueTypeIdGeneration.IsCandidateShape(identityType) ||
+               FSharpDiscriminatedUnionIdGeneration.IsCandidateShape(identityType);
+    }
+
     [GeneratedRegex("<|>")]
     private static partial Regex AliasSanitizer();
 
@@ -470,9 +499,17 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
         // #4525: the attribute-then-convention traversal (IdentityAttribute on a
         // property, then a field, then a case-insensitive "id" property/field) is
         // lifted verbatim to JasperFx.DocumentIdentity. Marten keeps its own
-        // IsValidIdentityType predicate (which also recognizes strong-typed ids and
-        // F# DUs) so resolution behavior is unchanged.
-        return JasperFx.DocumentIdentity.FindIdMember(documentType, IsValidIdentityType);
+        // predicate (which also recognizes strong-typed ids and F# DUs) so
+        // resolution behavior is unchanged.
+        //
+        // #5562: that predicate is the SHAPE-only one. The traversal applies the filter to
+        // EVERY property and field before it picks by [Identity] or by name, and the effectful
+        // IsValidIdentityType registers each type it is asked about on the global
+        // PostgresqlProvider. Asking it about every member remapped ordinary single-value
+        // structs process-wide and crashed Native AOT startup on the generic construction.
+        // The chosen member still goes through IsValidIdentityType -- the IdMember setter does
+        // that -- so the registration a real strong-typed id needs still happens.
+        return JasperFx.DocumentIdentity.FindIdMember(documentType, IsPlausibleIdentityType);
     }
 
     public DocumentIndex AddGinIndexToData()

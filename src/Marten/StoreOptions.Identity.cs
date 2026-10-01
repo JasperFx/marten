@@ -11,6 +11,8 @@ using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Weasel.Core;
+using Weasel.Postgresql;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Marten;
@@ -150,6 +152,7 @@ public partial class StoreOptions
         if (ctor != null)
         {
             var valueType = new ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, ctor);
+            registerValueTypeMapping(valueType);
             ValueTypes.Add(valueType);
             return valueType;
         }
@@ -166,12 +169,38 @@ public partial class StoreOptions
         if (builder != null)
         {
             var valueType = new ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, builder);
+            registerValueTypeMapping(valueType);
             ValueTypes.Add(valueType);
             return valueType;
         }
 
         throw new InvalidValueTypeException(type,
             "Unable to determine either a builder static method or a constructor to use");
+    }
+
+    /// <summary>
+    ///     Teach the Postgres provider how a value type's column is typed, so a duplicated field or a
+    ///     parameter built from it can infer an NpgsqlDbType.
+    /// </summary>
+    /// <remarks>
+    ///     #5562. This used to happen only as a SIDE EFFECT of the strong-typed-id probe, which ran over
+    ///     every property and field of every mapped type and registered anything shaped like a
+    ///     strong-typed id. A value type registered here and used as a duplicated field rather than as an
+    ///     id therefore worked only because some document happened to carry it where the probe reached
+    ///     it. Narrowing that probe to the chosen id member would have taken this with it, so the
+    ///     registration now belongs to the call that registers the value type -- which is where a reader
+    ///     would look for it anyway.
+    ///
+    ///     F# option types are deliberately excluded, as they were before: neither probe ever accepted
+    ///     one (ValueTypeIdGeneration rejects classes, and the DU probe requires a name ending in "Id"),
+    ///     so registering them here would be a new behaviour rather than a preserved one.
+    /// </remarks>
+    private static void registerValueTypeMapping(ValueTypeInfo valueType)
+    {
+        var dbType = PostgresqlProvider.Instance.GetDatabaseType(valueType.SimpleType, EnumStorage.AsInteger);
+        var parameterType = PostgresqlProvider.Instance.TryGetDbType(valueType.SimpleType);
+
+        PostgresqlProvider.Instance.RegisterMapping(valueType.OuterType, dbType, parameterType);
     }
 
     public void RegisterFSharpOptionValueTypes()

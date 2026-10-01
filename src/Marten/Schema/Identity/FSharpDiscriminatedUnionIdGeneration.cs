@@ -72,10 +72,46 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
         return type.IsClass && type.IsSealed && type.GetProperties().Any(x => x.Name == "Tag");
     }
 
+    /// <summary>
+    ///     Whether <paramref name="idType" /> has the SHAPE of a single-case DU id, registering nothing
+    ///     and constructing nothing. The speculative half of <see cref="IsCandidate" /> (#5562).
+    /// </summary>
+    public static bool IsCandidateShape(Type idType) => tryMatch(idType, out _, out _, out _);
+
     public static bool IsCandidate(Type idType,
         [NotNullWhen(true)] out FSharpDiscriminatedUnionIdGeneration? idGeneration)
     {
         idGeneration = default;
+
+        if (!tryMatch(idType, out var innerProperty, out var ctor, out var builder))
+        {
+            return false;
+        }
+
+        var identityType = innerProperty.PropertyType;
+        var dbType = PostgresqlProvider.Instance.GetDatabaseType(identityType, EnumStorage.AsInteger);
+        var parameterType = PostgresqlProvider.Instance.TryGetDbType(identityType);
+
+        PostgresqlProvider.Instance.RegisterMapping(idType, dbType, parameterType);
+
+        idGeneration = ctor != null
+            ? new FSharpDiscriminatedUnionIdGeneration(idType, innerProperty, identityType, ctor)
+            : new FSharpDiscriminatedUnionIdGeneration(idType, innerProperty, identityType, builder!);
+
+        return true;
+    }
+
+    /// <summary>The pure half of <see cref="IsCandidate" />: matches the shape, touches no global state.</summary>
+    private static bool tryMatch(
+        Type idType,
+        [NotNullWhen(true)] out PropertyInfo? innerProperty,
+        out ConstructorInfo? ctor,
+        out MethodInfo? builder)
+    {
+        innerProperty = null;
+        ctor = null;
+        builder = null;
+
         if (idType.IsClass && !IsFSharpSingleCaseDiscriminatedUnion(idType))
         {
             return false;
@@ -91,36 +127,33 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
             .Where(x => DocumentMapping.ValidIdTypes.Contains(x.PropertyType))
             .ToArray();
 
-        if (properties.Length == 1)
+        if (properties.Length != 1)
         {
-            var innerProperty = properties[0];
-            var identityType = innerProperty.PropertyType;
+            return false;
+        }
 
-            var ctor = idType.GetConstructors().FirstOrDefault(x =>
-                x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == identityType);
+        var candidate = properties[0];
+        var identityType = candidate.PropertyType;
 
-            var dbType = PostgresqlProvider.Instance.GetDatabaseType(identityType, EnumStorage.AsInteger);
-            var parameterType = PostgresqlProvider.Instance.TryGetDbType(identityType);
+        ctor = idType.GetConstructors().FirstOrDefault(x =>
+            x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == identityType);
 
-            if (ctor != null)
-            {
-                PostgresqlProvider.Instance.RegisterMapping(idType, dbType, parameterType);
-                idGeneration = new FSharpDiscriminatedUnionIdGeneration(idType, innerProperty, identityType, ctor);
-                return true;
-            }
+        if (ctor != null)
+        {
+            innerProperty = candidate;
+            return true;
+        }
 
-            var builder = idType
-                .GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .FirstOrDefault(x =>
-                    x.ReturnType == idType && x.GetParameters().Length == 1 &&
-                    x.GetParameters()[0].ParameterType == identityType);
+        builder = idType
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .FirstOrDefault(x =>
+                x.ReturnType == idType && x.GetParameters().Length == 1 &&
+                x.GetParameters()[0].ParameterType == identityType);
 
-            if (builder != null)
-            {
-                PostgresqlProvider.Instance.RegisterMapping(idType, dbType, parameterType);
-                idGeneration = new FSharpDiscriminatedUnionIdGeneration(idType, innerProperty, identityType, builder);
-                return true;
-            }
+        if (builder != null)
+        {
+            innerProperty = candidate;
+            return true;
         }
 
         return false;
