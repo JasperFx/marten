@@ -190,6 +190,75 @@ If your handler mutates the aggregate locally — e.g. Wolverine's `[AggregateHa
 If your handlers self-mutate aggregates from `FetchForWriting()`, set `opts.Events.UseIdentityMapForAggregates = false;` (or call `opts.RestoreV8Defaults()`) so each save round-trips through the database and the in-memory mutation stays ephemeral.
 :::
 
+## FetchManyForWriting <Badge type="tip" text="9.45" />
+
+`FetchForWriting()` handles one stream. When a command spans several — cancelling every reservation on an
+order, settling a batch of ledgers — calling it in a loop costs one round trip per stream, and that cost grows
+with the size of the batch rather than staying flat.
+
+`FetchManyForWriting()` fetches all of them in **one** round trip:
+
+<!-- snippet: sample_fetch_many_for_writing -->
+<a id='snippet-sample_fetch_many_for_writing'></a>
+```cs
+public static async Task CancelAll(IDocumentSession session, IReadOnlyList<Guid> reservationIds)
+{
+    // One round trip for every stream, rather than one round trip each.
+    var streams = await session.Events
+        .FetchManyForWriting<Reservation>(reservationIds);
+
+    // The handles come back in the order you asked for them, so you can
+    // zip the result against your own ids.
+    foreach (var stream in streams)
+    {
+        // A stream that does not exist yet is still a handle -- its
+        // Aggregate is null and its version is 0.
+        if (stream.Aggregate is { Cancelled: false })
+        {
+            stream.AppendOne(new ReservationCancelled());
+        }
+    }
+
+    // Each handle kept its own starting version, so this still guards
+    // every stream it appended to -- and no others.
+    await session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BatchReads.cs#L23-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_many_for_writing' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+What it guarantees:
+
+- **One handle per id, in the order you asked for them**, so you can zip the result against your own list.
+- **A stream that does not exist yet still gets a handle**, with a `null` aggregate at version 0 — never a gap
+  in the list. Appending to it starts the stream, exactly as `FetchForWriting()` does.
+- **Each handle keeps its own starting version.** `SaveChangesAsync()` still guards every stream it appended
+  to and no other, so one contended stream does not fail a sibling that nobody else touched.
+
+A repeated id is rejected with an `ArgumentException` rather than handed back twice, because two handles on
+one stream inside a single session would race each other's expected version.
+
+::: warning
+This is the non-exclusive form only. There is no `FetchManyForExclusiveWriting()`: an exclusive fetch takes a
+row lock per stream, and taking several at once in an order the caller chooses is a deadlock waiting to
+happen. Use `FetchForExclusiveWriting()` one stream at a time.
+:::
+
+::: tip
+Marten implements this natively on top of its batch query. Other Critter Stack stores inherit a correct but
+sequential default, so the behavior above is identical everywhere while the round-trip count is not.
+:::
+
+::: warning An `Async` projection lifecycle falls back to one round trip per stream
+An aggregate projected with `ProjectionLifecycle.Async` is fetched inside
+`begin transaction isolation level repeatable read read only` … `end`, so that all of its reads share one
+snapshot. PostgreSQL only accepts that as the **first** statement in a transaction, so two such fetches
+cannot share a batch. `FetchManyForWriting()` detects this lifecycle and fetches sequentially instead —
+same results, same ordering, same per-stream version guards, just without the round-trip saving.
+
+`Inline`, `Live` and `Snapshot` aggregates get the single-round-trip path.
+:::
+
 ## Explicit Optimistic Concurrency
 
 This time let's explicitly opt into optimistic concurrency checks by telling Marten what the expected starting
