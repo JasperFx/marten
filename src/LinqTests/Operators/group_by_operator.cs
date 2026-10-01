@@ -251,4 +251,83 @@ public class group_by_operator: OneOffConfigurationsContext
 
         count.ShouldBe(3L);
     }
+
+    [Fact]
+    public async Task order_and_page_a_grouped_projection_by_renamed_aggregate_and_key()
+    {
+        await SetupTargetData();
+
+        var grouped = _session.Query<Target>()
+            .Where(x => x.Number >= 10)
+            .GroupBy(x => x.Color)
+            .Select(g => new GroupedTarget
+            {
+                Category = g.Key,
+                Total = g.Sum(x => x.Number),
+                FirstNumber = g.Min(x => x.Number)
+            });
+
+        var page = grouped.OrderByDescending(x => x.Total)
+            .ThenBy(x => x.Category)
+            .Skip(1)
+            .Take(1);
+
+        var command = page.ToCommand();
+        command.CommandText.ShouldContain("order by sum(");
+        command.CommandText.ShouldContain("min(");
+        command.CommandText.ShouldContain("OFFSET");
+        command.CommandText.ShouldContain("LIMIT");
+
+        var results = await page.ToListAsync();
+        results.Count.ShouldBe(1);
+        results.Single().Category.ShouldBe(Colors.Red);
+        results.Single().Total.ShouldBe(60);
+        results.Single().FirstNumber.ShouldBe(60);
+
+        var firstPage = await grouped.OrderByDescending(x => x.Total).ThenBy(x => x.Category).Take(1).ToListAsync();
+        var lastPage = await grouped.OrderByDescending(x => x.Total).ThenBy(x => x.Category).Skip(2).Take(1).ToListAsync();
+
+        firstPage.Single().Category.ShouldBe(Colors.Green);
+        lastPage.Single().Category.ShouldBe(Colors.Blue);
+
+        (await grouped.CountAsync()).ShouldBe(3);
+        (await grouped.LongCountAsync()).ShouldBe(3L);
+    }
+
+    [Fact]
+    public async Task order_and_page_composite_groups_by_renamed_key_and_aggregate()
+    {
+        await SetupTargetData();
+
+        var grouped = _session.Query<Target>()
+            .GroupBy(x => new { x.Color, x.String })
+            .Select(g => new GroupedTarget
+            {
+                Category = g.Key.Color,
+                Label = g.Key.String,
+                Total = g.Sum(x => x.Number),
+                FirstNumber = g.Min(x => x.Number)
+            });
+
+        var results = await grouped.OrderBy(x => x.FirstNumber)
+            .ThenByDescending(x => x.Label)
+            .Skip(1)
+            .Take(2)
+            .ToListAsync();
+
+        results.Select(x => (x.Category, x.Label, x.FirstNumber))
+            .ShouldBe(new[]
+            {
+                (Colors.Green, "Beta", 30),
+                (Colors.Green, "Gamma", 50)
+            });
+    }
+
+    public class GroupedTarget
+    {
+        public Colors Category { get; set; }
+        public string Label { get; set; } = string.Empty;
+        public int Total { get; set; }
+        public int FirstNumber { get; set; }
+    }
 }

@@ -906,6 +906,11 @@ public partial class CollectionUsage
             statement.Limit ??= downstream._limit;
             statement.Offset ??= downstream._offset;
 
+            foreach (var ordering in downstream.OrderingExpressions)
+            {
+                statement.Ordering.Expressions.Add(parser.BuildOrderingFragment(ordering));
+            }
+
             if (downstream.SingleValueMode.HasValue)
             {
                 SingleValueMode = downstream.SingleValueMode;
