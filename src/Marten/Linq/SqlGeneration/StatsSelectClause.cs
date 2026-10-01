@@ -15,7 +15,8 @@ internal interface IStatsSelectClause
     ISelectClause Inner { get; }
 }
 
-internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStatsSelectClause where T : notnull
+internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStatsSelectClause, ISelectFieldsFragment
+    where T : notnull
 {
     private QueryStatistics _statistics;
 
@@ -35,12 +36,17 @@ internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStat
     public void Apply(ICommandBuilder sql)
     {
         sql.Append("select ");
-        sql.Append(Inner.SelectFields().Join(", "));
-        sql.Append(", ");
-        sql.Append(LinqConstants.StatsColumn);
+        ApplySelectFields(sql);
         sql.Append(" from ");
         sql.Append(FromObject);
         sql.Append(" as d");
+    }
+
+    public void ApplySelectFields(ICommandBuilder sql)
+    {
+        Inner.ApplySelectFields(sql);
+        sql.Append(", ");
+        sql.Append(LinqConstants.StatsColumn);
     }
 
     public string[] SelectFields()
