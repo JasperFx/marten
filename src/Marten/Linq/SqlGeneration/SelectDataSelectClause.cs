@@ -12,7 +12,7 @@ using Weasel.Postgresql.SqlGeneration;
 namespace Marten.Linq.SqlGeneration;
 
 internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
-    IDistinctOnSelectClause, IParameterBearingSelectClause where T : notnull
+    IDistinctOnSelectClause, IParameterBearingSelectClause, ISelectFieldsFragment where T : notnull
 {
     /// <summary>
     /// #5233: the fragments this projection renders into the SELECT list, so compiled-query
@@ -73,6 +73,11 @@ internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IM
         var fieldName = builder.Compile().CommandText;
 
         return new[] { fieldName };
+    }
+
+    public void ApplySelectFields(ICommandBuilder sql)
+    {
+        Selector.Apply(sql);
     }
 
     public ISelector BuildSelector(IStorageSession session)

@@ -109,7 +109,19 @@ internal class VersionSelectClause<T>: ISelectClause, IModifyableFromObject wher
     public void Apply(ICommandBuilder sql)
     {
         sql.Append("select ");
-        sql.Append(innerFields().Join(", "));
+
+        // A projection that can carry bound parameters is written through the command so they stay
+        // bound. It is a single jsonb_build_object(...) field, so it is the payload (see innerFields).
+        if (Inner is ISelectFieldsFragment fragment && Inner.SelectFields().Length == 1)
+        {
+            fragment.ApplySelectFields(sql);
+            sql.Append($" as {VersionSelectClause.DataAlias}");
+        }
+        else
+        {
+            sql.Append(innerFields().Join(", "));
+        }
+
         sql.Append(", ");
         sql.Append(VersionColumn);
         sql.Append(" from ");

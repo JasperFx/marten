@@ -20,7 +20,7 @@ namespace Marten.Linq.SqlGeneration;
 /// extra projected column the same way. The appended columns are pre-formatted
 /// <c>&lt;locator&gt; as cursor_key_N</c> expressions supplied by the caller.
 /// </summary>
-internal class CursorKeySelectClause: ISelectClause, IModifyableFromObject
+internal class CursorKeySelectClause: ISelectClause, IModifyableFromObject, ISelectFieldsFragment
 {
     private readonly IReadOnlyList<string> _keyColumns;
 
@@ -40,16 +40,20 @@ internal class CursorKeySelectClause: ISelectClause, IModifyableFromObject
     public void Apply(ICommandBuilder sql)
     {
         sql.Append("select ");
-        sql.Append(Inner.SelectFields().Join(", "));
+        ApplySelectFields(sql);
+        sql.Append(" from ");
+        sql.Append(FromObject);
+        sql.Append(" as d");
+    }
+
+    public void ApplySelectFields(ICommandBuilder sql)
+    {
+        Inner.ApplySelectFields(sql);
         foreach (var column in _keyColumns)
         {
             sql.Append(", ");
             sql.Append(column);
         }
-
-        sql.Append(" from ");
-        sql.Append(FromObject);
-        sql.Append(" as d");
     }
 
     public string[] SelectFields()

@@ -525,6 +525,11 @@ public static class LinqInternalExtensions
                     return false;
                 }
 
+                if (Nullable.GetUnderlyingType(property.DeclaringType!) != null)
+                {
+                    return tryReadNullableMember(property, target, out value);
+                }
+
                 value = property.GetValue(target);
                 return true;
             }
@@ -584,6 +589,37 @@ public static class LinqInternalExtensions
                 value = values;
                 return true;
             }
+
+            default:
+                value = null;
+                return false;
+        }
+    }
+
+    /// <summary>
+    ///     Read <c>HasValue</c> or <c>Value</c> of a <see cref="Nullable{T}" /> that has already been
+    ///     evaluated to an object.
+    /// </summary>
+    /// <remarks>
+    ///     A <see cref="Nullable{T}" /> never survives boxing: an empty one boxes to <c>null</c> and a
+    ///     populated one to a boxed <c>T</c>. <see cref="PropertyInfo.GetValue(object)" /> has no target
+    ///     for the empty case and throws, which breaks the common
+    ///     `where !captured.HasValue || x.Id == captured`. The boxed form already carries the answer for
+    ///     both cases, so it is read from that. Any other member declines, leaving it to the compiled path.
+    /// </remarks>
+    private static bool tryReadNullableMember(PropertyInfo property, object? boxed, out object? value)
+    {
+        switch (property.Name)
+        {
+            case nameof(Nullable<int>.HasValue):
+                value = boxed != null;
+                return true;
+
+            case nameof(Nullable<int>.Value):
+                // Same exception the compiled path and the CLR raise for an empty Nullable; the caller
+                // reports it as a bad Linq expression.
+                value = boxed ?? throw new InvalidOperationException("Nullable object must have a value.");
+                return true;
 
             default:
                 value = null;
