@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -304,6 +305,56 @@ internal class GroupBySelectParser: ExpressionVisitor
         // Simple predicate support: x => x.Flag
         var member = _memberFor(lambda.Body);
         return $"{member.TypedLocator} = True";
+    }
+
+    public ISqlFragment BuildOrderingFragment(Ordering ordering)
+    {
+        var memberName = ordering.MemberName ?? GetProjectedMemberName(ordering.Expression);
+        if (!NewObject.Members.TryGetValue(memberName, out var projection))
+        {
+            throw new BadLinqExpressionException(
+                $"Cannot order a GroupBy projection by '{memberName}' because it is not a projected member");
+        }
+
+        if (projection is IQueryableMember member)
+        {
+            return new LiteralOrdering(member.BuildOrderingExpression(ordering, ordering.CasingRule));
+        }
+
+        if (projection is LiteralSql literal)
+        {
+            var direction = ordering.Direction == OrderingDirection.Desc ? " desc" : string.Empty;
+            return new LiteralOrdering(literal.Text + direction);
+        }
+
+        throw new BadLinqExpressionException(
+            $"Cannot order a GroupBy projection by '{memberName}' because its SQL expression is not sortable");
+    }
+
+    private static string GetProjectedMemberName(Expression expression)
+    {
+        while (expression is UnaryExpression { NodeType: ExpressionType.Quote or ExpressionType.Convert } unary)
+        {
+            expression = unary.Operand;
+        }
+
+        if (expression is LambdaExpression lambda)
+        {
+            expression = lambda.Body;
+        }
+
+        while (expression is UnaryExpression { NodeType: ExpressionType.Convert } conversion)
+        {
+            expression = conversion.Operand;
+        }
+
+        if (expression is MemberExpression member && member.Expression is ParameterExpression)
+        {
+            return member.Member.Name;
+        }
+
+        throw new BadLinqExpressionException(
+            $"Invalid OrderBy() expression '{expression}' after a GroupBy projection");
     }
 }
 
