@@ -23,7 +23,7 @@ public enum ContainmentUsage
 
 public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, ICompiledQueryAwareFilter, IReversibleWhereFragment
 {
-    private readonly string _locator;
+    private string _locator;
     private readonly ISerializer _serializer;
     private Dictionary<string, object> _data = new();
     private readonly List<DictionaryValueUsage> _usages = new();
@@ -54,24 +54,80 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         CollectionMember = collection;
     }
 
+    /// <summary>
+    ///     Re-anchors this filter one collection level outwards, so that an enclosing
+    ///     <c>Any()</c> can express it as containment against its own collection.
+    /// </summary>
+    /// <remarks>
+    ///     A sub-query is parsed against a member tree rooted at the element type -- <c>Bottoms</c>
+    ///     inside <c>Middles.Any(m =&gt; m.Bottoms.Any(...))</c> reports <c>d.data -&gt; 'Bottoms'</c>,
+    ///     because inside that parse <c>d.data</c> stands for one <c>Middle</c>. Nothing in the member
+    ///     tree records that <c>Bottoms</c> lives under <c>Middles</c>; this is where that nesting is
+    ///     put back. The locator has to move with the payload (#5549): re-nesting the dictionary while
+    ///     leaving <c>_locator</c> at the inner collection produced
+    ///     <c>d.data -&gt; 'Bottoms' @&gt; '[{"Middles":[...]}]'</c>, which is well-formed SQL that can
+    ///     never match, so the query quietly returned nothing.
+    /// </remarks>
     public ISqlFragment MoveUnder(ICollectionMember ancestorCollection)
     {
-        var dict = new Dictionary<string, object>();
+        assertCanCarryContainment(ancestorCollection);
 
-        ancestorCollection.PlaceValueInDictionaryForContainment(dict, Expression.Constant(_data));
+        // One level only: CompileFragment runs at every enclosing Any(), so a filter nested
+        // n deep is moved up n times rather than walking the ancestors here. Walking them
+        // was also unreachable for anything deeper than two levels -- the ancestor of a
+        // sub-query's collection is a RootMember, whose PlaceValueInDictionaryForContainment
+        // throws NotSupportedException.
+        _data = payloadRelativeToElement();
 
-        _data = dict;
-
-        foreach (var parent in ancestorCollection.Ancestors.Reverse())
-        {
-            if (parent is DocumentQueryableMemberCollection) break;
-
-            dict = new Dictionary<string, object>();
-            parent.PlaceValueInDictionaryForContainment(dict, Expression.Constant(_data));
-            _data = dict;
-        }
+        _locator = ancestorCollection.JSONBLocator;
+        Usage = ContainmentUsage.Collection;
+        CollectionMember = ancestorCollection;
 
         return this;
+    }
+
+    /// <summary>
+    ///     A dictionary has no JSON key standing for "some value", so there is no containment payload
+    ///     that reaches through one. The same refusal the constructor already makes for a
+    ///     <c>Dictionary&lt;,&gt;.Values</c> sub-query, made here for anything moved under one.
+    /// </summary>
+    private static void assertCanCarryContainment(ICollectionMember ancestorCollection)
+    {
+        if (ancestorCollection is DictionaryValuesMember or IDictionaryMember ||
+            ancestorCollection.Ancestors.Any(x => x is DictionaryValuesMember or IDictionaryMember))
+        {
+            throw new BadLinqExpressionException(
+                "Marten cannot (yet) support a sub query filter nested inside a dictionary member. You may need to resort to MatchesSql(), and using the PostgreSQL '#>' JSONPath operator. See https://www.postgresql.org/docs/current/functions-json.html");
+        }
+    }
+
+    /// <summary>
+    ///     This filter's payload expressed relative to one element of the collection it is anchored
+    ///     to, which is the shape an enclosing containment filter has to splice in.
+    /// </summary>
+    private Dictionary<string, object> payloadRelativeToElement()
+    {
+        // Singular means the payload is already written from the element outwards -- that is how a
+        // value collection or a Contains() filter arrives, carrying its own member name.
+        if (CollectionMember == null || Usage == ContainmentUsage.Singular)
+        {
+            return _data;
+        }
+
+        var root = new Dictionary<string, object>();
+        var dict = root;
+
+        // Any plain members between the element and this filter's collection, as in
+        // m.Inner.Bottoms.Any(...). The document root carries no key of its own.
+        foreach (var ancestor in CollectionMember.Ancestors)
+        {
+            if (ancestor is DocumentQueryableMemberCollection) continue;
+            dict = ancestor.FindOrPlaceChildDictionaryForContainment(dict);
+        }
+
+        CollectionMember.PlaceValueInDictionaryForContainment(dict, Expression.Constant(_data));
+
+        return root;
     }
 
     public bool IsNot { get; set; }
@@ -85,11 +141,14 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
 
     ICollectionAwareFilter ICollectionAware.BuildFragment(ICollectionMember member, ISerializer serializer)
     {
-        var original = _data;
-        _data = new Dictionary<string, object>();
-        PlaceMemberValue(member, Expression.Constant(original));
+        // Reached when an OR branch inside Any() is itself a nested containment. Same move as
+        // MoveUnder(), and it has to re-anchor the locator for the same reason (#5549).
+        if (ReferenceEquals(CollectionMember, member))
+        {
+            return this;
+        }
 
-        return this;
+        return (ICollectionAwareFilter)MoveUnder(member);
     }
 
     bool ICollectionAware.SupportsContainment()
@@ -99,20 +158,40 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
 
     void ICollectionAware.PlaceIntoContainmentFilter(ContainmentWhereFilter filter)
     {
-        var dict = filter._data;
-        foreach (var ancestor in CollectionMember.Ancestors)
-            dict = ancestor.FindOrPlaceChildDictionaryForContainment(dict);
+        // Both filters describe one element of the same collection, so this one's payload is spliced
+        // into the target's. A value-collection filter (CollectionMember == null) already carries its
+        // own member name and merges in as it stands.
+        mergeInto(filter._data, payloadRelativeToElement());
 
-        if (dict.TryGetValue(CollectionMember.MemberName, out var raw) && raw is object[] data)
+        filter._usages.AddRange(_usages);
+    }
+
+    private static void mergeInto(Dictionary<string, object> target, Dictionary<string, object> source)
+    {
+        foreach (var pair in source)
         {
-            if (data.Length == 1 && data[0] is Dictionary<string, object> existing)
+            if (!target.TryGetValue(pair.Key, out var existing))
             {
-                foreach (var pair in _data) existing[pair.Key] = pair.Value;
+                target[pair.Key] = pair.Value;
             }
-        }
-        else
-        {
-            dict[CollectionMember.MemberName] = new object[] { _data };
+            else if (existing is Dictionary<string, object> existingDict &&
+                     pair.Value is Dictionary<string, object> incomingDict)
+            {
+                mergeInto(existingDict, incomingDict);
+            }
+            else if (existing is object[] existingArray && pair.Value is object[] incomingArray)
+            {
+                // Two sibling Any() calls over the same child collection. `@>` over arrays asks that
+                // every element of the payload be matched by *some* element of the stored array, which
+                // is exactly what the two calls mean. Marten used to merge them into a single element
+                // instead, which both demanded one element satisfy both predicates and silently
+                // dropped whichever value was placed first (#5549).
+                target[pair.Key] = existingArray.Concat(incomingArray).ToArray();
+            }
+            else
+            {
+                target[pair.Key] = pair.Value;
+            }
         }
     }
 
@@ -126,7 +205,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         throw new NotSupportedException();
     }
 
-    public ICollectionMember CollectionMember { get; }
+    public ICollectionMember CollectionMember { get; private set; }
 
 
 
