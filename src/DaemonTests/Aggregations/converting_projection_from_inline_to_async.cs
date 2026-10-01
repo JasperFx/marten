@@ -76,6 +76,31 @@ public class converting_projection_from_inline_to_async : OneOffConfigurationsCo
         });
 
     }
+
+    // Postgres reports last_value = 1 for a sequence nothing has drawn from, so an empty store must not start
+    // the projection at 1 while the high water mark is still 0.
+    [Fact]
+    public async Task start_against_an_empty_event_store()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async, o => o.SubscribeAsInlineToAsync());
+        });
+
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        var id = theSession.Events.StartStream<SimpleAggregate>(new MTAEvent(), new MTBEvent()).Id;
+        await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await daemon.WaitForNonStaleData(10.Seconds());
+
+        var aggregate = await theSession.LoadAsync<SimpleAggregate>(id, TestContext.Current.CancellationToken);
+        aggregate.ShouldBe(new SimpleAggregate { Id = id, Version = 2, ACount = 1, BCount = 1 });
+    }
 }
 
 public class SimpleAggregate : IRevisioned
