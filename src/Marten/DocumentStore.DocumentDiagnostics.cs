@@ -51,10 +51,26 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         // Match TryCreateUsage: force lazy mappings to materialize before enumerating.
         Options.Storage.BuildAllMappings();
 
-        var refs = Options.Storage.DocumentMappingsWithSchema
-            .OrderBy(x => x.Alias)
-            .Select(m => new DocumentTypeRef(m.DocumentType.FullNameInCode(), m.Alias, m.DatabaseSchemaName))
-            .ToList();
+        var refs = new List<DocumentTypeRef>();
+
+        foreach (var mapping in Options.Storage.DocumentMappingsWithSchema.OrderBy(x => x.Alias))
+        {
+            refs.Add(new DocumentTypeRef(mapping.DocumentType.FullNameInCode(), mapping.Alias,
+                mapping.DatabaseSchemaName));
+
+            // jasperfx#932: a sub-class is listed too, because resolveDiagnosticsTarget already accepts
+            // its name and narrows to its rows -- a picker that could not offer it would be hiding a
+            // capability the contract guarantees. Its rows live in the root's table, so it carries the
+            // root's schema and its own mt_doc_type alias, which is the name a caller passes back.
+            foreach (var subClass in mapping.SubClasses.OrderBy(x => x.Alias))
+            {
+                refs.Add(new DocumentTypeRef(subClass.DocumentType.FullNameInCode(), subClass.Alias,
+                    mapping.DatabaseSchemaName)
+                {
+                    RootTypeName = mapping.DocumentType.FullNameInCode()
+                });
+            }
+        }
 
         return await Task.FromResult<IReadOnlyList<DocumentTypeRef>>(refs).ConfigureAwait(false);
     }

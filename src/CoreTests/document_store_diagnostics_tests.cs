@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using JasperFx.Documents;
 using JasperFx.Events;
@@ -176,6 +177,42 @@ public class document_store_diagnostics_tests: HostedStoreContext
 
         (await diagnostics.LoadDocumentJsonAsync(typeName, Guid.NewGuid().ToString())).ShouldBeNull();
         (await diagnostics.LoadDocumentJsonAsync("Not.A.Mapped.Type", target.Id.ToString())).ShouldBeNull();
+    }
+
+    /// <remarks>
+    /// jasperfx#932 settled a cross-store disagreement -- Polecat listed sub-classes, Marten and Fisher
+    /// did not -- in favour of listing them, since every member taking a documentTypeName already accepts
+    /// a sub-class name. DocumentStoreDiagnosticsCompliance pins the listing and the root marker; what is
+    /// Marten's own, and asserted here, is that a sub-class carries its own mt_doc_type alias and the
+    /// ROOT's schema, because that is where its rows actually live.
+    /// </remarks>
+    [Fact]
+    public async Task document_types_list_subclasses_against_the_root_table()
+    {
+        var host = await BuildHost("subclasstypes", opts =>
+            opts.Schema.For<DiagAnimal>()
+                .AddSubClass<DiagDog>()
+                .AddSubClass<DiagCat>());
+
+        var diagnostics = host.Services.GetRequiredService<IDocumentStoreDiagnostics>();
+        var types = (await diagnostics.DocumentTypesAsync(CancellationToken.None))
+            .ToDictionary(x => x.TypeName);
+
+        var root = types.Values.Single(x => x.Alias == "diaganimal");
+        root.RootTypeName.ShouldBeNull();
+        root.IsSubClass.ShouldBeFalse();
+
+        // The alias is the mt_doc_type discriminator the rows actually carry, not the type name
+        // lower-cased -- that is the string a picker hands back to QueryDocumentsAsync.
+        foreach (var (subClassType, alias) in new[] { (typeof(DiagDog), "diag_dog"), (typeof(DiagCat), "diag_cat") })
+        {
+            var subClass = types[subClassType.FullNameInCode()];
+
+            subClass.IsSubClass.ShouldBeTrue();
+            subClass.RootTypeName.ShouldBe(root.TypeName);
+            subClass.Alias.ShouldBe(alias);
+            subClass.SchemaName.ShouldBe(root.SchemaName);
+        }
     }
 
     [Fact]
