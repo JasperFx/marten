@@ -120,4 +120,42 @@ public class querying_through_n_deep_sub_collections : IntegrationContext
         results.Any(x => x.Equals(blueBill)).ShouldBeTrue();
         results.Any(x => x.Equals(greenBill)).ShouldBeTrue();
     }
+
+    // #5549 -- the reporter's own repro. Bug_5549_nested_any_containment_locator carries the
+    // rest of the shapes that fell out of the same defect.
+
+    [Fact]
+    public async Task nested_any_with_equality_and_no_sibling_predicate()
+    {
+        var results = await theSession.Query<Top>()
+            .Where(x => x.Middles.Any(m => m.Bottoms.Any(b => b.Name == "Bill")))
+            .ToListAsync();
+
+        results.Count.ShouldBe(2);
+        results.Any(x => x.Equals(blueBill)).ShouldBeTrue();
+        results.Any(x => x.Equals(greenBill)).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task nested_any_with_equality_and_a_sibling_predicate()
+    {
+        var results = await theSession.Query<Top>()
+            .Where(x => x.Middles.Any(m => m.Color == Colors.Blue && m.Bottoms.Any(b => b.Name == "Bill")))
+            .ToListAsync();
+
+        results.Single().ShouldBe(blueBill);
+    }
+
+    [Fact]
+    public async Task negated_nested_any_with_equality_and_no_sibling_predicate()
+    {
+        var results = await theSession.Query<Top>()
+            .Where(x => !x.Middles.Any(m => m.Bottoms.Any(b => b.Name == "Bill")))
+            .ToListAsync();
+
+        results.Any(x => x.Equals(blueBill)).ShouldBeFalse();
+        results.Any(x => x.Equals(greenBill)).ShouldBeFalse();
+        results.Any(x => x.Equals(top2)).ShouldBeTrue();
+        results.Any(x => x.Equals(topNoBottoms)).ShouldBeTrue();
+    }
 }
