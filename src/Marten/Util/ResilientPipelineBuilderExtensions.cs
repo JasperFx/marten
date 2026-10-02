@@ -20,20 +20,35 @@ internal static class ResilientPipelineBuilderExtensions
     {
         #region sample_default_polly_setup
 
-        // default Marten policies
+        // default Marten policies. A command that timed out is not retried: it has already spent
+        // the whole CommandTimeout, and every retry would hold the caller for that long again.
         return builder
            .AddRetry(new()
             {
                 ShouldHandle = new PredicateBuilder()
-                    .Handle<NpgsqlException>()
-                    .Handle<MartenCommandException>()
-                    .Handle<EventLoaderException>(),
+                    .Handle<NpgsqlException>(e => !IsTimeout(e))
+                    .Handle<MartenCommandException>(e => !IsTimeout(e))
+                    .Handle<EventLoaderException>(e => !IsTimeout(e)),
                 MaxRetryAttempts = 3,
                 Delay = TimeSpan.FromMilliseconds(50),
                 BackoffType = DelayBackoffType.Exponential
             });
 
         #endregion
+    }
+
+    /// <summary>
+    ///     Npgsql reports a command timeout as an <see cref="NpgsqlException" /> wrapping a
+    ///     <see cref="TimeoutException" />, which Marten may wrap again in <see cref="MartenCommandException" />.
+    /// </summary>
+    internal static bool IsTimeout(Exception exception)
+    {
+        for (var inner = exception.InnerException; inner != null; inner = inner.InnerException)
+        {
+            if (inner is TimeoutException) return true;
+        }
+
+        return false;
     }
 
     /// <summary>

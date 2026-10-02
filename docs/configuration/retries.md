@@ -9,24 +9,31 @@ Out of the box, Marten is using [Polly.Core](https://www.pollydocs.org/) for res
 <!-- snippet: sample_default_polly_setup -->
 <a id='snippet-sample_default_polly_setup'></a>
 ```cs
-// default Marten policies
+// default Marten policies. A command that timed out is not retried: it has already spent
+// the whole CommandTimeout, and every retry would hold the caller for that long again.
 return builder
    .AddRetry(new()
     {
         ShouldHandle = new PredicateBuilder()
-            .Handle<NpgsqlException>()
-            .Handle<MartenCommandException>()
-            .Handle<EventLoaderException>(),
+            .Handle<NpgsqlException>(e => !IsTimeout(e))
+            .Handle<MartenCommandException>(e => !IsTimeout(e))
+            .Handle<EventLoaderException>(e => !IsTimeout(e)),
         MaxRetryAttempts = 3,
         Delay = TimeSpan.FromMilliseconds(50),
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L21-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L21-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The general idea is to have _some_ level of retry with an exponential backoff on typical transient errors encountered
 in database usage (network hiccups, a database being too busy, etc.).
+
+A command that timed out — an `NpgsqlException` wrapping a `TimeoutException`, possibly inside a
+`MartenCommandException` — is the exception. That attempt has already waited out the whole `CommandTimeout`, plus
+Npgsql's cancel request, so retrying it three times would hold the caller for four timeouts instead of one. The
+timeout is surfaced to the caller at once, as it already is on the commit path below. Connection-pool exhaustion
+reaches you in the same shape, so it is not retried either.
 
 ## Committing a unit of work is retried differently
 
@@ -58,7 +65,7 @@ return builder
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L45-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_write_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L60-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_write_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `SaveChangesAsync()` is retried when, and only when:
