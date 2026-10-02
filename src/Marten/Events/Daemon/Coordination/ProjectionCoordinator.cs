@@ -63,8 +63,10 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
     // 9.0 (#4349 dedupe): the Solo / SingleTenant / MultiTenanted distributors live in
     // JasperFx.Events. Marten wires them with closures over its own tenancy, shard, and lock
     // surfaces. ProjectionSet (Marten-side) remains the IProjectionSet implementation, and the
-    // Postgres lock factory hands back Weasel's AdvisoryLock — which implements
-    // JasperFx.Events.Daemon.IAdvisoryLock directly as of Weasel 9.0.0-alpha.7.
+    // Postgres lock factory hands back Marten's own AdvisoryLock — which implements
+    // JasperFx.Events.Daemon.IAdvisoryLock directly. It lived in Weasel.Postgresql until 9.46,
+    // when #5567 moved it here so its shutdown behaviour could be fixed without a cross-repo
+    // release; the intent is to move it back once that has settled.
     private static IProjectionDistributor? BuildDistributor(DocumentStore store)
     {
         var projections = store.Options.Projections;
@@ -134,7 +136,11 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
             new AdvisoryLockOptions
             {
                 LockMonitoringEnabled = store.Options.Events.UseMonitoredAdvisoryLock,
-                TransactionalLockEnabled = store.Options.Events.UseAdvisoryLockTransaction
+                TransactionalLockEnabled = store.Options.Events.UseAdvisoryLockTransaction,
+
+                // #5567: the daemon's own stop budget is the right bound for how long a shutdown will
+                // wait on lock release. See AdvisoryLock.DisposeAsync.
+                ReleaseTimeout = store.Options.Projections.StopAndDrainTimeout
             });
     }
 
@@ -188,7 +194,7 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
     ///     <c>IHost.Dispose()</c> does not stop hosted services — so the very common <c>using var host = ...</c>
     ///     shape tears the container down underneath a running coordinator. The container then disposes the
     ///     DocumentStore and, with it, the owned NpgsqlDataSource, while the leadership loop is still polling
-    ///     <see cref="Weasel.Postgresql.AdvisoryLock.TryAttainLockAsync" /> on its cadence. Every poll opened a
+    ///     <see cref="AdvisoryLock.TryAttainLockAsync" /> on its cadence. Every poll opened a
     ///     connection against a dead pool.
     ///
     ///     The coordinator is constructed from an <see cref="IDocumentStore" />, so the container always creates
