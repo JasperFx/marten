@@ -7,7 +7,6 @@ using Marten;
 using Marten.Exceptions;
 using Marten.Services;
 using Marten.Testing.Harness;
-using Marten.Util;
 using Npgsql;
 using Polly;
 using Shouldly;
@@ -52,11 +51,18 @@ public class Bug_5262_retry_loses_events: OneOffConfigurationsContext
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
 
-            // The permissive default, explicitly, so this test measures the buffer lifetime under retry
-            // rather than the narrowed write policy. Note this has to be ConfigureWritePolly: ConfigurePolly
-            // deliberately no longer reaches the commit path, precisely so that tuning read retries cannot
-            // silently take the replay protection off a non-idempotent write.
-            opts.ConfigureWritePolly(builder => builder.AddMartenDefaults());
+            // A permissive policy that retries the timeout, explicitly, so this test measures the buffer
+            // lifetime under retry rather than the narrowed write policy. Not AddMartenDefaults: the read
+            // default no longer retries a command timeout either. Note this has to be ConfigureWritePolly:
+            // ConfigurePolly deliberately no longer reaches the commit path, precisely so that tuning read
+            // retries cannot silently take the replay protection off a non-idempotent write.
+            opts.ConfigureWritePolly(builder => builder.AddRetry(new()
+            {
+                ShouldHandle = new PredicateBuilder().Handle<NpgsqlException>().Handle<MartenCommandException>(),
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromMilliseconds(50),
+                BackoffType = DelayBackoffType.Exponential
+            }));
         });
 
         var streamKeys = Enumerable.Range(0, Count).Select(i => $"stream-{i}").ToArray();
