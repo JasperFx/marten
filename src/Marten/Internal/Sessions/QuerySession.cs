@@ -68,6 +68,19 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
                + "and call StoreOptions.UsePgVector(), which is what supplies the implementation of "
                + "IDocumentReadOperations.Search.");
 
+    // #5550 / jasperfx#930. Same trap as the two above, but the default it binds to is SLOW rather
+    // than throwing, so nothing fails to tell you about it. Marten has sixteen LoadManyAsync
+    // overloads and NONE of them takes the token last, so the contract's (ids, token) call matches
+    // none of them and resolves to the interface default -- which awaits LoadAsync once per id. The
+    // compliance suite loads 2,500 documents through this, and it passed, one round trip at a time.
+    Task<IReadOnlyList<T>> JasperFx.Events.Documents.IDocumentReadOperations.LoadManyAsync<T>(
+        IEnumerable<Guid> ids, CancellationToken token)
+        => LoadManyAsync<T>(token, ids);
+
+    Task<IReadOnlyList<T>> JasperFx.Events.Documents.IDocumentReadOperations.LoadManyAsync<T>(
+        IEnumerable<string> ids, CancellationToken token)
+        => LoadManyAsync<T>(token, ids);
+
     protected virtual IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
     {
         return new QueryEventStore(this, store, tenant);

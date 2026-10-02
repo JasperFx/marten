@@ -61,3 +61,37 @@ public async Task LoadByIdAsync(IQuerySession session, CancellationToken token =
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Load_by_Id.cs#L35-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_load_by_id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Batched Loading and the Shared Contract
+
+Every `LoadManyAsync()` overload above is a **single** round trip, however many ids you pass — Marten
+sends `where id = ANY(:ids)` rather than a query per id, so there is no parameter ceiling to work around
+and no benefit to chunking the list yourself.
+
+That also holds when you reach Marten through `IDocumentReadOperations`, the store-agnostic read contract
+shared with the other Critter Stack stores:
+
+<!-- snippet: sample_load_many_through_the_shared_contract -->
+<a id='snippet-sample_load_many_through_the_shared_contract'></a>
+```cs
+public static async Task<IReadOnlyList<Reservation>> LoadAll(
+    JasperFx.Events.Documents.IDocumentReadOperations session,
+    IEnumerable<Guid> ids,
+    CancellationToken token)
+{
+    // Store-agnostic, and on Marten this is a single round trip.
+    // Ids with no document are left out, and a repeated id comes back once.
+    return await session.LoadManyAsync<Reservation>(ids, token);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BatchReads.cs#L50-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_load_many_through_the_shared_contract' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Ids with no document are left out of the result, a repeated id yields its document once, and the order of
+the returned list is **not** part of the contract — sort it yourself if you need one.
+
+::: tip
+The contract ships a default implementation that loads one document per round trip, and Marten overrides
+it. If you are writing store-agnostic code, the semantics above are the same on every store; only the
+round-trip count differs.
+:::
