@@ -999,6 +999,117 @@ public class full_text_index: OneOffConfigurationsContext
             results[0].Id.ShouldBe(expectedId);
         }
     }
+
+    // #5568: PrefixSearch is documented for raw search-box input ("each word is treated as a
+    // prefix"), unlike Search, which documents that it may carry lexeme patterns. So every one
+    // of these used to come back as 42601: syntax error in tsquery.
+    [Theory]
+    [InlineData("Priced & idea")]
+    [InlineData("Priced | idea")]
+    [InlineData("Priced ! idea")]
+    [InlineData("Priced ( idea )")]
+    [InlineData("Priced <-> idea")]
+    [InlineData("Priced:idea")]
+    [InlineData("Priced'idea")]
+    [InlineData("Priced\\idea")]
+    [InlineData("Priced\\")]
+    [InlineData("Priced idea\t")]
+    [InlineData("Priced\tidea")]
+    [InlineData("Priced\nidea")]
+    public async Task prefix_search_tolerates_tsquery_operators_in_the_term(string searchTerm)
+    {
+        StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+        var expectedId = Guid.NewGuid();
+
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(new BlogPost { Id = expectedId, EnglishText = "Priced Idea Screening" });
+            session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "Unrelated Content" });
+            await session.SaveChangesAsync();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            var results = await session.Query<BlogPost>()
+                .Where(x => x.PrefixSearch(searchTerm))
+                .ToListAsync();
+
+            results.Select(x => x.Id).ShouldBe([expectedId]);
+        }
+    }
+
+    // A term made of nothing but operators has no lexemes at all. Postgres reduces that to an
+    // empty tsquery, which matches nothing -- but it must not throw.
+    [Fact]
+    public async Task prefix_search_with_only_operators_matches_nothing_without_throwing()
+    {
+        StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "Priced Idea Screening" });
+            await session.SaveChangesAsync();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            var results = await session.Query<BlogPost>()
+                .Where(x => x.PrefixSearch("& | ! ( )"))
+                .ToListAsync();
+
+            results.ShouldBeEmpty();
+        }
+    }
+
+    // Escaping must not change the tsquery produced for ordinary words -- including the compound
+    // forms (hyphens, dots, underscores) that the text search parser expands on its own.
+    [Theory]
+    [InlineData("Priced")]
+    [InlineData("Priced idea")]
+    [InlineData("foo-bar")]
+    [InlineData("a.b.c")]
+    [InlineData("v9_0_0")]
+    [InlineData("ünïcode")]
+    public async Task prefix_search_produces_the_same_tsquery_as_before_for_ordinary_words(string searchTerm)
+    {
+        StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+        var unescaped = string.Join(" & ",
+            searchTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => w + ":*"));
+
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        async Task<string> tsqueryFor(string term)
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = "select to_tsquery('english', :term)::text";
+            cmd.Parameters.AddWithValue("term", term);
+            return (string)await cmd.ExecuteScalarAsync();
+        }
+
+        var escaped = new PrefixSearchTermSpy().Transform(searchTerm);
+
+        (await tsqueryFor(escaped)).ShouldBe(await tsqueryFor(unescaped));
+    }
+}
+
+/// <summary>
+/// Reaches the internal <c>PrefixSearch.TransformSearchTerm</c> so a test can assert on the
+/// tsquery text it builds rather than only on query results.
+/// </summary>
+internal class PrefixSearchTermSpy
+{
+    public string Transform(string searchTerm)
+    {
+        var parser = typeof(Marten.LinqExtensions).Assembly
+            .GetType("Marten.Linq.Parsing.Methods.FullText.PrefixSearch")!;
+        var instance = Activator.CreateInstance(parser, nonPublic: true)!;
+        var method = parser.GetMethod("TransformSearchTerm",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return (string)method.Invoke(instance, [searchTerm])!;
+    }
 }
 
 public static class FullTextIndexTestsExtension

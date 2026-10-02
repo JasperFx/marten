@@ -308,6 +308,9 @@ public static class LinqExtensions
     /// <param name="searchTerm">The text to search for. Each word is treated as a prefix.</param>
     /// <remarks>
     ///     Uses PostgreSQL's to_tsquery with the :* prefix matching operator.
+    ///     Raw input is safe: unlike <see cref="Search{T}(T,string)" />, each word is quoted as a
+    ///     tsquery lexeme, so a term carrying '&amp;', '|', '!', '(', ')', ':', '\'' or '\\' searches
+    ///     for those characters rather than being parsed as query syntax (#5568).
     ///     See: https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
     public static bool PrefixSearch<T>(this T variable, string searchTerm)
@@ -328,6 +331,9 @@ public static class LinqExtensions
     /// </param>
     /// <remarks>
     ///     Uses PostgreSQL's to_tsquery with the :* prefix matching operator.
+    ///     Raw input is safe: unlike <see cref="Search{T}(T,string)" />, each word is quoted as a
+    ///     tsquery lexeme, so a term carrying '&amp;', '|', '!', '(', ')', ':', '\'' or '\\' searches
+    ///     for those characters rather than being parsed as query syntax (#5568).
     ///     See: https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
     public static bool PrefixSearch<T>(this T variable, string searchTerm, string regConfig)

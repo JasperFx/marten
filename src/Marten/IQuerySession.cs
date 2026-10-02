@@ -566,6 +566,9 @@ public interface IQuerySession: IDisposable, IAsyncDisposable, IDocumentReadOper
     /// <param name="token"></param>
     /// <remarks>
     ///     Uses PostgreSQL's to_tsquery with the :* prefix matching operator.
+    ///     Raw input is safe: each word is quoted as a tsquery lexeme, so a term carrying
+    ///     '&amp;', '|', '!', '(', ')', ':', '\'' or '\\' searches for those characters rather
+    ///     than being parsed as query syntax (#5568).
     ///     See: https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
     /// </remarks>
     Task<IReadOnlyList<TDoc>> PrefixSearchAsync<TDoc>(string searchTerm,
