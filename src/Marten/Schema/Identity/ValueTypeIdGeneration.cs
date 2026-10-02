@@ -44,18 +44,66 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
         return _selector.CloneToOtherTable(tableName);
     }
 
+    /// <summary>
+    ///     Whether <paramref name="idType" /> has the SHAPE of a strong-typed id, without registering
+    ///     anything or constructing anything.
+    /// </summary>
+    /// <remarks>
+    ///     <see cref="IsCandidate" /> cannot be used to ask the question speculatively: it registers the
+    ///     type on the global <see cref="PostgresqlProvider" /> singleton and closes an open generic to
+    ///     build the select clause. Identity resolution has to test many members to find one, so it asks
+    ///     this instead and only lets <see cref="IsCandidate" /> near the member it actually picked
+    ///     (#5562).
+    /// </remarks>
+    public static bool IsCandidateShape(Type idType) => tryMatch(idType, out _, out _, out _, out _);
+
     public static bool IsCandidate(Type idType, [NotNullWhen(true)]out ValueTypeIdGeneration? idGeneration)
     {
         idGeneration = default;
+
+        if (!tryMatch(idType, out var outerType, out var innerProperty, out var ctor, out var builder))
+        {
+            return false;
+        }
+
+        var identityType = innerProperty.PropertyType;
+        var dbType = PostgresqlProvider.Instance.GetDatabaseType(identityType, EnumStorage.AsInteger);
+        var parameterType = PostgresqlProvider.Instance.TryGetDbType(identityType);
+
+        PostgresqlProvider.Instance.RegisterMapping(outerType, dbType, parameterType);
+
+        idGeneration = ctor != null
+            ? new ValueTypeIdGeneration(outerType, innerProperty, identityType, ctor)
+            : new ValueTypeIdGeneration(outerType, innerProperty, identityType, builder!);
+
+        return true;
+    }
+
+    /// <summary>
+    ///     The pure half of <see cref="IsCandidate" />: decides whether the type is a strong-typed id and
+    ///     hands back the pieces, touching no global state.
+    /// </summary>
+    private static bool tryMatch(
+        Type idType,
+        out Type outerType,
+        [NotNullWhen(true)] out PropertyInfo? innerProperty,
+        out ConstructorInfo? ctor,
+        out MethodInfo? builder)
+    {
+        outerType = idType;
+        innerProperty = null;
+        ctor = null;
+        builder = null;
+
         if (idType == typeof(Type)) return false;
         if (idType == typeof(BigInteger)) return false;
 
         if (idType.IsGenericType && idType.IsNullable())
         {
             idType = idType.GetGenericArguments().Single();
+            outerType = idType;
         }
 
-        idGeneration = null;
         if (idType.IsClass)
         {
             return false;
@@ -82,38 +130,34 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
             .Where(x => DocumentMapping.ValidIdTypes.Contains(x.PropertyType))
             .ToArray();
 
-        if (properties.Length == 1)
+        if (properties.Length != 1)
         {
-            var innerProperty = properties[0];
-            var identityType = innerProperty.PropertyType;
-
-            var ctor = idType.GetConstructors().FirstOrDefault(x =>
-                x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == identityType);
-
-            var dbType = PostgresqlProvider.Instance.GetDatabaseType(identityType, EnumStorage.AsInteger);
-            var parameterType = PostgresqlProvider.Instance.TryGetDbType(identityType);
-
-            if (ctor != null)
-            {
-                PostgresqlProvider.Instance.RegisterMapping(idType, dbType, parameterType);
-                idGeneration = new ValueTypeIdGeneration(idType, innerProperty, identityType, ctor);
-                return true;
-            }
-
-            var builder = idType
-                .GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .FirstOrDefault(x =>
-                    x.ReturnType == idType && x.GetParameters().Length == 1 &&
-                    x.GetParameters()[0].ParameterType == identityType);
-
-            if (builder != null)
-            {
-                PostgresqlProvider.Instance.RegisterMapping(idType, dbType, parameterType);
-                idGeneration = new ValueTypeIdGeneration(idType, innerProperty, identityType, builder);
-                return true;
-            }
+            return false;
         }
 
+        var candidate = properties[0];
+        var identityType = candidate.PropertyType;
+
+        ctor = idType.GetConstructors().FirstOrDefault(x =>
+            x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == identityType);
+
+        if (ctor != null)
+        {
+            innerProperty = candidate;
+            return true;
+        }
+
+        builder = idType
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .FirstOrDefault(x =>
+                x.ReturnType == idType && x.GetParameters().Length == 1 &&
+                x.GetParameters()[0].ParameterType == identityType);
+
+        if (builder != null)
+        {
+            innerProperty = candidate;
+            return true;
+        }
 
         return false;
     }
