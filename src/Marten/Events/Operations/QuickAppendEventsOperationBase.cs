@@ -311,6 +311,16 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
             var values = rentColumn<string?>(count);
             for (int i = 0; i < count; i++)
             {
+                // #5569: this is the one column writer that doesn't have a value for every
+                // event, so it has to null the slot itself. The buffer comes from
+                // ArrayPool<string>.Shared, which is process-wide and hands back whatever the
+                // previous renter left behind -- and the pool's contract allows returning
+                // without clearing. A leftover string reaches mt_quick_append_events as a
+                // non-null tag value, where it is cast to the tag's type: either a 22P02 that
+                // fails the whole append, or, if the leftover happens to parse, a silent tag
+                // row for an id the event was never tagged with.
+                values[i] = null;
+
                 var tags = events[i].Tags;
                 if (tags != null)
                 {

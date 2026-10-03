@@ -37,6 +37,17 @@ internal sealed class PooledList<T>: IList<T>, IReadOnlyList<T>, IDisposable
         if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
         _buffer = count == 0 ? Array.Empty<T>() : ArrayPool<T>.Shared.Rent(count);
         _count = count;
+
+        // #5569: the shared pool is process-wide and its contract permits returning a buffer
+        // without clearing it, so a rental can arrive holding another library's strings. A
+        // writer that leaves a slot unassigned would then send that leftover to Postgres. Zero
+        // the visible window on rent so an unassigned slot always binds as NULL. Reference
+        // buffers only -- for value types the JIT folds this away, and the cost on a reference
+        // buffer is a memset of `count` slots against per-event JSON serialization.
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() && _count > 0)
+        {
+            Array.Clear(_buffer, 0, _count);
+        }
     }
 
     public int Count => _count;
