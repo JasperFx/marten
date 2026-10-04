@@ -94,16 +94,7 @@ public partial class StoreOptions
 
         if (isEnumerable(memberType))
         {
-            Type? elementType = null;
-            try
-            {
-                elementType = memberType.DetermineElementType()!;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
+            var elementType = memberType.DetermineElementType()!;
 
             if (elementType.IsValueTypeForQuerying())
             {
