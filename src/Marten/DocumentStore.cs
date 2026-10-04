@@ -586,6 +586,13 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         CancellationToken cancellation = default
     )
     {
+        // #5586: the method name is a promise. SessionOptions.IsolationLevel defaults to ReadCommitted and
+        // is not nullable, so a caller who simply passes `new SessionOptions()` used to get a session that
+        // was not serializable at all -- and, because this path always builds a sticky
+        // TransactionalConnection, not auto-closing either. Pin it here rather than silently honouring a
+        // level that contradicts the method being called.
+        options.IsolationLevel = IsolationLevel.Serializable;
+
         var connection = await options.InitializeAsync(this, CommandRunnerMode.ReadOnly, cancellation)
             .ConfigureAwait(false);
 
@@ -646,6 +653,13 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     public async Task<IDocumentSession> OpenSerializableSessionAsync(SessionOptions options,
         CancellationToken token = default)
     {
+        // #5586: the method name is a promise. SessionOptions.IsolationLevel defaults to ReadCommitted and
+        // is not nullable, so a caller who simply passes `new SessionOptions()` used to get a session that
+        // was not serializable at all -- and, because this path always builds a sticky
+        // TransactionalConnection, not auto-closing either. Pin it here rather than silently honouring a
+        // level that contradicts the method being called.
+        options.IsolationLevel = IsolationLevel.Serializable;
+
         var connection = await options.InitializeAsync(this, CommandRunnerMode.Transactional, token)
             .ConfigureAwait(false);
 
