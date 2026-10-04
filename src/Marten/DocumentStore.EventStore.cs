@@ -31,6 +31,7 @@ using Marten.Storage;
 using Marten.Subscriptions;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Polly;
 using Weasel.Postgresql.SqlGeneration;
 using EventTypeFilter = Marten.Events.Daemon.Internals.EventTypeFilter;
 using System.Diagnostics.CodeAnalysis;
@@ -471,13 +472,40 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         return projectionBatch;
     }
 
+    /// <summary>
+    ///     #5587. The pipeline handed to <see cref="ResilientEventLoader" />, which is deliberately empty.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The decorator used to be given <c>Options.ResiliencePipeline</c>, which is the same object the
+    ///         <see cref="QuerySession" /> underneath it already runs every command through
+    ///         (<c>QuerySession.Execution.cs</c>). <see cref="EventLoader" /> opens a session per call, so the two
+    ///         nested: both 3-retry, so one handled failure was executed up to <b>sixteen</b> times, with the
+    ///         backoff compounding the same way.
+    ///     </para>
+    ///     <para>
+    ///         The inner one is the right place to keep it. That is where the command actually runs, and where
+    ///         <see cref="AutoClosingLifetime" /> opens a fresh connection for every attempt -- the outer one
+    ///         would replay through a session it did not create and cannot reason about. So the decorator keeps
+    ///         what only it can do (loading metrics, and the <c>EventLoaderException</c> wrap that carries the
+    ///         shard name and database) and stops retrying.
+    ///     </para>
+    ///     <para>
+    ///         This matters more since JasperFx 2.80.1 (jasperfx#948): until then
+    ///         <c>ResilientEventLoader.LoadAsync</c> returned the pipeline's task without awaiting it inside its
+    ///         own try, so the outer pipeline's handler was largely unreachable for an async failure. Fixing that
+    ///         upstream is what turned this from latent into live.
+    ///     </para>
+    /// </remarks>
+    internal static ResiliencePipeline DaemonLoaderPipeline => ResiliencePipeline.Empty;
+
     IEventLoader IEventStore<IDocumentOperations, IQuerySession>.BuildEventLoader(IEventDatabase database,
         ILogger loggerFactory, EventFilterable filtering, AsyncOptions shardOptions)
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
         var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters,
             filtering.IncludeArchivedEvents);
-        return new ResilientEventLoader(Options.ResiliencePipeline, inner, database);
+        return new ResilientEventLoader(DaemonLoaderPipeline, inner, database);
     }
 
     /// <summary>
@@ -499,7 +527,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         var filters = buildEventLoaderFilters(filtering).ToArray();
         var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters,
             filtering.IncludeArchivedEvents, shardName);
-        return new ResilientEventLoader(Options.ResiliencePipeline, inner, database);
+        return new ResilientEventLoader(DaemonLoaderPipeline, inner, database);
     }
 
     private IEnumerable<ISqlFragment> buildEventLoaderFilters(EventFilterable filterable)
