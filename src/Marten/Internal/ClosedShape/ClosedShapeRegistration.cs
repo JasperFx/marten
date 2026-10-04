@@ -158,6 +158,13 @@ public static class ClosedShapeRegistration
         var wrapperType = vt.OuterType;
         var innerType = vt.SimpleType;
 
+        // #5589: registry first. The reflective tail below closes ValueTypeIdentification<,,> AND
+        // BuildProvider<TDoc,TWrapper>, and the latter being a runtime METHOD instantiation means every
+        // storage type it constructs is one too -- about eight of them. One registered delegate roots the
+        // whole subtree because the compiler closes BuildProviderFor<TDoc,TWrapper> inside it.
+        var registered = ValueTypeIdRegistry.TryProvider<TDoc>(wrapperType, mapping, vt);
+        if (registered != null) return registered;
+
         var identification = typeof(ValueTypeIdentification<,,>)
             .CloseAndBuildAs<object>(
                 mapping.IdMember, vt, (object)mapping.DocumentType,
@@ -169,6 +176,16 @@ public static class ClosedShapeRegistration
 
         return (DocumentProvider<TDoc>)buildProvider.Invoke(null, new object?[] { mapping, identification })!;
     }
+
+    /// <summary>
+    ///     #5589: the statically-closed entry point the registry's delegates call, so the storage subtree is
+    ///     rooted at compile time rather than produced by MakeGenericMethod.
+    /// </summary>
+    internal static DocumentProvider<TDoc> BuildProviderFor<TDoc, TId>(DocumentMapping mapping,
+        IIdentification<TDoc, TId> identification)
+        where TDoc : notnull
+        where TId : notnull
+        => BuildProvider<TDoc, TId>(mapping, identification);
 
     private static DocumentProvider<TDoc> BuildProvider<TDoc, TId>(
         DocumentMapping mapping,

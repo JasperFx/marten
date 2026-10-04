@@ -114,8 +114,9 @@ public class SelectorVisitor: ExpressionVisitor
         else
         {
             _statement.SelectClause =
-                member.IsGenericInterfaceImplementation(typeof(IValueTypeMember<,>))
-                ? (ISelectClause)member.CallGenericInterfaceMethod(typeof(IValueTypeMember<,>), "BuildSelectClause", _statement.FromObject)
+                // #5589: a type test and a direct call, not a reflective method lookup.
+                member is IValueTypeMember valueTypeMember
+                ? valueTypeMember.BuildSelectClause(_statement.FromObject)
                 : typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.FromObject,
                     member.RawLocator,
                     member.MemberType);

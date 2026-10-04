@@ -54,6 +54,9 @@ var store = DocumentStore.For(o =>
     o.AutoCreateSchemaObjects = AutoCreate.All;
     o.DatabaseSchemaName = "aot_runtime_smoke";
     o.Schema.For<Praktijk>().Index(x => x.AgbCode);
+    o.Schema.For<Declaratie>();
+    // #5589: names the three types so the identity generics are closed at compile time.
+    o.RegisterValueTypeId<Declaratie, DeclaratieId, Guid>();
 
     o.Events.StreamIdentity = StreamIdentity.AsString;
     o.Events.AddEventType<DossierGeopend>();
@@ -72,6 +75,7 @@ try
     await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
     var id = Guid.NewGuid();
+    var declaratieId = new DeclaratieId(Guid.NewGuid());
 
     await using (var writing = store.LightweightSession())
     {
@@ -84,6 +88,14 @@ try
         writing.Store(new Praktijk
         {
             Id = Guid.NewGuid(), AgbCode = "01059911", Naam = "Praktijk Pietersen", Soort = Soort.Apotheek
+        });
+        writing.Store(new Declaratie
+        {
+            Id = declaratieId, Prestatiecode = "12000", Bedrag = 42
+        });
+        writing.Store(new Declaratie
+        {
+            Id = new DeclaratieId(Guid.NewGuid()), Prestatiecode = "12001", Bedrag = 7
         });
         writing.Events.StartStream<Dossier>("dossier-1",
             new DossierGeopend("dossier-1", "Dossier Jansen"), new RegelToegevoegd("12000"));
@@ -203,6 +215,33 @@ try
         return found.Count == 1;
     });
 
+    // #5579 — a strong-typed id reaches FastExpressionCompiler from two directions: JasperFx's
+    // ValueTypeInfo.CreateWrapper/UnWrapper (fixed in 2.80.0) and Marten's own
+    // ValueTypeIdGeneration.BuildInnerValueSource. Both are Reflection.Emit underneath, so before
+    // this every one of the four checks below threw PlatformNotSupportedException from a native
+    // binary -- while docs/configuration/aot-publishing.md listed strong-typed ids as AOT-clean.
+    await Check("LoadAsync by a strong-typed id", async () =>
+    {
+        var loaded = await session.LoadAsync<Declaratie>(declaratieId);
+        return loaded?.Prestatiecode == "12000";
+    });
+
+    // Reads the inner Guid back out of the wrapper to build the WHERE -- BuildInnerValueSource,
+    // via StrongTypedIdMember.
+    await Check("LINQ filtered on a strong-typed id", async () =>
+    {
+        var found = await session.Query<Declaratie>().Where(x => x.Id == declaratieId).ToListAsync();
+        return found.Count == 1 && found[0].Prestatiecode == "12000";
+    });
+
+    // Selecting the id closes ValueTypeIdSelectClause<TOuter,TInner>, which wraps the raw Guid
+    // coming off the reader back into the strong type -- the CreateWrapper half.
+    await Check("LINQ selecting a strong-typed id", async () =>
+    {
+        var ids = await session.Query<Declaratie>().Where(x => x.Prestatiecode == "12000").Select(x => x.Id).ToListAsync();
+        return ids.Count == 1 && ids[0] == declaratieId;
+    });
+
 }
 catch (Exception e)
 {
@@ -312,6 +351,20 @@ public enum Soort
     Apotheek
 }
 
+/// <summary>
+/// #5579. A plain readonly record struct id -- deliberately not a Vogen or StronglyTypedId generated
+/// one, so this gate tests Marten's value-type identity path and not a third-party generator's AOT
+/// story.
+/// </summary>
+public readonly record struct DeclaratieId(Guid Value);
+
+public class Declaratie
+{
+    public DeclaratieId Id { get; set; }
+    public string Prestatiecode { get; set; } = "";
+    public decimal Bedrag { get; set; }
+}
+
 public class Aanlevering
 {
     public Guid Id { get; set; }
@@ -350,6 +403,8 @@ public record DossierGeopend(string Nummer, string Naam);
 public record RegelToegevoegd(string Prestatiecode);
 
 [JsonSerializable(typeof(Praktijk))]
+[JsonSerializable(typeof(Declaratie))]
+[JsonSerializable(typeof(DeclaratieId))]
 [JsonSerializable(typeof(Aanlevering))]
 [JsonSerializable(typeof(Dossier))]
 [JsonSerializable(typeof(DossierGeopend))]

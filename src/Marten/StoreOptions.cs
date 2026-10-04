@@ -133,6 +133,48 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     /// <summary>
+    ///     Declare that <typeparamref name="TDoc" /> is identified by the strong-typed id
+    ///     <typeparamref name="TWrapper" />, which wraps a <typeparamref name="TInner" />. Only needed for
+    ///     Native AOT.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         #5589. Marten's identity path closes a chain of generics over your id type at runtime, which a
+    ///         Native AOT image cannot do unless the instantiations were rooted at compile time. Naming all
+    ///         three types here is what roots them — the same reason
+    ///         <c>Projections.LiveStreamAggregation&lt;TDoc, TId&gt;()</c> exists alongside the overload that
+    ///         infers the identity. Without it, one strong-typed id anywhere in the store fails the
+    ///         application while the first document's mapping is built:
+    ///     </para>
+    ///     <code>
+    ///     System.MissingMethodException: No parameterless constructor defined for type
+    ///     'Marten.Schema.Identity.ValueTypeIdSelectClause`2[YourId,System.Guid]'
+    ///     </code>
+    ///     <para>
+    ///         Under a JIT this is a no-op worth nothing and costing nothing: the reflective path still runs
+    ///         for anything unregistered. Call it from the same configuration lambda as
+    ///         <c>Schema.For&lt;TDoc&gt;()</c> — anywhere before the store builds its mappings will do.
+    ///     </para>
+    ///     <para>
+    ///         The document type is part of the signature because it has to be: the closed-shape storage
+    ///         subtree is closed over the document as well as the id, so an id-only registration would get the
+    ///         store through bootstrap and then fail on the first session that touched the document.
+    ///     </para>
+    ///     <para>
+    ///         F# single-case discriminated-union ids are not covered — they are reference types, and their
+    ///         select clause is a different generic. They still work under a JIT.
+    ///     </para>
+    /// </remarks>
+    public StoreOptions RegisterValueTypeId<TDoc, TWrapper, TInner>()
+        where TDoc : notnull
+        where TWrapper : struct
+        where TInner : notnull
+    {
+        ValueTypeIdRegistry.Register<TDoc, TWrapper, TInner>();
+        return this;
+    }
+
+    /// <summary>
     ///     Types that should be treated as "child document" containers (JSONB) when
     ///     resolving LINQ members. The optional <c>Marten.Newtonsoft</c> package
     ///     adds <c>Newtonsoft.Json.Linq.JObject</c> here via its

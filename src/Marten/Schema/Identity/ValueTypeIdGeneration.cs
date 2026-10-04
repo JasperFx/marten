@@ -7,6 +7,7 @@ using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
+using Marten.Internal;
 using Marten.Linq.SqlGeneration;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -26,15 +27,21 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
     private ValueTypeIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, ConstructorInfo ctor)
         : base(outerType, simpleType, valueProperty, ctor)
     {
-        _selector = typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
-            SimpleType);
+        // #5589: registry first, reflective fallback. CloseAndBuildAs is Activator on a runtime-computed
+        // generic, which a Native AOT image cannot produce unless something rooted it.
+        _selector = ValueTypeIdRegistry.TryIdSelectClause(OuterType, SimpleType, this)
+                    ?? typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
+                        SimpleType);
     }
 
     private ValueTypeIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, MethodInfo builder)
         : base(outerType, simpleType, valueProperty, builder)
     {
-        _selector = typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
-            SimpleType);
+        // #5589: registry first, reflective fallback. CloseAndBuildAs is Activator on a runtime-computed
+        // generic, which a Native AOT image cannot produce unless something rooted it.
+        _selector = ValueTypeIdRegistry.TryIdSelectClause(OuterType, SimpleType, this)
+                    ?? typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
+                        SimpleType);
     }
 
     public bool IsNumeric => false;
