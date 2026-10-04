@@ -109,6 +109,42 @@ builder.Services.AddMarten(opts =>
 .AddAsyncDaemon(DaemonMode.HotCold);
 ```
 
+### Leadership lock monitoring
+
+Marten also *monitors* the leadership lock, so that it notices when the connection holding the lock
+is lost — a database restart or a fail-over. Without monitoring, `HasLock` keeps reporting true after
+the lock is gone, and because the leadership loop only tries to re-attain a lock when `HasLock` says
+it does not have one, two nodes can end up running the same projection. That is why monitoring is on
+by default:
+
+```cs
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(connectionString);
+
+    // Opt OUT of leadership lock monitoring. Only do this knowing the failure mode above.
+    opts.Events.UseMonitoredAdvisoryLock = false;
+})
+.AddAsyncDaemon(DaemonMode.HotCold);
+```
+
+Monitoring used to be visible in the database as a long-running `SELECT pg_catalog.pg_sleep(60)`,
+which some monitoring tools reported as load. On a data source Marten owns that is no longer how it
+works: the monitor waits client-side for a notification instead, and the backend simply sits `idle`
+for up to a minute at a time. It still consumes no database resources.
+
+Releasing the locks at shutdown is bounded by `Projections.StopAndDrainTimeout`
+<Badge type="tip" text="9.46" />. Monitoring parks the lock connection in a one-minute wait between
+checks, and a session-scoped lock multiplexes several held locks onto one such connection, so the
+last release on a connection could end up waiting out that whole window — which made some host stops
+take 60 or 120 seconds, with nothing logged
+([#5567](https://github.com/JasperFx/marten/issues/5567)). The releases now run concurrently and stop
+being waited on once the timeout is up; anything still outstanding finishes in the background and is
+logged as a warning naming how many locks it was still waiting on. The practical consequence of
+hitting that timeout is that leadership of those projections cannot move to another node until the
+releases complete, so a rolling deployment may see a projection sit unowned for up to a minute.
+Before 9.46 the stop simply blocked for the same period instead.
+
 ::: tip
 Marten's gap detection recognizes its own leadership lock connections and never counts them as
 possible appenders, so a transaction-scoped lock — whether currently held or leaked from a host that

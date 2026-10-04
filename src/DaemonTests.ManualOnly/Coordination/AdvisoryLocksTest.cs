@@ -6,7 +6,6 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
-using Weasel.Postgresql;
 using Xunit;
 
 namespace DaemonTests.ManualOnly.Coordination;

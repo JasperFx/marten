@@ -17,6 +17,13 @@ another client. Restore the previous behavior there:
 opts.Events.UseAdvisoryLockTransaction = true;
 ```
 
+Between 9.41 and 9.45 the new default had a second consequence, since fixed in 9.46: stopping a
+`HotCold` daemon that held many projection locks could intermittently stall for 60 or 120 seconds
+while the locks were released, silently
+([#5567](https://github.com/JasperFx/marten/issues/5567)). If you are on one of those versions and
+cannot upgrade, either `UseAdvisoryLockTransaction = true` or `UseMonitoredAdvisoryLock = false`
+avoids it — prefer the first, since the second gives up fail-over detection.
+
 See [Solo vs. HotCold](/events/projections/async-daemon#solo-vs-hotcold) for details.
 
 ## Key Changes in 9.21.0
