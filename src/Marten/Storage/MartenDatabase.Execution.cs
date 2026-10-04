@@ -15,23 +15,11 @@ public partial class MartenDatabase : ISingleQueryRunner
         public async Task<T> ExecuteAsync(CancellationToken cancellation)
         {
             await using var conn = Database.CreateConnection();
+            await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
             var command = Handler.BuildCommand();
-            try
-            {
-                command.Connection = conn;
-            }
-            catch (InvalidOperationException e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-            finally
-            {
-                await conn.CloseAsync().ConfigureAwait(false);
-            }
+            command.Connection = conn;
 
-            await conn.OpenAsync(cancellation).ConfigureAwait(false);
             await using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
 
             try
