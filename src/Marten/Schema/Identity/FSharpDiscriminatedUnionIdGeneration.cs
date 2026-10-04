@@ -57,14 +57,9 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
 
     public Func<object, T> BuildInnerValueSource<T>()
     {
-        var target = Expression.Parameter(typeof(object), "target");
-        var method = ValueProperty.GetMethod;
-
-        var callGetMethod = Expression.Call(Expression.Convert(target, OuterType), method);
-
-        var lambda = Expression.Lambda<Func<object, T>>(callGetMethod, target);
-
-        return FastExpressionCompiler.ExpressionCompiler.CompileFast(lambda);
+        // #5579: emits where the platform allows it, reflects where it does not. See
+        // StrongTypedIdValueSource -- the JasperFx 2.80 wrapper fix did not cover this half.
+        return StrongTypedIdValueSource.Build<T>(OuterType, ValueProperty);
     }
 
     public static bool IsFSharpSingleCaseDiscriminatedUnion(Type type)
