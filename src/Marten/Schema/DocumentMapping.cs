@@ -10,6 +10,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using Marten.Exceptions;
+using Marten.Internal;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
@@ -1056,13 +1057,16 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
         IQueryableMember idField;
         if (IdStrategy is ValueTypeIdGeneration st)
         {
-            idField = typeof(StrongTypedIdMember<,>).CloseAndBuildAs<IQueryableMember>(IdMember, st, st.OuterType,
-                st.SimpleType);
+            // #5589: registry first, reflective fallback.
+            idField = ValueTypeIdRegistry.TryIdMember(st.OuterType, st.SimpleType, IdMember, st)
+                      ?? typeof(StrongTypedIdMember<,>).CloseAndBuildAs<IQueryableMember>(IdMember, st,
+                          st.OuterType, st.SimpleType);
         }
         else if (IdStrategy is FSharpDiscriminatedUnionIdGeneration fst)
         {
-            idField = typeof(StrongTypedIdMember<,>).CloseAndBuildAs<IQueryableMember>(IdMember, fst, fst.OuterType,
-                fst.SimpleType);
+            idField = ValueTypeIdRegistry.TryIdMember(fst.OuterType, fst.SimpleType, IdMember, fst)
+                      ?? typeof(StrongTypedIdMember<,>).CloseAndBuildAs<IQueryableMember>(IdMember, fst,
+                          fst.OuterType, fst.SimpleType);
         }
         else
         {

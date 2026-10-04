@@ -65,14 +65,20 @@ public partial class QuerySession
         // 9.0 (#4373): replace per-call Activator.CreateInstance with delegate-cached
         // factory keyed on id.GetType(). One reflection pass on first-encountered
         // identity type; subsequent calls hit the cached factory delegate.
-        var loader = GenericFactoryCache.BuildAs<ILoader>(
-            typeof(Loader<>),
-            id.GetType(),
-            static closed => () => (ILoader)Activator.CreateInstance(closed)!);
+        // #5589: registry first. GenericFactoryCache caches a delegate per closed type, but the first
+        // miss still runs MakeGenericType + Activator.CreateInstance, which a Native AOT image cannot do.
+        var loader = ValueTypeIdRegistry.TryLoader(id.GetType())
+                     ?? GenericFactoryCache.BuildAs<ILoader>(
+                         typeof(Loader<>),
+                         id.GetType(),
+                         static closed => () => (ILoader)Activator.CreateInstance(closed)!);
         return await loader.LoadAsync<T>(id, this, token).ConfigureAwait(false);
     }
 
-    private interface ILoader
+    /// <summary>#5589: internal so ValueTypeIdRegistry can hold a statically-closed factory for it.</summary>
+    internal static ILoader BuildLoader<TId>() => new Loader<TId>();
+
+    internal interface ILoader
     {
         Task<T?> LoadAsync<T>(object id, QuerySession session, CancellationToken token = default) where T : notnull;
     }

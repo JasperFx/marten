@@ -22,10 +22,29 @@ namespace Marten.Linq.Members;
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
-public interface IValueTypeMember<TOuter, TInner>: IQueryableMember
+/// <summary>
+///     The non-generic half of <see cref="IValueTypeMember{TOuter,TInner}" />, so callers that only hold an
+///     <see cref="IQueryableMember" /> can ask for a select clause with a type test instead of reflection.
+/// </summary>
+/// <remarks>
+///     #5589. <c>SelectorVisitor</c> used to reach this through
+///     <c>CallGenericInterfaceMethod(typeof(IValueTypeMember&lt;,&gt;), "BuildSelectClause", ...)</c>, which
+///     is a reflective method lookup — fine under a JIT, and in a Native AOT image a
+///     <c>Method 'BuildSelectClause' not found</c> as soon as the trimmer dropped the metadata. A direct
+///     interface call needs none of it, and is faster everywhere.
+/// </remarks>
+public interface IValueTypeMember: IQueryableMember
+{
+    ISelectClause BuildSelectClause(string fromObject);
+}
+
+public interface IValueTypeMember<TOuter, TInner>: IValueTypeMember
 {
     IEnumerable<TInner> ConvertFromWrapperArray(IEnumerable<TOuter> values);
-    ISelectClause BuildSelectClause(string fromObject);
+
+    // Redeclared rather than only inherited so the interface slot an assembly compiled against an earlier
+    // Marten already calls through stays exactly where it was.
+    new ISelectClause BuildSelectClause(string fromObject);
 }
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",

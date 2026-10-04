@@ -138,7 +138,24 @@ As of Marten 9.0.0-alpha:
 ### Works (AOT-clean)
 
 - **`UseSystemTextJsonForSerialization`** with the default `JsonSerializerOptions` or a user-supplied one. For best AOT results, pass a source-generated `JsonSerializerContext`.
-- **Document storage** — `Schema.For<TDoc>()` and the entire CRUD / LINQ surface for closed-shape document types with a **Guid / string / int / long** identity, including the containment and JSONPath filters a child-collection query compiles to (#5377). Strong-typed identities are **not** in this list — see below.
+- **Document storage** — `Schema.For<TDoc>()` and the entire CRUD / LINQ surface for closed-shape document types with a **Guid / string / int / long** identity, including the containment and JSONPath filters a child-collection query compiles to (#5377).
+- **Strong-typed identities** (Vogen, StronglyTypedId, a plain `readonly record struct`) — **once you register them**, which is one extra line per document type:
+
+  ```cs
+  opts.Schema.For<Declaratie>();
+  opts.RegisterValueTypeId<Declaratie, DeclaratieId, Guid>();
+  ```
+
+  Marten's identity path closes a chain of generics over your id type, and a Native AOT image has no instantiation for any of them unless something rooted it at compile time. Naming all three types is what roots them — the same reason `Projections.LiveStreamAggregation<TDoc, TId>()` exists alongside the overload that infers the identity. The document type is part of the signature because the closed-shape storage subtree is closed over the document as well as the id, so an id-only registration would get through bootstrap and then fail on the first session that touched the document.
+
+  Under a JIT the call does nothing and costs nothing — unregistered types still take the reflective path. Without it, under AOT, one strong-typed id anywhere in the store fails the application while the **first** document's mapping is built:
+
+  ```text
+  System.MissingMethodException: No parameterless constructor defined for type
+  'Marten.Schema.Identity.ValueTypeIdSelectClause`2[YourId,System.Guid]'
+  ```
+
+  See [#5589](https://github.com/JasperFx/marten/issues/5589); the plan is for `Marten.SourceGenerator` to emit these registrations so the call becomes unnecessary.
 - **Event storage** — `StartStream`, `Append`, `FetchStream`, `FetchStreamStateAsync`, `AggregateStreamAsync`, `QueryAllRawEvents`, the async daemon. Reading an event needed a JIT until [#5373](https://github.com/JasperFx/marten/issues/5373): the events table closed its per-column reader over the column's member type at runtime.
 - **Projections** — registered either as a projection type (`Projections.Add<T>(...)`) or, for a self-aggregating type, through the identity-typed `LiveStreamAggregation<TDoc, TId>()` / `Snapshot<TDoc, TId>(...)` overloads: `SingleStreamProjection<TDoc, TId>`, `MultiStreamProjection<TDoc, TId>`, `EventProjection`, `CustomProjection`, and `EventApplier` — the JasperFx.Events source generator emits `[GeneratedEvolver]` dispatchers at compile time for each registration. Marten calls `Options.Projections.DiscoverGeneratedEvolvers(...)` at startup (`src/Marten/DocumentStore.cs:84`) to pick them up.
 - **Compiled queries** registered through `Marten.SourceGenerator` in an assembly marked `[JasperFxAssembly]`.
@@ -156,21 +173,8 @@ As of Marten 9.0.0-alpha:
 
 ### Doesn't work in AOT
 
-- **Strong-typed identities** (Vogen, StronglyTypedId, a plain `readonly record struct`, F# single-case discriminated unions). A document whose `Id` is a value-type wrapper takes the whole store down at bootstrap, before a single query runs:
-
-  ```text
-  System.MissingMethodException: No parameterless constructor defined for type
-  'Marten.Schema.Identity.ValueTypeIdSelectClause`2[YourId,System.Guid]'.
-     at System.Activator.CreateInstance(Type, Object[])
-     at JasperFx.Core.Reflection.TypeExtensions.CloseAndBuildAs[T](Type, Object, Type[])
-     at Marten.Schema.Identity.ValueTypeIdGeneration..ctor(...)
-     at Marten.Schema.Identity.ValueTypeIdGeneration.IsCandidate(Type, ValueTypeIdGeneration&)
-     at Marten.Schema.DocumentMapping..ctor(Type, StoreOptions)
-  ```
-
-  `IsCandidate` runs while the mapping for *every* document is built, so one strong-typed id anywhere in the store is enough. The identity path closes a chain of generics over your id type at runtime — `ValueTypeIdSelectClause<,>`, then `StrongTypedIdMember<,>`, and others behind them — and a Native AOT image has no instantiation for any of them unless something rooted it statically. Deferring one site only moves the failure to the next. The fix is to stop closing these generics at runtime, most likely by having `Marten.SourceGenerator` emit the instantiations per registered id type; tracked in [#5589](https://github.com/JasperFx/marten/issues/5589).
-
-  This entry previously read the other way round — strong-typed ids were listed as AOT-clean. That was never verified against a native binary and was wrong (#5579).
+- **F# single-case discriminated-union ids.** The C# strong-typed id wrappers are covered by `RegisterValueTypeId<TDoc, TWrapper, TInner>()` above, but an F# DU id is a reference type and routes through a different select clause (`FSharpDiscriminatedUnionIdSelectClause`), which that registration cannot name. Still fine under a JIT. Tracked with the rest of [#5589](https://github.com/JasperFx/marten/issues/5589).
+- **`.IsOneOf(...)` over a strong-typed id** reaches `ConvertFromWrapperArray` through a reflective method lookup that the trimmer can drop. Equality and ordering on a strong-typed id are fine.
 
 - **`Marten.Newtonsoft`** — Newtonsoft.Json is fundamentally AOT-hostile. The package's csproj deliberately leaves `IsAotCompatible` off (see PR [#4468](https://github.com/JasperFx/marten/pull/4468)). Use `UseSystemTextJsonForSerialization` instead.
 - **`services.AddRuntimeCompilation()`** — the seam doesn't exist in Marten 9. If you have it in your composition root from a pre-9 app, delete the call.
