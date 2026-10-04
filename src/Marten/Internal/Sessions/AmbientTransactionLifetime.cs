@@ -54,6 +54,13 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
 
 
 
+    /// <summary>
+    ///     #5583: the ambient System.Transactions scope owns the transaction, so a failure inside it
+    ///     outlives the call and Marten must not resolve it. Recording the cause only changes what the NEXT
+    ///     use of the session reports.
+    /// </summary>
+    protected override bool HasSurvivingTransaction => true;
+
     public async ValueTask DisposeAsync()
     {
         if (_connection is { State: ConnectionState.Open })
@@ -176,6 +183,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(cmd, e);
             throw;
         }
@@ -198,6 +206,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(command, e);
             throw;
         }
@@ -215,6 +224,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(command, e);
             throw;
         }
@@ -237,6 +247,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(command, e);
             throw;
         }
@@ -254,6 +265,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(batch, e);
             throw;
         }
@@ -276,6 +288,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(batch, e);
             throw;
         }

@@ -35,6 +35,14 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
 
     public NpgsqlTransaction Transaction { get; }
 
+    /// <summary>
+    ///     #5583: the caller supplied this transaction and owns its lifecycle, so from Marten's point of
+    ///     view it is always surviving -- a failure inside it outlives the call that caused it, and Marten
+    ///     must not roll it back on the caller's behalf. All this changes is that the NEXT use of the
+    ///     session names the original failure instead of handing back a bare 25P02.
+    /// </summary>
+    protected override bool HasSurvivingTransaction => true;
+
     public virtual ValueTask DisposeAsync()
     {
         return new ValueTask();
@@ -142,6 +150,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(cmd, e);
             throw;
         }
@@ -164,6 +173,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(command, e);
             throw;
         }
@@ -181,6 +191,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(command, e);
             throw;
         }
@@ -203,6 +214,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(command, e);
             throw;
         }
@@ -220,6 +232,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(batch, e);
             throw;
         }
@@ -242,6 +255,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(batch, e);
             throw;
         }
