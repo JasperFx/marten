@@ -31,6 +31,7 @@
 // Exits non-zero with the offending stack trace on the first failure, so CI reports the
 // specific read path that regressed.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -41,6 +42,7 @@ using Marten.Linq;
 using Weasel.Core;
 
 [assembly: JasperFxAssembly]
+
 
 var connection = Environment.GetEnvironmentVariable("marten_testing_database")
                  ?? "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
@@ -67,6 +69,8 @@ var store = DocumentStore.For(o =>
     // either, so this also covers the aggregate's mapping being built from a Type.
     o.Projections.LiveStreamAggregation<Dossier, string>();
 });
+
+DecimalOperatorRoots.Root();
 
 var failures = 0;
 
@@ -236,6 +240,15 @@ try
 
     // Selecting the id closes ValueTypeIdSelectClause<TOuter,TInner>, which wraps the raw Guid
     // coming off the reader back into the strong type -- the CreateWrapper half.
+    // #5597 — a decimal comparison. Expression.GreaterThan has no IL operator for decimal, so it looks
+    // up System.Decimal.op_GreaterThan reflectively, and the expression tree is built by the CONSUMER's
+    // compiler-generated code before Marten sees anything.
+    await Check("LINQ with a decimal comparison", async () =>
+    {
+        var found = await session.Query<Declaratie>().Where(x => x.Bedrag > 10).ToListAsync();
+        return found.Count == 1;
+    });
+
     await Check("LINQ selecting a strong-typed id", async () =>
     {
         var ids = await session.Query<Declaratie>().Where(x => x.Prestatiecode == "12000").Select(x => x.Id).ToListAsync();
@@ -327,6 +340,18 @@ async Task Check(string description, Func<Task<bool>> check)
     }
 
     failures++;
+}
+
+// #5597: Expression.GreaterThan on two decimals cannot use an IL comparison -- decimal has no
+// primitive '>' -- so the factory looks up System.Decimal.op_GreaterThan by reflection. The trimmer
+// has no reason to keep an operator nothing statically calls, and the factory then reports it as
+// "not defined". Rooting decimal's public methods keeps the metadata it needs.
+internal static class DecimalOperatorRoots
+{
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(decimal))]
+    internal static void Root()
+    {
+    }
 }
 
 public class Praktijk
