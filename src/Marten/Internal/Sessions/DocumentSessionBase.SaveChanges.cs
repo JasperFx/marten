@@ -151,7 +151,30 @@ public abstract partial class DocumentSessionBase
     internal record PagesExecution(IReadOnlyList<OperationPage> Pages, IConnectionLifetime Connection,
         IReadOnlyList<ITransactionParticipant>? Participants)
     {
-        public List<Exception> Exceptions { get; } = new();
+        /// <summary>
+        ///     The per-operation failures from the <i>most recent</i> attempt. Replaced by
+        ///     <see cref="BeginAttempt" /> rather than appended to across retries.
+        /// </summary>
+        public List<Exception> Exceptions { get; private set; } = new();
+
+        /// <summary>
+        ///     #5585. Hands the next attempt a clean list.
+        /// </summary>
+        /// <remarks>
+        ///     This record is the state object the write pipeline carries across retries, so a list built once
+        ///     in an initializer was shared by every attempt. <c>ExecuteBatchPagesAsync</c> branches on the
+        ///     <i>count</i> -- one exception is rethrown as itself, more than one becomes an
+        ///     <see cref="AggregateException" /> -- so a single operation failing the same way twice turned
+        ///     attempt 1's honest rethrow into attempt 2's AggregateException. The caller's exception type
+        ///     depended on how many times the batch happened to be retried, and
+        ///     <c>WriteRetryClassifier.Flatten</c> then classified attempt 2 from a graph that still held
+        ///     attempt 1's failure.
+        /// </remarks>
+        public List<Exception> BeginAttempt()
+        {
+            Exceptions = new List<Exception>();
+            return Exceptions;
+        }
     }
 
     /// <summary>
@@ -244,7 +267,7 @@ public abstract partial class DocumentSessionBase
                 else
                 {
                     await Options.WriteResiliencePipeline.ExecuteAsync(
-                        static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t, e.Participants)), execution, token).ConfigureAwait(false);
+                        static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.BeginAttempt(), t, e.Participants)), execution, token).ConfigureAwait(false);
                 }
 
                 await executeAfterCommitListeners(batch).ConfigureAwait(false);
