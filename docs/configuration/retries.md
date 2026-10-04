@@ -33,7 +33,9 @@ A command that timed out — an `NpgsqlException` wrapping a `TimeoutException`,
 `MartenCommandException` — is the exception. That attempt has already waited out the whole `CommandTimeout`, plus
 Npgsql's cancel request, so retrying it three times would hold the caller for four timeouts instead of one. The
 timeout is surfaced to the caller at once, as it already is on the commit path below. Connection-pool exhaustion
-reaches you in the same shape, so it is not retried either.
+reaches you in the same shape, so it is not retried either. See
+[Handle a timeout outside Marten](#handle-a-timeout-outside-marten) for what to do with the one you now get on the
+first attempt.
 
 ## Committing a unit of work is retried differently
 
@@ -92,12 +94,47 @@ with a `COMMIT` in flight. That is the right answer for a `SELECT` and the wrong
 Note also that connection-pool exhaustion — where nothing was ever sent and a replay would be perfectly safe —
 reaches you as an `NpgsqlException` wrapping a `TimeoutException`, which is structurally identical to a read timeout
 that stalled halfway through a batch. Since the two cannot be told apart from the exception, both surface to the
-caller rather than being guessed at.
+caller rather than being guessed at. The read policy inherited that ambiguity when it stopped retrying timeouts:
+pool exhaustion is no longer retried there either, which is a deliberate trade of a retry that might have cleared
+in 50-350 ms against the four-timeouts-instead-of-one behavior that ambiguity was buying.
 :::
 
-When a commit is not retried, the exception reaches your code, where it can be handled at a level that knows how to
-rebuild the work — a Wolverine message retry re-runs the handler and constructs a fresh session, which is safe in a
-way that replaying the old batch is not.
+## Handle a timeout outside Marten
+
+Neither pipeline retries a timeout, so one reaches your code on the first attempt. That is not a gap waiting to be
+filled with a more clever retry — **there is no retry Marten can perform that would help.**
+
+The usual suggestion is to cycle a fresh connection before retrying. Marten's default `AutoClosingLifetime`
+**already does that**: the retried delegate is the whole lifetime call, which opens a connection, runs the command
+and closes it, so every attempt has had its own connection all along. It makes no difference, because a timeout is
+never a connection-health problem:
+
+| What happened | The connection afterwards | What a fresh connection does |
+| --- | --- | --- |
+| `CommandTimeout` expired, server responsive | healthy and open | nothing — the query is slow, and it is equally slow on a new connection |
+| `CommandTimeout` expired, server unreachable | broken | also fails, after another full timeout |
+| `statement_timeout` cancelled the query | healthy and open | runs the same query against the same clock |
+| Connection pool exhausted | n/a | a connection is precisely what cannot be had |
+
+So the retry has to happen somewhere that can do something different. In order of preference:
+
+1. **Fix the timeout budget.** A query that runs past `CommandTimeout` usually wants an index, a narrower filter, or
+   a larger `CommandTimeout` — not a second attempt. Marten exposes the per-session value through
+   `SessionOptions.Timeout` and the store-wide default through `StoreOptions.CommandTimeout`.
+2. **Retry the whole unit of work from a message handler.** A [Wolverine](https://wolverinefx.net) message retry
+   re-runs the handler, which constructs a **fresh session, a fresh connection and a fresh timeout budget**, and
+   re-derives the work from the incoming message rather than replaying operations computed against a snapshot that
+   may no longer hold. That is the one retry shape that can genuinely differ from the first attempt, and on the
+   commit path it is also the only safe one — replaying the old batch can append the same events twice.
+3. **Retry around your own call site** if you are not using Wolverine: catch the exception outside the `using` block
+   for the session, build a new session, and redo the work. The key is that the retry is outside the session, not
+   inside it. Retrying with the session still open gets you nothing on a read, and on a sticky session it can get
+   you a `25P02` instead of the original error.
+
+::: tip
+Do not reach for `ConfigurePolly` to put timeout retries back. It governs reads only, so it cannot restore the
+commit behavior anyway, and the table above is why it would not pay on reads either.
+:::
 
 ## Replacing or extending the policies
 
