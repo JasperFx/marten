@@ -156,6 +156,21 @@ As of Marten 9.0.0-alpha:
   ```
 
   See [#5589](https://github.com/JasperFx/marten/issues/5589); the plan is for `Marten.SourceGenerator` to emit these registrations so the call becomes unnecessary.
+- **LINQ comparisons on `decimal`** (and any other type whose `>` / `<` is a user-defined operator) — **once you root the operator**, which is one declaration somewhere reachable in your app:
+
+  ```cs
+  internal static class DecimalOperatorRoots
+  {
+      [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(decimal))]
+      internal static void Root() { }
+  }
+
+  // the attribute only applies when the annotated method is itself reachable
+  DecimalOperatorRoots.Root();
+  ```
+
+  This one is **not Marten's code**, which is worth knowing before you go looking in the wrong place. Writing `.Where(x => x.Amount > 10)` against an `IQueryable<T>` makes the compiler emit code in *your* assembly that builds the expression tree at runtime, and `Expression.GreaterThan` on two decimals cannot use an IL comparison — `decimal` has no primitive `>` — so it looks up `System.Decimal.op_GreaterThan` by reflection. The trimmer has no reason to keep an operator nothing statically calls, and the factory then reports it as *"The binary operator GreaterThan is not defined for the types 'System.Decimal' and 'System.Decimal'"*. Equality is fine; it is the ordering comparisons that need the operator. See [#5597](https://github.com/JasperFx/marten/issues/5597), and note `Marten.AotRuntimeSmoke` covers this so the behaviour stays pinned if the runtime changes it.
+
 - **Event storage** — `StartStream`, `Append`, `FetchStream`, `FetchStreamStateAsync`, `AggregateStreamAsync`, `QueryAllRawEvents`, the async daemon. Reading an event needed a JIT until [#5373](https://github.com/JasperFx/marten/issues/5373): the events table closed its per-column reader over the column's member type at runtime.
 - **Projections** — registered either as a projection type (`Projections.Add<T>(...)`) or, for a self-aggregating type, through the identity-typed `LiveStreamAggregation<TDoc, TId>()` / `Snapshot<TDoc, TId>(...)` overloads: `SingleStreamProjection<TDoc, TId>`, `MultiStreamProjection<TDoc, TId>`, `EventProjection`, `CustomProjection`, and `EventApplier` — the JasperFx.Events source generator emits `[GeneratedEvolver]` dispatchers at compile time for each registration. Marten calls `Options.Projections.DiscoverGeneratedEvolvers(...)` at startup (`src/Marten/DocumentStore.cs:84`) to pick them up.
 - **Compiled queries** registered through `Marten.SourceGenerator` in an assembly marked `[JasperFxAssembly]`.
