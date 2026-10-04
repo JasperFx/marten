@@ -909,10 +909,22 @@
          detected — and weasel#638, where changing a computed column's definition now drops and
          recreates the dependent indexes instead of silently dropping them.
          Must stay >= 9.20.2 (weasel#399), and >= 9.36.0's own floor of JasperFx 2.76.0, which
-         9.40.0 still names and Marten already clears at 2.79.1. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.40.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.40.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.40.0" />
+         9.40.0 still names and Marten already clears at 2.79.1.
+         9.41.0 is two Native AOT changes on the identity seam, and both are additive:
+         weasel#689 adds a non-generic IIdentification that the generic interface satisfies through
+         default implementations, so a Type-keyed consumer (Marten's ProviderGraph) can hold a strategy
+         without closing IIdentification<TDoc,TId> over (documentType, idType) at runtime. weasel#690
+         adds Identifications, a non-generic entry point over all seven strategies whose ForValueType
+         branches on RuntimeFeature.IsDynamicCodeSupported: the compiled generic where dynamic code
+         is available, and a new reflection-only ReflectedValueTypeIdentification where it is not.
+         That matters because ValueTypeIdentification<TDoc,TWrapper,TInner> is the one strategy whose
+         arguments are not all reference types, so it is the one with no native code under AOT.
+         Nothing is removed: ValueTypeIdentification<,,> and its constructor are untouched, so
+         ClosedShapeRegistration still builds it directly. Marten does not consume either new seam yet;
+         marten#5589 covers the Marten-side generics, which are a separate chain. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.41.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.41.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.41.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
