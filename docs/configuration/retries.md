@@ -37,6 +37,12 @@ reaches you in the same shape, so it is not retried either. See
 [Handle a timeout outside Marten](#handle-a-timeout-outside-marten) for what to do with the one you now get on the
 first attempt.
 
+A **server-side** timeout counts the same way. If you set `statement_timeout` on the role, the database or the
+connection string — a very common production setup — PostgreSQL cancels the query itself and reports
+`57014 query_canceled`, with no `TimeoutException` anywhere in the exception. That is treated as a timeout too, so
+those deployments get the same single attempt rather than four. Cancellation you asked for arrives as `57014` as
+well, and is equally right not to retry.
+
 ## Committing a unit of work is retried differently
 
 That policy governs reads and other **idempotent** work. Committing a session is not idempotent: one
@@ -67,7 +73,7 @@ return builder
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L60-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_write_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L91-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_write_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `SaveChangesAsync()` is retried when, and only when:

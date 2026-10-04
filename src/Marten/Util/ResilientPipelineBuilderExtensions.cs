@@ -38,14 +38,45 @@ internal static class ResilientPipelineBuilderExtensions
     }
 
     /// <summary>
-    ///     Npgsql reports a command timeout as an <see cref="NpgsqlException" /> wrapping a
-    ///     <see cref="TimeoutException" />, which Marten may wrap again in <see cref="MartenCommandException" />.
+    ///     A query that ran out of time, in either of the two shapes PostgreSQL and Npgsql produce.
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The client-side shape is <see cref="NpgsqlCommand.CommandTimeout" /> expiring: an
+    ///         <see cref="NpgsqlException" /> wrapping a <see cref="TimeoutException" />, which Marten may wrap
+    ///         again in <see cref="MartenCommandException" />.
+    ///     </para>
+    ///     <para>
+    ///         The server-side shape is a <c>statement_timeout</c> set on the role, the database or the connection
+    ///         string -- a very common production setup, and one that never produces a
+    ///         <see cref="TimeoutException" /> at all. PostgreSQL cancels the query itself and reports
+    ///         <c>57014 query_canceled</c>, so matching only the inner-exception chain missed it entirely and left
+    ///         those deployments on the four-timeouts-instead-of-one behaviour #5566 set out to remove.
+    ///         <c>EventLoader.isTimeoutException</c> already treats 57014 as a timeout, and
+    ///         <see cref="WriteRetryClassifier" /> already withholds it from the commit path's allowlist; this makes
+    ///         the read policy agree with both.
+    ///     </para>
+    ///     <para>
+    ///         Cancellation the caller asked for arrives here as 57014 too, and is equally right not to retry.
+    ///         Polly will not retry against a cancelled token in any case.
+    ///     </para>
+    ///     <para>
+    ///         Shares <see cref="WriteRetryClassifier.Flatten" /> rather than walking <c>InnerException</c> alone,
+    ///         so the two classifiers in this file see the same exception graph -- including the
+    ///         <see cref="AggregateException" /> branch a batch failure folds its per-operation exceptions into.
+    ///     </para>
+    /// </remarks>
     internal static bool IsTimeout(Exception exception)
     {
-        for (var inner = exception.InnerException; inner != null; inner = inner.InnerException)
+        foreach (var node in WriteRetryClassifier.Flatten(exception))
         {
-            if (inner is TimeoutException) return true;
+            switch (node)
+            {
+                // Must precede NpgsqlException in any future case list here -- PostgresException derives from it.
+                case PostgresException { SqlState: PostgresErrorCodes.QueryCanceled }:
+                case TimeoutException:
+                    return true;
+            }
         }
 
         return false;
@@ -265,7 +296,12 @@ internal static class WriteRetryClassifier
         return sawRetryableMartenFailure ? Outcome.RolledBack : Outcome.Deterministic;
     }
 
-    private static IEnumerable<Exception> Flatten(Exception exception)
+    /// <summary>
+    ///     Every exception in the graph, depth first, starting with <paramref name="exception" /> itself. Shared
+    ///     with <see cref="ResilientPipelineBuilderExtensions.IsTimeout" /> so the read and write classifiers in
+    ///     this file never disagree about what they are looking at.
+    /// </summary>
+    internal static IEnumerable<Exception> Flatten(Exception exception)
     {
         yield return exception;
 
