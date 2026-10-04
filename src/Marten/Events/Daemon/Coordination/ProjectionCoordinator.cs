@@ -63,10 +63,11 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
     // 9.0 (#4349 dedupe): the Solo / SingleTenant / MultiTenanted distributors live in
     // JasperFx.Events. Marten wires them with closures over its own tenancy, shard, and lock
     // surfaces. ProjectionSet (Marten-side) remains the IProjectionSet implementation, and the
-    // Postgres lock factory hands back Marten's own AdvisoryLock — which implements
-    // JasperFx.Events.Daemon.IAdvisoryLock directly. It lived in Weasel.Postgresql until 9.46,
-    // when #5567 moved it here so its shutdown behaviour could be fixed without a cross-repo
-    // release; the intent is to move it back once that has settled.
+    // Postgres lock factory hands back Weasel's AdvisoryLock — which implements
+    // JasperFx.Events.Daemon.IAdvisoryLock directly as of Weasel 9.0.0-alpha.7.
+    // #5567 vendored a copy of that class into this namespace for 9.46, so its shutdown behaviour
+    // could be fixed without a two-repository release chain. weasel#676 took the fix upstream and
+    // #5574 deleted the copy, so this is back to consuming Weasel.Postgresql as of Weasel 9.40.0.
     private static IProjectionDistributor? BuildDistributor(DocumentStore store)
     {
         var projections = store.Options.Projections;
@@ -138,8 +139,10 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
                 LockMonitoringEnabled = store.Options.Events.UseMonitoredAdvisoryLock,
                 TransactionalLockEnabled = store.Options.Events.UseAdvisoryLockTransaction,
 
-                // #5567: the daemon's own stop budget is the right bound for how long a shutdown will
-                // wait on lock release. See AdvisoryLock.DisposeAsync.
+                // #5567 / weasel#676: the daemon's own stop budget is the right bound for how long a
+                // shutdown will wait on lock release. See Weasel's AdvisoryLock.DisposeAsync — a
+                // non-positive or infinite value there opts OUT of the bound rather than meaning
+                // "give up immediately", which is the same convention StopAndDrainTimeout itself has.
                 ReleaseTimeout = store.Options.Projections.StopAndDrainTimeout
             });
     }
@@ -194,7 +197,7 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
     ///     <c>IHost.Dispose()</c> does not stop hosted services — so the very common <c>using var host = ...</c>
     ///     shape tears the container down underneath a running coordinator. The container then disposes the
     ///     DocumentStore and, with it, the owned NpgsqlDataSource, while the leadership loop is still polling
-    ///     <see cref="AdvisoryLock.TryAttainLockAsync" /> on its cadence. Every poll opened a
+    ///     <see cref="Weasel.Postgresql.AdvisoryLock.TryAttainLockAsync" /> on its cadence. Every poll opened a
     ///     connection against a dead pool.
     ///
     ///     The coordinator is constructed from an <see cref="IDocumentStore" />, so the container always creates

@@ -3,21 +3,28 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten;
-using Marten.Events.Daemon.Coordination;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace DaemonTests.Coordination;
 
 /// <summary>
-/// #5567. Covers the release behaviour of Marten's own <see cref="AdvisoryLock" />, which was lifted
-/// out of Weasel.Postgresql in 9.46 so that <see cref="AdvisoryLock.DisposeAsync" /> could be made
-/// concurrent and time-bounded.
+/// #5567. Covers the release behaviour of <see cref="AdvisoryLock" />, whose
+/// <see cref="AdvisoryLock.DisposeAsync" /> releases concurrently and bounds how long it waits.
 /// </summary>
 /// <remarks>
+/// #5572 vendored that class into Marten to make this fix without a two-repository release chain;
+/// weasel#676 took it upstream and #5574 deleted the copy, so this now exercises
+/// <c>Weasel.Postgresql</c>'s type again. Weasel carries an equivalent of this file, and it is kept
+/// here as well on purpose: the configuration under test is the one Marten's
+/// <see cref="Marten.Events.Daemon.Coordination.ProjectionCoordinator" /> actually builds, feeding
+/// <c>ReleaseTimeout</c> from <c>Projections.StopAndDrainTimeout</c>, which is Marten's wiring to
+/// keep honest rather than Weasel's.
+/// <para>
 /// The bound itself -- that a stop cannot exceed <c>Projections.StopAndDrainTimeout</c> no matter
 /// what the connection monitor is doing -- is covered behaviourally by
 /// <see cref="Bug_5567_hotcold_stop_stalls_behind_monitored_lock" />, because making a real release
@@ -25,6 +32,7 @@ namespace DaemonTests.Coordination;
 /// everything that has to stay true either side of that bound: the locks are actually released, and
 /// the opt-out convention Marten inherits from <c>DaemonSettings.StopAndDrainTimeout</c> is honoured
 /// rather than read as "give up immediately".
+/// </para>
 /// <para>
 /// Only the negative-budget case of that theory fails without the opt-out guard, and it is worth
 /// knowing why, because the other two look like they should and do not. A zero or infinite budget is
