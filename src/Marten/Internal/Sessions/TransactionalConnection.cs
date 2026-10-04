@@ -20,6 +20,14 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
     protected readonly SessionOptions _options;
     protected NpgsqlConnection? _connection;
 
+    /// <summary>
+    ///     The first failure that made this lifetime unusable, or null while it is still healthy. See
+    ///     <see cref="SessionTransactionUnusableException" /> for why a sticky lifetime needs this at all:
+    ///     unlike <see cref="AutoClosingLifetime" />, it carries one connection and one transaction across every
+    ///     operation in the session, so a failure that kills either of them is not confined to the call that
+    ///     provoked it.
+    /// </summary>
+    private Exception? _unusableBecause;
 
     public TransactionalConnection(SessionOptions options)
     {
@@ -215,6 +223,13 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             _connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
         }
+        else if (discardBrokenConnection())
+        {
+            _connection.SafeDispose();
+#pragma warning disable CS8602
+            _connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
+        }
 
         if (_connection.State == ConnectionState.Closed)
         {
@@ -231,12 +246,94 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             _connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
         }
+        else if (discardBrokenConnection())
+        {
+            await _connection.DisposeAsync().ConfigureAwait(false);
+#pragma warning disable CS8602
+            _connection = _options.Tenant.Database.CreateConnection();
+#pragma warning restore CS8602
+        }
 
         if (_connection.State == ConnectionState.Closed)
         {
             await _connection.OpenAsync(token).ConfigureAwait(false);
             await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    ///     #5577. Whether the current connection is broken and may be replaced with a fresh one.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Npgsql reports a broken connection as <see cref="ConnectionState.Closed" /> -- the break shows only
+    ///         in <see cref="NpgsqlConnection.FullState" /> -- so testing <c>State</c> alone made the reopen below
+    ///         look like the ordinary "not connected yet" path. It is not. Reopening acquires a <i>different</i>
+    ///         backend, and <see cref="Apply(NpgsqlCommand)" /> then hands the command the stale
+    ///         <see cref="NpgsqlTransaction" />, which Npgsql accepts without complaint. The command runs with no
+    ///         transaction at all, and a <c>Serializable</c> session quietly starts answering from a newer
+    ///         snapshot than the one it was opened to hold.
+    ///     </para>
+    ///     <para>
+    ///         So: with no transaction open there is nothing to lose and a fresh connection is strictly better
+    ///         than calling <c>Open()</c> on a broken object. With one open, the transaction died with the backend
+    ///         and no connection can bring it back, so the session fails instead of pretending otherwise.
+    ///     </para>
+    /// </remarks>
+    private bool discardBrokenConnection()
+    {
+        if (!_connection!.FullState.HasFlag(ConnectionState.Broken)) return false;
+
+        if (Transaction != null)
+        {
+            throw new SessionTransactionUnusableException(
+                "its connection was broken while a transaction was open, and that transaction cannot be resumed on a new connection.",
+                _unusableBecause ?? new InvalidOperationException(
+                    $"The connection to {_connection.Database} was broken."));
+        }
+
+        // A caller-supplied connection is not ours to replace.
+        if (ReferenceEquals(_connection, _options.Connection))
+        {
+            throw new SessionTransactionUnusableException(
+                "the connection supplied through SessionOptions was broken, and Marten will not silently substitute one of its own.",
+                _unusableBecause ?? new InvalidOperationException(
+                    $"The connection to {_connection.Database} was broken."));
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    ///     #5578. Records -- and then enforces -- that a failure inside an open transaction has made this
+    ///     lifetime unusable. Any statement that fails inside a transaction block aborts it, so every later
+    ///     command on this session is answered <c>25P02</c> by PostgreSQL regardless of what it asks for.
+    ///     That 25P02 is only ever the consequence; the first failure is the cause, and it is the one worth
+    ///     reporting.
+    /// </summary>
+    private void noteTransactionFailure(Exception e)
+    {
+        // AutoClosingLifetime has no surviving transaction to poison, and neither do we before one is begun.
+        if (Transaction == null) return;
+
+        if (_unusableBecause != null && isInFailedTransaction(e))
+        {
+            throw new SessionTransactionUnusableException(
+                "an earlier failure aborted its transaction, and PostgreSQL has been refusing every command since.",
+                _unusableBecause);
+        }
+
+        _unusableBecause ??= e;
+    }
+
+    private static bool isInFailedTransaction(Exception exception)
+    {
+        for (var e = exception; e != null; e = e.InnerException)
+        {
+            if (e is PostgresException { SqlState: PostgresErrorCodes.InFailedSqlTransaction }) return true;
+        }
+
+        return false;
     }
 
     protected virtual void AfterOpened(NpgsqlConnection connection)
@@ -270,6 +367,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(cmd, e);
             throw;
         }
@@ -292,6 +390,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(command, e);
             throw;
         }
@@ -309,6 +408,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(command, e);
             throw;
         }
@@ -331,6 +431,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(command, e);
             throw;
         }
@@ -348,6 +449,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(batch, e);
             throw;
         }
@@ -370,6 +472,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
         catch (Exception e)
         {
+            noteTransactionFailure(e);
             handleCommandException(batch, e);
             throw;
         }
