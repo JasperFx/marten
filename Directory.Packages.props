@@ -836,7 +836,29 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
-    <!-- Weasel 9.37.0, and the reason for the bump is weasel#659:
+    <!-- Weasel 9.40.0, and the reason for the bump is weasel#676: the AdvisoryLock shutdown fix
+         marten#5567 could not wait for a two-repository release chain is now upstream, so
+         marten#5574 deletes the copy that was vendored into Marten.Events.Daemon.Coordination for
+         9.46 and this consumes Weasel.Postgresql.AdvisoryLock again. The port kept the shape the
+         vendored copy had — AdvisoryLockOptions.ReleaseTimeout is a settable PROPERTY and the
+         4-argument constructor is untouched — so the de-vendoring is a revert, and the
+         ReleaseTimeout = Projections.StopAndDrainTimeout wiring in ProjectionCoordinator survives
+         it unchanged. The defect being routed around is still unfixed upstream in
+         Patched.DistributedLock.Core 1.0.11; no bump exists.
+         Also adopted here, as marten#5573: weasel#675 adds ParameterCount to
+         Weasel.Core.ICommandBuilder, which CompiledQueryPlan implements. It ships with a default
+         returning UnknownParameterCount (-1) — weasel#682, added after the first cut made a
+         published Marten 9.45.0 fail with TypeLoadException on get_ParameterCount — so this is
+         opt-in adoption, not a required fix.
+         Two of 9.40.0 change migration OUTPUT, which is the part worth A/B'ing on any Weasel bump:
+         weasel#677 writes a creation script in dependency order and weasel#681 guards a creation
+         script's foreign key so the script can re-run. That second one is adjacent to marten#5536's
+         `42710` on a re-applied event-store FK. Not Marten's concern but in the same range:
+         weasel#666 adds a Weasel.Firebird provider, weasel#667 round-trips an Oracle identity
+         column, weasel#668 ends a SQL Server batch after a column change, weasel#670 makes a SQL
+         Server rollback undo check-constraint changes, and weasel#686 stops MySQL declaring a
+         foreign key inline.
+         9.37.0 before it was weasel#659:
          ApplyAllConfiguredChangesToDatabaseAsync released the global migration lock only on its
          SUCCESS paths, so a migration that threw left the lock held and locked every other replica out
          of migrating — while the node that stranded it reported nothing. Disposing the connection was
@@ -860,10 +882,11 @@
          (weasel#650) — which is what lets a Marten HotCold double-runner be named rather than only
          detected — and weasel#638, where changing a computed column's definition now drops and
          recreates the dependent indexes instead of silently dropping them.
-         Must stay >= 9.20.2 (weasel#399), and >= 9.36.0's own floor of JasperFx 2.76.0. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.37.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.37.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.37.0" />
+         Must stay >= 9.20.2 (weasel#399), and >= 9.36.0's own floor of JasperFx 2.76.0, which
+         9.40.0 still names and Marten already clears at 2.79.1. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.40.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.40.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.40.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

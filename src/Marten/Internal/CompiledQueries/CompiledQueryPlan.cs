@@ -168,6 +168,19 @@ public class CompiledQueryPlan : ICommandBuilder
 
     string Weasel.Core.ICommandBuilder.LastParameterName => _current.Parameters.LastOrDefault()?.Parameter.ParameterName;
 
+    // weasel#675 (#5573): how many parameters the command being planned already carries, so a
+    // fragment rendering a value list can decide against the provider's per-command budget --
+    // Migrator.MaxParametersPerCommand. Two fragments that are each well under any per-fragment
+    // threshold can still blow the command's budget between them, and the second one has no other
+    // way to know what the first spent.
+    // The count is for the CURRENT command, not a batch-wide total, because the limit it exists to
+    // be compared against is itself per command. _current is the command the plan is recording
+    // into, which is the same scope LastParameterName above answers in.
+    // Don't derive this from LastParameterName: an index can be parsed back out of it while names
+    // come from ParameterNames.ForPosition, but that assumes the naming stays positional and is
+    // simply wrong for parameters added through AddParameters(IDictionary<,>) or AppendWithParameters.
+    int Weasel.Core.ICommandBuilder.ParameterCount => _current.Parameters.Count;
+
     private CommandPlan appendCommand()
     {
         var plan = new CommandPlan();

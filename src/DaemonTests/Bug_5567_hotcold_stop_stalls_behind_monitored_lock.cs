@@ -12,6 +12,7 @@ using Marten.Events.Daemon.Coordination;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace DaemonTests;
@@ -50,8 +51,10 @@ public partial class HotColdStopEventProjection: EventProjection
 /// nothing and its own two-second retry loop re-evaluates that same false condition until the window
 /// expires.
 /// <para>
-/// Marten's own <see cref="AdvisoryLock" /> therefore releases concurrently and bounds the wait --
-/// see <see cref="AdvisoryLock.DisposeAsync" />. <see cref="StoreOptions" />'
+/// <see cref="AdvisoryLock" /> therefore releases concurrently and bounds the wait --
+/// see <see cref="AdvisoryLock.DisposeAsync" />. That fix was vendored into Marten by #5572 and
+/// went upstream as weasel#676, so from Weasel 9.40.0 (#5574) this exercises Weasel's type again;
+/// what stays Marten's here is the HotCold stop path, which Weasel has no equivalent of. <see cref="StoreOptions" />'
 /// <c>Projections.StopAndDrainTimeout</c> is the bound, which is why this test sets it to 2s and
 /// then allows 5s: the point is that the stop is bounded at all, not that it is instant.
 /// </para>
