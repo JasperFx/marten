@@ -261,10 +261,13 @@ public sealed class SessionOptions
                 ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = timeout }
                 : new TransactionalConnection(this) { CommandTimeout = timeout };
 
-            if (IsolationLevel == IsolationLevel.Serializable)
-            {
-                await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
-            }
+            // #5586: unconditionally, not just at Serializable. This builder is reached only from
+            // DocumentStore.QuerySerializableSessionAsync / OpenSerializableSessionAsync, which now pin
+            // IsolationLevel to Serializable -- and a serializable session is only serializable from the
+            // point its transaction opens. Leaving it to the first command meant the sticky connection
+            // below carried no transaction at all, so the session was neither serializable nor
+            // auto-closing: it just held one connection open for its lifetime with nothing protecting it.
+            await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
 
             return transaction;
         }
@@ -298,10 +301,13 @@ public sealed class SessionOptions
                 ? new RlsReadOnlyTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout }
                 : new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
 
-            if (IsolationLevel == IsolationLevel.Serializable)
-            {
-                await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
-            }
+            // #5586: unconditionally, not just at Serializable. This builder is reached only from
+            // DocumentStore.QuerySerializableSessionAsync / OpenSerializableSessionAsync, which now pin
+            // IsolationLevel to Serializable -- and a serializable session is only serializable from the
+            // point its transaction opens. Leaving it to the first command meant the sticky connection
+            // below carried no transaction at all, so the session was neither serializable nor
+            // auto-closing: it just held one connection open for its lifetime with nothing protecting it.
+            await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
 
             return transaction;
         }
