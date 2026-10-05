@@ -305,6 +305,17 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
 
         await CommitAsync(token).ConfigureAwait(true);
+
+        // #5603: only now is the participants' work durable. A participant holding provisional state
+        // -- the EF Core change tracker -- accepts it here, never in BeforeCommitAsync, because that
+        // method runs inside the retried block and may have run more than once.
+        if (participants is { Count: > 0 })
+        {
+            foreach (var participant in participants)
+            {
+                await participant.AfterCommitAsync(token).ConfigureAwait(false);
+            }
+        }
     }
 
 }
