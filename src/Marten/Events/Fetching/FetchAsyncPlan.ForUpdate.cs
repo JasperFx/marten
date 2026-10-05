@@ -67,8 +67,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         var builder = new BatchBuilder{TenantId = session.TenantId};
         if (!forUpdate)
         {
-            builder.Append("begin transaction isolation level repeatable read read only");
-            builder.StartNewCommand();
+            beginSharedSnapshot(builder);
         }
 
         _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, forUpdate);
@@ -92,8 +91,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
         if (!forUpdate)
         {
-            builder.StartNewCommand();
-            builder.Append("end");
+            endSharedSnapshot(builder);
         }
 
         var batch = builder.Compile();
@@ -283,8 +281,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         {
             if (!_forUpdate)
             {
-                builder.Append("begin transaction isolation level repeatable read read only");
-                builder.StartNewCommand();
+                beginSharedSnapshot(builder);
             }
 
             _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, _forUpdate);
@@ -299,8 +296,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
             if (!_forUpdate)
             {
-                builder.StartNewCommand();
-                builder.Append("end");
+                endSharedSnapshot(builder);
             }
         }
 

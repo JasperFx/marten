@@ -58,9 +58,17 @@ internal partial class BatchedQuery: IBatchedQuery
     /// </summary>
     private static string describeSelfTransactingHandler(object handler)
     {
-        // The only implementor today is FetchAsyncPlan's non-exclusive handler, and its own name is
-        // ForUpdateQueryHandler -- actively misleading here, since this IS the not-for-update case.
-        var aggregate = handler.GetType().DeclaringType?.GenericTypeArguments.FirstOrDefault();
+        // The implementors are FetchAsyncPlan's non-exclusive handlers, whose own names --
+        // ForUpdateQueryHandler and ExpectedVersionQueryHandler -- are no use here, the first of them
+        // actively misleading since this IS the not-for-update case.
+        //
+        // The closed type arguments are read off the nested handler type itself, NOT off its
+        // DeclaringType. For a nested type inside a constructed generic, DeclaringType hands back the
+        // generic type DEFINITION -- FetchAsyncPlan<TDoc, TId>, whose GenericTypeArguments is empty --
+        // so this always fell through to the unnamed fallback below, which is not what #5535 claimed
+        // to do. typeof(Outer<string, int>.Inner).GenericTypeArguments is [string, int]; its
+        // DeclaringType.GenericTypeArguments is [].
+        var aggregate = handler.GetType().GenericTypeArguments.FirstOrDefault();
         return aggregate == null
             ? "FetchForWriting for an aggregate projected with ProjectionLifecycle.Async"
             : $"FetchForWriting<{aggregate.Name}> (projected with ProjectionLifecycle.Async)";

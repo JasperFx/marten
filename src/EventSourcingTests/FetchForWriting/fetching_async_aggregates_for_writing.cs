@@ -849,8 +849,15 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         await daemon.RebuildProjectionAsync<SimpleAggregateAsString>(CancellationToken.None);
 
         var batch = theSession.CreateBatchQuery();
-        var targetQuery1 = batch.Load<Target>(target1.Id);
+
+        // #5604: the expected-version fetch now brackets its reads in 'begin transaction isolation
+        // level repeatable read read only' … 'end' so they share one snapshot, exactly as the
+        // non-version overload already did. PostgreSQL only accepts that as the first statement in a
+        // transaction, so this fetch has to be enlisted first -- the same #5535 rule its
+        // non-version sibling has had, now reaching this overload too. It used to be enlisted
+        // second here, which is what makes this a behaviour change rather than a pure fix.
         var streamQuery = batch.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
+        var targetQuery1 = batch.Load<Target>(target1.Id);
         var targetQuery2 = batch.Load<Target>(target2.Id);
 
         await batch.Execute();
