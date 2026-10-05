@@ -44,8 +44,11 @@ internal record GapLiveness(long OldLockHolders, long OlderTransactions, long Ol
 ///    so in mixed-role deployments without pg_read_all_stats this clause only sees the daemon's own
 ///    role — the common single-role deployment sees everything.
 /// 3. <c>pg_snapshot_xip(pg_current_snapshot())</c>: any in-progress write transaction id below the
-///    xmax recorded at observation. Purely MVCC data — visible regardless of role/privileges — and
-///    covers cross-role writers that the redacted pg_stat_activity clause cannot see.
+///    xmax recorded at observation, restricted to transactions belonging to THIS database. Purely
+///    MVCC data — visible regardless of role/privileges — so it covers cross-role writers that the
+///    redacted pg_stat_activity clause cannot see, and prepared transactions, which have no backend
+///    for either of the other clauses to find. The snapshot's xid list is cluster-wide, so the
+///    restriction is not optional: see the <c>local_xids</c> comment in the SQL and #5605.
 ///
 /// The allocation fence rules candidate reservers out by proof rather than wall clock: the fence is
 /// the latest server time at which the detector observed the event sequence's reserved last_value at
@@ -121,6 +124,38 @@ excluded as (
   select pid, backend_xid from quiescent
   union
   select pid, backend_xid from own_daemon_locks
+),
+-- #5605: the in-progress xids of THIS database. pg_snapshot_xip is cluster-wide -- xids come from one
+-- counter shared by every database on the server -- so without this the xid clause below counts a
+-- write transaction in an unrelated database as a possible reserver of a gap in ours. A client running
+-- one test database per test on a shared server never had the count fall to zero under load, so every
+-- dead gap looked outstanding forever and the high water mark stopped advancing, with nothing in the
+-- holding store's own database to explain it.
+--
+-- A transaction is mapped to its database through the ExclusiveLock every xid holder takes on its own
+-- transactionid at assignment (XactLockTableInsert), whose pid gives the backend and hence datname.
+-- pg_locks carries no database oid for locktype 'transactionid' (documented as null for a transaction
+-- target), which is why the join goes through the pid rather than reading l.database. Both halves stay
+-- readable cross-role -- pg_locks is never redacted and datname is among the columns an unprivileged
+-- viewer keeps -- so scoping costs none of the cross-role coverage that is this clause's whole reason
+-- for existing.
+--
+-- A prepared transaction has an xid and so appears in the snapshot, but has no backend: its pg_locks
+-- rows carry a null pid and pg_stat_activity has no row for it at all, so it is unioned in from
+-- pg_prepared_xacts, which names its database directly. It is the one candidate reserver that NONE of
+-- the other clauses can see, so dropping it is the one gap this mapping must not leave.
+local_xids as (
+  select l.transactionid::text::bigint as xid
+    from pg_locks l
+    join pg_stat_activity a on a.pid = l.pid
+   where l.locktype = 'transactionid'
+     and l.granted
+     and l.mode = 'ExclusiveLock'
+     and a.datname = current_database()
+  union
+  select p.transaction::text::bigint as xid
+    from pg_prepared_xacts p
+   where p.database = current_database()
 )
 select
   (select count(*)
@@ -150,6 +185,7 @@ select
   (select count(*)
      from pg_snapshot_xip(pg_current_snapshot()) as xip(xid)
     where xip.xid::text::bigint < :xmax0
+      and mod(xip.xid::text::bigint, 4294967296) in (select l.xid from local_xids l)
       and mod(xip.xid::text::bigint, 4294967296) not in
           (select e.backend_xid::text::bigint from excluded e where e.backend_xid is not null)) as older_write_xids,
   (select count(*)
