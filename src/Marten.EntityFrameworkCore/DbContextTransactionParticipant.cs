@@ -61,17 +61,37 @@ internal class DbContextTransactionParticipant<TDbContext>: ITransactionParticip
             await setSchema.ExecuteNonQueryAsync(token).ConfigureAwait(false);
         }
 
-        // Swap to Marten's real connection and transaction
+        // Swap to Marten's real connection and transaction. On a retry this runs again against a
+        // fresh connection, and EF Core refuses to change the connection while a transaction is
+        // still enlisted, so the dead one from the previous attempt is detached first.
+        await DbContext.Database.UseTransactionAsync(null, token).ConfigureAwait(false);
         DbContext.Database.SetDbConnection(connection);
         await DbContext.Database.UseTransactionAsync(transaction, token).ConfigureAwait(false);
 
-        // Flush all tracked changes into the same transaction
-        await DbContext.SaveChangesAsync(token).ConfigureAwait(false);
+        // #5603: flush WITHOUT accepting the change tracker. The plain SaveChangesAsync(token)
+        // overload is SaveChangesAsync(acceptAllChangesOnSuccess: true), which marks every entry
+        // Unchanged as soon as its statements execute -- before this transaction commits. This method
+        // runs inside the block Marten's write resilience pipeline retries, so when the commit itself
+        // failed transiently the second attempt arrived here to find a tracker that believed it had
+        // nothing left to save, and the retry committed the events without the projection's row while
+        // SaveChangesAsync returned success. The entries stay provisional until AfterCommitAsync.
+        await DbContext.SaveChangesAsync(false, token).ConfigureAwait(false);
 
         // The placeholder has been swapped out and is no longer referenced by the DbContext, so
         // release it now rather than waiting for the session to be disposed. Disposal is
         // idempotent, so the session's own teardown pass is a no-op after this.
         await ReleaseAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// #5603: the commit has happened, so the rows written in <see cref="BeforeCommitAsync" /> are
+    /// durable and the change tracker can finally be accepted. Doing this here rather than as part of
+    /// the flush is the whole fix: it is the only point that distinguishes a commit from a retry.
+    /// </summary>
+    public Task AfterCommitAsync(CancellationToken token)
+    {
+        DbContext.ChangeTracker.AcceptAllChanges();
+        return Task.CompletedTask;
     }
 
     /// <summary>
