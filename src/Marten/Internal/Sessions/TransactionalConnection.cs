@@ -26,7 +26,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
     ///     unlike <see cref="AutoClosingLifetime" />, it then carries that transaction across every operation
     ///     in the session, so a failure that kills it is not confined to the call that provoked it.
     /// </summary>
-    protected override bool HasSurvivingTransaction => Transaction != null;
+    protected internal override bool HasSurvivingTransaction => Transaction != null;
 
     public TransactionalConnection(SessionOptions options)
     {

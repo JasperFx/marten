@@ -73,36 +73,64 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Async;
 
     /// <summary>
-    ///     Brackets a fetch's reads so they all see ONE snapshot of the database.
+    ///     Whether a fetch on this session may bracket its reads so they all see ONE snapshot of the
+    ///     database -- and therefore whether <see cref="beginSharedSnapshot" /> emits anything.
     /// </summary>
     /// <remarks>
     ///     <para>
     ///         An async-plan fetch reads the stream version, the snapshot document and the events after the
-    ///         snapshot as separate statements. Under READ COMMITTED each of those takes its own snapshot, and
-    ///         the async daemon writing the snapshot document in between is enough to make them disagree: the
-    ///         delta query re-reads <c>a.mt_version</c> and therefore excludes the very events the snapshot
-    ///         read never saw. The aggregate then comes back null for an existing stream, or silently stale.
+    ///         snapshot as separate statements. Under READ COMMITTED each of those takes its own snapshot,
+    ///         and the async daemon writing the snapshot document in between is enough to make them
+    ///         disagree: the delta query re-reads <c>a.mt_version</c> and therefore excludes the very events
+    ///         the snapshot read never saw. The aggregate then comes back null for an existing stream, or
+    ///         silently stale. Hence the bracket.
     ///     </para>
     ///     <para>
-    ///         Defined once and used by every path that reads this way, because the two halves have to agree
-    ///         and because <c>begin transaction isolation level repeatable read read only</c> is only legal as
-    ///         the FIRST statement of a transaction -- a constraint that is invisible at the call site and
-    ///         surfaces as a bare <c>25001</c> when it is broken (#5535).
+    ///         #5611: but only when the session is not already inside a transaction that outlives this call.
+    ///         Marten cannot change the isolation level of a transaction it did not open -- PostgreSQL
+    ///         answers <c>25001</c> the moment that transaction has run a single statement -- and the
+    ///         <c>end</c> that closes the bracket would COMMIT it, so a caller composing Marten with
+    ///         <see cref="SessionOptions.ForTransaction" />, an ambient <c>TransactionScope</c> or an
+    ///         explicit <c>BeginTransaction</c> silently lost atomicity. Those callers keep their
+    ///         transaction and give up the shared snapshot, which is the right way round: a read race is
+    ///         recoverable, a committed transaction the caller meant to roll back is not. A caller who
+    ///         wants both opens their own transaction at <c>RepeatableRead</c>, which gives the reads one
+    ///         snapshot with nothing for Marten to emit.
     ///     </para>
     /// </remarks>
-    private static void beginSharedSnapshot(ICommandBuilder builder)
+    private static bool canShareOneSnapshot(DocumentSessionBase session)
     {
-        builder.Append("begin transaction isolation level repeatable read read only");
-        builder.StartNewCommand();
+        return !session.HasSurvivingTransaction;
     }
 
     /// <summary>
-    ///     Closes the bracket opened by <see cref="beginSharedSnapshot" />. Note this <c>end</c> commits the
-    ///     transaction it is in, which is why a fetch that emits it cannot share a batch with one holding a
-    ///     row lock for a later SaveChanges.
+    ///     Opens the bracket described on <see cref="canShareOneSnapshot" />, and reports whether it
+    ///     actually emitted anything so that <see cref="endSharedSnapshot" /> closes exactly what was
+    ///     opened. The two halves have to agree, and nothing but this return value makes that structural.
     /// </summary>
-    private static void endSharedSnapshot(ICommandBuilder builder)
+    /// <remarks>
+    ///     Factored out because <c>begin transaction isolation level repeatable read read only</c> is only
+    ///     legal as the FIRST statement of a transaction -- a constraint that is invisible at the call site
+    ///     and surfaces as a bare <c>25001</c> when it is broken (#5535).
+    /// </remarks>
+    private static bool beginSharedSnapshot(ICommandBuilder builder, DocumentSessionBase session)
     {
+        if (!canShareOneSnapshot(session)) return false;
+
+        builder.Append("begin transaction isolation level repeatable read read only");
+        builder.StartNewCommand();
+        return true;
+    }
+
+    /// <summary>
+    ///     Closes the bracket opened by <see cref="beginSharedSnapshot" />, and only if it was opened.
+    ///     Note this <c>end</c> commits the transaction it is in, which is why a fetch that emits it cannot
+    ///     share a batch with one holding a row lock for a later SaveChanges.
+    /// </summary>
+    private static void endSharedSnapshot(ICommandBuilder builder, bool opened)
+    {
+        if (!opened) return;
+
         builder.StartNewCommand();
         builder.Append("end");
     }
