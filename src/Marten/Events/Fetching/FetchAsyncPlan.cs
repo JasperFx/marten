@@ -72,6 +72,41 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
 
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Async;
 
+    /// <summary>
+    ///     Brackets a fetch's reads so they all see ONE snapshot of the database.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         An async-plan fetch reads the stream version, the snapshot document and the events after the
+    ///         snapshot as separate statements. Under READ COMMITTED each of those takes its own snapshot, and
+    ///         the async daemon writing the snapshot document in between is enough to make them disagree: the
+    ///         delta query re-reads <c>a.mt_version</c> and therefore excludes the very events the snapshot
+    ///         read never saw. The aggregate then comes back null for an existing stream, or silently stale.
+    ///     </para>
+    ///     <para>
+    ///         Defined once and used by every path that reads this way, because the two halves have to agree
+    ///         and because <c>begin transaction isolation level repeatable read read only</c> is only legal as
+    ///         the FIRST statement of a transaction -- a constraint that is invisible at the call site and
+    ///         surfaces as a bare <c>25001</c> when it is broken (#5535).
+    ///     </para>
+    /// </remarks>
+    private static void beginSharedSnapshot(ICommandBuilder builder)
+    {
+        builder.Append("begin transaction isolation level repeatable read read only");
+        builder.StartNewCommand();
+    }
+
+    /// <summary>
+    ///     Closes the bracket opened by <see cref="beginSharedSnapshot" />. Note this <c>end</c> commits the
+    ///     transaction it is in, which is why a fetch that emits it cannot share a batch with one holding a
+    ///     row lock for a later SaveChanges.
+    /// </summary>
+    private static void endSharedSnapshot(ICommandBuilder builder)
+    {
+        builder.StartNewCommand();
+        builder.Append("end");
+    }
+
     private void writeEventFetchStatement(TId id,
         ICommandBuilder builder)
     {

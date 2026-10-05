@@ -12,6 +12,7 @@ using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
+using Marten.Services.BatchQuerying;
 using Npgsql;
 using Weasel.Postgresql;
 
@@ -29,9 +30,14 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             .ConfigureAwait(false);
 
         ensureInitialSql(selector);
-        // TODO -- use read only transaction????
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
+
+        // #5604: the same bracket the non-version overload has always had. Without it the three reads
+        // below each take their own snapshot, and a daemon snapshot write landing between the second
+        // and the third returns a null or stale aggregate for a stream that is perfectly healthy.
+        beginSharedSnapshot(builder);
+
         _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, false);
 
         builder.StartNewCommand();
@@ -42,6 +48,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         builder.StartNewCommand();
 
         writeEventFetchStatement(id, builder);
+
+        endSharedSnapshot(builder);
 
         var batch = builder.Compile();
         await using var reader =
@@ -127,12 +135,22 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         return new ExpectedVersionQueryHandler(this, id, expectedStartingVersion);
     }
 
-    public class ExpectedVersionQueryHandler: IQueryHandler<IEventStream<TDoc>>
+    public class ExpectedVersionQueryHandler: IQueryHandler<IEventStream<TDoc>>, IOpensItsOwnTransaction
     {
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
         private readonly long _expectedStartingVersion;
         private readonly LoadByIdHandler<TDoc,TId> _loadHandler;
+
+        /// <summary>
+        ///     Always true: unlike its non-exclusive sibling this handler has no for-update mode, so it
+        ///     always brackets its reads. #5604 gave it the bracket, and the marker is what makes a batch
+        ///     enforce the two rules that come with one — it has to be the batch's first operation, and it
+        ///     cannot share a batch with an exclusive fetch whose row lock its <c>end</c> would release.
+        ///     Without the marker a batched expected-version fetch would fail at <c>Execute()</c> with the
+        ///     bare <c>25001</c> that #5535 was filed to eliminate.
+        /// </summary>
+        public bool OpensItsOwnTransaction => true;
 
         public ExpectedVersionQueryHandler(FetchAsyncPlan<TDoc,TId> parent, TId id, long expectedStartingVersion)
         {
@@ -145,6 +163,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
+            beginSharedSnapshot(builder);
+
             _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, false);
 
             builder.StartNewCommand();
@@ -154,6 +174,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             builder.StartNewCommand();
 
             _parent.writeEventFetchStatement(_id, builder);
+
+            endSharedSnapshot(builder);
         }
 
         public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
