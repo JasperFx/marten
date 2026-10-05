@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - "7.0"
+      - "8.0"
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
@@ -13,6 +14,7 @@ on:
     branches:
       - master
       - "7.0"
+      - "8.0"
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
