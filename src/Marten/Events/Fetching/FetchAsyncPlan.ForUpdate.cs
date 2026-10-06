@@ -65,10 +65,11 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         }
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
-        if (!forUpdate)
-        {
-            beginSharedSnapshot(builder);
-        }
+
+        // The exclusive path has just opened the session's own transaction above and holds a row lock in
+        // it, so it must not bracket anything; everyone else shares one snapshot unless the session is
+        // already inside a transaction this fetch would be committing. See canShareOneSnapshot.
+        var sharedSnapshot = !forUpdate && beginSharedSnapshot(builder, session);
 
         _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, forUpdate);
 
@@ -89,10 +90,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             writeCachedEventFetchStatement(id, cachedVersion, builder);
         }
 
-        if (!forUpdate)
-        {
-            endSharedSnapshot(builder);
-        }
+        endSharedSnapshot(builder, sharedSnapshot);
 
         var batch = builder.Compile();
         try
@@ -252,7 +250,10 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             ensureInitialSql(dsb.EventStorage());
         }
 
-        return new ForUpdateQueryHandler(this, id, forUpdate);
+        // #5611: decided here, where the session is in hand, rather than inside ConfigureCommand -- the
+        // batch has to know the answer at ENLISTMENT time, before any SQL is built, because
+        // OpensItsOwnTransaction is what gates the must-be-first and no-mixing-with-exclusive rules.
+        return new ForUpdateQueryHandler(this, id, forUpdate, !forUpdate && canShareOneSnapshot(dsb));
     }
 
     public class ForUpdateQueryHandler: IQueryHandler<IEventStream<TDoc>>, IOpensItsOwnTransaction
@@ -260,29 +261,35 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
         private readonly bool _forUpdate;
+        private readonly bool _sharedSnapshot;
         private readonly LoadByIdHandler<TDoc,TId> _loadHandler;
 
         /// <summary>
         ///     True exactly when <see cref="ConfigureCommand" /> below brackets its reads in
-        ///     <c>begin transaction … end</c>, which is the non-exclusive case. See
-        ///     <see cref="IOpensItsOwnTransaction" /> for why a batch needs to know.
+        ///     <c>begin transaction … end</c>: the non-exclusive case, on a session not already inside a
+        ///     transaction of its own. See <see cref="IOpensItsOwnTransaction" /> for why a batch needs to
+        ///     know, and <see cref="canShareOneSnapshot" /> for the second condition. A batch on a session
+        ///     that holds its own transaction emits no bracket, so none of the rules that exist to protect
+        ///     one apply to it.
         /// </summary>
-        public bool OpensItsOwnTransaction => !_forUpdate;
+        public bool OpensItsOwnTransaction => _sharedSnapshot;
 
-        public ForUpdateQueryHandler(FetchAsyncPlan<TDoc,TId> parent, TId id, bool forUpdate)
+        public ForUpdateQueryHandler(FetchAsyncPlan<TDoc,TId> parent, TId id, bool forUpdate, bool sharedSnapshot)
         {
             _parent = parent;
             _id = id;
             _forUpdate = forUpdate;
+            _sharedSnapshot = sharedSnapshot;
             _loadHandler = new LoadByIdHandler<TDoc, TId>(parent._storage, id);
         }
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
-            if (!_forUpdate)
-            {
-                beginSharedSnapshot(builder);
-            }
+            // Asked again here rather than reusing _sharedSnapshot: the session can acquire a transaction
+            // between enlistment and Execute(), and this is the last moment before the SQL goes out. The
+            // enlistment-time answer only has to be good enough for the batch's own rules; this one has to
+            // be right.
+            var sharedSnapshot = !_forUpdate && beginSharedSnapshot(builder, (DocumentSessionBase)session);
 
             _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, _forUpdate);
 
@@ -294,10 +301,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
             _parent.writeEventFetchStatement(_id, builder);
 
-            if (!_forUpdate)
-            {
-                endSharedSnapshot(builder);
-            }
+            endSharedSnapshot(builder, sharedSnapshot);
         }
 
         public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)

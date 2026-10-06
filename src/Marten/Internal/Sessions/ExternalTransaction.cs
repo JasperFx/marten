@@ -41,7 +41,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
     ///     must not roll it back on the caller's behalf. All this changes is that the NEXT use of the
     ///     session names the original failure instead of handing back a bare 25P02.
     /// </summary>
-    protected override bool HasSurvivingTransaction => true;
+    protected internal override bool HasSurvivingTransaction => true;
 
     public virtual ValueTask DisposeAsync()
     {

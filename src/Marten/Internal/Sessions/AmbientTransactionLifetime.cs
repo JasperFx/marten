@@ -59,7 +59,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
     ///     outlives the call and Marten must not resolve it. Recording the cause only changes what the NEXT
     ///     use of the session reports.
     /// </summary>
-    protected override bool HasSurvivingTransaction => true;
+    protected internal override bool HasSurvivingTransaction => true;
 
     public async ValueTask DisposeAsync()
     {

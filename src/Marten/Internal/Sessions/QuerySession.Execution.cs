@@ -18,6 +18,16 @@ public partial class QuerySession
 {
     internal IConnectionLifetime _connection;
 
+    /// <summary>
+    ///     #5611. Whether this session is already inside a transaction that outlives the current call --
+    ///     one the caller opened with <see cref="SessionOptions.ForTransaction" />, an ambient
+    ///     <c>TransactionScope</c>, or an explicit <c>BeginTransaction</c>. A read that wants its own
+    ///     isolation level has to check this first: PostgreSQL will not let it change the isolation of a
+    ///     transaction already in progress, and the <c>end</c> that closes its bracket would commit that
+    ///     transaction out from under whoever owns it.
+    /// </summary>
+    internal bool HasSurvivingTransaction => _connection.HasSurvivingTransaction();
+
     internal record CommandExecution(NpgsqlCommand Command, IConnectionLifetime Lifetime);
 
     public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new())

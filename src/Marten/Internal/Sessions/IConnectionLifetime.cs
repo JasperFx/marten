@@ -24,7 +24,14 @@ internal class ConnectionLifetimeBase
     ///     caused it. False for <see cref="AutoClosingLifetime" />, which opens and closes per operation and
     ///     so has nothing to poison.
     /// </summary>
-    protected virtual bool HasSurvivingTransaction => false;
+    /// <remarks>
+    ///     #5611 made this <c>internal</c> as well as <c>protected</c>. A second caller needs the same
+    ///     question answered with the same precision: a fetch that is about to emit <c>begin transaction
+    ///     isolation level … end</c> has to know whether that <c>end</c> would commit a transaction it did
+    ///     not open. Read it through <see cref="ConnectionLifetimeExtensions.HasSurvivingTransaction" />
+    ///     rather than casting, so the decorating lifetimes are unwrapped.
+    /// </remarks>
+    protected internal virtual bool HasSurvivingTransaction => false;
 
     /// <summary>
     ///     #5578 / #5583. Records -- and then enforces -- that a failure inside an open transaction has made
@@ -82,6 +89,41 @@ internal class ConnectionLifetimeBase
         Logger.LogFailure(batch, e);
 
         MartenExceptionTransformer.WrapAndThrow(batch, e);
+    }
+}
+
+internal static class ConnectionLifetimeExtensions
+{
+    /// <summary>
+    ///     #5611. Whether this lifetime is inside a transaction that outlives the current call -- so that a
+    ///     caller about to emit <c>end</c> can know it would be committing somebody else's work.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <see cref="ConnectionLifetimeBase.HasSurvivingTransaction" /> already answers this with the
+    ///         right precision per lifetime. The only reason this wrapper exists is that
+    ///         <see cref="EventTracingConnectionLifetime" /> decorates an inner lifetime WITHOUT deriving
+    ///         from the base, so asking the outer object directly would answer <c>false</c> for a session
+    ///         that is very much inside a transaction, whenever OpenTelemetry tracing happens to be on.
+    ///         That is a bug that only appears once tracing is configured, which is exactly the kind that
+    ///         reaches production.
+    ///     </para>
+    ///     <para>
+    ///         An implementation Marten does not recognise answers <c>false</c>, which leaves today's
+    ///         behaviour in place for it. Every lifetime Marten itself builds is covered by one of the two
+    ///         branches below; a foreign <see cref="IConnectionLifetime" /> that carries a surviving
+    ///         transaction cannot be detected from out here, and guessing <c>true</c> would quietly disable
+    ///         the shared snapshot (#5604) for every such session instead.
+    ///     </para>
+    /// </remarks>
+    internal static bool HasSurvivingTransaction(this IConnectionLifetime lifetime)
+    {
+        return lifetime switch
+        {
+            EventTracingConnectionLifetime tracing => tracing.InnerConnectionLifetime.HasSurvivingTransaction(),
+            ConnectionLifetimeBase lifetimeBase => lifetimeBase.HasSurvivingTransaction,
+            _ => false
+        };
     }
 }
 

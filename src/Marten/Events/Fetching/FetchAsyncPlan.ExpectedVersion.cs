@@ -36,7 +36,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         // #5604: the same bracket the non-version overload has always had. Without it the three reads
         // below each take their own snapshot, and a daemon snapshot write landing between the second
         // and the third returns a null or stale aggregate for a stream that is perfectly healthy.
-        beginSharedSnapshot(builder);
+        var sharedSnapshot = beginSharedSnapshot(builder, session);
 
         _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, false);
 
@@ -49,7 +49,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
         writeEventFetchStatement(id, builder);
 
-        endSharedSnapshot(builder);
+        endSharedSnapshot(builder, sharedSnapshot);
 
         var batch = builder.Compile();
         await using var reader =
@@ -132,7 +132,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         {
             ensureInitialSql(dsb.EventStorage());
         }
-        return new ExpectedVersionQueryHandler(this, id, expectedStartingVersion);
+        return new ExpectedVersionQueryHandler(this, id, expectedStartingVersion, canShareOneSnapshot(dsb));
     }
 
     public class ExpectedVersionQueryHandler: IQueryHandler<IEventStream<TDoc>>, IOpensItsOwnTransaction
@@ -140,30 +140,38 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
         private readonly long _expectedStartingVersion;
+        private readonly bool _sharedSnapshot;
         private readonly LoadByIdHandler<TDoc,TId> _loadHandler;
 
         /// <summary>
-        ///     Always true: unlike its non-exclusive sibling this handler has no for-update mode, so it
-        ///     always brackets its reads. #5604 gave it the bracket, and the marker is what makes a batch
-        ///     enforce the two rules that come with one — it has to be the batch's first operation, and it
-        ///     cannot share a batch with an exclusive fetch whose row lock its <c>end</c> would release.
-        ///     Without the marker a batched expected-version fetch would fail at <c>Execute()</c> with the
-        ///     bare <c>25001</c> that #5535 was filed to eliminate.
+        ///     Unlike its non-exclusive sibling this handler has no for-update mode, so it brackets its
+        ///     reads whenever it is allowed to at all. #5604 gave it the bracket, and the marker is what
+        ///     makes a batch enforce the two rules that come with one — it has to be the batch's first
+        ///     operation, and it cannot share a batch with an exclusive fetch whose row lock its <c>end</c>
+        ///     would release. Without the marker a batched expected-version fetch would fail at
+        ///     <c>Execute()</c> with the bare <c>25001</c> that #5535 was filed to eliminate.
+        ///     <para>
+        ///     #5611 made it conditional rather than constant: on a session already inside a caller-owned
+        ///     transaction there is no bracket, and so nothing for either rule to protect.
+        ///     </para>
         /// </summary>
-        public bool OpensItsOwnTransaction => true;
+        public bool OpensItsOwnTransaction => _sharedSnapshot;
 
-        public ExpectedVersionQueryHandler(FetchAsyncPlan<TDoc,TId> parent, TId id, long expectedStartingVersion)
+        public ExpectedVersionQueryHandler(FetchAsyncPlan<TDoc,TId> parent, TId id, long expectedStartingVersion,
+            bool sharedSnapshot)
         {
             _parent = parent;
             _id = id;
             _expectedStartingVersion = expectedStartingVersion;
+            _sharedSnapshot = sharedSnapshot;
 
             _loadHandler = new LoadByIdHandler<TDoc, TId>(_parent._storage, id);
         }
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
-            beginSharedSnapshot(builder);
+            // Asked again here rather than reusing _sharedSnapshot -- see ForUpdateQueryHandler for why.
+            var sharedSnapshot = beginSharedSnapshot(builder, (DocumentSessionBase)session);
 
             _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, false);
 
@@ -175,7 +183,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
             _parent.writeEventFetchStatement(_id, builder);
 
-            endSharedSnapshot(builder);
+            endSharedSnapshot(builder, sharedSnapshot);
         }
 
         public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
