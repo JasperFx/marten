@@ -946,6 +946,40 @@ public class MartenRegistry
         }
 
         /// <summary>
+        ///     Set the fill factor (10 to 100) of this document type's table, written as
+        ///     <c>WITH (fillfactor = n)</c>. A lower fill factor leaves free space in each page, so an update can
+        ///     place the new row version on the same page. An update is only heap-only (HOT) when no indexed column
+        ///     changes, and a computed index reads the whole <c>data</c> column, so a document with computed indexes
+        ///     is never updated HOT whatever its fill factor. Shorthand for
+        ///     <c>StorageParameter("fillfactor", fillFactor)</c>. Only declared parameters are managed, and a changed
+        ///     fill factor is applied with <c>ALTER TABLE ... SET</c> but only affects pages written from then on:
+        ///     existing rows are not repacked until the table is rewritten, e.g. by <c>VACUUM FULL</c>.
+        /// </summary>
+        /// <param name="fillFactor">The fill factor percentage</param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> FillFactor(int fillFactor)
+        {
+            return StorageParameter("fillfactor", fillFactor);
+        }
+
+        /// <summary>
+        ///     Set a table level storage parameter on this document type's table, written as
+        ///     <c>WITH (name = value)</c>, for example <c>autovacuum_vacuum_scale_factor</c>. Only the parameters
+        ///     declared here are managed: Marten applies a changed value with <c>ALTER TABLE ... SET</c>, but never
+        ///     resets a parameter that exists in the database and is not declared. Parameters that affect the
+        ///     physical layout, like <c>fillfactor</c>, only affect pages written after the change; existing rows are
+        ///     not repacked until the table is rewritten. <c>toast.*</c> parameters are not supported.
+        /// </summary>
+        /// <param name="name">The PostgreSQL storage parameter name</param>
+        /// <param name="value">The value of the parameter</param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> StorageParameter(string name, object value)
+        {
+            _builder.Alter = m => m.StorageParameters[name] = value;
+            return this;
+        }
+
+        /// <summary>
         /// Override any table partitioning policy on just this document type
         /// </summary>
         /// <returns></returns>

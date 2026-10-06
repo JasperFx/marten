@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
@@ -196,6 +197,13 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
     public bool DisablePartitioningIfAny { get; set; } = false;
 
     public IPartitionStrategy? Partitioning { get; set; }
+
+    /// <summary>
+    ///     Table level storage parameters written as <c>WITH (name = value, ...)</c> on the document table,
+    ///     keyed by the PostgreSQL parameter name, e.g. <c>fillfactor</c>. Only the parameters declared here are
+    ///     managed: a parameter that exists in the database but is not declared is left alone.
+    /// </summary>
+    public OrderedDictionary StorageParameters { get; } = new();
 
     [IgnoreDescription]
     public DocumentCodeGen? CodeGen { get; private set; }

@@ -89,6 +89,29 @@ public class Tractor
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/configuring_the_document_type_alias.cs#L38-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-document-alias-attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Table Storage Parameters
+
+PostgreSQL storage parameters are table level settings written as `WITH (...)` on `CREATE TABLE`. Marten exposes them through `FillFactor()` for the common case and `StorageParameter()` for any other parameter by name:
+
+<!-- snippet: sample_configuring_document_table_storage_parameters -->
+<a id='snippet-sample_configuring_document_table_storage_parameters'></a>
+```cs
+opts.Schema.For<Target>()
+    // WITH (fillfactor = 90) -- leaves free space in each page for updated row versions
+    .FillFactor(90)
+    // Any other table level storage parameter by name
+    .StorageParameter("autovacuum_vacuum_scale_factor", 0.01);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/document_table_storage_parameters.cs#L20-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_document_table_storage_parameters' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Marten reads the parameters of an existing table back from the database and applies a changed value with `ALTER TABLE ... SET (...)` as part of the normal schema migration. A few things to know:
+
+* Only the parameters you declare are managed. A parameter that is set in the database but not declared in the mapping, perhaps by a DBA, is left alone and never reset.
+* Changing a layout parameter like `fillfactor` only affects pages written after the change. Existing rows are not repacked until the table is rewritten, for example by `VACUUM FULL`.
+* On a partitioned table (see Table Partitioning below) PostgreSQL does not allow storage parameters on the parent, so they are applied to each partition instead.
+* `toast.*` parameters are not supported.
+
 ## Table Partitioning <Badge type="tip" text="7.26" />
 
 ::: warning
