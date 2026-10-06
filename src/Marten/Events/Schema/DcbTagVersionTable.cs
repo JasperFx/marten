@@ -39,8 +39,10 @@ internal class DcbTagVersionTable: Table
         // No index on version — keeping that column unindexed means UPDATEs
         // remain HOT-eligible (only the PK index lookup, no index-entry rewrite
         // on bump). A lower heap fillfactor would help further by leaving free
-        // space in each page for in-place updates, but Weasel.Postgresql's Table
-        // doesn't currently expose `WITH (fillfactor = N)` on the heap table —
-        // tracked as a follow-up.
+        // space in each page for in-place updates. Weasel 9.42.0 now exposes
+        // that as WithFillFactor(N) (weasel#696), so the follow-up this comment
+        // used to promise is tracked as marten#5622 — deliberately not taken
+        // here, because the value wants a measurement and it is a delta-visible
+        // change for every existing deployment.
     }
 }
