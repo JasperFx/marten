@@ -935,10 +935,24 @@
          arguments are not all reference types, so it is the one with no native code under AOT.
          Nothing is removed: ValueTypeIdentification<,,> and its constructor are untouched, so
          ClosedShapeRegistration still builds it directly. Marten does not consume either new seam yet;
-         marten#5589 covers the Marten-side generics, which are a separate chain. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.41.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.41.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.41.0" />
+         marten#5589 covers the Marten-side generics, which are a separate chain.
+         9.42.0 carries three things, one of which touches every Marten table.
+         weasel#696/#698 add PostgreSQL TABLE STORAGE PARAMETERS (fillfactor, autovacuum knobs) with a
+         fluent API, written on create and tracked by the delta. Marten sets none of them, so the delta
+         must stay quiet on every existing table — that is the risk this bump carries and the reason the
+         schema-delta suites are the gate for it, not just a compile.
+         weasel#694/#697 roots the Identifications factories' constructors with
+         [DynamicDependency(PublicConstructors, typeof(Strategy<>))]. Five of the six threw under Native
+         AOT: each closes a generic over the document type alone, which is a class and so shares a
+         canonical body, but nothing statically referenced e.g. SequentialGuidIdentification<anything>, so
+         ILC generated no body to share and MakeGenericType threw before Activator was reached. Marten does
+         not consume Identifications yet (see the 9.41.0 note), so this is latent here rather than a fix to
+         anything Marten currently hits — marten#5589/#5600 are the Marten-side chain.
+         weasel#695 is a SQL Server AdvisoryLock fix and is Polecat's, not Marten's: Marten's advisory
+         locks are PostgreSQL. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.42.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.42.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.42.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
