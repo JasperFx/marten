@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
@@ -29,9 +30,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
     {
         // #5589: registry first, reflective fallback. CloseAndBuildAs is Activator on a runtime-computed
         // generic, which a Native AOT image cannot produce unless something rooted it.
-        _selector = ValueTypeIdRegistry.TryIdSelectClause(OuterType, SimpleType, this)
-                    ?? typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
-                        SimpleType);
+        _selector = BuildSelectClause(this, RuntimeFeature.IsDynamicCodeSupported);
     }
 
     private ValueTypeIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, MethodInfo builder)
@@ -39,9 +38,47 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
     {
         // #5589: registry first, reflective fallback. CloseAndBuildAs is Activator on a runtime-computed
         // generic, which a Native AOT image cannot produce unless something rooted it.
-        _selector = ValueTypeIdRegistry.TryIdSelectClause(OuterType, SimpleType, this)
-                    ?? typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
-                        SimpleType);
+        _selector = BuildSelectClause(this, RuntimeFeature.IsDynamicCodeSupported);
+    }
+
+    /// <summary>
+    ///     The registered select clause for this id, or the reflective one when nothing registered it.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         #5600. The reflective fallback is <c>Activator.CreateInstance</c> on a generic closed over a
+    ///         VALUE type at runtime, which a Native AOT image has no code for. It used to simply be allowed
+    ///         to fail, and what reached the user was
+    ///         <c>MissingMethodException: No parameterless constructor defined for type
+    ///         'ValueTypeIdSelectClause`2[YourId,System.Guid]'</c> — true, and no help at all in working out
+    ///         that the fix is one registration call. It also arrives while the FIRST document's mapping is
+    ///         built, so it reads like a bootstrap bug rather than a missing opt-in.
+    ///     </para>
+    ///     <para>
+    ///         <paramref name="canEmit" /> is a parameter rather than a direct
+    ///         <see cref="RuntimeFeature.IsDynamicCodeSupported" /> read so that a JIT test can exercise the
+    ///         AOT branch — the same reason <c>LinqInternalExtensions.CompileValueReader</c> takes one
+    ///         (#5328). A guard that can only be reached by publishing natively is a guard nothing checks.
+    ///     </para>
+    /// </remarks>
+    internal static IScalarSelectClause BuildSelectClause(ValueTypeIdGeneration generation, bool canEmit)
+    {
+        var registered = ValueTypeIdRegistry.TryIdSelectClause(generation.OuterType, generation.SimpleType,
+            generation);
+        if (registered != null) return registered;
+
+        if (!canEmit)
+        {
+            throw new InvalidOperationException(
+                $"The strong-typed identity {generation.OuterType.FullNameInCode()} has not been registered, and this is a Native AOT image, "
+                + $"which has no instantiation of Marten's identity generics closed over it. Add one line per document type that uses it:{Environment.NewLine}{Environment.NewLine}"
+                + $"    opts.RegisterValueTypeId<TDocument, {generation.OuterType.NameInCode()}, {generation.SimpleType.NameInCode()}>();{Environment.NewLine}{Environment.NewLine}"
+                + "Naming all three types is what roots the generics at compile time. Under a JIT the call does nothing. "
+                + "See https://martendb.io/configuration/aot-publishing and https://github.com/JasperFx/marten/issues/5589.");
+        }
+
+        return typeof(ValueTypeIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(generation,
+            generation.OuterType, generation.SimpleType);
     }
 
     public bool IsNumeric => false;
