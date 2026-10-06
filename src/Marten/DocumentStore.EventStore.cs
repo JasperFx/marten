@@ -35,6 +35,7 @@ using Polly;
 using Weasel.Postgresql.SqlGeneration;
 using EventTypeFilter = Marten.Events.Daemon.Internals.EventTypeFilter;
 using System.Diagnostics.CodeAnalysis;
+using Marten.Util;
 
 namespace Marten;
 
@@ -772,11 +773,11 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     // aiming at the moved interface would still have returned null. Reflecting at a private generic
     // helper instead keeps the resolved signature one Marten owns, and leaves the SaveChangesAsync
     // and the token that the session level overload expects from its caller in compiled code.
-    private static readonly MethodInfo _compactByStreamId =
-        typeof(DocumentStore).GetMethod(nameof(compactStreamAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly Lazy<MethodInfo> _compactByStreamId = new(() =>
+        typeof(DocumentStore).RequireMethod(nameof(compactStreamAsync), BindingFlags.NonPublic | BindingFlags.Static));
 
-    private static readonly MethodInfo _compactByStreamKey =
-        typeof(DocumentStore).GetMethod(nameof(compactStreamByKeyAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly Lazy<MethodInfo> _compactByStreamKey = new(() =>
+        typeof(DocumentStore).RequireMethod(nameof(compactStreamByKeyAsync), BindingFlags.NonPublic | BindingFlags.Static));
 
     private static async Task compactStreamAsync<T>(IDocumentSession session, Guid streamId, CancellationToken token)
         where T : class
@@ -836,7 +837,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
                 $"Cannot compact stream {streamId}: stream not found or no aggregate type associated.");
         }
 
-        var genericMethod = _compactByStreamId.MakeGenericMethod(state.AggregateType);
+        var genericMethod = _compactByStreamId.Value.MakeGenericMethod(state.AggregateType);
         await ((Task)genericMethod.Invoke(null, [session, streamId, token])!).ConfigureAwait(false);
     }
 
@@ -854,7 +855,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
                 $"Cannot compact stream '{streamKey}': stream not found or no aggregate type associated.");
         }
 
-        var genericMethod = _compactByStreamKey.MakeGenericMethod(state.AggregateType);
+        var genericMethod = _compactByStreamKey.Value.MakeGenericMethod(state.AggregateType);
         await ((Task)genericMethod.Invoke(null, [session, streamKey, token])!).ConfigureAwait(false);
     }
 }

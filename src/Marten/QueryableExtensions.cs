@@ -16,6 +16,7 @@ using Marten.Linq.Includes;
 using Marten.Services.BatchQuerying;
 using Npgsql;
 using System.Diagnostics.CodeAnalysis;
+using Marten.Util;
 
 namespace Marten;
 
@@ -788,11 +789,11 @@ public static class QueryableExtensions
 
     #endregion
 
-    private static MethodInfo _orderBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(OrderBySql),
-        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
+    private static Lazy<MethodInfo> _orderBySqlMethod = new(() => typeof(QueryableExtensions).RequireMethod(nameof(OrderBySql),
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic));
 
-    private static MethodInfo _thenBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(ThenBySql),
-        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
+    private static Lazy<MethodInfo> _thenBySqlMethod = new(() => typeof(QueryableExtensions).RequireMethod(nameof(ThenBySql),
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic));
 
     /// <summary>
     /// Supply literal SQL fragments to be placed in the generated SQL for this LINQ query.
@@ -803,7 +804,7 @@ public static class QueryableExtensions
     /// <returns></returns>
     public static IQueryable<T> OrderBySql<T>(this IQueryable<T> queryable, string sql)
     {
-        return queryable.Provider.CreateQuery<T>(Expression.Call(null, _orderBySqlMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
+        return queryable.Provider.CreateQuery<T>(Expression.Call(null, _orderBySqlMethod.Value.MakeGenericMethod(typeof(T)), queryable.Expression,
             Expression.Constant(sql)));
     }
 
@@ -816,12 +817,12 @@ public static class QueryableExtensions
     /// <returns></returns>
     public static IQueryable<T> ThenBySql<T>(this IQueryable<T> queryable, string sql)
     {
-        return queryable.Provider.CreateQuery<T>(Expression.Call(null, _thenBySqlMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
+        return queryable.Provider.CreateQuery<T>(Expression.Call(null, _thenBySqlMethod.Value.MakeGenericMethod(typeof(T)), queryable.Expression,
             Expression.Constant(sql)));
     }
 
-    private static MethodInfo _orderByNgramRankMethod = typeof(QueryableExtensions).GetMethod(nameof(OrderByNgramRank),
-        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
+    private static Lazy<MethodInfo> _orderByNgramRankMethod = new(() => typeof(QueryableExtensions).RequireMethod(nameof(OrderByNgramRank),
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic));
 
     /// <summary>
     /// Order query results by ngram search relevance using PostgreSQL's ts_rank function.
@@ -837,17 +838,17 @@ public static class QueryableExtensions
     {
         return queryable.Provider.CreateQuery<T>(
             Expression.Call(null,
-                _orderByNgramRankMethod.MakeGenericMethod(typeof(T)),
+                _orderByNgramRankMethod.Value.MakeGenericMethod(typeof(T)),
                 queryable.Expression,
                 memberExpression,
                 Expression.Constant(searchTerm)));
     }
 
-    private static MethodInfo _orderByTextRankMethod = typeof(QueryableExtensions).GetMethod(
-        nameof(OrderByTextRank), BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
+    private static Lazy<MethodInfo> _orderByTextRankMethod = new(() => typeof(QueryableExtensions).RequireMethod(
+        nameof(OrderByTextRank), BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic));
 
-    private static MethodInfo _thenByTextRankMethod = typeof(QueryableExtensions).GetMethod(
-        nameof(ThenByTextRank), BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
+    private static Lazy<MethodInfo> _thenByTextRankMethod = new(() => typeof(QueryableExtensions).RequireMethod(
+        nameof(ThenByTextRank), BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic));
 
     /// <summary>
     ///     Order results by full text search relevance, using PostgreSQL's <c>ts_rank</c>. Highest
@@ -882,7 +883,7 @@ public static class QueryableExtensions
     {
         return queryable.Provider.CreateQuery<T>(
             Expression.Call(null,
-                _orderByTextRankMethod.MakeGenericMethod(typeof(T)),
+                _orderByTextRankMethod.Value.MakeGenericMethod(typeof(T)),
                 queryable.Expression,
                 Expression.Constant(searchTerm),
                 Expression.Constant(function),
@@ -898,7 +899,7 @@ public static class QueryableExtensions
     {
         return queryable.Provider.CreateQuery<T>(
             Expression.Call(null,
-                _thenByTextRankMethod.MakeGenericMethod(typeof(T)),
+                _thenByTextRankMethod.Value.MakeGenericMethod(typeof(T)),
                 queryable.Expression,
                 Expression.Constant(searchTerm),
                 Expression.Constant(function),
@@ -922,7 +923,7 @@ public static class QueryableExtensions
     }
 
     internal static readonly MethodInfo IncludePlanMethod =
-        typeof(QueryableExtensions).GetMethod(nameof(IncludePlan), BindingFlags.Static | BindingFlags.NonPublic)!;
+        typeof(QueryableExtensions).RequireMethod(nameof(IncludePlan), BindingFlags.Static | BindingFlags.NonPublic);
 
     internal static IMartenQueryable<T> IncludePlan<T>(this IQueryable<T> queryable, IIncludePlan include)
     {

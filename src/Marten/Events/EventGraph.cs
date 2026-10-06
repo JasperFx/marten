@@ -1078,11 +1078,20 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         typeof(Guid), typeof(string), typeof(int), typeof(long), typeof(short)
     ];
 
-    private static readonly System.Reflection.MethodInfo CreateTagTypeMethod =
-        typeof(TagTypeRegistration).GetMethod(nameof(TagTypeRegistration.Create))!;
+    // #5619: deliberately NULLABLE, unlike the lookups that became RequireMethod. Nothing calls
+    // TagTypeRegistration.Create except this reflection, so a trimmer may legitimately remove it -- and the
+    // consequence is only that tag types are not auto-discovered, which the catch below already treats as
+    // acceptable. Failing the EventGraph type initializer instead would take the whole store down for an
+    // app that trimmed a feature it does not use. The `!` it replaced hid that choice: a null turned into a
+    // NullReferenceException from MakeGenericMethod, which the bare catch then swallowed, so the decision
+    // was being made accidentally by an exception handler rather than on purpose here.
+    private static readonly System.Reflection.MethodInfo? CreateTagTypeMethod =
+        typeof(TagTypeRegistration).GetMethod(nameof(TagTypeRegistration.Create));
 
     private void autoDiscoverTagTypesFromProjections()
     {
+        if (CreateTagTypeMethod == null) return;
+
         foreach (var projection in Options.Projections.All.OfType<IAggregateProjection>())
         {
             var identityType = projection.IdentityType;

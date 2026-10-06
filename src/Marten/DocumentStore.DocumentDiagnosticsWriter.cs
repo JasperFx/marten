@@ -10,6 +10,7 @@ using JasperFx;
 using JasperFx.Core.Reflection;
 using JasperFx.Documents;
 using Marten.Schema;
+using Marten.Util;
 
 namespace Marten;
 
@@ -33,8 +34,9 @@ namespace Marten;
 /// </remarks>
 public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
 {
-    private static readonly MethodInfo _updateExpectedVersion =
-        typeof(IDocumentOperations).GetMethod(nameof(IDocumentOperations.UpdateExpectedVersion))!;
+    private static readonly Lazy<MethodInfo> _updateExpectedVersion = new(() =>
+        typeof(IDocumentOperations).RequireMethod(nameof(IDocumentOperations.UpdateExpectedVersion),
+            BindingFlags.Public | BindingFlags.Instance));
 
     async Task<DocumentWriteResult> IDocumentStoreDiagnosticsWriter.SaveDocumentJsonAsync(
         DocumentWriteRequest request, CancellationToken token)
@@ -68,7 +70,7 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
                 try
                 {
                     await using var guarded = openDiagnosticsSession(tenantId);
-                    _updateExpectedVersion
+                    _updateExpectedVersion.Value
                         .MakeGenericMethod(document.GetType())
                         .Invoke(guarded, [document, expected]);
 
