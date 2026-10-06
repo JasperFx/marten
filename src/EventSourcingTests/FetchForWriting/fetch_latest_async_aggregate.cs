@@ -265,8 +265,14 @@ public class fetch_latest_async_aggregate: OneOffConfigurationsContext
 
         await using var query = theStore.LightweightSession();
         var batch = query.CreateBatchQuery();
-        var targetQuery1 = batch.Load<Target>(target1.Id);
+
+        // #5604: FetchLatest is enlisted FIRST now. For an Async-lifecycle aggregate it brackets its two
+        // reads in `begin transaction isolation level repeatable read read only` … `end` so they share one
+        // snapshot, and PostgreSQL accepts that only as a transaction's first statement. This test used to
+        // enlist a Load ahead of it; that is now refused at the enlisting call. Nothing else about it
+        // changes, and the ordering of RESULTS is unaffected.
         var documentQuery = batch.Events.FetchLatest<SimpleAggregate>(streamId);
+        var targetQuery1 = batch.Load<Target>(target1.Id);
         var targetQuery2 = batch.Load<Target>(target2.Id);
         await batch.Execute();
 
