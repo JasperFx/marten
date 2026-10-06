@@ -508,6 +508,30 @@ public static async Task rewinding_subscription(IProjectionCoordinator coordinat
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L238-L257' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rewinding_subscriptions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Shutdown, Rebalancing and Redelivery <Badge type="tip" text="9.47" />
+
+When a subscription shard is stopped — a host shutting down, or the shard being reassigned to another node —
+the range in flight is allowed to finish, ranges still queued are skipped and resumed by the next owner from the
+committed progression, and a range still running after `Projections.StopAndDrainTimeout` (default **5 seconds**)
+is cancelled with its transaction rolled back.
+
+That rollback covers your subscription's writes *through the Marten session* and the progression update together,
+so the range is simply processed again by whichever node runs the shard next. It does **not** cover side effects
+`ProcessEventsAsync` performs outside the session — an HTTP call, or a message sent without the
+[transactional outbox](https://wolverinefx.net/guide/durability/). Delivery has always been at-least-once, but a
+subscription whose pages take longer than the timeout will now see those duplicates on every shutdown and every
+rebalance.
+
+If your pages are legitimately slow, raise the timeout rather than discover this as duplicate processing:
+
+```cs
+opts.Projections.StopAndDrainTimeout = 30.Seconds();
+```
+
+See [Graceful Shutdown and the Drain Timeout](/events/projections/async-daemon#graceful-shutdown-and-the-drain-timeout-)
+for the full picture, including why this bound is what stops a node that has lost a shard's lock from fighting
+the new owner over progression.
+
 ## Error Handling
 
 ::: warning

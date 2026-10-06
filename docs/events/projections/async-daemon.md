@@ -260,12 +260,38 @@ opts.Projections.StopAndDrainTimeout = 30.Seconds();
 The bound applies to every stop path: stopping one agent, stopping all agents (the `SIGTERM`/host shutdown
 path), and the internal stop-if-already-running replacement that happens when an agent is reassigned.
 
-**Why you would raise it.** If the drain is cut off before the progression flush lands, the shard restarts
-against a stale progression row and throws `ProgressionProgressOutOfOrderException` on its next start. Raise
-the timeout when in-flight batches legitimately take longer than five seconds — a large `BatchSize`, expensive
-projection code, heavy rebuild load, or a slow or contended database. This is most visible shutting down a host
-with a large agent universe: a [database-per-tenant](/configuration/multitenancy) deployment with thousands of
-(projection × tenant) shards all draining inside a Kubernetes termination grace window.
+### What a drain actually does <Badge type="tip" text="9.47" />
+
+A drain is deliberately **not** "process everything that is queued". Three things happen:
+
+1. The page or range **in flight** is allowed to finish, and its progression is committed.
+2. Pages or ranges still **queued** behind it are skipped. They are not lost — the next owner of the shard
+   resumes them from the committed progression row.
+3. If the in-flight page is still running when `StopAndDrainTimeout` expires, it is **cancelled**, and its
+   transaction — the projection or subscription writes *plus* the progression update — rolls back together. That
+   page is processed again by whichever node runs the shard next.
+
+This is what makes shutdown bounded rather than proportional to the backlog, and it is what stops a node that
+has lost a shard's lock from continuing to apply its backlog alongside the new owner. That overlap used to end
+in `ProgressionProgressOutOfOrderException` and a **Stopped** shard, because progression is written with an
+optimistic `last_seq_id` guard and only one of the two nodes can win it.
+
+::: warning
+**A page slower than `StopAndDrainTimeout` is re-processed on every shutdown and every rebalance.** Delivery has
+always been at-least-once, so this is not a new guarantee — but duplicates become far more likely for slow
+pages. Anything a projection or subscription does *outside* the store session does not roll back with the
+cancelled transaction: HTTP calls, or sends that bypass the [transactional outbox](https://wolverinefx.net/guide/durability/).
+If your pages are legitimately slow, raise `StopAndDrainTimeout` rather than discover this as duplicate
+processing.
+:::
+
+**Why you would raise it.** So that in-flight pages finish instead of being cancelled and re-processed. Raise
+the timeout when pages legitimately take longer than five seconds — a large `BatchSize`, expensive projection
+code, heavy rebuild load, or a slow or contended database. A shard whose pages never finish inside the bound
+makes no forward progress across a restart loop: every attempt is cancelled and rolled back, and the next one
+starts from the same place. This is most visible shutting down a host with a large agent universe: a
+[database-per-tenant](/configuration/multitenancy) deployment with thousands of (projection × tenant) shards all
+draining inside a Kubernetes termination grace window.
 
 ::: tip
 A per-shard bound is only useful if the process lives long enough to spend it. Match a raised
