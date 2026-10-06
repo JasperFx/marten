@@ -338,6 +338,37 @@ A boundary that decides there is **nothing to append** is not a save at all as f
 
 The side table grows with **distinct boundary-tag values**, not with event volume, and is never deleted automatically — the same `StudentId` or `CourseId` reuses its row across every save. Avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
 
+### Tuning the side table for a large tag set <Badge type="tip" text="9.47" />
+
+`mt_dcb_tag_version` takes an `UPDATE` on every boundary save, so it is built for PostgreSQL's
+[HOT](https://www.postgresql.org/docs/current/storage-hot.html) (Heap-Only Tuple) path: the only column that
+changes, `version`, is deliberately left unindexed, so a bump rewrites no index entry. HOT also needs free
+space in the same heap page, and that is what a lower `fillfactor` reserves:
+
+```cs
+// Opt-in. Null (the default) leaves PostgreSQL's default of 100.
+opts.Events.DcbTagVersionFillFactor = 70;
+```
+
+**Most stores should leave this alone.** Measured on PostgreSQL 17 over 50,000 bumps, one statement per
+transaction:
+
+| tag set | default (fillfactor 100) | `fillfactor = 70` |
+| --- | --- | --- |
+| 50 distinct values (one heap page) | **100% HOT**, no growth | 100% HOT — no change at all |
+| 200,000 distinct values (packed pages) | 92.9% HOT, heap grows | **100% HOT**, no growth |
+| disk for 200,000 rows | 13 MB | **19 MB (+45%)** |
+
+So it buys nothing until the table is large enough for its pages to be genuinely packed, and it costs 45%
+more disk permanently. Marten cannot know your tag cardinality, which is why there is no default.
+
+::: warning
+Two things to know before setting it. Declaring a storage parameter is **visible to the schema diff**, so
+an existing deployment will report a pending `ALTER TABLE … SET (fillfactor = N)`. And that `ALTER` does
+**not** rewrite existing pages — the benefit arrives gradually as pages are rewritten, and fully only after
+a `VACUUM FULL` or `CLUSTER` that you run yourself.
+:::
+
 ## Checking Event Existence
 
 If you only need to know whether any events matching a tag query exist -- without loading or deserializing them -- use `EventsExistAsync`. This is a lightweight `SELECT EXISTS(...)` query that avoids the overhead of fetching and materializing event data:

@@ -223,6 +223,20 @@ namespace Marten.Events
         public bool UseListenNotifyForEventAppends { get; set; }
 
         /// <summary>
+        /// #5622. Heap <c>fillfactor</c> for the <c>mt_dcb_tag_version</c> side table. Null (the default)
+        /// leaves PostgreSQL's default of 100, which is what every existing deployment has.
+        /// <para>
+        /// Only worth setting for a store with a LARGE number of distinct DCB tag values. Measured on
+        /// PostgreSQL 17: at 50 tag rows the default already gives 100% HOT updates and this changes
+        /// nothing at all; at 200k rows it moves 92.9% to 100% HOT and stops heap growth, for 45% more
+        /// disk permanently. Setting it is visible to the schema delta, and the resulting
+        /// <c>ALTER TABLE … SET (fillfactor = N)</c> does not rewrite existing pages — see
+        /// <c>EventGraph.DcbTagVersionFillFactor</c> for the full numbers and caveats.
+        /// </para>
+        /// </summary>
+        public int? DcbTagVersionFillFactor { get; set; }
+
+        /// <summary>
         /// When enabled, adds FOR UPDATE to the stream version SELECT inside
         /// mt_quick_append_events for OCC (optimistic concurrency) appends.
         /// This prevents a READ COMMITTED race where two concurrent transactions

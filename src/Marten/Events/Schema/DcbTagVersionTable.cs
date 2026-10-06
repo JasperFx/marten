@@ -38,11 +38,19 @@ internal class DcbTagVersionTable: Table
 
         // No index on version — keeping that column unindexed means UPDATEs
         // remain HOT-eligible (only the PK index lookup, no index-entry rewrite
-        // on bump). A lower heap fillfactor would help further by leaving free
-        // space in each page for in-place updates. Weasel 9.42.0 now exposes
-        // that as WithFillFactor(N) (weasel#696), so the follow-up this comment
-        // used to promise is tracked as marten#5622 — deliberately not taken
-        // here, because the value wants a measurement and it is a delta-visible
-        // change for every existing deployment.
+        // on bump).
+        //
+        // #5622: a lower heap fillfactor is the other half of that, and Weasel
+        // 9.42.0 makes it available. It is OPT-IN, because the measurement says
+        // it only ever pays for a LARGE tag set: at 50 rows the default already
+        // gives 100% HOT updates and fillfactor changes nothing at all, while at
+        // 200k rows it moves 92.9% -> 100% HOT and stops heap growth, for 45%
+        // more disk permanently. Marten cannot know the caller's tag cardinality,
+        // so defaulting it on would be pure cost for the common case.
+        // See EventGraph.DcbTagVersionFillFactor for the numbers.
+        if (events.DcbTagVersionFillFactor.HasValue)
+        {
+            this.WithFillFactor(events.DcbTagVersionFillFactor.Value);
+        }
     }
 }
