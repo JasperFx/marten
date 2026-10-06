@@ -9,6 +9,7 @@ using System.Data.Common;
 using JasperFx.Core;
 using Marten.Linq;
 using Marten.Util;
+using System.Reflection;
 
 namespace Marten.Services;
 
@@ -205,7 +206,7 @@ internal static class JsonStreamingExtensions
         // reader.GetFieldValue<underlying>(ordinal): the appended column is cast to the proper PG
         // type by the member's TypedLocator, so Npgsql materializes exactly the CLR key type.
         var method = _getFieldValueMethods.GetOrAdd(underlying, static t =>
-            typeof(DbDataReader).GetMethod(nameof(DbDataReader.GetFieldValue))!.MakeGenericMethod(t));
+            typeof(DbDataReader).RequireMethod(nameof(DbDataReader.GetFieldValue), BindingFlags.Public | BindingFlags.Instance).MakeGenericMethod(t));
 
         return method.Invoke(reader, new object[] { ordinal })!;
     }

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten.Linq.Parsing;
+using Marten.Util;
 
 namespace Marten.Events.Schema;
 
@@ -49,7 +50,7 @@ internal static class EventColumnReaders
         var eventParam = Expression.Parameter(typeof(IEvent), "@event");
 
         var getFieldValueMethod = typeof(DbDataReader)
-            .GetMethod(nameof(DbDataReader.GetFieldValue))!
+            .RequireMethod(nameof(DbDataReader.GetFieldValue), BindingFlags.Public | BindingFlags.Instance)
             .MakeGenericMethod(memberType);
 
         var getValueCall = Expression.Call(readerParam, getFieldValueMethod, indexParam);
@@ -103,7 +104,7 @@ internal static class EventColumnReaders
         Type memberType, MemberInfo member)
     {
         var helper = typeof(EventColumnReaders)
-            .GetMethod(nameof(BuildAsyncImpl), BindingFlags.NonPublic | BindingFlags.Static)!
+            .RequireMethod(nameof(BuildAsyncImpl), BindingFlags.NonPublic | BindingFlags.Static)
             .MakeGenericMethod(memberType);
 
         return (Func<DbDataReader, int, IEvent, CancellationToken, Task>)helper.Invoke(null, new object[] { member })!;

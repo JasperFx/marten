@@ -9,6 +9,7 @@ using Marten.Linq.Includes;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
+using Marten.Util;
 
 namespace Marten.Internal.CompiledQueries;
 
@@ -233,7 +234,7 @@ internal static class RuntimeCompiledQueryDescriptorFactory
             {
                 if (def == typeof(Action<>))
                 {
-                    var method = typeof(Include).GetMethod(nameof(Include.ReaderToAction))!.MakeGenericMethod(args[0]);
+                    var method = typeof(Include).RequireMethod(nameof(Include.ReaderToAction), BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(args[0]);
                     return (IIncludeReader)method.Invoke(null, new object[] { session, value })!;
                 }
 
@@ -241,7 +242,7 @@ internal static class RuntimeCompiledQueryDescriptorFactory
                     || def == typeof(IList<>)
                     || typeof(IList<>).MakeGenericType(args).IsAssignableFrom(memberType))
                 {
-                    var method = typeof(Include).GetMethod(nameof(Include.ReaderToList))!.MakeGenericMethod(args[0]);
+                    var method = typeof(Include).RequireMethod(nameof(Include.ReaderToList), BindingFlags.Public | BindingFlags.Static).MakeGenericMethod(args[0]);
                     return (IIncludeReader)method.Invoke(null, new object[] { session, value })!;
                 }
             }
@@ -254,7 +255,7 @@ internal static class RuntimeCompiledQueryDescriptorFactory
                     // Include.ReaderToDictionary<T, TId>(session, IDictionary<TId, T>) —
                     // args[0] = TId (the dictionary's key, the doc id type),
                     // args[1] = T (the dictionary's value, the doc type).
-                    var method = typeof(Include).GetMethod(nameof(Include.ReaderToDictionary))!
+                    var method = typeof(Include).RequireMethod(nameof(Include.ReaderToDictionary), BindingFlags.Public | BindingFlags.Static)
                         .MakeGenericMethod(args[1], args[0]);
                     return (IIncludeReader)method.Invoke(null, new object[] { session, value })!;
                 }

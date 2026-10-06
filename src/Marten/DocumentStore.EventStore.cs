@@ -35,6 +35,7 @@ using Polly;
 using Weasel.Postgresql.SqlGeneration;
 using EventTypeFilter = Marten.Events.Daemon.Internals.EventTypeFilter;
 using System.Diagnostics.CodeAnalysis;
+using Marten.Util;
 
 namespace Marten;
 
@@ -773,10 +774,10 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     // helper instead keeps the resolved signature one Marten owns, and leaves the SaveChangesAsync
     // and the token that the session level overload expects from its caller in compiled code.
     private static readonly MethodInfo _compactByStreamId =
-        typeof(DocumentStore).GetMethod(nameof(compactStreamAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
+        typeof(DocumentStore).RequireMethod(nameof(compactStreamAsync), BindingFlags.NonPublic | BindingFlags.Static);
 
     private static readonly MethodInfo _compactByStreamKey =
-        typeof(DocumentStore).GetMethod(nameof(compactStreamByKeyAsync), BindingFlags.NonPublic | BindingFlags.Static)!;
+        typeof(DocumentStore).RequireMethod(nameof(compactStreamByKeyAsync), BindingFlags.NonPublic | BindingFlags.Static);
 
     private static async Task compactStreamAsync<T>(IDocumentSession session, Guid streamId, CancellationToken token)
         where T : class

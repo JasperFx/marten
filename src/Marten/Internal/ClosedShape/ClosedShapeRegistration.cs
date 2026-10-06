@@ -9,6 +9,7 @@ using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 
 using Weasel.Core.Identity;
+using Marten.Util;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -171,7 +172,7 @@ public static class ClosedShapeRegistration
                 typeof(TDoc), wrapperType, innerType);
 
         var buildProvider = typeof(ClosedShapeRegistration)
-            .GetMethod(nameof(BuildProvider), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .RequireMethod(nameof(BuildProvider), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
             .MakeGenericMethod(typeof(TDoc), wrapperType);
 
         return (DocumentProvider<TDoc>)buildProvider.Invoke(null, new object?[] { mapping, identification })!;

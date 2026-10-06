@@ -15,13 +15,14 @@ using Marten.Internal.Sessions;
 using Marten.Linq;
 
 using Marten.Internal;
+using Marten.Util;
 
 namespace Marten.Events;
 
 public static class AggregateToExtensions
 {
     private static readonly MethodInfo AggregateManyMethod = typeof(AggregateToExtensions)
-        .GetMethod(nameof(aggregateManyAsync), BindingFlags.Static | BindingFlags.NonPublic)!;
+        .RequireMethod(nameof(aggregateManyAsync), BindingFlags.Static | BindingFlags.NonPublic);
 
     private static void setIdentity<T>(QuerySession session, T aggregate, IEnumerable<IEvent> events) where T : class
     {
