@@ -24,6 +24,8 @@ using JasperFx.Core.TypeScanning;
 [assembly: InternalsVisibleTo("EventSourcingTests")]
 [assembly: InternalsVisibleTo("Examples")]
 [assembly: InternalsVisibleTo("PatchingTests")]
+// #5600: so the AOT guard in ValueTypeIdGeneration.BuildSelectClause can be exercised under a JIT.
+[assembly: InternalsVisibleTo("ValueTypeTests")]
 [assembly: InternalsVisibleTo("StressTests")]
 [assembly: InternalsVisibleTo("ContainerScopedProjectionTests")]
 [assembly: InternalsVisibleTo("Marten.AspNetCore")]
