@@ -34,9 +34,14 @@ internal partial class BatchedQuery: IBatchedQuery
     // an exclusive fetch, whose row lock has to survive until SaveChangesAsync. See assertNoTransactionConflict.
     private bool _holdsSelfTransactingItem;
 
-    private const string MixedBatchMessage =
-        "A batched FetchForExclusiveWriting cannot share a batch with a non-exclusive FetchForWriting for an "
-        + "aggregate projected with ProjectionLifecycle.Async. The non-exclusive fetch wraps its reads in "
+    // The call that the self-transacting item in this batch came from, for MixedBatchMessage. Kept
+    // beside _holdsSelfTransactingItem because assertNoTransactionConflict() fires from the other
+    // direction too -- an exclusive fetch enlisted SECOND -- and by then the handler is long gone.
+    private string _selfTransactingCall = "FetchForWriting";
+
+    private string MixedBatchMessage =>
+        $"A batched FetchForExclusiveWriting cannot share a batch with {_selfTransactingCall} for an "
+        + "aggregate projected with ProjectionLifecycle.Async. That fetch wraps its reads in "
         + "'begin transaction isolation level repeatable read read only' … 'end' so they share one snapshot, and "
         + "that 'end' commits the session's transaction — releasing the exclusive fetch's row lock before "
         + "SaveChangesAsync can use it. Use separate batches, or fetch both exclusively.";
@@ -56,11 +61,10 @@ internal partial class BatchedQuery: IBatchedQuery
     /// <summary>
     ///     Names the offending call in terms the caller wrote, not the internal handler type.
     /// </summary>
-    private static string describeSelfTransactingHandler(object handler)
+    private static string describeSelfTransactingHandler(IOpensItsOwnTransaction handler)
     {
-        // The implementors are FetchAsyncPlan's non-exclusive handlers, whose own names --
-        // ForUpdateQueryHandler and ExpectedVersionQueryHandler -- are no use here, the first of them
-        // actively misleading since this IS the not-for-update case.
+        // The call name comes from the handler itself -- see IOpensItsOwnTransaction.CallName for why it
+        // is not derived from the type name.
         //
         // The closed type arguments are read off the nested handler type itself, NOT off its
         // DeclaringType. For a nested type inside a constructed generic, DeclaringType hands back the
@@ -70,8 +74,8 @@ internal partial class BatchedQuery: IBatchedQuery
         // DeclaringType.GenericTypeArguments is [].
         var aggregate = handler.GetType().GenericTypeArguments.FirstOrDefault();
         return aggregate == null
-            ? "FetchForWriting for an aggregate projected with ProjectionLifecycle.Async"
-            : $"FetchForWriting<{aggregate.Name}> (projected with ProjectionLifecycle.Async)";
+            ? $"{handler.CallName} for an aggregate projected with ProjectionLifecycle.Async"
+            : $"{handler.CallName}<{aggregate.Name}> (projected with ProjectionLifecycle.Async)";
     }
 
     private void assertNoTransactionConflict()
@@ -229,11 +233,12 @@ internal partial class BatchedQuery: IBatchedQuery
 
     public Task<T> AddItem<T>(IQueryHandler<T> handler)
     {
-        if (handler is IOpensItsOwnTransaction { OpensItsOwnTransaction: true })
+        if (handler is IOpensItsOwnTransaction { OpensItsOwnTransaction: true } selfTransacting)
         {
             // Set BEFORE either check can throw, so Execute()'s own guard stays armed even if a caller
             // swallows the exception raised here.
             _holdsSelfTransactingItem = true;
+            _selfTransactingCall = selfTransacting.CallName;
 
             // Order matters. Both conditions can hold at once -- an exclusive fetch enlisted first is also
             // "something already in the batch" -- and the mixed-batch one is the more specific and the more
@@ -252,7 +257,7 @@ internal partial class BatchedQuery: IBatchedQuery
             if (_items.Count > 0)
             {
                 throw new InvalidOperationException(
-                    $"A batched {describeSelfTransactingHandler(handler)} has to be the FIRST operation in its "
+                    $"A batched {describeSelfTransactingHandler(selfTransacting)} has to be the FIRST operation in its "
                     + $"batch, but {_items.Count} operation(s) are already enlisted. It wraps its reads in "
                     + "'begin transaction isolation level repeatable read read only' … 'end' so they share one "
                     + "snapshot, and PostgreSQL only accepts that as the first statement in a transaction. "

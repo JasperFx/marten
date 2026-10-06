@@ -10,6 +10,7 @@ using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Services.BatchQuerying;
 using Marten.Util;
 using Npgsql;
 using Weasel.Postgresql;
@@ -41,9 +42,14 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         _initialSql ??=
             $"select {selector.SelectFields().Select(x => "d." + x).Join(", ")} from {_events.DatabaseSchemaName}.mt_events as d";
 
-        // TODO -- use read only transaction????
-
         var builder = new BatchBuilder{TenantId = session.TenantId};
+
+        // #5604. The two reads below have exactly the race FetchForWriting was fixed for: the snapshot
+        // document and then the events after it, each taking its own snapshot under READ COMMITTED, with
+        // the delta query re-reading a.mt_version. A daemon snapshot write landing in between makes the
+        // events read exclude the very events the document read never saw, so FetchLatest answers null
+        // for a live stream or silently stale state.
+        var sharedSnapshot = beginSharedSnapshot(builder, session);
 
         var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
         loadHandler.ConfigureCommand(builder, session);
@@ -51,6 +57,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         builder.StartNewCommand();
 
         writeEventFetchStatement(id, builder);
+
+        endSharedSnapshot(builder, sharedSnapshot);
 
         var batch = builder.Compile();
         await using var reader =
@@ -91,12 +99,18 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
         var builder = new BatchBuilder { TenantId = session.TenantId };
 
+        // #5604, as in FetchForReading above -- the streaming variant reads the same two things in the
+        // same order and had the same race.
+        var sharedSnapshot = beginSharedSnapshot(builder, session);
+
         var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
         loadHandler.ConfigureCommand(builder, session);
 
         builder.StartNewCommand();
 
         writeEventFetchStatement(id, builder);
+
+        endSharedSnapshot(builder, sharedSnapshot);
 
         var batch = builder.Compile();
         await using var reader = await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
@@ -182,30 +196,48 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             ensureInitialSql(session.EventStorage());
         }
 
-        return new QueryHandler(this, id);
+        return new QueryHandler(this, id, canShareOneSnapshot(session));
     }
 
-    public class QueryHandler: IQueryHandler<TDoc?>
+    public class QueryHandler: IQueryHandler<TDoc?>, IOpensItsOwnTransaction
     {
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
+        private readonly bool _sharedSnapshot;
         private readonly LoadByIdHandler<TDoc,TId> _loadHandler;
 
-        public QueryHandler(FetchAsyncPlan<TDoc, TId> parent, TId id)
+        /// <summary>
+        ///     #5604: a batched <c>FetchLatest</c> brackets its two reads for the same reason the direct
+        ///     call does, so it takes on the same two batch rules — it has to be the batch's first
+        ///     operation, and it cannot share a batch with an exclusive fetch whose row lock its
+        ///     <c>end</c> would release. False inside a caller-owned transaction, where #5611 suppresses
+        ///     the bracket and so leaves nothing for either rule to protect.
+        /// </summary>
+        public bool OpensItsOwnTransaction => _sharedSnapshot;
+
+        public string CallName => "FetchLatest";
+
+        public QueryHandler(FetchAsyncPlan<TDoc, TId> parent, TId id, bool sharedSnapshot)
         {
             _parent = parent;
             _id = id;
+            _sharedSnapshot = sharedSnapshot;
 
             _loadHandler = new LoadByIdHandler<TDoc, TId>(parent._storage, id);
         }
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
+            // Asked again here rather than reusing _sharedSnapshot -- see ForUpdateQueryHandler for why.
+            var sharedSnapshot = beginSharedSnapshot(builder, (QuerySession)session);
+
             _loadHandler.ConfigureCommand(builder, session);
 
             builder.StartNewCommand();
 
             _parent.writeEventFetchStatement(_id, builder);
+
+            endSharedSnapshot(builder, sharedSnapshot);
         }
 
         public Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)

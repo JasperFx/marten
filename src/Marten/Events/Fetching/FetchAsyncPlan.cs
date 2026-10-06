@@ -98,7 +98,15 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     ///         snapshot with nothing for Marten to emit.
     ///     </para>
     /// </remarks>
-    private static bool canShareOneSnapshot(DocumentSessionBase session)
+    /// <remarks>
+    ///     Takes a <see cref="QuerySession" /> rather than a <see cref="DocumentSessionBase" /> on purpose:
+    ///     the read paths reach it from a plain query session too, and the only thing it needs is a
+    ///     property QuerySession already has. Narrowing it would have meant an
+    ///     <c>AssertIsDocumentSession()</c> on the FetchLatest path, which throws "only possible for full,
+    ///     writeable IDocumentSession" — a message about a call the caller did not make, raised earlier
+    ///     than the cast that used to raise it.
+    /// </remarks>
+    private static bool canShareOneSnapshot(QuerySession session)
     {
         return !session.HasSurvivingTransaction;
     }
@@ -113,7 +121,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     ///     legal as the FIRST statement of a transaction -- a constraint that is invisible at the call site
     ///     and surfaces as a bare <c>25001</c> when it is broken (#5535).
     /// </remarks>
-    private static bool beginSharedSnapshot(ICommandBuilder builder, DocumentSessionBase session)
+    private static bool beginSharedSnapshot(ICommandBuilder builder, QuerySession session)
     {
         if (!canShareOneSnapshot(session)) return false;
 
