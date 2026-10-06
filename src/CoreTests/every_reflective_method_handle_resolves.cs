@@ -75,7 +75,8 @@ public class every_reflective_method_handle_resolves
             var fields = type
                 .GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic |
                            BindingFlags.DeclaredOnly)
-                .Where(x => x.FieldType == typeof(MethodInfo) || x.FieldType == typeof(MethodInfo[]))
+                .Where(x => x.FieldType == typeof(MethodInfo) || x.FieldType == typeof(MethodInfo[])
+                            || x.FieldType == typeof(Lazy<MethodInfo>))
                 .ToArray();
 
             if (fields.Length == 0) continue;
@@ -102,6 +103,24 @@ public class every_reflective_method_handle_resolves
                 {
                     var name = $"{type.FullNameInCode()}.{field.Name}";
                     if (!deliberatelyOptional.Contains(name)) unresolved.Add(name);
+                    continue;
+                }
+
+                // #5619: the lookups that sit behind a Lazy are deferred ON PURPOSE -- see RequireMethod --
+                // so forcing .Value here is the only way this test still covers them. Under a JIT nothing is
+                // trimmed, so it resolves; a refactor surfaces as the RequireMethod message, which already
+                // names the member.
+                if (value is Lazy<MethodInfo> lazy)
+                {
+                    try
+                    {
+                        lazy.Value.ShouldNotBeNull();
+                    }
+                    catch (Exception e)
+                    {
+                        unresolved.Add($"{type.FullNameInCode()}.{field.Name}: {e.Message}");
+                    }
+
                     continue;
                 }
 

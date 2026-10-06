@@ -34,9 +34,9 @@ namespace Marten;
 /// </remarks>
 public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
 {
-    private static readonly MethodInfo _updateExpectedVersion =
+    private static readonly Lazy<MethodInfo> _updateExpectedVersion = new(() =>
         typeof(IDocumentOperations).RequireMethod(nameof(IDocumentOperations.UpdateExpectedVersion),
-            BindingFlags.Public | BindingFlags.Instance);
+            BindingFlags.Public | BindingFlags.Instance));
 
     async Task<DocumentWriteResult> IDocumentStoreDiagnosticsWriter.SaveDocumentJsonAsync(
         DocumentWriteRequest request, CancellationToken token)
@@ -70,7 +70,7 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
                 try
                 {
                     await using var guarded = openDiagnosticsSession(tenantId);
-                    _updateExpectedVersion
+                    _updateExpectedVersion.Value
                         .MakeGenericMethod(document.GetType())
                         .Invoke(guarded, [document, expected]);
 

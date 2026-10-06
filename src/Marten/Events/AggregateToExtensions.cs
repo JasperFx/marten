@@ -21,8 +21,8 @@ namespace Marten.Events;
 
 public static class AggregateToExtensions
 {
-    private static readonly MethodInfo AggregateManyMethod = typeof(AggregateToExtensions)
-        .RequireMethod(nameof(aggregateManyAsync), BindingFlags.Static | BindingFlags.NonPublic);
+    private static readonly Lazy<MethodInfo> AggregateManyMethod = new(() => typeof(AggregateToExtensions)
+        .RequireMethod(nameof(aggregateManyAsync), BindingFlags.Static | BindingFlags.NonPublic));
 
     private static void setIdentity<T>(QuerySession session, T aggregate, IEnumerable<IEvent> events) where T : class
     {
@@ -112,7 +112,7 @@ public static class AggregateToExtensions
             return Array.Empty<T>();
         }
 
-        var closed = AggregateManyMethod.MakeGenericMethod(typeof(T), idType);
+        var closed = AggregateManyMethod.Value.MakeGenericMethod(typeof(T), idType);
         var task = (Task<IReadOnlyList<T>>)closed.Invoke(null, [projection, events, session, token])!;
         return await task.ConfigureAwait(false);
     }
