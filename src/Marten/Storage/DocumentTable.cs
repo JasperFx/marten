@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -94,6 +95,9 @@ internal class DocumentTable: Table
         }
 
         ForeignKeys.AddRange(mapping.ForeignKeys);
+
+        foreach (DictionaryEntry parameter in mapping.StorageParameters)
+            StorageParameters[parameter.Key] = parameter.Value;
 
         Partitioning = mapping.Partitioning;
 
