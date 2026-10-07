@@ -325,6 +325,38 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool UseListenNotifyForEventAppends { get; set; }
 
     /// <summary>
+    ///     Heap <c>fillfactor</c> for the <c>mt_dcb_tag_version</c> side table. Null (the default) leaves
+    ///     PostgreSQL's default of 100. Only worth setting for a store with a LARGE number of distinct DCB
+    ///     tag values — see the remarks, which carry the measurement.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         #5622. That table takes an UPDATE on every <c>FetchForWritingByTags</c> →
+    ///         <c>SaveChangesAsync</c>, and is built for PostgreSQL's HOT (Heap-Only Tuple) path: the only
+    ///         column that changes, <c>version</c>, is deliberately unindexed so a bump rewrites no index
+    ///         entry. HOT also needs free space in the same heap page, which is what a lower fillfactor
+    ///         reserves.
+    ///     </para>
+    ///     <para>
+    ///         <b>Measured on PostgreSQL 17, 50k single-statement-per-transaction bumps.</b> With a SMALL
+    ///         tag set (50 rows, one heap page) the default already gives <b>100% HOT updates</b> and
+    ///         fillfactor changes nothing at all. With a LARGE tag set (200k rows, a hot subset spread
+    ///         across packed pages) the default gives <b>92.9% HOT</b> and the heap grows, while
+    ///         fillfactor 70 gives <b>100% HOT</b> and no growth — but costs <b>45% more disk
+    ///         permanently</b> (19 MB against 13 MB for the same rows).
+    ///     </para>
+    ///     <para>
+    ///         Marten cannot know your tag cardinality, and a hard-coded value would be pure disk cost for
+    ///         the common small-table case, so this is opt-in rather than a default. Two consequences worth
+    ///         knowing before you set it: declaring a storage parameter is visible to the schema delta, so
+    ///         an existing deployment will show a pending <c>ALTER TABLE … SET (fillfactor = N)</c>; and
+    ///         that ALTER does not rewrite existing pages, so the benefit arrives gradually and fully only
+    ///         after a <c>VACUUM FULL</c> or <c>CLUSTER</c> you run yourself.
+    ///     </para>
+    /// </remarks>
+    public int? DcbTagVersionFillFactor { get; set; }
+
+    /// <summary>
     /// When enabled, adds FOR UPDATE to the stream version SELECT inside
     /// mt_quick_append_events for OCC (optimistic concurrency) appends.
     /// This prevents a READ COMMITTED race where two concurrent transactions
