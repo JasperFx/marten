@@ -477,6 +477,13 @@ internal class NewObject : ISqlFragment
             else
             {
                 yield return member;
+                if (member is GroupBySqlFragment aggregate)
+                {
+                    foreach (var filter in aggregate.AllFragments())
+                    {
+                        yield return filter;
+                    }
+                }
             }
         }
     }

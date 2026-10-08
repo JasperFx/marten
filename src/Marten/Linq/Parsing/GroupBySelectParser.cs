@@ -8,6 +8,7 @@ using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration;
+using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -19,7 +20,9 @@ namespace Marten.Linq.Parsing;
 /// </summary>
 internal class GroupBySelectParser: ExpressionVisitor
 {
-    private readonly ISerializer _serializer;
+    private readonly StoreOptions _options;
+    private readonly IQueryableMemberCollection _collection;
+    private readonly bool _hasCustomMemberResolver;
     private readonly Func<Expression, IQueryableMember> _memberFor;
     private readonly LambdaExpression _keySelector;
     private readonly ParameterExpression _groupingParameter;
@@ -46,19 +49,21 @@ internal class GroupBySelectParser: ExpressionVisitor
     /// nothing once the FROM is a join of two CTEs.
     /// </param>
     public GroupBySelectParser(
-        ISerializer serializer,
+        StoreOptions options,
         IQueryableMemberCollection collection,
         LambdaExpression keySelector,
         Expression selectBody,
         ParameterExpression groupingParameter,
         Func<Expression, IQueryableMember> memberFor = null)
     {
-        _serializer = serializer;
+        _options = options;
+        _collection = collection;
+        _hasCustomMemberResolver = memberFor != null;
         _memberFor = memberFor ?? (expression => collection.MemberFor(expression));
         _keySelector = keySelector;
         _groupingParameter = groupingParameter;
 
-        NewObject = new NewObject(serializer);
+        NewObject = new NewObject(options.Serializer());
         ParseKeySelector();
         Visit(selectBody);
     }
@@ -204,13 +209,13 @@ internal class GroupBySelectParser: ExpressionVisitor
         {
             if (_currentField != null)
             {
-                NewObject.Members[_currentField] = new LiteralSql(aggregateSql);
+                NewObject.Members[_currentField] = aggregateSql;
                 _currentField = null;
             }
             else
             {
                 IsScalar = true;
-                ScalarFragment = new LiteralSql(aggregateSql);
+                ScalarFragment = aggregateSql;
             }
 
             return node;
@@ -219,23 +224,23 @@ internal class GroupBySelectParser: ExpressionVisitor
         return base.VisitMethodCall(node);
     }
 
-    private string TryResolveAggregate(MethodCallExpression node)
+    private ISqlFragment TryResolveAggregate(MethodCallExpression node)
     {
         var methodName = node.Method.Name;
 
-        // Parameterless: g.Count(), g.LongCount()
+        // Parameterless or predicate-based counts.
         if (methodName is "Count" or "LongCount")
         {
             if (node.Arguments.Count == 1 && IsGroupingParameter(node.Arguments[0]))
             {
-                return "count(*)";
+                return new LiteralSql("count(*)");
             }
 
             // With predicate: g.Count(x => x.Flag)
             if (node.Arguments.Count == 2 && IsGroupingParameter(node.Arguments[0]))
             {
-                var predicateSql = ResolvePredicate(node.Arguments[1]);
-                return $"count(*) filter (where {predicateSql})";
+                var predicate = ResolvePredicate(node.Arguments[1]);
+                return new GroupBySqlFragment("count(*) filter (where ", predicate, ")");
             }
         }
 
@@ -249,7 +254,7 @@ internal class GroupBySelectParser: ExpressionVisitor
                 {
                     var member = _memberFor(selectorLambda.Body);
                     var sqlOp = methodName == "Average" ? "avg" : methodName.ToLowerInvariant();
-                    return $"{sqlOp}({member.TypedLocator})";
+                    return new LiteralSql($"{sqlOp}({member.TypedLocator})");
                 }
             }
         }
@@ -295,7 +300,7 @@ internal class GroupBySelectParser: ExpressionVisitor
         return expr as LambdaExpression;
     }
 
-    private string ResolvePredicate(Expression expr)
+    private ISqlFragment ResolvePredicate(Expression expr)
     {
         var lambda = ExtractLambda(expr);
         if (lambda == null)
@@ -303,9 +308,29 @@ internal class GroupBySelectParser: ExpressionVisitor
             throw new BadLinqExpressionException("Expected a lambda predicate in GroupBy aggregate");
         }
 
-        // Simple predicate support: x => x.Flag
-        var member = _memberFor(lambda.Body);
-        return $"{member.TypedLocator} = True";
+        // Keep the existing single boolean member support over CTE-aliased joins.
+        if (_hasCustomMemberResolver)
+        {
+            if (lambda.Body is MemberExpression { Type: var type } && type == typeof(bool))
+            {
+                return new BooleanFieldIsTrue(_memberFor(lambda.Body));
+            }
+
+            throw new BadLinqExpressionException(
+                "Marten only supports single boolean member predicates in GroupBy aggregates over a GroupJoin");
+        }
+
+        var holder = new ChildCollectionWhereClause();
+        new WhereClauseParser(_options, _collection, holder).Visit(lambda.Body);
+        var fragment = holder.Fragment ?? throw new BadLinqExpressionException(
+            $"Unsupported predicate '{lambda.Body}' in GroupBy aggregate");
+        if (GroupBySqlFragment.EnumerateFragments(fragment).OfType<ISubQueryFilter>().Any())
+        {
+            throw new BadLinqExpressionException(
+                "Sub Query filters are not supported in GroupBy aggregate predicates");
+        }
+
+        return fragment;
     }
 
     /// <summary>
@@ -367,6 +392,10 @@ internal class GroupBySelectParser: ExpressionVisitor
                 var direction = ordering.Direction == OrderingDirection.Desc ? " desc" : string.Empty;
                 return new LiteralOrdering(literal.Text + direction);
 
+            case GroupBySqlFragment aggregate:
+                return new GroupBySqlFragment(string.Empty, aggregate,
+                    ordering.Direction == OrderingDirection.Desc ? " desc" : string.Empty);
+
             default:
                 throw new BadLinqExpressionException(
                     $"Cannot order a GroupBy projection by '{description}' because its SQL expression is not sortable");
@@ -410,6 +439,48 @@ internal class GroupBySelectParser: ExpressionVisitor
         }
 
         return expression;
+    }
+}
+
+internal class GroupBySqlFragment: ISqlFragment
+{
+    private readonly string _prefix;
+    private readonly string _suffix;
+    public ISqlFragment Inner { get; }
+
+    public GroupBySqlFragment(string prefix, ISqlFragment inner, string suffix)
+    {
+        _prefix = prefix;
+        Inner = inner;
+        _suffix = suffix;
+    }
+
+    public void Apply(ICommandBuilder builder)
+    {
+        builder.Append(_prefix);
+        Inner.Apply(builder);
+        builder.Append(_suffix);
+    }
+
+    public IEnumerable<ISqlFragment> AllFragments()
+    {
+        return EnumerateFragments(Inner);
+    }
+
+    public static IEnumerable<ISqlFragment> EnumerateFragments(ISqlFragment fragment)
+    {
+        yield return fragment;
+        var children = fragment switch
+        {
+            GroupBySqlFragment wrapper => wrapper.AllFragments(),
+            CompoundWhereFragment compound => compound.Children.SelectMany(EnumerateFragments),
+            ExistsCollectionFilter exists => EnumerateFragments(exists.Inner),
+            _ => Enumerable.Empty<ISqlFragment>()
+        };
+        foreach (var child in children)
+        {
+            yield return child;
+        }
     }
 }
 
