@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Exceptions;
 using JasperFx.Events;
+using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -42,7 +43,9 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
             return true;
         }
 
-        if (pg is { SqlState: OptimisticVersionMismatchSqlState })
+        // Two Starts can both pass the function's MT003 check before either commits; the loser's
+        // mt_streams insert then raises 23505 instead, and must surface exactly as MT003 would.
+        if (pg is { SqlState: OptimisticVersionMismatchSqlState } || IsLostStartRace(pg))
         {
             // #5454: PrepareEvents sets ExpectedVersionOnServer 0 for a Start, so MT003 there means the id is
             // already in use — the condition the dedicated mt_streams INSERT reported as a 23505, surfaced as
@@ -66,6 +69,14 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         transformed = original;
         return false;
     }
+
+    private bool IsLostStartRace(PostgresException? pg)
+        => Stream.ActionType == StreamActionType.Start
+           && pg is
+           {
+               SqlState: PostgresErrorCodes.UniqueViolation,
+               TableName: StreamsTable.TableName or StreamIdentityEnforcementTable.TableName
+           };
 
     // 9.0 (#4385): per-batch column-array rentals from ArrayPool<T>.Shared, returned in
     // Dispose() once the whole unit of work is finished. NOT in PostprocessAsync: the resilience
