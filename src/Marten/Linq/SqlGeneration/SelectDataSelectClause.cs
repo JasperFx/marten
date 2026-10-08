@@ -19,7 +19,12 @@ internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IM
     /// parameter discovery can include them alongside the WHERE-clause filters.
     /// </summary>
     public IEnumerable<ISqlFragment> SelectFragments()
-        => Selector is NewObject newObject ? newObject.AllFragments() : [Selector];
+        => Selector switch
+        {
+            NewObject newObject => newObject.AllFragments(),
+            GroupBySqlFragment aggregate => aggregate.AllFragments(),
+            _ => [Selector]
+        };
 
     public string? DistinctOn { get; set; }
 
@@ -121,4 +126,3 @@ internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IM
         return new SelectDataSelectClause<T>(tableName, Selector);
     }
 }
-

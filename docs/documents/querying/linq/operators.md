@@ -285,10 +285,17 @@ var results = await session.Query<Target>()
 The following aggregate methods are supported within GroupBy projections:
 
 - `g.Count()` / `g.LongCount()` -- `COUNT(*)`
+- `g.Count(predicate)` / `g.LongCount(predicate)` -- `COUNT(*) FILTER (WHERE predicate)`
 - `g.Sum(x => x.Property)` -- `SUM(property)`
 - `g.Min(x => x.Property)` -- `MIN(property)`
 - `g.Max(x => x.Property)` -- `MAX(property)`
 - `g.Average(x => x.Property)` -- `AVG(property)`
+
+### Predicate Counts
+
+`Count(predicate)` and `LongCount(predicate)` use the same predicate translation as
+document `Where()` clauses, including nullable comparisons, duplicated fields, compound
+predicates, and bound parameters.
 
 ## Distinct()
 

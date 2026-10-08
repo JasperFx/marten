@@ -545,7 +545,7 @@ public partial class CollectionUsage
                 expander.Expand(groupBy.KeySelector.Body), groupBy.KeySelector.Parameters);
 
             groupByParser = new GroupBySelectParser(
-                _options.Serializer(),
+                _options,
                 outerCollection,
                 keySelector,
                 expander.Expand(groupingUsage.SelectExpression),
@@ -804,7 +804,7 @@ public partial class CollectionUsage
         ParameterExpression groupingParam = FindGroupingParameter(groupingUsage.SelectExpression);
 
         var parser = new GroupBySelectParser(
-            _options.Serializer(),
+            _options,
             collection,
             groupBy.KeySelector,
             groupingUsage.SelectExpression,
@@ -836,11 +836,14 @@ public partial class CollectionUsage
                             member.MemberType);
                 }
             }
-            else if (fragment is LiteralSql literal)
+            else if (fragment is LiteralSql or GroupBySqlFragment)
             {
-                // Aggregate scalar like count(*)
+                // JSON serialization uses the expression's actual result type (Count vs LongCount).
                 statement.SelectClause =
-                    new NewScalarSelectClause<int>(literal.Text, statement.SelectClause.FromObject);
+                    typeof(SelectDataSelectClause<>).CloseAndBuildAs<ISelectClause>(
+                        statement.SelectClause.FromObject,
+                        new GroupBySqlFragment("to_jsonb(", fragment, ")"),
+                        groupingUsage.SelectExpression.Type);
             }
         }
         else
