@@ -54,6 +54,14 @@ public partial class DocumentStore
     /// <c>order by Status</c> put Cancelled before Open. Equality, <c>!=</c> and <c>in @0</c> are unaffected and
     /// stay allowed. The same members stored as integers compare correctly, so the rule resolves the member
     /// through Marten's own query-member model rather than refusing every enum.</item>
+    /// <item><b>SQL null semantics</b> (<see cref="DynamicQueryShapeRules.SqlNullSemantics" />, the shared
+    /// JasperFx rule): <c>&lt;&gt;</c>, or <c>not</c> over a comparison or string method, on a member that can
+    /// be null. Marten translates <c>Notes != 'x'</c> to a plain <c>&lt;&gt;</c>, not <c>IS DISTINCT FROM</c>,
+    /// so every null row drops out: <c>Notes != @0</c>, <c>not (Notes = @0)</c> and
+    /// <c>not Notes.Contains(@0)</c> returned 3 of the oracle's 9 rows, <c>Discount != @0</c> and
+    /// <c>BillTo.City != @0</c> 4 of 8. The guarded forms (<c>… or Notes = null</c>,
+    /// <c>Notes != null and …</c>) and <c>!=</c> on a non-nullable member translate correctly and stay
+    /// allowed.</item>
     /// </list>
     /// <para>
     /// What did NOT need a rule, against the jasperfx#869 spike's findings on Polecat and Fisher: date member
@@ -72,7 +80,9 @@ public partial class DocumentStore
         var storesAsName = new StringEnumMembers(members, documentType, Options.Serializer().EnumStorage);
 
         return (
-            DynamicQueryPolicy.Default.WithRules(DynamicQueryShapeRules.For(storesAsName.RefuseRangeComparison)),
+            DynamicQueryPolicy.Default.WithRules(
+                DynamicQueryShapeRules.SqlNullSemantics(),
+                DynamicQueryShapeRules.For(storesAsName.RefuseRangeComparison)),
             DynamicQueryPolicy.Default.WithRules(DynamicQueryShapeRules.For(storesAsName.RefuseOrdering)));
     }
 

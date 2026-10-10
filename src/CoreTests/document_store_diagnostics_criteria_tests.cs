@@ -1,3 +1,7 @@
+// Nullable context ON deliberately (jasperfx#869): SqlNullSemantics reads nullable-reference annotations, so
+// `string Name = ""` here is a non-nullable member and `Name != @0` is allowed on it. In an unannotated context
+// the same member counts as nullable and the text would be refused.
+#nullable enable
 using System;
 using System.Linq;
 using System.Text.Json;
@@ -387,13 +391,18 @@ public class document_store_diagnostics_criteria_tests
         var mapping = (Marten.Schema.DocumentMapping)store.Options.Storage.FindMapping(typeof(CriteriaOrder));
         var (where, orderBy) = store.DiagnosticsCriteriaPolicies(mapping.QueryMembers, typeof(CriteriaOrder));
 
-        where.ShapeRules.Count.ShouldBe(DynamicQueryPolicy.Default.ShapeRules.Count + 1);
+        where.ShapeRules.Count.ShouldBe(DynamicQueryPolicy.Default.ShapeRules.Count + 2);
         orderBy.ShapeRules.Count.ShouldBe(DynamicQueryPolicy.Default.ShapeRules.Count + 1);
 
         Should.Throw<DynamicQueryException>(() => DynamicQuery.Validate(typeof(CriteriaOrder),
             new DynamicQueryText("Status > 1"), where));
         Should.Throw<DynamicQueryException>(() => DynamicQuery.Validate(typeof(CriteriaOrder),
             new DynamicQueryText(null, "Status"), orderBy));
+
+        // jasperfx#869 SQL null semantics: a null-blind inequality is refused, the guarded form is not.
+        Should.Throw<DynamicQueryException>(() => DynamicQuery.Validate(typeof(CriteriaOrder),
+            new DynamicQueryText("Notes != \"x\""), where));
+        DynamicQuery.Validate(typeof(CriteriaOrder), new DynamicQueryText("Notes != \"x\" or Notes = null"), where);
 
         // Equality is untouched, and the Where rule does not fire on an ordering it never sees.
         DynamicQuery.Validate(typeof(CriteriaOrder), new DynamicQueryText("Status = \"Open\""), where);

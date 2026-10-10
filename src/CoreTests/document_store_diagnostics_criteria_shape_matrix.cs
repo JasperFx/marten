@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +9,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Documents;
 using JasperFx.Linq;
 using Marten;
+using Marten.Linq;
 using Marten.Testing.Harness;
 using Npgsql;
 using NpgsqlTypes;
@@ -53,6 +55,11 @@ public class CriteriaOrder
     public string[] Tags { get; set; } = [];
     public int Score { get; set; }
     public int? Rating { get; set; }
+
+    // jasperfx#869 SQL null semantics: nullable members compared with <> / negated.
+    public string? Notes { get; set; }
+    public int? Discount { get; set; }
+    public CriteriaAddress BillTo { get; set; } = new();
 }
 
 /// <summary>
@@ -104,8 +111,12 @@ public class document_store_diagnostics_criteria_shape_matrix
     /// The verdict under <c>EnumStorage.AsString</c>, where it differs: an enum stored as its name compares
     /// and orders alphabetically, so the ordering shapes over it are refused there.
     /// </param>
+    /// <param name="Oracle">
+    /// The C# answer, for the one kind of shape LINQ to objects cannot evaluate: a string method on a null
+    /// member throws there, where the text's intent (null contains nothing) is unambiguous.
+    /// </param>
     public sealed record Shape(string Name, string? Where, object?[]? Args, Verdict Expected, string? OrderBy = null,
-        Verdict? WhenEnumsAreNames = null)
+        Verdict? WhenEnumsAreNames = null, Func<CriteriaOrder, bool>? Oracle = null)
     {
         public override string ToString() => Name;
     }
@@ -190,6 +201,21 @@ public class document_store_diagnostics_criteria_shape_matrix
         new("Guid = @0", "CustomerId = @0", [SharedCustomer], Verdict.Correct),
         new("Guid = @0 as text", "CustomerId = @0", [SharedCustomer.ToString().ToUpperInvariant()], Verdict.Correct),
         new("and / or / not", "(Status = \"Open\" or Total > @0) and not IsPriority", [200m], Verdict.Correct),
+
+        // SQL three-valued logic: NULL <> 'x' is unknown, so the database drops every null row the C# text
+        // keeps. Refused by DynamicQueryShapeRules.SqlNullSemantics() unless the text settles the null case.
+        new("nullable string !=", "Notes != @0", ["fragile"], Verdict.RefusedBeforeProvider),
+        new("not (nullable string =)", "not (Notes = @0)", ["fragile"], Verdict.RefusedBeforeProvider),
+        new("not nullable string Contains", "not Notes.Contains(@0)", ["frag"], Verdict.RefusedBeforeProvider,
+            Oracle: x => !(x.Notes?.Contains("frag") ?? false)),
+        new("nullable int !=", "Discount != @0", [5], Verdict.RefusedBeforeProvider),
+        new("nested nullable !=", "BillTo.City != @0", ["Austin"], Verdict.RefusedBeforeProvider),
+        new("!= guarded: or = null", "Notes != @0 or Notes = null", ["fragile"], Verdict.Correct),
+        new("!= guarded: != null and", "Notes != null and Notes != @0", ["fragile"], Verdict.Correct),
+        new("nullable int != guarded", "Discount != @0 or Discount = null", [5], Verdict.Correct),
+        new("nested != guarded", "BillTo.City != @0 or BillTo.City = null", ["Austin"], Verdict.Correct),
+        new("non-nullable string !=", "CustomerName != @0", ["Ann"], Verdict.Correct),
+        new("not over non-nullable", "not (CustomerName = @0)", ["Ann"], Verdict.Correct),
 
         // refused before any provider sees it
         new("np()", "np(ShipTo.City) = null", null, Verdict.RefusedBeforeProvider),
@@ -278,7 +304,10 @@ public class document_store_diagnostics_criteria_shape_matrix
                 .ToList(),
             Tags = tags[i % tags.Length],
             Score = i % 5,
-            Rating = i % 3 == 0 ? null : i % 4
+            Rating = i % 3 == 0 ? null : i % 4,
+            Notes = i % 4 == 0 ? "fragile" : i % 4 == 1 ? "glass" : null,
+            Discount = i % 3 == 0 ? null : i % 2 == 0 ? 5 : 10,
+            BillTo = new CriteriaAddress { City = i % 3 == 0 ? null : i % 2 == 0 ? "Austin" : "Denver", Zip = "1" }
         }).ToList();
     }
 
@@ -365,10 +394,15 @@ public class document_store_diagnostics_criteria_shape_matrix
         mismatches.ShouldBeEmpty(string.Join(Environment.NewLine, mismatches));
     }
 
-    private static (List<Guid>? Ids, string Note) runOracle(List<CriteriaOrder> orders, Shape shape)
+    internal static (List<Guid>? Ids, string Note) runOracle(List<CriteriaOrder> orders, Shape shape)
     {
         // The same text through the same helper, over LINQ to objects, with the same id tie-breaker the
         // store applies after any ordering.
+        if (shape.Oracle != null)
+        {
+            return (orders.Where(shape.Oracle).Select(x => x.Id).ToList(), "");
+        }
+
         var orderBy = shape.OrderBy == null ? null : $"{shape.OrderBy}, Id";
         try
         {
@@ -379,6 +413,69 @@ public class document_store_diagnostics_criteria_shape_matrix
         {
             return (null, "parser refuses");
         }
+    }
+
+    /// <summary>
+    /// The negative control for every store rule: each shape the matrix expects to be refused by a rule (and
+    /// that the oracle can answer) is run through Marten's RAW provider -- the same text, composed with
+    /// JasperFx's default policy only, none of Marten's rules -- and must come back different from the oracle.
+    /// A shape that comes back right here no longer needs its rule, and the rule is then refusing a correct
+    /// answer.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Configurations))]
+    public async Task without_the_store_rules_each_refused_shape_is_silently_wrong(string configuration)
+    {
+        var schema = $"diag869_raw_{configuration}";
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.DropSchemaAsync(schema);
+        }
+
+        await using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = schema;
+            opts.DisableNpgsqlLogging = true;
+            configure(configuration, opts);
+        });
+
+        var orders = Seed();
+        await using (var session = store.LightweightSession())
+        {
+            session.Store(orders.ToArray());
+            await session.SaveChangesAsync();
+        }
+
+        var controls = Shapes
+            .Where(x => (configuration == "camel_string_enums" ? x.WhenEnumsAreNames ?? x.Expected : x.Expected)
+                        == Verdict.RefusedBeforeProvider)
+            .Select(x => (Shape: x, Oracle: runOracle(orders, x).Ids))
+            .Where(x => x.Oracle != null)
+            .ToList();
+
+        controls.ShouldNotBeEmpty();
+
+        await using var query = store.QuerySession();
+        var stillRight = new List<string>();
+        foreach (var (shape, oracle) in controls)
+        {
+            var orderBy = shape.OrderBy == null ? null : $"{shape.OrderBy}, Id";
+            var raw = await DynamicQuery.Apply(query.Query<CriteriaOrder>(),
+                    new DynamicQueryText(shape.Where, orderBy, shape.Args))
+                .ToListAsync();
+            var ids = raw.Select(x => x.Id).ToList();
+
+            var same = shape.OrderBy == null
+                ? ids.OrderBy(x => x).SequenceEqual(oracle!.OrderBy(x => x))
+                : ids.SequenceEqual(oracle!);
+
+            _output.WriteLine($"{configuration} | {shape.Name} | oracle {oracle!.Count} | raw {ids.Count} | {(same ? "SAME" : "wrong")}");
+            if (same) stillRight.Add(shape.Name);
+        }
+
+        stillRight.ShouldBeEmpty("These shapes are refused by a store rule but Marten's raw provider answers them correctly");
     }
 
     private static string shorten(string message)
