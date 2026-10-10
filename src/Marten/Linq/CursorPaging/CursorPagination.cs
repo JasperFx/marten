@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -247,9 +248,15 @@ internal static class CursorPagination
     /// the last row in a page so they can be round-tripped back as the next
     /// request's cursor.
     /// </summary>
-    public static string EncodeCursor(object?[] values)
+    /// <remarks>
+    /// The keys are written with the store's <paramref name="serializer"/>, not the default
+    /// System.Text.Json options: a key type only the store's serializer knows how to write, such as a
+    /// NodaTime LocalDate, otherwise serializes as a property bag that reads back as a default value,
+    /// and the next page seeks from there.
+    /// </remarks>
+    public static string EncodeCursor(object?[] values, ISerializer serializer)
     {
-        var json = JsonSerializer.Serialize(values);
+        var json = "[" + string.Join(",", values.Select(serializer.ToCleanJson)) + "]";
         var bytes = Encoding.UTF8.GetBytes(json);
         return CursorPrefix + Convert.ToBase64String(bytes);
     }
@@ -257,9 +264,9 @@ internal static class CursorPagination
     /// <summary>
     /// Decode a cursor string produced by <see cref="EncodeCursor"/>, converting
     /// each element back to the CLR type produced by its matching ordering's key
-    /// selector.
+    /// selector with the same <paramref name="serializer"/> that wrote it.
     /// </summary>
-    public static object?[] DecodeCursor(string cursor, IReadOnlyList<CursorOrdering> orderings)
+    public static object?[] DecodeCursor(string cursor, IReadOnlyList<CursorOrdering> orderings, ISerializer serializer)
     {
         if (!cursor.StartsWith(CursorPrefix, StringComparison.Ordinal))
         {
@@ -298,15 +305,24 @@ internal static class CursorPagination
             var values = new object?[orderings.Count];
             for (var i = 0; i < orderings.Count; i++)
             {
+                // A sort key is a scalar. Refusing anything else here also keeps client-supplied
+                // metadata such as Newtonsoft's $type away from the store's serializer.
+                if (root[i].ValueKind is JsonValueKind.Object or JsonValueKind.Array)
+                {
+                    throw new ArgumentException("Invalid cursor.", nameof(cursor));
+                }
+
                 try
                 {
-                    values[i] = JsonSerializer.Deserialize(root[i].GetRawText(), orderings[i].KeyType);
+                    using var element = new MemoryStream(Encoding.UTF8.GetBytes(root[i].GetRawText()));
+                    values[i] = serializer.FromJson(orderings[i].KeyType, element);
                 }
-                catch (JsonException e)
+                catch (Exception e)
                 {
                     // Cursors are client-supplied: a well-formed JSON array whose element can't bind
                     // to the key type (e.g. "abc" for a Guid key) must surface as a clean ArgumentException
-                    // (=> 400) rather than an uncaught JsonException (=> 500).
+                    // (=> 400) rather than an uncaught serializer exception (=> 500). Which exception
+                    // that is depends on the store's serializer, hence the broad catch.
                     throw new ArgumentException("Invalid cursor.", nameof(cursor), e);
                 }
             }

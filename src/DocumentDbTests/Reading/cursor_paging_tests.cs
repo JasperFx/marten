@@ -235,7 +235,7 @@ public class cursor_paging_tests: IntegrationContext
         // A well-formed, correct-length cursor array whose terminal element ("not-a-guid")
         // cannot bind to the Guid Id key. This must surface as a clean ArgumentException (=> 400),
         // not an uncaught JsonException (=> 500). Cursors are client-supplied.
-        var tampered = CursorPagination.EncodeCursor(new object?[] { "a", "not-a-guid" });
+        var tampered = CursorPagination.EncodeCursor(new object?[] { "a", "not-a-guid" }, theStore.Serializer);
 
         await Should.ThrowAsync<ArgumentException>(async () =>
             await theSession.Query<User>().OrderBy(x => x.FirstName).ThenBy(x => x.Id)
