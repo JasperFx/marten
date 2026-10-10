@@ -284,7 +284,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         var read = await reader.StreamCursorKeyset(keyTypes, pageSize, token).ConfigureAwait(false);
 
         var nextCursor = read is { HasMore: true, LastKeys: not null }
-            ? CursorPagination.EncodeCursor(read.LastKeys)
+            ? CursorPagination.EncodeCursor(read.LastKeys, _session.Serializer)
             : null;
 
         return new CursorPageResult(read.ItemsJson, read.Count, nextCursor);

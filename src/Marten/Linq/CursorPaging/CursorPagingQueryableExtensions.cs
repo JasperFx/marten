@@ -70,7 +70,7 @@ public static class CursorPagingQueryableExtensions
 
         if (!string.IsNullOrEmpty(cursor))
         {
-            var values = CursorPagination.DecodeCursor(cursor!, orderings);
+            var values = CursorPagination.DecodeCursor(cursor!, orderings, session.Serializer);
             var predicate = CursorPagination.BuildSeekPredicate<T>(orderings, values);
             working = working.Where(predicate);
         }
