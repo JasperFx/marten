@@ -84,11 +84,6 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         // honour AllTenants at all.
         options.AssertValidTenantScope();
 
-        // Refused BEFORE anything else, including resolving the type: silently returning the unfiltered
-        // page is the one answer a console cannot tell apart from a filter that matched every row
-        // (jasperfx#870 §1). Marten will apply these once jasperfx#869's Dynamic LINQ translation lands.
-        refuseUnsupportedCriteria(options);
-
         var pageNumber = Math.Max(1, options.PageNumber);
         var pageSize = Math.Max(1, options.PageSize);
 
@@ -105,6 +100,14 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         if (database == null)
         {
             return emptyPage(pageNumber, pageSize);
+        }
+
+        // jasperfx#869: Where / OrderBy go through Marten's own LINQ provider. Without them, nothing below
+        // this line changed.
+        if (options.HasCriteria())
+        {
+            return await queryWithCriteriaAsync(target, database, options, pageNumber, pageSize, token)
+                .ConfigureAwait(false);
         }
 
         var predicate = new DiagnosticsPredicate(target, options.TenantId, options.AllTenants);
@@ -195,21 +198,6 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
 
     private static DocumentQueryResult emptyPage(int pageNumber, int pageSize)
         => new(Array.Empty<StoredDocument>(), 0, pageNumber, pageSize);
-
-    private static void refuseUnsupportedCriteria(DocumentQueryOptions options)
-    {
-        if (options.Where != null)
-        {
-            throw new DocumentCriteriaNotSupportedException(nameof(DocumentQueryOptions.Where),
-                "Marten does not translate Dynamic LINQ predicates for diagnostic document queries yet (jasperfx#869). Narrow the page with IdEquals, TenantId or the metadata filters instead.");
-        }
-
-        if (options.OrderBy != null)
-        {
-            throw new DocumentCriteriaNotSupportedException(nameof(DocumentQueryOptions.OrderBy),
-                "Marten does not translate Dynamic LINQ ordering for diagnostic document queries yet (jasperfx#869). Results come back in the store's own stable order, by id.");
-        }
-    }
 
     /// <summary>
     /// The physical database a diagnostic read should run against, or null when the tenant is not one this
@@ -347,7 +335,6 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         private readonly List<string> _conditions = new();
         private readonly List<Action<NpgsqlCommand>> _parameters = new();
         private readonly bool _allTenants;
-        private object? _id;
 
         public DiagnosticsPredicate(DiagnosticsTarget target, string? tenantId, bool allTenants = false)
         {
@@ -397,31 +384,42 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         /// </remarks>
         public bool TryMatchId(string idText)
         {
-            var idType = _target.Mapping.InnerIdType();
+            if (!TryConvertId(_target.Mapping, idText, out var id))
+            {
+                return false;
+            }
+
+            _conditions.Add("id = @id");
+            _parameters.Add(cmd => cmd.Parameters.AddWithValue("id", id));
+
+            return true;
+        }
+
+        /// <summary>
+        /// The text id as a value of the mapping's stored identity type, or false when it is not one.
+        /// Shared by the raw read and the criteria read (jasperfx#869) so the two cannot disagree on what
+        /// an id matches.
+        /// </summary>
+        internal static bool TryConvertId(DocumentMapping mapping, string idText, out object id)
+        {
+            var idType = mapping.InnerIdType();
+            id = idText;
 
             if (idType == typeof(Guid))
             {
                 if (!Guid.TryParse(idText, out var guid)) return false;
-                _id = guid;
+                id = guid;
             }
             else if (idType == typeof(int))
             {
                 if (!int.TryParse(idText, out var i)) return false;
-                _id = i;
+                id = i;
             }
             else if (idType == typeof(long))
             {
                 if (!long.TryParse(idText, out var l)) return false;
-                _id = l;
+                id = l;
             }
-            else
-            {
-                _id = idText;
-            }
-
-            _conditions.Add("id = @id");
-            var id = _id;
-            _parameters.Add(cmd => cmd.Parameters.AddWithValue("id", id!));
 
             return true;
         }
@@ -436,27 +434,37 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         /// </summary>
         public void AddMetadataFilters(DocumentQueryOptions options)
         {
-            var metadata = _target.Mapping.Metadata;
+            var index = 0;
+            foreach (var (column, value) in MetadataFilters(_target.Mapping, options))
+            {
+                var name = $"meta{index++}";
+                _conditions.Add($"{column} = @{name}");
+                _parameters.Add(cmd => cmd.Parameters.AddWithValue(name, value));
+            }
+        }
+
+        /// <summary>
+        /// The metadata column / value pairs <see cref="AddMetadataFilters" /> applies, as data — so the
+        /// criteria read (jasperfx#869) applies exactly the same ones.
+        /// </summary>
+        internal static IEnumerable<(string Column, string Value)> MetadataFilters(DocumentMapping mapping,
+            DocumentQueryOptions options)
+        {
+            var metadata = mapping.Metadata;
 
             if (options.CorrelationId != null && metadata.CorrelationId.Enabled)
             {
-                _conditions.Add($"{CorrelationIdColumn.ColumnName} = @corr");
-                var value = options.CorrelationId;
-                _parameters.Add(cmd => cmd.Parameters.AddWithValue("corr", value));
+                yield return (CorrelationIdColumn.ColumnName, options.CorrelationId);
             }
 
             if (options.CausationId != null && metadata.CausationId.Enabled)
             {
-                _conditions.Add($"{CausationIdColumn.ColumnName} = @caus");
-                var value = options.CausationId;
-                _parameters.Add(cmd => cmd.Parameters.AddWithValue("caus", value));
+                yield return (CausationIdColumn.ColumnName, options.CausationId);
             }
 
             if (options.LastModifiedBy != null && metadata.LastModifiedBy.Enabled)
             {
-                _conditions.Add($"{LastModifiedByColumn.ColumnName} = @lmb");
-                var value = options.LastModifiedBy;
-                _parameters.Add(cmd => cmd.Parameters.AddWithValue("lmb", value));
+                yield return (LastModifiedByColumn.ColumnName, options.LastModifiedBy);
             }
         }
 
@@ -517,14 +525,21 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         private readonly int _deletedAtIndex = -1;
         private readonly int _docTypeIndex = -1;
 
-        public StoredDocumentReader(DiagnosticsTarget target)
+        /// <param name="target">What is being read.</param>
+        /// <param name="alias">
+        /// The table alias to qualify every column with, or null for an unaliased single-table read. The
+        /// criteria read (jasperfx#869) passes <c>d</c>, the alias Marten's LINQ statements give the
+        /// document table, because its select list is spliced into a statement Marten built.
+        /// </param>
+        public StoredDocumentReader(DiagnosticsTarget target, string? alias = null)
         {
             _target = target;
+            var p = alias == null ? "" : alias + ".";
 
             // id::text so every identity type -- Guid, int, long, string, or a strong-typed wrapper's inner
             // value -- comes back as the text StoredDocument.Id is defined as, without a per-type switch on
             // the read side. data::text guarantees the jsonb column arrives as JSON text.
-            var columns = new List<string> { "id::text", "data::text" };
+            var columns = new List<string> { $"{p}id::text", $"{p}data::text" };
             var metadata = target.Mapping.Metadata;
 
             // Guid version and numeric revision are the SAME mt_version column -- they are mutually
@@ -534,43 +549,46 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             if (metadata.Version.Enabled || metadata.Revision.Enabled)
             {
                 _versionIndex = columns.Count;
-                columns.Add($"{SchemaConstants.VersionColumn}::text");
+                columns.Add($"{p}{SchemaConstants.VersionColumn}::text");
             }
 
             if (metadata.LastModified.Enabled)
             {
                 _lastModifiedIndex = columns.Count;
-                columns.Add(SchemaConstants.LastModifiedColumn);
+                columns.Add(p + SchemaConstants.LastModifiedColumn);
             }
 
             if (metadata.CreatedAt.Enabled)
             {
                 _createdAtIndex = columns.Count;
-                columns.Add(SchemaConstants.CreatedAtColumn);
+                columns.Add(p + SchemaConstants.CreatedAtColumn);
             }
 
             if (target.IsConjoined)
             {
                 _tenantIndex = columns.Count;
-                columns.Add(TenantIdColumn.Name);
+                columns.Add(p + TenantIdColumn.Name);
             }
 
             if (target.IsSoftDeleted)
             {
                 _deletedIndex = columns.Count;
-                columns.Add(SchemaConstants.DeletedColumn);
+                columns.Add(p + SchemaConstants.DeletedColumn);
                 _deletedAtIndex = columns.Count;
-                columns.Add(SchemaConstants.DeletedAtColumn);
+                columns.Add(p + SchemaConstants.DeletedAtColumn);
             }
 
             if (target.IsHierarchy)
             {
                 _docTypeIndex = columns.Count;
-                columns.Add(SchemaConstants.DocumentTypeColumn);
+                columns.Add(p + SchemaConstants.DocumentTypeColumn);
             }
 
+            SelectFields = columns.ToArray();
             SelectList = string.Join(", ", columns);
         }
+
+        public string[] SelectFields { get; }
 
         public string SelectList { get; }
 
