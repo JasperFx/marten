@@ -27,15 +27,21 @@
 //   child collection      a containment filter serialized its jsonb payload through the consumer's
 //                         source-generated resolver, which carries documents and not object[],
 //                         Dictionary<string, object> or the enum being compared (#5374).
+//   diagnostics criteria  IDocumentStoreDiagnostics Where / OrderBy (jasperfx#869) are translated with
+//                         runtime code generation, so a native binary must REFUSE them -- before any
+//                         generic method is closed over the document type -- not crash, and never
+//                         return the page unfiltered.
 //
 // Exits non-zero with the offending stack trace on the first failure, so CI reports the
 // specific read path that regressed.
 
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using JasperFx;
+using JasperFx.Documents;
 using JasperFx.Events;
 using Marten;
 using Marten.Linq;
@@ -253,6 +259,30 @@ try
     {
         var ids = await session.Query<Declaratie>().Where(x => x.Prestatiecode == "12000").Select(x => x.Id).ToListAsync();
         return ids.Count == 1 && ids[0] == declaratieId;
+    });
+
+    var diagnostics = (IDocumentStoreDiagnostics)store;
+
+    await Check("diagnostics page without criteria", async () =>
+    {
+        var page = await diagnostics.QueryDocumentsAsync(typeof(Praktijk).FullName!, new DocumentQueryOptions(1, 10));
+        return page.TotalCount == 2;
+    });
+
+    await Check("diagnostics criteria refused under Native AOT", async () =>
+    {
+        var criteria = new DocumentQueryOptions(1, 10) { Where = "Naam = @0", Arguments = ["Praktijk Jansen"] };
+        try
+        {
+            var page = await diagnostics.QueryDocumentsAsync(typeof(Praktijk).FullName!, criteria);
+
+            // Only a JIT process (`dotnet run` of this project) may answer; a native binary must refuse.
+            return RuntimeFeature.IsDynamicCodeSupported && page.TotalCount == 1;
+        }
+        catch (DocumentCriteriaNotSupportedException e)
+        {
+            return !RuntimeFeature.IsDynamicCodeSupported && e.Criterion == nameof(DocumentQueryOptions.Where);
+        }
     });
 
 }
