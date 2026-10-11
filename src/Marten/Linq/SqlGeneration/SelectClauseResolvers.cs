@@ -2,7 +2,10 @@
 using System;
 using System.Collections.Concurrent;
 using JasperFx.Core.Reflection;
+using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.QueryHandlers;
+using Marten.Linq.Selectors;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
@@ -31,6 +34,17 @@ namespace Marten.Linq.SqlGeneration;
 ///         <c>MartenLinqQueryable&lt;TResult&gt;</c>. That constructor calls
 ///         <see cref="Register{T}" />, where the compiler has already emitted the closed
 ///         instantiations.
+///     </para>
+///     <para>
+///         The <em>scalar</em> half (#5635) cannot be registered from there, because
+///         <c>NewScalarSelectClause&lt;T&gt;</c> — and <c>NullableSelector&lt;T&gt;</c> with it — is
+///         declared <c>where T : struct</c> while <c>MartenLinqQueryable&lt;T&gt;</c> constrains its
+///         own <c>T</c> only to <c>notnull</c>. C# has no way to close a struct-constrained generic
+///         from a <c>notnull</c> one without <c>MakeGenericMethod</c>, which is the thing being
+///         avoided. So <see cref="RegisterValueType{T}" /> is called from the static constructor for
+///         every scalar type Marten renders itself, and from
+///         <c>StoreOptions.RegisterScalarType&lt;T&gt;()</c> for an enum or struct out of the
+///         consumer's assembly, which Marten cannot name.
 ///     </para>
 ///     <para>
 ///         The registry is a fast path, not a contract: a miss falls back to the reflective
@@ -102,7 +116,16 @@ internal static class SelectClauseResolvers
 
         _scalars[typeof(T)] = new ScalarResolver(
             static (locator, from) => new NewScalarSelectClause<T>(locator, from),
-            static (member, from) => new NewScalarSelectClause<T>(member, from));
+            static (member, from) => new NewScalarSelectClause<T>(member, from),
+            // A list of nullable scalars -- Select(x => x.OptionalAmount) -- resolves the value with
+            // the non-nullable selector and wraps it, so both halves have to be rooted here too.
+            // CS8714: ListQueryHandler<T> is declared `where T : notnull` and Nullable<T> does not
+            // satisfy it in C#. The constraint is erased in metadata, which is exactly why the
+            // reflective fallback below can close the same type at runtime.
+#pragma warning disable CS8714
+            static (statement, inner) =>
+                new ListQueryHandler<T?>(statement, new NullableSelector<T>((ISelector<T>)inner)));
+#pragma warning restore CS8714
     }
 
     /// <summary>
@@ -112,7 +135,8 @@ internal static class SelectClauseResolvers
     {
         return _scalars.TryGetValue(scalarType, out var resolver)
             ? resolver.FromLocator(locator, from)
-            : typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(locator, from, scalarType);
+            : reflectively(scalarType,
+                () => typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(locator, from, scalarType));
     }
 
     /// <summary>
@@ -122,7 +146,42 @@ internal static class SelectClauseResolvers
     {
         return _scalars.TryGetValue(scalarType, out var resolver)
             ? resolver.FromMember(member, from)
-            : typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(member, from, scalarType);
+            : reflectively(scalarType,
+                () => typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(member, from, scalarType));
+    }
+
+    /// <summary>
+    ///     #5635. The reflective fallback for an unregistered value type, which is correct under a JIT
+    ///     and has no native code to run under AOT. Name the one line that fixes it rather than
+    ///     letting <c>Activator.CreateInstance</c>'s own message stand: it reports a missing
+    ///     parameterless constructor on an internal generic, which says nothing about what to do.
+    /// </summary>
+    private static ISelectClause reflectively(Type scalarType, Func<ISelectClause> build)
+    {
+        try
+        {
+            return build();
+        }
+        catch (MissingMemberException e)
+        {
+            throw new MartenNotSupportedException(
+                $"Marten has no instantiation of its scalar select clause closed over {scalarType.FullNameInCode()}, which a Native AOT image cannot create at runtime. Register the value type once, in the same place as Schema.For<T>():{Environment.NewLine}{Environment.NewLine}"
+                + $"    opts.RegisterScalarType<{scalarType.NameInCode()}>();{Environment.NewLine}{Environment.NewLine}"
+                + "Marten roots the scalar types it renders itself, so this only applies to an enum or struct from your own assembly. Under a JIT the call does nothing. See https://martendb.io/configuration/aot-publishing and https://github.com/JasperFx/marten/issues/5635.",
+                e);
+        }
+    }
+
+    /// <summary>
+    ///     The <c>ListQueryHandler&lt;scalarType?&gt;</c> for a list of nullable scalars, with its
+    ///     value resolved by <c>NullableSelector&lt;scalarType&gt;</c>. Returns null when the scalar
+    ///     type was never registered, leaving the caller's reflective path to it.
+    /// </summary>
+    internal static object? TryBuildNullableListHandler(Type scalarType, ISqlFragment? statement, object selector)
+    {
+        return _scalars.TryGetValue(scalarType, out var resolver)
+            ? resolver.NullableListHandler(statement, selector)
+            : null;
     }
 
     /// <summary>
@@ -163,5 +222,6 @@ internal static class SelectClauseResolvers
 
     private sealed record ScalarResolver(
         Func<string, string, ISelectClause> FromLocator,
-        Func<IQueryableMember, string, ISelectClause> FromMember);
+        Func<IQueryableMember, string, ISelectClause> FromMember,
+        Func<ISqlFragment?, object, object> NullableListHandler);
 }

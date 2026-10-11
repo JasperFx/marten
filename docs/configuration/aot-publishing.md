@@ -139,7 +139,21 @@ As of Marten 9.0.0-alpha:
 
 - **`UseSystemTextJsonForSerialization`** with the default `JsonSerializerOptions` or a user-supplied one. For best AOT results, supply a source-generated `JsonSerializerContext` — and prefer `SystemTextJsonSerializer.UseTypeInfoResolver(MyContext.Default)` over assigning `JsonSerializerOptions.TypeInfoResolver` yourself. The former *combines* your context with a reflection-based resolver behind it; the latter replaces the reflection resolver outright, and then any type your context cannot name — an anonymous projection in particular — has no metadata at all. See [an anonymous projection cannot be materialized](#a-projection-into-an-anonymous-type-cannot-be-materialized).
 - **Document storage** — `Schema.For<TDoc>()` and the entire CRUD / LINQ surface for closed-shape document types with a **Guid / string / int / long** identity, including the containment and JSONPath filters a child-collection query compiles to (#5377).
-- **`Select()` projections** — into a named DTO (`Select(x => new Summary { ... })`), into a collection member (`Select(x => x.Lines)`), the element type of a `SelectMany(x => x.Lines)`, and a scalar member of any framework type (`string`, `decimal`, `Guid`, `DateTime`/`DateOnly`/`TimeOnly`, the integral and floating-point types). Every one of these closed its select clause over `selectExpression.Type` with `Activator.CreateInstance` until #5624, so they all failed natively — a *named* DTO projection just as hard as an anonymous one, and before the serializer was reached. The one shape still left over is a scalar projection of an **enum or struct declared in your own assembly**; see below.
+- **`Select()` projections** — into a named DTO (`Select(x => new Summary { ... })`), into a collection member (`Select(x => x.Lines)`), the element type of a `SelectMany(x => x.Lines)`, and a scalar member of any framework type, nullable included (`string`, `decimal?`, `Guid`, `DateTime`/`DateOnly`/`TimeOnly`, the integral and floating-point types). Every one of these closed its select clause over `selectExpression.Type` with `Activator.CreateInstance` until #5624, so they all failed natively — a *named* DTO projection just as hard as an anonymous one, and before the serializer was reached. A list of *nullable* scalars needed one more pair of instantiations (`NullableSelector<T>` feeding `ListQueryHandler<T?>`) and was fixed in #5635.
+- **A scalar projection of your own enum or struct** — `Select(x => x.Status)`, `MaxAsync(x => x.Status)` — **once you register the type**, one line per value type:
+
+  ```cs
+  opts.RegisterScalarType<Status>();
+  ```
+
+  Marten's scalar select clause is declared `where T : struct`, and the registration point #5624 added — `MartenLinqQueryable<T>`, which every projected type passes through — constrains its own `T` only to `notnull`, so Marten cannot close that clause for a type it doesn't know. It roots the scalar types it renders itself, which is why `decimal` and `DateOnly` need nothing. Without the call, under AOT:
+
+  ```text
+  MissingMethodException: No parameterless constructor defined for type
+  'Marten.Linq.SqlGeneration.NewScalarSelectClause`1[YourEnum]'
+  ```
+
+  Under a JIT the call does nothing and costs nothing. Projecting the same enum as a *member* of a named type (`Select(x => new StatusView { Status = x.Status })`) never needed it, and neither does filtering on it. See [#5635](https://github.com/JasperFx/marten/issues/5635).
 - **Strong-typed identities** (Vogen, StronglyTypedId, a plain `readonly record struct`) — **once you register them**, which is one extra line per document type:
 
   ```cs
@@ -191,23 +205,6 @@ As of Marten 9.0.0-alpha:
 
 - **F# single-case discriminated-union ids.** The C# strong-typed id wrappers are covered by `RegisterValueTypeId<TDoc, TWrapper, TInner>()` above, but an F# DU id is a reference type and routes through a different select clause (`FSharpDiscriminatedUnionIdSelectClause`), which that registration cannot name. Still fine under a JIT. Tracked with the rest of [#5589](https://github.com/JasperFx/marten/issues/5589).
 - **`.IsOneOf(...)` over a strong-typed id** reaches `ConvertFromWrapperArray` through a reflective method lookup that the trimmer can drop. Equality and ordering on a strong-typed id are fine.
-- **A bare scalar projection of an enum or struct declared in your own assembly** — `Select(x => x.Status)` where `Status` is your enum:
-
-  ```text
-  MissingMethodException: No parameterless constructor defined for type
-  'Marten.Linq.SqlGeneration.NewScalarSelectClause`1[YourEnum]'
-  ```
-
-  That clause is declared with a `struct` constraint, and the registration point #5624 added —
-  `MartenLinqQueryable<T>`, where every projected type arrives — constrains its own `T` only to
-  `notnull`, so it cannot close the clause for you. Marten pre-closes it for every scalar type it
-  renders natively, which is why `decimal` and `DateOnly` are fine and your enum is not.
-  **Workaround: project into a named type instead** — `Select(x => new StatusView { Status = x.Status })`
-  with `[JsonSerializable(typeof(StatusView))]` on your context works natively, because the
-  generator emits the enum's converter along with the type that holds it. Filtering on an enum
-  (`Where(x => x.Status == Status.Active)`) was never affected. Tracked in
-  [#5635](https://github.com/JasperFx/marten/issues/5635).
-
 - **`Marten.Newtonsoft`** — Newtonsoft.Json is fundamentally AOT-hostile. The package's csproj deliberately leaves `IsAotCompatible` off (see PR [#4468](https://github.com/JasperFx/marten/pull/4468)). Use `UseSystemTextJsonForSerialization` instead.
 - **`services.AddRuntimeCompilation()`** — the seam doesn't exist in Marten 9. If you have it in your composition root from a pre-9 app, delete the call.
 - **Pre-built `Internal/Generated/`** — irrelevant to Marten 9. Delete the folder.
