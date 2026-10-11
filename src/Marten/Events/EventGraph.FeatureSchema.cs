@@ -120,6 +120,20 @@ public partial class EventGraph: IFeatureSchema
             }
         }
 
+        var backfilledDocumentTypes = allProjectionSources().OfType<IProjectionWithBackfills>()
+            .Where(x => x.HasBackfills).Select(x => x.BackfilledDocumentType).Distinct().ToArray();
+        if (backfilledDocumentTypes.Length > 0)
+        {
+            yield return new ProjectionBackfillTable(this);
+            yield return new SystemFunction(Options, "mt_jsonb_deep_merge", "jsonb, jsonb");
+
+            foreach (var documentType in backfilledDocumentTypes)
+            {
+                yield return new ProjectionBackfillValuesTable(
+                    (Marten.Schema.DocumentMapping)Options.Storage.FindMapping(documentType).Root);
+            }
+        }
+
         if (EnableAdvancedAsyncTracking)
         {
             yield return new EventProgressionSkippingTable(this);
@@ -143,6 +157,19 @@ public partial class EventGraph: IFeatureSchema
         if (_tagTypes.Count > 0)
         {
             yield return new DcbTagVersionTable(this);
+        }
+    }
+
+    private IEnumerable<object> allProjectionSources()
+    {
+        foreach (var source in Options.Projections.All)
+        {
+            yield return source;
+
+            if (source is JasperFx.Events.Projections.Composite.CompositeProjection<IDocumentOperations, IQuerySession> composite)
+            {
+                foreach (var member in composite.AllProjections()) yield return member;
+            }
         }
     }
 }

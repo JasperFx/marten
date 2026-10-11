@@ -5,6 +5,8 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
+using Microsoft.Extensions.Logging;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Projections.ContainerScoped;
@@ -30,10 +32,30 @@ namespace Marten.Events.Projections;
     Justification = "Class-level: generic type argument doesn't carry the DAM annotation of its target. The argument types flow in from StoreOptions / projection-registration on the caller side and are preserved by the trimmer at that boundary.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
-public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>, IMartenRegistrable where TDoc : notnull where TId : notnull
+public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>, IMartenRegistrable,
+    IProjectionBackfillSource<IDocumentOperations, IQuerySession>, IProjectionWithBackfills where TDoc : notnull where TId : notnull
 {
+    private readonly ProjectionBackfills<TDoc, TId> _backfills = new();
+
     protected MultiStreamProjection(): base()
     {
+    }
+
+    /// <summary>
+    ///     Fill a member added to <typeparamref name="TDoc" /> without a version bump. See <see cref="ProjectionBackfill{TDoc,TId}" />.
+    /// </summary>
+    [JasperFxIgnore]
+    public ProjectionBackfill<TDoc, TId> Backfill(string name) => _backfills.Add(name);
+
+    bool IProjectionWithBackfills.HasBackfills => _backfills.All.Count > 0;
+
+    Type IProjectionWithBackfills.BackfilledDocumentType => typeof(TDoc);
+
+    bool IProjectionBackfillSource<IDocumentOperations, IQuerySession>.TryBuildBackfillExecutor(
+        IEventStore<IDocumentOperations, IQuerySession> store, IEventDatabase database, ShardName shardName,
+        ILogger logger, [NotNullWhen(true)] out IBackfillExecutor? executor)
+    {
+        return _backfills.TryBuildExecutor(store, database, shardName, logger, this, out executor);
     }
 
     void IMartenAggregateProjection.ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
@@ -75,6 +97,8 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
             yield return
                 "MultiStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection";
         }
+
+        foreach (var message in _backfills.Validate(this)) yield return message;
     }
 
     public static void Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,

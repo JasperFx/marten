@@ -26,6 +26,16 @@ internal class PatchExpression<T>: IPatchExpression<T>
         ? _patchSet[^1].Items
         : null;
 
+    /// <summary>
+    ///     Collects a patch set without queueing an operation, for a caller that writes it somewhere else.
+    /// </summary>
+    internal PatchExpression(DocumentSessionBase session)
+    {
+        _session = session;
+    }
+
+    internal List<PatchData> PatchSet => _patchSet;
+
     public PatchExpression(ISqlFragment filter, DocumentSessionBase session)
     {
         _session = session;
