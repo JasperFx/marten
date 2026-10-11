@@ -1,11 +1,13 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
@@ -75,9 +77,6 @@ public class InvoiceSummaryAfterTheChange: SingleStreamProjection<InvoiceSummary
         Name = "InvoiceSummary";
         DeleteEvent<InvoiceVoided>();
 
-        // Small pages, so a backfill over a test-sized store still takes several pages alongside the live shard
-        Options.BatchSize = 5;
-
         Backfill("year-and-line-count")
             .On<InvoiceOpened>((patch, e) => patch
                 .Set(x => x.Year, e.Date.Year)
@@ -121,7 +120,6 @@ public class CustomerSummaryAfterTheChange: MultiStreamProjection<CustomerSummar
     {
         Name = "CustomerSummary";
         Identity<InvoiceLineAdded>(x => x.Customer);
-        Options.BatchSize = 5;
 
         Backfill("line-count").On<InvoiceLineAdded>((patch, _) => patch.Increment(x => x.LineCount));
     }
@@ -155,6 +153,10 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
         {
             x.Add(new InvoiceSummaryAfterTheChange(slowness));
             x.Add(new CustomerSummaryAfterTheChange());
+
+            // Small pages, so a backfill over a test-sized store still takes several pages alongside the live shard.
+            // A backfill pages by its shard, which for a member is the composite
+            x.Options.BatchSize = 5;
         });
     }
 
@@ -592,5 +594,48 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
         var states = await after.Advanced.AllProjectionBackfills(token: TestContext.Current.CancellationToken);
         states.Select(x => x.Name).ShouldBe(["CustomerSummary:All:line-count", "InvoiceSummary:All:year-and-line-count"]);
         states.ShouldAllBe(x => x.IsCompleted && x.Position == x.Ceiling);
+    }
+    [Fact]
+    public async Task the_backfill_progress_is_published_on_the_shard_state_for_monitoring()
+    {
+        var before = StoreOptions(opts => beforeTheChange(opts, null));
+        await appendInvoicesAsync(before, 30);
+        await runDaemonToTheEndAsync(before);
+
+        var after = StoreOptions(opts => afterTheChange(opts, null), cleanAll: false);
+        using var daemon = await after.BuildProjectionDaemonAsync();
+
+        var published = new ConcurrentQueue<BackfillProgress>();
+        using var subscription = daemon.Tracker.Subscribe(new BackfillRecorder(published));
+
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(60.Seconds());
+        await daemon.StopAllAsync();
+
+        var byName = published.GroupBy(x => x.Name).ToDictionary(x => x.Key, x => x.ToList());
+        byName.Keys.Order().ShouldBe(["CustomerSummary:All:line-count", "InvoiceSummary:All:year-and-line-count"]);
+
+        foreach (var progress in byName.Values)
+        {
+            progress.ShouldContain(x => !x.Completed && x.Position < x.Ceiling);
+            progress.ShouldContain(x => x.Completed && x.Position == x.Ceiling);
+            progress.ShouldAllBe(x => x.Failure == null);
+        }
+    }
+
+    private sealed class BackfillRecorder(ConcurrentQueue<BackfillProgress> published): IObserver<ShardState>
+    {
+        public void OnNext(ShardState value)
+        {
+            foreach (var backfill in value.Backfills ?? []) published.Enqueue(backfill);
+        }
+
+        public void OnError(Exception error)
+        {
+        }
+
+        public void OnCompleted()
+        {
+        }
     }
 }

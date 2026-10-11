@@ -152,10 +152,11 @@ internal class ProjectionBackfillExecutor<TDoc, TId>: IBackfillExecutor where TD
 
             _logger.LogInformation("Backfilling {Backfill} from {Floor} alongside the live projection at {Live}",
                 name, position, liveProgression());
+            await request.ReportAsync(new BackfillProgress(name, position, liveProgression())).ConfigureAwait(false);
 
-            var loader = buildLoader(backfill);
+            var loader = buildLoader(backfill, request.BatchSize);
             long live;
-            while ((live = liveProgression()) - position > _projection.Options.BatchSize)
+            while ((live = liveProgression()) - position > request.BatchSize)
             {
                 position = await foldPageAsync(backfill, loader, position, live, request, handOver: false, token)
                     .ConfigureAwait(false);
@@ -177,7 +178,7 @@ internal class ProjectionBackfillExecutor<TDoc, TId>: IBackfillExecutor where TD
                 continue;
             }
 
-            var loader = buildLoader(backfill);
+            var loader = buildLoader(backfill, request.BatchSize);
             do
             {
                 position = await foldPageAsync(backfill, loader, position, ceiling, request, handOver: true, token)
@@ -190,7 +191,7 @@ internal class ProjectionBackfillExecutor<TDoc, TId>: IBackfillExecutor where TD
         _positions.Clear();
     }
 
-    private EventLoader buildLoader(ProjectionBackfill<TDoc, TId> backfill)
+    private EventLoader buildLoader(ProjectionBackfill<TDoc, TId> backfill, int batchSize)
     {
         var filtering = new EventFilterable
         {
@@ -198,7 +199,7 @@ internal class ProjectionBackfillExecutor<TDoc, TId>: IBackfillExecutor where TD
         };
         filtering.IncludedEventTypes.AddRange(backfill.EventTypes.Concat(_deleteTypes).Distinct());
 
-        return new EventLoader(_store, (MartenDatabase)_database, _projection.Options,
+        return new EventLoader(_store, (MartenDatabase)_database, new AsyncOptions { BatchSize = batchSize },
             _store.buildEventLoaderFilters(filtering).ToArray(), filtering.IncludeArchivedEvents, _shardName);
     }
 
@@ -212,7 +213,7 @@ internal class ProjectionBackfillExecutor<TDoc, TId>: IBackfillExecutor where TD
         {
             Floor = floor,
             HighWater = ceiling,
-            BatchSize = _projection.Options.BatchSize,
+            BatchSize = request.BatchSize,
             Name = _shardName,
             ErrorOptions = request.ErrorHandling,
             Runtime = request.Runtime
@@ -247,6 +248,8 @@ internal class ProjectionBackfillExecutor<TDoc, TId>: IBackfillExecutor where TD
             try
             {
                 await session.SaveChangesAsync(token).ConfigureAwait(false);
+                await request.ReportAsync(new BackfillProgress(name, page.Ceiling, ceiling) { Completed = complete })
+                    .ConfigureAwait(false);
                 return page.Ceiling;
             }
             catch (Exception e) when (attempt < MaxAttemptsPerPage && isConflictWithTheLiveProjection(e))
@@ -345,28 +348,38 @@ internal class ProjectionBackfillExecutor<TDoc, TId>: IBackfillExecutor where TD
 
     // Writes the backfilled members into the documents that still exist and are not soft-deleted. Alongside
     // the live projection this merges only what the backfill changed; the hand-over also re-merges every
-    // document the live projection has rewritten since its last merge.
+    // document the live projection has rewritten since its last merge. Each statement finds its rows through
+    // the partial index on dirty, so a page costs what it changed, not the size of the backfill.
     private void queueMerge(DocumentSessionBase session, string name, bool handOver)
     {
         var tenant = _mapping.TenancyStyle == TenancyStyle.Conjoined ? " and d.tenant_id = s.tenant_id" : "";
         var notDeleted = _mapping.DeleteStyle == DeleteStyle.SoftDelete ? " and d.mt_deleted = false" : "";
-        var changed = handOver
-            ? "(s.dirty or s.merged_xmin is null or not (d.xmin = s.merged_xmin))"
-            : "s.dirty";
+
+        if (handOver)
+        {
+            // The one full pass: documents the live projection rewrote since their merge are merged again
+            session.QueueSqlCommand(
+                $"update {_valuesTable} as s set dirty = true from {_documentTable} as d where s.name = ? and not s.dirty and d.id = s.id{tenant} and (s.merged_xmin is null or not (d.xmin = s.merged_xmin))",
+                name);
+        }
 
         session.QueueSqlCommand(
-            $"with merged as (update {_documentTable} as d set data = {_schema}.mt_jsonb_deep_merge(d.data, s.data) from {_valuesTable} as s where s.name = ? and {changed} and d.id = s.id{tenant}{notDeleted} returning d.id, s.tenant_id, d.xmin) " +
-            $"update {_valuesTable} as s set dirty = false, merged_xmin = merged.xmin from merged where s.name = ? and s.id = merged.id and s.tenant_id = merged.tenant_id",
-            name, name);
+            $"update {_documentTable} as d set data = {_schema}.mt_jsonb_deep_merge(d.data, s.data) from {_valuesTable} as s where s.name = ? and s.dirty and d.id = s.id{tenant}{notDeleted}",
+            name);
 
         if (_mapping.DuplicatedFields.Count > 0)
         {
-            // Duplicated columns are computed from data, so only after it changed: the rows this transaction merged
+            // Duplicated columns are computed from data, so only after it changed. The subquery keeps "data" unambiguous
             var columns = string.Join(", ", _mapping.DuplicatedFields.Select(x => x.UpdateSqlFragment()));
             session.QueueSqlCommand(
-                $"update {_documentTable} as d set {columns} where d.xmin = pg_current_xact_id()::xid and exists (select 1 from {_valuesTable} as s where s.name = ? and d.id = s.id{tenant} and s.merged_xmin = d.xmin)",
+                $"update {_documentTable} as d set {columns} from (select id, tenant_id from {_valuesTable} where name = ? and dirty) as s where d.id = s.id{tenant} and d.xmin = pg_current_xact_id()::xid",
                 name);
         }
+
+        // A deleted document has no version to record, and is not merged again by the hand-over
+        session.QueueSqlCommand(
+            $"update {_valuesTable} as s set dirty = false, merged_xmin = (select d.xmin from {_documentTable} as d where d.id = s.id{tenant}) where s.name = ? and s.dirty",
+            name);
     }
 
     private DocumentSessionBase openSession() =>

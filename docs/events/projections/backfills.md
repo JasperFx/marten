@@ -72,6 +72,23 @@ Wolverine's managed event subscription distribution: whichever node starts a ten
 a node that takes over resumes from the recorded position. A forced catch-up (`daemon.CatchUpAsync()`,
 `ForceAllMartenDaemonActivityToCatchUpAsync()`) runs a shard's backfills before catching it up.
 
+## What a backfill costs
+
+A version bump replays every event the projection reads (for a composite, every member's events) into new tables.
+A backfill reads only its own event types and writes only the documents they touch, in pages of the shard's batch
+size (for a composite member, the composite's):
+
+- **Reading** is proportional to the backfill's events, not the store's. A single event type is served by the
+  `(type, seq_id)` index (`opts.Events.EnableEventTypeIndex`); a few common types by the sequence index.
+- **Writing** costs one side-table upsert and one merge per document per page it appears in. The merge finds its rows
+  through a partial index, so a page costs what it changed, not the size of the backfill.
+- **The hand-over** makes one pass over the backfilled documents of the shard to re-merge what the live projection
+  rewrote, while the shard is held. That pass grows with the number of documents, not events.
+
+The gain is therefore largest when the new member comes from a small share of the events, and for composites, where a
+bump would rebuild every member. When the backfill's event types are most of what the projection reads, it does
+about the same work as a rebuild, but without a version, a new table or a pause in projecting.
+
 ## Waiting for and watching a backfill
 
 Until a backfill is handed over, the member it fills is incomplete, even though the projection's progression is
@@ -90,6 +107,12 @@ foreach (var backfill in backfills)
     Console.WriteLine($"{backfill.Name}: {backfill.Position}/{backfill.Ceiling}, completed: {backfill.IsCompleted}");
 }
 ```
+
+A running daemon also publishes it: while a shard owes backfills, every `ShardState` it publishes (including its
+heartbeat) carries `Backfills`, with each backfill's position, the live position it is following, and a `Failure`
+when it stopped. An `IObserver<ShardState>` on `daemon.Tracker`, or a monitoring tool subscribed to it, sees the
+progress without polling. The shard's own sequence and mode stay those of the live projection, so its lag remains
+honest while a backfill runs.
 
 ## Rules for a backfill
 

@@ -21,6 +21,9 @@ internal class ProjectionBackfillValuesTable: Table
         AddColumn("data", "jsonb").NotNull();
         AddColumn<bool>("dirty").NotNull().DefaultValueByExpression("true");
         AddColumn("merged_xmin", "xid").AllowNulls();
+
+        // Only the rows of the page being merged are dirty
+        Indexes.Add(new IndexDefinition($"{Identifier.Name}_dirty") { Columns = ["name"], Predicate = "dirty" });
     }
 
     public static PostgresqlObjectName NameFor(DocumentMapping mapping) =>
