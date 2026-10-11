@@ -205,7 +205,8 @@ As of Marten 9.0.0-alpha:
   **Workaround: project into a named type instead** — `Select(x => new StatusView { Status = x.Status })`
   with `[JsonSerializable(typeof(StatusView))]` on your context works natively, because the
   generator emits the enum's converter along with the type that holds it. Filtering on an enum
-  (`Where(x => x.Status == Status.Active)`) was never affected.
+  (`Where(x => x.Status == Status.Active)`) was never affected. Tracked in
+  [#5635](https://github.com/JasperFx/marten/issues/5635).
 
 - **`Marten.Newtonsoft`** — Newtonsoft.Json is fundamentally AOT-hostile. The package's csproj deliberately leaves `IsAotCompatible` off (see PR [#4468](https://github.com/JasperFx/marten/pull/4468)). Use `UseSystemTextJsonForSerialization` instead.
 - **`services.AddRuntimeCompilation()`** — the seam doesn't exist in Marten 9. If you have it in your composition root from a pre-9 app, delete the call.
