@@ -45,9 +45,10 @@ public class DiagCat: DiagAnimal { }
 /// <remarks>
 /// #5543 / jasperfx#870 grew that surface and defined its semantics. The semantics themselves are pinned
 /// cross-store by <c>DocumentStoreDiagnosticsCompliance</c> (soft deletes, hierarchies, tenancy, id
-/// conversion, criteria refusal, and the write sibling), so what is added here is only what is Marten's
-/// own: the writer's DI registration, the serializer-casing and index/duplicated-field descriptors, and
-/// the rule that a diagnostic read must never PROVISION a tenant's database.
+/// conversion, Where / OrderBy criteria, and the write sibling), so what is added here is only what is
+/// Marten's own: the writer's DI registration, the serializer-casing and index/duplicated-field descriptors,
+/// and the rule that a diagnostic read must never PROVISION a tenant's database. Marten's own side of the
+/// jasperfx#869 criteria lives in document_store_diagnostics_criteria_tests and _shape_matrix.
 /// </remarks>
 public class document_store_diagnostics_tests: HostedStoreContext
 {

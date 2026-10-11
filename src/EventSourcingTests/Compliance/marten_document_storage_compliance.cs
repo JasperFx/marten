@@ -142,10 +142,9 @@ public class document_conjoined_tenancy_compliance
  * drop them and the facts fail rather than skip, because a hard-deleting type and a sub-class in its own
  * table are configurations where the behaviour under test cannot be observed at all.
  *
- * SupportsDocumentDiagnosticCriteria is deliberately left FALSE and is not a skip: with it false the
- * suite asserts Where / OrderBy are REFUSED with DocumentCriteriaNotSupportedException. That refusal is
- * the contract for a store with no predicate translation, because a console cannot tell an ignored
- * filter apart from one that matched every row. It flips when jasperfx#869's Dynamic LINQ lands.
+ * SupportsDocumentDiagnosticCriteria is TRUE as of jasperfx#869: Where / OrderBy are composed onto
+ * Marten's own LINQ provider, and the criteria facts (casing, string methods, JSON-wire arguments,
+ * IdEquals, tie-broken paging, sub-classes, tenants, refusals, hostile predicates) run here.
  */
 [Collection(DocumentComplianceCollection.Name)]
 public class document_store_diagnostics_compliance

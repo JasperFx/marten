@@ -78,13 +78,11 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     public override IDocumentStoreDiagnosticsWriter DocumentDiagnosticsWriter => _store;
 
     /// <summary>
-    /// Left FALSE, and it is the flag doing the work rather than hiding a gap: Marten has no Dynamic LINQ
-    /// translation yet (jasperfx#869), so with this false the suite asserts that <c>Where</c> and
-    /// <c>OrderBy</c> are REFUSED with a <c>DocumentCriteriaNotSupportedException</c> rather than silently
-    /// ignored — which is the contract for a store without predicate support, and a real assertion rather
-    /// than a skip. It flips in the node that applies the criteria.
+    /// jasperfx#869. Marten applies <c>Where</c> / <c>OrderBy</c> through its own LINQ provider, so the
+    /// criteria facts run — and the "refused, not ignored" fact, which holds a store WITHOUT predicate
+    /// support to refusing, skips.
     /// </summary>
-    public override bool SupportsDocumentDiagnosticCriteria => false;
+    public override bool SupportsDocumentDiagnosticCriteria => true;
 
     /// <summary>
     /// #5544 / jasperfx#928. This fixture builds a single-database conjoined store, which is the shape

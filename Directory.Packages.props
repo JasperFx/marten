@@ -796,15 +796,22 @@
          TryParse) and jasperfx#963/#964 (the in-memory prototyping store moves OUT of JasperFx.Events
          into a new JasperFx.Events.InMemory package — Marten references none of it, so nothing moves
          here, but a compile error mentioning an in-memory store type would be that split). -->
-    <PackageVersion Include="JasperFx" Version="2.81.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.81.0" />
+    <!-- JasperFx 2.84.0 (from 2.81.0): carries jasperfx#869, Dynamic LINQ document criteria.
+         DocumentQueryOptions.ApplyCriteriaTo / DynamicQuery compose IDocumentStoreDiagnostics Where /
+         OrderBy text onto a store's own LINQ provider, and DynamicQueryShapeRules.SqlNullSemantics() is
+         the shared refusal for null-blind inequality that Marten's diagnostics Where policy adds. The
+         compliance package's criteria facts run here now (SupportsDocumentDiagnosticCriteria = true).
+         JasperFx gains a dependency on System.Linq.Dynamic.Core, so every Marten consumer picks it up
+         transitively. -->
+    <PackageVersion Include="JasperFx" Version="2.84.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.84.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.81.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.84.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -823,11 +830,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.81.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.84.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.81.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.84.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
