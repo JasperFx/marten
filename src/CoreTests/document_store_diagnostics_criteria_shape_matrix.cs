@@ -337,6 +337,7 @@ public class document_store_diagnostics_criteria_shape_matrix
             await session.SaveChangesAsync();
         }
 
+        var collation = await DatabaseCollation.ReadAsync(orders);
         var diagnostics = (IDocumentStoreDiagnostics)store;
         var typeName = typeof(CriteriaOrder).FullNameInCode();
 
@@ -348,7 +349,7 @@ public class document_store_diagnostics_criteria_shape_matrix
 
         foreach (var shape in Shapes)
         {
-            var (oracleIds, oracleNote) = runOracle(orders, shape);
+            var (oracleIds, oracleNote) = runOracle(orders, shape, collation);
 
             Verdict verdict;
             string storeNote;
@@ -394,7 +395,8 @@ public class document_store_diagnostics_criteria_shape_matrix
         mismatches.ShouldBeEmpty(string.Join(Environment.NewLine, mismatches));
     }
 
-    internal static (List<Guid>? Ids, string Note) runOracle(List<CriteriaOrder> orders, Shape shape)
+    internal static (List<Guid>? Ids, string Note) runOracle(List<CriteriaOrder> orders, Shape shape,
+        DatabaseCollation collation)
     {
         // The same text through the same helper, over LINQ to objects, with the same id tie-breaker the
         // store applies after any ordering.
@@ -404,14 +406,100 @@ public class document_store_diagnostics_criteria_shape_matrix
         }
 
         var orderBy = shape.OrderBy == null ? null : $"{shape.OrderBy}, Id";
+        List<CriteriaOrder> selected;
         try
         {
-            return (DynamicQuery.Apply(orders.AsQueryable(), new DynamicQueryText(shape.Where, orderBy, shape.Args))
-                .Select(x => x.Id).ToList(), "");
+            selected = DynamicQuery.Apply(orders.AsQueryable(), new DynamicQueryText(shape.Where, orderBy, shape.Args))
+                .ToList();
         }
         catch (DynamicQueryException)
         {
             return (null, "parser refuses");
+        }
+
+        // Strings order by the DATABASE's collation, not .NET's: see DatabaseCollation.
+        return ((shape.OrderBy == null ? selected : collation.Order(selected, shape.OrderBy))
+            .Select(x => x.Id).ToList(), "");
+    }
+
+    /// <summary>
+    /// The order the database's own collation puts strings in, as an oracle comparer.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// String ordering in a diagnostic query is the DATABASE's: Marten orders by <c>d.data ->> 'Member'</c> (or a
+    /// duplicated column) under the database's default collation, and that is a property of the server, not a
+    /// translation Marten could get right or wrong. Two servers that both report <c>en_US.utf8</c> disagree:
+    /// the Debian <c>postgres</c> image sorts with glibc (<c>Al &lt; ann &lt; Ann &lt; austin &lt; Austin</c>,
+    /// which happens to match .NET's culture-aware LINQ to objects) while <c>postgres:15-alpine</c> sorts with
+    /// musl, bytewise (<c>Al &lt; Ann &lt; Austin &lt; ann &lt; austin</c>). This matrix first ran green on the
+    /// former and red on the latter in CI, with the provider identical. So the oracle asks the database how it
+    /// orders the seeded strings and orders by that; every non-string key still orders by .NET's comparer, so
+    /// a real mistranslation of an ordering is still caught. <c>string_ordering_follows_the_database_collation</c>
+    /// pins the behaviour as a fact of its own.
+    /// </para>
+    /// <para>Nulls sort first, as C# does — the diagnostic read appends NULLS FIRST / LAST to match.</para>
+    /// </remarks>
+    public sealed class DatabaseCollation : IComparer<object?>
+    {
+        private readonly Dictionary<string, int> _rank;
+
+        private DatabaseCollation(Dictionary<string, int> rank) => _rank = rank;
+
+        public static async Task<DatabaseCollation> ReadAsync(IEnumerable<string?> values)
+        {
+            var distinct = values.OfType<string>().Distinct(StringComparer.Ordinal).ToArray();
+
+            await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await conn.OpenAsync();
+            await using var cmd = new NpgsqlCommand("select v from unnest(@values) as v order by v", conn);
+            cmd.Parameters.AddWithValue("values", distinct);
+
+            var rank = new Dictionary<string, int>(StringComparer.Ordinal);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                rank[reader.GetString(0)] = rank.Count;
+            }
+
+            return new DatabaseCollation(rank);
+        }
+
+        public static Task<DatabaseCollation> ReadAsync(IEnumerable<CriteriaOrder> orders)
+            => ReadAsync(orders.SelectMany(x => new[] { x.CustomerName, x.ShipTo.City, x.ShipTo.Zip, x.BillTo.City, x.Notes }
+                .Concat(x.Tags).Concat(x.Items.Select(i => i.Sku))));
+
+        public int Compare(object? x, object? y)
+        {
+            if (x is null) return y is null ? 0 : -1;
+            if (y is null) return 1;
+
+            return x is string a && y is string b
+                ? _rank[a].CompareTo(_rank[b])
+                : Comparer<object>.Default.Compare(x, y);
+        }
+
+        /// <summary><paramref name="rows" /> in <paramref name="orderBy" />'s order, then by id.</summary>
+        public IEnumerable<CriteriaOrder> Order(IEnumerable<CriteriaOrder> rows, string orderBy)
+        {
+            IOrderedEnumerable<CriteriaOrder>? ordered = null;
+            foreach (var part in orderBy.Split(','))
+            {
+                var text = part.Trim();
+                var descending = text.EndsWith(" desc", StringComparison.OrdinalIgnoreCase);
+                if (descending) text = text[..^5].Trim();
+                else if (text.EndsWith(" asc", StringComparison.OrdinalIgnoreCase)) text = text[..^4].Trim();
+
+                var compiled = System.Linq.Dynamic.Core.DynamicExpressionParser
+                    .ParseLambda(typeof(CriteriaOrder), null, text).Compile();
+                Func<CriteriaOrder, object?> key = x => compiled.DynamicInvoke(x);
+
+                ordered = ordered == null
+                    ? descending ? rows.OrderByDescending(key, this) : rows.OrderBy(key, this)
+                    : descending ? ordered.ThenByDescending(key, this) : ordered.ThenBy(key, this);
+            }
+
+            return ordered!.ThenBy(x => x.Id);
         }
     }
 
@@ -448,10 +536,11 @@ public class document_store_diagnostics_criteria_shape_matrix
             await session.SaveChangesAsync();
         }
 
+        var collation = await DatabaseCollation.ReadAsync(orders);
         var controls = Shapes
             .Where(x => (configuration == "camel_string_enums" ? x.WhenEnumsAreNames ?? x.Expected : x.Expected)
                         == Verdict.RefusedBeforeProvider)
-            .Select(x => (Shape: x, Oracle: runOracle(orders, x).Ids))
+            .Select(x => (Shape: x, Oracle: runOracle(orders, x, collation).Ids))
             .Where(x => x.Oracle != null)
             .ToList();
 

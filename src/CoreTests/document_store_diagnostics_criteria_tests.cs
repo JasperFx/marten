@@ -228,6 +228,44 @@ public class document_store_diagnostics_criteria_tests
     }
 
     [Fact]
+    public async Task string_ordering_follows_the_database_collation()
+    {
+        // Ordering by a string member is the DATABASE's collation, and that is server behaviour rather than
+        // something the provider translates: the Debian postgres image (glibc) puts "ann" before "Ann", the
+        // alpine image (musl) puts every capital first, and both report en_US.utf8. So the expectation here is
+        // read off the same database, never written down as C# ordering -- a console sorting by Title sees
+        // exactly what `order by` on that server gives.
+        await using var store = await storeFor("diag869_collation", opts => opts.Schema.For<CriteriaTicket>());
+
+        string[] titles = ["b", "B", "a", "A", "Ab", "ab", "aB", "Zed", "zed"];
+        await using (var session = store.LightweightSession())
+        {
+            session.Store(titles.Select(t => new CriteriaTicket { Id = Guid.NewGuid(), Title = t }).ToArray());
+            await session.SaveChangesAsync();
+        }
+
+        var databaseOrder = new System.Collections.Generic.List<string>();
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await using var cmd = new NpgsqlCommand("select v from unnest(@v) as v order by v", conn);
+            cmd.Parameters.AddWithValue("v", titles);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync()) databaseOrder.Add(reader.GetString(0));
+        }
+
+        var ascending = await ((IDocumentStoreDiagnostics)store).QueryDocumentsAsync(
+            typeof(CriteriaTicket).FullNameInCode(), new DocumentQueryOptions(1, 20) { OrderBy = "Title" });
+        ascending.Documents.Select(x => JsonDocument.Parse(x.Json).RootElement.GetProperty("Title").GetString())
+            .ShouldBe(databaseOrder);
+
+        var descending = await ((IDocumentStoreDiagnostics)store).QueryDocumentsAsync(
+            typeof(CriteriaTicket).FullNameInCode(), new DocumentQueryOptions(1, 20) { OrderBy = "Title desc" });
+        descending.Documents.Select(x => JsonDocument.Parse(x.Json).RootElement.GetProperty("Title").GetString())
+            .ShouldBe(Enumerable.Reverse(databaseOrder));
+    }
+
+    [Fact]
     public async Task include_soft_deleted_with_where_returns_the_matching_deleted_row_flagged()
     {
         await using var store = await storeFor("diag869_soft", opts => opts.Schema.For<CriteriaTicket>().SoftDeleted());
