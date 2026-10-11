@@ -72,6 +72,10 @@ var store = DocumentStore.For(o =>
     o.Schema.For<Declaratie>();
     // #5589: names the three types so the identity generics are closed at compile time.
     o.RegisterValueTypeId<Declaratie, DeclaratieId, Guid>();
+    // #5635: the scalar select clause is `where T : struct`, so a consumer enum projected on its
+    // own -- Select(x => x.Soort) -- is the one projected type #5624's registry cannot close from
+    // MartenLinqQueryable<T>. Marten roots its own scalar types; this names ours.
+    o.RegisterScalarType<Soort>();
 
     o.Events.StreamIdentity = StreamIdentity.AsString;
     o.Events.AddEventType<DossierGeopend>();
@@ -108,7 +112,7 @@ try
         });
         writing.Store(new Declaratie
         {
-            Id = declaratieId, Prestatiecode = "12000", Bedrag = 42
+            Id = declaratieId, Prestatiecode = "12000", Bedrag = 42, Korting = 5
         });
         writing.Store(new Declaratie
         {
@@ -313,6 +317,44 @@ try
         return regels.Count == 1;
     });
 
+    // #5635: the scalar shapes whose clause or selector is `where T : struct`. The enum ones need
+    // the RegisterScalarType<Soort>() above; the nullable decimal needs nothing -- its gap was the
+    // reflectively-closed NullableSelector<decimal> / ListQueryHandler<decimal?> pair, which the
+    // registry now carries for every scalar type Marten knows.
+    await Check("enum scalar projection, list", async () =>
+    {
+        var soorten = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+            .Select(x => x.Soort).ToListAsync();
+        return soorten.Count == 1 && soorten[0] == Soort.Huisarts;
+    });
+
+    await Check("enum scalar projection, single value", async () =>
+    {
+        var soort = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+            .Select(x => x.Soort).FirstOrDefaultAsync();
+        return soort == Soort.Huisarts;
+    });
+
+    await Check("nullable enum member projection", async () =>
+    {
+        var soorten = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+            .Select(x => x.OptioneleSoort).ToListAsync();
+        return soorten.Count == 1 && soorten[0] == Soort.Huisarts;
+    });
+
+    await Check("nullable decimal member projection", async () =>
+    {
+        var kortingen = await session.Query<Declaratie>().Where(x => x.Prestatiecode == "12000")
+            .Select(x => x.Korting).ToListAsync();
+        return kortingen.Count == 1 && kortingen[0] == 5m;
+    });
+
+    await Check("enum aggregate (Max)", async () =>
+    {
+        var max = await session.Query<Praktijk>().MaxAsync(x => x.Soort);
+        return max == Soort.Apotheek;
+    });
+
     // #5624 proper: the projected type is handed to the consumer's serializer, and no
     // [JsonSerializable(...)] can name an anonymous type. This store assigns TypeInfoResolver
     // directly, so there is no reflection-based resolver behind the context and the projection
@@ -458,6 +500,24 @@ async Task CheckRenamedEnumMemberAsync()
             .Where(x => wanted.Contains(x.Zorgvorm)).ToListAsync();
         return found.Count == 1 && found[0].Id == id;
     });
+
+    // #5635: Zorgvorm is deliberately NOT registered, unlike Soort on the main store. A native
+    // binary cannot close the scalar clause over it, and the bare Activator.CreateInstance message
+    // -- "No parameterless constructor defined for type 'NewScalarSelectClause`1[Zorgvorm]'" --
+    // tells the consumer nothing. Marten names the one line that fixes it. A JIT still answers the
+    // query, so either outcome passes here; a RAW MissingMethodException fails both ways.
+    await Check("an unregistered enum scalar projection names RegisterScalarType", async () =>
+    {
+        try
+        {
+            var zorgvormen = await session.Query<Aanlevering>().Select(x => x.Zorgvorm).ToListAsync();
+            return zorgvormen.Count == 1 && zorgvormen[0] == Zorgvorm.Apotheek;
+        }
+        catch (MartenNotSupportedException e)
+        {
+            return e.Message.Contains("RegisterScalarType<Zorgvorm>()");
+        }
+    });
 }
 
 async Task Check(string description, Func<Task<bool>> check)
@@ -527,6 +587,7 @@ public class Declaratie
     public DeclaratieId Id { get; set; }
     public string Prestatiecode { get; set; } = "";
     public decimal Bedrag { get; set; }
+    public decimal? Korting { get; set; }
 }
 
 /// <summary>

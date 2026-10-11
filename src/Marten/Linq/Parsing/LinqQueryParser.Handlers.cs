@@ -39,6 +39,17 @@ internal partial class LinqQueryParser
                                          typeof(TResult).FullNameInCode());
         }
 
+        // #5635: a list of nullable scalars -- Select(x => x.OptionalAmount) -- needs
+        // NullableSelector<TDocument> and ListQueryHandler<TDocument?>, both closed over a struct.
+        // Neither can be closed from here (TDocument is only `notnull`), and the reflective path
+        // below has no native code for them, so the registry carries both for every scalar type
+        // Marten knows plus whatever StoreOptions.RegisterScalarType<T>() named.
+        var registered = SelectClauseResolvers.TryBuildNullableListHandler(typeof(TDocument), statement, selector);
+        if (registered != null)
+        {
+            return (IQueryHandler<TResult>)registered;
+        }
+
         // 9.0 (#4308): replace per-call MakeGenericType + Activator.CreateInstance
         // on the LINQ hot path with delegate-cached factories via
         // JasperFx.Core.Reflection.GenericFactoryCache.

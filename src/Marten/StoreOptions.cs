@@ -175,6 +175,42 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     /// <summary>
+    ///     Declare a value type — an <c>enum</c> or <c>struct</c> from your own assembly — that you
+    ///     project or aggregate as a scalar: <c>Select(x =&gt; x.Status)</c>,
+    ///     <c>MaxAsync(x =&gt; x.Status)</c>. Only needed for Native AOT.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         #5635. Marten's scalar select clause and its nullable selector are declared
+    ///         <c>where T : struct</c>. #5624 roots every other projected type from
+    ///         <c>MartenLinqQueryable&lt;T&gt;</c>, which every projection passes through — but that
+    ///         class constrains its own <c>T</c> to <c>notnull</c>, and C# cannot close a
+    ///         struct-constrained generic from there. Marten roots the scalar types it renders
+    ///         natively itself, so <c>decimal</c>, <c>Guid</c> and <c>DateOnly</c> need nothing; a
+    ///         type declared in your assembly is the one it cannot name. Without this, under AOT:
+    ///     </para>
+    ///     <code>
+    ///     System.MissingMethodException: No parameterless constructor defined for type
+    ///     'Marten.Linq.SqlGeneration.NewScalarSelectClause`1[YourEnum]'
+    ///     </code>
+    ///     <para>
+    ///         Under a JIT this is a no-op costing nothing: the reflective path still runs for
+    ///         anything unregistered. Call it from the same configuration lambda as
+    ///         <c>Schema.For&lt;TDoc&gt;()</c>.
+    ///     </para>
+    ///     <para>
+    ///         Only bare scalar projections need it. Projecting the same enum as a member of a named
+    ///         type — <c>Select(x =&gt; new StatusView { Status = x.Status })</c> — already works
+    ///         natively, and so does filtering on it.
+    ///     </para>
+    /// </remarks>
+    public StoreOptions RegisterScalarType<T>() where T : struct
+    {
+        Marten.Linq.SqlGeneration.SelectClauseResolvers.RegisterValueType<T>();
+        return this;
+    }
+
+    /// <summary>
     ///     Types that should be treated as "child document" containers (JSONB) when
     ///     resolving LINQ members. The optional <c>Marten.Newtonsoft</c> package
     ///     adds <c>Newtonsoft.Json.Linq.JObject</c> here via its
