@@ -81,8 +81,7 @@ internal class DictionaryKeysMember: QueryableMember, ICollectionMember, IValueC
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)
     {
-        return typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(fromObject, ExplodeLocator,
-            ElementType);
+        return SelectClauseResolvers.Data(ElementType, fromObject, ExplodeLocator);
     }
 
     public ISqlFragment ParseWhereForAny(Expression body, IReadOnlyStoreOptions options)

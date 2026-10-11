@@ -202,8 +202,7 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
     {
         var selection = $"jsonb_array_elements_text({JSONBLocator})";
 
-        return typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(fromObject, selection,
-            ElementType);
+        return SelectClauseResolvers.Data(ElementType, fromObject, selection);
     }
 
     public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict,

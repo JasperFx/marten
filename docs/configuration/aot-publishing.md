@@ -137,8 +137,9 @@ As of Marten 9.0.0-alpha:
 
 ### Works (AOT-clean)
 
-- **`UseSystemTextJsonForSerialization`** with the default `JsonSerializerOptions` or a user-supplied one. For best AOT results, pass a source-generated `JsonSerializerContext`.
+- **`UseSystemTextJsonForSerialization`** with the default `JsonSerializerOptions` or a user-supplied one. For best AOT results, supply a source-generated `JsonSerializerContext` — and prefer `SystemTextJsonSerializer.UseTypeInfoResolver(MyContext.Default)` over assigning `JsonSerializerOptions.TypeInfoResolver` yourself. The former *combines* your context with a reflection-based resolver behind it; the latter replaces the reflection resolver outright, and then any type your context cannot name — an anonymous projection in particular — has no metadata at all. See [an anonymous projection cannot be materialized](#a-projection-into-an-anonymous-type-cannot-be-materialized).
 - **Document storage** — `Schema.For<TDoc>()` and the entire CRUD / LINQ surface for closed-shape document types with a **Guid / string / int / long** identity, including the containment and JSONPath filters a child-collection query compiles to (#5377).
+- **`Select()` projections** — into a named DTO (`Select(x => new Summary { ... })`), into a collection member (`Select(x => x.Lines)`), the element type of a `SelectMany(x => x.Lines)`, and a scalar member of any framework type (`string`, `decimal`, `Guid`, `DateTime`/`DateOnly`/`TimeOnly`, the integral and floating-point types). Every one of these closed its select clause over `selectExpression.Type` with `Activator.CreateInstance` until #5624, so they all failed natively — a *named* DTO projection just as hard as an anonymous one, and before the serializer was reached. The one shape still left over is a scalar projection of an **enum or struct declared in your own assembly**; see below.
 - **Strong-typed identities** (Vogen, StronglyTypedId, a plain `readonly record struct`) — **once you register them**, which is one extra line per document type:
 
   ```cs
@@ -190,6 +191,21 @@ As of Marten 9.0.0-alpha:
 
 - **F# single-case discriminated-union ids.** The C# strong-typed id wrappers are covered by `RegisterValueTypeId<TDoc, TWrapper, TInner>()` above, but an F# DU id is a reference type and routes through a different select clause (`FSharpDiscriminatedUnionIdSelectClause`), which that registration cannot name. Still fine under a JIT. Tracked with the rest of [#5589](https://github.com/JasperFx/marten/issues/5589).
 - **`.IsOneOf(...)` over a strong-typed id** reaches `ConvertFromWrapperArray` through a reflective method lookup that the trimmer can drop. Equality and ordering on a strong-typed id are fine.
+- **A bare scalar projection of an enum or struct declared in your own assembly** — `Select(x => x.Status)` where `Status` is your enum:
+
+  ```text
+  MissingMethodException: No parameterless constructor defined for type
+  'Marten.Linq.SqlGeneration.NewScalarSelectClause`1[YourEnum]'
+  ```
+
+  That clause is declared with a `struct` constraint, and the registration point #5624 added —
+  `MartenLinqQueryable<T>`, where every projected type arrives — constrains its own `T` only to
+  `notnull`, so it cannot close the clause for you. Marten pre-closes it for every scalar type it
+  renders natively, which is why `decimal` and `DateOnly` are fine and your enum is not.
+  **Workaround: project into a named type instead** — `Select(x => new StatusView { Status = x.Status })`
+  with `[JsonSerializable(typeof(StatusView))]` on your context works natively, because the
+  generator emits the enum's converter along with the type that holds it. Filtering on an enum
+  (`Where(x => x.Status == Status.Active)`) was never affected.
 
 - **`Marten.Newtonsoft`** — Newtonsoft.Json is fundamentally AOT-hostile. The package's csproj deliberately leaves `IsAotCompatible` off (see PR [#4468](https://github.com/JasperFx/marten/pull/4468)). Use `UseSystemTextJsonForSerialization` instead.
 - **`services.AddRuntimeCompilation()`** — the seam doesn't exist in Marten 9. If you have it in your composition root from a pre-9 app, delete the call.
@@ -315,6 +331,40 @@ though it affects how the document was stored. If you rely on one of those, comp
 whose type Marten hands to the serializer rather than one it renders itself. A custom
 `JavaScriptEncoder` is not a concern: Postgres parses the payload into jsonb, where an escaped and an
 unescaped character are the same character.
+
+### A projection into an anonymous type cannot be materialized
+
+```text
+MartenNotSupportedException: Cannot materialize the LINQ projection into the anonymous type
+'<>f__AnonymousType0`2[System.String,System.Int32]' because MyApp.MyJsonContext has no
+JsonTypeInfo for it, and an anonymous type cannot be named by a [JsonSerializable] attribute.
+```
+
+A `Select(x => new { ... })` projection is rendered as a `jsonb_build_object(...)` and then
+deserialized **into the anonymous type**. `[JsonSerializable(typeof(...))]` needs a nameable type, so
+there is no way to put `<>f__AnonymousType0<string, int>` into a `JsonSerializerContext` — the
+remedy System.Text.Json's own `NotSupportedException` advises is impossible to follow, which is why
+Marten replaces it with the message above. It is **not** an AOT-specific failure: a JIT process whose
+options carry a context-only resolver fails exactly the same way.
+
+Two remedies, and which one you want depends on how much reflection you are willing to keep:
+
+```cs
+// 1. Keep a reflection-based resolver behind your context. Anonymous projections work, natively
+//    too -- the fallback resolves the anonymous type from metadata ILC kept because your own
+//    assembly is a TrimmerRootAssembly (step 1 of the recipe above).
+var serializer = new SystemTextJsonSerializer();
+serializer.UseTypeInfoResolver(MyJsonContext.Default);
+opts.Serializer(serializer);
+
+// 2. Or forgo reflection entirely -- and project into a named type your context does cover.
+opts.UseSystemTextJsonForSerialization(new JsonSerializerOptions { TypeInfoResolver = MyJsonContext.Default });
+// then, instead of Select(x => new { x.Name, x.Count }):
+.Select(x => new Summary { Name = x.Name, Count = x.Count })   // [JsonSerializable(typeof(Summary))]
+```
+
+The same applies to a `GroupBy(...).Select(g => new { g.Key, Count = g.Count() })`, which is the
+shape most grouping examples are written in.
 
 ### Secondary store throws `MissingMethodException` at boot
 

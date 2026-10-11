@@ -19,11 +19,11 @@ using System.Diagnostics.CodeAnalysis;
 namespace Marten.Linq;
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer. #5624: a projection into an ANONYMOUS type is the one shape that contract cannot cover -- no [JsonSerializable] attribute can name one -- so Marten refuses that query with the remedy rather than leaning on this suppression.")]
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. The select clauses closed over a PROJECTED type now resolve through SelectClauseResolvers, which holds a compile-time instantiation for every type that reached MartenLinqQueryable<T>; the reflective path here remains the fallback for a JIT (#5624). Marten 9 retired the codegen-write step the earlier wording cited.")]
 public partial class CollectionUsage
 {
     private bool _hasCompiledMany;
@@ -746,8 +746,7 @@ public partial class CollectionUsage
             var clauseType = Nullable.GetUnderlyingType(resultType) ?? resultType;
             var scalarClause = clauseType == typeof(string)
                 ? new NewScalarStringSelectClause("d.data", joinStatement.ExportName)
-                : typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(
-                    "d.data", joinStatement.ExportName, clauseType);
+                : SelectClauseResolvers.NewScalar(clauseType, "d.data", joinStatement.ExportName);
 
             var scalarStatement = new SelectorStatement { SelectClause = scalarClause };
             joinStatement.AddToEnd(scalarStatement);
@@ -830,30 +829,22 @@ public partial class CollectionUsage
                 else if (member.MemberType.IsSimple() || member.MemberType == typeof(Guid) ||
                          member.MemberType == typeof(decimal) || member.MemberType == typeof(DateTimeOffset))
                 {
-                    statement.SelectClause =
-                        typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(member,
-                            statement.SelectClause.FromObject,
-                            member.MemberType);
+                    statement.SelectClause = SelectClauseResolvers.NewScalar(member.MemberType, member,
+                        statement.SelectClause.FromObject);
                 }
             }
             else if (fragment is LiteralSql or GroupBySqlFragment)
             {
                 // JSON serialization uses the expression's actual result type (Count vs LongCount).
-                statement.SelectClause =
-                    typeof(SelectDataSelectClause<>).CloseAndBuildAs<ISelectClause>(
-                        statement.SelectClause.FromObject,
-                        new GroupBySqlFragment("to_jsonb(", fragment, ")"),
-                        groupingUsage.SelectExpression.Type);
+                statement.SelectClause = SelectClauseResolvers.SelectData(groupingUsage.SelectExpression.Type,
+                    statement.SelectClause.FromObject, new GroupBySqlFragment("to_jsonb(", fragment, ")"));
             }
         }
         else
         {
             var resultType = groupingUsage.SelectExpression.Type;
             statement.SelectClause =
-                typeof(SelectDataSelectClause<>).CloseAndBuildAs<ISelectClause>(
-                    statement.SelectClause.FromObject,
-                    parser.NewObject,
-                    resultType);
+                SelectClauseResolvers.SelectData(resultType, statement.SelectClause.FromObject, parser.NewObject);
         }
 
         // Process HAVING from the grouping usage's WhereExpressions

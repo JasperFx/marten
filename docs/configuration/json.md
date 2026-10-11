@@ -164,8 +164,17 @@ var store = DocumentStore.For(opts =>
 
 Types known to the context use its precompiled metadata, while everything else — Marten's internal documents, dynamic types, and any type the context does not cover — falls back to reflection. The reflection fallback is preserved on purpose, so covering only a subset of your types is safe.
 
+Note the difference between `UseTypeInfoResolver(MyContext.Default)` above and assigning
+`JsonSerializerOptions.TypeInfoResolver = MyContext.Default` yourself: the first _combines_ your
+context with a reflection-based resolver behind it, the second _replaces_ the reflection resolver
+outright. Replacing it is the stricter, fully trimmable posture — and it means a
+`Select(x => new { ... })` projection can no longer be materialized at all, because an anonymous type
+cannot be named by a `[JsonSerializable]` attribute. Marten refuses that query with the remedy rather
+than letting System.Text.Json advise an impossible annotation; see
+[AOT Publishing](/configuration/aot-publishing) for both ways out.
+
 ::: tip
-For a fully trimmed / AOT build you would supply a context that covers every serialized type and forgo the reflection fallback. See [AOT Publishing](/configuration/aot-publishing) for the broader story.
+For a fully trimmed / AOT build you would supply a context that covers every serialized type and forgo the reflection fallback — projecting into named types rather than anonymous ones. See [AOT Publishing](/configuration/aot-publishing) for the broader story.
 :::
 
 ## Collection Storage <Badge type="warning" text="Newtonsoft Only" />

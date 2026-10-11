@@ -27,6 +27,12 @@
 //   child collection      a containment filter serialized its jsonb payload through the consumer's
 //                         source-generated resolver, which carries documents and not object[],
 //                         Dictionary<string, object> or the enum being compared (#5374).
+//   projections           every Select() into a new object closed its select clause over
+//                         selectExpression.Type with Activator.CreateInstance, so a NAMED DTO
+//                         projection failed natively just as hard as an anonymous one, before the
+//                         serializer was ever reached. An anonymous projection then still cannot be
+//                         materialized by a source-generated resolver that replaced the
+//                         reflection-based one, and Marten now says so with the remedy (#5624).
 //   diagnostics criteria  IDocumentStoreDiagnostics Where / OrderBy (jasperfx#869) are translated with
 //                         runtime code generation, so a native binary must REFUSE them -- before any
 //                         generic method is closed over the document type -- not crash, and never
@@ -44,6 +50,7 @@ using JasperFx;
 using JasperFx.Documents;
 using JasperFx.Events;
 using Marten;
+using Marten.Exceptions;
 using Marten.Linq;
 using Weasel.Core;
 
@@ -261,6 +268,108 @@ try
         return ids.Count == 1 && ids[0] == declaratieId;
     });
 
+    // #5624 — every one of the projection shapes below threw
+    // "MissingMethodException: No parameterless constructor defined for type
+    // 'SelectDataSelectClause`1[...]'" from a native binary, because the parser only has
+    // selectExpression.Type and closed the clause over it with Activator.CreateInstance.
+    await Check("LINQ projection into a NAMED type", async () =>
+    {
+        var summaries = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+            .Select(x => new PraktijkSamenvatting { AgbCode = x.AgbCode, Naam = x.Naam }).ToListAsync();
+        return summaries.Count == 1 && summaries[0].Naam == "Praktijk Jansen";
+    });
+
+    await Check("GroupBy into a NAMED type", async () =>
+    {
+        var tallies = await session.Query<Praktijk>().GroupBy(x => x.Soort)
+            .Select(g => new SoortTally { Soort = g.Key, Count = g.Count() }).ToListAsync();
+        return tallies.Count == 2;
+    });
+
+    await Check("scalar projection (string)", async () =>
+    {
+        var names = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910").Select(x => x.Naam)
+            .ToListAsync();
+        return names.Count == 1 && names[0] == "Praktijk Jansen";
+    });
+
+    await Check("scalar projection (decimal)", async () =>
+    {
+        var amounts = await session.Query<Declaratie>().Where(x => x.Prestatiecode == "12000")
+            .Select(x => x.Bedrag).ToListAsync();
+        return amounts.Count == 1 && amounts[0] == 42m;
+    });
+
+    await Check("collection member projection", async () =>
+    {
+        var regels = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910").Select(x => x.Regels)
+            .ToListAsync();
+        return regels.Count == 1 && regels[0].Count == 1;
+    });
+
+    await Check("SelectMany over a child collection", async () =>
+    {
+        var regels = await session.Query<Praktijk>().SelectMany(x => x.Regels).ToListAsync();
+        return regels.Count == 1;
+    });
+
+    // #5624 proper: the projected type is handed to the consumer's serializer, and no
+    // [JsonSerializable(...)] can name an anonymous type. This store assigns TypeInfoResolver
+    // directly, so there is no reflection-based resolver behind the context and the projection
+    // cannot be materialized -- under a JIT every bit as much as natively. Marten says so instead
+    // of letting System.Text.Json advise an impossible annotation.
+    await Check("anonymous projection is refused with the remedy", async () =>
+    {
+        try
+        {
+            await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+                .Select(x => new { x.AgbCode, x.Naam }).ToListAsync();
+            return false;
+        }
+        catch (MartenNotSupportedException e)
+        {
+            return e.Message.Contains("UseTypeInfoResolver") && e.InnerException is NotSupportedException;
+        }
+    });
+
+    await Check("anonymous GroupBy projection is refused with the remedy", async () =>
+    {
+        try
+        {
+            await session.Query<Praktijk>().GroupBy(x => x.Soort).Select(g => new { g.Key, Count = g.Count() })
+                .ToListAsync();
+            return false;
+        }
+        catch (MartenNotSupportedException e)
+        {
+            return e.Message.Contains("UseTypeInfoResolver");
+        }
+    });
+
+    // ...and the remedy that exception names, exercised from the native binary. UseTypeInfoResolver
+    // combines the context with a DefaultJsonTypeInfoResolver, and that reflection fallback DOES
+    // work natively for an anonymous type -- the consumer's assembly is a TrimmerRootAssembly, so
+    // its metadata survives. IsReflectionEnabledByDefault is false here, which governs the resolver
+    // System.Text.Json picks when none was supplied, not one Marten constructed outright.
+    await Check("anonymous projection works with the resolver CHAINED", async () =>
+    {
+        var serializer = new Marten.Services.SystemTextJsonSerializer();
+        serializer.UseTypeInfoResolver(SmokeJson.Default);
+
+        await using var chained = DocumentStore.For(o =>
+        {
+            o.Connection(connection);
+            o.Serializer(serializer);
+            o.AutoCreateSchemaObjects = AutoCreate.None;
+            o.DatabaseSchemaName = "aot_runtime_smoke";
+            o.Schema.For<Praktijk>();
+        });
+
+        await using var s = chained.QuerySession();
+        var summaries = await s.Query<Praktijk>().Select(x => new { x.AgbCode, x.Naam }).ToListAsync();
+        return summaries.Count == 2;
+    });
+
     var diagnostics = (IDocumentStoreDiagnostics)store;
 
     await Check("diagnostics page without criteria", async () =>
@@ -420,6 +529,22 @@ public class Declaratie
     public decimal Bedrag { get; set; }
 }
 
+/// <summary>
+/// #5624. The nameable half of a LINQ projection: a consumer can write
+/// [JsonSerializable(typeof(PraktijkSamenvatting))] for this and cannot for an anonymous type.
+/// </summary>
+public class PraktijkSamenvatting
+{
+    public string AgbCode { get; set; } = "";
+    public string Naam { get; set; } = "";
+}
+
+public class SoortTally
+{
+    public Soort Soort { get; set; }
+    public int Count { get; set; }
+}
+
 public class Aanlevering
 {
     public Guid Id { get; set; }
@@ -460,6 +585,8 @@ public record RegelToegevoegd(string Prestatiecode);
 [JsonSerializable(typeof(Praktijk))]
 [JsonSerializable(typeof(Declaratie))]
 [JsonSerializable(typeof(DeclaratieId))]
+[JsonSerializable(typeof(PraktijkSamenvatting))]
+[JsonSerializable(typeof(SoortTally))]
 [JsonSerializable(typeof(Aanlevering))]
 [JsonSerializable(typeof(Dossier))]
 [JsonSerializable(typeof(DossierGeopend))]

@@ -12,9 +12,9 @@ using System.Diagnostics.CodeAnalysis;
 namespace Marten.Linq.Parsing;
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer. #5624: a projection into an ANONYMOUS type is the one shape that contract cannot cover -- no [JsonSerializable] attribute can name one -- so Marten refuses that query with the remedy rather than leaning on this suppression.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. The select clauses closed over a PROJECTED type now resolve through SelectClauseResolvers, which holds a compile-time instantiation for every type that reached MartenLinqQueryable<T>; the reflective path here remains the fallback for a JIT (#5624). Marten 9 retired the codegen-write step the earlier wording cited.")]
 public class SelectorVisitor: ExpressionVisitor
 {
     private readonly IQueryableMemberCollection _collection;
@@ -49,16 +49,12 @@ public class SelectorVisitor: ExpressionVisitor
                      node.Type == typeof(DateTimeOffset))
             {
                 _statement.SelectClause =
-                    typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(sql,
-                        _statement.SelectClause.FromObject,
-                        node.Type);
+                    SelectClauseResolvers.NewScalar(node.Type, sql, _statement.SelectClause.FromObject);
             }
             else
             {
                 _statement.SelectClause =
-                    typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
-                        sql,
-                        node.Type);
+                    SelectClauseResolvers.Data(node.Type, _statement.SelectClause.FromObject, sql);
             }
             return null;
         }
@@ -106,10 +102,8 @@ public class SelectorVisitor: ExpressionVisitor
         {
             // DateOnly/TimeOnly read their native date/time TypedLocator here; the
             // DataSelectClause fallback would JSON-deserialize the raw ->> text and fail.
-            _statement.SelectClause =
-                typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(member,
-                    _statement.SelectClause.FromObject,
-                    member.MemberType);
+            _statement.SelectClause = SelectClauseResolvers.NewScalar(member.MemberType, member,
+                _statement.SelectClause.FromObject);
         }
         else
         {
@@ -117,9 +111,7 @@ public class SelectorVisitor: ExpressionVisitor
                 // #5589: a type test and a direct call, not a reflective method lookup.
                 member is IValueTypeMember valueTypeMember
                 ? valueTypeMember.BuildSelectClause(_statement.FromObject)
-                : typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.FromObject,
-                    member.RawLocator,
-                    member.MemberType);
+                : SelectClauseResolvers.Data(member.MemberType, _statement.FromObject, member.RawLocator);
         }
     }
 
@@ -129,10 +121,8 @@ public class SelectorVisitor: ExpressionVisitor
         {
             var visitor = new SelectParser(_serializer, _collection, selectExpression);
 
-            _statement.SelectClause =
-                typeof(SelectDataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
-                    visitor.NewObject,
-                    selectExpression.Type);
+            _statement.SelectClause = SelectClauseResolvers.SelectData(selectExpression.Type,
+                _statement.SelectClause.FromObject, visitor.NewObject);
         }
         catch (SelectProjectionNotSimpleException)
         {
