@@ -9,6 +9,7 @@ using JasperFx.Events;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Protected;
 using JasperFx.MultiTenancy;
+using Marten.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Protected;
@@ -225,6 +226,39 @@ public class AdvancedOperations
         foreach (var database in databases)
         {
             states.AddRange(await database.AllProjectionProgress(token).ConfigureAwait(false));
+        }
+
+        return states;
+    }
+
+    /// <summary>
+    ///     Where every projection backfill stands, per shard. A backfill fills a member added to a projected
+    ///     document without a version bump; until it is completed that member is incomplete. Across every
+    ///     database of a multi-database store unless <paramref name="tenantId" /> picks one.
+    /// </summary>
+    public async Task<IReadOnlyList<ProjectionBackfillState>> AllProjectionBackfills(string? tenantId = null,
+        CancellationToken token = default)
+    {
+        if (tenantId != null)
+        {
+            var database =
+                (await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
+                    .ConfigureAwait(false)).Database;
+            return await ProjectionBackfillStates.FetchAsync(database, token).ConfigureAwait(false);
+        }
+
+        if (_store.Tenancy is DefaultTenancy)
+        {
+            return await ProjectionBackfillStates.FetchAsync(_store.Tenancy.Default.Database, token).ConfigureAwait(false);
+        }
+
+        var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);
+        assertHasDatabases(databases);
+
+        var states = new List<ProjectionBackfillState>();
+        foreach (var database in databases)
+        {
+            states.AddRange(await ProjectionBackfillStates.FetchAsync(database, token).ConfigureAwait(false));
         }
 
         return states;

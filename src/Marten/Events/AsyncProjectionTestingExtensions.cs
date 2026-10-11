@@ -8,6 +8,7 @@ using JasperFx.CommandLine.TextualDisplays;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Projections;
+using Marten.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
 using Marten.Services;
@@ -267,13 +268,29 @@ public static class TestingExtensions
             return true;
         }
 
+        // A backfill fills a member added without a version bump while the shard keeps going, so a shard can
+        // be at the high water mark with that member still incomplete. Current means its backfills completed.
+        var backfilling = ProjectionBackfillStates.Declaring(options.Projections);
+        IReadOnlyList<string> pendingBackfills = [];
+
         IReadOnlyList<ShardState> projections = [];
         try
         {
             do
             {
                 projections = await database.AllProjectionProgress(cancellationSource.Token).ConfigureAwait(false);
-                if (isCaughtUp(projections) || cancellationSource.IsCancellationRequested)
+                pendingBackfills = [];
+                if (isCaughtUp(projections))
+                {
+                    pendingBackfills = await ProjectionBackfillStates.PendingAsync(database, backfilling,
+                        backfillTenants(projections, perTenant), cancellationSource.Token).ConfigureAwait(false);
+                    if (pendingBackfills.Count == 0)
+                    {
+                        break;
+                    }
+                }
+
+                if (cancellationSource.IsCancellationRequested)
                 {
                     break;
                 }
@@ -281,7 +298,7 @@ public static class TestingExtensions
                 await Task.Delay(250.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
             } while (true);
         }
-        catch (TaskCanceledException)
+        catch (OperationCanceledException)
         {
             // We just didn't finish
         }
@@ -297,6 +314,12 @@ public static class TestingExtensions
             throw new TimeoutException(writer.ToString());
         }
 
+        if (cancellationSource.IsCancellationRequested && pendingBackfills.Count > 0)
+        {
+            throw new TimeoutException(
+                $"The projections reached the initial sequence of {initial.EventSequenceNumber}, but these backfills have not completed: {string.Join(", ", pendingBackfills)}");
+        }
+
         if (cancellationSource.IsCancellationRequested)
         {
             var writer = new StringWriter();
@@ -307,6 +330,19 @@ public static class TestingExtensions
 
             throw new TimeoutException(writer.ToString());
         }
+    }
+
+    // The tenants whose shards owe backfills: the per-tenant shards that record HighWaterMark:{tenant}, or the
+    // store-global shard
+    private static IReadOnlyCollection<string?> backfillTenants(IReadOnlyList<ShardState> rows, bool perTenant)
+    {
+        const string hw = ShardState.HighWaterMark;
+        var tenants = perTenant
+            ? rows.Where(x => x.ShardName.StartsWith(hw + ":", StringComparison.Ordinal))
+                .Select(x => (string?)x.ShardName.Substring(hw.Length + 1)).ToArray()
+            : [];
+
+        return tenants.Length > 0 ? tenants : [null];
     }
 
     private static string writeStatusMessage(IMartenDatabase database, IReadOnlyList<ShardState> projections)
@@ -357,6 +393,23 @@ public static class TestingExtensions
         using var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(token);
         cancellationSource.CancelAfter(timeout);
 
+        // The member a backfill fills is incomplete until the backfill completed, whatever the progression says
+        var options = database.As<MartenDatabase>().Options;
+        var backfilling = ProjectionBackfillStates.Declaring(options.Projections)
+            .Where(x => x.BackfilledDocumentType == aggregationType).ToArray();
+
+        async Task<bool> backfillsCompletedAsync()
+        {
+            if (backfilling.Length == 0) return true;
+
+            var tenants = options.Events.UseTenantPartitionedEvents
+                ? backfillTenants(await database.AllProjectionProgress(cancellationSource.Token).ConfigureAwait(false), true)
+                : [null];
+
+            return (await ProjectionBackfillStates.PendingAsync(database, backfilling, tenants, cancellationSource.Token)
+                .ConfigureAwait(false)).Count == 0;
+        }
+
         try
         {
             while (true)
@@ -367,7 +420,7 @@ public static class TestingExtensions
                     tracking[state.ShardName] = state.Sequence;
                 }
 
-                if (tracking.isComplete(highWaterMark)) return;
+                if (tracking.isComplete(highWaterMark) && await backfillsCompletedAsync().ConfigureAwait(false)) return;
 
                 await Task.Delay(100.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
             }

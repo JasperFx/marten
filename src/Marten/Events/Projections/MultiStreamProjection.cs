@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
@@ -49,7 +50,11 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
 
     bool IProjectionWithBackfills.HasBackfills => _backfills.All.Count > 0;
 
+    bool IProjectionBackfillSource<IDocumentOperations, IQuerySession>.HasBackfills => _backfills.All.Count > 0;
+
     Type IProjectionWithBackfills.BackfilledDocumentType => typeof(TDoc);
+
+    IReadOnlyList<string> IProjectionWithBackfills.BackfillNames => _backfills.All.Select(x => x.Name).ToArray();
 
     bool IProjectionBackfillSource<IDocumentOperations, IQuerySession>.TryBuildBackfillExecutor(
         IEventStore<IDocumentOperations, IQuerySession> store, IEventDatabase database, ShardName shardName,

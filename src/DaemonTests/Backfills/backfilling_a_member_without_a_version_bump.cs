@@ -9,6 +9,7 @@ using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
+using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Linq.SoftDeletes;
 using Marten.Testing.Harness;
@@ -177,26 +178,15 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
         await session.SaveChangesAsync();
     }
 
-    private async Task runDaemonToTheEndAsync(DocumentStore store, int backfills = 0)
+    private static async Task runDaemonToTheEndAsync(DocumentStore store)
     {
         using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
+
+        // Non-stale data includes completed backfills
         await daemon.WaitForNonStaleData(60.Seconds());
 
-        // The live shard does not wait for its backfill, so non-stale data says nothing about it
-        if (backfills > 0) await waitForCompletedBackfillsAsync(backfills);
-
         await daemon.StopAllAsync();
-    }
-
-    private async Task waitForCompletedBackfillsAsync(int count)
-    {
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
-        while ((await backfillStateAsync()).Values.Count(x => x.Completed) < count)
-        {
-            if (DateTimeOffset.UtcNow > deadline) throw new TimeoutException("The backfills did not complete");
-            await Task.Delay(100);
-        }
     }
 
     private async Task everyDocumentIsCompleteAsync(IDocumentStore store, string tenantId = "*DEFAULT*")
@@ -271,7 +261,7 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
 
         var after = StoreOptions(opts => afterTheChange(opts, null), cleanAll: false);
         await appendInvoicesAsync(after, 10); // not yet projected when the new code starts
-        await runDaemonToTheEndAsync(after, backfills: 2);
+        await runDaemonToTheEndAsync(after);
 
         await everyDocumentIsCompleteAsync(after);
 
@@ -298,15 +288,19 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
         var fresh = _invoices.Skip(existing).Select(x => x.Invoice).ToArray();
 
         // The new invoices are projected while the backfill is still folding its first pages
-        await daemon.WaitForNonStaleData(30.Seconds());
-        await using (var query = after.QuerySession())
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
+        while (true)
         {
-            (await query.LoadManyAsync<InvoiceSummary>(fresh)).Count.ShouldBe(fresh.Length);
+            await using var query = after.QuerySession();
+            if ((await query.LoadManyAsync<InvoiceSummary>(fresh)).Count == fresh.Length) break;
+            if (DateTimeOffset.UtcNow > deadline) throw new TimeoutException("The live projection did not project the new invoices");
+            await Task.Delay(50);
         }
 
         (await backfillStateAsync()).Values.ShouldNotContain(x => x.Completed);
 
-        await waitForCompletedBackfillsAsync(2);
+        await daemon.WaitForNonStaleData(60.Seconds());
+        (await backfillStateAsync()).Values.Count(x => x.Completed).ShouldBe(2);
         await daemon.StopAllAsync();
 
         await everyDocumentIsCompleteAsync(after);
@@ -349,7 +343,7 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
 
         var after = StoreOptions(opts => afterTheChange(opts, null), cleanAll: false);
         await appendInvoicesAsync(after, 1);
-        await runDaemonToTheEndAsync(after, backfills: 2);
+        await runDaemonToTheEndAsync(after);
 
         await everyDocumentIsCompleteAsync(after);
     }
@@ -363,7 +357,7 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
 
         var after = StoreOptions(opts => afterTheChange(opts, null), cleanAll: false);
         await appendInvoicesAsync(after, 2);
-        await runDaemonToTheEndAsync(after, backfills: 2);
+        await runDaemonToTheEndAsync(after);
 
         // Restarted after the hand-over with new events: an Increment applied twice would show in every count
         await appendInvoicesAsync(after, 10);
@@ -377,7 +371,7 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
     {
         var store = StoreOptions(opts => afterTheChange(opts, null));
         await appendInvoicesAsync(store, 10);
-        await runDaemonToTheEndAsync(store, backfills: 2);
+        await runDaemonToTheEndAsync(store);
 
         await everyDocumentIsCompleteAsync(store);
 
@@ -438,7 +432,7 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
 
         var after = StoreOptions(opts => afterTheChange(opts, deletes), cleanAll: false);
         await appendInvoicesAsync(after, 2);
-        await runDaemonToTheEndAsync(after, backfills: 2);
+        await runDaemonToTheEndAsync(after);
 
         await using var query = after.QuerySession();
         foreach (var invoice in voided)
@@ -497,7 +491,7 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
         await appendInvoicesAsync(after, 2, "blue");
         blueInvoices = _invoices.ToList();
 
-        await runDaemonToTheEndAsync(after, backfills: 4);
+        await runDaemonToTheEndAsync(after);
 
         _invoices.Clear();
         _invoices.AddRange(redInvoices);
@@ -514,5 +508,89 @@ public class backfilling_a_member_without_a_version_bump: OneOffConfigurationsCo
             "CustomerSummary:All:red:line-count", "CustomerSummary:All:blue:line-count"
         }, ignoreOrder: true);
         state.Values.ShouldAllBe(x => x.Completed);
+    }
+
+    [Fact]
+    public async Task waiting_for_non_stale_data_waits_for_the_backfill_even_when_nothing_new_happened()
+    {
+        var before = StoreOptions(opts => beforeTheChange(opts, null));
+        await appendInvoicesAsync(before, 20);
+        await runDaemonToTheEndAsync(before);
+
+        // The progression is already at the high water mark, so only the backfill can keep the wait open
+        var after = StoreOptions(opts => afterTheChange(opts, null, slowness: 20.Milliseconds()), cleanAll: false);
+        await runDaemonToTheEndAsync(after);
+
+        (await backfillStateAsync()).Values.Count(x => x.Completed).ShouldBe(2);
+        await everyDocumentIsCompleteAsync(after);
+    }
+
+    [Fact]
+    public async Task a_timeout_names_the_backfills_that_did_not_complete()
+    {
+        var before = StoreOptions(opts => beforeTheChange(opts, null));
+        await appendInvoicesAsync(before, 30);
+        await runDaemonToTheEndAsync(before);
+
+        var after = StoreOptions(opts => afterTheChange(opts, null, slowness: 200.Milliseconds()), cleanAll: false);
+        using var daemon = await after.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        var timeout = await Should.ThrowAsync<TimeoutException>(() => after.WaitForNonStaleProjectionDataAsync(2.Seconds()));
+        timeout.Message.ShouldContain("InvoiceSummary:All:year-and-line-count");
+
+        await daemon.StopAllAsync();
+    }
+
+    [Fact]
+    public async Task waiting_for_one_document_type_waits_for_its_backfill()
+    {
+        var before = StoreOptions(opts => beforeTheChange(opts, null));
+        await appendInvoicesAsync(before, 20);
+        await runDaemonToTheEndAsync(before);
+
+        var after = StoreOptions(opts => afterTheChange(opts, null, slowness: 20.Milliseconds()), cleanAll: false);
+        await appendInvoicesAsync(after, 1);
+        using var daemon = await after.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        await after.Storage.Database.WaitForNonStaleProjectionDataAsync(typeof(InvoiceSummary), 60.Seconds(),
+            TestContext.Current.CancellationToken);
+
+        (await backfillStateAsync())["InvoiceSummary:All:year-and-line-count"].Completed.ShouldBeTrue();
+        await daemon.StopAllAsync();
+    }
+
+    [Fact]
+    public async Task a_forced_catch_up_backfills_as_well()
+    {
+        var before = StoreOptions(opts => beforeTheChange(opts, null));
+        await appendInvoicesAsync(before, 20);
+        await runDaemonToTheEndAsync(before);
+
+        var after = StoreOptions(opts => afterTheChange(opts, null), cleanAll: false);
+        await appendInvoicesAsync(after, 2);
+        using (var daemon = await after.BuildProjectionDaemonAsync())
+        {
+            await daemon.CatchUpAsync(60.Seconds(), TestContext.Current.CancellationToken);
+        }
+
+        await everyDocumentIsCompleteAsync(after);
+        (await backfillStateAsync()).Values.Count(x => x.Completed).ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task where_each_backfill_stands_can_be_read_from_the_store()
+    {
+        var before = StoreOptions(opts => beforeTheChange(opts, null));
+        await appendInvoicesAsync(before, 10);
+        await runDaemonToTheEndAsync(before);
+
+        var after = StoreOptions(opts => afterTheChange(opts, null), cleanAll: false);
+        await runDaemonToTheEndAsync(after);
+
+        var states = await after.Advanced.AllProjectionBackfills(token: TestContext.Current.CancellationToken);
+        states.Select(x => x.Name).ShouldBe(["CustomerSummary:All:line-count", "InvoiceSummary:All:year-and-line-count"]);
+        states.ShouldAllBe(x => x.IsCompleted && x.Position == x.Ceiling);
     }
 }

@@ -120,8 +120,8 @@ public partial class EventGraph: IFeatureSchema
             }
         }
 
-        var backfilledDocumentTypes = allProjectionSources().OfType<IProjectionWithBackfills>()
-            .Where(x => x.HasBackfills).Select(x => x.BackfilledDocumentType).Distinct().ToArray();
+        var backfilledDocumentTypes = ProjectionBackfillStates.Declaring(Options.Projections)
+            .Select(x => x.BackfilledDocumentType).Distinct().ToArray();
         if (backfilledDocumentTypes.Length > 0)
         {
             yield return new ProjectionBackfillTable(this);
@@ -157,19 +157,6 @@ public partial class EventGraph: IFeatureSchema
         if (_tagTypes.Count > 0)
         {
             yield return new DcbTagVersionTable(this);
-        }
-    }
-
-    private IEnumerable<object> allProjectionSources()
-    {
-        foreach (var source in Options.Projections.All)
-        {
-            yield return source;
-
-            if (source is JasperFx.Events.Projections.Composite.CompositeProjection<IDocumentOperations, IQuerySession> composite)
-            {
-                foreach (var member in composite.AllProjections()) yield return member;
-            }
         }
     }
 }

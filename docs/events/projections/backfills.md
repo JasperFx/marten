@@ -69,7 +69,27 @@ completed without doing any work, because the new `Apply` produces the member fo
 
 Per-tenant shards (`UseTenantPartitionedEvents`) each run their own backfill, so they work unchanged with
 Wolverine's managed event subscription distribution: whichever node starts a tenant's shard runs its backfill, and
-a node that takes over resumes from the recorded position.
+a node that takes over resumes from the recorded position. A forced catch-up (`daemon.CatchUpAsync()`,
+`ForceAllMartenDaemonActivityToCatchUpAsync()`) runs a shard's backfills before catching it up.
+
+## Waiting for and watching a backfill
+
+Until a backfill is handed over, the member it fills is incomplete, even though the projection's progression is
+current. The non-stale waits therefore treat a projection as current only once **every backfill of every shard has
+completed**: `WaitForNonStaleProjectionDataAsync()`, `IProjectionDaemon.WaitForNonStaleData()`, the per-document-type
+wait behind `QueryForNonStaleData`, and the read-only wait of an externally managed daemon. A timeout names the
+backfills that had not completed.
+
+To see where each backfill stands, per shard:
+
+```cs
+var backfills = await store.Advanced.AllProjectionBackfills();
+foreach (var backfill in backfills)
+{
+    // e.g. "OrderSummary:All:year-and-line-count", or "OrderSummary:All:tenant-a:year-and-line-count" per tenant
+    Console.WriteLine($"{backfill.Name}: {backfill.Position}/{backfill.Ceiling}, completed: {backfill.IsCompleted}");
+}
+```
 
 ## Rules for a backfill
 
@@ -78,9 +98,11 @@ a node that takes over resumes from the recorded position.
 - **A handler sees one event, not the document.** It starts from an empty object and folds the events of its own
   types in order. A member derived from *other* members of the document, or from `Updated<T>` in a later composite
   stage, cannot be backfilled this way.
+- **Only aggregations backfill.** `SingleStreamProjection` and `MultiStreamProjection` own the identity of their
+  documents; an `EventProjection` or flat table projection writes whatever it likes, so there is nothing to fold onto.
 - **Only async projections run backfills.** Declaring one on an inline projection is a configuration error.
+- **Register the projection as a singleton.** A scoped or transient registration resolves the projection per batch,
+  so there is no single projection to hand the member over; Marten refuses it at startup.
 - **Renaming a backfill runs it again**; once every shard has completed it, the declaration can be removed.
-- **Until it is handed over, the member is incomplete.** Waiting for non-stale data waits for the projection's
-  progression, not for its backfills; read `mt_projection_backfills` to see where a backfill stands.
 - **Old code must not run the shard after the hand-over.** A node still on the previous code writes documents without
   the new member. Make sure old nodes no longer pick up projection agents during a rolling deployment.
