@@ -24,6 +24,7 @@ using Marten.Linq.SqlGeneration;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Marten.Util;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -175,7 +176,11 @@ public partial class DocumentStore
         }
     }
 
-    private static MethodInfo? _queryWithCriteriaOfT;
+    // #5619 house style: resolved by name with RequireMethod (a rename fails loudly, by name), and behind a
+    // Lazy so the lookup is deferred to the first criteria read -- every_reflective_method_handle_resolves
+    // forces .Value, so a refactor that loses the method fails that test rather than a console's query.
+    private static readonly Lazy<MethodInfo> _queryWithCriteriaOfT = new(() =>
+        typeof(DocumentStore).RequireMethod(nameof(queryWithCriteriaOfTAsync), BindingFlags.NonPublic | BindingFlags.Instance));
 
     /// <summary>
     /// jasperfx#869: a diagnostic document page with <see cref="DocumentQueryOptions.Where" /> and / or
@@ -235,11 +240,8 @@ public partial class DocumentStore
                 "property predicates and orderings are not available in a Native AOT process: they are translated with runtime code generation. Page without them, or narrow with IdEquals and the metadata filters.");
         }
 
-        _queryWithCriteriaOfT ??= typeof(DocumentStore).GetMethod(nameof(queryWithCriteriaOfTAsync),
-            BindingFlags.NonPublic | BindingFlags.Instance)!;
-
         // An async method: everything it throws arrives in the task, never as a TargetInvocationException.
-        return (Task<DocumentQueryResult>)_queryWithCriteriaOfT.MakeGenericMethod(target.RequestedType)
+        return (Task<DocumentQueryResult>)_queryWithCriteriaOfT.Value.MakeGenericMethod(target.RequestedType)
             .Invoke(this, [target, database, options, pageNumber, pageSize, token])!;
     }
 
