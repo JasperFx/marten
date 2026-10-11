@@ -15,6 +15,7 @@ using Marten.Internal.Sessions;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
+using Marten.Linq.SqlGeneration;
 using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
@@ -39,6 +40,13 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         // so it is where the closed instantiation is proven to exist for Native AOT.
         DocumentStorageResolvers.Register<T>();
 
+        // #5624: and T here is not only the document type. Queryable.Select<TSource, TResult>()
+        // asks the provider for CreateQuery<TResult>(), so a projection -- anonymous type,
+        // named DTO, a collection member, the element type of a SelectMany -- arrives as the T
+        // of its own MartenLinqQueryable. The select clauses the parser closes over
+        // selectExpression.Type get their closed instantiations from right here.
+        SelectClauseResolvers.Register<T>();
+
         Provider = provider;
         Session = session;
         MartenProvider = provider;
@@ -48,6 +56,7 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
     public MartenLinqQueryable(QuerySession session)
     {
         DocumentStorageResolvers.Register<T>();
+        SelectClauseResolvers.Register<T>();
 
         Session = session;
         MartenProvider = new MartenLinqQueryProvider(session, typeof(T));

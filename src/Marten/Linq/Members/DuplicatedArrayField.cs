@@ -80,8 +80,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
     {
         var selection = $"jsonb_array_elements_text({JSONBLocator})";
 
-        return typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(fromObject, selection,
-            ElementType);
+        return SelectClauseResolvers.Data(ElementType, fromObject, selection);
     }
 
     public ISqlFragment ParseWhereForAny(Expression body, IReadOnlyStoreOptions options)

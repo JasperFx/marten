@@ -114,15 +114,13 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
     public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IStorageSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
-        var selectClause =
-            typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(parentStatement.ExportName, ElementType);
+        var selectClause = SelectClauseResolvers.Data(ElementType, parentStatement.ExportName);
         return collectionUsage.BuildSelectManyStatement(session, this, selectClause, statistics, parentStatement);
     }
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)
     {
-        return typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(fromObject, _arraySelector,
-            ElementType);
+        return SelectClauseResolvers.Data(ElementType, fromObject, _arraySelector);
     }
 
     public IComparableMember ParseComparableForCount(Expression body)

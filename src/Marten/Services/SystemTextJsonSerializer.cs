@@ -112,7 +112,14 @@ public class SystemTextJsonSerializer: ISerializer
     public T FromJson<T>(Stream stream)
     {
         using var buffer = SharedBuffer.RentAndCopy(stream.ToSOHSkippingStream());
-        return JsonSerializer.Deserialize<T>(buffer, _optionsDeserialize);
+        try
+        {
+            return JsonSerializer.Deserialize<T>(buffer, _optionsDeserialize);
+        }
+        catch (NotSupportedException e) when (AnonymousProjection<T>.Yes)
+        {
+            throw AnonymousProjection<T>.Explain(_optionsDeserialize, e);
+        }
     }
 
     public T FromJson<T>(DbDataReader reader, int index)
@@ -122,9 +129,16 @@ public class SystemTextJsonSerializer: ISerializer
 
     public async ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
     {
-        return await JsonSerializer
-            .DeserializeAsync<T>(stream.ToSOHSkippingStream(), _optionsDeserialize, cancellationToken)
-            .ConfigureAwait(false);
+        try
+        {
+            return await JsonSerializer
+                .DeserializeAsync<T>(stream.ToSOHSkippingStream(), _optionsDeserialize, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (NotSupportedException e) when (AnonymousProjection<T>.Yes)
+        {
+            throw AnonymousProjection<T>.Explain(_optionsDeserialize, e);
+        }
     }
 
     public async ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index,

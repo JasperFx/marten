@@ -103,8 +103,7 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
                 session.Serializer, ElementType);
         }
 
-        var selectClause =
-            typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(parentStatement.ExportName, ElementType);
+        var selectClause = SelectClauseResolvers.Data(ElementType, parentStatement.ExportName);
         return (SelectorStatement)collectionUsage.BuildSelectManyStatement(session, this, selectClause, statistics, parentStatement);
     }
 
@@ -133,8 +132,7 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)
     {
-        return typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(fromObject, ExplodeLocator,
-            ElementType);
+        return SelectClauseResolvers.Data(ElementType, fromObject, ExplodeLocator);
     }
 
     public ISqlFragment ParseWhereForAny(Expression body, IReadOnlyStoreOptions options)
