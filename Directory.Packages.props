@@ -956,10 +956,24 @@
          not consume Identifications yet (see the 9.41.0 note), so this is latent here rather than a fix to
          anything Marten currently hits — marten#5589/#5600 are the Marten-side chain.
          weasel#695 is a SQL Server AdvisoryLock fix and is Polecat's, not Marten's: Marten's advisory
-         locks are PostgreSQL. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.42.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.42.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.42.0" />
+         locks are PostgreSQL.
+         9.43.0 (weasel#700/#701, configurable SQL Server advisory lock monitor) and 9.44.0
+         (weasel#703/#704, re-runnable SQL Server function scripts) are SQL Server only: inert here.
+         9.45.0 carries two fixes, and the first one was reported against Marten.
+         weasel#706: db-patch wrote CREATE SCHEMA, and in the drop file `drop schema if exists ...
+         CASCADE`, for every schema the application knows about. A Marten app's drop file for a one-table
+         patch began with cascading drops of every Marten schema, the event store's included. The patch
+         now creates only the changed schemas (SchemaMigration.ChangedSchemas) and the drop file drops no
+         schema at all; it rolls back the objects the patch touched.
+         weasel#707: TableBase.PrimaryKeyName is empty for a table without primary key columns (it was
+         the default name built from no columns), and a primary key added to an existing table is now a
+         PrimaryKeyDifference.Create that the PostgreSQL delta actually applies, instead of a table-level
+         Create that only wrote CREATE TABLE IF NOT EXISTS. Removing a primary key no longer writes
+         `add CONSTRAINT ... PRIMARY KEY ()`. Every Marten table declares its primary key, so the risk
+         is the same as 9.42.0's: the schema-delta suites have to stay quiet on existing tables. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.45.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.45.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.45.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
