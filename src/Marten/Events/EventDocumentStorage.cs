@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten.Events.Archiving;
+using Marten.Events.Archiving.ObjectStorage;
 using Marten.Events.Operations;
 using Marten.Events.Schema;
 using Marten.Exceptions;
@@ -35,8 +36,9 @@ namespace Marten.Events;
 ///     mapping for the event store in a running system. The actual implementation of this
 ///     base type is generated and compiled at runtime by Marten
 /// </summary>
-public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
+public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage, ISelectClauseDependsOnFilters
 {
+    private readonly ISelectClause? _archiveInclusive;
     private readonly ISqlFragment _defaultWhere;
     private readonly string[] _fields;
     private readonly EventQueryMapping _mapping;
@@ -67,6 +69,18 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         _defaultWhere = Events.TenancyStyle == TenancyStyle.Conjoined
             ? CompoundWhereFragment.And(IsNotArchivedFilter.Instance, CurrentTenantFilter.Instance)
             : IsNotArchivedFilter.Instance;
+
+        if (Events.ArchivedEventObjectStorage != null)
+        {
+            _archiveInclusive = new ArchiveInclusiveEventsSelectClause(this);
+        }
+    }
+
+    ISelectClause ISelectClauseDependsOnFilters.SelectClauseFor(IReadOnlyList<ISqlFragment> wheres)
+    {
+        return _archiveInclusive != null && ArchiveInclusiveEventsSelectClause.IsNeededFor(wheres)
+            ? _archiveInclusive
+            : this;
     }
 
     public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;

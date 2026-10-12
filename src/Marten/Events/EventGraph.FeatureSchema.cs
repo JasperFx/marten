@@ -81,6 +81,11 @@ public partial class EventGraph: IFeatureSchema
 
         yield return sequence;
 
+        if (ArchivedEventObjectStorage != null)
+        {
+            yield return new Archiving.ObjectStorage.ArchiveInclusiveEventsView(this, ArchivedEventObjectStorage);
+        }
+
         // #4596 Phase 1 Session 2: per-tenant sequences for the
         // UseTenantPartitionedEvents path live alongside the global sequence.
         // The wrapper yields one Sequence per partition currently registered on

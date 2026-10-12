@@ -311,6 +311,13 @@ jobs:
             serializer: Newtonsoft
             pg_image: timescale/timescaledb-ha:pg17
 
+          - name: ObjectStorageArchive (net9, pgduckdb:17-v1.1.1)
+            target: TestObjectStorageArchive
+            project: src/Marten.ObjectStorageArchive.Tests/Marten.ObjectStorageArchive.Tests.csproj
+            framework: net9.0
+            serializer: Newtonsoft
+            pg_image: pgduckdb/pgduckdb:17-v1.1.1
+
     services:
       postgres:
         image: ${{ matrix.pg_image }}

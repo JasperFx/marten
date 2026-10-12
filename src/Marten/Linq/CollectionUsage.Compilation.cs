@@ -12,6 +12,7 @@ using Marten.Linq.Includes;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Operators;
+using Marten.Events.Archiving.ObjectStorage;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
 using System.Diagnostics.CodeAnalysis;
@@ -46,6 +47,10 @@ public partial class CollectionUsage
         }
 
         statement.ParseWhereClause(WhereExpressions, session, collection, storage);
+        if (storage is ISelectClauseDependsOnFilters dependsOnFilters)
+        {
+            statement.SelectClause = dependsOnFilters.SelectClauseFor(statement.Wheres);
+        }
 
         // If this is a GroupBy query, handle it separately
         if (GroupByData != null)

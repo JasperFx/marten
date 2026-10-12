@@ -1,0 +1,14 @@
+version: '3'
+services:
+  pgduckdb:
+    # PostgreSQL with pg_duckdb preloaded: the local stand-in for object storage of archived events
+    # (Marten.ObjectStorageArchive.Tests). Runs on 5434 so it can coexist with the main postgresql service.
+    #
+    #   export marten_testing_database="Host=localhost;Port=5434;Database=marten_testing;Username=postgres;password=postgres"
+    image: pgduckdb/pgduckdb:17-v1.1.1
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: marten_testing

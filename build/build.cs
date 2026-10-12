@@ -58,6 +58,7 @@ partial class Build : NukeBuild
         .DependsOn(TestPostGIS)
         .DependsOn(TestPgVector)
         .DependsOn(TestTimescaleDB)
+        .DependsOn(TestObjectStorageArchive)
         .DependsOn(TestEntityFrameworkCore)
         .DependsOn(TestMemoryPack);
 
@@ -159,6 +160,10 @@ partial class Build : NukeBuild
     Target TestTimescaleDB => _ => _
         .ProceedAfterFailure()
         .Executes(() => RunTestProject("src/Marten.TimescaleDB.Tests/Marten.TimescaleDB.Tests.csproj"));
+
+    Target TestObjectStorageArchive => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => RunTestProject("src/Marten.ObjectStorageArchive.Tests/Marten.ObjectStorageArchive.Tests.csproj"));
 
     Target TestCore => _ => _
         .ProceedAfterFailure()
