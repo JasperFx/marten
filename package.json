@@ -10,7 +10,7 @@
     "deploy": "netlify deploy --prod"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2",
+    "concurrently": "^9.2.5",
     "markdown-it-block-embed": "^0.0.3",
     "netlify-cli": "^27.4.2",
     "vitepress": "1.6.3",
