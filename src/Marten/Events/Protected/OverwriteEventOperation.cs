@@ -28,29 +28,21 @@ internal class OverwriteEventOperation : IStorageOperation, NoDataReturnedCall
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        // Bind both data and headers as direct UTF-8 bytes via WriteToParameter so we
-        // skip the intermediate string allocations Serializer.ToJson would produce.
+        builder.Append($"update {_graph.DatabaseSchemaName}.mt_events set ");
+        StoredEventPayload.AppendAssignments(builder, session, _graph.EventMappingFor(_e.EventType), _e.Data);
+
         if (_graph.MetadataConfig.HeadersEnabled)
         {
-            var parameters = builder.AppendWithParameters($"update {_graph.DatabaseSchemaName}.mt_events set data = ?, headers = ? where seq_id = ?");
-            session.Serializer.WriteToParameter(parameters[0], _e.Data);
-            session.Serializer.WriteToParameter(parameters[1], _e.Headers);
-            parameters[2].NpgsqlDbType = NpgsqlDbType.Bigint;
-            parameters[2].Value = _e.Sequence;
-
-            // #5234: seq_id alone is not unique across tenants under UseTenantPartitionedEvents
-            builder.AppendConjoinedTenantFilter(session);
+            // Headers as direct UTF-8 bytes, skipping the string Serializer.ToJson would allocate
+            var headers = builder.AppendWithParameters(", headers = ?");
+            session.Serializer.WriteToParameter(headers[0], _e.Headers);
         }
-        else
-        {
-            var parameters = builder.AppendWithParameters($"update {_graph.DatabaseSchemaName}.mt_events set data = ? where seq_id = ?");
-            session.Serializer.WriteToParameter(parameters[0], _e.Data);
-            parameters[1].NpgsqlDbType = NpgsqlDbType.Bigint;
-            parameters[1].Value = _e.Sequence;
 
-            // #5234: seq_id alone is not unique across tenants under UseTenantPartitionedEvents
-            builder.AppendConjoinedTenantFilter(session);
-        }
+        builder.Append(" where seq_id = ");
+        builder.AppendParameter(_e.Sequence, NpgsqlDbType.Bigint);
+
+        // #5234: seq_id alone is not unique across tenants under UseTenantPartitionedEvents
+        builder.AppendConjoinedTenantFilter(session);
     }
 
     public Type DocumentType => typeof(IEvent);

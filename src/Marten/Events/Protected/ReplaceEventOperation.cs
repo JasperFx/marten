@@ -39,12 +39,9 @@ internal class ReplaceEventOperation<T> : IStorageOperation, NoDataReturnedCall 
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        builder.Append($"update {_graph.DatabaseSchemaName}.mt_events set data = ");
-        using (var buffer = new Services.PooledByteBufferWriter())
-        {
-            session.Serializer.WriteTo(buffer, _eventBody);
-            builder.AppendParameter(buffer.ToSizedArray(), NpgsqlDbType.Jsonb);
-        }
+        builder.Append($"update {_graph.DatabaseSchemaName}.mt_events set ");
+        StoredEventPayload.AppendAssignments(builder, session, _graph.EventMappingFor<T>(), _eventBody);
+
         // marten#5379 / marten#5136: bare now(), never `now() at time zone 'utc'`. The latter strips
         // the offset and the naive result is re-read in the session's TimeZone, so on a non-UTC
         // database a compacted event is re-stamped at the wrong instant. mt_streams.timestamp already
