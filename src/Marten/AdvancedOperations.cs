@@ -12,6 +12,7 @@ using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Protected;
+using Marten.Events.Rewriting;
 using Marten.Events.TestSupport;
 using Marten.Internal;
 using Marten.Schema;
@@ -947,5 +948,18 @@ public class AdvancedOperations
         var masking = new EventDataMasking(_store);
         configure(masking);
         return masking.ApplyAsync(token);
+    }
+
+    /// <summary>
+    ///     Rewrite stored events the way an append would store them today: under their current type name,
+    ///     binary or JSON as now configured, through the configured serializer, and optionally transformed.
+    ///     Runs page by page in short statements, skips rows that would not change, and can be resumed.
+    /// </summary>
+    public Task<StoredEventRewriteResult> RewriteStoredEventsAsync(Action<StoredEventRewrite> configure,
+        CancellationToken token = default)
+    {
+        var rewrite = new StoredEventRewrite();
+        configure(rewrite);
+        return new StoredEventRewriter(_store, rewrite).ExecuteAsync(token);
     }
 }
