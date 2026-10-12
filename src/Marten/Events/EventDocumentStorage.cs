@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten.Events.Archiving;
-using Marten.Events.Archiving.ObjectStorage;
+using Marten.ColdStorage;
 using Marten.Events.Operations;
 using Marten.Events.Schema;
 using Marten.Exceptions;
@@ -70,15 +70,16 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage,
             ? CompoundWhereFragment.And(IsNotArchivedFilter.Instance, CurrentTenantFilter.Instance)
             : IsNotArchivedFilter.Instance;
 
-        if (Events.ArchivedEventObjectStorage != null)
+        if (options.ColdStorageProvider != null)
         {
-            _archiveInclusive = new ArchiveInclusiveEventsSelectClause(this);
+            _archiveInclusive = new ColdInclusiveEventsSelectClause(this,
+                ColdViews.WithColdViewFor(new EventsTable(Events).Identifier).QualifiedName);
         }
     }
 
     ISelectClause ISelectClauseDependsOnFilters.SelectClauseFor(IReadOnlyList<ISqlFragment> wheres)
     {
-        return _archiveInclusive != null && ArchiveInclusiveEventsSelectClause.IsNeededFor(wheres)
+        return _archiveInclusive != null && ColdInclusiveEventsSelectClause.IsNeededFor(wheres)
             ? _archiveInclusive
             : this;
     }

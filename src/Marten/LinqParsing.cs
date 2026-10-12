@@ -74,6 +74,7 @@ public class LinqParsing: IReadOnlyLinqParsing
 
         // event is archived
         new MaybeArchivedMethodCallParser(),
+        new Marten.ColdStorage.MaybeColdParser(),
         new EventTypesAreParser(),
         new HasTagParser(),
 

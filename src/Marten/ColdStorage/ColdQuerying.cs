@@ -2,10 +2,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Events;
+using Marten.Events;
+using Marten.Events.Archiving;
 using Marten.Internal;
 using Marten.Linq;
+using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
@@ -13,35 +18,52 @@ using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
-namespace Marten.Events.Archiving.ObjectStorage;
+namespace Marten.ColdStorage;
 
 /// <summary>
-///     A storage whose FROM depends on the filters of the query, so that it can be decided after the
-///     where clause is parsed.
+///     A storage whose FROM depends on the filters of the query, decided after the where clause is parsed.
 /// </summary>
 internal interface ISelectClauseDependsOnFilters
 {
     ISelectClause SelectClauseFor(IReadOnlyList<ISqlFragment> wheres);
 }
 
+internal sealed class MaybeColdFilter: ISqlFragment
+{
+    public static readonly MaybeColdFilter Instance = new();
+
+    public void Apply(ICommandBuilder builder) => builder.Append("1 = 1");
+}
+
+internal sealed class MaybeColdParser: IMethodCallParser
+{
+    private static readonly MethodInfo _method =
+        typeof(ColdStorageExtensions).GetMethod(nameof(ColdStorageExtensions.MaybeCold))!;
+
+    public bool Matches(MethodCallExpression expression) => expression.Method == _method;
+
+    public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
+        MethodCallExpression expression) => MaybeColdFilter.Instance;
+}
+
 /// <summary>
-///     Reads events from <see cref="ArchiveInclusiveEventsView" /> instead of <c>mt_events</c>, with the
-///     same columns and the same selector.
+///     Reads events from <c>mt_events_with_cold</c> instead of <c>mt_events</c>, with the same columns
+///     and the same selector.
 /// </summary>
-internal sealed class ArchiveInclusiveEventsSelectClause: ISelectClause
+internal sealed class ColdInclusiveEventsSelectClause: ISelectClause
 {
     private readonly EventDocumentStorage _storage;
     private readonly string _sql;
 
-    public ArchiveInclusiveEventsSelectClause(EventDocumentStorage storage)
+    public ColdInclusiveEventsSelectClause(EventDocumentStorage storage, string fromObject)
     {
         _storage = storage;
-        FromObject = $"{storage.Events.DatabaseSchemaName}.{ArchiveInclusiveEventsView.ViewName}";
+        FromObject = fromObject;
         _sql = $"select {storage.SelectFields().Join(", ")} from {FromObject} as d";
     }
 
     public static bool IsNeededFor(IReadOnlyList<ISqlFragment> wheres) =>
-        wheres.Any(x => x.ContainsAny<AllEventsFilter>() || x.ContainsAny<IsArchivedFilter>());
+        wheres.Any(x => x.ContainsAny<AllEventsFilter>() || x.ContainsAny<IsArchivedFilter>() || x.ContainsAny<MaybeColdFilter>());
 
     public string FromObject { get; }
 

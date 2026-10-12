@@ -322,8 +322,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
 
     public bool UseArchivedStreamPartitioning { get; set; }
-
-    internal Marten.Events.Archiving.ObjectStorage.IArchivedEventObjectStorage? ArchivedEventObjectStorage { get; set; }
     public bool UseListenNotifyForEventAppends { get; set; }
 
     /// <summary>

@@ -81,9 +81,9 @@ public partial class EventGraph: IFeatureSchema
 
         yield return sequence;
 
-        if (ArchivedEventObjectStorage != null)
+        if (Options.ColdStorageProvider != null)
         {
-            yield return new Archiving.ObjectStorage.ArchiveInclusiveEventsView(this, ArchivedEventObjectStorage);
+            yield return new Marten.ColdStorage.ColdViews(eventsTable, Options.ColdStorageProvider, null);
         }
 
         // #4596 Phase 1 Session 2: per-tenant sequences for the

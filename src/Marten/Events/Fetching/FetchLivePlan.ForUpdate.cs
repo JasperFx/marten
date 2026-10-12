@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using Marten.ColdStorage;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Sessions;
@@ -72,6 +73,13 @@ internal partial class FetchLivePlan<TDoc, TId>
 
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+            if (ColdEventPrefix.IsMissing(((IMartenSession)session).Options, events, 0, 0, null, out var coldPrefix))
+            {
+                await reader.CloseAsync().ConfigureAwait(false);
+                var cold = await session.ExecuteHandlerAsync(
+                    _identityStrategy.BuildEventQueryHandler(IsGlobal, id, coldPrefix), cancellation).ConfigureAwait(false);
+                events = ColdEventPrefix.Prepend(cold, events);
+            }
             _telemetry.RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.LivePlan);
 
             var document = await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);

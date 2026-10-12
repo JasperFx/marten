@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Tags;
+using Marten.ColdStorage;
 using Marten.Events.Dcb;
 using Marten.Events.Querying;
 using Marten.Linq.MatchesSql;
@@ -31,6 +32,31 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
         _tenant = tenant;
     }
 
+    private async Task<IReadOnlyList<IEvent>> withColdPrefixAsync(IReadOnlyList<IEvent> hot, EventStatement statement,
+        IEventStorage selector, CancellationToken token)
+    {
+        if (!ColdEventPrefix.IsMissing(_store.Options, hot, statement.FromVersion, statement.Version,
+                statement.Timestamp, out var coldPrefix))
+        {
+            return hot;
+        }
+
+        var coldStatement = new EventStatement(selector, _store.Events)
+        {
+            StreamId = statement.StreamId,
+            StreamKey = statement.StreamKey,
+            Version = statement.Version,
+            Timestamp = statement.Timestamp,
+            TenantId = statement.TenantId,
+            FromVersion = statement.FromVersion,
+            Filters = [coldPrefix!]
+        };
+
+        var cold = await _session.ExecuteHandlerAsync<IReadOnlyList<IEvent>>(new ListQueryHandler<IEvent>(coldStatement, selector), token)
+            .ConfigureAwait(false);
+        return ColdEventPrefix.Prepend(cold, hot);
+    }
+
     public async Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0,
         DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
     {
@@ -49,7 +75,8 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 
         IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
 
-        return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+        var events = await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+        return await withColdPrefixAsync(events, statement, selector, token).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0,
@@ -70,7 +97,8 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 
         IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
 
-        return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+        var events = await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
+        return await withColdPrefixAsync(events, statement, selector, token).ConfigureAwait(false);
     }
 
     public async Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,

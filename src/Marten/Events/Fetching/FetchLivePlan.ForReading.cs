@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using Marten.ColdStorage;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
@@ -42,6 +43,14 @@ internal partial class FetchLivePlan<TDoc, TId>
             await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
 
         var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        if (ColdEventPrefix.IsMissing(((IMartenSession)session).Options, events, 0, 0, null, out var coldPrefix))
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+            var cold = await session.ExecuteHandlerAsync(
+                _identityStrategy.BuildEventQueryHandler(IsGlobal, id, coldPrefix), cancellation).ConfigureAwait(false);
+            events = ColdEventPrefix.Prepend(cold, events);
+        }
+
         return await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
     }
 

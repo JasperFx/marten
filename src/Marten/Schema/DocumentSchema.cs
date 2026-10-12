@@ -60,6 +60,12 @@ internal class DocumentSchema: IFeatureSchema
     {
         yield return Table;
 
+        if (_mapping.UseColdStorage && _mapping.StoreOptions.ColdStorageProvider is { } coldStorage)
+        {
+            string[] key = _mapping.TenancyStyle == TenancyStyle.Conjoined ? [TenantIdColumn.Name, "id"] : ["id"];
+            yield return new ColdStorage.ColdViews(Table, coldStorage, key);
+        }
+
         if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
         {
             var (enabled, settingName) = _mapping.ResolveRowLevelSecurity();

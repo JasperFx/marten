@@ -313,6 +313,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// </summary>
     public bool DisableNpgsqlLogging { get; set; } = true;
 
+    internal Marten.ColdStorage.IColdStorageProvider? ColdStorageProvider { get; set; }
+
     /// <summary>
     /// Configure and override the Polly error handling policies for this DocumentStore
     /// </summary>

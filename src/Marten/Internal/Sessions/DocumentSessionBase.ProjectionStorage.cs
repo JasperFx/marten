@@ -8,6 +8,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
+using Marten.ColdStorage;
 using Marten.Events.Archiving;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -172,7 +173,20 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         var docs = ((IMartenSession)_session).Options.EventGraph.UseIdentityMapForAggregates
             ? await _storage.LoadManyAsync(identities, _session, cancellationToken).ConfigureAwait(false)
             : await _storage.LoadManyProjectedAsync(identities, _session.Database, TenantId, cancellationToken).ConfigureAwait(false);
-        return docs.ToDictionary(doc => _storage.Identity(doc));
+        var loaded = docs.ToDictionary(doc => _storage.Identity(doc));
+
+        // A cold snapshot is the starting point; the projection then stores it hot again.
+        if (_storage is DocumentStorage<TDoc, TId> { UsesColdStorage: true })
+        {
+            var missing = identities.Where(x => !loaded.ContainsKey(x)).ToArray();
+            if (missing.Length > 0)
+            {
+                var cold = await _session.LoadManyMaybeColdAsync<TDoc, TId>(missing, cancellationToken).ConfigureAwait(false);
+                foreach (var doc in cold) loaded[_storage.Identity(doc)] = doc;
+            }
+        }
+
+        return loaded;
     }
 
     public void SetIdentity(TDoc document, TId identity)
@@ -252,11 +266,19 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
     }
 
     //TODO fix in IProjectionStorage
-    public Task<TDoc?> LoadAsync(TId id, CancellationToken cancellation)
+    public async Task<TDoc?> LoadAsync(TId id, CancellationToken cancellation)
     {
         // #4667 Phase 2 — see LoadManyAsync above for rationale.
-        return ((IMartenSession)_session).Options.EventGraph.UseIdentityMapForAggregates
-            ? _storage.LoadAsync(id, _session, cancellation)
-            : _storage.LoadProjectedAsync(id, _session.Database, TenantId, cancellation);
+        var doc = ((IMartenSession)_session).Options.EventGraph.UseIdentityMapForAggregates
+            ? await _storage.LoadAsync(id, _session, cancellation).ConfigureAwait(false)
+            : await _storage.LoadProjectedAsync(id, _session.Database, TenantId, cancellation).ConfigureAwait(false);
+
+        if (doc == null && _storage is DocumentStorage<TDoc, TId> { UsesColdStorage: true })
+        {
+            var cold = await _session.LoadManyMaybeColdAsync<TDoc, TId>([id], cancellation).ConfigureAwait(false);
+            doc = cold.FirstOrDefault();
+        }
+
+        return doc;
     }
 }

@@ -12,7 +12,7 @@ using Marten.Linq.Includes;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Operators;
-using Marten.Events.Archiving.ObjectStorage;
+using Marten.ColdStorage;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
 using System.Diagnostics.CodeAnalysis;

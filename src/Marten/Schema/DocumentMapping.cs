@@ -320,6 +320,11 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
     public bool UseOptimisticConcurrency { get; set; }
 
+    /// <summary>
+    ///     Documents of this type can be moved to the store's cold storage. See <c>AllowColdStorage()</c>.
+    /// </summary>
+    internal bool UseColdStorage { get; set; }
+
     public bool UseNumericRevisions { get; set; }
 
     /// <summary>

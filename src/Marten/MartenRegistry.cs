@@ -800,6 +800,18 @@ public class MartenRegistry
         }
 
         /// <summary>
+        ///     Documents of this type can be moved to the store's cold storage with
+        ///     <c>MoveDocumentsToColdStorageAsync()</c>. Like soft-deleted documents, cold documents
+        ///     are invisible to every read until it asks for them with <c>MaybeCold()</c> or
+        ///     <c>LoadMaybeColdAsync()</c>.
+        /// </summary>
+        public DocumentMappingExpression<T> AllowColdStorage()
+        {
+            _builder.Alter = m => m.UseColdStorage = true;
+            return this;
+        }
+
+        /// <summary>
         ///     Mark this document type as soft-deleted, with an index on the is_deleted column
         /// </summary>
         /// <param name="configure"></param>

@@ -2,7 +2,7 @@ using JasperFx;
 using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Archiving;
-using Marten.Events.Archiving.ObjectStorage;
+using Marten.ColdStorage;
 using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -23,7 +23,7 @@ public class PgDuckDbCollection;
 [Collection("pg_duckdb")]
 public abstract class archived_events_in_parquet: IAsyncLifetime
 {
-    private const string ArchiveView = "mt_events_with_archive";
+    private const string ArchiveView = "mt_events_with_cold";
 
     private readonly bool _archivedStreamPartitioning;
     private DocumentStore _store = null!;
@@ -49,12 +49,13 @@ public abstract class archived_events_in_parquet: IAsyncLifetime
 
             // Files are written by the database server, inside its container. A fresh prefix per run
             // keeps the files of an earlier run out of this one.
-            opts.UseObjectStorageForArchivedEvents(
-                new PgDuckDbParquetArchive($"/var/lib/postgresql/{schema}_{Guid.NewGuid():N}_"));
+            opts.UseColdStorage(
+                new PgDuckDbParquetColdStorage($"/var/lib/postgresql/{schema}_{Guid.NewGuid():N}_"));
         });
 
         await _store.Advanced.Clean.CompletelyRemoveAllAsync(TestContext.Current.CancellationToken);
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await _store.InitializeColdStorageAsync(TestContext.Current.CancellationToken);
     }
 
     public ValueTask DisposeAsync()
@@ -80,7 +81,7 @@ public abstract class archived_events_in_parquet: IAsyncLifetime
             await session.SaveChangesAsync(token);
         }
 
-        (await _store.MoveArchivedEventsToObjectStorageAsync(token)).ShouldBe(3);
+        (await _store.MoveArchivedEventsToColdStorageAsync(token)).ShouldBe(3);
         (await CountInMtEventsAsync(closed)).ShouldBe(0);
 
         await using var query = _store.QuerySession();
@@ -118,7 +119,7 @@ public abstract class archived_events_in_parquet: IAsyncLifetime
             await session.SaveChangesAsync(token);
         }
 
-        await _store.MoveArchivedEventsToObjectStorageAsync(token);
+        await _store.MoveArchivedEventsToColdStorageAsync(token);
 
         await using (var session = _store.LightweightSession())
         {
@@ -147,7 +148,7 @@ public abstract class archived_events_in_parquet: IAsyncLifetime
             await session.SaveChangesAsync(token);
         }
 
-        (await _store.MoveArchivedEventsToObjectStorageAsync(token)).ShouldBe(0);
+        (await _store.MoveArchivedEventsToColdStorageAsync(token)).ShouldBe(0);
 
         await using var query = _store.QuerySession();
         (await query.Events.QueryAllRawEvents().Where(x => x.MaybeArchived()).CountAsync(token)).ShouldBe(1);

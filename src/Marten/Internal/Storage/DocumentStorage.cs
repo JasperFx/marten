@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.ColdStorage;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -42,8 +43,9 @@ internal interface IHaveMetadataColumns
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDocumentStorage, IHaveMetadataColumns where T : notnull where TId : notnull
+public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDocumentStorage, IHaveMetadataColumns, ISelectClauseDependsOnFilters where T : notnull where TId : notnull
 {
+    private readonly string? _withColdView;
     protected readonly string _loadArraySql;
     protected readonly string _loaderSql;
     private readonly string _selectClause;
@@ -87,6 +89,11 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
         _selectFields = table.SelectColumns(storageStyle).Select(x => $"d.{x.Name}").ToArray();
         var fieldSelector = _selectFields.Join(", ");
         _selectClause = $"select {fieldSelector} from {document.TableName.QualifiedName} as d";
+
+        if (document.UseColdStorage && document.StoreOptions.ColdStorageProvider != null)
+        {
+            _withColdView = ColdViews.WithColdViewFor(document.TableName).QualifiedName;
+        }
 
         _loaderSql =
             $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = $1";
@@ -431,6 +438,18 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
     public void Apply(ICommandBuilder sql)
     {
         sql.Append(_selectClause);
+    }
+
+    internal bool UsesColdStorage => _withColdView != null;
+
+    ISelectClause ISelectClauseDependsOnFilters.SelectClauseFor(IReadOnlyList<ISqlFragment> wheres)
+    {
+        if (_withColdView == null || !wheres.Any(x => x.ContainsAny<MaybeColdFilter>()))
+        {
+            return this;
+        }
+
+        return new DuplicatedFieldSelectClause(_withColdView, string.Empty, _selectFields, typeof(T), this);
     }
 
     public string[] SelectFields()

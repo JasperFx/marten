@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.Events.Projections;
+using Marten.ColdStorage;
 using Marten.Events.Archiving;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
@@ -15,10 +16,12 @@ internal class EventStatement: SelectorStatement
 {
     private const string ALL_TENANTS = "~ALL~";
     private readonly IEventStorage _storage;
+    private readonly string _coldView;
 
     public EventStatement(IEventStorage storage, EventGraph events)
     {
         _storage = storage;
+        _coldView = $"{events.DatabaseSchemaName}.mt_events_cold";
         IgnoreSkipped = events.EnableEventSkippingInProjectionsOrSubscriptions;
     }
 
@@ -41,7 +44,14 @@ internal class EventStatement: SelectorStatement
 
     protected override void configure(ICommandBuilder builder)
     {
-        _storage.Apply(builder);
+        if (Filters.OfType<ColdPrefixFilter>().Any())
+        {
+            builder.Append($"select {_storage.SelectFields().Join(", ")} from {_coldView} as d");
+        }
+        else
+        {
+            _storage.Apply(builder);
+        }
 
         var wheres = filters().ToArray();
         switch (wheres.Length)
