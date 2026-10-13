@@ -1,4 +1,5 @@
 using Marten.Internal.Storage;
+using Marten.Linq.QueryHandlers;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 
@@ -37,6 +38,25 @@ internal class PassthroughSelectStatement: SelectorStatement
         {
             // Hack, but makes SelectMany() work where the exact table gets lost
             if (SelectClause is IModifyableFromObject o) o.FromObject = TableName;
+
+            // #5654: a Select() projection has to be re-applied against the temp table -- unlike the
+            // branch above it cannot just read the row back. Its statistics column must not be
+            // re-applied with it. The temp table already carries the count, computed over the whole
+            // match set because PostgreSQL evaluates a window function before LIMIT; emitting
+            // count(*) over() a second time here counts the rows the inner statement's Take() left,
+            // so a paged projection reported the size of its own page as the total.
+            if (SelectClause is IStatsSelectClause projected)
+            {
+                sql.Append("select ");
+                projected.Inner.ApplySelectFields(sql);
+                sql.Append(", d.");
+                sql.Append(LinqConstants.StatsColumnName);
+                sql.Append(" from ");
+                sql.Append(TableName);
+                sql.Append(" as d");
+
+                return;
+            }
 
             SelectClause.Apply(sql);
         }
