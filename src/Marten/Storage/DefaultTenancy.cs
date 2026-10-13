@@ -41,6 +41,14 @@ internal class DefaultTenancy: Tenancy, ITenancy, IAsyncDisposable
         return new ValueTask<IMartenDatabase>(Default.Database);
     }
 
+    /// <summary>
+    /// #5658 — one database holds every tenant (conjoined or not), so every tenant id resolves to it.
+    /// </summary>
+    public ValueTask<IMartenDatabase?> TryFindDatabase(string tenantIdOrDatabaseIdentifier)
+    {
+        return new ValueTask<IMartenDatabase?>(Default.Database);
+    }
+
     public ValueTask<IMartenDatabase> FindDatabase(DatabaseId id)
     {
         return new ValueTask<IMartenDatabase>(Default.Database);
