@@ -82,6 +82,21 @@ Supported inner value types: `Guid`, `string`, `int`, `long`, `short`.
 
 Tags work with both **Rich** and **Quick** append modes (the default in Marten 9 is `QuickWithServerTimestamps`). In Rich mode, tags are inserted using pre-assigned sequence numbers. In Quick mode, tags are inserted using a subquery that looks up the sequence from the event's id.
 
+### Native AOT
+
+`RegisterTagType<TTag>()` discovers the tag's inner type by reflection and closes `TagTypeRegistration<TTag, TInner>` at runtime, and a Native AOT image without that instantiation has no code for it. Under AOT, name the inner type and pass the delegate that reads it instead:
+
+```cs
+opts.Events.RegisterTagType<StudentId, Guid>(x => x.Value, "student")
+    .ForAggregate<StudentCourseEnrollment>();
+opts.Events.RegisterTagType<CourseId, Guid>(x => x.Value, "course")
+    .ForAggregate<StudentCourseEnrollment>();
+```
+
+That overload closes the generic at compile time and compiles nothing, so it works under a JIT as well. For a tag the inferring overload can register, it registers the same inner type, and the same table when given the same suffix. When the inferring overload fails natively, it throws an `InvalidOperationException` that names this line for the tag type in question. [Automatic tag type registration](#automatic-tag-type-registration) uses the inferring path too and can fail the same way, usually with a logged warning that names the line, including its `ForAggregate<T>()`. Under AOT, register those tag types explicitly as well.
+
+With explicit registrations, tagging, tag rules, tag queries, `EventsExistAsync`, `AggregateByTagsAsync` and `FetchForWritingByTags` into a `[BoundaryAggregate]` run from a native binary, over a `Guid`- and a `string`-backed tag in the default storage mode; the `aot-runtime` CI job runs them.
+
 ## Tagging Events
 
 Use `BuildEvent` and `WithTag` to attach tags before appending:
