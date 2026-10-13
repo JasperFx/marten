@@ -585,6 +585,28 @@ namespace Marten.Events
         ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull;
 
         /// <summary>
+        /// Register a strong-typed identifier as a tag type, naming its inner value type and supplying the
+        /// unwrapper rather than having them discovered by reflection. This is the overload to use under
+        /// Native AOT: the inferring overloads close <c>TagTypeRegistration&lt;TTag, TInner&gt;</c> at runtime,
+        /// which a native image may have no code for, while this one closes it at compile time and compiles nothing.
+        /// Under a JIT it registers what <see cref="RegisterTagType{TTag}(string)" /> would for a tag that overload
+        /// can infer, with the inner type and unwrapper given here.
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// opts.Events.RegisterTagType&lt;StudentId, Guid&gt;(x =&gt; x.Value, "student");
+        /// </code>
+        /// </example>
+        /// <typeparam name="TTag">A strong-typed identifier type (e.g., StudentId)</typeparam>
+        /// <typeparam name="TInner">The primitive it wraps: Guid, string, int, long or short</typeparam>
+        /// <param name="unwrapper">Reads the inner value out of the tag, e.g. <c>x =&gt; x.Value</c></param>
+        /// <param name="tableSuffix">Table name suffix, as for <see cref="RegisterTagType{TTag}(string)" /></param>
+        /// <returns>The tag type registration for further configuration</returns>
+        /// <exception cref="InvalidOperationException">The tag type is already registered with a different inner type</exception>
+        ITagTypeRegistration RegisterTagType<TTag, TInner>(Func<TTag, TInner> unwrapper, string tableSuffix)
+            where TTag : notnull;
+
+        /// <summary>
         /// Derive a DCB tag from an event's own data, for every event appended through this store.
         /// <para>
         /// Tag inference can only find a tag when the event exposes a property whose <i>type</i> is the tag
