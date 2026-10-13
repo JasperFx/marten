@@ -803,15 +803,18 @@
          compliance package's criteria facts run here now (SupportsDocumentDiagnosticCriteria = true).
          JasperFx gains a dependency on System.Linq.Dynamic.Core, so every Marten consumer picks it up
          transitively. -->
-    <PackageVersion Include="JasperFx" Version="2.84.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.84.0" />
+    <!-- JasperFx 2.86.0 (from 2.84.0): carries jasperfx#1005, IEventStore.FindDatabaseForTenantAsync.
+         DocumentStore overrides it through ITenancy.TryFindDatabase (marten#5658) so a per-tenant wait
+         or query reaches only that tenant's database. -->
+    <PackageVersion Include="JasperFx" Version="2.86.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.86.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.84.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.86.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -830,11 +833,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.84.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.86.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.84.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.86.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

@@ -15,6 +15,7 @@ using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
@@ -132,6 +133,36 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         // projects rather than returning the list directly. See #4570.
         var databases = await Tenancy.BuildDatabases().ConfigureAwait(false);
         return databases.OfType<IEventDatabase>().ToList();
+    }
+
+    /// <summary>
+    ///     #5658 / jasperfx#1005 — the one database holding <paramref name="tenantId"/>, so a caller waiting
+    ///     on or querying a single tenant (Bobcat's <c>AfterAsyncDaemonsCatchUpAsync(tenantId)</c>, the
+    ///     correlation query behind wolverine#4962) touches only that database instead of
+    ///     <c>AllDatabases()</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Goes through <see cref="ITenancy.TryFindDatabase"/>, never <see cref="ITenancy.FindOrCreateDatabase"/>:
+    ///     the latter provisions on SingleServerMultiTenancy and ShardedTenancy, and a lookup must not bring
+    ///     an unknown tenant into existence. Single-database tenancy answers its one database for every
+    ///     tenant. StaticMultiTenancy (and any custom tenancy) leaves <c>TryFindDatabase</c> at its default,
+    ///     which delegates to a <c>FindOrCreateDatabase</c> that throws <see cref="UnknownTenantIdException"/>
+    ///     for an unknown id rather than provisioning; that becomes null here. The throw stays in
+    ///     StaticMultiTenancy because the document diagnostics read relies on it to refuse an unknown tenant.
+    /// </remarks>
+    async ValueTask<IEventDatabase?> IEventStore.FindDatabaseForTenantAsync(string tenantId, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(tenantId);
+
+        try
+        {
+            var database = await Tenancy.TryFindDatabase(tenantId).ConfigureAwait(false);
+            return database as IEventDatabase;
+        }
+        catch (UnknownTenantIdException)
+        {
+            return null;
+        }
     }
 
     public EventStoreIdentity Identity { get; }
