@@ -33,6 +33,12 @@
 //                         serializer was ever reached. An anonymous projection then still cannot be
 //                         materialized by a source-generated resolver that replaced the
 //                         reflection-based one, and Marten now says so with the remedy (#5624).
+//   boundary aggregate    EventGraph.Build<TDoc>() closed SingleStreamProjection<,> with
+//                         CloseAndBuildAs for a [BoundaryAggregate], even though both type
+//                         arguments are known at compile time (TDoc, and string per jasperfx#324).
+//                         ILC has no such instantiation, so every DCB boundary fetch threw
+//                         "No parameterless constructor defined for type
+//                         SingleStreamProjection`2[...]" (#5649).
 //   diagnostics criteria  IDocumentStoreDiagnostics Where / OrderBy (jasperfx#869) are translated with
 //                         runtime code generation, so a native binary must REFUSE them -- before any
 //                         generic method is closed over the document type -- not crash, and never
@@ -49,6 +55,7 @@ using System.Text.Json.Serialization;
 using JasperFx;
 using JasperFx.Documents;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using Marten;
 using Marten.Exceptions;
 using Marten.Linq;
@@ -436,6 +443,16 @@ try
         }
     });
 
+    // #5649. Exercised directly rather than through AggregateByTagsAsync, because reaching the
+    // boundary fetch needs a registered tag type and RegisterTagType<TTag> closes its own open
+    // generic -- a separate AOT hole, still open. This is the one site this fix moves, and it is
+    // the site the reported MissingMethodException came from.
+    await Check("boundary aggregate aggregator source", () =>
+    {
+        var source = store.Events.Build<Toegangsgrens>();
+        return Task.FromResult(source is Marten.Events.Aggregation.SingleStreamProjection<Toegangsgrens, string>);
+    });
+
 }
 catch (Exception e)
 {
@@ -642,6 +659,19 @@ public class Dossier
 public record DossierGeopend(string Nummer, string Naam);
 
 public record RegelToegevoegd(string Prestatiecode);
+
+// #5649: a *pure* DCB boundary aggregate -- Apply methods, no identity of any kind. The
+// [BoundaryAggregate] marker is the only thing that makes EventGraph.Build<TDoc>() take the branch
+// under test, and its id is unconditionally string (jasperfx#324).
+[BoundaryAggregate]
+public class Toegangsgrens
+{
+    public int Geopend { get; set; }
+    public int Regels { get; set; }
+
+    public void Apply(DossierGeopend _) => Geopend++;
+    public void Apply(RegelToegevoegd _) => Regels++;
+}
 
 [JsonSerializable(typeof(Praktijk))]
 [JsonSerializable(typeof(Declaratie))]

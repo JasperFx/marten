@@ -23,6 +23,7 @@ using Marten.Schema;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Subscriptions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
 using Weasel.Core;
@@ -165,8 +166,18 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         // lookup hits, regardless of StreamIdentity or of any stray Id member on the type.
         if (typeof(TDoc).IsDefined(typeof(BoundaryAggregateAttribute), inherit: false))
         {
-            return typeof(SingleStreamProjection<,>)
-                .CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), typeof(string));
+            // #5649: constructed directly rather than through CloseAndBuildAs. Both type arguments
+            // are known here -- TDoc from the caller and string per the note above -- so closing the
+            // open generic at runtime bought nothing and cost Native AOT everything: ILC cannot see
+            // the instantiation, and the fetch failed with "No parameterless constructor defined for
+            // type SingleStreamProjection`2[Enrollment,System.String]". Writing it out roots the
+            // instantiation at compile time.
+            //
+            // The CS8714 this carries is the same one ProjectionOptions.cs takes for the same
+            // construction: Build<TDoc>() is public and unconstrained, so the compiler cannot see
+            // that TDoc satisfies the notnull constraint. Constraining a public signature to silence
+            // it would be source-breaking for no runtime gain -- CloseAndBuildAs never checked it.
+            return new SingleStreamProjection<TDoc, string>();
         }
 
         var mapping = Options.Storage.MappingFor(typeof(TDoc));
@@ -1102,7 +1113,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
             _aggregateTypeByName.Fill(alias, aggregateType);
         }
 
-        autoDiscoverTagTypesFromProjections();
+        autoDiscoverTagTypesFromProjections(logger);
     }
 
     private static readonly HashSet<Type> PrimitiveIdentityTypes =
@@ -1120,7 +1131,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     private static readonly System.Reflection.MethodInfo? CreateTagTypeMethod =
         typeof(TagTypeRegistration).GetMethod(nameof(TagTypeRegistration.Create));
 
-    private void autoDiscoverTagTypesFromProjections()
+    private void autoDiscoverTagTypesFromProjections(ILogger logger)
     {
         if (CreateTagTypeMethod == null) return;
 
@@ -1137,11 +1148,48 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 registration.ForAggregate(projection.AggregateType);
                 _tagTypes.Add(registration);
             }
-            catch
+            catch (Exception e) when (isNotAValueType(e))
             {
-                // Not a valid strong-typed identifier — skip silently
+                // An identity that is simply not a strong-typed identifier is the ordinary case this
+                // discovery pass has to tolerate, and it is not worth a word.
+            }
+            catch (Exception e)
+            {
+                // #5649: everything else used to be swallowed by the same bare catch, which under
+                // Native AOT is a silent wrong answer rather than a tolerated one: MakeGenericMethod
+                // into Create<TTag> closes TagTypeRegistration<,> with MakeGenericType, ILC has no
+                // such instantiation, and the NotSupportedException it raises ("missing native code
+                // or metadata") left the store running with the tag type quietly absent -- the
+                // queries that need it then fail far from the cause.
+                //
+                // Still not rethrown. This runs inside the store's Initialize, and a throw here
+                // would stop an application from starting over a feature it may not use -- the same
+                // trade the CreateTagTypeMethod lookup above already makes. Logged so the answer is
+                // traceable to "could not register" instead of being indistinguishable from "there
+                // was nothing to register".
+                logger.LogWarning(e,
+                    "Unable to automatically register the identity type {IdentityType} of projection {Projection} as an event tag type. Tag queries and boundary-aggregate fetches using this tag will not work. Under Native AOT, register it explicitly with StoreOptions.Events.RegisterTagType<{IdentityType}>().",
+                    identityType.FullNameInCode(), projection.GetType().FullNameInCode(),
+                    identityType.FullNameInCode());
             }
         }
+    }
+
+    /// <summary>
+    /// An identity type that is not a strong-typed identifier at all. ValueTypeInfo.ForType raises
+    /// this before any generic is closed, and MethodInfo.Invoke wraps it, so the chain is walked.
+    /// </summary>
+    private static bool isNotAValueType(Exception e)
+    {
+        for (var current = e; current != null; current = current.InnerException)
+        {
+            if (current is InvalidValueTypeException)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public List<Type> GlobalAggregates { get; } = new();
