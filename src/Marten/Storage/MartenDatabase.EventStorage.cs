@@ -307,6 +307,28 @@ public partial class MartenDatabase : IEventDatabase
         await conn.OpenAsync(token).ConfigureAwait(false);
         try
         {
+            // #5652: ask the catalog whether the table is there before asking it for rows. The catch
+            // below already keeps a missing table from reaching the caller, but the failed statement
+            // still gets as far as Postgres, which logs an ERROR for it. A store with no event type
+            // and no projection never has its event tables migrated, and under Wolverine-managed
+            // subscription distribution the leader builds a usage descriptor for every store on a
+            // ten second heartbeat -- so that steady state is tens of thousands of server-side ERROR
+            // lines a day for a store that can never hold an event, burying real ones.
+            //
+            // This stays within #5511's rule that only Postgres can answer whether the storage is
+            // there -- to_regclass is that same question asked without raising, and it answers for a
+            // missing schema as well as a missing table. The catch is still needed for the race
+            // where the table goes away between the two statements.
+            var exists = await conn
+                .CreateCommand("select to_regclass(:name) is not null;")
+                .With("name", $"{Options.Events.DatabaseSchemaName}.mt_events", NpgsqlDbType.Text)
+                .ExecuteScalarAsync(token).ConfigureAwait(false);
+
+            if (exists is not true)
+            {
+                return null;
+            }
+
             var raw = await conn
                 .CreateCommand($"select max(seq_id) from {Options.Events.DatabaseSchemaName}.mt_events;")
                 .ExecuteScalarAsync(token).ConfigureAwait(false);
