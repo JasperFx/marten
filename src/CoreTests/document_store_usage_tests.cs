@@ -160,6 +160,28 @@ public class document_store_usage_tests: HostedStoreContext
         usage.GlobalAggregates.ShouldContain(g => g.FullName == typeof(User).FullName);
     }
 
+    // JasperFx/wolverine#5002: the database half of TryCreateUsage on its own, for Wolverine's heartbeat
+    [Fact]
+    public async Task describing_the_databases_alone_matches_the_usage()
+    {
+        var host = await BuildHost(opts =>
+        {
+            opts.DatabaseSchemaName = $"{SchemaName}_describe_databases";
+        });
+
+        var store = host.Services.GetRequiredService<IEventStore>();
+
+        var databases = await store.TryDescribeDatabasesAsync(CancellationToken.None);
+        var usage = await store.TryCreateUsage(CancellationToken.None);
+
+        databases.ShouldNotBeNull();
+        databases.Cardinality.ShouldBe(usage!.Database.Cardinality);
+        databases.MainDatabase!.DatabaseName.ShouldBe(usage.Database.MainDatabase!.DatabaseName);
+        databases.MainDatabase.ServerName.ShouldBe(usage.Database.MainDatabase.ServerName);
+        databases.Databases.Select(x => x.DatabaseName)
+            .ShouldBe(usage.Database.Databases.Select(x => x.DatabaseName));
+    }
+
     private Task<IHost> BuildHost(Action<StoreOptions> configure)
     {
         return StartHostAsync(configure);

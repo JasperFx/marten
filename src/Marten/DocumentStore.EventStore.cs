@@ -644,6 +644,16 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await session.ExecuteBatchAsync(batch, token).ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///     JasperFx/wolverine#5002 — just the database half of <c>TryCreateUsage</c>, straight from the tenancy.
+    ///     Wolverine asks for it on every leader heartbeat, and the full usage also reads the highest event
+    ///     sequence and describes every projection, subscription, event type and tag type.
+    /// </summary>
+    async Task<DatabaseUsage?> IEventStore.TryDescribeDatabasesAsync(CancellationToken token)
+    {
+        return await Options.Tenancy.DescribeDatabasesAsync(token).ConfigureAwait(false);
+    }
+
     async Task<EventStoreUsage?> IEventStore.TryCreateUsage(CancellationToken token)
     {
         var usage = new EventStoreUsage(Subject, this)
