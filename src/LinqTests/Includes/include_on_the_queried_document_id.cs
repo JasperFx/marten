@@ -35,13 +35,7 @@ public class include_on_the_queried_document_id: OneOffConfigurationsContext
     [InlineData(SessionKind.DirtyTracked, false)]
     public async Task includes_the_children_of_the_queried_document(SessionKind kind, bool duplicatedField)
     {
-        StoreOptions(opts =>
-        {
-            if (duplicatedField)
-            {
-                opts.Schema.For<Folder>().Duplicate(x => x.Name);
-            }
-        });
+        configure(duplicatedField);
 
         var folder = new Folder { Id = Guid.NewGuid(), Name = "Invoices" };
         var other = new Folder { Id = Guid.NewGuid(), Name = "Receipts" };
@@ -59,13 +53,7 @@ public class include_on_the_queried_document_id: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        await using var query = kind switch
-        {
-            SessionKind.Query => theStore.QuerySession(),
-            SessionKind.Lightweight => theStore.LightweightSession(),
-            SessionKind.IdentityMap => theStore.IdentitySession(),
-            _ => (IQuerySession)theStore.DirtyTrackedSession()
-        };
+        await using var query = sessionFor(kind);
 
         var children = new List<FolderItem>();
         var folders = await query.Query<Folder>()
@@ -77,10 +65,83 @@ public class include_on_the_queried_document_id: OneOffConfigurationsContext
         children.Select(x => x.Name).OrderBy(x => x).ShouldBe(["one", "two"]);
     }
 
+    /// <summary>
+    /// #5653: Stats() wraps the select clause, which hid it from the check that puts the id back
+    /// into the temp table. Returning fewer rows than match keeps the assertion on TotalResults
+    /// honest about where the statistics column lands once the id column is added alongside it.
+    /// </summary>
+    [Theory]
+    [InlineData(SessionKind.Query, true)]
+    [InlineData(SessionKind.Lightweight, true)]
+    [InlineData(SessionKind.IdentityMap, true)]
+    [InlineData(SessionKind.DirtyTracked, true)]
+    [InlineData(SessionKind.Query, false)]
+    [InlineData(SessionKind.Lightweight, false)]
+    [InlineData(SessionKind.IdentityMap, false)]
+    [InlineData(SessionKind.DirtyTracked, false)]
+    public async Task includes_the_children_and_counts_every_match(SessionKind kind, bool duplicatedField)
+    {
+        configure(duplicatedField);
+
+        var folders = Enumerable.Range(1, 3)
+            .Select(i => new Folder { Id = Guid.NewGuid(), Name = "Invoices", Sort = i })
+            .ToArray();
+        var other = new Folder { Id = Guid.NewGuid(), Name = "Receipts", Sort = 4 };
+        var items = new[]
+        {
+            new FolderItem { Id = Guid.NewGuid(), FolderId = folders[0].Id, Name = "one" },
+            new FolderItem { Id = Guid.NewGuid(), FolderId = folders[1].Id, Name = "two" },
+            new FolderItem { Id = Guid.NewGuid(), FolderId = other.Id, Name = "elsewhere" }
+        };
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Store(folders);
+            session.Store(other);
+            session.Store(items);
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = sessionFor(kind);
+
+        var children = new List<FolderItem>();
+        var page = await query.Query<Folder>()
+            .Stats(out var stats)
+            .Where(x => x.Name == "Invoices")
+            .Include(children).On(x => x.Id, i => i.FolderId)
+            .OrderBy(x => x.Sort)
+            .Take(2)
+            .ToListAsync();
+
+        page.Select(x => x.Sort).ShouldBe([1, 2]);
+        stats.TotalResults.ShouldBe(3);
+        children.Select(x => x.Name).OrderBy(x => x).ShouldBe(["one", "two"]);
+    }
+
+    private void configure(bool duplicatedField)
+    {
+        StoreOptions(opts =>
+        {
+            if (duplicatedField)
+            {
+                opts.Schema.For<Folder>().Duplicate(x => x.Name);
+            }
+        });
+    }
+
+    private IQuerySession sessionFor(SessionKind kind) => kind switch
+    {
+        SessionKind.Query => theStore.QuerySession(),
+        SessionKind.Lightweight => theStore.LightweightSession(),
+        SessionKind.IdentityMap => theStore.IdentitySession(),
+        _ => theStore.DirtyTrackedSession()
+    };
+
     public class Folder
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = "";
+        public int Sort { get; set; }
     }
 
     public class FolderItem

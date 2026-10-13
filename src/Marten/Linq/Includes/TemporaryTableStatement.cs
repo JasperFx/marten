@@ -14,24 +14,47 @@ public class TemporaryTableStatement: Statement
         var selectorStatement = Inner.SelectorStatement();
         selectorStatement.Mode = StatementMode.Inner;
 
-        // This is ugly, but you need to pick up the id column *just* in case there's a Select()
-        // clause that needs it.
-        if (selectorStatement.SelectClause is IQueryOnlyDocumentStorage s)
+        // #5653: Stats() wraps the real select clause, so look *through* the wrapper rather than
+        // past it. Neither case below matches a StatsSelectClause, so without this the temp table
+        // for a statistics query was created with no id at all. The statistics column is read back
+        // at Inner.SelectFields().Length, so it follows the added id column by itself.
+        if (selectorStatement.SelectClause is IStatsSelectClause stats)
         {
-            selectorStatement.SelectClause = s.SelectClauseForIncludes();
+            stats.Inner = withIdColumn(stats.Inner);
         }
-        else if (selectorStatement.SelectClause is DuplicatedFieldSelectClause duplicated)
+        else
         {
-            // An include on a document with duplicated fields selects through this clause instead,
-            // which a query session builds without the id column. An include joined on the queried
-            // document's own id reads "d.id" from the temp table, so the id has to be there too.
-            duplicated.EnsureColumn("d.id");
+            selectorStatement.SelectClause = withIdColumn(selectorStatement.SelectClause);
         }
 
         ExportName = session.NextTempTableName();
     }
 
     public Statement Inner { get; }
+
+    /// <summary>
+    /// This is ugly, but you need to pick up the id column *just* in case there's a Select()
+    /// clause that needs it, or an Include() joined on the queried document's own id, which
+    /// reads "d.id" straight out of the temp table.
+    /// </summary>
+    private static ISelectClause withIdColumn(ISelectClause selectClause)
+    {
+        switch (selectClause)
+        {
+            case IQueryOnlyDocumentStorage s:
+                return s.SelectClauseForIncludes();
+
+            // #5650: with duplicated fields the query selects through this clause instead, which a
+            // query session builds from the same id-less column list. In the other session kinds
+            // the id is already selected and EnsureColumn does nothing.
+            case DuplicatedFieldSelectClause duplicated:
+                duplicated.EnsureColumn("d.id");
+                return duplicated;
+
+            default:
+                return selectClause;
+        }
+    }
 
     protected override void configure(ICommandBuilder sql)
     {
