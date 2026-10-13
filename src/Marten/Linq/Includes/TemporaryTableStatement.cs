@@ -20,6 +20,13 @@ public class TemporaryTableStatement: Statement
         {
             selectorStatement.SelectClause = s.SelectClauseForIncludes();
         }
+        else if (selectorStatement.SelectClause is DuplicatedFieldSelectClause duplicated)
+        {
+            // An include on a document with duplicated fields selects through this clause instead,
+            // which a query session builds without the id column. An include joined on the queried
+            // document's own id reads "d.id" from the temp table, so the id has to be there too.
+            duplicated.EnsureColumn("d.id");
+        }
 
         ExportName = session.NextTempTableName();
     }
