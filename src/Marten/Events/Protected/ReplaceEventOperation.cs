@@ -20,17 +20,12 @@ internal class ReplaceEventOperation<T> : IStorageOperation, NoDataReturnedCall 
     private readonly EventGraph _graph;
     private readonly T _eventBody;
     private readonly long _sequence;
-    private readonly string _eventTypeName;
-    private readonly string _dotNetType;
 
     public ReplaceEventOperation(EventGraph graph, T eventBody, long sequence)
     {
         _graph = graph;
         _eventBody = eventBody;
         _sequence = sequence;
-        var mapping = graph.EventMappingFor<T>();
-        _eventTypeName = mapping.EventTypeName;
-        _dotNetType = mapping.DotNetTypeName;
 
         Id = CombGuidIdGeneration.NewGuid();
     }
@@ -39,21 +34,14 @@ internal class ReplaceEventOperation<T> : IStorageOperation, NoDataReturnedCall 
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        builder.Append($"update {_graph.DatabaseSchemaName}.mt_events set data = ");
-        using (var buffer = new Services.PooledByteBufferWriter())
-        {
-            session.Serializer.WriteTo(buffer, _eventBody);
-            builder.AppendParameter(buffer.ToSizedArray(), NpgsqlDbType.Jsonb);
-        }
+        builder.Append($"update {_graph.DatabaseSchemaName}.mt_events set ");
+        StoredEventPayload.AppendAssignments(builder, session, _graph.EventMappingFor<T>(), _eventBody);
+
         // marten#5379 / marten#5136: bare now(), never `now() at time zone 'utc'`. The latter strips
         // the offset and the naive result is re-read in the session's TimeZone, so on a non-UTC
         // database a compacted event is re-stamped at the wrong instant. mt_streams.timestamp already
         // used bare now(); this column is now consistent with it.
-        builder.Append(", timestamp = now(), type = ");
-        builder.AppendParameter(_eventTypeName, NpgsqlDbType.Varchar);
-        builder.Append(", mt_dotnet_type = ");
-        builder.AppendParameter(_dotNetType, NpgsqlDbType.Varchar);
-        builder.Append(", id = ");
+        builder.Append(", timestamp = now(), id = ");
         builder.AppendParameter(Id);
 
         if (_graph.MetadataConfig.HeadersEnabled)
