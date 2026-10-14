@@ -185,20 +185,10 @@ public class explicit_tag_type_registration: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void the_remedy_escapes_keyword_identifiers_in_generic_and_nested_names()
+    public void the_remedy_uses_placeholders_when_the_tag_cannot_be_read()
     {
-        EventGraph.TagTypeRegistrationLine(typeof(@event<Guid>), "x\u2028y", typeof(TagOwner.@class), out _)
-            .ShouldBe("opts.Events.RegisterTagType<@event<Guid>, Guid>(x => x.Value, \"x\\u2028y\").ForAggregate<TagOwner.@class>();");
-    }
-
-    [Fact]
-    public void the_remedy_says_what_to_replace_when_the_tag_cannot_be_read()
-    {
-        var failure = new NotSupportedException();
-        EventGraph.TagTypeRemedy(typeof(TwoPropertyTagId), "two", failure)
-            .ShouldContain("opts.Events.RegisterTagType<TwoPropertyTagId, TInner>(x => x.Value, \"two\");");
-        EventGraph.TagTypeRemedy(typeof(TwoPropertyTagId), "two", failure).ShouldContain("Replace TInner");
-        EventGraph.TagTypeRemedy(typeof(EnrolleeId), "enrollee", failure).ShouldNotContain("Replace TInner");
+        EventGraph.TagTypeRegistrationLine(typeof(TwoPropertyTagId), "two", null)
+            .ShouldBe("opts.Events.RegisterTagType<TwoPropertyTagId, TInner>(x => x.Value, \"two\");");
     }
 
     [Fact]
@@ -206,45 +196,31 @@ public class explicit_tag_type_registration: OneOffConfigurationsContext
     {
         // A string-backed id has to get a line that compiles, not a hard-coded Guid, and the suffix the
         // inferring overload would have used keeps the same tag table
-        EventGraph.TagTypeRemedy(typeof(StringTagId), null, new NotSupportedException())
-            .ShouldContain("opts.Events.RegisterTagType<StringTagId, string>(x => x.Value, \"string_tag_id\");");
+        EventGraph.TagTypeRegistrationLine(typeof(StringTagId), null, null)
+            .ShouldBe("opts.Events.RegisterTagType<StringTagId, string>(x => x.Value, \"string_tag_id\");");
     }
 
     [Fact]
     public void the_remedy_replaces_an_empty_suffix_with_the_default()
     {
         // The inferring overload accepts "", which names no usable table; the explicit overload refuses it
-        EventGraph.TagTypeRegistrationLine(typeof(StringTagId), "", null, out _)
+        EventGraph.TagTypeRegistrationLine(typeof(StringTagId), "", null)
             .ShouldBe("opts.Events.RegisterTagType<StringTagId, string>(x => x.Value, \"string_tag_id\");");
-    }
-
-    [Fact]
-    public void the_remedy_carries_the_original_failure()
-    {
-        EventGraph.TagTypeRemedy(typeof(EnrolleeId), "enrollee", new NotSupportedException("missing native code"))
-            .ShouldContain("missing native code");
     }
 
     [Fact]
     public void the_discovery_line_keeps_the_aggregate()
     {
         // Auto-discovery registers the tag for the projection's aggregate, and a boundary append routes by it
-        EventGraph.TagTypeRegistrationLine(typeof(EnrolleeId), null, typeof(SubscriptionState), out _)
+        EventGraph.TagTypeRegistrationLine(typeof(EnrolleeId), null, typeof(SubscriptionState))
             .ShouldBe("opts.Events.RegisterTagType<EnrolleeId, Guid>(x => x.Value, \"enrollee_id\").ForAggregate<SubscriptionState>();");
     }
 
     [Fact]
     public void the_remedy_follows_the_member_name()
     {
-        EventGraph.TagTypeRegistrationLine(typeof(CodeTagId), "code", null, out _)
+        EventGraph.TagTypeRegistrationLine(typeof(CodeTagId), "code", null)
             .ShouldBe("opts.Events.RegisterTagType<CodeTagId, string>(x => x.Code, \"code\");");
-    }
-
-    [Fact]
-    public void the_remedy_escapes_a_keyword_member_and_the_suffix_literal()
-    {
-        EventGraph.TagTypeRegistrationLine(typeof(KeywordTagId), "a\"b\\c\r\n", null, out _)
-            .ShouldBe("opts.Events.RegisterTagType<KeywordTagId, Guid>(x => x.@event, \"a\\\"b\\\\c\\r\\n\");");
     }
 
     [Fact]
@@ -260,13 +236,4 @@ public class explicit_tag_type_registration: OneOffConfigurationsContext
 
 public record CodeTagId(string Code);
 
-public record KeywordTagId(Guid @event);
-
 public record TwoPropertyTagId(Guid Value, string Label);
-
-public record @event<T>(Guid Value);
-
-public class TagOwner
-{
-    public class @class { }
-}

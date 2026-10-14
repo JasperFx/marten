@@ -640,17 +640,16 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     }
 
     /// <remarks>
-    ///     <see cref="TagTypeRegistration.Create{TTag}" /> discovers the inner type with <c>ValueTypeInfo</c> and
-    ///     then closes <c>TagTypeRegistration&lt;TTag, TInner&gt;</c> with <c>MakeGenericType</c>. A Native AOT
-    ///     image can lack either: the code for that instantiation ("missing native code or metadata"), or, when
-    ///     the app's assembly is not rooted, the tag's members, which <c>ValueTypeInfo</c> then reports as
-    ///     <see cref="InvalidValueTypeException" />. Neither says anything about the one-line registration that
-    ///     avoids both. The original exception is kept as the inner exception rather than predicted: an
-    ///     instantiation the image happens to contain still works, so the overload is only refused when it has
-    ///     actually failed.
     ///     <para>
-    ///         <paramref name="create" /> and <paramref name="canEmit" /> are parameters so a JIT test can reach
-    ///         the AOT branch, as in <c>ValueTypeIdGeneration.BuildSelectClause</c> (#5600).
+    ///         #5649. <see cref="TagTypeRegistration.Create{TTag}" /> reads the inner type with <c>ValueTypeInfo</c>
+    ///         and closes <c>TagTypeRegistration&lt;TTag, TInner&gt;</c> with <c>MakeGenericType</c>. A Native AOT
+    ///         image has no code for that instantiation, and when the app's assembly is not rooted it has lost the
+    ///         tag's members too, which <c>ValueTypeInfo</c> reports as <see cref="InvalidValueTypeException" />.
+    ///         Neither message says that the fix is one registration call.
+    ///     </para>
+    ///     <para>
+    ///         <paramref name="create" /> and <paramref name="canEmit" /> are parameters so that a JIT test can
+    ///         exercise the AOT branch, as in <c>ValueTypeIdGeneration.BuildSelectClause</c> (#5600).
     ///     </para>
     /// </remarks>
     internal static ITagTypeRegistration CreateTagType(Type tagType, string? tableSuffix,
@@ -662,44 +661,32 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         }
         catch (Exception e) when (!canEmit && e is NotSupportedException or MissingMethodException or InvalidValueTypeException)
         {
-            throw new InvalidOperationException(TagTypeRemedy(tagType, tableSuffix, e), e);
+            throw new InvalidOperationException(
+                $"The tag type {tagType.FullNameInCode()} could not be registered by inference, and this is a Native AOT image, "
+                + $"which cannot read the tag or close TagTypeRegistration<,> over it at runtime. Register it with its inner type and unwrapper instead:{Environment.NewLine}{Environment.NewLine}"
+                + $"    {TagTypeRegistrationLine(tagType, tableSuffix, null)}{Environment.NewLine}{Environment.NewLine}"
+                + "Naming the inner type is what closes the generic at compile time. The overload works the same under a JIT. "
+                + "See https://martendb.io/configuration/aot-publishing and https://github.com/JasperFx/marten/issues/5649.",
+                e);
         }
     }
 
-    internal static string TagTypeRemedy(Type tagType, string? tableSuffix, Exception failure)
-    {
-        var line = TagTypeRegistrationLine(tagType, tableSuffix, null, out var resolved);
-        return $"The tag type {tagType.FullNameInCode()} could not be registered by inference while dynamic code is "
-               + "unavailable, as under Native AOT. Inference reflects over the tag type and closes "
-               + "TagTypeRegistration<,> at runtime, and a native image can lack the metadata or the code for either. "
-               + $"Name the inner type and pass the unwrapper instead:{Environment.NewLine}{Environment.NewLine}"
-               + $"    {line}{Environment.NewLine}{Environment.NewLine}"
-               + (resolved ? "" : "Replace TInner and the member with the value the tag wraps. ")
-               + "That overload closes the generic at compile time and compiles nothing. "
-               + $"See https://martendb.io/events/dcb#native-aot.{Environment.NewLine}{Environment.NewLine}"
-               + $"Inference failed with: {failure.Message}";
-    }
-
     /// <summary>
-    /// The explicit registration of <paramref name="tagType" />, as a line that compiles: the inner type and
-    /// member follow the tag, and a missing or empty suffix becomes the one the inferring overload uses by
-    /// default (an empty one names no usable table). <paramref name="resolved" /> is false when the tag could not
-    /// be read and the line carries placeholders.
+    /// The explicit registration of <paramref name="tagType" /> as a line of code. The inner type and member
+    /// follow the tag when it can be read, with <c>TInner</c> and <c>Value</c> as placeholders when it can't, and a
+    /// missing or empty suffix becomes the one the inferring overload uses by default.
     /// </summary>
     [UnconditionalSuppressMessage("Trimming", "IL2067",
         Justification = "Diagnostic text only; if the tag type's members were trimmed the line falls back to placeholders.")]
-    internal static string TagTypeRegistrationLine(Type tagType, string? tableSuffix, Type? aggregateType,
-        out bool resolved)
+    internal static string TagTypeRegistrationLine(Type tagType, string? tableSuffix, Type? aggregateType)
     {
-        string inner = "TInner";
-        string member = "Value";
-        resolved = false;
+        var inner = "TInner";
+        var member = "Value";
         try
         {
             var valueType = ValueTypeInfo.ForType(tagType);
             inner = valueType.SimpleType.NameInCode();
             member = valueType.ValueProperty.Name;
-            resolved = true;
         }
         catch (Exception)
         {
@@ -707,70 +694,10 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
             // the overload
         }
 
-        var suffix = CSharpStringContent(string.IsNullOrEmpty(tableSuffix) ? tagType.Name.ToTableAlias() : tableSuffix);
-        var forAggregate = aggregateType == null ? "" : $".ForAggregate<{CSharpTypeName(aggregateType)}>()";
-        return $"opts.Events.RegisterTagType<{CSharpTypeName(tagType)}, {inner}>(x => x.{CSharpIdentifier(member)}, \"{suffix}\"){forAggregate};";
+        var suffix = string.IsNullOrEmpty(tableSuffix) ? tagType.Name.ToTableAlias() : tableSuffix;
+        var forAggregate = aggregateType == null ? "" : $".ForAggregate<{aggregateType.NameInCode()}>()";
+        return $"opts.Events.RegisterTagType<{tagType.NameInCode()}, {inner}>(x => x.{member}, \"{suffix}\"){forAggregate};";
     }
-
-    private static readonly HashSet<Type> CSharpAliasedTypes =
-    [
-        typeof(bool), typeof(byte), typeof(sbyte), typeof(char), typeof(decimal), typeof(double), typeof(float),
-        typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(short), typeof(ushort), typeof(object),
-        typeof(string)
-    ];
-
-    private static string CSharpTypeName(Type type)
-    {
-        // A type nested in a generic one shares its owner's type arguments; NameInCode already writes that shape
-        if (type.IsNested && type.DeclaringType!.IsGenericType) return type.NameInCode();
-        if (CSharpAliasedTypes.Contains(type)) return type.NameInCode();
-
-        // Every other identifier is escaped on its own: the owner of a nested type, the name, each type argument
-        var owner = type.IsNested ? CSharpTypeName(type.DeclaringType!) + "." : "";
-        var name = type.Name;
-        var arity = name.IndexOf('`');
-        if (arity >= 0) name = name[..arity];
-
-        var arguments = type.IsGenericType
-            ? "<" + string.Join(", ", type.GetGenericArguments().Select(CSharpTypeName)) + ">"
-            : "";
-
-        return owner + CSharpIdentifier(name) + arguments;
-    }
-
-    private static string CSharpStringContent(string value)
-    {
-        var builder = new System.Text.StringBuilder(value.Length);
-        foreach (var c in value)
-        {
-            builder.Append(c switch
-            {
-                '\\' => "\\\\",
-                '"' => "\\\"",
-                '\r' => "\\r",
-                '\n' => "\\n",
-                '\t' => "\\t",
-                // Line and paragraph separators end a regular string literal, and char.IsControl misses them
-                _ when char.IsControl(c) || c is '\u2028' or '\u2029' => $"\\u{(int)c:x4}",
-                _ => c.ToString()
-            });
-        }
-
-        return builder.ToString();
-    }
-
-    private static readonly HashSet<string> CSharpKeywords =
-    [
-        "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const",
-        "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event", "explicit",
-        "extern", "false", "finally", "fixed", "float", "for", "foreach", "goto", "if", "implicit", "in", "int",
-        "interface", "internal", "is", "lock", "long", "namespace", "new", "null", "object", "operator", "out",
-        "override", "params", "private", "protected", "public", "readonly", "ref", "return", "sbyte", "sealed",
-        "short", "sizeof", "stackalloc", "static", "string", "struct", "switch", "this", "throw", "true", "try",
-        "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using", "virtual", "void", "volatile", "while"
-    ];
-
-    private static string CSharpIdentifier(string name) => CSharpKeywords.Contains(name) ? "@" + name : name;
 
     /// <summary>
     /// The registered tag types for DCB support.
@@ -1336,7 +1263,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 logger.LogWarning(e,
                     "Unable to automatically register the identity type {IdentityType} of projection {Projection} as an event tag type. Tag queries and boundary-aggregate fetches using this tag will not work. Under Native AOT, register it explicitly with {Registration}",
                     identityType.FullNameInCode(), projection.GetType().FullNameInCode(),
-                    TagTypeRegistrationLine(identityType, null, projection.AggregateType, out _));
+                    TagTypeRegistrationLine(identityType, null, projection.AggregateType));
             }
         }
     }
