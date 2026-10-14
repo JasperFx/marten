@@ -120,6 +120,20 @@ public partial class EventGraph: IFeatureSchema
             }
         }
 
+        var backfilledDocumentTypes = ProjectionBackfillStates.Declaring(Options.Projections)
+            .Select(x => x.BackfilledDocumentType).Distinct().ToArray();
+        if (backfilledDocumentTypes.Length > 0)
+        {
+            yield return new ProjectionBackfillTable(this);
+            yield return new SystemFunction(Options, "mt_jsonb_deep_merge", "jsonb, jsonb");
+
+            foreach (var documentType in backfilledDocumentTypes)
+            {
+                yield return new ProjectionBackfillValuesTable(
+                    (Marten.Schema.DocumentMapping)Options.Storage.FindMapping(documentType).Root);
+            }
+        }
+
         if (EnableAdvancedAsyncTracking)
         {
             yield return new EventProgressionSkippingTable(this);

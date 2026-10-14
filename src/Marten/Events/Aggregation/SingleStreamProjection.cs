@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Projections.ContainerScoped;
@@ -28,8 +30,32 @@ namespace Marten.Events.Aggregation;
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class SingleStreamProjection<TDoc, TId>:
     JasperFxSingleStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection,
-    IValidatedProjection<StoreOptions>, IMartenRegistrable where TDoc : notnull where TId : notnull
+    IValidatedProjection<StoreOptions>, IMartenRegistrable,
+    IProjectionBackfillSource<IDocumentOperations, IQuerySession>, IProjectionWithBackfills where TDoc : notnull where TId : notnull
 {
+    private readonly ProjectionBackfills<TDoc, TId> _backfills = new();
+
+    /// <summary>
+    ///     Fill a member added to <typeparamref name="TDoc" /> without a version bump. See <see cref="ProjectionBackfill{TDoc,TId}" />.
+    /// </summary>
+    [JasperFxIgnore]
+    public ProjectionBackfill<TDoc, TId> Backfill(string name) => _backfills.Add(name);
+
+    bool IProjectionWithBackfills.HasBackfills => _backfills.All.Count > 0;
+
+    bool IProjectionBackfillSource<IDocumentOperations, IQuerySession>.HasBackfills => _backfills.All.Count > 0;
+
+    Type IProjectionWithBackfills.BackfilledDocumentType => typeof(TDoc);
+
+    IReadOnlyList<string> IProjectionWithBackfills.BackfillNames => _backfills.All.Select(x => x.Name).ToArray();
+
+    bool IProjectionBackfillSource<IDocumentOperations, IQuerySession>.TryBuildBackfillExecutor(
+        IEventStore<IDocumentOperations, IQuerySession> store, IEventDatabase database, ShardName shardName,
+        Microsoft.Extensions.Logging.ILogger logger, [NotNullWhen(true)] out IBackfillExecutor? executor)
+    {
+        return _backfills.TryBuildExecutor(store, database, shardName, logger, this, out executor);
+    }
+
     // public override SubscriptionDescriptor Describe()
     // {
     //     return new SubscriptionDescriptor(this, SubscriptionType.SingleStreamProjection);
@@ -173,6 +199,8 @@ public class SingleStreamProjection<TDoc, TId>:
             yield return
                 "SingleStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection";
         }
+
+        foreach (var message in _backfills.Validate(this)) yield return message;
     }
 
     internal bool IsIdTypeValidForStream(Type idType, StoreOptions options, out Type expectedType,

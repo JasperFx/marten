@@ -562,7 +562,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         return new ResilientEventLoader(DaemonLoaderPipeline, inner, database);
     }
 
-    private IEnumerable<ISqlFragment> buildEventLoaderFilters(EventFilterable filterable)
+    internal IEnumerable<ISqlFragment> buildEventLoaderFilters(EventFilterable filterable)
     {
         if (filterable.IncludedEventTypes.Any() && !filterable.IncludedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
         {

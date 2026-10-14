@@ -31,6 +31,11 @@ namespace Marten.Events.Projections;
 internal interface ICompositeProjectionServiceSource
 {
     void AttachServiceProvider(IServiceProvider services);
+
+    /// <summary>
+    ///     The projection behind this registration once services are attached, for reading what it declares.
+    /// </summary>
+    object? SourceIfResolvable { get; }
 }
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",
@@ -234,6 +239,8 @@ internal class CompositeProjectionWithServicesSource<TProjection> :
             return _inner;
         }
     }
+
+    public object? SourceIfResolvable => _services == null ? null : Source;
 
     public void AttachServiceProvider(IServiceProvider services)
     {

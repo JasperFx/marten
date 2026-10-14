@@ -254,6 +254,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                 { text: 'Asynchronous Projections', link: '/events/projections/async-daemon' },
                 { text: 'Testing Projections', link: '/events/projections/testing' },
                 { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },
+                { text: 'Backfilling Without a Version Bump', link: '/events/projections/backfills' },
                 { text: 'EF Core Projections', link: '/events/projections/efcore' },
                 { text: 'Projections and IoC Services', link: '/events/projections/ioc' },
                 { text: 'Ancillary Stores in Projections', link: '/events/projections/ancillary-stores' },

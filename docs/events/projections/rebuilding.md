@@ -201,6 +201,11 @@ single stream projections for zero downtime deployments while trying to create l
 
 ## Blue/Green Deployments with Projection Versioning
 
+::: tip
+Only adding a member to a projected document? A [backfill](/events/projections/backfills) fills it on the
+existing documents from just the events that produce it, without a new version or a full replay.
+:::
+
 When deploying projection changes to production without downtime, you can use projection
 versioning to run old and new projection versions in parallel:
 
