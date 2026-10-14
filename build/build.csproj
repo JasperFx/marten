@@ -16,6 +16,10 @@
     <PackageReference Include="JasperFx" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Nuke.Common" />
+    <!-- Lift Nuke's vulnerable transitive packages to patched versions; see Directory.Packages.props. -->
+    <PackageReference Include="NuGet.Packaging" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
 </Project>
