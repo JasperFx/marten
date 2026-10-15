@@ -80,8 +80,38 @@ opts.Events.RegisterTagType<StudentId, Guid>(id => id.Value, "student")
 ```
 
 The second type argument is the primitive the tag table stores, typically `Guid`, `string`, `int`
-or `long`. Automatic tag type registration from projection identities still uses reflection, so
-under Native AOT register those identity types explicitly this way as well.
+or `long`. The suffix is optional and defaults to the tag type's own name, exactly as it does for
+the inferring overloads — so for a tag the inferring overload could have registered, the explicit
+one registers the same inner type and the same table.
+
+If you call an inferring overload anyway and it cannot do its work, it says which line to write.
+A native image that has no instantiation of `TagTypeRegistration<TTag, TInner>` — or a trimmed
+image that has lost the tag's members — throws an `InvalidOperationException` while the store is
+being configured, naming the registration for the tag type in question and keeping the original
+failure as its inner exception:
+
+```text
+The tag type Enrollment.StudentId could not be read as a strong-typed identifier. Either it is not
+a single-value wrapper, or this image was trimmed and has lost the members that say so. Naming the
+inner type and how to read it needs neither:
+
+    opts.Events.RegisterTagType<StudentId, Guid>(x => x.Value, "student");
+```
+
+That message matters because the `[RequiresUnreferencedCode]`/`[RequiresDynamicCode]` warnings only
+reach an application that is itself AOT-analyzed. A store configured from inside a library gets no
+warning at build time, so the runtime message is the only thing that names the fix.
+
+[Automatic tag type registration](#automatic-tag-type-registration) uses the inferring path too. It
+cannot throw — it runs while the store initializes, and a tag type is not worth refusing to start
+over — so it logs a warning naming the same line, including the projection's `ForAggregate<T>()`.
+Under Native AOT, register those identity types explicitly as well rather than relying on it.
+
+::: warning
+An empty table suffix is refused. `mt_event_tag_` is a real table name, so `RegisterTagType<T>("")`
+used to be accepted and would put every tag type registered that way into one shared table. Pass a
+suffix, or `null` for the tag type's own name.
+:::
 
 ### Tag Type Requirements
 

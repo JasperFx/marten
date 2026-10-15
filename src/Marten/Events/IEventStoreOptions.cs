@@ -598,8 +598,17 @@ namespace Marten.Events
         /// <typeparam name="TTag">A strong-typed identifier type (e.g., StudentId)</typeparam>
         /// <typeparam name="TInner">The primitive the tag table stores, e.g. Guid, string, int or long</typeparam>
         /// <param name="unwrapper">Reads the primitive out of the tag, e.g. <c>id =&gt; id.Value</c></param>
-        /// <param name="tableSuffix">Optional table name suffix; defaults to the tag type's name</param>
+        /// <param name="tableSuffix">
+        ///     Optional table name suffix; <c>null</c> defaults to the tag type's name, and an empty or
+        ///     whitespace suffix is refused rather than naming the shared <c>mt_event_tag_</c> table.
+        /// </param>
         /// <returns>The tag type registration for further configuration</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="unwrapper" /> is null</exception>
+        /// <exception cref="ArgumentException"><paramref name="tableSuffix" /> is empty or whitespace</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     The tag type is already registered with a different inner type. Registering it again with the
+        ///     same inner type returns the first registration, as the inferring overloads do.
+        /// </exception>
         ITagTypeRegistration RegisterTagType<TTag, TInner>(Func<TTag, TInner> unwrapper, string? tableSuffix = null)
             where TTag : notnull;
 

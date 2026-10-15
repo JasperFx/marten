@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
@@ -590,7 +591,8 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
         if (existing != null) return existing;
 
-        var registration = TagTypeRegistration.Create<TTag>();
+        var registration = CreateTagType(typeof(TTag), null, TagTypeRegistration.Create<TTag>,
+            RuntimeFeature.IsDynamicCodeSupported);
         _tagTypes.Add(registration);
         return registration;
     }
@@ -602,10 +604,13 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     [RequiresDynamicCode("Closes TagTypeRegistration<TTag, TInner> with MakeGenericType (TagTypeRegistration.Create). Under Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
     public ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull
     {
+        assertUsableTableSuffix(tableSuffix);
+
         var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
         if (existing != null) return existing;
 
-        var registration = TagTypeRegistration.Create<TTag>(tableSuffix);
+        var registration = CreateTagType(typeof(TTag), tableSuffix, TagTypeRegistration.Create<TTag>,
+            RuntimeFeature.IsDynamicCodeSupported);
         _tagTypes.Add(registration);
         return registration;
     }
@@ -615,15 +620,151 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// Native AOT-safe form of <see cref="RegisterTagType{TTag}()"/> (jasperfx#1012). Nothing is
     /// discovered by reflection and no generic type is closed at runtime.
     /// </summary>
+    /// <param name="unwrapper">Reads the inner value out of the tag, e.g. <c>x =&gt; x.Value</c></param>
+    /// <param name="tableSuffix">
+    ///     Table name suffix. <c>null</c> takes the same default the inferring overloads use — the tag
+    ///     type's name as a table alias — and an empty or whitespace suffix is refused.
+    /// </param>
+    /// <exception cref="InvalidOperationException">
+    ///     The tag type is already registered with a different inner type
+    /// </exception>
     public ITagTypeRegistration RegisterTagType<TTag, TInner>(Func<TTag, TInner> unwrapper, string? tableSuffix = null)
         where TTag : notnull
     {
+        ArgumentNullException.ThrowIfNull(unwrapper);
+        assertUsableTableSuffix(tableSuffix);
+
         var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
-        if (existing != null) return existing;
+        if (existing != null)
+        {
+            // The first registration of a tag type wins, as it does for the inferring overloads. But a
+            // DIFFERENT inner type is a conflicting registration rather than a repeated one, and silently
+            // keeping the first would leave the unwrapper this call passed unused -- every tag value would
+            // then be read by the other registration's rule. Inference can only ever produce one inner
+            // type for a given tag, so a disagreement means one of the two call sites is wrong.
+            if (existing.SimpleType != typeof(TInner))
+            {
+                throw new InvalidOperationException(
+                    $"The tag type {typeof(TTag).FullNameInCode()} is already registered with the inner type "
+                    + $"{existing.SimpleType.FullNameInCode()}, so it cannot be registered again with {typeof(TInner).FullNameInCode()}.");
+            }
+
+            return existing;
+        }
 
         var registration = TagTypeRegistration.FromUnwrapper(unwrapper, tableSuffix);
         _tagTypes.Add(registration);
         return registration;
+    }
+
+    /// <remarks>
+    ///     A tag table is named <c>mt_event_tag_&lt;suffix&gt;</c>, so an empty suffix names
+    ///     <c>mt_event_tag_</c> — a real table, which is why nothing failed before, and a table every tag
+    ///     type registered that way would share. <c>null</c> is the way to ask for the default; "" never
+    ///     meant anything a caller wanted.
+    /// </remarks>
+    private static void assertUsableTableSuffix(string? tableSuffix)
+    {
+        if (tableSuffix == null) return;
+
+        if (tableSuffix.IsEmpty() || tableSuffix.Trim().Length == 0)
+        {
+            throw new ArgumentException(
+                "An empty tag table suffix would name the table mt_event_tag_, which every tag type registered "
+                + "that way would share. Pass a suffix, or null for the tag type's own name.",
+                nameof(tableSuffix));
+        }
+    }
+
+    /// <remarks>
+    ///     <para>
+    ///         #5649. <see cref="TagTypeRegistration.Create{TTag}" /> reads the inner type with
+    ///         <c>ValueTypeInfo</c>, which reflects over the tag's members, and closes
+    ///         <c>TagTypeRegistration&lt;TTag, TInner&gt;</c> with <c>MakeGenericType</c>. A Native AOT image
+    ///         has no code for that instantiation, and a trimmed one may have lost the tag's members. Neither
+    ///         failure says that the fix is one registration call, and the
+    ///         <c>[RequiresDynamicCode]</c>/<c>[RequiresUnreferencedCode]</c> annotations only reach an
+    ///         application that is itself AOT-analyzed — a store configured from inside a library is not.
+    ///     </para>
+    ///     <para>
+    ///         The two halves are gated differently on purpose.
+    ///         <see cref="NotSupportedException" />/<see cref="MissingMethodException" /> mean the generic
+    ///         could not be closed, which only happens with no JIT, so they are reinterpreted only when
+    ///         <paramref name="canEmit" /> is false. <see cref="InvalidValueTypeException" /> is
+    ///         <i>ambiguous</i> — the tag may genuinely not be a single-value wrapper, or its members may
+    ///         have been trimmed away — and no runtime flag separates those two, because a trimmed
+    ///         non-AOT image still has dynamic code. It is reinterpreted either way, with a message that
+    ///         covers both readings, because the explicit overload is the answer to both.
+    ///     </para>
+    ///     <para>
+    ///         <paramref name="create" /> and <paramref name="canEmit" /> are parameters so that a JIT test
+    ///         can exercise the native branch, as in <c>ValueTypeIdGeneration.BuildSelectClause</c> (#5600).
+    ///         A guard reachable only by publishing natively is a guard nothing checks.
+    ///     </para>
+    /// </remarks>
+    internal static ITagTypeRegistration CreateTagType(Type tagType, string? tableSuffix,
+        Func<string?, ITagTypeRegistration> create, bool canEmit)
+    {
+        try
+        {
+            return create(tableSuffix);
+        }
+        catch (InvalidValueTypeException e)
+        {
+            throw new InvalidOperationException(
+                $"The tag type {tagType.FullNameInCode()} could not be read as a strong-typed identifier. Either it is not a "
+                + "single-value wrapper, or this image was trimmed and has lost the members that say so. Naming the inner "
+                + $"type and how to read it needs neither:{Environment.NewLine}{Environment.NewLine}"
+                + $"    {TagTypeRegistrationLine(tagType, tableSuffix, null)}{Environment.NewLine}{Environment.NewLine}"
+                + "The unwrapper replaces reflecting over the tag's members, and naming the inner type closes the generic at "
+                + "compile time. The overload works the same under a JIT. "
+                + "See https://martendb.io/configuration/aot-publishing and https://github.com/JasperFx/marten/issues/5649.",
+                e);
+        }
+        catch (Exception e) when (!canEmit && e is NotSupportedException or MissingMethodException)
+        {
+            throw new InvalidOperationException(
+                $"The tag type {tagType.FullNameInCode()} could not be registered by inference, and this is a Native AOT image, "
+                + $"which cannot close TagTypeRegistration<,> over it at runtime. Register it with its inner type and unwrapper instead:{Environment.NewLine}{Environment.NewLine}"
+                + $"    {TagTypeRegistrationLine(tagType, tableSuffix, null)}{Environment.NewLine}{Environment.NewLine}"
+                + "Naming the inner type is what closes the generic at compile time. The overload works the same under a JIT. "
+                + "See https://martendb.io/configuration/aot-publishing and https://github.com/JasperFx/marten/issues/5649.",
+                e);
+        }
+    }
+
+    /// <summary>
+    /// The explicit registration of <paramref name="tagType" /> as a line of code. The inner type and member
+    /// follow the tag when it can be read, with <c>TInner</c> and <c>Value</c> as placeholders when it can't, and a
+    /// missing or empty suffix becomes the one the inferring overload uses by default.
+    /// </summary>
+    /// <remarks>
+    ///     <c>NameInCode()</c> rather than <c>FullNameInCode()</c> for the types inside the line, matching the
+    ///     #5600 and #5635 remedies — the fully qualified name is in the sentence above it. A tag type nested
+    ///     inside another type therefore prints a line that needs its outer scope added; that is true of all
+    ///     three remedies and is not worth diverging here.
+    /// </remarks>
+    [UnconditionalSuppressMessage("Trimming", "IL2067",
+        Justification = "Diagnostic text only; if the tag type's members were trimmed the line falls back to placeholders.")]
+    internal static string TagTypeRegistrationLine(Type tagType, string? tableSuffix, Type? aggregateType)
+    {
+        var inner = "TInner";
+        var member = "Value";
+        try
+        {
+            var valueType = ValueTypeInfo.ForType(tagType);
+            inner = valueType.SimpleType.NameInCode();
+            member = valueType.ValueProperty.Name;
+        }
+        catch (Exception)
+        {
+            // Not a shape ValueTypeInfo understands, or its members were trimmed; the placeholders still name
+            // the overload
+        }
+
+        var suffix = string.IsNullOrEmpty(tableSuffix) ? tagType.Name.ToTableAlias() : tableSuffix;
+        var forAggregate = aggregateType == null ? "" : $".ForAggregate<{aggregateType.NameInCode()}>()";
+        return $"opts.Events.RegisterTagType<{tagType.NameInCode()}, {inner}>(x => x.{member}, \"{suffix}\"){forAggregate};";
     }
 
     /// <summary>
@@ -1168,7 +1309,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 registration.ForAggregate(projection.AggregateType);
                 _tagTypes.Add(registration);
             }
-            catch (Exception e) when (isNotAValueType(e))
+            catch (Exception e) when (IsToleratedDiscoveryFailure(e, RuntimeFeature.IsDynamicCodeSupported))
             {
                 // An identity that is simply not a strong-typed identifier is the ordinary case this
                 // discovery pass has to tolerate, and it is not worth a word.
@@ -1188,12 +1329,39 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 // traceable to "could not register" instead of being indistinguishable from "there
                 // was nothing to register".
                 logger.LogWarning(e,
-                    "Unable to automatically register the identity type {IdentityType} of projection {Projection} as an event tag type. Tag queries and boundary-aggregate fetches using this tag will not work. Under Native AOT, register it explicitly with StoreOptions.Events.RegisterTagType<{IdentityType}>().",
+                    "Unable to automatically register the identity type {IdentityType} of projection {Projection} as an event tag type. Tag queries and boundary-aggregate fetches using this tag will not work. Register it explicitly with {Registration}",
                     identityType.FullNameInCode(), projection.GetType().FullNameInCode(),
-                    identityType.FullNameInCode());
+                    TagTypeRegistrationLine(identityType, null, projection.AggregateType));
             }
         }
     }
+
+    /// <summary>
+    ///     Whether an auto-discovery failure is the ordinary, uninteresting kind: a projection identity that
+    ///     is not a strong-typed identifier at all, which this pass exists to walk past quietly.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         #5649 follow-up. Gated on <paramref name="canEmit" /> because
+    ///         <see cref="InvalidValueTypeException" /> does not only mean "not a value type". Under Native
+    ///         AOT, an application that does not root its own assembly loses the tag's members, and
+    ///         <c>ValueTypeInfo</c> reports a perfectly good tag exactly the same way — which made the one
+    ///         scenario #5649 reported the one scenario that stayed silent, while the
+    ///         <see cref="NotSupportedException" /> path got a warning. With no JIT, nothing here is
+    ///         ordinary, so it falls through to the warning.
+    ///     </para>
+    ///     <para>
+    ///         A <i>trimmed</i> non-AOT image still has dynamic code and so is still silent. Nothing at
+    ///         runtime distinguishes it from an identity that was never a value type, and guessing wrong
+    ///         would mean a warning on every ordinary projection whose identity is a plain custom type.
+    ///     </para>
+    ///     <para>
+    ///         A parameter rather than a direct <see cref="RuntimeFeature.IsDynamicCodeSupported" /> read so
+    ///         a JIT test can exercise the native branch, as in <see cref="CreateTagType" /> and
+    ///         <c>ValueTypeIdGeneration.BuildSelectClause</c> (#5600).
+    ///     </para>
+    /// </remarks>
+    internal static bool IsToleratedDiscoveryFailure(Exception e, bool canEmit) => canEmit && isNotAValueType(e);
 
     /// <summary>
     /// An identity type that is not a strong-typed identifier at all. ValueTypeInfo.ForType raises

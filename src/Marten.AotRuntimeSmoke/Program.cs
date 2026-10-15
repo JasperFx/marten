@@ -39,6 +39,12 @@
 //                         ILC has no such instantiation, so every DCB boundary fetch threw
 //                         "No parameterless constructor defined for type
 //                         SingleStreamProjection`2[...]" (#5649).
+//   DCB tags              RegisterTagType<TTag>() let JasperFx close TagTypeRegistration<TTag, TInner>
+//                         with MakeGenericType and read the tag's members with ValueTypeInfo, so the
+//                         store could not even be CONFIGURED. RegisterTagType<TTag, TInner>(unwrapper)
+//                         closes it at compile time and reflects over nothing; the checks below run
+//                         tagging, tag rules, tag queries and the consistency boundary on it, and hold
+//                         the inferring overload to naming that remedy instead of failing opaquely.
 //   diagnostics criteria  IDocumentStoreDiagnostics Where / OrderBy (jasperfx#869) are translated with
 //                         runtime code generation, so a native binary must REFUSE them -- before any
 //                         generic method is closed over the document type -- not crash, and never
@@ -56,6 +62,7 @@ using JasperFx;
 using JasperFx.Documents;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Tags;
 using Marten;
 using Marten.Exceptions;
 using Marten.Linq;
@@ -92,6 +99,15 @@ var store = DocumentStore.For(o =>
     // SingleStreamProjection<,> at runtime. Dossier is deliberately not named by a Schema.For<T>()
     // either, so this also covers the aggregate's mapping being built from a Type.
     o.Projections.LiveStreamAggregation<Dossier, string>();
+
+    // DCB: the inner type is named and the unwrapper passed, so nothing is closed and nothing is
+    // reflected over at runtime. The tag types are records over a Guid and a string, the two inner
+    // types a tag table is most often keyed by.
+    o.Events.AddEventType<ConsultGehouden>();
+    o.Events.RegisterTagType<PatientId, Guid>(x => x.Value, "patient").ForAggregate<Behandeltraject>();
+    o.Events.RegisterTagType<ZorgverlenerCode, string>(x => x.Value, "zorgverlener")
+        .ForAggregate<Behandeltraject>();
+    o.Events.TagWith<ConsultGehouden>(e => new ZorgverlenerCode(e.Zorgverlener));
 });
 
 DecimalOperatorRoots.Root();
@@ -443,18 +459,17 @@ try
         }
     });
 
-    // #5649. Exercised directly rather than through AggregateByTagsAsync, because reaching the
-    // boundary fetch needs a registered tag type and RegisterTagType<TTag> closes its own open
-    // generic -- a separate AOT hole. marten#5673 marks that overload RequiresDynamicCode and adds
-    // the closed RegisterTagType<TTag, TInner>(unwrapper) (TagTypeRegistration.FromUnwrapper), which
-    // a native smoke of the tag path should use. This is the one site this fix moves, and it is
-    // the site the reported MissingMethodException came from.
+    // #5649. Exercised directly rather than through AggregateByTagsAsync, because this aggregate's
+    // tag type is deliberately not registered at all. This is the one site that fix moves, and it is
+    // the site the reported MissingMethodException came from; the DCB checks below reach the same
+    // branch through the fetch itself, on explicit RegisterTagType<TTag, TInner> registrations.
     await Check("boundary aggregate aggregator source", () =>
     {
         var source = store.Events.Build<Toegangsgrens>();
         return Task.FromResult(source is Marten.Events.Aggregation.SingleStreamProjection<Toegangsgrens, string>);
     });
 
+    await CheckDcbAsync();
 }
 catch (Exception e)
 {
@@ -535,6 +550,103 @@ async Task CheckRenamedEnumMemberAsync()
         catch (MartenNotSupportedException e)
         {
             return e.Message.Contains("RegisterScalarType<Zorgvorm>()");
+        }
+    });
+}
+
+// Dynamic Consistency Boundary tags, all from the explicit RegisterTagType<TTag, TInner> registrations
+// in the store above.
+async Task CheckDcbAsync()
+{
+    var patient = new PatientId(Guid.NewGuid());
+    var zorgverlener = new ZorgverlenerCode("01059910");
+    var traject = new EventTagQuery().Or<PatientId>(patient);
+
+    ConsultGehouden Consult(string verrichting) => new(patient.Value, zorgverlener.Value, verrichting);
+
+    await Check("DCB append with tags", async () =>
+    {
+        await using var s = store.LightweightSession();
+        var eerste = s.Events.BuildEvent(Consult("intake"));
+        eerste.WithTag(patient); // the zorgverlener tag comes from the TagWith rule
+        s.Events.Append("traject-1", eerste);
+        await s.SaveChangesAsync();
+        return true;
+    });
+
+    await Check("DCB query by a Guid-backed tag", async () =>
+    {
+        await using var s = store.LightweightSession();
+        return (await s.Events.QueryByTagsAsync(traject)).Count == 1;
+    });
+
+    await Check("DCB query by a string-backed tag added by a TagWith rule", async () =>
+    {
+        await using var s = store.LightweightSession();
+        return (await s.Events.QueryByTagsAsync(new EventTagQuery().Or<ZorgverlenerCode>(zorgverlener))).Count == 1
+               && await s.Events.EventsExistAsync(new EventTagQuery().Or<ZorgverlenerCode>(zorgverlener));
+    });
+
+    await Check("DCB FetchForWritingByTags into a [BoundaryAggregate] and append", async () =>
+    {
+        await using var s = store.LightweightSession();
+        var boundary = await s.Events.FetchForWritingByTags<Behandeltraject>(traject);
+        if (boundary.Aggregate?.Consulten != 1) return false;
+
+        var vervolg = s.Events.BuildEvent(Consult("controle"));
+        vervolg.WithTag(patient);
+        boundary.AppendOne(vervolg);
+        await s.SaveChangesAsync();
+
+        await using var q = store.LightweightSession();
+        return (await q.Events.AggregateByTagsAsync<Behandeltraject>(traject))?.Consulten == 2;
+    });
+
+    await Check("DCB boundary refuses a concurrent append", async () =>
+    {
+        await using var first = store.LightweightSession();
+        await using var second = store.LightweightSession();
+        var b1 = await first.Events.FetchForWritingByTags<Behandeltraject>(traject);
+        var b2 = await second.Events.FetchForWritingByTags<Behandeltraject>(traject);
+
+        var e1 = first.Events.BuildEvent(Consult("telefonisch"));
+        e1.WithTag(patient);
+        b1.AppendOne(e1);
+        await first.SaveChangesAsync();
+
+        var e2 = second.Events.BuildEvent(Consult("telefonisch"));
+        e2.WithTag(patient);
+        b2.AppendOne(e2);
+        try
+        {
+            await second.SaveChangesAsync();
+            return false;
+        }
+        catch (DcbConcurrencyException)
+        {
+            return true;
+        }
+    });
+
+    // The inferring overload cannot work natively, so it has to say what to write instead. A JIT process
+    // (`dotnet run` of this project) closes the generic and simply registers it. Neither RuntimeFeature flag
+    // tells the two apart here -- PublishAot turns IsDynamicCodeSupported off under `dotnet run` as well, and
+    // CoreCLR derives IsDynamicCodeCompiled from it -- so the check accepts either outcome, and nothing else.
+    await Check("inferred tag registration names the explicit overload under Native AOT", () =>
+    {
+        try
+        {
+            var options = new StoreOptions();
+            var registered = options.Events.RegisterTagType<VerwijzingId>("verwijzing").SimpleType == typeof(Guid);
+            Console.WriteLine("     (inferred registration succeeded, as under a JIT)");
+            return Task.FromResult(registered);
+        }
+        catch (InvalidOperationException e)
+        {
+            Console.WriteLine("     (inferred registration refused with the remedy, as natively)");
+            return Task.FromResult(e.InnerException is NotSupportedException or MissingMethodException
+                                       or JasperFx.Core.Reflection.InvalidValueTypeException
+                                   && e.Message.Contains("RegisterTagType<VerwijzingId, Guid>(x => x.Value, \"verwijzing\")"));
         }
     });
 }
@@ -662,6 +774,27 @@ public record DossierGeopend(string Nummer, string Naam);
 
 public record RegelToegevoegd(string Prestatiecode);
 
+public readonly record struct PatientId(Guid Value);
+
+public readonly record struct ZorgverlenerCode(string Value);
+
+/// <summary>Only ever registered through the inferring overload, so nothing roots its instantiation.</summary>
+public readonly record struct VerwijzingId(Guid Value);
+
+public record ConsultGehouden(Guid Patient, string Zorgverlener, string Verrichting);
+
+/// <summary>
+/// A pure boundary aggregate over the DCB tags: no identity, so only the [BoundaryAggregate] marker gets the
+/// source generator to emit its evolver, and only a tag query can load it.
+/// </summary>
+[BoundaryAggregate]
+public class Behandeltraject
+{
+    public int Consulten { get; set; }
+
+    public void Apply(ConsultGehouden _) => Consulten++;
+}
+
 // #5649: a *pure* DCB boundary aggregate -- Apply methods, no identity of any kind. The
 // [BoundaryAggregate] marker is the only thing that makes EventGraph.Build<TDoc>() take the branch
 // under test, and its id is unconditionally string (jasperfx#324).
@@ -684,4 +817,6 @@ public class Toegangsgrens
 [JsonSerializable(typeof(Dossier))]
 [JsonSerializable(typeof(DossierGeopend))]
 [JsonSerializable(typeof(RegelToegevoegd))]
+[JsonSerializable(typeof(ConsultGehouden))]
+[JsonSerializable(typeof(Behandeltraject))]
 public partial class SmokeJson: JsonSerializerContext;
