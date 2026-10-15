@@ -161,6 +161,12 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
 
     public async Task<IReadOnlyDictionary<TId, TDoc>> LoadManyAsync(TId[] identities, CancellationToken cancellationToken)
     {
+        // Nothing to look up -- e.g. an inline snapshot whose commit only STARTS streams, since the
+        // projection asks only for the ids of streams being appended to. Neither load below short-circuits
+        // an empty id array, so every such commit paid a round trip (and, with UseIdentityMapForAggregates
+        // off, a connection of its own) for a query that could only return no rows.
+        if (identities.Length == 0) return new Dictionary<TId, TDoc>();
+
         // #4667 Phase 2 — default (UseIdentityMapForAggregates = false) routes
         // through LoadManyProjectedAsync, which opens a fresh connection and
         // uses a tracker-free deserialization path so the async daemon's
