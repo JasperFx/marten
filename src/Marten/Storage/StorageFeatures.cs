@@ -501,7 +501,12 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
 
         if (SequenceIsRequired())
         {
-            yield return database.Sequences;
+            // #5665: SequenceFeature, not Sequences. This method is the enumeration path — it feeds
+            // AllObjects(), ToDatabaseScript() and so db-dump — and reading `database.Sequences`
+            // applies the mt_hilo DDL as a side effect of its Lazy. One int-id document was enough
+            // to make listing the schema connect to the database and provision. The feature still
+            // appears in the list, so an apply or a patch covers mt_hilo exactly as before.
+            yield return database.SequenceFeature;
         }
 
         if (_options.Events.As<EventGraph>().IsActive(_options))

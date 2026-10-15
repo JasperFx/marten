@@ -38,6 +38,19 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     ISequence ISequenceSource.SequenceFor(Type documentType) => Sequences.SequenceFor(documentType);
 
     /// <summary>
+    ///     The Hi-Lo sequence support of this database as a schema feature to be <em>described</em>:
+    ///     <c>mt_hilo</c> and <c>mt_get_next_hi</c> with no side effects.
+    /// </summary>
+    /// <remarks>
+    ///     #5665. <see cref="Sequences" /> provisions its own storage on first access, because the
+    ///     runtime path that hands out a Hi-Lo id has no other chance to. The schema-management paths
+    ///     — <c>AllObjects</c>, <c>AllSchemaNames</c>, <c>ToDatabaseScript</c>, and so <c>db-dump</c> —
+    ///     only enumerate, and must not connect or run DDL to do it. The default implementation keeps
+    ///     the historical behaviour for any outside <see cref="IMartenDatabase" />.
+    /// </remarks>
+    IFeatureSchema SequenceFeature => Sequences;
+
+    /// <summary>
     ///     The command timeout in seconds that this database's own connection string asks for, or null when it
     ///     does not name one.
     /// </summary>

@@ -27,6 +27,11 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
     private readonly StorageFeatures _features;
 
     private Lazy<SequenceFactory> _sequences;
+
+    // #5665: the same Hi-Lo feature, built but never applied, for the paths that only describe the
+    // schema. See SequenceFeature below.
+    private Lazy<SequenceFactory> _sequenceFeature;
+
     private ILogger? _logger;
 
     // #5269: resolved once from this database's own connection string. Lazy rather than eager because it
@@ -91,6 +96,9 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
     Uri IProjectionDatabase.DatabaseUri => Describe().DatabaseUri();
 
     public ISequences Sequences => _sequences.Value;
+
+    /// <inheritdoc />
+    public IFeatureSchema SequenceFeature => _sequenceFeature.Value;
 
     public IProviderGraph Providers { get; }
 
@@ -254,6 +262,9 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
 
     private void resetSequences()
     {
+        // The runtime seam. Reading this hands out sequences that are about to be advanced against
+        // mt_get_next_hi, so the storage has to be there — there is no later point at which an id
+        // assignment could ask for it.
         _sequences = new Lazy<SequenceFactory>(() =>
         {
             var sequences = new SequenceFactory(Options, this);
@@ -263,5 +274,10 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
 
             return sequences;
         });
+
+        // #5665: the schema-management seam. Identical objects, no apply. A SequenceFactory's
+        // IFeatureSchema half is derived entirely from StoreOptions, so this describes exactly what
+        // the applying instance above would — it just never touches the database to do it.
+        _sequenceFeature = new Lazy<SequenceFactory>(() => new SequenceFactory(Options, this));
     }
 }
