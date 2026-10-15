@@ -1321,6 +1321,17 @@ internal static class ForeignKeyExtensions
         foreignKey.LinkedNames = new string[] { TenantIdColumn.Name }
             .Concat(foreignKey.LinkedNames.Where(x => x != TenantIdColumn.Name)).ToArray();
 
-        foreignKey.Name = $"{mapping.TableName.Name}_{foreignKey.ColumnNames.Join("_")}_fkey";
+        // #5672: regenerate the name only when it is still the generated one. A name set through the
+        // foreignKeyConfiguration callback is the caller's answer to the identifier-length error this
+        // reordering provokes -- the exception even tells them to override the name -- and overwriting it
+        // here made that escape hatch unusable: there was no way to name a conjoined document's foreign key.
+        //
+        // A plain ForeignKey (the schemaName/tableName overload, or one added by hand) is left alone too.
+        // Its name was never Marten's to generate, so nothing here can tell a default from a choice.
+        if (foreignKey is DocumentForeignKey { HasGeneratedName: true })
+        {
+            foreignKey.Name = PostgresqlIdentifier.Shorten(
+                $"{mapping.TableName.Name}_{foreignKey.ColumnNames.Join("_")}_fkey");
+        }
     }
 }
