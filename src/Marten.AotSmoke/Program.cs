@@ -37,6 +37,11 @@
 //     (The build itself doesn't catch a missing emission — the SG silently
 //     skips when its preconditions don't hold; the runtime check is the
 //     sentinel.)
+//   - opts.Events.RegisterTagType<TTag, TInner>(unwrapper, tableSuffix) —
+//     the DCB tag registration an AOT consumer uses (#5649). The inferring
+//     RegisterTagType<TTag>() is annotated RequiresDynamicCode and
+//     RequiresUnreferencedCode and is not exercised here; calling it would
+//     be exactly the warning this project proves absent.
 //   - Host.CreateApplicationBuilder + Build + DI resolution of
 //     IDocumentStore — the boot path consumers actually hit.
 //
@@ -123,6 +128,13 @@ builder.Services.AddMarten(opts =>
     // on the aggregate type itself (still SG-dispatched because the
     // emission targets the aggregate's Evolve signature directly).
     opts.Projections.Snapshot<SelfAggregatingEvolve>(SnapshotLifecycle.Inline);
+
+    // DCB tag registration with the inner type named and the unwrapper passed, so nothing
+    // is closed and nothing is reflected over at runtime (#5649). The inferring
+    // RegisterTagType<TTag>() is annotated RequiresDynamicCode/RequiresUnreferencedCode and
+    // is deliberately NOT exercised here -- calling it would be the IL3050/IL2026 this
+    // project exists to prove absent.
+    opts.Events.RegisterTagType<SmokeTagId, Guid>(x => x.Value, "smoke_tag");
 });
 
 using var host = builder.Build();
@@ -134,7 +146,7 @@ if (store is null)
     return 1;
 }
 
-Console.WriteLine("Marten AOT smoke OK — AddMarten + Schema.For + AddEventType + Projections.Add + DI resolve clean.");
+Console.WriteLine("Marten AOT smoke OK — AddMarten + Schema.For + AddEventType + Projections.Add + RegisterTagType + DI resolve clean.");
 return 0;
 
 
@@ -146,6 +158,8 @@ public sealed class SmokeDoc
 }
 
 public sealed record SmokeEvent(int Delta);
+
+public sealed record SmokeTagId(Guid Value);
 
 public sealed class SmokeProjection : SingleStreamProjection<SmokeDoc, Guid>
 {
