@@ -120,6 +120,15 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
             : StringStorage.ArchiveStream(streamId, tenantId, true);
     }
 
+    // marten#5673: the hard delete rides the seam's TombstoneStream slot, which the dialect fills with
+    // DeleteStreamOperation. The seam's name is the contract's; Marten's own "tombstone" is unrelated.
+    public override Weasel.Storage.IStorageOperation DeleteStream(object streamId, string tenantId)
+    {
+        return Events.StreamIdentity == StreamIdentity.AsGuid
+            ? GuidStorage.TombstoneStream(streamId, tenantId)
+            : StringStorage.TombstoneStream(streamId, tenantId);
+    }
+
     public override Weasel.Storage.IStorageOperation InsertStream(StreamAction stream)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid

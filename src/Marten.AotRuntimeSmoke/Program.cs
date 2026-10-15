@@ -445,7 +445,9 @@ try
 
     // #5649. Exercised directly rather than through AggregateByTagsAsync, because reaching the
     // boundary fetch needs a registered tag type and RegisterTagType<TTag> closes its own open
-    // generic -- a separate AOT hole, still open. This is the one site this fix moves, and it is
+    // generic -- a separate AOT hole. marten#5673 marks that overload RequiresDynamicCode and adds
+    // the closed RegisterTagType<TTag, TInner>(unwrapper) (TagTypeRegistration.FromUnwrapper), which
+    // a native smoke of the tag path should use. This is the one site this fix moves, and it is
     // the site the reported MissingMethodException came from.
     await Check("boundary aggregate aggregator source", () =>
     {

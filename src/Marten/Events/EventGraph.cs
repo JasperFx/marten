@@ -583,6 +583,8 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <summary>
     /// Register a strong-typed identifier as a tag type for DCB support.
     /// </summary>
+    [RequiresUnreferencedCode("Discovers the tag type's inner value by reflecting over its members (TagTypeRegistration.Create). Under trimming or Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
+    [RequiresDynamicCode("Closes TagTypeRegistration<TTag, TInner> with MakeGenericType (TagTypeRegistration.Create). Under Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
     public ITagTypeRegistration RegisterTagType<TTag>() where TTag : notnull
     {
         var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
@@ -596,12 +598,30 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <summary>
     /// Register a strong-typed identifier as a tag type with a custom table name suffix.
     /// </summary>
+    [RequiresUnreferencedCode("Discovers the tag type's inner value by reflecting over its members (TagTypeRegistration.Create). Under trimming or Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
+    [RequiresDynamicCode("Closes TagTypeRegistration<TTag, TInner> with MakeGenericType (TagTypeRegistration.Create). Under Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
     public ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull
     {
         var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
         if (existing != null) return existing;
 
         var registration = TagTypeRegistration.Create<TTag>(tableSuffix);
+        _tagTypes.Add(registration);
+        return registration;
+    }
+
+    /// <summary>
+    /// Register a strong-typed identifier as a tag type with an explicit unwrapper, the trim- and
+    /// Native AOT-safe form of <see cref="RegisterTagType{TTag}()"/> (jasperfx#1012). Nothing is
+    /// discovered by reflection and no generic type is closed at runtime.
+    /// </summary>
+    public ITagTypeRegistration RegisterTagType<TTag, TInner>(Func<TTag, TInner> unwrapper, string? tableSuffix = null)
+        where TTag : notnull
+    {
+        var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
+        if (existing != null) return existing;
+
+        var registration = TagTypeRegistration.FromUnwrapper(unwrapper, tableSuffix);
         _tagTypes.Add(registration);
         return registration;
     }

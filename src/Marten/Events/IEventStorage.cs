@@ -82,6 +82,13 @@ public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocu
     /// </summary>
     Weasel.Storage.IStorageOperation ArchiveStream(object streamId, string tenantId);
 
+    /// <summary>
+    /// marten#5673: create a storage operation that hard-deletes a single stream, its events and their
+    /// DCB tag rows, routed through the shared seam's <c>TombstoneStream</c> slot. Backs
+    /// <c>IEventStoreOperations.TombstoneStream</c>; see <see cref="Marten.Events.Operations.DeleteStreamOperation"/>.
+    /// </summary>
+    Weasel.Storage.IStorageOperation DeleteStream(object streamId, string tenantId);
+
     Weasel.Storage.IStorageOperation QuickAppendEventWithVersion(StreamAction stream,
         IEvent e);
 }

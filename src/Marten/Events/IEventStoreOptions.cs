@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -574,6 +575,8 @@ namespace Marten.Events
         /// </summary>
         /// <typeparam name="TTag">A strong-typed identifier type (e.g., StudentId)</typeparam>
         /// <returns>The tag type registration for further configuration</returns>
+        [RequiresUnreferencedCode("Discovers the tag type's inner value by reflecting over its members (TagTypeRegistration.Create). Under trimming or Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
+        [RequiresDynamicCode("Closes TagTypeRegistration<TTag, TInner> with MakeGenericType (TagTypeRegistration.Create). Under Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
         ITagTypeRegistration RegisterTagType<TTag>() where TTag : notnull;
 
         /// <summary>
@@ -582,7 +585,23 @@ namespace Marten.Events
         /// <typeparam name="TTag">A strong-typed identifier type</typeparam>
         /// <param name="tableSuffix">Custom table name suffix (e.g., "custom_student")</param>
         /// <returns>The tag type registration for further configuration</returns>
+        [RequiresUnreferencedCode("Discovers the tag type's inner value by reflecting over its members (TagTypeRegistration.Create). Under trimming or Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
+        [RequiresDynamicCode("Closes TagTypeRegistration<TTag, TInner> with MakeGenericType (TagTypeRegistration.Create). Under Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
         ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull;
+
+        /// <summary>
+        /// Register a strong-typed identifier as a tag type with an explicit unwrapper. This is the
+        /// trim- and Native AOT-safe form of <see cref="RegisterTagType{TTag}()"/>: it is backed by
+        /// <see cref="TagTypeRegistration.FromUnwrapper{TTag, TInner}"/>, so nothing is discovered by
+        /// reflection and no generic type is closed at runtime.
+        /// </summary>
+        /// <typeparam name="TTag">A strong-typed identifier type (e.g., StudentId)</typeparam>
+        /// <typeparam name="TInner">The primitive the tag table stores, e.g. Guid, string, int or long</typeparam>
+        /// <param name="unwrapper">Reads the primitive out of the tag, e.g. <c>id =&gt; id.Value</c></param>
+        /// <param name="tableSuffix">Optional table name suffix; defaults to the tag type's name</param>
+        /// <returns>The tag type registration for further configuration</returns>
+        ITagTypeRegistration RegisterTagType<TTag, TInner>(Func<TTag, TInner> unwrapper, string? tableSuffix = null)
+            where TTag : notnull;
 
         /// <summary>
         /// Derive a DCB tag from an event's own data, for every event appended through this store.
