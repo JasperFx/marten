@@ -130,7 +130,8 @@
     "SQLSTATE",
     "SQLSTATEs",
     "tsvector",
-    "unpartitioned"
+    "unpartitioned",
+    "unwrapper"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links
