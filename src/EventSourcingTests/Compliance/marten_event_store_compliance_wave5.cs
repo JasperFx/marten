@@ -16,6 +16,13 @@ public class fetch_latest_compliance
 public class stream_archiving_compliance
     : StreamArchivingCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
 
+/// <summary>
+///     marten#5673 (jasperfx#1014). The hard delete next to its soft sibling above: TombstoneStream
+///     removes the stream, its events and their tag rows, backed by DeleteStreamOperation.
+/// </summary>
+public class stream_tombstoning_compliance
+    : StreamTombstoningCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
 public class event_store_explorer_compliance
     : EventStoreExplorerCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
 

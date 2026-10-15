@@ -64,6 +64,25 @@ opts.Events.RegisterTagType<TicketId>("custom_ticket")
 opts.Projections.Add<TicketSummaryProjection>(ProjectionLifecycle.Inline);
 ```
 
+### Registering Tag Types under Trimming or Native AOT
+
+`RegisterTagType<TTag>()` discovers the primitive inside your tag type by reflecting over its
+members, and closes a generic registration type at runtime. Both are unsafe under trimming and
+Native AOT, so those overloads are marked `[RequiresUnreferencedCode]` and `[RequiresDynamicCode]`,
+and an AOT-analyzed application sees IL2026/IL3050 warnings where it calls them. For those
+applications, register the tag type with an explicit unwrapper instead. It is backed by
+`TagTypeRegistration.FromUnwrapper<TTag, TInner>()` in JasperFx.Events, and needs no reflection:
+
+```csharp
+// Trim- and AOT-safe: the unwrapper says how to read the stored primitive out of the tag
+opts.Events.RegisterTagType<StudentId, Guid>(id => id.Value, "student")
+    .ForAggregate<StudentCourseEnrollment>();
+```
+
+The second type argument is the primitive the tag table stores, typically `Guid`, `string`, `int`
+or `long`. Automatic tag type registration from projection identities still uses reflection, so
+under Native AOT register those identity types explicitly this way as well.
+
 ### Tag Type Requirements
 
 Tag types should be simple wrapper records around a primitive value:

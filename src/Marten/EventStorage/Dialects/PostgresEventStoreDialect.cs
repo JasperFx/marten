@@ -772,12 +772,14 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 
     /// <summary>
     /// #4968: vend the shared Weasel.Storage.Events auxiliary-operation seam. Marten routes the stream
-    /// ARCHIVE operation through it, single-sourcing the invocation contract with Polecat. Tombstone and
-    /// progression stay Marten-local and are intentionally left null:
+    /// ARCHIVE operation through it, single-sourcing the invocation contract with Polecat, and (marten#5673)
+    /// the stream hard delete behind <c>IEventStoreOperations.TombstoneStream</c>. Progression stays
+    /// Marten-local and is intentionally left null:
     /// <list type="bullet">
-    /// <item>Tombstone — Marten's <see cref="EstablishTombstoneStream"/> ESTABLISHES the tombstone
-    /// bookkeeping stream (keyed only by tenant, no stream id) rather than hard-deleting a stream, so it
-    /// does not match the seam's <c>TombstoneStream(streamId, tenantId)</c> hard-delete contract.</item>
+    /// <item>TombstoneStream — filled with <see cref="DeleteStreamOperation"/>, which deletes the stream's
+    /// tag rows, events and stream row. Do not confuse it with Marten's own <see cref="EstablishTombstoneStream"/>,
+    /// which ESTABLISHES the sequence-gap bookkeeping stream (keyed only by tenant, no stream id) and has
+    /// nothing to do with this slot; that is why the operation is not named after it.</item>
     /// <item>Progression — Marten's <see cref="Marten.Events.Daemon.Progress.UpdateProjectionProgress"/>
     /// guards its update with the sequence FLOOR (<c>where last_seq_id = floor</c>), which the seam's
     /// <c>UpdateProgress(name, sequence, upsert)</c> factory signature cannot carry; routing it would drop
@@ -797,6 +799,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                 }
 
                 return new ArchiveStreamOperation(graph, streamId) { TenantId = tenantId };
-            });
+            },
+            TombstoneStream: (streamId, tenantId) => new DeleteStreamOperation(graph, streamId, tenantId));
     }
 }

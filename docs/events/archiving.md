@@ -37,6 +37,11 @@ public async Task SampleArchive(IDocumentSession session, string streamId)
 As in all cases with an `IDocumentSession`, you need to call `SaveChanges()` to commit the
 unit of work.
 
+::: tip
+Archiving keeps the data. To delete a stream and its events for good, see
+[Deleting a Stream Permanently](#deleting-a-stream-permanently).
+:::
+
 Archiving the same stream again preserves one archived copy of its stream and event rows,
 including when hot/cold partitioning is enabled. A single-stream projection with
 `IncludeArchivedEvents = true` can process the `Archived` marker after an inline projection
@@ -364,3 +369,81 @@ runs is entirely governed by the user-defined handlers on that projection —
 `Archived` is just an event and receives no special treatment at the
 `EvolveAsync` level. The ownership guard described above only scopes the
 stream-archival side effect.
+
+## Deleting a Stream Permanently
+
+Archiving is a soft delete: the stream and its events stay in the database, just out of the way.
+When the data really has to go, for example to purge a customer's records or to clean up after a
+plan or workflow that should leave nothing behind, use `TombstoneStream()` instead. It is a **hard
+delete** of the stream and every event in it:
+
+<!-- snippet: sample_tombstone_stream -->
+<a id='snippet-sample_tombstone_stream'></a>
+```cs
+await using var session = theStore.LightweightSession();
+
+// Queue a hard delete of the stream, its events and their tag rows.
+// Nothing touches the database until SaveChangesAsync.
+session.Events.TombstoneStream(streamId);
+
+// The string-keyed overload is used when StreamIdentity is AsString:
+// session.Events.TombstoneStream("customer-123");
+
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Archiving/tombstoning_streams.cs#L270-L283' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tombstone_stream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`TombstoneStream()` has a `Guid` overload and a `string` overload, matching your
+`StreamIdentity`. Calling the overload that does not match the store's configured identity throws
+an `InvalidOperationException` right away, the same guard the other stream operations use. The
+method is part of the shared `JasperFx.Events.IEventStoreOperations` contract, so code written
+against that abstraction works the same way on Marten, Polecat and Fisher.
+
+What `TombstoneStream()` does, compared with `ArchiveStream()`:
+
+| | `ArchiveStream()` | `TombstoneStream()` |
+| --- | --- | --- |
+| Stream row in `mt_streams` | kept, marked archived (or moved to the archived partition) | deleted |
+| Event rows in `mt_events` | kept, marked archived | deleted |
+| DCB tag rows (`mt_event_tag_*`) | kept | deleted |
+| Can be undone | the data is still there | no |
+| Stream id can start a new stream | depends on partitioning and strict identity settings | yes |
+| Projected documents | left alone | left alone |
+
+Some details worth knowing:
+
+* **It is queued.** Like every other `IDocumentSession` operation, nothing happens until you call
+  `SaveChangesAsync()`, and the delete commits or rolls back with the rest of the unit of work.
+* **Tag rows go too.** For every registered DCB tag type, the stream's rows in that type's
+  `mt_event_tag_*` table are deleted along with the events, so tag queries and
+  `EventsExistAsync()` no longer find them. In `DcbStorageMode.HStore` the tags live on the event
+  rows and leave with them.
+* **It is tenant scoped.** Under conjoined event tenancy the delete only reaches the session's
+  tenant. Another tenant's stream with the same id is untouched.
+* **A missing stream is a no-op.** Deleting a stream that does not exist, or that was already
+  deleted, is not an error.
+* **Every storage layout is covered.** The delete reaches the archived partition when
+  `UseArchivedStreamPartitioning` is on, so archived streams can be deleted too, and the tenant's
+  partition under `UseTenantPartitionedEvents`. Natural key rows are removed with the stream. With
+  `EnableStrictStreamIdentityEnforcement`, the identity is released as well, so the same id can start
+  a new stream afterwards.
+* **Sequence numbers are not reused.** The event sequence is left alone. The deleted events'
+  sequence numbers stay spent, so an async projection or subscription whose high water mark has
+  already moved past them can never miss an event that later takes one of those numbers. Expect a
+  gap in the sequence where the deleted events were.
+* **Projected documents are left alone.** Nothing is "un-applied". Snapshots, single or multi
+  stream projection documents and flat table rows built from the deleted events stay where they
+  are. If they should go too, delete them in the same session with `session.Delete<T>(id)` or
+  `session.DeleteWhere<T>()`.
+
+::: warning
+There is no way to recover a deleted stream. If you need to keep the data for audit or historical
+queries, archive the stream instead.
+:::
+
+::: tip
+In Marten's internals, "tombstone" also names the bookkeeping stream Marten uses to fill gaps in the
+event sequence after a failed append. That has nothing to do with `TombstoneStream()`, which takes
+its name from the shared `IEventStoreOperations` contract.
+:::

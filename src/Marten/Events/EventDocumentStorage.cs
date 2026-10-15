@@ -254,6 +254,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
     public abstract Weasel.Storage.IStorageOperation UpdateStreamVersion(StreamAction stream);
     public abstract Weasel.Storage.IStorageOperation AssertStreamVersion(StreamAction stream);
     public abstract Weasel.Storage.IStorageOperation ArchiveStream(object streamId, string tenantId);
+    public abstract Weasel.Storage.IStorageOperation DeleteStream(object streamId, string tenantId);
 
     public string StreamStateSelectSql => Marten.EventStorage.StreamStateSql.Build(Events);
 

@@ -749,6 +749,12 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsUnarchiveStream => false;
 
     /// <summary>
+    ///     marten#5673: IEventStoreOperations.TombstoneStream is implemented by DeleteStreamOperation,
+    ///     the hard delete of a stream, its events and their DCB tag rows.
+    /// </summary>
+    public override bool SupportsTombstoneStream => true;
+
+    /// <summary>
     ///     Marten names its own six exceptions rather than the ones lifted into JasperFx.Events by
     ///     jasperfx#751.
     /// </summary>
