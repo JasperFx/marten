@@ -121,6 +121,7 @@ partial class Build
         };
 
         var ledger = loadTestLedger(projectName, framework);
+        var durations = new LaneDurations(ledger);
 
         var supervisor = new Supervisor(factory)
         {
@@ -142,9 +143,11 @@ partial class Build
             StallAction = StallAction.Report,
             HeartbeatInterval = TimeSpan.FromSeconds(30),
 
-            // Longest-processing-time-first lane balancing from the committed ledger. Null on a
-            // project with no ledger yet, which degrades to balancing by test count.
-            KnownTestDurations = ledger.KnownDurations() is { Count: > 0 } known ? known : null,
+            // Longest-processing-time-first lane balancing from the committed ledger, matched to
+            // this run's tests by display name as discovery reports them (TestLedger.cs says why
+            // not by uid). No ledger, or no match, degrades to balancing by test count.
+            TestFilter = durations.Observe,
+            KnownTestDurations = durations.KnownTestDurations,
 
             Log = message => Log.Information("  {Message}", message)
         };
@@ -152,6 +155,12 @@ partial class Build
         if (!DisableTestRetry) supervisor.AddFailurePolicy(new RetryOptedInTestsInFreshProcess());
 
         var results = supervisor.Run().GetAwaiter().GetResult();
+
+        // Said after the fact because the match can only be made once discovery has run. Without
+        // this line a ledger that matches nothing is indistinguishable from one that works.
+        if (workers > 1)
+            Log.Information("  lanes were balanced with {Matched} of {Discovered} test duration(s) from the committed ledger",
+                durations.Matched, durations.Discovered);
 
         recordTestLedger(ledger, projectName, framework, results);
         writeRunReport(projectName, framework, results);
