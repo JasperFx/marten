@@ -43,11 +43,16 @@ public partial class QuerySession
 
     /// <summary>
     /// Virtual chokepoint for the public <see cref="LoadManyAsync{T}(Guid[])"/>
-    /// family. See <see cref="ExecuteLoadOneAsync{T, TId}"/>.
+    /// family. See <see cref="ExecuteLoadOneAsync{T, TId}"/>. No ids answer an empty
+    /// list without a command: only the identity-map storages skip an empty id array
+    /// themselves (#5258), and the others would send an <c>id = ANY($1)</c> query
+    /// that can only return no rows.
     /// </summary>
     protected internal virtual Task<IReadOnlyList<T>> ExecuteLoadManyAsync<T, TId>(IDocumentStorage<T, TId> storage, TId[] ids, CancellationToken token)
         where T : notnull where TId : notnull
-        => storage.LoadManyAsync(ids, this, token);
+        => ids.Length == 0
+            ? Task.FromResult<IReadOnlyList<T>>(Array.Empty<T>())
+            : storage.LoadManyAsync(ids, this, token);
 
     public async Task<T?> LoadAsync<T>(string id, CancellationToken token = default) where T : notnull
     {
