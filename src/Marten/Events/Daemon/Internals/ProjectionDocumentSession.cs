@@ -97,8 +97,9 @@ internal class ProjectionDocumentSession: DocumentSessionBase, ITransactionParti
             : storage.LoadProjectedAsync(id, Database, TenantId, token)!;
 
     /// <inheritdoc cref="ExecuteLoadOneAsync{T, TId}"/>
+    /// <remarks>No ids go to the base, which answers them without a command.</remarks>
     protected internal override Task<IReadOnlyList<T>> ExecuteLoadManyAsync<T, TId>(IDocumentStorage<T, TId> storage, TId[] ids, CancellationToken token)
-        => Options.EventGraph.UseIdentityMapForAggregates
+        => ids.Length == 0 || Options.EventGraph.UseIdentityMapForAggregates
             ? base.ExecuteLoadManyAsync(storage, ids, token)
             : storage.LoadManyProjectedAsync(ids, Database, TenantId, token);
 }
