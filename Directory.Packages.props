@@ -12,7 +12,7 @@
          reported as flaky rather than laundered into a clean pass. See
          build/SupervisedTests.cs. Bobcat.Supervisor pulls in Bobcat (the
          Bobcat.Resilience types) transitively. -->
-    <PackageVersion Include="Bobcat.Supervisor" Version="0.27.3" />
+    <PackageVersion Include="Bobcat.Supervisor" Version="0.60.4" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
     <PackageVersion Include="Confluent.Kafka" Version="2.3.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />

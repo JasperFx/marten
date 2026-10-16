@@ -4,43 +4,56 @@ using System.IO;
 using System.Linq;
 using Bobcat.Resilience;
 using Bobcat.Supervisor;
+using Npgsql;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Serilog;
 
-// The supervised test runner (#5096): every test target drives its project's
-// Microsoft.Testing.Platform host through Bobcat's Supervisor
+// The supervised test runner (#5096, extended for JasperFx/bobcat#565): every test target drives
+// its project's Microsoft.Testing.Platform host through Bobcat's Supervisor
 // (https://github.com/JasperFx/bobcat) instead of shelling out to `dotnet test`.
 //
 // What that buys, and why it is here:
 //
-//   - Honest retries. A failing test is retried in a FRESH process — the reset bracket xUnit
-//     cannot give you in-process, because a failed first attempt leaves half-built stores,
-//     schema objects and daemon state behind. Crucially, a pass-on-retry is NEVER folded into
-//     a clean pass: it lands in the flakiness ledger (see RetryLedger.cs) and in the job
-//     summary. A crashed worker is Indeterminate, with its exit code and stderr, rather than a
-//     silent pass or an ordinary "failed".
+//   - Worker processes, partitioned by test CLASS. A suite with `workers > 1` is split across that
+//     many test hosts, each pointed at its own Postgres database (see "Per-lane databases" below).
+//     Partitioning is by class and never by test: a class is the unit xUnit's isolation contract
+//     (fixtures, static state) is written against, and splitting one was measured on Wolverine as
+//     1-4 non-deterministic failures.
 //
-//   - Per-test knobs for the timing-sensitive suites. The supervisor reads xUnit traits:
-//     [Trait("Retry", "3")] raises a single test's attempt ceiling and [Trait("Isolated",
-//     "true")] runs it alone. That is the tool for a test that is genuinely racy against a
-//     shared database, instead of deleting it or leaving the whole project out of CI —
-//     which is how the seven projects in #5096 went dark in the first place.
+//   - Retries are OPT-IN, and always in a FRESH process. A test is retried only when it carries
+//     [Trait("Retry", "N")] (or [Trait("Isolated", "true")]); everything else that fails, fails.
+//     Up to bobcat#565 every failure here was retried, which made "flaky" and "broken" impossible
+//     to tell apart without opening the ledger. A test earns a Retry trait with evidence: the
+//     flakiness roll-up names every test that only passed on a retry. A retry runs in a fresh
+//     process because a failed Marten test usually leaves a half-built store, schema objects or a
+//     running daemon behind — the fresh process IS the reset bracket.
 //
-// Parallelism in this repo is at the JOB level, not the worker level: .github/workflows/tests.yml
-// gives every test project its own runner and its own Postgres. So the supervisor runs one worker
-// here. Raising MaxParallelWorkers would need per-lane database isolation first (Marten's suites
-// hard-code schema names, so the isolation has to be the catalog) plus a pass over the two traps
-// in https://github.com/JasperFx/bobcat/blob/main/docs/parallel-ready-suites.md, neither of which
-// has been checked against Marten. Deliberately left for a follow-up rather than half-wired here.
+//   - Honest reporting. A pass-on-retry is never folded into a clean pass (RetryLedger.cs); a
+//     crashed worker is Indeterminate, with its exit code and stderr; a test in flight past five
+//     minutes is named as STALLED (report-only); Bobcat's own RunReport lands in the job summary.
+//
+//   - Lane balancing from measured durations. The committed per-project TestLedger under
+//     build/test-ledger/ feeds Supervisor.KnownTestDurations, so lanes are balanced
+//     longest-processing-time-first instead of by test count (TestLedger.cs).
+//
+// Parallelism is still mainly at the JOB level: .github/workflows/tests.yml gives every project its
+// own runner and its own Postgres. Workers > 1 is reserved for the suites that set the workflow's
+// wall clock, and only after the suite was checked against the bug shapes in
+// https://github.com/JasperFx/bobcat/blob/main/docs/parallel-ready-suites.md.
 //
 // The executable this drives comes from <UseMicrosoftTestingPlatformRunner> in src/Tests.props.
 partial class Build
 {
     /// <summary>
-    /// Turns off the retry policy (<c>--disable-test-retry</c>). Worth reaching for when you are
-    /// measuring a suite's real stability: a retry budget masks exactly the instability you are
-    /// trying to quantify.
+    /// Overrides every target's worker count (<c>--test-workers 4</c>), bypassing the per-machine
+    /// clamp. For measuring; the committed per-target counts are the tuned values.
+    /// </summary>
+    [Parameter] readonly int? TestWorkers;
+
+    /// <summary>
+    /// Turns off retries entirely (<c>--disable-test-retry</c>), including those a test opted into
+    /// with a Retry trait. Measure a suite's real stability with this on.
     /// </summary>
     [Parameter] readonly bool DisableTestRetry;
 
@@ -52,12 +65,19 @@ partial class Build
     const int MaxRetriesPerRun = 25;
 
     /// <summary>
-    /// Attempts any one test may take. Three, not two: a first attempt inside a suite that has
-    /// already churned the database is a materially different run from a fresh-process attempt,
-    /// so a genuinely racy test deserves the same two clean shots the old ad-hoc reruns gave it.
-    /// A per-test <c>[Trait("Retry", "N")]</c> raises this for that test alone.
+    /// The run-wide ceiling on attempts for any one test, including the first. A test's own
+    /// <c>[Trait("Retry", "N")]</c> can LOWER this but never raise it (Bobcat's
+    /// <c>RetryBudget.AttemptsAllowedFor</c>): the operator owns how much time a run may spend.
+    /// Three is the ceiling the pre-#565 harness gave every test, kept for the tests that opt in.
     /// </summary>
     const int MaxAttemptsPerTest = 3;
+
+    /// <summary>
+    /// A test in flight this long is named in the log, the job summary and the run report. Report
+    /// only: nothing is killed. Five minutes is Wolverine's calibration, and nothing in Marten's
+    /// suites legitimately runs that long as ONE test.
+    /// </summary>
+    static readonly TimeSpan StallThreshold = TimeSpan.FromMinutes(5);
 
     /// <summary>
     /// Runs one test project through the supervisor, once per target framework.
@@ -67,57 +87,119 @@ partial class Build
     /// Pins the run to one TFM regardless of <c>--framework</c>. Only for a project whose suite
     /// is meaningful on a single framework.
     /// </param>
-    void RunTestProject(string projectPath, string frameworkOverride = null)
+    /// <param name="workers">
+    /// Worker processes for the suite. 1 (sequential, one database) unless the suite has been
+    /// profiled AND checked for the parallel-ready bug shapes. With more than one, every lane gets
+    /// its own database (<see cref="laneEnvironment"/>). Clamped to <c>ProcessorCount / 2</c> on
+    /// the machine running unless <c>--test-workers</c> says otherwise.
+    /// </param>
+    void RunTestProject(string projectPath, string frameworkOverride = null, int workers = 1)
     {
         var failed = new List<string>();
 
         foreach (var framework in frameworksBuiltFor(projectPath, frameworkOverride))
         {
-            if (!runSupervised(projectPath, framework)) failed.Add($"{projectPath} ({framework})");
+            if (!runSupervised(projectPath, framework, workers)) failed.Add($"{projectPath} ({framework})");
         }
 
         if (failed.Count > 0) throw new InvalidOperationException($"Tests failed: {string.Join(", ", failed)}");
     }
 
-    bool runSupervised(string projectPath, string framework)
+    bool runSupervised(string projectPath, string framework, int workers)
     {
+        workers = workerCountFor(workers);
+
         var projectName = Path.GetFileNameWithoutExtension(projectPath);
         var executable = testHostFor(projectPath, framework);
 
-        Log.Information("=== {Project} ({Framework}): supervised run{Retry} ===",
-            projectName, framework, DisableTestRetry ? ", retries OFF" : "");
+        Log.Information("=== {Project} ({Framework}): supervised run, {Workers} worker(s){Retry} ===",
+            projectName, framework, workers, DisableTestRetry ? ", retries OFF" : "");
 
-        var supervisor = new Supervisor(new MtpWorkerFactory(executable))
+        var factory = new MtpWorkerFactory(executable)
         {
-            MaxParallelWorkers = 1,
+            EnvironmentFor = workers > 1 ? laneEnvironment(workers) : null
+        };
+
+        var ledger = loadTestLedger(projectName, framework);
+
+        var supervisor = new Supervisor(factory)
+        {
+            MaxParallelWorkers = workers,
             RetryBudget = DisableTestRetry
                 ? RetryBudget.None
                 : new RetryBudget { MaxAttemptsPerTest = MaxAttemptsPerTest, MaxRetriesPerRun = MaxRetriesPerRun },
+
+            // The policy below only ever retries in a fresh process, so idle lane workers are
+            // released before the retry passes. Without it, workers+1 test hosts sit resident at
+            // once — which is what OOM-killed 16GB GitHub runners on Wolverine, both times during a
+            // retry.
+            ReleaseIdleLanes = true,
+
+            // Report-only observability. A test in flight past the threshold is named at once (a
+            // wedged daemon test used to be visible only as a job hitting its 20 minute cap), and a
+            // one-line heartbeat every 30s says how far a run got and what has been running longest.
+            StallThreshold = StallThreshold,
+            StallAction = StallAction.Report,
+            HeartbeatInterval = TimeSpan.FromSeconds(30),
+
+            // Longest-processing-time-first lane balancing from the committed ledger. Null on a
+            // project with no ledger yet, which degrades to balancing by test count.
+            KnownTestDurations = ledger.KnownDurations() is { Count: > 0 } known ? known : null,
+
             Log = message => Log.Information("  {Message}", message)
         };
 
-        if (!DisableTestRetry) supervisor.AddFailurePolicy(new RetryFailuresInFreshProcess());
+        if (!DisableTestRetry) supervisor.AddFailurePolicy(new RetryOptedInTestsInFreshProcess());
 
         var results = supervisor.Run().GetAwaiter().GetResult();
+
+        recordTestLedger(ledger, projectName, framework, results);
+        writeRunReport(projectName, framework, results);
 
         return report(projectName, framework, results);
     }
 
     /// <summary>
-    /// Every failure gets another attempt in a fresh process, within the budget. Fresh-process
-    /// isolation is the whole point: a Marten test that fails partway through has usually left a
-    /// store, a schema or a running daemon behind it, and a warm retry then fails for a reason
-    /// that has nothing to do with the original defect. A pass on any retry is reported as flaky,
-    /// never as clean.
+    /// The committed worker count is tuned on a developer machine; the machine running decides
+    /// what it can carry. A GitHub-hosted runner has 4 vCPUs and 16GB, and four Marten test hosts
+    /// beside Postgres got a Wolverine runner killed with a shutdown signal — an oversubscribed
+    /// fleet does not fail politely. An explicit <c>--test-workers</c> bypasses the clamp.
     /// </summary>
-    class RetryFailuresInFreshProcess : IFailurePolicy
+    int workerCountFor(int committed)
+    {
+        if (TestWorkers is { } asked) return Math.Max(1, asked);
+
+        var ceiling = Math.Max(1, Environment.ProcessorCount / 2);
+        if (committed <= ceiling) return committed;
+
+        Log.Information("Clamping {Asked} workers to {Ceiling} for this machine's {Cores} core(s)",
+            committed, ceiling, Environment.ProcessorCount);
+        return ceiling;
+    }
+
+    /// <summary>
+    /// Retries a failure only when the test opted in with a <c>Retry</c> (or <c>Isolated</c>)
+    /// trait, and always in a FRESH process. Abstains otherwise, so Bobcat's
+    /// <c>DefaultFailurePolicy</c> reports the failure as the failure it is.
+    /// </summary>
+    /// <remarks>
+    /// Not the default policy's own handling of the Retry trait, which retries in the SAME process.
+    /// A Marten test that fails partway through has usually left a store, a schema or a running
+    /// daemon behind, and a warm retry then fails for a reason unrelated to the original defect —
+    /// Wolverine measured exactly that (MySqlTests' end_to_end_from_scratch). xUnit workers have no
+    /// reset bracket of their own, so the fresh process is the bracket.
+    /// </remarks>
+    class RetryOptedInTestsInFreshProcess : IFailurePolicy
     {
         public Disposition Decide(AttemptContext attempt)
         {
             if (attempt.Succeeded || !attempt.RetriesAvailable) return null;
 
+            var optedIn = attempt.HasTrait(ResilienceTags.Retry) || attempt.Trait(ResilienceTags.Isolated) == "true";
+            if (!optedIn) return null;
+
             return Disposition.RetryInFreshProcess(
-                "a failure is retried in a fresh process, within the budget, to separate flaky from broken");
+                $"tagged Retry — attempt {attempt.AttemptNumber + 1} runs in a fresh process");
         }
     }
 
@@ -149,13 +231,123 @@ partial class Build
 
         foreach (var fault in results.WorkerFaults) Log.Error("  [WORKER FAULT] {Fault}", fault);
 
+        // Report-only, like everything the stall threshold does: a test that ran past it and then
+        // passed is still worth a line, because a green run is where a creeping slowdown hides.
+        foreach (var stalled in results.StalledTests)
+            Log.Warning("  [STALLED] {Test} — {Seconds}s in flight on lane {Lane}",
+                stalled.DisplayName, (int)stalled.InFlight.TotalSeconds, stalled.Worker.Lane);
+
         foreach (var test in results.Indeterminate)
             Log.Error("  [INDETERMINATE] {Test} — {Error}", test.DisplayName, test.Final.Outcome.ErrorMessage);
 
-        foreach (var test in results.Failed)
+        foreach (var test in results.Failed.Where(x => !x.IsIndeterminate))
             Log.Error("  [FAILED] {Test} — {Error}", test.DisplayName, test.Final.Outcome.ErrorMessage);
 
         return results.ExitCode == 0;
+    }
+
+    // ─── Per-lane databases ────────────────────────────────────────────
+
+    /// <summary>
+    /// The connection string the suites read when nothing overrides it — the same default as
+    /// src/Marten.Testing/Harness/ConnectionSource.cs, so a lane differs from a sequential run in
+    /// its database name and nothing else.
+    /// </summary>
+    const string DefaultTestConnectionString =
+        "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5";
+
+    static string baseTestConnectionString =>
+        Environment.GetEnvironmentVariable("marten_testing_database") is { Length: > 0 } configured
+            ? configured
+            : DefaultTestConnectionString;
+
+    /// <summary>
+    /// Points each worker at its own database through <c>marten_testing_database</c>, the variable
+    /// ConnectionSource already reads. Marten's suites hard-code their schema names, so two
+    /// processes sharing one database collide however the classes are partitioned: isolation has to
+    /// be the catalog. Discovery, isolated and recycled workers all report lane 0, so the databases
+    /// provisioned equal the workers asked for, not the processes launched.
+    /// </summary>
+    /// <remarks>
+    /// The variable carries a whole connection string built with NpgsqlConnectionStringBuilder
+    /// rather than a database name stitched onto a base string: a textual replace that stops
+    /// matching once the base changes quietly points every lane at one database.
+    /// </remarks>
+    Func<WorkerLaunchContext, IReadOnlyDictionary<string, string>> laneEnvironment(int workers)
+    {
+        var lanes = Enumerable.Range(0, workers).Select(laneConnectionString).ToArray();
+        ensureLaneDatabases(lanes);
+
+        return context => new Dictionary<string, string>
+        {
+            ["marten_testing_database"] = lanes[Math.Clamp(context.Lane, 0, lanes.Length - 1)]
+        };
+    }
+
+    static string laneConnectionString(int lane)
+    {
+        var builder = new NpgsqlConnectionStringBuilder(baseTestConnectionString);
+        builder.Database = $"{builder.Database}_w{lane}";
+        return builder.ConnectionString;
+    }
+
+    static void ensureLaneDatabases(IEnumerable<string> lanes)
+    {
+        // CREATE DATABASE cannot run inside a transaction or on a multiplexed connection, hence a
+        // dedicated unpooled admin connection to the base database.
+        var admin = new NpgsqlConnectionStringBuilder(baseTestConnectionString) { Pooling = false };
+        using var conn = new NpgsqlConnection(admin.ConnectionString);
+        conn.Open();
+
+        foreach (var lane in lanes)
+        {
+            var database = new NpgsqlConnectionStringBuilder(lane).Database!;
+
+            using var check = conn.CreateCommand();
+            check.CommandText = "select 1 from pg_database where datname = @name";
+            check.Parameters.AddWithValue("name", database);
+            if (check.ExecuteScalar() is not null) continue;
+
+            Log.Information("Provisioning per-lane database {Database}", database);
+            using var create = conn.CreateCommand();
+            // An identifier, not a value, so it cannot be parameterized; it is generated above from
+            // the configured database name, never user input.
+            create.CommandText = $"CREATE DATABASE \"{database}\"";
+            create.ExecuteNonQuery();
+        }
+    }
+
+    // ─── Bobcat's run report ───────────────────────────────────────────
+
+    /// <summary>
+    /// Bobcat's own rendering of the run: the text view (timing, slowest tests, stalls, quarantine)
+    /// collapsed into the job summary, and the JSON view beside the retry ledger for the artifact.
+    /// Best-effort, like every other report here.
+    /// </summary>
+    static void writeRunReport(string projectName, string framework, SupervisorResults results)
+    {
+        try
+        {
+            // A subdirectory, not beside the retry ledgers: the flakiness roll-up in tests.yml reads
+            // every top-level *.json as a retry ledger and asserts on its schema.
+            var reports = LedgerDirectory / "run-reports";
+            reports.CreateDirectory();
+            File.WriteAllText(
+                reports / (fileNameSafe($"{ledgerJobName}.{projectName}.{framework}") + ".json"),
+                RunReport.ToJson(results));
+
+            var summaryFile = Environment.GetEnvironmentVariable("GITHUB_STEP_SUMMARY");
+            if (string.IsNullOrEmpty(summaryFile)) return;
+
+            File.AppendAllText(summaryFile,
+                $"<details><summary>Run report — {projectName} ({framework})</summary>{Environment.NewLine}{Environment.NewLine}" +
+                $"```{Environment.NewLine}{RunReport.ToText(results)}{Environment.NewLine}```{Environment.NewLine}{Environment.NewLine}" +
+                $"</details>{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Could not write the run report for {Project}", projectName);
+        }
     }
 
     // ─── Test host resolution ──────────────────────────────────────────

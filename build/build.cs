@@ -168,9 +168,13 @@ partial class Build : NukeBuild
         .ProceedAfterFailure()
         .Executes(() => RunTestProject("src/DocumentDbTests/DocumentDbTests.csproj"));
 
+    // The workflow's pole (8.8 min of test step on net9/PG15, median of 7 green master runs), so it
+    // is split across worker processes, each with its own database (build/SupervisedTests.cs).
+    // Measured locally on net10.0 (warm databases), retries off, 2525/2525 green at every count:
+    // 1 worker 4m36s, 2 workers 2m29s, 4 workers 1m27s. A 4-vCPU hosted runner clamps this to 2.
     Target TestEventSourcing => _ => _
         .ProceedAfterFailure()
-        .Executes(() => RunTestProject("src/EventSourcingTests/EventSourcingTests.csproj"));
+        .Executes(() => RunTestProject("src/EventSourcingTests/EventSourcingTests.csproj", workers: 4));
 
     // The async daemon suite. Ran outside the Nuke build until #5096 — daemon.yml shelled out to
     // `dotnet test` directly — which meant the single most timing-sensitive suite in the repo was
@@ -183,9 +187,12 @@ partial class Build : NukeBuild
         .ProceedAfterFailure()
         .Executes(() => RunTestProject("src/ModularConfigTests/ModularConfigTests.csproj"));
 
+    // Off the workflow's critical path, but the third-largest job (2.6 min of test step on
+    // net9/PG15) and cheap to split. Measured locally on net10.0, retries off, 1550/1550 green at
+    // every count: 1 worker 53s, 2 workers 32s, 4 workers 22s. Clamped to 2 on a hosted runner.
     Target TestLinq => _ => _
         .ProceedAfterFailure()
-        .Executes(() => RunTestProject("src/LinqTests/LinqTests.csproj"));
+        .Executes(() => RunTestProject("src/LinqTests/LinqTests.csproj", workers: 4));
 
     Target TestValueTypes => _ => _
         .ProceedAfterFailure()
