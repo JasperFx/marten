@@ -262,8 +262,36 @@ public static class LinqInternalExtensions
             return true;
         }
 
+        // An array literal written inline, `new[] { "a", "b" }.Contains(x.Name)`, reaches the parser
+        // as a NewArrayInit rather than as a constant. While none of its elements reads a lambda
+        // parameter it is just a value -- the same one a captured local array would have been.
+        if (expression is NewArrayExpression { NodeType: ExpressionType.NewArrayInit } array &&
+            isArrayLiteralValue(array))
+        {
+            constant = ReduceToConstant(expression);
+            return true;
+        }
+
         constant = default;
         return false;
+    }
+
+    private static bool isArrayLiteralValue(NewArrayExpression array)
+    {
+        var parameters = new FreeParameterFinder();
+        parameters.Visit(array);
+        if (parameters.Found != null)
+        {
+            return false;
+        }
+
+        // A compiled query plan binds each parameter to one of the query's own members by matching
+        // values, and an array assembled from several of those members matches none of them.
+        // Reducing it here would freeze the values the plan was built with into every later
+        // execution, so leave that shape to fail the way it always has.
+        var compiledQueryReads = new CompiledQueryReadFinder();
+        compiledQueryReads.Visit(array);
+        return !compiledQueryReads.Found;
     }
 
     /// <summary>
@@ -708,6 +736,25 @@ public static class LinqInternalExtensions
             if (Found == null && !_bound.Contains(node))
             {
                 Found = node;
+            }
+
+            return node;
+        }
+    }
+
+    /// <summary>
+    /// Walks an expression looking for a read off a compiled query instance, which is how a
+    /// compiled query's members appear inside its own <c>QueryIs()</c> expression.
+    /// </summary>
+    private sealed class CompiledQueryReadFinder: ExpressionVisitor
+    {
+        public bool Found { get; private set; }
+
+        protected override Expression VisitConstant(ConstantExpression node)
+        {
+            if (node.Value is ICompiledQueryMarker)
+            {
+                Found = true;
             }
 
             return node;
