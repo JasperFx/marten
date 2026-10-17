@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using Marten.Events;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -35,6 +36,8 @@ internal class TenantDataCleaner
         // partition registry may forget the tenant once DropPartitionFromAllTablesForValue runs.
         var capturedSuffixes = PerTenantPartitionedCleanup.CaptureSequenceSuffixes(
             _store.Options, database, new[] { _tenantId });
+
+        await deleteTagRowsAsync(database, logger, token).ConfigureAwait(false);
 
         if (_store.Options is { TenantPartitions: not null})
         {
@@ -110,6 +113,47 @@ internal class TenantDataCleaner
         // the same code path.
         await PerTenantPartitionedCleanup.RunAsync(
             _store.Options, database, new[] { _tenantId }, capturedSuffixes, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     The tenant's DCB tag rows go first, before both the partition drop and the deletes that follow it. Each
+    ///     <c>mt_event_tag_*</c> table has a foreign key to <c>mt_events</c> that does not cascade and is not itself
+    ///     partitioned by tenant, so neither dropping the tenant's <c>mt_events</c> partition nor deleting its events
+    ///     is allowed while they remain. Only conjoined event stores share tag tables between tenants.
+    /// </summary>
+    private async Task deleteTagRowsAsync(IMartenDatabase database, ILogger logger, CancellationToken token)
+    {
+        var events = _store.Options.EventGraph;
+        if (events.TenancyStyle != TenancyStyle.Conjoined || events.DcbStorageMode == DcbStorageMode.HStore ||
+            events.TagTypes.Count == 0)
+        {
+            return;
+        }
+
+        var tables = await database.SchemaTables(token).ConfigureAwait(false);
+        var builder = new BatchBuilder();
+        var foundTables = false;
+
+        foreach (var tagType in events.TagTypes)
+        {
+            var table = new DbObjectName(events.DatabaseSchemaName, $"mt_event_tag_{tagType.TableSuffix}");
+            if (!tables.Contains(table)) continue;
+
+            foundTables = true;
+            logger.LogInformation("Trying to delete tenant information from table {Table} for tenant {TenantId}", table.QualifiedName, _tenantId);
+            builder.StartNewCommand();
+            builder.Append($"delete from {table.QualifiedName} where tenant_id = ");
+            builder.AppendParameter(_tenantId);
+        }
+
+        if (!foundTables) return;
+
+        var batch = builder.Compile();
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        batch.Connection = conn;
+        await batch.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        await conn.CloseAsync().ConfigureAwait(false);
     }
 
     private void deleteDataForTenantDatabase(Action<DbObjectName> deleteTenantedDataIfExists, Action<DbObjectName> deleteDataIfExists)

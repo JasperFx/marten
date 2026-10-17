@@ -467,12 +467,18 @@ CREATE TABLE IF NOT EXISTS mt_event_tag_student (
     value uuid NOT NULL,
     seq_id bigint NOT NULL,
     CONSTRAINT pk_mt_event_tag_student PRIMARY KEY (value, seq_id),
-    CONSTRAINT fk_mt_event_tag_student_events
-        FOREIGN KEY (seq_id) REFERENCES mt_events(seq_id) ON DELETE CASCADE
+    CONSTRAINT fkey_mt_event_tag_student_seq_id
+        FOREIGN KEY (seq_id) REFERENCES mt_events(seq_id)
 );
+
+CREATE INDEX idx_mt_event_tag_student_seq_id ON mt_event_tag_student USING btree (seq_id);
 ```
 
 DCB queries `LEFT JOIN` across each referenced tag table. Strengths: native column types preserve `Guid`/`int`/`string`/`long`/`short` semantics, and single-tag `EventsExistAsync` checks hit a small dedicated table via its primary-key index. Trade-offs: every distinct tag type adds a table, two indexes, and a foreign key; queries spanning N tag types pay N JOINs.
+
+The foreign key does not cascade. Whenever Marten deletes events — stream compaction, `TombstoneStream`, archiving under `UseArchivedStreamPartitioning`, `DeleteSingleEventStreamAsync` and `DeleteAllTenantDataAsync` — it deletes their tag rows first. The index on `seq_id` keeps those deletes, and the foreign key's own check on every deleted event, from scanning the whole tag table.
+
+A store whose tag tables predate the index gets it from its next schema migration, as a plain `CREATE INDEX`. That build holds a `SHARE` lock on the tag table, so tagged appends wait until it finishes, while reads carry on. To avoid the wait on a large tag table, build the index yourself first with `CREATE INDEX CONCURRENTLY` and the same name and column. Marten then finds it in place and leaves it alone. Under `UseArchivedStreamPartitioning` the tag table is partitioned, so use the three-step sequence shown for the HStore index below.
 
 Because the primary key is `(value, seq_id)`, **one event may carry several values of the same tag type** — a `HomeworkCopied` event naming the student copied from and the student who copied is two `student` tags on one event, and either one finds it. This is the mode to pick when your events tag that way; `HStore` cannot represent it.
 
