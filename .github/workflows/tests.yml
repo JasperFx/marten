@@ -17,9 +17,12 @@ name: tests
 # The matrix below fixes both: adding a project is one entry, the entry runs on its own runner
 # beside all the others, and the list of what CI covers is the list of what is in this file.
 #
-# Every target runs through Bobcat's supervisor (build/SupervisedTests.cs), so a failing test is
-# retried in a fresh process and a pass-on-retry is reported as flaky rather than laundered into a
-# green tick. The `flakiness` job at the bottom rolls those ledgers up across every job.
+# Every target runs through Bobcat's supervisor (build/SupervisedTests.cs). A test that opted into
+# retries with [Trait("Retry", "N")] is retried in a fresh process and a pass-on-retry is reported
+# as flaky rather than laundered into a green tick; every other failure is red. The heaviest suites
+# (EventSourcing, Linq) are split across worker processes on their runner, a Postgres database per
+# worker, created on demand in the service container below. The `flakiness` job at the bottom rolls
+# the ledgers up across every job.
 #
 # ADDING A TEST PROJECT: add a target in build/build.cs AND an entry here. A target with no entry
 # is exactly the state this workflow exists to make impossible to reach by accident.
@@ -176,6 +179,8 @@ jobs:
 
           # Replaces daemon.yml. That workflow shelled straight out to `dotnet test`, so the most
           # timing-sensitive suite in the repo was the one project with no retry story at all.
+          # Supervised at ONE worker: splitting it is JasperFx/bobcat#562, which restructures the
+          # suite first.
           - name: Daemon (net10, PGlatest, STJ)
             target: TestDaemon
             project: src/DaemonTests/DaemonTests.csproj
@@ -471,6 +476,19 @@ jobs:
           pattern: test-ledger-*
           path: ledgers
           merge-multiple: true
+
+      # Every job's folded TestLedger (build/TestLedger.cs), gathered into one artifact. Refreshing
+      # the committed durations under build/test-ledger/ is downloading this from a master run and
+      # copying the files over: each one already holds the committed ledger plus this run.
+      - name: Publish the folded test ledgers
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          # Not test-ledger-*: the download above matches that pattern.
+          name: folded-test-ledgers
+          path: ledgers/durations/
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Summarize
         run: |

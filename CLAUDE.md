@@ -131,15 +131,30 @@ npm install && npm run docs
 ```
 
 Test targets run through [Bobcat](https://github.com/JasperFx/bobcat)'s supervisor rather than
-`dotnet test` (`build/SupervisedTests.cs`, #5096). A failing test is retried in a **fresh process**,
-and a test that only passes on a retry is reported as flaky — in the log, in the GitHub job summary
-and in a JSON ledger under `artifacts/test-ledger/` — never folded into a clean pass. Two knobs:
+`dotnet test` (`build/SupervisedTests.cs`, #5096, extended for JasperFx/bobcat#565). What it does:
 
-- `--disable-test-retry` turns retries off. Measure a suite's real stability with this on; a retry
-  budget hides exactly the instability you are trying to quantify.
-- `[Trait("Retry", "3")]` raises one test's attempt ceiling, `[Trait("Isolated", "true")]` runs it
-  in its own process. Reach for these on a genuinely racy test instead of dropping the project from
-  CI, which is how ten suites went dark before #5096.
+- **Retries are opt-in, and always in a fresh process.** A failing test is retried only when it
+  carries `[Trait("Retry", "N")]` (or `[Trait("Isolated", "true")]`); anything else that fails is red.
+  A test that only passes on a retry is reported as flaky — in the log, in the GitHub job summary
+  and in the JSON ledger under `artifacts/test-ledger/` — never folded into a clean pass. A test
+  earns a Retry trait with evidence from the `flakiness` roll-up, and the trait carries a comment
+  saying what that evidence was. Never add one to hide a deterministic failure.
+- `N` in `Retry=N` can only **lower** the run-wide ceiling of 3 attempts (`MaxAttemptsPerTest`),
+  never raise it: the operator, not the test, owns how long a run may take.
+- `--disable-test-retry` turns every retry off. Measure a suite's real stability with this on.
+- **Worker processes, a database each.** A target may pass `workers: N`: the suite is split across N
+  test hosts, partitioned by test CLASS, and each lane gets its own database
+  (`marten_testing_w0..N-1`, created on demand, handed over through `marten_testing_database`).
+  The count is clamped to `ProcessorCount / 2` on the machine running; `--test-workers N`
+  overrides both the target's count and the clamp (`--test-workers 1` is the sequential baseline).
+  Before raising a suite's count, read the bug shapes in Bobcat's `docs/parallel-ready-suites.md`:
+  a test that hard-codes `marten_testing` or a port ignores its lane.
+- **Stalls and a heartbeat** (report-only): a test in flight for five minutes is named as
+  `[STALLED]`, and a progress line every 30s says how far the run got.
+- **Lane balancing from a committed ledger.** `build/test-ledger/{Project}.{framework}.json` is
+  Bobcat's `TestLedger`; its per-test durations balance the lanes. Every run writes the folded
+  ledger to `artifacts/test-ledger/durations/`; refresh the committed copy deliberately with
+  `--update-test-ledger` (or from a CI artifact) — it never rewrites itself.
 
 This requires each test project to build as a Microsoft.Testing.Platform host, which
 `<UseMicrosoftTestingPlatformRunner>` in `src/Tests.props` turns on for every project importing it.
@@ -213,7 +228,9 @@ own target framework, serializer and Postgres image, and gets its own runner and
 so suites never contend and adding coverage costs no wall clock. The core suites keep both
 combinations they always had — net9.0/PG15/Newtonsoft and net10.0/PGlatest/System.Text.Json — and
 the extension suites each name the image they need (postgis, pgvector, timescaledb). Tests run in
-Release with parallelization disabled.
+Release with in-process parallelization disabled; EventSourcingTests and LinqTests are split across
+worker processes instead (`workers: 4` in `build/build.cs`, clamped to 2 on a 4-vCPU hosted runner),
+each worker on its own database. DaemonTests stays at one worker until JasperFx/bobcat#562.
 
 **Adding a test project means two edits: a target in `build/build.cs` AND an entry in
 `tests.yml`.** The previous shape was a hand-maintained list of steps inside a handful of monolithic
