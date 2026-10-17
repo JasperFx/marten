@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Bobcat.Xunit;
+using Bobcat;
 using DaemonTests.MultiTenancy;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
@@ -21,8 +21,7 @@ using Xunit;
 
 namespace DaemonTests.Aggregations;
 
-[Bobcat.BobcatFeature("Building an aggregate projection")]
-[BobcatScenario]
+[BobcatFeature("Building an aggregate projection")]
 public class build_aggregate_projection: DaemonContext
 {
     public build_aggregate_projection(ITestOutputHelper output): base(output)
@@ -95,11 +94,9 @@ public class build_aggregate_projection: DaemonContext
         var agent = await StartDaemon();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
-
         await agent.StartAgentAsync(shard.Name.Identity, CancellationToken.None);
 
-        await waiter;
+        await WaitForShard(agent, shard.Name.Identity, NumberOfEvents, typeof(Trip), 60.Seconds());
 
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -122,11 +119,9 @@ public class build_aggregate_projection: DaemonContext
         await PublishSingleThreaded();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
-
         await agent.StartAgentAsync(shard.Name.Identity, CancellationToken.None);
 
-        await waiter;
+        await WaitForShard(agent, shard.Name.Identity, NumberOfEvents, typeof(Trip), 60.Seconds());
 
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -148,11 +143,9 @@ public class build_aggregate_projection: DaemonContext
         var agent = await StartDaemon();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
-
         await PublishSingleThreaded();
 
-        await waiter;
+        await WaitForShard(agent, shard.Name.Identity, NumberOfEvents, typeof(Trip), 60.Seconds());
 
         await CheckAllExpectedAggregatesAgainstActuals("a");
         await CheckAllExpectedAggregatesAgainstActuals("b");
@@ -176,11 +169,9 @@ public class build_aggregate_projection: DaemonContext
         var agent = await StartDaemon();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
-
         await PublishSingleThreaded();
 
-        await waiter;
+        await WaitForShard(agent, shard.Name.Identity, NumberOfEvents, typeof(Trip), 60.Seconds());
 
         await CheckAllExpectedAggregatesAgainstActuals("a");
         await CheckAllExpectedAggregatesAgainstActuals("b");
@@ -199,12 +190,9 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        var waiter =
-            agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 30.Seconds());
-
-        await waiter;
+        await WaitForShard(agent, "TripCustomName:All", NumberOfEvents, typeof(Trip), 30.Seconds());
         Logger.LogDebug("About to rebuild TripCustomName:All");
-        await agent.RebuildProjectionAsync("TripCustomName", CancellationToken.None);
+        await RebuildProjection(agent, "TripCustomName");
         Logger.LogDebug("Done rebuilding TripCustomName:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -225,12 +213,9 @@ public class build_aggregate_projection: DaemonContext
         // Gotta do this to have it mixed up
         await PublishMultiThreaded(3);
 
-        var waiter =
-            agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 120.Seconds());
-
-        await waiter;
+        await WaitForShard(agent, "TripCustomName:All", NumberOfEvents, typeof(Trip), 120.Seconds());
         Logger.LogDebug("About to rebuild TripCustomName:All");
-        await agent.RebuildProjectionAsync("TripCustomName", CancellationToken.None);
+        await RebuildProjection(agent, "TripCustomName");
         Logger.LogDebug("Done rebuilding TripCustomName:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -248,20 +233,17 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        var waiter =
-            agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 30.Seconds());
+        await WaitForShard(agent, "TripCustomName:All", NumberOfEvents, typeof(Trip), 30.Seconds());
 
-        await waiter;
-
-        // This should be gone after a rebuild
+        // Given a Trip the events never produced, which a rebuild should wipe
         var trip = new Trip();
         theSession.Store(trip);
         await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await agent.RebuildProjectionAsync("TripCustomName", CancellationToken.None);
+        await RebuildProjection(agent, "TripCustomName");
 
         await using var query = theStore.QuerySession();
-        // Demonstrates that the Trip documents were deleted first
+        // Then the Trip documents were deleted first
         (await query.LoadAsync<Trip>(trip.Id, TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
@@ -278,8 +260,9 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+        await WaitForCatchUp(typeof(Trip), 15.Seconds());
 
+        // When the Trip projection is rebuilt through RebuildProjectionAsync<Trip>()
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjectionAsync<Trip>(CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
@@ -299,8 +282,9 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+        await WaitForCatchUp(typeof(Trip), 15.Seconds());
 
+        // When the Trip projection is rebuilt by naming its projection type
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjectionAsync(typeof(TestingSupport.TripProjection), CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
@@ -320,7 +304,8 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
+        await WaitForCatchUp(typeof(Trip), 15.Seconds());
+        // When the Trip projection is rebuilt by naming its document type
         Logger.LogDebug("About to rebuild Trip:All");
         await agent.RebuildProjectionAsync(typeof(Trip), CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
@@ -340,9 +325,7 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
-
-        await waiter;
+        await WaitForShard(agent, "Trip:All", NumberOfEvents, typeof(Trip), 30.Seconds());
 
         foreach (var stream in Streams)
         {
@@ -373,9 +356,7 @@ public class build_aggregate_projection: DaemonContext
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents), 30.Seconds());
-
-        await waiter;
+        await WaitForShard(agent, "Trip:All", NumberOfEvents, typeof(Trip), 30.Seconds());
 
         var days = await theSession.Query<Trip>().ToListAsync(TestContext.Current.CancellationToken);
 
@@ -387,9 +368,7 @@ public class build_aggregate_projection: DaemonContext
 
         await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var waiter2 = agent.Tracker.WaitForShardState(new ShardState("Trip:All", NumberOfEvents + 2), 300.Seconds());
-
-        await waiter2;
+        await WaitForShard(agent, "Trip:All", NumberOfEvents + 2, typeof(Trip), 300.Seconds());
 
 
         await using var query = theStore.QuerySession();
@@ -414,8 +393,6 @@ public class build_aggregate_projection: DaemonContext
         var agent = await StartDaemon();
 
 
-        var waiter1 = agent.Tracker.WaitForShardState("Trip:All", initialCount);
-
         await using (var session = theStore.LightweightSession())
         {
             session.Events.Append(shortTrip.StreamId, shortTrip.Events.ToArray());
@@ -423,7 +400,7 @@ public class build_aggregate_projection: DaemonContext
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await waiter1;
+        await WaitForShard(agent, "Trip:All", initialCount, typeof(Trip));
 
         // This should not trigger a delete
         theSession.Events.Append(shortTrip.StreamId, new VacationOver());
@@ -434,9 +411,7 @@ public class build_aggregate_projection: DaemonContext
         await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var totalNumberOfEvents = initialCount + 2;
-        var waiter2 = agent.Tracker.WaitForShardState(new ShardState("Trip:All", totalNumberOfEvents), 30.Seconds());
-
-        await waiter2;
+        await WaitForShard(agent, "Trip:All", totalNumberOfEvents, typeof(Trip), 30.Seconds());
 
 
         await using var query = theStore.QuerySession();
@@ -470,7 +445,7 @@ public class build_aggregate_projection: DaemonContext
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjectionAsync("Contact", CancellationToken.None);
+        await RebuildProjection(daemon, "Contact");
 
         await using var session2 = theStore.LightweightSession("a");
         var c = await session2.LoadAsync<Contact>(id, TestContext.Current.CancellationToken);
@@ -501,7 +476,7 @@ public class build_aggregate_projection: DaemonContext
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
+        await RebuildProjection(daemon, "Foo");
 
         await using var session2 = theStore.LightweightSession("a");
         var c = await session2.LoadAsync<Foo>(id, TestContext.Current.CancellationToken);
@@ -532,7 +507,7 @@ public class build_aggregate_projection: DaemonContext
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
+        await RebuildProjection(daemon, "Foo");
 
         await using var session2 = theStore.LightweightSession("a");
         var c = await session2.LoadAsync<Foo>(id, TestContext.Current.CancellationToken);

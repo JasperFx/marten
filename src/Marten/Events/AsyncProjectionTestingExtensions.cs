@@ -137,16 +137,28 @@ public static class TestingExtensions
         cancellationSource.CancelAfter(timeout);
 
         EventStoreStatistics initial;
-        do
+        try
         {
-            initial = await database.FetchEventStoreStatistics(cancellationSource.Token).ConfigureAwait(false);
-            if (initial.EventSequenceNumber > 0 || cancellationSource.IsCancellationRequested)
+            do
             {
-                break;
-            }
+                initial = await database.FetchEventStoreStatistics(cancellationSource.Token).ConfigureAwait(false);
+                if (initial.EventSequenceNumber > 0 || cancellationSource.IsCancellationRequested)
+                {
+                    break;
+                }
 
-            await Task.Delay(100.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
-        } while (true);
+                await Task.Delay(100.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
+            } while (true);
+        }
+        catch (Exception e) when (cancellationSource.IsCancellationRequested && isCancellation(e))
+        {
+            // This method's contract is a TimeoutException. When the timeout lands inside this first round trip
+            // (a cold store's first EnsureStorageExists, a slow connect) the cancellation used to escape as a
+            // TaskCanceledException, an OperationCanceledException or an NpgsqlException wrapping one, which
+            // callers that catch TimeoutException, Bobcat's catch-up diagnosis among them, never saw.
+            throw new TimeoutException(
+                $"The event store statistics could not be read within the timeout span of {timeout}", e);
+        }
 
         if (initial.EventSequenceNumber == 0 || initial.EventCount == 0)
         {
@@ -281,9 +293,11 @@ public static class TestingExtensions
                 await Task.Delay(250.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
             } while (true);
         }
-        catch (TaskCanceledException)
+        catch (Exception e) when (cancellationSource.IsCancellationRequested && isCancellation(e))
         {
-            // We just didn't finish
+            // We just didn't finish. Npgsql reports a cancelled query as an OperationCanceledException (or an
+            // NpgsqlException wrapping one), not only as the TaskCanceledException Task.Delay throws, so all of
+            // them fall through to the TimeoutException below
         }
 
         if (projections.Count < projectionsCount)
@@ -307,6 +321,17 @@ public static class TestingExtensions
 
             throw new TimeoutException(writer.ToString());
         }
+    }
+
+    // A cancellation, however the layer that observed it chose to report it
+    private static bool isCancellation(Exception? e)
+    {
+        for (; e != null; e = e.InnerException)
+        {
+            if (e is OperationCanceledException) return true;
+        }
+
+        return false;
     }
 
     private static string writeStatusMessage(IMartenDatabase database, IReadOnlyList<ShardState> projections)
