@@ -5,7 +5,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DaemonTests\DaemonTests.csproj" />
         <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
@@ -24,6 +23,10 @@
     <ItemGroup>
         <PackageReference Include="FSharp.Core" />
         <PackageReference Include="Jil" />
+        <!-- Used to arrive transitively through a ProjectReference to DaemonTests, which nothing in
+             CoreTests otherwise used. That reference went when DaemonTests moved to Bobcat 1.0 on
+             xunit.v3 4.x, so CoreTests could stay on the repo's xunit.v3 3.x line. -->
+        <PackageReference Include="Lamar.Microsoft.DependencyInjection" />
         <PackageReference Include="Microsoft.FeatureManagement" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <!-- #5093: the rolling range partition tests roll the window forward by moving the clock,

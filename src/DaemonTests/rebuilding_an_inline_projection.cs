@@ -1,7 +1,6 @@
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Bobcat.Xunit;
+using Bobcat;
 using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
 using JasperFx.Events.Projections;
@@ -10,8 +9,7 @@ using Xunit;
 
 namespace DaemonTests;
 
-[Bobcat.BobcatFeature("Rebuilding an inline projection")]
-[BobcatScenario]
+[BobcatFeature("Rebuilding an inline projection")]
 public class rebuilding_an_inline_projection : DaemonContext
 {
     public rebuilding_an_inline_projection(ITestOutputHelper output) : base(output)
@@ -26,8 +24,10 @@ public class rebuilding_an_inline_projection : DaemonContext
         await PublishSingleThreaded();
 
         var agent = await StartDaemon();
-        await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
 
+        await RebuildProjection(agent, "Distance");
+
+        // Then no Distance progression is left behind
         var progress = await theStore.Advanced.AllProjectionProgress(token: TestContext.Current.CancellationToken);
         progress.Any(x => x.ShardName.StartsWith("Distance")).ShouldBeFalse();
 

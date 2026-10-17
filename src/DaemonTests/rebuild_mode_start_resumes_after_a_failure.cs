@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
+using Bobcat;
 using DaemonTests.TestingSupport;
 using JasperFx;
 using JasperFx.Core;
@@ -63,6 +64,7 @@ public partial class RestartableTallyProjection: SingleStreamProjection<Restarta
 /// has. Before #1015, every position strategy answered Rebuild with a floor of 0 and a rewind of the progression
 /// row, so the second start deleted the row and folded every event again on top of the existing documents.
 /// </summary>
+[BobcatFeature("Resuming a failed rebuild")]
 public class rebuild_mode_start_resumes_after_a_failure: DaemonContext
 {
     private const int NumberOfEvents = 100;
@@ -132,13 +134,14 @@ public class rebuild_mode_start_resumes_after_a_failure: DaemonContext
     [Fact]
     public async Task a_failed_rebuild_mode_run_can_be_restarted_and_finished_from_its_committed_progress()
     {
+        // Given a hundred streams of one event each
         configure();
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
         await appendAsync(1, NumberOfEvents);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
 
-        // First run: fails on event 60
+        // When a Rebuild-mode run fails on event 60
         RestartableTallyProjection.Failing = true;
         var paused = new ShardActionWatcher(daemon.Tracker, TheShard.Identity, ShardAction.Paused, 30.Seconds());
 
@@ -147,7 +150,7 @@ public class rebuild_mode_start_resumes_after_a_failure: DaemonContext
 
         await paused.Task;
 
-        // The progress the first run committed, and the failure, both recorded through extended progression tracking.
+        // Then the committed progress and the failure are recorded by extended progression tracking
         // The extended columns are written by the progression writer on its own flush, a moment after the pause
         await waitUntilAsync(async () => (await readProgressionAsync()).failureCategory != null,
             "extended progression tracking records the failure");
@@ -156,11 +159,12 @@ public class rebuild_mode_start_resumes_after_a_failure: DaemonContext
         afterFailure.lastSeqId.ShouldBeLessThan(await highestSequenceAsync());
         afterFailure.failureCategory.ShouldNotBeNull();
 
-        // Every event at or below the committed mark is in a document already; nothing past the failing event is
+        // And every event at or below the committed mark is in a document already
+        // (nothing past the failing event is)
         var committedIndexes = RestartableTallyProjection.Applications.Keys.Where(i => i < 60).ToArray();
         committedIndexes.ShouldNotBeEmpty();
 
-        // Stop, clear the fault, and start the rebuild-mode run again
+        // When the shard is stopped, the fault cleared, and the Rebuild-mode run started again
         await daemon.StopAgentAsync(TheShard);
         RestartableTallyProjection.Failing = false;
 
@@ -171,8 +175,9 @@ public class rebuild_mode_start_resumes_after_a_failure: DaemonContext
         await waitUntilAsync(async () => (await readProgressionAsync()).lastSeqId >= highest,
             $"the shard reaches the high-water mark {highest}");
 
-        // Finished: every event folded into its document exactly once. A replay from the floor over the documents the
-        // first run built would leave every committed stream with a Count of 2
+        // Then every event is folded into its document exactly once
+        // A replay from the floor over the documents the first run built would leave every committed stream with a
+        // Count of 2
         await using (var session = theStore.QuerySession())
         {
             var tallies = await session.Query<RestartableTally>().ToListAsync();
@@ -180,21 +185,25 @@ public class rebuild_mode_start_resumes_after_a_failure: DaemonContext
             tallies.ShouldAllBe(x => x.Count == 1);
         }
 
+        // And the failure is cleared
         var afterRestart = await readProgressionAsync();
         afterRestart.failureCategory.ShouldBeNull();
 
-        // No event below the first run's committed mark was folded again by the second run
+        // And no event below the first run's committed mark was folded again by the second run
         await using (var session = theStore.QuerySession())
         {
             var committedSequences = await session.Events.QueryAllRawEvents()
                 .Where(x => x.Sequence <= afterFailure.lastSeqId)
                 .ToListAsync();
 
-            foreach (var e in committedSequences)
-            {
-                var index = ((RestartableIncrement)e.Data).Index;
-                RestartableTallyProjection.Applications[index].ShouldBe(1, $"event {index} at sequence {e.Sequence}");
-            }
+            // One assertion over the whole set rather than one per event: with BobcatProjectAssertions on, a
+            // per-event ShouldBe would render as sixty steps
+            var foldedAgain = committedSequences
+                .Select(e => (Index: ((RestartableIncrement)e.Data).Index, e.Sequence))
+                .Where(x => RestartableTallyProjection.Applications[x.Index] != 1)
+                .Select(x => $"event {x.Index} at sequence {x.Sequence}")
+                .ToList();
+            foldedAgain.ShouldBeEmpty();
         }
 
         // And the restarted run keeps following the store past where the rebuild started

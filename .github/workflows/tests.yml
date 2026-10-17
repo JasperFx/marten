@@ -179,8 +179,8 @@ jobs:
 
           # Replaces daemon.yml. That workflow shelled straight out to `dotnet test`, so the most
           # timing-sensitive suite in the repo was the one project with no retry story at all.
-          # Supervised at ONE worker: splitting it is JasperFx/bobcat#562, which restructures the
-          # suite first.
+          # Supervised at ONE worker. JasperFx/bobcat#562 measured two lanes green locally (374/374
+          # twice, 5m10s against 7m09s, retries off); raising it is a separate call, made on CI evidence.
           - name: Daemon (net10, PGlatest, STJ)
             target: TestDaemon
             project: src/DaemonTests/DaemonTests.csproj

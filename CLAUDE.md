@@ -160,6 +160,23 @@ This requires each test project to build as a Microsoft.Testing.Platform host, w
 `<UseMicrosoftTestingPlatformRunner>` in `src/Tests.props` turns on for every project importing it.
 A new test project must import `src/Tests.props`.
 
+**DaemonTests is on a different xUnit line from every other suite** (JasperFx/bobcat#562). It renders
+its tests as Bobcat specifications through `Bobcat.Xunit` 1.0, which requires xunit.v3 4.x on
+Microsoft.Testing.Platform 2.x, while the rest of the repo stays on xunit.v3 3.x. The two lines cannot
+share a test project, so DaemonTests and DaemonTests.ManualOnly take 4.x through `VersionOverride`
+(`BobcatXunitV3Version` in `Directory.Packages.props`). Consequences:
+
+- **Never add a `ProjectReference` to DaemonTests from another test project**: it drags xunit 4 into that
+  project. CoreTests had one, used only for a transitive Lamar, and lost it for this reason.
+- On 4.x, `[assembly: CollectionBehavior(DisableTestParallelization = true)]` is a compile error; DaemonTests
+  uses `[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]`.
+- Run DaemonTests through `./build.sh test-daemon` or its built executable
+  (`src/DaemonTests/bin/Release/net10.0/DaemonTests --filter-class …`). `dotnet test` on an MTP 2.x host
+  needs `global.json`'s `"test": { "runner": "Microsoft.Testing.Platform" }`, a repo-wide switch not made here.
+- The rendered specifications print to a terminal; under a captured stdout, set
+  `BOBCAT_SPEC_CONSOLE_FILE=<path>` to get them (`BOBCAT_SPEC_CONSOLE=1` prints nothing when stdout is
+  redirected on alpha.1).
+
 Default test connection: `Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres` (`build/build.cs:28`). Override with `marten_testing_database` env var.
 
 ## Test Harness
@@ -230,7 +247,9 @@ combinations they always had — net9.0/PG15/Newtonsoft and net10.0/PGlatest/Sys
 the extension suites each name the image they need (postgis, pgvector, timescaledb). Tests run in
 Release with in-process parallelization disabled; EventSourcingTests and LinqTests are split across
 worker processes instead (`workers: 4` in `build/build.cs`, clamped to 2 on a 4-vCPU hosted runner),
-each worker on its own database. DaemonTests stays at one worker until JasperFx/bobcat#562.
+each worker on its own database. DaemonTests is still at one worker: under JasperFx/bobcat#562 it ran green
+at two lanes locally (374/374 twice, 5m10s against 7m09s at one, retries off), but that was not judged
+enough evidence to change the gate on the most timing-sensitive suite.
 
 **Adding a test project means two edits: a target in `build/build.cs` AND an entry in
 `tests.yml`.** The previous shape was a hand-maintained list of steps inside a handful of monolithic

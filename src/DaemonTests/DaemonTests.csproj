@@ -8,6 +8,12 @@
              daemon test is cancelled and reported instead of hanging until CI's own timeout.
              Keeping the rule ON guards the sweep. Must be set before Tests.props is imported. -->
         <ThreadTestCancellationToken>true</ThreadTestCancellationToken>
+
+        <!-- A statement-level Shouldly assertion inside a [BobcatFeature] class renders as its own
+             Then step, and a run of consecutive assertions is all evaluated before the test fails,
+             so a red daemon spec shows every disagreement rather than the first. Classes without
+             [BobcatFeature] are untouched. -->
+        <BobcatProjectAssertions>true</BobcatProjectAssertions>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Bobcat" />
@@ -21,11 +27,13 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="Neovolve.Logging.Xunit.v3" />
-        <PackageReference Include="xunit.runner.visualstudio">
+        <!-- xunit.v3 4.x, which Bobcat.Xunit 1.0 requires; see BobcatXunitV3Version in
+             Directory.Packages.props for why only this graph moves. -->
+        <PackageReference Include="xunit.runner.visualstudio" VersionOverride="$(BobcatXunitRunnerVersion)">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit.v3" />
+        <PackageReference Include="xunit.v3" VersionOverride="$(BobcatXunitV3Version)" />
 
     </ItemGroup>
     <ItemGroup>
