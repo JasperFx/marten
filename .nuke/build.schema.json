@@ -172,6 +172,16 @@
         "Solution": {
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
+        },
+        "TestWorkers": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "UpdateTestLedger": {
+          "type": "boolean"
         }
       }
     },
