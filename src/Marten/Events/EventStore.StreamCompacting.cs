@@ -297,7 +297,31 @@ internal class DeleteEventsOperation: IStorageOperation, NoDataReturnedCall
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        builder.Append($"delete from {((IMartenSession)session).Options.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(");
+        var events = ((IMartenSession)session).Options.EventGraph;
+        var schema = events.DatabaseSchemaName;
+
+        // The DCB tag rows of the folded events go in the same statement, ahead of the events. Each
+        // mt_event_tag_* table has a foreign key to mt_events that does NOT cascade, so deleting a tagged
+        // event while its tag rows remain is refused with 23503. Same shape as DeleteStreamOperation: the
+        // CTEs share one snapshot and the key is checked at the end of the statement, when both are gone.
+        // HStore mode keeps tags inline on mt_events and has no tag tables.
+        IReadOnlyList<JasperFx.Events.Tags.ITagTypeRegistration> tagTypes =
+            events.DcbStorageMode == DcbStorageMode.HStore ? [] : events.TagTypes;
+
+        for (var i = 0; i < tagTypes.Count; i++)
+        {
+            builder.Append(i == 0 ? "with " : ", ");
+            builder.Append($"tag{i} as (delete from {schema}.mt_event_tag_{tagTypes[i].TableSuffix} where seq_id = ANY(");
+            builder.AppendParameter(_sequences);
+            builder.Append(")");
+
+            // The tag tables carry tenant_id under conjoined tenancy, and seq_id alone is not an event
+            // there (#5234, below)
+            builder.AppendConjoinedTenantFilter(session);
+            builder.Append(") ");
+        }
+
+        builder.Append($"delete from {schema}.mt_events where seq_id = ANY(");
         builder.AppendParameter(_sequences);
         builder.Append(")");
 
