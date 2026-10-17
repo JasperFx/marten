@@ -417,11 +417,14 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
 
     private async Task maybeApplyChanges(TenantLookupDatabase tenantDatabase)
     {
-        if (!_hasAppliedChanges && (_configuration.AutoCreate ?? _options.AutoCreateSchemaObjects) != AutoCreate.None)
+        // MasterTableTenancyOptions.AutoCreate overrides the store's setting "for just the master tenancy
+        // table", so it has to choose the mode the table is migrated under, not only whether it is migrated.
+        var autoCreate = _configuration.AutoCreate ?? _options.AutoCreateSchemaObjects;
+        if (!_hasAppliedChanges && autoCreate != AutoCreate.None)
         {
 #pragma warning disable MA0032
             await tenantDatabase
-                .ApplyAllConfiguredChangesToDatabaseAsync(_options.AutoCreateSchemaObjects).ConfigureAwait(false);
+                .ApplyAllConfiguredChangesToDatabaseAsync(autoCreate).ConfigureAwait(false);
 #pragma warning restore MA0032
             _hasAppliedChanges = true;
         }
