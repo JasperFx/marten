@@ -66,3 +66,5 @@ public abstract class ShipmentsHostBase: IAsyncLifetime
 public sealed class ShipmentsHost(): ShipmentsHostBase("daemon_specs", runsTheDaemon: true);
 
 public sealed class ShipmentsHostWithNoDaemon(): ShipmentsHostBase("daemon_specs_no_daemon", runsTheDaemon: false);
+
+public sealed class ShipmentsRebuildHost(): ShipmentsHostBase("daemon_specs_rebuild", runsTheDaemon: true);

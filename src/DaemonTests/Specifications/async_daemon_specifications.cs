@@ -50,6 +50,30 @@ public class async_daemon_specifications: CritterStackSpec, IClassFixture<Shipme
         await ThenNoReadModel<ShipmentSummary>(id);
     }
 
+    private static async Task append(IServiceProvider services, Guid id, object @event)
+    {
+        await using var session = services.GetRequiredService<IDocumentStore>().LightweightSession();
+        session.Events.Append(id, @event);
+        await session.SaveChangesAsync();
+    }
+}
+
+/// <summary>
+/// A rebuild through the application's own running daemon, on a host of its own. JasperFx's rebuild stops the
+/// shard's continuous agent, rebuilds with dedicated agents and disposes them, and does not start the continuous
+/// agent again, so after a rebuild the shard sits at the rebuilt position and processes no new event. Sharing a host
+/// with <see cref="async_daemon_specifications" />, whichever specification ran after this one timed out with
+/// "'ShipmentSummary:All' at 2 of 4". Whether a hosted daemon should resume the shard is a question for Marten, not
+/// for this specification.
+/// </summary>
+[BobcatFeature("The async daemon keeps read models current")]
+public class rebuilding_through_the_running_daemon: CritterStackSpec, IClassFixture<ShipmentsRebuildHost>
+{
+    public rebuilding_through_the_running_daemon(ShipmentsRebuildHost app): base(app.Host)
+    {
+        ProjectionTimeout = 30.Seconds();
+    }
+
     [Fact]
     public async Task a_rebuild_through_the_running_daemon_rebuilds_the_read_model()
     {
@@ -63,12 +87,5 @@ public class async_daemon_specifications: CritterStackSpec, IClassFixture<Shipme
         await ThenReadModel<ShipmentSummary>(id, Specify<ShipmentSummary>()
             .With(x => x.Items, 5)
             .With(x => x.Shipped, true));
-    }
-
-    private static async Task append(IServiceProvider services, Guid id, object @event)
-    {
-        await using var session = services.GetRequiredService<IDocumentStore>().LightweightSession();
-        session.Events.Append(id, @event);
-        await session.SaveChangesAsync();
     }
 }
