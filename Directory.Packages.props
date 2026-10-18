@@ -3,8 +3,8 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 
     <!-- One Bobcat line for the specs (DaemonTests) and the build's supervisor (JasperFx/bobcat#562).
-         1.0.0-alpha.1 is ahead of the rc.1 that bobcat#562 originally planned to wait for. -->
-    <BobcatVersion>1.0.0-alpha.1</BobcatVersion>
+         1.0.0-rc.1 is the release bobcat#562 planned to wait for. -->
+    <BobcatVersion>1.0.0-rc.1</BobcatVersion>
 
     <!-- Bobcat.Xunit 1.0 is built on xunit.v3 4.x over Microsoft.Testing.Platform 2.5.1, and the two
          xunit lines cannot share a test project. The rest of the repo stays on the xunit.v3 3.x pinned

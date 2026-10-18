@@ -58,6 +58,7 @@ partial class Build
             Framework = framework,
             Tests = results.Tests.Count,
             CleanPasses = results.CleanPasses.Count,
+            Skipped = results.Skipped.Count,
             PassedOnRetry = results.PassedOnRetry.Count,
             RetriesPerformed = results.RetriesPerformed,
             Failed = results.Failed.Count,
@@ -208,12 +209,12 @@ partial class Build
             {
                 builder.AppendLine($"### Retry ledger — {entry.Job}");
                 builder.AppendLine();
-                builder.AppendLine("| project | tests | clean | passed on retry | retries | failed | indeterminate |");
-                builder.AppendLine("|---|--:|--:|--:|--:|--:|--:|");
+                builder.AppendLine("| project | tests | clean | skipped | passed on retry | retries | failed | indeterminate |");
+                builder.AppendLine("|---|--:|--:|--:|--:|--:|--:|--:|");
             }
 
             builder.AppendLine(
-                $"| {entry.Project} ({entry.Framework}) | {entry.Tests} | {entry.CleanPasses} | " +
+                $"| {entry.Project} ({entry.Framework}) | {entry.Tests} | {entry.CleanPasses} | {entry.Skipped} | " +
                 $"{mark(entry.PassedOnRetry)} | {mark(entry.RetriesPerformed)} | {mark(entry.Failed)} | " +
                 $"{mark(entry.Indeterminate)} |");
 
@@ -297,6 +298,9 @@ partial class Build
         public string Framework { get; init; }
         public int Tests { get; init; }
         public int CleanPasses { get; init; }
+
+        // Bobcat 1.0 counts a skipped test on its own (bobcat#655): neither a clean pass nor a failure.
+        public int Skipped { get; init; }
         public int PassedOnRetry { get; init; }
         public int RetriesPerformed { get; init; }
         public int Failed { get; init; }

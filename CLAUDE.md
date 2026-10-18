@@ -135,6 +135,8 @@ Test targets run through [Bobcat](https://github.com/JasperFx/bobcat)'s supervis
 
 - **Retries are opt-in, and always in a fresh process.** A failing test is retried only when it
   carries `[Trait("Retry", "N")]` (or `[Trait("Isolated", "true")]`); anything else that fails is red.
+  This is Bobcat's own default policy since 1.0 (bobcat#661); never add `[Trait("RetryWarm", "true")]`,
+  which would retry in the same process, over a half-built store.
   A test that only passes on a retry is reported as flaky — in the log, in the GitHub job summary
   and in the JSON ledger under `artifacts/test-ledger/` — never folded into a clean pass. A test
   earns a Retry trait with evidence from the `flakiness` roll-up, and the trait carries a comment
@@ -151,10 +153,13 @@ Test targets run through [Bobcat](https://github.com/JasperFx/bobcat)'s supervis
   a test that hard-codes `marten_testing` or a port ignores its lane.
 - **Stalls and a heartbeat** (report-only): a test in flight for five minutes is named as
   `[STALLED]`, and a progress line every 30s says how far the run got.
-- **Lane balancing from a committed ledger.** `build/test-ledger/{Project}.{framework}.json` is
-  Bobcat's `TestLedger`; its per-test durations balance the lanes. Every run writes the folded
-  ledger to `artifacts/test-ledger/durations/`; refresh the committed copy deliberately with
-  `--update-test-ledger` (or from a CI artifact) — it never rewrites itself.
+- **Lane balancing from the previous master run's ledger** (a CI artifact, nothing committed). Each
+  test job downloads the `folded-test-ledgers` artifact of the newest successful master run into
+  `artifacts/previous-test-ledger/`; its per-test durations (Bobcat's `TestLedger`, keyed by display
+  name since Bobcat 1.0) balance the lanes, and the run writes the folded ledger to
+  `artifacts/test-ledger/durations/`, which the `flakiness` job gathers for the next run. Locally,
+  `--previous-test-ledger <dir>` points at a downloaded copy; with none, lanes balance by test count.
+  The run report's first line says how many durations matched.
 
 This requires each test project to build as a Microsoft.Testing.Platform host, which
 `<UseMicrosoftTestingPlatformRunner>` in `src/Tests.props` turns on for every project importing it.
@@ -173,9 +178,8 @@ share a test project, so DaemonTests and DaemonTests.ManualOnly take 4.x through
 - Run DaemonTests through `./build.sh test-daemon` or its built executable
   (`src/DaemonTests/bin/Release/net10.0/DaemonTests --filter-class …`). `dotnet test` on an MTP 2.x host
   needs `global.json`'s `"test": { "runner": "Microsoft.Testing.Platform" }`, a repo-wide switch not made here.
-- The rendered specifications print to a terminal; under a captured stdout, set
-  `BOBCAT_SPEC_CONSOLE_FILE=<path>` to get them (`BOBCAT_SPEC_CONSOLE=1` prints nothing when stdout is
-  redirected on alpha.1).
+- The rendered specifications print at exit. In CI, set `BOBCAT_SPEC_CONSOLE_FILE=<path>` to get them as a
+  file; since Bobcat 1.0.0-rc.1 (bobcat#717) a redirected stdout gets them too, instead of nothing.
 
 Default test connection: `Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres` (`build/build.cs:28`). Override with `marten_testing_database` env var.
 

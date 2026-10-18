@@ -163,6 +163,9 @@
         "Framework": {
           "type": "string"
         },
+        "PreviousTestLedger": {
+          "type": "string"
+        },
         "Profile": {
           "type": "string"
         },
@@ -179,9 +182,6 @@
             "null"
           ],
           "format": "int32"
-        },
-        "UpdateTestLedger": {
-          "type": "boolean"
         }
       }
     },
