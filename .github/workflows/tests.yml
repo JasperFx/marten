@@ -58,6 +58,11 @@ env:
   # src/CoreTests/AssemblyInfo.cs and src/Marten.Testing/AssemblyInfo.cs. Change it there.
   NUKE_TELEMETRY_OPTOUT: true
 
+# actions: read lets a test job download the previous master run's duration ledger (below).
+permissions:
+  actions: read
+  contents: read
+
 concurrency:
   group: tests-${{ github.workflow }}-${{ github.ref }}
   # Superseded PR pushes are worth cancelling — 30 jobs per push adds up. A master run is not:
@@ -390,6 +395,24 @@ jobs:
         run: ./build.sh compile-project --project ${{ matrix.project }}
         shell: bash
 
+      # The duration ledger travels as an artifact, not a committed file (JasperFx/bobcat#730,
+      # build/TestLedger.cs): the newest successful master run's `folded-test-ledgers` balances this
+      # run's lanes. Best-effort: with no ledger the supervisor balances by test count and says so.
+      - name: Download the previous run's duration ledger
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list --repo "${{ github.repository }}" --workflow tests.yml --branch master \
+            --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          if [ -n "$run_id" ]; then
+            gh run download "$run_id" --repo "${{ github.repository }}" --name folded-test-ledgers \
+              --dir artifacts/previous-test-ledger || echo "run $run_id has no folded-test-ledgers artifact"
+          else
+            echo "no successful master run to take a ledger from"
+          fi
+        shell: bash
+
       - name: test
         run: ./build.sh ${{ matrix.target }}
         shell: bash
@@ -477,9 +500,9 @@ jobs:
           path: ledgers
           merge-multiple: true
 
-      # Every job's folded TestLedger (build/TestLedger.cs), gathered into one artifact. Refreshing
-      # the committed durations under build/test-ledger/ is downloading this from a master run and
-      # copying the files over: each one already holds the committed ledger plus this run.
+      # Every job's folded TestLedger (build/TestLedger.cs), gathered into one artifact. The next
+      # run's test jobs download this from the newest successful master run to balance their lanes;
+      # each file already holds the previous ledger plus this run.
       - name: Publish the folded test ledgers
         uses: actions/upload-artifact@v4
         continue-on-error: true

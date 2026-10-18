@@ -23,6 +23,9 @@ using Serilog;
 //
 //   - Retries are OPT-IN, and always in a FRESH process. A test is retried only when it carries
 //     [Trait("Retry", "N")] (or [Trait("Isolated", "true")]); everything else that fails, fails.
+//     Since Bobcat 1.0 (bobcat#661) that is Bobcat's DefaultFailurePolicy as it ships: a Retry trait
+//     retries in a fresh process unless the test also says [Trait("RetryWarm", "true")], which
+//     nothing in Marten does. The repo's own fresh-process policy from bobcat#565 is gone.
 //     Up to bobcat#565 every failure here was retried, which made "flaky" and "broken" impossible
 //     to tell apart without opening the ledger. A test earns a Retry trait with evidence: the
 //     flakiness roll-up names every test that only passed on a retry. A retry runs in a fresh
@@ -33,8 +36,8 @@ using Serilog;
 //     crashed worker is Indeterminate, with its exit code and stderr; a test in flight past five
 //     minutes is named as STALLED (report-only); Bobcat's own RunReport lands in the job summary.
 //
-//   - Lane balancing from measured durations. The committed per-project TestLedger under
-//     build/test-ledger/ feeds Supervisor.KnownTestDurations, so lanes are balanced
+//   - Lane balancing from measured durations. The previous master run's per-project TestLedger,
+//     fetched as a CI artifact, feeds Supervisor.KnownTestDurations, so lanes are balanced
 //     longest-processing-time-first instead of by test count (TestLedger.cs).
 //
 // Parallelism is still mainly at the JOB level: .github/workflows/tests.yml gives every project its
@@ -121,7 +124,6 @@ partial class Build
         };
 
         var ledger = loadTestLedger(projectName, framework);
-        var durations = new LaneDurations(ledger);
 
         var supervisor = new Supervisor(factory)
         {
@@ -143,24 +145,20 @@ partial class Build
             StallAction = StallAction.Report,
             HeartbeatInterval = TimeSpan.FromSeconds(30),
 
-            // Longest-processing-time-first lane balancing from the committed ledger, matched to
-            // this run's tests by display name as discovery reports them (TestLedger.cs says why
-            // not by uid). No ledger, or no match, degrades to balancing by test count.
-            TestFilter = durations.Observe,
-            KnownTestDurations = durations.KnownTestDurations,
+            // Longest-processing-time-first lane balancing from the previous run's ledger, keyed by
+            // display name (bobcat#730). No ledger, or no match, degrades to balancing by test
+            // count, and the run report's first lines say how many durations matched.
+            KnownTestDurations = ledger.KnownDurations(),
 
             Log = message => Log.Information("  {Message}", message)
         };
-
-        if (!DisableTestRetry) supervisor.AddFailurePolicy(new RetryOptedInTestsInFreshProcess());
 
         var results = supervisor.Run().GetAwaiter().GetResult();
 
         // Said after the fact because the match can only be made once discovery has run. Without
         // this line a ledger that matches nothing is indistinguishable from one that works.
-        if (workers > 1)
-            Log.Information("  lanes were balanced with {Matched} of {Discovered} test duration(s) from the committed ledger",
-                durations.Matched, durations.Discovered);
+        if (workers > 1 && results.DurationCoverage is { } coverage)
+            Log.Information("  lanes were balanced on the previous run's ledger: {Coverage}", coverage);
 
         recordTestLedger(ledger, projectName, framework, results);
         writeRunReport(projectName, framework, results);
@@ -184,32 +182,6 @@ partial class Build
         Log.Information("Clamping {Asked} workers to {Ceiling} for this machine's {Cores} core(s)",
             committed, ceiling, Environment.ProcessorCount);
         return ceiling;
-    }
-
-    /// <summary>
-    /// Retries a failure only when the test opted in with a <c>Retry</c> (or <c>Isolated</c>)
-    /// trait, and always in a FRESH process. Abstains otherwise, so Bobcat's
-    /// <c>DefaultFailurePolicy</c> reports the failure as the failure it is.
-    /// </summary>
-    /// <remarks>
-    /// Not the default policy's own handling of the Retry trait, which retries in the SAME process.
-    /// A Marten test that fails partway through has usually left a store, a schema or a running
-    /// daemon behind, and a warm retry then fails for a reason unrelated to the original defect —
-    /// Wolverine measured exactly that (MySqlTests' end_to_end_from_scratch). xUnit workers have no
-    /// reset bracket of their own, so the fresh process is the bracket.
-    /// </remarks>
-    class RetryOptedInTestsInFreshProcess : IFailurePolicy
-    {
-        public Disposition Decide(AttemptContext attempt)
-        {
-            if (attempt.Succeeded || !attempt.RetriesAvailable) return null;
-
-            var optedIn = attempt.HasTrait(ResilienceTags.Retry) || attempt.Trait(ResilienceTags.Isolated) == "true";
-            if (!optedIn) return null;
-
-            return Disposition.RetryInFreshProcess(
-                $"tagged Retry — attempt {attempt.AttemptNumber + 1} runs in a fresh process");
-        }
     }
 
     bool report(string projectName, string framework, SupervisorResults results)
