@@ -130,6 +130,37 @@ public class Bug_5688_cancelled_save_leaves_transaction_open: OneOffConfiguratio
         return (string?)await cmd.ExecuteScalarAsync();
     }
 
+    /// <summary>
+    /// Whether some transaction still holds the stream row's <c>for update</c> lock, asked from a separate
+    /// connection with <c>nowait</c> so the answer is immediate.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately not "is the cancelled session's backend idle in transaction". Once the session rolls
+    /// back, its connection goes back to the pool, and the background tombstone write can pick up that same
+    /// physical connection -- same pid -- and be mid-transaction of its own at the moment of asking.
+    /// </remarks>
+    private async Task<bool> streamRowIsLockedAsync(Guid id)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand(
+            $"select version from {theStore.Options.Events.DatabaseSchemaName}.mt_streams where id = $1 for update nowait",
+            conn)
+        {
+            Parameters = { new NpgsqlParameter { Value = id } }
+        };
+
+        try
+        {
+            await cmd.ExecuteScalarAsync();
+            return false;
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.LockNotAvailable)
+        {
+            return true;
+        }
+    }
+
     private async Task<long> tombstoneCountAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -146,7 +177,7 @@ public class Bug_5688_cancelled_save_leaves_transaction_open: OneOffConfiguratio
     /// session is disposed, and a second writer of the same stream that is not held up by it.
     /// </summary>
     private async Task assertCancelledSaveReleasesTheStreamAsync(IDocumentSession session, Guid id,
-        CancellationTokenSource cts, int? pid)
+        CancellationTokenSource cts)
     {
         var clock = Stopwatch.StartNew();
         Exception? thrown = null;
@@ -162,15 +193,11 @@ public class Bug_5688_cancelled_save_leaves_transaction_open: OneOffConfiguratio
         var saveTook = clock.Elapsed;
         _output.WriteLine($"cancelled save threw {thrown?.GetType().Name ?? "nothing"} after {saveTook.TotalSeconds:F2}s");
 
-        if (pid.HasValue)
-        {
-            var state = await backendStateAsync(pid.Value);
-            _output.WriteLine($"cancelled session's backend {pid} is '{state}' before the session is disposed");
-
-            // The heart of it: neither committed nor rolled back.
-            state.ShouldNotBe("idle in transaction");
-            state.ShouldNotBe("idle in transaction (aborted)");
-        }
+        // The heart of it: a transaction neither committed nor rolled back keeps the stream row locked
+        // until the session is disposed. The session is still alive here.
+        var locked = await streamRowIsLockedAsync(id);
+        _output.WriteLine($"stream row {(locked ? "is still locked" : "is free")} before the cancelled session is disposed");
+        locked.ShouldBeFalse();
 
         // A second writer of the same stream, while the cancelled session is still alive. It did nothing
         // wrong, and should be held up only as long as the cancelled transaction actually ran.
@@ -222,9 +249,7 @@ public class Bug_5688_cancelled_save_leaves_transaction_open: OneOffConfiguratio
 
         var stream = await session.Events.FetchForExclusiveWriting<Bug5688Counter>(id);
         stream.AppendOne(new Bug5688Incremented());
-        var pid = session.Connection.ProcessID;
-
-        await assertCancelledSaveReleasesTheStreamAsync(session, id, cts, pid);
+        await assertCancelledSaveReleasesTheStreamAsync(session, id, cts);
     }
 
     [Fact]
@@ -240,9 +265,7 @@ public class Bug_5688_cancelled_save_leaves_transaction_open: OneOffConfiguratio
         var stream = await session.Events.FetchForExclusiveWriting<Bug5688Counter>(id);
         stream.AppendOne(new Bug5688Incremented());
         session.QueueOperation(new CancelWhileReadingResults(cts));
-        var pid = session.Connection.ProcessID;
-
-        await assertCancelledSaveReleasesTheStreamAsync(session, id, cts, pid);
+        await assertCancelledSaveReleasesTheStreamAsync(session, id, cts);
     }
 
     [Fact]
@@ -310,8 +333,7 @@ public class Bug_5688_cancelled_save_leaves_transaction_open: OneOffConfiguratio
     {
         // Control: an ordinary append goes through AutoClosingLifetime, which opens and closes its own
         // connection inside ExecuteBatchPagesAsync and closes it in a finally before the tombstones are
-        // posted. There is no long-lived backend to inspect, so only the timing and the second writer are
-        // asserted.
+        // posted. It never held the stream row lock, so the lock check is trivially true here.
         var id = await startStreamAsync();
 
         using var cts = new CancellationTokenSource();
@@ -320,6 +342,6 @@ public class Bug_5688_cancelled_save_leaves_transaction_open: OneOffConfiguratio
 
         session.Events.Append(id, new Bug5688Incremented());
 
-        await assertCancelledSaveReleasesTheStreamAsync(session, id, cts, null);
+        await assertCancelledSaveReleasesTheStreamAsync(session, id, cts);
     }
 }
