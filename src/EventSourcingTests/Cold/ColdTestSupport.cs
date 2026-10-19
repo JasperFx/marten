@@ -22,6 +22,14 @@ public class InMemoryColdEventStore: IColdEventStore
 
     public int Reads;
 
+    /// <summary>The throughVersion of every read, in order.</summary>
+    public readonly ConcurrentQueue<long> ReadThrough = new();
+
+    public long[] StoredVersions(string tenantId, object streamId) =>
+        _streams.TryGetValue((tenantId, streamId.ToString()!), out var events)
+            ? events.Select(x => x.Version).OrderBy(x => x).ToArray()
+            : [];
+
     public void Store(string tenantId, object streamId, IEnumerable<ColdEvent> events)
     {
         _streams.GetOrAdd((tenantId, streamId.ToString()!), _ => new List<ColdEvent>()).AddRange(events);
@@ -37,6 +45,7 @@ public class InMemoryColdEventStore: IColdEventStore
         [EnumeratorCancellation] CancellationToken token)
     {
         Interlocked.Increment(ref Reads);
+        ReadThrough.Enqueue(throughVersion);
 
         // An application's store reads its own tables through the session, so the session has to be free.
         (await session.AdvancedSql.QueryAsync<int>("select 1", token)).Single().ShouldBe(1);

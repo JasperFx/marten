@@ -49,7 +49,20 @@ await session.SaveChangesAsync();
 `MarkStreamCold` deletes the stream's events through that version from `mt_events` (and their tag rows),
 and records the version in `mt_streams.cold_version`. It fails the unit of work if the stream does not exist
 or has not reached that version. `mt_streams.version` is left alone, so optimistic concurrency keeps working
-as before. `MarkStreamWarm` clears the boundary again, after you put the events back.
+as before.
+
+A cold stream stays an ordinary stream. New events are appended to `mt_events` as usual, with the version
+continuing after the cold part. Once those are finished too, move them with a higher version, and repeat as
+often as the stream grows:
+
+```cs
+// versions 1..3 went cold earlier; 4 and 5 were appended since
+session.Events.MarkStreamCold(streamKey, 5);
+```
+
+The boundary only moves up. Marking a stream cold through a version at or below its current boundary
+deletes nothing and changes nothing, so retrying a move is harmless. Events below the boundary are always
+read from the cold event store, never from `mt_events`.
 
 ::: warning
 The async daemon does not read cold events. `MarkStreamCold` therefore refuses, deleting nothing, while any

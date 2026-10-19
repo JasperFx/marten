@@ -19,16 +19,6 @@ internal partial class EventStore
         queueColdBoundary(streamKey, new MarkStreamColdOperation(assertColdStore(), streamKey, throughVersion, _session.TenantId));
     }
 
-    public void MarkStreamWarm(Guid streamId)
-    {
-        queueColdBoundary(streamId, new MarkStreamWarmOperation(assertColdStore(), streamId, _session.TenantId));
-    }
-
-    public void MarkStreamWarm(string streamKey)
-    {
-        queueColdBoundary(streamKey, new MarkStreamWarmOperation(assertColdStore(), streamKey, _session.TenantId));
-    }
-
     public ValueTask<long?> ColdVersionOfAsync(StreamAction stream, CancellationToken token = default)
     {
         ArgumentNullException.ThrowIfNull(stream);

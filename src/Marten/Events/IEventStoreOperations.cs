@@ -50,25 +50,22 @@ public interface IEventStoreOperations : JasperFx.Events.IEventStoreOperations, 
     ///     in the same unit of work. Requires <see cref="IEventStoreOptions.UseColdEventStore(Cold.IColdEventStore)" />.
     /// </summary>
     /// <remarks>
+    ///     A stream keeps being appended to after it went cold, and is moved again with a higher
+    ///     <paramref name="throughVersion" /> whenever the application decides; the boundary only moves up. A
+    ///     version at or below the current boundary deletes nothing and changes nothing, so a retried move is
+    ///     harmless.
+    ///     <para>
     ///     Fails the unit of work, deleting nothing, when the stream does not exist or has not reached
     ///     <paramref name="throughVersion" />, or when a registered async projection or subscription has not
     ///     processed those events yet (its progression for this tenant is below the highest sequence being
     ///     deleted, or it has no progression yet). The async daemon never reads cold events, so moving them
     ///     earlier would silently lose them for that shard. Retry once the daemon caught up.
+    ///     </para>
     /// </remarks>
     void MarkStreamCold(Guid streamId, long throughVersion);
 
     /// <inheritdoc cref="MarkStreamCold(Guid, long)" />
     void MarkStreamCold(string streamKey, long throughVersion);
-
-    /// <summary>
-    ///     On <c>SaveChangesAsync</c>, forget the stream's cold part: after this the stream is read from
-    ///     <c>mt_events</c> alone, so put its cold events back there first.
-    /// </summary>
-    void MarkStreamWarm(Guid streamId);
-
-    /// <inheritdoc cref="MarkStreamWarm(Guid)" />
-    void MarkStreamWarm(string streamKey);
 
     /// <summary>
     ///     The cold version of a stream this unit of work appends to: null when the stream has no cold part or

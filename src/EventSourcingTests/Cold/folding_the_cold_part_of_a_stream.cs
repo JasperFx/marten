@@ -154,28 +154,102 @@ public class folding_the_cold_part_of_a_stream: OneOffConfigurationsContext
         (await latest)!.Items.ShouldBe(["apple"]);
     }
 
+    private async Task appendItems(object id, params string[] names)
+    {
+        await using var session = theStore.LightweightSession();
+        if (id is Guid guid)
+        {
+            var stream = await session.Events.FetchForWriting<GuidCart>(guid);
+            stream.AppendMany(names.Select(x => (object)new ItemAdded(x)).ToArray());
+        }
+        else
+        {
+            var stream = await session.Events.FetchForWriting<Cart>((string)id);
+            stream.AppendMany(names.Select(x => (object)new ItemAdded(x)).ToArray());
+        }
+
+        await session.SaveChangesAsync();
+    }
+
+    [Theory]
+    [InlineData(StreamIdentity.AsString)]
+    [InlineData(StreamIdentity.AsGuid)]
+    public async Task a_stream_goes_cold_again_and_again_as_it_grows(StreamIdentity identity)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = identity;
+            opts.Events.UseColdEventStore(_cold);
+        });
+
+        object id = identity == StreamIdentity.AsGuid ? Guid.NewGuid() : Guid.NewGuid().ToString();
+        await using (var session = theStore.LightweightSession())
+        {
+            object[] events = [new CartOpened("anne"), new ItemAdded("apple"), new ItemAdded("pear")];
+            if (id is Guid guid) session.Events.StartStream<GuidCart>(guid, events);
+            else session.Events.StartStream<Cart>((string)id, events);
+            await session.SaveChangesAsync();
+        }
+
+        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, id, 3);
+        await appendItems(id, "plum", "fig");
+        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, id, 5);
+        await appendItems(id, "kiwi");
+
+        _cold.StoredVersions(StorageConstants.DefaultTenantId, id).ShouldBe([1L, 2L, 3L, 4L, 5L]);
+
+        await using var first = theStore.LightweightSession();
+        await using var second = theStore.LightweightSession();
+
+        while (_cold.ReadThrough.TryDequeue(out _)) { }
+
+        if (id is Guid g)
+        {
+            var stream = await first.Events.FetchForWriting<GuidCart>(g);
+            stream.Aggregate!.Items.ShouldBe(["apple", "pear", "plum", "fig", "kiwi"]);
+            stream.StartingVersion.ShouldBe(6);
+            stream.AppendOne(new ItemAdded("lime"));
+
+            (await second.Events.FetchForWriting<GuidCart>(g)).AppendOne(new ItemAdded("date"));
+        }
+        else
+        {
+            var stream = await first.Events.FetchForWriting<Cart>((string)id);
+            stream.Aggregate!.Items.ShouldBe(["apple", "pear", "plum", "fig", "kiwi"]);
+            stream.StartingVersion.ShouldBe(6);
+            stream.AppendOne(new ItemAdded("lime"));
+
+            (await second.Events.FetchForWriting<Cart>((string)id)).AppendOne(new ItemAdded("date"));
+        }
+
+        _cold.ReadThrough.ShouldBe([5L, 5L]);
+
+        await first.SaveChangesAsync();
+        await Should.ThrowAsync<ConcurrencyException>(() => second.SaveChangesAsync());
+    }
+
     [Fact]
-    public async Task a_cold_part_is_marked_in_steps_and_can_be_forgotten_again()
+    public async Task marking_at_or_below_the_boundary_again_changes_nothing()
     {
         useStringStreams();
-        var key = await startCart(new ItemAdded("apple"), new ItemAdded("pear"));
-        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 1);
-        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 2);
+        var key = await startCart(new ItemAdded("apple"), new ItemAdded("pear"), new ItemAdded("plum"));
+        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 3);
 
         await using (var session = theStore.LightweightSession())
         {
-            (await session.Events.FetchStreamAsync(key)).Select(x => x.Version).ShouldBe([3L]);
-            (await session.Events.FetchLatest<Cart>(key))!.Items.ShouldBe(["apple", "pear"]);
-
-            session.Events.MarkStreamWarm(key);
+            // A retried move, and a stale one
+            session.Events.MarkStreamCold(key, 3);
+            session.Events.MarkStreamCold(key, 2);
             await session.SaveChangesAsync();
         }
 
         await using (var session = theStore.LightweightSession())
         {
-            var reads = _cold.Reads;
-            (await session.Events.FetchStreamIncludingColdAsync(key)).Select(x => x.Version).ShouldBe([3L]);
-            _cold.Reads.ShouldBe(reads);
+            (await session.Events.FetchStreamAsync(key)).Select(x => x.Version).ShouldBe([4L]);
+
+            while (_cold.ReadThrough.TryDequeue(out _)) { }
+            (await session.Events.FetchLatest<Cart>(key))!.Items.ShouldBe(["apple", "pear", "plum"]);
+            _cold.ReadThrough.ShouldBe([3L]);
         }
     }
 

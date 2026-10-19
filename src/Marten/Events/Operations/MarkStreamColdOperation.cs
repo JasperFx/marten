@@ -12,7 +12,6 @@ using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Marten.Services;
 using Marten.Storage;
 using NpgsqlTypes;
 using Weasel.Postgresql;
@@ -164,44 +163,6 @@ internal class MarkStreamColdOperation: IStorageOperation
             exceptions.Add(new InvalidOperationException(
                 $"Cannot mark stream '{_streamId}' cold through version {_throughVersion}: the stream does not exist for tenant '{_tenantId}', or has not reached that version."));
         }
-    }
-
-    public OperationRole Role() => OperationRole.Events;
-}
-
-/// <summary>
-/// Behind <c>IEventStoreOperations.MarkStreamWarm</c>: clears <c>mt_streams.cold_version</c>.
-/// </summary>
-internal class MarkStreamWarmOperation: IStorageOperation, NoDataReturnedCall
-{
-    private readonly EventGraph _events;
-    private readonly object _streamId;
-    private readonly string _tenantId;
-
-    public MarkStreamWarmOperation(EventGraph events, object streamId, string tenantId)
-    {
-        _events = events;
-        _streamId = streamId;
-        _tenantId = tenantId;
-    }
-
-    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
-    {
-        builder.Append($"update {_events.DatabaseSchemaName}.{StreamsTable.TableName} set {StreamsTable.ColdVersionColumn} = null where id = ");
-        builder.AppendParameter(_streamId, _events.StreamIdDbType);
-
-        if (_events.TenancyStyle == TenancyStyle.Conjoined)
-        {
-            builder.Append(" and tenant_id = ");
-            builder.AppendParameter(_tenantId);
-        }
-    }
-
-    public Type DocumentType => typeof(IEvent);
-
-    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-    {
-        return Task.CompletedTask;
     }
 
     public OperationRole Role() => OperationRole.Events;
