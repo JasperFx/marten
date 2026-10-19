@@ -111,4 +111,13 @@ public partial class EventGraph
     {
         return _tombstones.PostAsync(tombstoneBatch);
     }
+
+    /// <summary>
+    ///     #5688. Queues the tombstones without awaiting a first attempt, for a failed unit of work whose
+    ///     transaction is still open and so still holds the sequence numbers they fill.
+    /// </summary>
+    internal void EnqueueTombstones(UpdateBatch tombstoneBatch)
+    {
+        _tombstones.Post(tombstoneBatch);
+    }
 }

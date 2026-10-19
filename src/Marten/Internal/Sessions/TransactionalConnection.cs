@@ -164,7 +164,10 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         {
             if (_connection.State == ConnectionState.Open)
             {
-                await BeforeCloseAsync(_connection, token).ConfigureAwait(false);
+                // #5688: the work is committed by now. A cancelled token must not turn that into a
+                // reported failure -- the RLS lifetimes run a command here -- and send the caller off
+                // to write tombstones over sequence numbers that are already taken.
+                await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
             }
             await _connection.CloseAsync().ConfigureAwait(false);
             await _connection.DisposeAsync().ConfigureAwait(false);
@@ -191,11 +194,17 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
     }
 
+    /// <remarks>
+    ///     #5688: the token is deliberately not passed on. A rollback is how a cancelled unit of work gives
+    ///     back its locks, and Npgsql honours an already-cancelled token by throwing <i>without sending</i>
+    ///     <c>ROLLBACK</c> -- which left the transaction <c>idle in transaction</c>, still holding the stream's
+    ///     row lock and the uncommitted <c>mt_events</c> rows, until the session was disposed.
+    /// </remarks>
     public async Task RollbackAsync(CancellationToken token)
     {
         if (Transaction != null)
         {
-            await Transaction.RollbackAsync(token).ConfigureAwait(false);
+            await Transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             await Transaction.DisposeAsync().ConfigureAwait(false);
             Transaction = null;
 
@@ -203,13 +212,45 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             {
                 if (_connection.State == ConnectionState.Open)
                 {
-                    await BeforeCloseAsync(_connection, token).ConfigureAwait(false);
+                    await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
                 }
                 await _connection.CloseAsync().ConfigureAwait(false);
                 await _connection.DisposeAsync().ConfigureAwait(false);
             }
 
             _connection = null;
+        }
+    }
+
+    /// <summary>
+    ///     #5688. Ends the transaction after a failure, whatever state the failure left it in.
+    /// </summary>
+    /// <remarks>
+    ///     A rollback that itself fails -- a broken connection, a transaction the failed commit already
+    ///     completed -- must not replace the exception that caused it, and must not leave the transaction
+    ///     or the connection behind: disposing them is what returns the backend, and with it the locks.
+    /// </remarks>
+    private async Task rollbackAfterFailureAsync()
+    {
+        try
+        {
+            await RollbackAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Logger.LogFailure(e, "Failure trying to rollback after a failed unit of work");
+
+            if (Transaction != null)
+            {
+                Transaction.SafeDispose();
+                Transaction = null;
+            }
+
+            if (_connection != null && !ReferenceEquals(_connection, _options.Connection))
+            {
+                _connection.SafeDispose();
+                _connection = null;
+            }
         }
     }
 
@@ -462,33 +503,44 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
         catch (Exception e)
         {
-            await RollbackAsync(token).ConfigureAwait(false);
+            await rollbackAfterFailureAsync().ConfigureAwait(false);
             Logger.LogFailure(new NpgsqlCommand(), e);
             pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
         }
 
         if (exceptions.Count == 1)
         {
-            await RollbackAsync(token).ConfigureAwait(false);
+            await rollbackAfterFailureAsync().ConfigureAwait(false);
             var ex = exceptions.Single();
             ExceptionDispatchInfo.Throw(ex);
         }
 
         if (exceptions.Any())
         {
-            await RollbackAsync(token).ConfigureAwait(false);
+            await rollbackAfterFailureAsync().ConfigureAwait(false);
             throw new AggregateException(exceptions);
         }
 
-        if (participants is { Count: > 0 })
+        // #5688: the participants and the commit fail inside the transaction too -- a participant can
+        // throw, and a token cancelled after the last statement makes CommitAsync throw before COMMIT is
+        // ever sent. Either way the transaction is still open and has to be ended here.
+        try
         {
-            foreach (var participant in participants)
+            if (participants is { Count: > 0 })
             {
-                await participant.BeforeCommitAsync(Connection, Transaction!, token).ConfigureAwait(false);
+                foreach (var participant in participants)
+                {
+                    await participant.BeforeCommitAsync(Connection, Transaction!, token).ConfigureAwait(false);
+                }
             }
-        }
 
-        await CommitAsync(token).ConfigureAwait(true);
+            await CommitAsync(token).ConfigureAwait(true);
+        }
+        catch (Exception)
+        {
+            await rollbackAfterFailureAsync().ConfigureAwait(false);
+            throw;
+        }
 
         // #5603: only now is the participants' work durable. A participant holding provisional state
         // -- the EF Core change tracker -- accepts it here, never in BeforeCommitAsync, because that

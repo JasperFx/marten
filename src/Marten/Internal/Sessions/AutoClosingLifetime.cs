@@ -260,7 +260,9 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             {
                 try
                 {
-                    await tx.RollbackAsync(token).ConfigureAwait(false);
+                    // #5688: never with the caller's token. Npgsql answers an already-cancelled token by
+                    // throwing without sending ROLLBACK, and that exception would replace this one.
+                    await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception rollbackEx)
                 {
@@ -277,7 +279,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             {
                 try
                 {
-                    await tx.RollbackAsync(token).ConfigureAwait(false);
+                    await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -292,7 +294,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             {
                 try
                 {
-                    await tx.RollbackAsync(token).ConfigureAwait(false);
+                    await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
