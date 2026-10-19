@@ -332,11 +332,14 @@ public abstract partial class DocumentSessionBase
         }
     }
 
+    /// <remarks>
+    ///     #5688: never awaited. See <see cref="Marten.Events.EventGraph.EnqueueTombstones" />.
+    /// </remarks>
     protected virtual Task tryApplyTombstoneEventsAsync(CancellationToken token)
     {
         if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
         {
-            return Options.EventGraph.PostTombstonesAsync(tombstoneBatch);
+            Options.EventGraph.EnqueueTombstones(tombstoneBatch);
         }
 
         return Task.CompletedTask;

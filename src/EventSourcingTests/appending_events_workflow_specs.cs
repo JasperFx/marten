@@ -334,6 +334,9 @@ public class appending_events_workflow_specs: IClassFixture<AppendingWorkflowFix
             await session.SaveChangesAsync();
         });
 
+        // #5688: tombstones are written off the failed save's path
+        await store.Options.EventGraph.WaitForPendingTombstonesAsync();
+
         await using var session2 = store.LightweightSession();
 
         if (store.Events.StreamIdentity == StreamIdentity.AsGuid)

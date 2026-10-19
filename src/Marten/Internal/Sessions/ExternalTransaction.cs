@@ -114,7 +114,8 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
     {
         if (_options.OwnsTransactionLifecycle)
         {
-            return Transaction.RollbackAsync(token);
+            // #5688: never with the caller's token -- see TransactionalConnection.RollbackAsync.
+            return Transaction.RollbackAsync(CancellationToken.None);
         }
 
         return Task.CompletedTask;
