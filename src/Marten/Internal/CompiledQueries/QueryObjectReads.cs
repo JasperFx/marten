@@ -68,11 +68,13 @@ internal static class QueryObjectReads
         }
 
         var inner = read;
+        var convertsAnEnum = false;
         while (inner is UnaryExpression
                {
                    NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked or ExpressionType.TypeAs
                } unary)
         {
+            convertsAnEnum |= (Nullable.GetUnderlyingType(unary.Operand.Type) ?? unary.Operand.Type).IsEnum;
             inner = unary.Operand;
         }
 
@@ -81,8 +83,10 @@ internal static class QueryObjectReads
             return false;
         }
 
-        // A plain member read is what the plan was built to bind
-        if (ReferenceEquals(inner, read))
+        // A plain member read is what the plan was built to bind. So is an enum member under the
+        // conversion C# puts on both sides of an enum comparison, `Convert(x.Color, Int32) ==
+        // Convert(Color, Int32)`: the parser strips it and binds the member through the enum storage.
+        if (ReferenceEquals(inner, read) || convertsAnEnum)
         {
             return true;
         }
