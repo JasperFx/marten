@@ -830,15 +830,31 @@
          as RequiresUnreferencedCode/RequiresDynamicCode; EventGraph.RegisterTagType carries those up,
          and TagTypeRegistration.FromUnwrapper is the trim-safe route. No Weasel bump is needed:
          9.45.1 only patches the SQL Server and Oracle providers. -->
-    <PackageVersion Include="JasperFx" Version="2.90.1" />
-    <PackageVersion Include="JasperFx.Events" Version="2.90.1" />
+    <!-- JasperFx 2.91.0 (from 2.90.1, spanning 2.90.2). No Marten code change; every item is a daemon
+         or Dynamic LINQ fix Marten picks up through the package.
+         jasperfx#1022/#1023 (2.90.2): a drained subscription agent never released its heartbeat timer,
+         which rooted the agent and through it the store and host; the daemon now disposes every agent
+         it drops on each stop path.
+         jasperfx#1027/#1028: the HighWaterAgent survives a failed watchdog restart, and the watchdog now
+         restarts the agent when the mark has stood still for DaemonSettings.HighWaterProgressStallThreshold
+         (default 2 minutes) below the committed ceiling, read through
+         IHighWaterDetector.FetchCommittedHighWaterCeilingAsync, which Marten's HighWaterDetector already
+         implements. A restart re-reads the mark and never advances it, so a gap held on purpose stays held.
+         jasperfx#1025: RewindSubscriptionAsync is per tenant under UseTenantPartitionedEvents; the
+         tenant-less rewind now refuses a non-zero sequenceFloor there.
+         jasperfx#1026: a tenant removed and re-added (RemoveTenantFromShardAsync/AddTenantToShardAsync) is
+         no longer held at its old incarnation's high-water mark.
+         jasperfx#1024: Dynamic LINQ document criteria read offset-less date text as UTC for DateTime members
+         too. jasperfx#1021/#1030: the EmittedEvents manifest gets one entry per overload. -->
+    <PackageVersion Include="JasperFx" Version="2.91.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.91.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.90.1" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.91.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -857,11 +873,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.90.1">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.91.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.90.1" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.91.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
