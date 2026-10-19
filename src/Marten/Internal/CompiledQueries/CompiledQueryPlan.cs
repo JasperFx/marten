@@ -461,9 +461,85 @@ public class CompiledQueryPlan : ICommandBuilder
                             break;
                         }
                     }
+
+                    usage.Setter ??= usage.Member == null ? tryBindArrayElements(options, usage.Parameter) : null;
                 }
             }
         }
+    }
+
+    /// <summary>
+    ///     An array parameter that no query member matches as a whole, because the query built it
+    ///     inline from several of its members: <c>new[] { First, Second }.Contains(x.Name)</c>, or
+    ///     <c>x.Name.IsOneOf(new[] { First, Second })</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Matching is by value, so each element is matched on its own against the scalar members'
+    ///     planning values, the way a scalar parameter is. A matched element is re-read from its member
+    ///     on every execution; an element no member accounts for is a literal and keeps its value.
+    ///     Without this the whole array is a hard-coded literal, so every later execution would
+    ///     silently run with the values the plan was built from.
+    /// </remarks>
+    private Action<NpgsqlParameter, object>? tryBindArrayElements(StoreOptions options, NpgsqlParameter parameter)
+    {
+        if (parameter.Value is not Array planned || planned is byte[] || planned.Rank != 1 || planned.Length == 0)
+        {
+            return null;
+        }
+
+        var members = QueryMembers.Where(x => !x.Type.IsArray).OfType<IArrayElementSource>().ToArray();
+        if (members.Length == 0)
+        {
+            return null;
+        }
+
+        var sources = new (IArrayElementSource Member, bool AsStored)?[planned.Length];
+        var anyBound = false;
+        for (var i = 0; i < planned.Length; i++)
+        {
+            var element = planned.GetValue(i);
+            foreach (var member in members)
+            {
+                if (Equals(member.ElementValue(options, false), element))
+                {
+                    sources[i] = (member, false);
+                }
+                else if (Equals(member.ElementValue(options, true), element))
+                {
+                    sources[i] = (member, true);
+                }
+                else
+                {
+                    continue;
+                }
+
+                anyBound = true;
+                break;
+            }
+        }
+
+        if (!anyBound)
+        {
+            return null;
+        }
+
+        var dbType = parameter.NpgsqlDbType;
+        return (target, query) =>
+        {
+            // A copy of the planning array, so literal elements keep their values and the element
+            // type is the one the plan rendered, without building an array type at runtime.
+            var values = (Array)planned.Clone();
+            for (var i = 0; i < sources.Length; i++)
+            {
+                if (sources[i] is { } source)
+                {
+                    values.SetValue(source.Member.ElementValueFrom(query, options, source.AsStored), i);
+                }
+            }
+
+            target.NpgsqlDbType = dbType;
+            target.Value = values;
+        };
     }
 
 }

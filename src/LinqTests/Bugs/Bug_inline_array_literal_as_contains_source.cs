@@ -63,6 +63,49 @@ public class Bug_inline_array_literal_as_contains_source: BugIntegrationContext
         }
     }
 
+    public class SwatchesNamedOneOf: ICompiledListQuery<Swatch>
+    {
+        public string First { get; set; } = string.Empty;
+        public string Second { get; set; } = string.Empty;
+
+        public Expression<Func<IMartenQueryable<Swatch>, IEnumerable<Swatch>>> QueryIs()
+        {
+            return q => q.Where(x => x.Name.IsOneOf(new[] { First, Second }));
+        }
+    }
+
+    public class SwatchesNamedThisOrGreen: ICompiledListQuery<Swatch>
+    {
+        public string Name { get; set; } = string.Empty;
+
+        public Expression<Func<IMartenQueryable<Swatch>, IEnumerable<Swatch>>> QueryIs()
+        {
+            return q => q.Where(x => new[] { Name, "Green" }.Contains(x.Name));
+        }
+    }
+
+    public class SwatchesWithEitherShade: ICompiledListQuery<Swatch>
+    {
+        public Shade First { get; set; }
+        public Shade Second { get; set; }
+
+        public Expression<Func<IMartenQueryable<Swatch>, IEnumerable<Swatch>>> QueryIs()
+        {
+            return q => q.Where(x => new[] { First, Second }.Contains(x.Shade));
+        }
+    }
+
+    public class SwatchesNumberedEither: ICompiledListQuery<Swatch>
+    {
+        public int First { get; set; }
+        public int Second { get; set; }
+
+        public Expression<Func<IMartenQueryable<Swatch>, IEnumerable<Swatch>>> QueryIs()
+        {
+            return q => q.Where(x => new[] { First, Second }.Contains(x.Number));
+        }
+    }
+
     private readonly Swatch _red = new()
     {
         Id = Guid.NewGuid(),
@@ -225,16 +268,67 @@ public class Bug_inline_array_literal_as_contains_source: BugIntegrationContext
         shouldBeRedAndBlue(await theSession.QueryAsync(new SwatchesNamedRedOrBlue()));
     }
 
+    // A compiled query plan binds each parameter to one of the query's members by matching values,
+    // and an array built inline from two of them matches neither as a whole. Each of these runs the
+    // same compiled query twice with different values: the second run is served from the cached plan,
+    // so a plan that froze its first values answers it with the first run's rows.
+
     [Fact]
-    public async Task compiled_query_still_refuses_an_array_literal_of_its_own_members()
+    public async Task compiled_query_with_an_array_literal_of_its_own_members()
     {
         await seedAsync();
 
-        // A compiled query plan binds each parameter to one of the query's members by value, and an
-        // array assembled from two of them matches neither. Reducing this literal to a constant would
-        // bake the planning-time values into every later execution, so it keeps being refused rather
-        // than answering the next caller with the first caller's rows.
-        await Should.ThrowAsync<BadLinqExpressionException>(() =>
-            theSession.QueryAsync(new SwatchesNamedEither { First = "Red", Second = "Blue" }));
+        shouldBeRedAndBlue(await theSession.QueryAsync(new SwatchesNamedEither { First = "Red", Second = "Blue" }));
+
+        (await theSession.QueryAsync(new SwatchesNamedEither { First = "Green", Second = "Blue" }))
+            .Select(x => x.Name).OrderBy(x => x).ShouldBe(["Blue", "Green"]);
+    }
+
+    [Fact]
+    public async Task compiled_query_with_is_one_of_over_an_array_literal_of_its_own_members()
+    {
+        await seedAsync();
+
+        shouldBeRedAndBlue(await theSession.QueryAsync(new SwatchesNamedOneOf { First = "Red", Second = "Blue" }));
+
+        (await theSession.QueryAsync(new SwatchesNamedOneOf { First = "Green", Second = "Green" }))
+            .Select(x => x.Name).ShouldBe(["Green"]);
+    }
+
+    [Fact]
+    public async Task compiled_query_with_a_member_and_a_literal_in_one_array()
+    {
+        await seedAsync();
+
+        (await theSession.QueryAsync(new SwatchesNamedThisOrGreen { Name = "Red" }))
+            .Select(x => x.Name).OrderBy(x => x).ShouldBe(["Green", "Red"]);
+
+        // The literal keeps its value; only the member's element is re-read
+        (await theSession.QueryAsync(new SwatchesNamedThisOrGreen { Name = "Blue" }))
+            .Select(x => x.Name).OrderBy(x => x).ShouldBe(["Blue", "Green"]);
+    }
+
+    [Fact]
+    public async Task compiled_query_with_an_array_literal_of_int_members()
+    {
+        await seedAsync();
+
+        shouldBeRedAndBlue(await theSession.QueryAsync(new SwatchesNumberedEither { First = 1, Second = 3 }));
+
+        (await theSession.QueryAsync(new SwatchesNumberedEither { First = 2, Second = 2 }))
+            .Select(x => x.Name).ShouldBe(["Green"]);
+    }
+
+    [Theory]
+    [InlineData(EnumStorage.AsInteger)]
+    [InlineData(EnumStorage.AsString)]
+    public async Task compiled_query_with_an_array_literal_of_enum_members(EnumStorage enumStorage)
+    {
+        await seedAsync(opts => opts.UseSystemTextJsonForSerialization(enumStorage: enumStorage));
+
+        shouldBeRedAndBlue(await theSession.QueryAsync(new SwatchesWithEitherShade { First = Shade.Light, Second = Shade.Dark }));
+
+        (await theSession.QueryAsync(new SwatchesWithEitherShade { First = Shade.Medium, Second = Shade.Medium }))
+            .Select(x => x.Name).ShouldBe(["Green"]);
     }
 }

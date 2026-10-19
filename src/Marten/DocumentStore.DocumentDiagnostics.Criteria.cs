@@ -68,8 +68,8 @@ public partial class DocumentStore
     /// What did NOT need a rule, against the jasperfx#869 spike's findings on Polecat and Fisher: date member
     /// access (<c>PlacedAt.Year</c>, <c>.Month</c>, <c>.Day</c>, <c>.Date</c>) and <c>string.Length</c> throw
     /// honestly here; <c>Items.Count</c>, <c>Tags.Length</c>, <c>Count()</c>, <c>Any(…)</c>,
-    /// <c>Tags.Any(it = …)</c>, decimals, nested members and nulls translate correctly; inline
-    /// <c>in (1, 2, 3)</c> still throws (use <c>in @0</c>). Two further differences are corrected rather than
+    /// <c>Tags.Any(it = …)</c>, decimals, nested members, nulls and inline <c>in (1, 2, 3)</c> (an array
+    /// literal to LINQ) translate correctly. Two further differences are corrected rather than
     /// refused, so they cost the operator nothing: null placement in an ordering (PostgreSQL puts nulls last
     /// ascending, C# first — the diagnostic read appends <c>NULLS FIRST</c> / <c>NULLS LAST</c>) and the Kind of
     /// a <see cref="DateTime" /> argument (see <see cref="DateTimeKindAdapter" />).
