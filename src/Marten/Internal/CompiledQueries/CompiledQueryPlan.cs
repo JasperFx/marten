@@ -400,20 +400,22 @@ public class CompiledQueryPlan : ICommandBuilder
 
         var ctorArgs = valueSource.ArgsFor(constructor);
         var query = Activator.CreateInstance(type, ctorArgs);
-        if (query is IQueryPlanning planning)
-        {
-            planning.SetUniqueValuesForQueryPlanning();
-            foreach (var member in QueryMembers) member.StoreValue(query);
-        }
 
         // Every successful return stores the template's own values: they are what the plan's
         // parameters will carry, and so what MatchParameters has to find
-        if (areAllMemberValuesUnique(query))
+        if (query is IQueryPlanning planning)
         {
-            foreach (var member in QueryMembers) member.StoreValue(query);
-            return query;
+            planning.SetUniqueValuesForQueryPlanning();
+            if (areAllMemberValuesUnique(query))
+            {
+                foreach (var member in QueryMembers) member.StoreValue(query);
+                return query;
+            }
         }
 
+        // #5711: a freshly constructed query is not a usable template merely because its members differ
+        // from one another. A lone member left at its default (a null string, a zero) is "unique" and
+        // still matches no parameter, or matches a literal, so generated values always go in.
         foreach (var queryMember in QueryMembers) queryMember.TryWriteValue(valueSource, query);
 
         if (areAllMemberValuesUnique(query))
