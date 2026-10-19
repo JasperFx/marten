@@ -15,7 +15,20 @@ internal interface IQueryMember<T>: IQueryMember
     void SetValue(object query, T value);
 }
 
-internal abstract class QueryMember<T>: IQueryMember<T>
+/// <summary>
+///     A scalar query member that can stand for one element of an array the plan built inline,
+///     <c>new[] { First, Second }</c>. See <c>CompiledQueryPlan.tryBindArrayElements</c>.
+/// </summary>
+internal interface IArrayElementSource
+{
+    /// <summary>The planning-time value, as the plan would have bound it.</summary>
+    object? ElementValue(StoreOptions options, bool asStored);
+
+    /// <summary>The same value read off a query instance at execution time.</summary>
+    object? ElementValueFrom(object query, StoreOptions options, bool asStored);
+}
+
+internal abstract class QueryMember<T>: IQueryMember<T>, IArrayElementSource
 {
     protected QueryMember(MemberInfo member)
     {
@@ -62,14 +75,30 @@ internal abstract class QueryMember<T>: IQueryMember<T>
 
     private object comparableValue(StoreOptions options)
     {
+        return toComparable(Value, options);
+    }
+
+    private object toComparable(T value, StoreOptions options)
+    {
         if (Type.IsEnum)
         {
             return options.Serializer().EnumStorage == EnumStorage.AsInteger
-                ? Value.As<int>()
-                : Value.ToString();
+                ? value.As<int>()
+                : value.ToString();
         }
 
-        return Value;
+        return value;
+    }
+
+    // asStored: the element as the serializer stores it (an enum as its number or name), which is
+    // how an array of enums reaches the SQL; otherwise the raw member value.
+    object? IArrayElementSource.ElementValue(StoreOptions options, bool asStored)
+        => asStored ? toComparable(Value, options) : Value;
+
+    object? IArrayElementSource.ElementValueFrom(object query, StoreOptions options, bool asStored)
+    {
+        var value = GetValue(query);
+        return asStored ? toComparable(value, options) : value;
     }
 
     public void TryWriteValue(UniqueValueSource valueSource, object query)

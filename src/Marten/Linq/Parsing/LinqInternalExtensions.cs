@@ -262,8 +262,28 @@ public static class LinqInternalExtensions
             return true;
         }
 
+        // An array literal written inline, `new[] { "a", "b" }.Contains(x.Name)`, reaches the parser
+        // as a NewArrayInit rather than as a constant. While none of its elements reads a lambda
+        // parameter it is just a value -- the same one a captured local array would have been.
+        if (expression is NewArrayExpression { NodeType: ExpressionType.NewArrayInit } array &&
+            isArrayLiteralValue(array))
+        {
+            constant = ReduceToConstant(expression);
+            return true;
+        }
+
         constant = default;
         return false;
+    }
+
+    private static bool isArrayLiteralValue(NewArrayExpression array)
+    {
+        // An array built from a compiled query's own members, `new[] { First, Second }`, is reduced
+        // here too. The plan then rebinds it element by element, from those members, on every
+        // execution -- see CompiledQueryPlan.tryBindArrayElements.
+        var parameters = new FreeParameterFinder();
+        parameters.Visit(array);
+        return parameters.Found == null;
     }
 
     /// <summary>
