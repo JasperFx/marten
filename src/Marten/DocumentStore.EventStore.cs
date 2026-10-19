@@ -215,6 +215,17 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             .Select(x => x.Name)
             .ToArray();
 
+        // jasperfx#487 / wolverine#3280: under per-tenant event partitioning the daemon rewinds a tenant
+        // agent's progression with that agent's OWN identity, "{Name}:{ShardKey}:{tenantId}" -- every time a
+        // subscription's starting position seeds the row before the agent runs (SubscribeFromPresent and
+        // friends). AllShards() only carries the store-global identities, so resolve the registered base
+        // shard and rewind that one tenant's row.
+        var tenantShard = names.Length == 0 ? findTenantShard(subscriptionName) : null;
+        if (tenantShard != null)
+        {
+            names = [tenantShard];
+        }
+
         if (names.Length == 0)
         {
             throw new ArgumentOutOfRangeException(nameof(subscriptionName),
@@ -237,11 +248,36 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             }
         }
 
-        // Rewind previous DeadLetterEvents because you're going to replay them all anyway
-        session.DeleteWhere<DeadLetterEvent>(x =>
-            x.ProjectionName == subscriptionName && x.EventSequence >= sequenceFloor);
+        if (tenantShard != null)
+        {
+            // Only this tenant's dead letters for this shard: every tenant draws its own sequence, so the
+            // floor names nothing in any other tenant's events
+            var projectionName = tenantShard.Name;
+            var shardKey = tenantShard.ShardKey;
+            var tenantId = tenantShard.TenantId;
+            session.DeleteWhere<DeadLetterEvent>(x =>
+                x.ProjectionName == projectionName && x.ShardName == shardKey && x.TenantId == tenantId &&
+                x.EventSequence >= sequenceFloor);
+        }
+        else
+        {
+            // Rewind previous DeadLetterEvents because you're going to replay them all anyway
+            session.DeleteWhere<DeadLetterEvent>(x =>
+                x.ProjectionName == subscriptionName && x.EventSequence >= sequenceFloor);
+        }
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    // A tenant agent's identity on a tenant-partitioned store, when its base shard is registered. Exact
+    // store-global identities are matched first by the caller, mirroring the daemon's StartAgentAsync.
+    private ShardName? findTenantShard(string identity)
+    {
+        if (!Options.Events.UseTenantPartitionedEvents) return null;
+        if (!ShardName.TryParse(identity, out var shard) || shard?.TenantId == null) return null;
+
+        var baseIdentity = ShardName.Compose(shard.Name, shard.ShardKey, null, shard.Version).Identity;
+        return Options.Projections.AllShards().Any(x => x.Name.Identity == baseIdentity) ? shard : null;
     }
 
     async Task IEventStore<IDocumentOperations, IQuerySession>.RewindAgentProgressAsync(IEventDatabase database,

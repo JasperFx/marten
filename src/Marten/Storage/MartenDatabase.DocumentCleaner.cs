@@ -214,8 +214,18 @@ END; $$;
             eventsWhere += tenantPart;
         }
 
+        // The stream's DCB tag rows go first: each mt_event_tag_* table has a foreign key to mt_events that
+        // does not cascade. Under conjoined tenancy the tag rows are matched on (seq_id, tenant_id), because
+        // seq_id alone is not an event under per-tenant sequences (#5234).
+        var schema = Options.Events.DatabaseSchemaName;
+        var tagKey = Options.Events.TenancyStyle == TenancyStyle.Conjoined ? "seq_id, tenant_id" : "seq_id";
+        var tagDeletes = Options.EventGraph.DcbStorageMode == DcbStorageMode.HStore
+            ? ""
+            : string.Concat(Options.EventGraph.TagTypes.Select(tagType =>
+                $"delete from {schema}.mt_event_tag_{tagType.TableSuffix} where ({tagKey}) in (select {tagKey} from {schema}.mt_events where {eventsWhere});"));
+
         var cmd = conn.CreateCommand(
-            $"delete from {Options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {Options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
+            $"{tagDeletes}delete from {schema}.mt_events where {eventsWhere};delete from {schema}.mt_streams where {streamsWhere}");
         cmd.AddNamedParameter("id", streamId);
 
         if (Options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())

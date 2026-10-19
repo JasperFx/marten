@@ -59,3 +59,34 @@ public static async Task mark_events_as_skipped(
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventSkipping.cs#L30-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mark_events_as_skipped' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Multi-tenancy
+
+If you use multi-tenancy, find the database that holds the tenant's events, and name the tenant too.
+With conjoined tenancy and `UseTenantPartitionedEvents`, every tenant numbers its own events, so a
+sequence alone matches the same-numbered event of every other tenant. In that mode the overload that
+takes only the sequences throws an `InvalidOperationException` rather than skip other tenants' events,
+and raw SQL against `mt_events` needs a `tenant_id` predicate as well as the `seq_id` one:
+
+<!-- snippet: sample_mark_events_as_skipped_by_tenant -->
+<a id='snippet-sample_mark_events_as_skipped_by_tenant'></a>
+```cs
+public static async Task mark_events_as_skipped_by_tenant(
+    IDocumentStore store,
+    long[] sequences,
+    string tenantId,
+    CancellationToken cancellation)
+{
+    // If you're using multi-tenancy through separate databases,
+    // you'll need to use the correct database
+    var database = await store.Storage.FindOrCreateDatabase(tenantId);
+
+    // And name the tenant. With conjoined tenancy and
+    // UseTenantPartitionedEvents, every tenant numbers its own
+    // events, so a sequence alone matches the same-numbered
+    // event of every other tenant
+    await database.MarkEventsAsSkipped(tenantId, sequences, cancellation);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventSkipping.cs#L40-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mark_events_as_skipped_by_tenant' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

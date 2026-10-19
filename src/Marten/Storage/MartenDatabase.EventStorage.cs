@@ -10,6 +10,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -30,18 +31,55 @@ public partial class MartenDatabase : IEventDatabase
 {
     private string _storageIdentifier;
 
-    public async Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default)
+    public Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default)
+    {
+        // #5234: under UseTenantPartitionedEvents every tenant draws seq_id from its own
+        // mt_events_sequence_{suffix}, so a sequence names the same-numbered event in EVERY
+        // tenant's partition, and this overload has no tenant to narrow it with. Refuse instead of
+        // skipping every other tenant's event too.
+        if (Options.Events.UseTenantPartitionedEvents)
+        {
+            throw new InvalidOperationException(
+                $"Event sequences are numbered per tenant under {nameof(IEventStoreOptions.UseTenantPartitionedEvents)}, so a sequence alone does not identify one event. " +
+                $"Call {nameof(MarkEventsAsSkipped)}(string tenantId, long[] sequences, CancellationToken) with the tenant the sequences belong to.");
+        }
+
+        return markEventsAsSkippedAsync(null, sequences, token);
+    }
+
+    public Task MarkEventsAsSkipped(string tenantId, long[] sequences, CancellationToken token = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(tenantId);
+
+        return markEventsAsSkippedAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId), sequences, token);
+    }
+
+    private async Task markEventsAsSkippedAsync(string? tenantId, long[] sequences, CancellationToken token)
     {
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        // #5234: the same gate as ConjoinedEventFilter. Only a conjoined event store can hold two
+        // tenants' events with one seq_id; under any other tenancy style the database is the scope.
+        var filterByTenant = tenantId != null && Options.Events.TenancyStyle == TenancyStyle.Conjoined;
+
+        var sql =
+            $"update {Options.EventGraph.DatabaseSchemaName}.mt_events set is_skipped = TRUE where seq_id = ANY(:sequences)";
+        if (filterByTenant)
+        {
+            sql += " and tenant_id = :tenant_id";
+        }
 
         await using var conn = CreateConnection();
         try
         {
             await conn.OpenAsync(token).ConfigureAwait(false);
-            await conn.CreateCommand(
-                    $"update {Options.EventGraph.DatabaseSchemaName}.mt_events set is_skipped = TRUE where seq_id = ANY(:sequences)")
-                .With("sequences", sequences)
-                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            var command = conn.CreateCommand(sql).With("sequences", sequences);
+            if (filterByTenant)
+            {
+                command.With("tenant_id", tenantId!, NpgsqlDbType.Varchar);
+            }
+
+            await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
         }
         finally
         {
