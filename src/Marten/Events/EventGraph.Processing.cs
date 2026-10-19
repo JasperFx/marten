@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
@@ -112,12 +113,71 @@ public partial class EventGraph
         return _tombstones.PostAsync(tombstoneBatch);
     }
 
+    private readonly object _pendingTombstoneLock = new();
+    private readonly HashSet<Task> _pendingTombstones = new();
+
     /// <summary>
-    ///     #5688. Queues the tombstones without awaiting a first attempt, for a failed unit of work whose
-    ///     transaction is still open and so still holds the sequence numbers they fill.
+    ///     #5688. Writes the tombstones for a failed unit of work off the caller's path: the save that failed
+    ///     throws straight away instead of waiting on this write.
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The tombstones fill sequence numbers the failed unit of work drew, on a fresh connection, so they
+    ///         can only land once nothing holds those numbers any more. Awaiting them inline made the save wait
+    ///         on its own transaction whenever that transaction was still open -- a caller-owned or ambient one,
+    ///         which Marten deliberately does not roll back, or one a cancelled token kept from being rolled
+    ///         back -- until the command timeout broke the wait.
+    ///     </para>
+    ///     <para>
+    ///         The write does not run on the caller's <see cref="ExecutionContext" />, so an ambient
+    ///         <c>TransactionScope</c> cannot flow into the tombstone session and enlist it in the very
+    ///         transaction that failed. The retry block still retries a first attempt that fails.
+    ///     </para>
+    /// </remarks>
     internal void EnqueueTombstones(UpdateBatch tombstoneBatch)
     {
-        _tombstones.Post(tombstoneBatch);
+        Task write;
+        using (ExecutionContext.SuppressFlow())
+        {
+            write = Task.Run(() => _tombstones.PostAsync(tombstoneBatch), CancellationToken.None);
+        }
+
+        lock (_pendingTombstoneLock)
+        {
+            _pendingTombstones.Add(write);
+        }
+
+        write.ContinueWith(t =>
+        {
+            _ = t.Exception; // observed; the retry block has already logged it
+
+            lock (_pendingTombstoneLock)
+            {
+                _pendingTombstones.Remove(t);
+            }
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+    }
+
+    /// <summary>
+    ///     #5688. Completes once the first attempt of every tombstone write queued so far has finished --
+    ///     the point a failed save used to return at, before the write moved off its path. For tests, and for
+    ///     store disposal.
+    /// </summary>
+    internal async Task WaitForPendingTombstonesAsync()
+    {
+        Task[] pending;
+        lock (_pendingTombstoneLock)
+        {
+            pending = _pendingTombstones.ToArray();
+        }
+
+        try
+        {
+            await Task.WhenAll(pending).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Observed in EnqueueTombstones; a failed first attempt belongs to the retry block now
+        }
     }
 }

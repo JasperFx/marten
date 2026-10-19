@@ -333,24 +333,13 @@ public abstract partial class DocumentSessionBase
     }
 
     /// <remarks>
-    ///     #5688: the tombstones fill the sequence numbers this unit of work drew, on a fresh connection, so
-    ///     they can only land once nothing holds those numbers any more. When this session's own transaction
-    ///     is still open -- a caller-owned or ambient transaction, which Marten deliberately does not roll
-    ///     back -- the failed batch's rows at those numbers are still uncommitted, and an inline write would
-    ///     wait on them until the command timeout, while the caller waits on this save. Those go to the retry
-    ///     block in the background instead, to land once the caller has ended its transaction.
+    ///     #5688: never awaited. See <see cref="Marten.Events.EventGraph.EnqueueTombstones" />.
     /// </remarks>
     protected virtual Task tryApplyTombstoneEventsAsync(CancellationToken token)
     {
         if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
         {
-            if (HasSurvivingTransaction)
-            {
-                Options.EventGraph.EnqueueTombstones(tombstoneBatch);
-                return Task.CompletedTask;
-            }
-
-            return Options.EventGraph.PostTombstonesAsync(tombstoneBatch);
+            Options.EventGraph.EnqueueTombstones(tombstoneBatch);
         }
 
         return Task.CompletedTask;

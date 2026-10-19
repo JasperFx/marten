@@ -199,7 +199,9 @@ public class Bug_5688_cancelled_save_leaves_transaction_open: OneOffConfiguratio
         secondTook.ShouldBeLessThan(Prompt);
 
         // The cancelled save drew sequence numbers it never committed; the tombstones that fill them
-        // have to land once its transaction is gone rather than being lost to a lock wait.
+        // have to land once its transaction is gone rather than being lost to a lock wait. They are
+        // written off the failed save's path, so wait for that write rather than assuming it happened.
+        await theStore.Options.EventGraph.WaitForPendingTombstonesAsync();
         (await tombstoneCountAsync()).ShouldBeGreaterThan(0);
 
         await using var query = theStore.QuerySession();

@@ -295,6 +295,12 @@ event sequence numbers that failed in a Marten transaction. This is done strictl
 far it's safe to process asynchronous projections. If you see event rows in your database of type "tombstone", it's representative of failed transactions (maybe from optimistic concurrency violations,
 transient network issues, timeouts, etc.).
 
+Tombstones are written in the background, after the failed `SaveChangesAsync()` has already thrown, so they can
+appear in the events table a moment later rather than by the time your code sees the exception. They fill sequence
+numbers the failed transaction drew, so they cannot land until that transaction has ended. That matters if you pass
+Marten your own transaction through `SessionOptions.ForTransaction()`: Marten does not roll that transaction back for
+you, and the tombstones are retried until you have.
+
 Where this is not _yet_ formal support in Marten's API surface for deleting "tombstone" events, it is 
 perfectly safe to delete tombstone events from your database:
 

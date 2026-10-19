@@ -208,6 +208,9 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         {
             if (_tombstones != null)
             {
+                // #5688: tombstone writes start off the saving caller's path, so let the ones already
+                // started reach the block before it is drained.
+                await WaitForPendingTombstonesAsync().ConfigureAwait(false);
                 await _tombstones.DrainAsync().ConfigureAwait(false);
             }
         }
