@@ -68,14 +68,12 @@ public class cold_stream_part_per_tenant: PartitionedStoreContext
     {
         public readonly ConcurrentDictionary<(string Tenant, string Key), long?> Seen = new();
 
-        public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
+        public override async Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
         {
             foreach (var stream in session.PendingChanges.Streams())
             {
-                Seen[(session.TenantId, stream.Key!)] = session.Events.ColdVersionOf(stream);
+                Seen[(session.TenantId, stream.Key!)] = await session.Events.ColdVersionOfAsync(stream, token);
             }
-
-            return Task.CompletedTask;
         }
     }
 
@@ -155,5 +153,76 @@ public class cold_stream_part_per_tenant: PartitionedStoreContext
             (await session.Events.FetchLatest<Notes>(key))!.Lines.ShouldBe(["opened by alpha", "alpha 1", "alpha 2", "alpha 3"]);
             (await session.Events.FetchStreamAsync(key)).Single().Version.ShouldBe(4);
         }
+    }
+}
+
+/// <summary>
+/// Under per-tenant partitioning each async shard keeps one progression row per tenant
+/// (<c>{shard}:{tenant}</c>), and MarkStreamCold has to read exactly that row.
+/// </summary>
+public class marking_cold_per_tenant_waits_for_async_shards: PartitionedStoreContext
+{
+    public class NoteCount
+    {
+        public string Id { get; set; } = null!;
+        public int Count { get; set; }
+    }
+
+    public partial class NoteCountProjection: SingleStreamProjection<NoteCount, string>
+    {
+        public override NoteCount Evolve(NoteCount? snapshot, string id, IEvent e)
+        {
+            snapshot ??= new NoteCount { Id = id };
+            snapshot.Count++;
+            return snapshot;
+        }
+    }
+
+    private readonly cold_stream_part_per_tenant.TenantColdStore _cold = new();
+
+    protected override string SchemaPrefix => "tp_coldlag";
+
+    protected override void ConfigureStore(StoreOptions opts)
+    {
+        opts.Events.StreamIdentity = StreamIdentity.AsString;
+        opts.Events.UseColdEventStore(_cold);
+        opts.Projections.Add(new NoteCountProjection(), ProjectionLifecycle.Async);
+    }
+
+    private async Task markCold(string tenant, string key)
+    {
+        await using var session = Store.LightweightSession(tenant);
+        session.Events.MarkStreamCold(key, 2);
+        await session.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task the_move_waits_for_the_tenants_own_progression_row()
+    {
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        var key = Guid.NewGuid().ToString();
+
+        foreach (var tenant in new[] { "alpha", "beta" })
+        {
+            await using var session = Store.LightweightSession(tenant);
+            session.Events.StartStream<NoteCount>(key, new cold_stream_part_per_tenant.Opened(tenant),
+                new cold_stream_part_per_tenant.Noted("one"));
+            await session.SaveChangesAsync();
+        }
+
+        var e = await Should.ThrowAsync<InvalidOperationException>(() => markCold("alpha", key));
+        e.Message.ShouldContain(":alpha");
+
+        using (var daemon = await Store.BuildProjectionDaemonAsync())
+        {
+            await daemon.StartAllAsync();
+            await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(60));
+        }
+
+        await markCold("alpha", key);
+        await markCold("beta", key);
+
+        await using var query = Store.LightweightSession("beta");
+        (await query.Events.FetchStreamAsync(key)).ShouldBeEmpty();
     }
 }

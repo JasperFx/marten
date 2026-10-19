@@ -51,6 +51,14 @@ and records the version in `mt_streams.cold_version`. It fails the unit of work 
 or has not reached that version. `mt_streams.version` is left alone, so optimistic concurrency keeps working
 as before. `MarkStreamWarm` clears the boundary again, after you put the events back.
 
+::: warning
+The async daemon does not read cold events. `MarkStreamCold` therefore refuses, deleting nothing, while any
+registered async projection or subscription has not processed the events it would delete: when its
+`mt_event_progression` row for the tenant (or the store-global row without `UseTenantPartitionedEvents`) is
+below the highest sequence being deleted, or missing. Move streams once the daemon has caught up, and retry
+the ones that were refused. A projection or subscription that is registered but never runs blocks every move.
+:::
+
 ## Reading
 
 - `FetchForWriting`, `FetchForExclusiveWriting`, `FetchLatest` and `AggregateStreamAsync` fold the cold
@@ -67,8 +75,12 @@ read the cold event store.
 
 ## Knowing that an append continues a cold stream
 
-`session.Events.ColdVersionOf(streamAction)` answers, for a stream the unit of work appends to, the cold
-version as it was stored before the unit of work. Marten resolves it for every appended stream before
-`IDocumentSessionListener.BeforeSaveChangesAsync` runs, whether the events were appended after
-`FetchForWriting` or with a plain `Append`, so a listener can update the application's own bookkeeping in
-the same transaction.
+`await session.Events.ColdVersionOfAsync(streamAction)` answers, for a stream the unit of work appends to,
+its cold version, so an `IDocumentSessionListener` can update the application's own bookkeeping in the same
+transaction, whether the events were appended after `FetchForWriting` or with a plain `Append`. The first
+call looks up every appended stream the session has not fetched in one query; a session that never asks pays
+nothing.
+
+Every appended stream whose cold version the session observed, through this call or a live fetch, is checked
+again at commit, behind the appends' own row locks. If another transaction marked it cold in between, the
+commit fails with `ColdStreamChangedException` and nothing is written; retry the unit of work.

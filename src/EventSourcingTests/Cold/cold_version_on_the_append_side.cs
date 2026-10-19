@@ -7,6 +7,7 @@ using JasperFx;
 using JasperFx.Events;
 using Marten;
 using Marten.Events.Schema;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
@@ -23,15 +24,23 @@ public class cold_version_on_the_append_side: OneOffConfigurationsContext
     public class ColdVersionListener: DocumentSessionListenerBase
     {
         public readonly Dictionary<string, long?> Seen = new();
+        public bool Asks = true;
 
-        public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
+        /// <summary>Runs once, right after the listener looked: a concurrent writer committing in between.</summary>
+        public Func<Task>? Meanwhile;
+
+        public override async Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
         {
+            if (!Asks) return;
+
             foreach (var stream in session.PendingChanges.Streams())
             {
-                Seen[stream.Key!] = session.Events.ColdVersionOf(stream);
+                Seen[stream.Key!] = await session.Events.ColdVersionOfAsync(stream, token);
             }
 
-            return Task.CompletedTask;
+            var meanwhile = Meanwhile;
+            Meanwhile = null;
+            if (meanwhile != null) await meanwhile();
         }
     }
 
@@ -67,7 +76,7 @@ public class cold_version_on_the_append_side: OneOffConfigurationsContext
         await using var session = theStore.LightweightSession();
         var stream = await session.Events.FetchForWriting<Cart>(key);
         stream.AppendOne(new ItemAdded("pear"));
-        session.Events.ColdVersionOf(session.PendingChanges.Streams().Single()).ShouldBe(2);
+        (await session.Events.ColdVersionOfAsync(session.PendingChanges.Streams().Single())).ShouldBe(2);
         await session.SaveChangesAsync();
 
         _listener.Seen[key].ShouldBe(2);
@@ -98,6 +107,71 @@ public class cold_version_on_the_append_side: OneOffConfigurationsContext
         _listener.Seen[cold].ShouldBe(2);
         _listener.Seen[warm].ShouldBeNull();
         _listener.Seen[started].ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task a_stream_that_went_cold_after_fetch_for_writing_fails_the_commit()
+    {
+        configure();
+        var key = Guid.NewGuid().ToString();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<Cart>(key, new CartOpened("anne"), new ItemAdded("apple"));
+            await session.SaveChangesAsync();
+        }
+
+        _listener.Asks = false;
+        await using var writer = theStore.LightweightSession();
+        var stream = await writer.Events.FetchForWriting<Cart>(key);
+        stream.AppendOne(new ItemAdded("pear"));
+
+        // Another process moves the stream to cold storage before this one commits
+        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 2);
+
+        var e = await Should.ThrowAsync<ColdStreamChangedException>(() => writer.SaveChangesAsync());
+        e.Message.ShouldContain(key);
+
+        (await theStore.LightweightSession().Events.FetchStreamIncludingColdAsync(key)).Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task a_stream_that_went_cold_after_a_listener_looked_fails_the_commit()
+    {
+        configure();
+        var key = Guid.NewGuid().ToString();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<Cart>(key, new CartOpened("anne"), new ItemAdded("apple"));
+            await session.SaveChangesAsync();
+        }
+
+        _listener.Meanwhile = () => theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 2);
+
+        await using var writer = theStore.LightweightSession();
+        writer.Events.Append(key, new ItemAdded("pear"));
+        await Should.ThrowAsync<ColdStreamChangedException>(() => writer.SaveChangesAsync());
+
+        _listener.Seen[key].ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task nothing_is_checked_when_nobody_looked()
+    {
+        configure();
+        var key = Guid.NewGuid().ToString();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<Cart>(key, new CartOpened("anne"), new ItemAdded("apple"));
+            await session.SaveChangesAsync();
+        }
+
+        _listener.Asks = false;
+        await using var writer = theStore.LightweightSession();
+        writer.Events.Append(key, new ItemAdded("pear"));
+        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 2);
+        await writer.SaveChangesAsync();
+
+        (await theStore.LightweightSession().Events.FetchLatest<Cart>(key))!.Items.ShouldBe(["apple", "pear"]);
     }
 
     [Fact]

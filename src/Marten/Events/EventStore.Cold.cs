@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten.Events.Operations;
 
@@ -27,11 +29,11 @@ internal partial class EventStore
         queueColdBoundary(streamKey, new MarkStreamWarmOperation(assertColdStore(), streamKey, _session.TenantId));
     }
 
-    public long? ColdVersionOf(StreamAction stream)
+    public ValueTask<long?> ColdVersionOfAsync(StreamAction stream, CancellationToken token = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
         assertColdStore();
-        return _session.ColdVersionOf(stream);
+        return _session.ColdVersionOfAsync(stream, token);
     }
 
     private void queueColdBoundary(object streamId, Weasel.Storage.IStorageOperation operation)

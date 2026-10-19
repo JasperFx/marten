@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using Marten.Events.Operations;
 using Marten.Events.Schema;
 using Marten.Storage;
 using Weasel.Postgresql;
@@ -13,7 +14,8 @@ namespace Marten.Internal.Sessions;
 
 public abstract partial class DocumentSessionBase
 {
-    // tenant + stream id -> cold version as stored, 0 meaning "no cold part"
+    // The cold versions this session has observed, by tenant and stream id; 0 means "no cold part".
+    // Every appended stream in here is verified when the unit of work commits.
     private Dictionary<(string TenantId, object StreamId), long>? _coldVersions;
 
     internal void RememberColdVersion(string tenantId, object streamId, long coldVersion)
@@ -27,48 +29,50 @@ public abstract partial class DocumentSessionBase
         _coldVersions?.Remove((tenantId, streamId));
     }
 
-    internal long? ColdVersionOf(StreamAction stream)
+    internal async ValueTask<long?> ColdVersionOfAsync(StreamAction stream, CancellationToken token)
     {
         if (stream.ActionType == StreamActionType.Start) return null;
 
-        var key = (stream.TenantId ?? TenantId, streamIdOf(stream));
-        if (_coldVersions == null || !_coldVersions.TryGetValue(key, out var coldVersion))
+        var key = coldKeyOf(stream);
+        if (_coldVersions == null || !_coldVersions.ContainsKey(key))
         {
-            throw new InvalidOperationException(
-                $"The cold version of stream '{key.Item2}' is not known yet. It is resolved for every appended stream during SaveChangesAsync, before IDocumentSessionListener.BeforeSaveChangesAsync, or when the stream is fetched with FetchForWriting or FetchLatest.");
+            await resolveColdVersionsAsync(token).ConfigureAwait(false);
         }
 
+        var coldVersion = _coldVersions![key];
         return coldVersion > 0 ? coldVersion : null;
     }
 
-    private object streamIdOf(StreamAction stream) =>
-        Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid ? stream.Id : stream.Key!;
+    private (string TenantId, object StreamId) coldKeyOf(StreamAction stream) =>
+        (stream.TenantId ?? TenantId,
+            Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid ? stream.Id : stream.Key!);
+
+    private IEnumerable<StreamAction> appendedStreams() =>
+        _workTracker.Streams.Where(x => x.ActionType == StreamActionType.Append);
 
     /// <summary>
-    ///     Makes the cold version of every stream this unit of work appends to known before the listeners run:
-    ///     one query for the streams that were not fetched through a live aggregation first.
+    ///     One query for every appended stream whose cold version this session has not observed yet.
     /// </summary>
-    internal async Task ResolveColdVersionsAsync(CancellationToken token)
+    private async Task resolveColdVersionsAsync(CancellationToken token)
     {
         var events = Options.EventGraph;
-        if (events.ColdEventStore == null) return;
 
-        var unknown = _workTracker.Streams
-            .Where(x => x.ActionType == StreamActionType.Append)
-            .Select(x => (TenantId: x.TenantId ?? TenantId, StreamId: streamIdOf(x)))
+        var unknown = appendedStreams()
+            .Select(coldKeyOf)
             .Where(x => _coldVersions == null || !_coldVersions.ContainsKey(x))
             .Distinct()
             .GroupBy(x => x.TenantId)
             .ToArray();
 
+        _coldVersions ??= new Dictionary<(string, object), long>();
         if (unknown.Length == 0) return;
 
         var builder = new BatchBuilder { TenantId = TenantId };
         for (var i = 0; i < unknown.Length; i++)
         {
-            var tenant = unknown[i];
             if (i > 0) builder.StartNewCommand();
 
+            var tenant = unknown[i];
             builder.Append($"select id, coalesce({StreamsTable.ColdVersionColumn}, 0) from {events.DatabaseSchemaName}.{StreamsTable.TableName} where id = any(");
             if (events.StreamIdentity == StreamIdentity.AsGuid)
             {
@@ -88,10 +92,9 @@ public abstract partial class DocumentSessionBase
             }
         }
 
-        _coldVersions ??= new Dictionary<(string, object), long>();
+        // A stream without a row yet is created by this append, so it has no cold part.
         foreach (var tenant in unknown)
         {
-            // A stream without a row yet is created by this append, so it has no cold part.
             foreach (var stream in tenant) _coldVersions[stream] = 0;
         }
 
@@ -109,5 +112,32 @@ public abstract partial class DocumentSessionBase
 
             await reader.NextResultAsync(token).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    ///     Queued after the listeners ran, so it lands behind the appends: their <c>mt_streams</c> updates hold
+    ///     the row locks, which makes the check exact. Only streams whose cold version was observed are checked.
+    /// </summary>
+    private void queueColdVersionVerification()
+    {
+        if (_coldVersions == null || _coldVersions.Count == 0) return;
+
+        var observed = appendedStreams()
+            .Where(x => x.Events.Count > 0)
+            .Select(coldKeyOf)
+            .Distinct()
+            .Where(_coldVersions.ContainsKey)
+            .GroupBy(x => x.TenantId);
+
+        foreach (var tenant in observed)
+        {
+            QueueOperation(new AssertColdVersionsOperation(Options.EventGraph, tenant.Key,
+                tenant.Select(x => (x.StreamId, _coldVersions[x])).ToArray()));
+        }
+    }
+
+    private void forgetObservedColdVersions()
+    {
+        _coldVersions?.Clear();
     }
 }
