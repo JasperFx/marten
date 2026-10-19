@@ -43,4 +43,32 @@ public interface IEventStoreOperations : JasperFx.Events.IEventStoreOperations, 
     /// the async projection is caught up. Returns true if found, false if not found.
     /// </summary>
     Task<bool> StreamLatestJson<T>(string id, Stream destination, CancellationToken cancellation = default) where T : class;
+
+    /// <summary>
+    ///     On <c>SaveChangesAsync</c>, delete the stream's events through <paramref name="throughVersion" /> from
+    ///     <c>mt_events</c> and record that they now live in the configured cold event store. Copy them there
+    ///     in the same unit of work. Fails the unit of work when the stream does not exist or has not reached
+    ///     <paramref name="throughVersion" />. Requires <see cref="IEventStoreOptions.UseColdEventStore(Cold.IColdEventStore)" />.
+    /// </summary>
+    void MarkStreamCold(Guid streamId, long throughVersion);
+
+    /// <inheritdoc cref="MarkStreamCold(Guid, long)" />
+    void MarkStreamCold(string streamKey, long throughVersion);
+
+    /// <summary>
+    ///     On <c>SaveChangesAsync</c>, forget the stream's cold part: after this the stream is read from
+    ///     <c>mt_events</c> alone, so put its cold events back there first.
+    /// </summary>
+    void MarkStreamWarm(Guid streamId);
+
+    /// <inheritdoc cref="MarkStreamWarm(Guid)" />
+    void MarkStreamWarm(string streamKey);
+
+    /// <summary>
+    ///     The cold version of a stream this unit of work appends to, as stored before it: null when the stream
+    ///     has no cold part or is started by this unit of work. Meant for <see cref="IDocumentSessionListener.BeforeSaveChangesAsync" />,
+    ///     by which time Marten has resolved it for every appended stream, whichever way the events were appended.
+    ///     Before that it is only known for streams fetched with <c>FetchForWriting</c> or <c>FetchLatest</c>.
+    /// </summary>
+    long? ColdVersionOf(StreamAction stream);
 }

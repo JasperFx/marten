@@ -552,6 +552,18 @@ namespace Marten.Events
         IEventStoreOptions Upcast<TUpcaster>() where TUpcaster : IEventUpcaster, new();
 
         /// <summary>
+        ///     Let streams have a cold part: their events up to <c>mt_streams.cold_version</c>, moved out of
+        ///     <c>mt_events</c> by the application and read back through <paramref name="coldEventStore" />.
+        ///     Live aggregations (<c>FetchForWriting</c>, <c>FetchLatest</c>, <c>AggregateStreamAsync</c>) fold the
+        ///     cold events first, and <c>FetchStreamIncludingColdAsync</c> returns them. Adds the nullable
+        ///     <c>cold_version</c> column to <c>mt_streams</c>.
+        /// </summary>
+        IEventStoreOptions UseColdEventStore(Cold.IColdEventStore coldEventStore);
+
+        /// <inheritdoc cref="UseColdEventStore(Cold.IColdEventStore)" />
+        IEventStoreOptions UseColdEventStore<T>() where T : Cold.IColdEventStore, new();
+
+        /// <summary>
         /// Register a policy for how to remove or mask protected information
         /// for an event type "T" or series of event types that can be cast
         /// to "T"

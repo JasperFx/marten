@@ -58,6 +58,10 @@ public partial class EventGraph
         // producer-side bumps it would otherwise read as a conflict.
         session.QueuePendingDcbBoundaryAssertions();
 
+        // Before the appender and the listeners, so an IDocumentSessionListener can ask
+        // IEventStoreOperations.ColdVersionOf(stream) for any appended stream.
+        await session.ResolveColdVersionsAsync(token).ConfigureAwait(false);
+
         await EventAppender.ProcessEventsAsync(this, session, _inlineProjections.Value, token).ConfigureAwait(false);
 
         if (UseListenNotifyForEventAppends)
