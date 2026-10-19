@@ -1064,11 +1064,13 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
     private async Task maybeApplyChanges()
     {
-        if (!_hasAppliedChanges &&
-            (_configuration.AutoCreate ?? _options.AutoCreateSchemaObjects) != AutoCreate.None)
+        // ShardedTenancyOptions.AutoCreate overrides the store's setting for the master database tables, so
+        // it has to choose the mode they are migrated under, not only whether they are migrated.
+        var autoCreate = _configuration.AutoCreate ?? _options.AutoCreateSchemaObjects;
+        if (!_hasAppliedChanges && autoCreate != AutoCreate.None)
         {
             await _poolDatabase.Value
-                .ApplyAllConfiguredChangesToDatabaseAsync(_options.AutoCreateSchemaObjects)
+                .ApplyAllConfiguredChangesToDatabaseAsync(autoCreate)
                 .ConfigureAwait(false);
             _hasAppliedChanges = true;
         }
