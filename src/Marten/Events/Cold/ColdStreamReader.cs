@@ -36,10 +36,10 @@ internal static class ColdStreamReader
     ///     Appends <c>select cold_version from mt_streams ...</c> as its own statement. Pair with
     ///     <see cref="ReadBoundaryAsync" />.
     /// </summary>
-    public static void WriteBoundaryQuery(EventGraph events, ICommandBuilder builder, object streamId, string tenantId)
+    public static void WriteBoundaryQuery(EventGraph events, ICommandBuilder builder, string streamKey, string tenantId)
     {
         builder.Append($"select {StreamsTable.ColdVersionColumn} from {events.DatabaseSchemaName}.{StreamsTable.TableName} where id = ");
-        builder.AppendParameter(streamId, events.StreamIdDbType);
+        builder.AppendParameter(streamKey);
 
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {
@@ -72,18 +72,16 @@ internal static class ColdStreamReader
     ///     The stream's cold events through <paramref name="coldVersion" /> that fall in <paramref name="window" />,
     ///     followed by the warm events above it. Must not run while a reader is open on the session.
     /// </summary>
-    public static async Task<IReadOnlyList<IEvent>> PrependColdAsync(QuerySession session, object streamId,
+    public static async Task<IReadOnlyList<IEvent>> PrependColdAsync(QuerySession session, string streamKey,
         string tenantId, long coldVersion, IReadOnlyList<IEvent> warm, StreamWindow window, CancellationToken token)
     {
         if (coldVersion <= 0) return warm;
 
         var events = session.Options.EventGraph;
         var store = events.ColdEventStore ?? throw new InvalidOperationException(
-            $"Stream '{streamId}' has a cold part through version {coldVersion}, but no cold event store is configured. Use StoreOptions.Events.UseColdEventStore().");
+            $"Stream '{streamKey}' has a cold part through version {coldVersion}, but no cold event store is configured. Use StoreOptions.Events.UseColdEventStore().");
 
-        var source = streamId is Guid id
-            ? store.ReadAsync(session, id, coldVersion, token)
-            : store.ReadAsync(session, (string)streamId, coldVersion, token);
+        var source = store.ReadAsync(session, streamKey, coldVersion, token);
 
         var all = new List<IEvent>(warm.Count + (int)Math.Min(coldVersion, 1024));
         long previous = 0;
@@ -92,23 +90,14 @@ internal static class ColdStreamReader
             if (cold.Version <= previous || cold.Version > coldVersion)
             {
                 throw new InvalidOperationException(
-                    $"{store.GetType().Name} returned version {cold.Version} of stream '{streamId}' after version {previous}. A cold event store must return at most one event per version, oldest first, none above the cold version {coldVersion}.");
+                    $"{store.GetType().Name} returned version {cold.Version} of stream '{streamKey}' after version {previous}. A cold event store must return at most one event per version, oldest first, none above the cold version {coldVersion}.");
             }
 
             previous = cold.Version;
             if (!window.Includes(cold.Version, cold.Timestamp)) continue;
 
             var @event = await events.DeserializeAsync(cold, token).ConfigureAwait(false);
-            if (streamId is Guid guid)
-            {
-                @event.StreamId = guid;
-                @event.StreamKey = null;
-            }
-            else
-            {
-                @event.StreamKey = (string)streamId;
-            }
-
+            @event.StreamKey = streamKey;
             @event.TenantId = tenantId;
             all.Add(@event);
         }

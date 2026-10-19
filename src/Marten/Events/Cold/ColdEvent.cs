@@ -56,13 +56,10 @@ public sealed class ColdEvent
 
     /// <summary>
     ///     Only read by <see cref="EventGraph.DeserializeAsync" /> when called directly. When Marten reads a
-    ///     stream's cold part, the stream identity and tenant come from that stream.
+    ///     stream's cold part, the stream key and tenant come from that stream.
     /// </summary>
-    public Guid StreamId { get; init; }
-
-    /// <inheritdoc cref="StreamId" />
     public string? StreamKey { get; init; }
 
-    /// <inheritdoc cref="StreamId" />
+    /// <inheritdoc cref="StreamKey" />
     public string? TenantId { get; init; }
 }

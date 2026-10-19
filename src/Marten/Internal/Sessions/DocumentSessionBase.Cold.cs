@@ -16,17 +16,17 @@ public abstract partial class DocumentSessionBase
 {
     // The cold versions this session has observed, by tenant and stream id; 0 means "no cold part".
     // Every appended stream in here is verified when the unit of work commits.
-    private Dictionary<(string TenantId, object StreamId), long>? _coldVersions;
+    private Dictionary<(string TenantId, string StreamKey), long>? _coldVersions;
 
-    internal void RememberColdVersion(string tenantId, object streamId, long coldVersion)
+    internal void RememberColdVersion(string tenantId, string streamKey, long coldVersion)
     {
-        _coldVersions ??= new Dictionary<(string, object), long>();
-        _coldVersions[(tenantId, streamId)] = coldVersion;
+        _coldVersions ??= new Dictionary<(string, string), long>();
+        _coldVersions[(tenantId, streamKey)] = coldVersion;
     }
 
-    internal void ForgetColdVersion(string tenantId, object streamId)
+    internal void ForgetColdVersion(string tenantId, string streamKey)
     {
-        _coldVersions?.Remove((tenantId, streamId));
+        _coldVersions?.Remove((tenantId, streamKey));
     }
 
     internal async ValueTask<long?> ColdVersionOfAsync(StreamAction stream, CancellationToken token)
@@ -43,9 +43,7 @@ public abstract partial class DocumentSessionBase
         return coldVersion > 0 ? coldVersion : null;
     }
 
-    private (string TenantId, object StreamId) coldKeyOf(StreamAction stream) =>
-        (stream.TenantId ?? TenantId,
-            Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid ? stream.Id : stream.Key!);
+    private (string TenantId, string StreamKey) coldKeyOf(StreamAction stream) => (stream.TenantId ?? TenantId, stream.Key!);
 
     private IEnumerable<StreamAction> appendedStreams() =>
         _workTracker.Streams.Where(x => x.ActionType == StreamActionType.Append);
@@ -64,7 +62,7 @@ public abstract partial class DocumentSessionBase
             .GroupBy(x => x.TenantId)
             .ToArray();
 
-        _coldVersions ??= new Dictionary<(string, object), long>();
+        _coldVersions ??= new Dictionary<(string, string), long>();
         if (unknown.Length == 0) return;
 
         var builder = new BatchBuilder { TenantId = TenantId };
@@ -74,14 +72,7 @@ public abstract partial class DocumentSessionBase
 
             var tenant = unknown[i];
             builder.Append($"select id, coalesce({StreamsTable.ColdVersionColumn}, 0) from {events.DatabaseSchemaName}.{StreamsTable.TableName} where id = any(");
-            if (events.StreamIdentity == StreamIdentity.AsGuid)
-            {
-                builder.AppendParameter(tenant.Select(x => (Guid)x.StreamId).ToArray());
-            }
-            else
-            {
-                builder.AppendParameter(tenant.Select(x => (string)x.StreamId).ToArray());
-            }
+            builder.AppendParameter(tenant.Select(x => x.StreamKey).ToArray());
 
             builder.Append(')');
 
@@ -103,11 +94,8 @@ public abstract partial class DocumentSessionBase
         {
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                object streamId = events.StreamIdentity == StreamIdentity.AsGuid
-                    ? await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false)
-                    : await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-
-                _coldVersions[(tenant.Key, streamId)] = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
+                var streamKey = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+                _coldVersions[(tenant.Key, streamKey)] = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
             }
 
             await reader.NextResultAsync(token).ConfigureAwait(false);
@@ -132,7 +120,7 @@ public abstract partial class DocumentSessionBase
         foreach (var tenant in observed)
         {
             QueueOperation(new AssertColdVersionsOperation(Options.EventGraph, tenant.Key,
-                tenant.Select(x => (x.StreamId, _coldVersions[x])).ToArray()));
+                tenant.Select(x => (x.StreamKey, _coldVersions[x])).ToArray()));
         }
     }
 

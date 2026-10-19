@@ -10,14 +10,14 @@ closed for appends, while a cold stream keeps working as an ordinary stream.
 
 ## Configuration
 
-Implement `IColdEventStore` and register it:
+Implement `IColdEventStore` and register it. Cold event storage requires string stream identity:
 
 ```cs
+opts.Events.StreamIdentity = StreamIdentity.AsString;
 opts.Events.UseColdEventStore(new MyColdEventStore());
 
 public class MyColdEventStore: IColdEventStore
 {
-    // Implement the overload that matches your StreamIdentity
     public async IAsyncEnumerable<ColdEvent> ReadAsync(IQuerySession session, string streamKey,
         long throughVersion, [EnumeratorCancellation] CancellationToken token)
     {
@@ -56,13 +56,12 @@ continuing after the cold part. Once those are finished too, move them with a hi
 often as the stream grows:
 
 ```cs
-// versions 1..3 went cold earlier; 4 and 5 were appended since
-session.Events.MarkStreamCold(streamKey, 5);
+// versions 1..5 went cold earlier; 6 and 7 were appended since
+session.Events.MarkStreamCold(streamKey, 7);
 ```
 
 The boundary only moves up. Marking a stream cold through a version at or below its current boundary
-deletes nothing and changes nothing, so retrying a move is harmless. Events below the boundary are always
-read from the cold event store, never from `mt_events`.
+deletes nothing and changes nothing, so retrying a move is harmless.
 
 ::: warning
 The async daemon does not read cold events. `MarkStreamCold` therefore refuses, deleting nothing, while any
@@ -74,17 +73,15 @@ the ones that were refused. A projection or subscription that is registered but 
 
 ## Reading
 
-- `FetchForWriting`, `FetchForExclusiveWriting`, `FetchLatest` and `AggregateStreamAsync` fold the cold
-  events first and then the events in `mt_events`, for live aggregations. A stream with only cold events
-  comes back whole, at its current version, so appending to it is ordinary code.
-- `FetchStreamAsync` still returns the events in `mt_events` only. `FetchStreamIncludingColdAsync` returns
-  the cold part first.
+- `FetchForWriting`, `FetchForExclusiveWriting`, `FetchLatest` (also in a batch) and `AggregateStreamAsync`
+  fold the cold events first and then the events in `mt_events`, for live aggregations. A stream with only
+  cold events comes back whole, at its current version, so appending to it is ordinary code.
+- Inline and async aggregations read their stored snapshot, which already contains the cold part, and do not
+  read the cold event store.
+- `FetchStreamAsync` returns the events in `mt_events` only.
 - Cold events are deserialized exactly like events from `mt_events`: the same event type resolution
   (aliases, the stored .NET type as fallback) and the same upcasters. `store.Events.DeserializeAsync(ColdEvent)`
-  exposes this for events held anywhere else.
-
-Inline and async aggregations read their stored snapshot, which already contains the cold part, and do not
-read the cold event store.
+  exposes this for reading cold events yourself.
 
 ## Knowing that an append continues a cold stream
 
@@ -95,5 +92,5 @@ call looks up every appended stream the session has not fetched in one query; a 
 nothing.
 
 Every appended stream whose cold version the session observed, through this call or a live fetch, is checked
-again at commit, behind the appends' own row locks. If another transaction marked it cold in between, the
-commit fails with `ColdStreamChangedException` and nothing is written; retry the unit of work.
+again at commit, behind the appends' own row locks. If another transaction moved more of it to cold storage in
+between, the commit fails with `ColdStreamChangedException` and nothing is written; retry the unit of work.

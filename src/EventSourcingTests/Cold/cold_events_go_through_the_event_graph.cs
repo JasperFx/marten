@@ -81,9 +81,7 @@ public class cold_events_go_through_the_event_graph: OneOffConfigurationsContext
 
         var stream = await session.Events.FetchForWriting<Cart>(key);
         stream.Aggregate!.Items.ShouldBe(["apple", "pear"]);
-
-        var events = await session.Events.FetchStreamIncludingColdAsync(key);
-        events.Select(x => x.Data).Skip(1).ShouldBe([new ItemAdded("apple"), new ItemAdded("pear")]);
+        stream.StartingVersion.ShouldBe(3);
     }
 
     [Fact]
@@ -136,35 +134,5 @@ public class cold_events_go_through_the_event_graph: OneOffConfigurationsContext
         e.TenantId.ShouldBe("tenant-a");
         e.CorrelationId.ShouldBe("corr");
         e.GetHeader("source").ShouldBe("cold");
-    }
-
-    [Fact]
-    public async Task fetching_the_raw_stream_includes_the_cold_part_only_when_asked()
-    {
-        configure();
-
-        var key = Guid.NewGuid().ToString();
-        await using (var session = theStore.LightweightSession())
-        {
-            session.Events.StartStream<Cart>(key, new CartOpened("anne"), new ItemAdded("apple"), new ItemAdded("pear"),
-                new CartCheckedOut());
-            await session.SaveChangesAsync();
-        }
-
-        var sequences = (await theStore.LightweightSession().Events.FetchStreamAsync(key)).Select(x => x.Sequence).ToArray();
-        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 2);
-
-        await using var query = theStore.QuerySession();
-
-        (await query.Events.FetchStreamAsync(key)).Select(x => x.Version).ShouldBe([3L, 4L]);
-
-        var all = await query.Events.FetchStreamIncludingColdAsync(key);
-        all.Select(x => x.Version).ShouldBe([1L, 2L, 3L, 4L]);
-        all.Select(x => x.Sequence).ShouldBe(sequences);
-        all.ShouldAllBe(x => x.StreamKey == key && x.TenantId == StorageConstants.DefaultTenantId);
-        all[1].Data.ShouldBe(new ItemAdded("apple"));
-
-        (await query.Events.FetchStreamIncludingColdAsync(key, version: 3)).Select(x => x.Version).ShouldBe([1L, 2L, 3L]);
-        (await query.Events.FetchStreamIncludingColdAsync(key, fromVersion: 2)).Select(x => x.Version).ShouldBe([2L, 3L, 4L]);
     }
 }

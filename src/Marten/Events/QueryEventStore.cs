@@ -42,14 +42,6 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
         DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
         => fetchStreamAsync(streamKey, version, timestamp, fromVersion, false, token);
 
-    public Task<IReadOnlyList<IEvent>> FetchStreamIncludingColdAsync(Guid streamId, long version = 0,
-        DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
-        => fetchStreamAsync(streamId, version, timestamp, fromVersion, true, token);
-
-    public Task<IReadOnlyList<IEvent>> FetchStreamIncludingColdAsync(string streamKey, long version = 0,
-        DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
-        => fetchStreamAsync(streamKey, version, timestamp, fromVersion, true, token);
-
     private async Task<IReadOnlyList<IEvent>> fetchStreamAsync(object streamId, long version,
         DateTimeOffset? timestamp, long fromVersion, bool includeCold, CancellationToken token)
     {
@@ -78,13 +70,14 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 
         IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
 
-        if (!includeCold || _store.Events.ColdEventStore == null)
+        // Only the aggregations read the cold part; a cold store implies string stream identity
+        if (!includeCold || _store.Events.ColdEventStore == null || streamId is not string streamKey)
         {
             return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
         var builder = new BatchBuilder { TenantId = _tenant.TenantId };
-        ColdStreamReader.WriteBoundaryQuery(_store.Events, builder, streamId, _tenant.TenantId);
+        ColdStreamReader.WriteBoundaryQuery(_store.Events, builder, streamKey, _tenant.TenantId);
         builder.StartNewCommand();
         handler.ConfigureCommand(builder, _session);
 
@@ -97,14 +90,14 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             warm = await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
         }
 
-        return await ColdStreamReader.PrependColdAsync(_session, streamId, _tenant.TenantId, coldVersion, warm,
+        return await ColdStreamReader.PrependColdAsync(_session, streamKey, _tenant.TenantId, coldVersion, warm,
             new StreamWindow(version, fromVersion, timestamp), token).ConfigureAwait(false);
     }
 
     public async Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
         T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
     {
-        var events = await FetchStreamIncludingColdAsync(streamId, version, timestamp, fromVersion, token).ConfigureAwait(false);
+        var events = await fetchStreamAsync(streamId, version, timestamp, fromVersion, false, token).ConfigureAwait(false);
         if (!events.Any())
         {
             return state;
@@ -132,7 +125,7 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
         DateTimeOffset? timestamp = null,
         CancellationToken token = default) where T : class
     {
-        var events = await FetchStreamIncludingColdAsync(streamId, version, timestamp, 0, token).ConfigureAwait(false);
+        var events = await fetchStreamAsync(streamId, version, timestamp, 0, false, token).ConfigureAwait(false);
         if (!events.Any())
         {
             return null;
@@ -162,7 +155,7 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
     public async Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
     {
-        var events = await FetchStreamIncludingColdAsync(streamKey, version, timestamp, fromVersion, token).ConfigureAwait(false);
+        var events = await fetchStreamAsync(streamKey, version, timestamp, fromVersion, true, token).ConfigureAwait(false);
         if (!events.Any())
         {
             return state;
@@ -188,7 +181,7 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
     public async Task<T?> AggregateStreamToLastKnownAsync<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         CancellationToken token = default) where T : class
     {
-        var events = await FetchStreamIncludingColdAsync(streamKey, version, timestamp, 0, token).ConfigureAwait(false);
+        var events = await fetchStreamAsync(streamKey, version, timestamp, 0, true, token).ConfigureAwait(false);
         if (!events.Any())
         {
             return null;

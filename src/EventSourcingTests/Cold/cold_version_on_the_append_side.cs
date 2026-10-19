@@ -131,7 +131,9 @@ public class cold_version_on_the_append_side: OneOffConfigurationsContext
         var e = await Should.ThrowAsync<ColdStreamChangedException>(() => writer.SaveChangesAsync());
         e.Message.ShouldContain(key);
 
-        (await theStore.LightweightSession().Events.FetchStreamIncludingColdAsync(key)).Count.ShouldBe(2);
+        await using var query = theStore.LightweightSession();
+        (await query.Events.FetchStreamStateAsync(key))!.Version.ShouldBe(2);
+        (await query.Events.FetchLatest<Cart>(key))!.Items.ShouldBe(["apple"]);
     }
 
     [Fact]

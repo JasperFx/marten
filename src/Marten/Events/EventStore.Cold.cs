@@ -9,11 +9,6 @@ namespace Marten.Events;
 
 internal partial class EventStore
 {
-    public void MarkStreamCold(Guid streamId, long throughVersion)
-    {
-        queueColdBoundary(streamId, new MarkStreamColdOperation(assertColdStore(), streamId, throughVersion, _session.TenantId));
-    }
-
     public void MarkStreamCold(string streamKey, long throughVersion)
     {
         queueColdBoundary(streamKey, new MarkStreamColdOperation(assertColdStore(), streamKey, throughVersion, _session.TenantId));
@@ -26,10 +21,10 @@ internal partial class EventStore
         return _session.ColdVersionOfAsync(stream, token);
     }
 
-    private void queueColdBoundary(object streamId, Weasel.Storage.IStorageOperation operation)
+    private void queueColdBoundary(string streamKey, Weasel.Storage.IStorageOperation operation)
     {
         // What this session remembered about the boundary is about to be stale.
-        _session.ForgetColdVersion(_session.TenantId, streamId);
+        _session.ForgetColdVersion(_session.TenantId, streamKey);
         _session.QueueOperation(operation);
     }
 

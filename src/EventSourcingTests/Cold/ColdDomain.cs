@@ -33,16 +33,6 @@ public class Cart
     public void Apply(CartCheckedOut _) => CheckedOut = true;
 }
 
-public class GuidCart
-{
-    public Guid Id { get; set; }
-    public string Customer { get; set; } = null!;
-    public List<string> Items { get; set; } = new();
-
-    public static GuidCart Create(CartOpened e) => new() { Customer = e.Customer };
-    public void Apply(ItemAdded e) => Items.Add(e.Name);
-}
-
 public abstract class CartSummary
 {
     public string Id { get; set; } = null!;

@@ -74,11 +74,14 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
     /// </summary>
     private readonly record struct LiveRead(long Version, long ColdVersion, IReadOnlyList<IEvent> WarmEvents);
 
+    // A cold event store is only accepted with string stream identity, so TId is string whenever it is used
+    private static string streamKeyOf(TId id) => (string)(object)id;
+
     private void configureColdBoundary(ICommandBuilder builder, TId id)
     {
         if (!_readsCold) return;
 
-        ColdStreamReader.WriteBoundaryQuery(_events, builder, id,
+        ColdStreamReader.WriteBoundaryQuery(_events, builder, streamKeyOf(id),
             IsGlobal ? StorageConstants.DefaultTenantId : builder.TenantId);
         builder.StartNewCommand();
     }
@@ -115,14 +118,19 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
     private async Task<IReadOnlyList<IEvent>> eventsToFoldAsync(QuerySession session, TId id, LiveRead read,
         CancellationToken token)
     {
-        var tenantId = ColdStreamReader.TenantFor(session, IsGlobal);
-        if (_readsCold && session is DocumentSessionBase documentSession)
+        var events = read.WarmEvents;
+        if (_readsCold)
         {
-            documentSession.RememberColdVersion(tenantId, id, read.ColdVersion);
-        }
+            var tenantId = ColdStreamReader.TenantFor(session, IsGlobal);
+            var streamKey = streamKeyOf(id);
+            if (session is DocumentSessionBase documentSession)
+            {
+                documentSession.RememberColdVersion(tenantId, streamKey, read.ColdVersion);
+            }
 
-        var events = await ColdStreamReader.PrependColdAsync(session, id, tenantId,
-            read.ColdVersion, read.WarmEvents, default, token).ConfigureAwait(false);
+            events = await ColdStreamReader.PrependColdAsync(session, streamKey, tenantId,
+                read.ColdVersion, read.WarmEvents, default, token).ConfigureAwait(false);
+        }
 
         _telemetry.RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.LivePlan);
         return events;

@@ -62,9 +62,6 @@ public interface IEventStoreOperations : JasperFx.Events.IEventStoreOperations, 
     ///     earlier would silently lose them for that shard. Retry once the daemon caught up.
     ///     </para>
     /// </remarks>
-    void MarkStreamCold(Guid streamId, long throughVersion);
-
-    /// <inheritdoc cref="MarkStreamCold(Guid, long)" />
     void MarkStreamCold(string streamKey, long throughVersion);
 
     /// <summary>

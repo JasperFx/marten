@@ -41,11 +41,11 @@ namespace Marten.Events.Operations;
 internal class MarkStreamColdOperation: IStorageOperation
 {
     private readonly EventGraph _events;
-    private readonly object _streamId;
+    private readonly string _streamKey;
     private readonly long _throughVersion;
     private readonly string _tenantId;
 
-    public MarkStreamColdOperation(EventGraph events, object streamId, long throughVersion, string tenantId)
+    public MarkStreamColdOperation(EventGraph events, string streamKey, long throughVersion, string tenantId)
     {
         if (throughVersion < 1)
         {
@@ -53,7 +53,7 @@ internal class MarkStreamColdOperation: IStorageOperation
         }
 
         _events = events;
-        _streamId = streamId;
+        _streamKey = streamKey;
         _throughVersion = throughVersion;
         _tenantId = tenantId;
     }
@@ -80,7 +80,7 @@ internal class MarkStreamColdOperation: IStorageOperation
         void streamPredicate(string column)
         {
             sql.Append(column).Append(" = ?");
-            parameters.Add((_streamId, _events.StreamIdDbType));
+            parameters.Add((_streamKey, NpgsqlDbType.Varchar));
             if (conjoined)
             {
                 sql.Append(" and tenant_id = ?");
@@ -154,14 +154,14 @@ internal class MarkStreamColdOperation: IStorageOperation
         {
             var shards = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
             exceptions.Add(new InvalidOperationException(
-                $"Cannot mark stream '{_streamId}' cold through version {_throughVersion} for tenant '{_tenantId}' yet: these async shards have not processed its events: {shards}. Nothing was deleted; try again once they caught up."));
+                $"Cannot mark stream '{_streamKey}' cold through version {_throughVersion} for tenant '{_tenantId}' yet: these async shards have not processed its events: {shards}. Nothing was deleted; try again once they caught up."));
             return;
         }
 
         if (!await reader.GetFieldValueAsync<bool>(1, token).ConfigureAwait(false))
         {
             exceptions.Add(new InvalidOperationException(
-                $"Cannot mark stream '{_streamId}' cold through version {_throughVersion}: the stream does not exist for tenant '{_tenantId}', or has not reached that version."));
+                $"Cannot mark stream '{_streamKey}' cold through version {_throughVersion}: the stream does not exist for tenant '{_tenantId}', or has not reached that version."));
         }
     }
 
@@ -178,9 +178,9 @@ internal class AssertColdVersionsOperation: IStorageOperation
 {
     private readonly EventGraph _events;
     private readonly string _tenantId;
-    private readonly (object StreamId, long ColdVersion)[] _expected;
+    private readonly (string StreamKey, long ColdVersion)[] _expected;
 
-    public AssertColdVersionsOperation(EventGraph events, string tenantId, (object StreamId, long ColdVersion)[] expected)
+    public AssertColdVersionsOperation(EventGraph events, string tenantId, (string StreamKey, long ColdVersion)[] expected)
     {
         _events = events;
         _tenantId = tenantId;
@@ -190,14 +190,7 @@ internal class AssertColdVersionsOperation: IStorageOperation
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append($"select s.id, coalesce(s.{StreamsTable.ColdVersionColumn}, 0) from unnest(");
-        if (_events.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            builder.AppendParameter(_expected.Select(x => (Guid)x.StreamId).ToArray());
-        }
-        else
-        {
-            builder.AppendParameter(_expected.Select(x => (string)x.StreamId).ToArray());
-        }
+        builder.AppendParameter(_expected.Select(x => x.StreamKey).ToArray());
 
         builder.Append(", ");
         builder.AppendParameter(_expected.Select(x => x.ColdVersion).ToArray());
@@ -219,7 +212,7 @@ internal class AssertColdVersionsOperation: IStorageOperation
         var changed = new List<string>();
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            var id = await reader.GetFieldValueAsync<object>(0, token).ConfigureAwait(false);
+            var id = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
             var coldVersion = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
             changed.Add($"'{id}' (now {(coldVersion > 0 ? $"cold through version {coldVersion}" : "without a cold part")})");
         }

@@ -139,7 +139,7 @@ public class cold_stream_part_per_tenant: PartitionedStoreContext
         await using (var session = Store.LightweightSession("beta"))
         {
             (await session.Events.FetchLatest<Notes>(key))!.Lines.ShouldBe(["opened by beta", "beta 1", "beta 2"]);
-            (await session.Events.FetchStreamIncludingColdAsync(key)).ShouldAllBe(x => x.TenantId == "beta");
+            (await session.Events.FetchStreamAsync(key)).Select(x => x.Version).ShouldBe([3L]);
 
             session.Events.Append(key, new Noted("beta 3"));
             await session.SaveChangesAsync();

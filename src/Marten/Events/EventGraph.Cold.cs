@@ -75,7 +75,6 @@ public partial class EventGraph
         @event.Version = stored.Version;
         @event.Sequence = stored.Sequence;
         @event.Timestamp = stored.Timestamp;
-        @event.StreamId = stored.StreamId;
         @event.StreamKey = stored.StreamKey;
         @event.TenantId = stored.TenantId ?? StorageConstants.DefaultTenantId;
         @event.CorrelationId = stored.CorrelationId;

@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 
@@ -89,6 +90,7 @@ internal sealed class JsonPayloadReader: DbDataReader
     public override string GetName(int ordinal) => "data";
     public override int GetOrdinal(string name) => 0;
     public override string GetDataTypeName(int ordinal) => "jsonb";
+    [return: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.PublicProperties)]
     public override Type GetFieldType(int ordinal) => typeof(string);
     public override bool NextResult() => false;
     public override IEnumerator GetEnumerator() => throw new NotSupportedException();

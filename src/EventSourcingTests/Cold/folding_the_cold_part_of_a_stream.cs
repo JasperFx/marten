@@ -154,73 +154,38 @@ public class folding_the_cold_part_of_a_stream: OneOffConfigurationsContext
         (await latest)!.Items.ShouldBe(["apple"]);
     }
 
-    private async Task appendItems(object id, params string[] names)
+    private async Task appendItems(string key, params string[] names)
     {
         await using var session = theStore.LightweightSession();
-        if (id is Guid guid)
-        {
-            var stream = await session.Events.FetchForWriting<GuidCart>(guid);
-            stream.AppendMany(names.Select(x => (object)new ItemAdded(x)).ToArray());
-        }
-        else
-        {
-            var stream = await session.Events.FetchForWriting<Cart>((string)id);
-            stream.AppendMany(names.Select(x => (object)new ItemAdded(x)).ToArray());
-        }
-
+        var stream = await session.Events.FetchForWriting<Cart>(key);
+        stream.AppendMany(names.Select(x => (object)new ItemAdded(x)).ToArray());
         await session.SaveChangesAsync();
     }
 
-    [Theory]
-    [InlineData(StreamIdentity.AsString)]
-    [InlineData(StreamIdentity.AsGuid)]
-    public async Task a_stream_goes_cold_again_and_again_as_it_grows(StreamIdentity identity)
+    [Fact]
+    public async Task a_stream_goes_cold_again_and_again_as_it_grows()
     {
-        StoreOptions(opts =>
-        {
-            opts.Events.StreamIdentity = identity;
-            opts.Events.UseColdEventStore(_cold);
-        });
+        useStringStreams();
+        var key = await startCart(new ItemAdded("apple"), new ItemAdded("pear"));
 
-        object id = identity == StreamIdentity.AsGuid ? Guid.NewGuid() : Guid.NewGuid().ToString();
-        await using (var session = theStore.LightweightSession())
-        {
-            object[] events = [new CartOpened("anne"), new ItemAdded("apple"), new ItemAdded("pear")];
-            if (id is Guid guid) session.Events.StartStream<GuidCart>(guid, events);
-            else session.Events.StartStream<Cart>((string)id, events);
-            await session.SaveChangesAsync();
-        }
+        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 3);
+        await appendItems(key, "plum", "fig");
+        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 5);
+        await appendItems(key, "kiwi");
 
-        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, id, 3);
-        await appendItems(id, "plum", "fig");
-        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, id, 5);
-        await appendItems(id, "kiwi");
-
-        _cold.StoredVersions(StorageConstants.DefaultTenantId, id).ShouldBe([1L, 2L, 3L, 4L, 5L]);
+        _cold.StoredVersions(StorageConstants.DefaultTenantId, key).ShouldBe([1L, 2L, 3L, 4L, 5L]);
 
         await using var first = theStore.LightweightSession();
         await using var second = theStore.LightweightSession();
 
         while (_cold.ReadThrough.TryDequeue(out _)) { }
 
-        if (id is Guid g)
-        {
-            var stream = await first.Events.FetchForWriting<GuidCart>(g);
-            stream.Aggregate!.Items.ShouldBe(["apple", "pear", "plum", "fig", "kiwi"]);
-            stream.StartingVersion.ShouldBe(6);
-            stream.AppendOne(new ItemAdded("lime"));
+        var stream = await first.Events.FetchForWriting<Cart>(key);
+        stream.Aggregate!.Items.ShouldBe(["apple", "pear", "plum", "fig", "kiwi"]);
+        stream.StartingVersion.ShouldBe(6);
+        stream.AppendOne(new ItemAdded("lime"));
 
-            (await second.Events.FetchForWriting<GuidCart>(g)).AppendOne(new ItemAdded("date"));
-        }
-        else
-        {
-            var stream = await first.Events.FetchForWriting<Cart>((string)id);
-            stream.Aggregate!.Items.ShouldBe(["apple", "pear", "plum", "fig", "kiwi"]);
-            stream.StartingVersion.ShouldBe(6);
-            stream.AppendOne(new ItemAdded("lime"));
-
-            (await second.Events.FetchForWriting<Cart>((string)id)).AppendOne(new ItemAdded("date"));
-        }
+        (await second.Events.FetchForWriting<Cart>(key)).AppendOne(new ItemAdded("date"));
 
         _cold.ReadThrough.ShouldBe([5L, 5L]);
 
@@ -267,38 +232,16 @@ public class folding_the_cold_part_of_a_stream: OneOffConfigurationsContext
     }
 
     [Fact]
-    public async Task guid_identified_streams_fold_their_cold_part()
+    public void guid_identified_streams_are_refused_at_configuration()
     {
-        StoreOptions(opts =>
+        var e = Should.Throw<InvalidOperationException>(() => DocumentStore.For(opts =>
         {
+            opts.Connection(ConnectionSource.ConnectionString);
             opts.Events.StreamIdentity = StreamIdentity.AsGuid;
             opts.Events.UseColdEventStore(_cold);
-        });
+        }));
 
-        var id = Guid.NewGuid();
-        await using (var session = theStore.LightweightSession())
-        {
-            session.Events.StartStream<GuidCart>(id, new CartOpened("anne"), new ItemAdded("apple"));
-            await session.SaveChangesAsync();
-        }
-
-        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, id, 2);
-
-        await using (var session = theStore.LightweightSession())
-        {
-            var stream = await session.Events.FetchForWriting<GuidCart>(id);
-            stream.Aggregate!.Id.ShouldBe(id);
-            stream.Aggregate.Items.ShouldBe(["apple"]);
-
-            stream.AppendOne(new ItemAdded("pear"));
-            await session.SaveChangesAsync();
-        }
-
-        await using (var session = theStore.LightweightSession())
-        {
-            (await session.Events.FetchLatest<GuidCart>(id))!.Items.ShouldBe(["apple", "pear"]);
-            (await session.Events.FetchStreamIncludingColdAsync(id)).Select(x => x.Version).ShouldBe([1L, 2L, 3L]);
-        }
+        e.Message.ShouldContain("Cold event storage supports string stream identity");
     }
 
     [Fact]
