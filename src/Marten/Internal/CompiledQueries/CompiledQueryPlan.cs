@@ -362,19 +362,25 @@ public class CompiledQueryPlan : ICommandBuilder
 
     public ICompiledQuery<TDoc, TOut> CreateQueryTemplate<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query) where TDoc : notnull
     {
-        foreach (var parameter in QueryMembers) parameter.StoreValue(query);
-
-        if (query is not IQueryPlanning && areAllMemberValuesUnique(query))
-        {
-            return query;
-        }
-
+        // #5711: plan from a generated template, never from the caller's instance by preference. The
+        // plan pairs a parameter with a member by matching values, so a caller whose value happens to
+        // equal one of the query's literals ("BB" against `x.Name == Name || x.Name == "BB"`) would bind
+        // that literal to the member, and every later execution would replace it. The template's
+        // values are generated (GUID strings, large negative numbers), so they don't collide with one.
         try
         {
             return (ICompiledQuery<TDoc, TOut>)TryCreateUniqueTemplate(query.GetType());
         }
         catch (Exception e)
         {
+            // A query type the template cannot be built for plans from the caller's instance, as every
+            // query did before #5711, as long as its values tell the members apart.
+            foreach (var parameter in QueryMembers) parameter.StoreValue(query);
+            if (query is not IQueryPlanning && areAllMemberValuesUnique(query))
+            {
+                return query;
+            }
+
             throw new InvalidCompiledQueryException("Unable to create a Compiled Query template", e);
         }
     }
@@ -400,8 +406,11 @@ public class CompiledQueryPlan : ICommandBuilder
             foreach (var member in QueryMembers) member.StoreValue(query);
         }
 
+        // Every successful return stores the template's own values: they are what the plan's
+        // parameters will carry, and so what MatchParameters has to find
         if (areAllMemberValuesUnique(query))
         {
+            foreach (var member in QueryMembers) member.StoreValue(query);
             return query;
         }
 
@@ -409,6 +418,7 @@ public class CompiledQueryPlan : ICommandBuilder
 
         if (areAllMemberValuesUnique(query))
         {
+            foreach (var member in QueryMembers) member.StoreValue(query);
             return query;
         }
 

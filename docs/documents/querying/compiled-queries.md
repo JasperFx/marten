@@ -134,7 +134,7 @@ The source generator is additive — adding it never breaks an existing compiled
 The first time that Marten encounters a new type of `ICompiledQuery`, it builds a "plan" for the query by:
 
 1. Finding all public _readable_ properties or fields on the compiled query type that would be potential parameters. Members marked with the `[MartenIgnore]` attribute are skipped.
-2. Either confirming that the query object you passed in has unique values across each parameter member, or constructing a new instance of the same type and assigning unique values itself.
+2. Constructing a new instance of the same type and assigning unique values itself. It falls back to the query object you passed in only when it cannot build that instance, and then only if your object has unique values across each parameter member. Marten generates the values so that none of them can be mistaken for a literal in your query.
 3. Parsing the expression returned from `QueryIs()` to derive the SQL command + the parameter slots Marten needs to fill at execution time.
 4. Matching the unique member values back to the command's parameter values to map query members to database parameters by index.
 
@@ -200,6 +200,7 @@ As for limitations,
 
 * You cannot use the Linq `ToArray()` or `ToList()` operators. See the next section for an explanation of how to query for multiple results with `ICompiledListQuery`.
 * The compiled query planning just cannot match Boolean fields or properties to command arguments, so Boolean flags cannot be used
+* `QueryIs()` has to read each value directly from a member of the query object. A value computed from members inside the expression, such as `First + Second`, `Name.ToUpper()` or `new List<string> { First, Second }`, is refused with an `InvalidCompiledQueryException` when the plan is built: it matches no member, so it would be frozen at its planning value. Compute it in a property of the query instead, the way `SkipCount` does in the example above. Conversions that keep a member's value, like comparing an `int` member to an `int?` field, and inline arrays of members, `new[] { First, Second }`, are fine (see [#5711](https://github.com/JasperFx/marten/issues/5711))
 * You cannot use any asynchronous operators. So in all cases, use the synchronous operator equivalent. So `FirstOrDefault()`, but not `FirstOrDefaultAsync()`. **This does not preclude you from using compiled queries in asynchronous querying**
 
 ## Querying for Multiple Results
