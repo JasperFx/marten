@@ -50,6 +50,16 @@ internal class EventTagTable: Table
         }
 
         PrimaryKeyName = PostgresqlIdentifier.Shorten($"pk_mt_event_tag_{registration.TableSuffix}");
+
+        // The primary key leads with value, which answers "which events carry this tag" but not "which tag
+        // rows belong to this event". PostgreSQL asks the second question of every tag table for each
+        // mt_events row any path deletes (the foreign key's check), and so does every delete of an event's
+        // tag rows ahead of the event. Without an index leading with seq_id, each of those is a scan of the
+        // whole tag table.
+        Indexes.Add(new IndexDefinition(PostgresqlIdentifier.Shorten($"idx_mt_event_tag_{registration.TableSuffix}_seq_id"))
+        {
+            Columns = ["seq_id"]
+        });
     }
 
     private static string PostgresqlTypeFor(Type simpleType)
