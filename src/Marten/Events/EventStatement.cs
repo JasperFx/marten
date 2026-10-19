@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using JasperFx.Core;
 using JasperFx.Events.Projections;
 using Marten.Events.Archiving;
 using Marten.Linq.SqlGeneration;
@@ -32,9 +31,26 @@ internal class EventStatement: SelectorStatement
 
     public string TenantId { get; set; } = ALL_TENANTS;
 
-    public string StreamKey { get; set; }
+    // Every caller sets exactly one of these two, and a set value is a stream -- Guid.Empty and "" included.
+    // They used to double as "no stream predicate" (Guid.Empty, or an empty key), so FetchStreamAsync(Guid.Empty)
+    // read every event in the tenant, and CompactStreamAsync then folded and deleted them. Marten refuses both
+    // values on Append and StartStream, but BulkInsertEventsAsync, a DCB boundary, legacy data and SQL do not.
+    // A key is tracked as assigned rather than read as non-null, because a null key is set too: it names no
+    // stream, and must read nothing rather than everything.
+    private string _streamKey;
+    private bool _hasStreamKey;
 
-    public Guid StreamId { get; set; } = Guid.Empty;
+    public string StreamKey
+    {
+        get => _streamKey;
+        set
+        {
+            _streamKey = value;
+            _hasStreamKey = true;
+        }
+    }
+
+    public Guid? StreamId { get; set; }
 
     public long FromVersion { get; set; }
     public bool IgnoreSkipped { get; }
@@ -102,14 +118,17 @@ internal class EventStatement: SelectorStatement
             yield return new WhereFragment("d.tenant_id = ?", TenantId);
         }
 
-        if (StreamId != Guid.Empty)
+        if (StreamId.HasValue)
         {
-            yield return new WhereFragment("d.stream_id = ?", StreamId);
+            yield return new WhereFragment("d.stream_id = ?", StreamId.Value);
         }
 
-        if (StreamKey.IsNotEmpty())
+        if (_hasStreamKey)
         {
-            yield return new WhereFragment("d.stream_id = ?", StreamKey);
+            // stream_id is never null, so no event belongs to a null key
+            yield return StreamKey == null
+                ? new WhereFragment("false")
+                : new WhereFragment("d.stream_id = ?", StreamKey);
         }
 
         foreach (var filter in Filters) yield return filter;

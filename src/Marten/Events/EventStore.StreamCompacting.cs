@@ -44,6 +44,13 @@ internal partial class EventStore
         // nothing the caller can act on.
         _store.Events.EnsureAsStringStorage(_session);
 
+        // The same refusal Append and StartStream make. Compaction rewrites one event and deletes the rest,
+        // so it must never be pointed at anything wider than a stream the caller named.
+        if (string.IsNullOrEmpty(streamKey))
+        {
+            throw new ArgumentOutOfRangeException(nameof(streamKey), "The stream key cannot be null or empty");
+        }
+
         var request = new StreamCompactingRequest<T>(streamKey);
         configure?.Invoke(request);
 
@@ -57,6 +64,12 @@ internal partial class EventStore
         // takes the AsString branch, reads a null StreamKey, matches no stream and returns at the
         // `if (!events.Any()) return;` guard -- so compaction silently did nothing at all.
         _store.Events.EnsureAsGuidStorage(_session);
+
+        // See the string overload above
+        if (streamId == Guid.Empty)
+        {
+            throw new ArgumentOutOfRangeException(nameof(streamId), "Cannot use an empty Guid as the stream id");
+        }
 
         var request = new StreamCompactingRequest<T>(streamId);
         configure?.Invoke(request);
