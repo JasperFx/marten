@@ -177,7 +177,32 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// <returns></returns>
     Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default);
 
+    /// <summary>
+    ///     Mark the events with these sequence numbers as skipped. Requires
+    ///     <see cref="IEventStoreOptions.EnableEventSkippingInProjectionsOrSubscriptions" />.
+    /// </summary>
+    /// <remarks>
+    ///     Throws <see cref="InvalidOperationException" /> under
+    ///     <see cref="IEventStoreOptions.UseTenantPartitionedEvents" />, where every tenant numbers its own
+    ///     events and a sequence alone matches one event per tenant. Use
+    ///     <see cref="MarkEventsAsSkipped(string, long[], CancellationToken)" /> there.
+    /// </remarks>
     Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default);
+
+    /// <summary>
+    ///     Mark the events with these sequence numbers that belong to <paramref name="tenantId" /> as
+    ///     skipped. Requires <see cref="IEventStoreOptions.EnableEventSkippingInProjectionsOrSubscriptions" />.
+    ///     Under conjoined event tenancy only that tenant's events are touched, which is what
+    ///     <see cref="IEventStoreOptions.UseTenantPartitionedEvents" /> needs; under any other tenancy
+    ///     style the database is already the scope and the tenant is not consulted.
+    /// </summary>
+    /// <remarks>
+    ///     #5234. A default interface implementation that throws, so the member is additive for anyone
+    ///     implementing <see cref="IMartenDatabase" />.
+    /// </remarks>
+    Task MarkEventsAsSkipped(string tenantId, long[] sequences, CancellationToken token = default)
+        => throw new NotSupportedException(
+            $"{GetType().FullName} does not support marking events as skipped for a single tenant.");
 }
 
 public enum ConnectionUsage
