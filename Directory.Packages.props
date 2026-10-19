@@ -1022,10 +1022,25 @@
          PrimaryKeyDifference.Create that the PostgreSQL delta actually applies, instead of a table-level
          Create that only wrote CREATE TABLE IF NOT EXISTS. Removing a primary key no longer writes
          `add CONSTRAINT ... PRIMARY KEY ()`. Every Marten table declares its primary key, so the risk
-         is the same as 9.42.0's: the schema-delta suites have to stay quiet on existing tables. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.45.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.45.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.45.0" />
+         is the same as 9.42.0's: the schema-delta suites have to stay quiet on existing tables.
+         9.46.0 (from 9.45.0, spanning 9.45.1) needs JasperFx 2.90.2, which is why it follows the
+         JasperFx 2.91.0 bump (marten#5713). Three things reach Marten.
+         weasel#718: a concurrent index on a partitioned table that stopped partway (a uniqueness
+         violation, a cancelled build, a process that died between a partition's build and its ATTACH)
+         could never be finished: the rebuild asked for the leftover child index's name again and failed
+         with 42P07 on every later run. Each partition's step now starts with DROP INDEX CONCURRENTLY IF
+         EXISTS on the child's name.
+         weasel#719: AdvisoryLock.FindHolderAsync (jasperfx#913's IAdvisoryLock member, which Marten does
+         not call itself but a monitoring tool asks through) read pg_locks server-wide, so under
+         database-per-tenant, or parallel test lanes on one server, it named another database's backend as
+         this database's holder. It is now scoped to the current database.
+         weasel#724: MultiCommandDataReader.GetFieldType keeps DbDataReader's trim annotation, so a trimmed
+         or native publish stops reporting IL2093 against Weasel.Core.
+         Inert here: weasel#710 (9.45.1) pins the patched System.Security.Cryptography.Pkcs for
+         Weasel.SqlServer and Weasel.Oracle, and weasel#723 is a Firebird-only catalog re-read. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.46.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.46.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.46.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
