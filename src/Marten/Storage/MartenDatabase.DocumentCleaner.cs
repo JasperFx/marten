@@ -107,6 +107,9 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
     public async Task CompletelyRemoveAllAsync(CancellationToken ct = default)
     {
+        // #5688: see DeleteAllEventDataAsync
+        await Options.EventGraph.WaitForPendingTombstonesAsync().ConfigureAwait(false);
+
         await using var conn = CreateConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
         var schemas = AllSchemaNames();
@@ -144,6 +147,12 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
     public async Task DeleteAllEventDataAsync(CancellationToken ct = default)
     {
+        // #5688: a failed save's tombstones are written in the background, at the sequence numbers it
+        // drew. This wipe restarts mt_events_sequence at 1, so one landing after it would occupy a
+        // number the sequence is about to hand out again, and the next append to reach it fails on
+        // pkey_mt_events_seq_id. Let the writes already started finish first.
+        await Options.EventGraph.WaitForPendingTombstonesAsync().ConfigureAwait(false);
+
         await EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         await using var connection = CreateConnection();
