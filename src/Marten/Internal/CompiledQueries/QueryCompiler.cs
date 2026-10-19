@@ -104,7 +104,8 @@ internal class QueryCompiler
             var values = new DateTime[count];
             for (var i = 0; i < values.Length; i++)
             {
-                values[i] = value.AddDays(-1);
+                value = value.AddDays(-1);
+                values[i] = value;
             }
 
             return values;
@@ -116,7 +117,8 @@ internal class QueryCompiler
             var values = new DateTimeOffset[count];
             for (var i = 0; i < values.Length; i++)
             {
-                values[i] = value.AddDays(-1);
+                value = value.AddDays(-1);
+                values[i] = value;
             }
 
             return values;
@@ -187,6 +189,9 @@ internal class QueryCompiler
 
         // This *could* throw
         var queryTemplate = plan.CreateQueryTemplate(query);
+
+        QueryObjectReads.AssertEveryReadBinds(plan, queryTemplate, queryTemplate.QueryIs(),
+            ((IMartenSession)session).Options);
 
         var statistics = plan.GetStatisticsIfAny(query);
         var parser = BuildDatabaseCommand(session, queryTemplate, statistics, plan);
