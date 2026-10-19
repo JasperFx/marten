@@ -146,6 +146,20 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
             return database;
         }
 
+        // _databasesById is filled only by AddDatabaseAsync and BuildDatabases, so on a store that has not
+        // read its pool yet a shard's database id misses both caches. Falling through would register it as a
+        // tenant on whichever shard the assignment strategy picks, and run partition DDL for it there, which
+        // is what IProjectionCoordinator.DaemonForDatabase(shardId) did right after start. An id that names a
+        // pooled database and is not itself an assigned tenant is that database.
+        if (await isUnassignedPoolDatabaseAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false))
+        {
+            await BuildDatabases().ConfigureAwait(false);
+            if (_databasesById.TryFind(tenantIdOrDatabaseIdentifier, out database))
+            {
+                return database;
+            }
+        }
+
         return await findOrAssignTenantDatabaseAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
     }
 
@@ -853,6 +867,22 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
 #pragma warning disable MA0032
     #region Internals
+
+    private async Task<bool> isUnassignedPoolDatabaseAsync(string id)
+    {
+        await maybeApplyChanges().ConfigureAwait(false);
+        await maybeSeedDatabases().ConfigureAwait(false);
+
+        // Any assignment row, disabled or not, keeps the id on the tenant path: a disabled tenant must still
+        // surface as DisabledTenantException there (#4607), and a cached tenant already won in FindOrCreateDatabase.
+        var result = await _dataSource.Value
+            .CreateCommand(
+                $"select exists (select 1 from {_schemaName}.{DatabasePoolTable.TableName} where database_id = :id) and not exists (select 1 from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id)")
+            .With("id", id)
+            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false);
+
+        return result is true;
+    }
 
     private async Task<MartenDatabase> findOrAssignTenantDatabaseAsync(string tenantId)
     {
