@@ -16,15 +16,25 @@ using Weasel.Postgresql;
 namespace Marten.Internal;
 
 /// <summary>
-/// Shared per-tenant cleanup for the two paths that drop a tenant under
+/// Shared per-tenant cleanup for the paths that drop a tenant under
 /// <c>UseTenantPartitionedEvents</c>: <c>AdvancedOperations.DeleteAllTenantDataAsync</c>
-/// (via <see cref="TenantDataCleaner"/>) and <c>AdvancedOperations.RemoveMartenManagedTenantsAsync</c>.
-/// Both routes drop the tenant's partition tables but neither, until #4683, dropped:
+/// (via <see cref="TenantDataCleaner"/>), <c>AdvancedOperations.RemoveMartenManagedTenantsAsync</c>
+/// and <c>ShardedTenancy.RemoveTenantAsync</c>.
+/// <para>
+/// Before the partition drop, the tenant's DCB tag rows have to go (<see cref="DeleteTagRowsAsync"/>,
+/// #5694): the tag tables are not partitioned by tenant, and their foreign key to <c>mt_events</c>
+/// refuses the drop while they remain. <c>RemoveMartenManagedTenantsAsync</c> is handed partition
+/// suffixes, so it maps them to tenant ids first (<see cref="FindTenantIdsForSuffixesAsync"/>).
+/// </para>
+/// <para>
+/// After the drop, they remove what it leaves behind (#4683):
 ///   * the freestanding <c>mt_events_sequence_{suffix}</c> sequence (no <c>OWNED BY</c> link
 ///     to the partition, so the partition drop leaves it orphaned)
 ///   * the per-tenant <c>mt_event_progression</c> rows -- one per projection per tenant
 ///     plus the per-tenant high-water row
 /// Both leak slowly but unboundedly across drop-tenant cycles (trial-account churn, etc).
+/// Both are found from tenant ids, not partition suffixes.
+/// </para>
 /// </summary>
 internal static class PerTenantPartitionedCleanup
 {
