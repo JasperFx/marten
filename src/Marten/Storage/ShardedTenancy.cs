@@ -648,6 +648,14 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         {
             var logger = _options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
 
+            if (_options.Events.UseTenantPartitionedEvents)
+            {
+                // The drop takes the tenant's mt_events partition, which its DCB tag rows still
+                // reference (#5694)
+                await Internal.PerTenantPartitionedCleanup.DeleteTagRowsAsync(
+                    _options, database, [tenantId], logger, ct).ConfigureAwait(false);
+            }
+
             try
             {
                 await _options.TenantPartitions.Partitions.DropPartitionFromAllTablesForValue(

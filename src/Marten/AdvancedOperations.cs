@@ -829,6 +829,16 @@ public class AdvancedOperations
         var capturedSuffixes = Marten.Internal.PerTenantPartitionedCleanup.CaptureSequenceSuffixes(
             _store.Options, database, suffixes);
 
+        if (_store.Options.Events.UseTenantPartitionedEvents)
+        {
+            // The drop takes the tenants' mt_events partitions, which their DCB tag rows still reference
+            // (#5694). The tag rows carry tenant ids, and these are partition suffixes.
+            var tenantIds = await Marten.Internal.PerTenantPartitionedCleanup.FindTenantIdsForSuffixesAsync(
+                _store.Options, _store.Tenancy.Default.Database, suffixes, token).ConfigureAwait(false);
+            await Marten.Internal.PerTenantPartitionedCleanup.DeleteTagRowsAsync(
+                _store.Options, _store.Tenancy.Default.Database, tenantIds, logger, token).ConfigureAwait(false);
+        }
+
         await _store.Options.TenantPartitions.Partitions.DropPartitionFromAllTables(database, logger, suffixes,
             token).ConfigureAwait(false);
 
