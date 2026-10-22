@@ -3,8 +3,11 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 
     <!-- One Bobcat line for the specs (DaemonTests) and the build's supervisor (JasperFx/bobcat#562).
-         1.0.0-rc.1 is the release bobcat#562 planned to wait for. -->
-    <BobcatVersion>1.0.0-rc.1</BobcatVersion>
+         1.0.0-rc.1 is the release bobcat#562 planned to wait for; 1.0.0-rc.3 brings the local
+         commit-and-push Gate the LocalGate target is built on (#5725, bobcat#729). Since rc.2
+         Bobcat references no JasperFx, and the Critter Stack vocabulary DaemonTests uses
+         (CritterStackSpec, CritterStackScenario, EventStores) ships in WolverineFx.Bobcat below. -->
+    <BobcatVersion>1.0.0-rc.3</BobcatVersion>
 
     <!-- Bobcat.Xunit 1.0 is built on xunit.v3 4.x over Microsoft.Testing.Platform 2.5.1, and the two
          xunit lines cannot share a test project. The rest of the repo stays on the xunit.v3 3.x pinned
@@ -568,6 +571,12 @@
     <PackageVersion Include="Bobcat" Version="$(BobcatVersion)" />
     <PackageVersion Include="Bobcat.Generators" Version="$(BobcatVersion)" />
     <PackageVersion Include="Bobcat.Xunit" Version="$(BobcatVersion)" />
+    <!-- The Bobcat.CritterStack namespace (CritterStackSpec, CritterStackScenario, EventStores) left
+         Bobcat core in 1.0.0-rc.2 (bobcat#744) for this package, which carries the JasperFx.Events
+         coupling. Test-only, DaemonTests only. Its JasperFx.Events floor must not be newer than the
+         one Marten builds against (bobcat docs/compatibility.md): 6.51.2-alpha.1 requires
+         JasperFx/JasperFx.Events 2.91.0, the same. It asks for Bobcat 1.0.0-rc.2 and gets rc.3. -->
+    <PackageVersion Include="WolverineFx.Bobcat" Version="6.51.2-alpha.1" />
     <!--
       2.69.1 (jasperfx#828 and jasperfx#830): two fixes on top of 2.69.0, and the first lands
       directly on what marten#5394 registered a release earlier. ProjectionEventModelSource no

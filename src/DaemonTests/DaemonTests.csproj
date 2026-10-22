@@ -21,6 +21,9 @@
         <!-- The xUnit v3 runner adapter. Replaces the copy this repo used to keep in
              TestingSupport, which never read the runner's verdict. -->
         <PackageReference Include="Bobcat.Xunit" />
+        <!-- CritterStackSpec, CritterStackScenario and EventStores (namespace Bobcat.CritterStack),
+             which moved out of Bobcat core in 1.0.0-rc.2. -->
+        <PackageReference Include="WolverineFx.Bobcat" />
         <PackageReference Include="Bogus" />
         <PackageReference Include="Confluent.Kafka" />
         <PackageReference Include="Lamar.Microsoft.DependencyInjection" />
