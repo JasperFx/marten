@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Bobcat.Ledger;
 using Bobcat.Resilience;
 using Bobcat.Supervisor;
 using Npgsql;
@@ -123,35 +124,14 @@ partial class Build
             EnvironmentFor = workers > 1 ? laneEnvironment(workers) : null
         };
 
-        var ledger = loadTestLedger(projectName, framework);
+        var ledger = loadTestLedger(PreviousTestLedgerDirectory, projectName, framework);
 
         var supervisor = new Supervisor(factory)
         {
             MaxParallelWorkers = workers,
-            RetryBudget = DisableTestRetry
-                ? RetryBudget.None
-                : new RetryBudget { MaxAttemptsPerTest = MaxAttemptsPerTest, MaxRetriesPerRun = MaxRetriesPerRun },
-
-            // The policy below only ever retries in a fresh process, so idle lane workers are
-            // released before the retry passes. Without it, workers+1 test hosts sit resident at
-            // once — which is what OOM-killed 16GB GitHub runners on Wolverine, both times during a
-            // retry.
-            ReleaseIdleLanes = true,
-
-            // Report-only observability. A test in flight past the threshold is named at once (a
-            // wedged daemon test used to be visible only as a job hitting its 20 minute cap), and a
-            // one-line heartbeat every 30s says how far a run got and what has been running longest.
-            StallThreshold = StallThreshold,
-            StallAction = StallAction.Report,
-            HeartbeatInterval = TimeSpan.FromSeconds(30),
-
-            // Longest-processing-time-first lane balancing from the previous run's ledger, keyed by
-            // display name (bobcat#730). No ledger, or no match, degrades to balancing by test
-            // count, and the run report's first lines say how many durations matched.
-            KnownTestDurations = ledger.KnownDurations(),
-
             Log = message => Log.Information("  {Message}", message)
         };
+        configureSupervisor(supervisor, ledger);
 
         var results = supervisor.Run().GetAwaiter().GetResult();
 
@@ -164,6 +144,36 @@ partial class Build
         writeRunReport(projectName, framework, results);
 
         return report(projectName, framework, results);
+    }
+
+    /// <summary>
+    /// Every supervisor setting a project's run carries apart from its worker count and log, in one
+    /// place, so a CI target (<see cref="runSupervised"/>) and a <see cref="LocalGate"/> unit
+    /// configure the same supervisor. The failure policy is Bobcat's own default: a test is retried,
+    /// in a fresh process, only when it opted in with <c>[Trait("Retry", "N")]</c>.
+    /// </summary>
+    void configureSupervisor(Supervisor supervisor, TestLedger ledger)
+    {
+        supervisor.RetryBudget = DisableTestRetry
+            ? RetryBudget.None
+            : new RetryBudget { MaxAttemptsPerTest = MaxAttemptsPerTest, MaxRetriesPerRun = MaxRetriesPerRun };
+
+        // The policy only ever retries in a fresh process, so idle lane workers are released
+        // before the retry passes. Without it, workers+1 test hosts sit resident at once — which is
+        // what OOM-killed 16GB GitHub runners on Wolverine, both times during a retry.
+        supervisor.ReleaseIdleLanes = true;
+
+        // Report-only observability. A test in flight past the threshold is named at once (a wedged
+        // daemon test used to be visible only as a job hitting its 20 minute cap), and a one-line
+        // heartbeat every 30s says how far a run got and what has been running longest.
+        supervisor.StallThreshold = StallThreshold;
+        supervisor.StallAction = StallAction.Report;
+        supervisor.HeartbeatInterval = TimeSpan.FromSeconds(30);
+
+        // Longest-processing-time-first lane balancing from the previous run's ledger, keyed by
+        // display name (bobcat#730). No ledger, or no match, degrades to balancing by test count,
+        // and the run report's first lines say how many durations matched.
+        supervisor.KnownTestDurations = ledger.KnownDurations();
     }
 
     /// <summary>
@@ -257,13 +267,17 @@ partial class Build
     Func<WorkerLaunchContext, IReadOnlyDictionary<string, string>> laneEnvironment(int workers)
     {
         var lanes = Enumerable.Range(0, workers).Select(laneConnectionString).ToArray();
-        ensureLaneDatabases(lanes);
+        ensureLaneDatabases(baseTestConnectionString, lanes);
 
-        return context => new Dictionary<string, string>
+        return laneEnvironment(lanes);
+    }
+
+    /// <summary>Hands lane N the Nth connection string through <c>marten_testing_database</c>.</summary>
+    static Func<WorkerLaunchContext, IReadOnlyDictionary<string, string>> laneEnvironment(string[] lanes)
+        => context => new Dictionary<string, string>
         {
             ["marten_testing_database"] = lanes[Math.Clamp(context.Lane, 0, lanes.Length - 1)]
         };
-    }
 
     static string laneConnectionString(int lane)
     {
@@ -272,11 +286,24 @@ partial class Build
         return builder.ConnectionString;
     }
 
-    static void ensureLaneDatabases(IEnumerable<string> lanes)
+    static readonly object LaneDatabaseLock = new();
+
+    /// <summary>
+    /// Creates every lane database that does not exist yet, through an admin connection to
+    /// <paramref name="adminConnectionString"/>'s own database. Serialized: a local gate starts
+    /// units concurrently, and one CREATE DATABASE at a time keeps template1 from being "accessed by
+    /// other users" mid-copy.
+    /// </summary>
+    static void ensureLaneDatabases(string adminConnectionString, IEnumerable<string> lanes)
+    {
+        lock (LaneDatabaseLock) createLaneDatabases(adminConnectionString, lanes);
+    }
+
+    static void createLaneDatabases(string adminConnectionString, IEnumerable<string> lanes)
     {
         // CREATE DATABASE cannot run inside a transaction or on a multiplexed connection, hence a
         // dedicated unpooled admin connection to the base database.
-        var admin = new NpgsqlConnectionStringBuilder(baseTestConnectionString) { Pooling = false };
+        var admin = new NpgsqlConnectionStringBuilder(adminConnectionString) { Pooling = false };
         using var conn = new NpgsqlConnection(admin.ConnectionString);
         conn.Open();
 

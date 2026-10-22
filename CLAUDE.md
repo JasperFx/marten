@@ -103,6 +103,9 @@ docker-compose up -d
 # Run all tests
 ./build.sh test
 
+# The tests.yml suites at once, through Bobcat's local gate (see "Local gate" below)
+./build.sh LocalGate
+
 # Run individual test suites — one target per test project
 ./build.sh test-base-lib                     # Marten.Testing
 ./build.sh test-core                         # CoreTests
@@ -182,6 +185,64 @@ share a test project, so DaemonTests and DaemonTests.ManualOnly take 4.x through
   file; since Bobcat 1.0.0-rc.1 (bobcat#717) a redirected stdout gets them too, instead of nothing.
 
 Default test connection: `Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres` (`build/build.cs:28`). Override with `marten_testing_database` env var.
+
+### Local gate: the whole matrix before a push
+
+`./build.sh LocalGate` (`build/LocalGate.cs`, #5725) runs the logical suites of `tests.yml` on this
+machine through Bobcat's local gate (`GateDeclaration` in `Bobcat.Supervisor`, see Bobcat's
+[local gates](https://github.com/JasperFx/bobcat/blob/main/docs/local-gates.md)). It needs only
+`docker compose up -d`.
+
+```bash
+./build.sh LocalGate                                  # every default suite, newest TFM (net10.0)
+./build.sh LocalGate --framework all                  # net9.0 and net10.0 units
+./build.sh LocalGate --gate-only Linq EventSourcing   # a subset, by matrix name or project name
+./build.sh LocalGate --gate-skip-build                # reuse the Release build already on disk
+```
+
+What it does, in order: `Init` once (clean, `connection.txt`, `AssemblyInfo.cs`); a preflight of the
+Postgres server; one `dotnet build src/Marten.slnx -c Release`; then one supervised run per
+`(project, framework)` unit, longest first, never more worker processes at once than the budget; then
+a report with one line per unit and the full run report of every unit that was not clean. Every unit
+runs even when another fails. The target fails when any unit failed or could not run.
+
+- **Same supervisor as CI.** Each unit gets the configuration its `Test*` target uses
+  (`configureSupervisor` in `build/SupervisedTests.cs`): retries only for `[Trait("Retry", "N")]`, in a
+  fresh process, the stall report, the heartbeat, and the same worker counts (EventSourcing and Linq
+  at 4). `--disable-test-retry` and `--test-workers` apply as they do there.
+- **A database per lane.** Each unit runs on its own databases, `marten_testing_<project>_<tfm>_w{n}`,
+  handed over through `marten_testing_database`, so two suites never share a schema.
+- **Tracks for fixed names.** Some suites create whole databases with fixed names on the server, or
+  reach for the default database directly. Those suites hold an exclusive track while they run, so the
+  gate never runs two of them that share a name at once: `tenant-databases` (tenant1..tenant6 and
+  database1: Core, Daemon, MultiTenancy, Stress), `shard-databases` (marten_shard_*: MultiTenancy,
+  TenantPartitionedEvents) and `default-database` (EventSourcingTests' `testing_projections`
+  hard-codes `localhost:5432/marten_testing`; Stress).
+- **The worker budget** is half the cores, lowered to what the server's free connections hold at about
+  40 per worker. A stock Postgres allows 100 connections, which gives a budget of 2.
+  `docker-compose.yml` sets `max_connections=500`, so recreate an older container once
+  (`docker compose up -d --force-recreate`) to run at the full budget. `--gate-worker-budget N` sets
+  the budget directly.
+- **Durations.** `.bobcat/gate-durations.json` (ignored) records each unit's wall clock on this machine
+  and orders the next run. `.bobcat/test-ledger/` keeps the folded test ledgers that balance lanes.
+- **`BOBCAT_RUN_TAG`** is the prefix: each unit publishes to the monitor as `<tag>/<project>.<tfm>`.
+
+Options that need more than the ordinary database are opt-in:
+
+| Option | What it adds |
+| --- | --- |
+| `--gate-include postgis` | Marten.PostGIS.Tests. The `docker-compose.yml` image includes PostGIS. |
+| `--gate-include timescaledb` | Marten.TimescaleDB.Tests on `docker-compose.timescaledb.yml` (port 5433, which Wolverine's Postgres also uses; the preflight checks the extension). `--gate-timescale-database` points it elsewhere. |
+| `--gate-include multihost` | MultiHostTests on the replication pair in `src/MultiHostTests/docker-compose.yaml` (5440/5441). The preflight logs in with the suite's credentials, so another container on those ports fails it. |
+| `--gate-include stress` | StressTests, which has no CI job. It holds every fixed-name track. |
+| `--gate-serializer split` | CI's pairing: net9.0 units on Newtonsoft, net10.0 units on System.Text.Json. `Newtonsoft` or `SystemTextJson` sets one serializer for every unit. With no option, the suites use their default, Newtonsoft. |
+| `--gate-database <conn>` | Another Postgres server for the lanes. For the PG15 leg, start a Postgres 15 container and run `--gate-database "Host=localhost;Port=<port>;Database=marten_testing;Username=postgres;password=postgres" --framework net9.0 --gate-serializer Newtonsoft`. |
+
+Measured on this 18-core machine at net10.0. With a 500-connection server (budget 9), the default
+gate takes about 8 minutes end to end. The units themselves take 7m40s, against 13m20s of unit time
+one after the other. DaemonTests is the longest unit at about 6m45s and sets the wall clock.
+CoreTests and MultiTenancyTests share its `tenant-databases` track, so they run after it. On a stock
+100-connection server (budget 2) the units take 11m30s.
 
 ## Test Harness
 

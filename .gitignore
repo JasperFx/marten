@@ -200,6 +200,8 @@ FakesAssemblies/
 *.opt
 
 artifacts
+# Bobcat's local gate keeps its per-machine duration record and folded test ledgers here (#5725)
+.bobcat/
 src/CommonAssemblyInfo.cs
 paket.exe
 .idea/

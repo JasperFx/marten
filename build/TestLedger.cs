@@ -40,9 +40,9 @@ partial class Build
 
     static string testLedgerFileName(string projectName, string framework) => $"{projectName}.{framework}.json";
 
-    TestLedger loadTestLedger(string projectName, string framework)
+    TestLedger loadTestLedger(AbsolutePath directory, string projectName, string framework)
     {
-        var path = PreviousTestLedgerDirectory / testLedgerFileName(projectName, framework);
+        var path = directory / testLedgerFileName(projectName, framework);
 
         try
         {
@@ -58,7 +58,13 @@ partial class Build
         }
     }
 
-    void recordTestLedger(TestLedger ledger, string projectName, string framework, SupervisorResults results)
+    /// <summary>
+    /// Folds this run into <paramref name="ledger"/> and writes it to artifacts/test-ledger/durations/,
+    /// plus to <paramref name="alsoTo"/> when given — the local gate keeps its own copy under
+    /// .bobcat/, because <see cref="Clean"/> empties artifacts/ at the start of every gate.
+    /// </summary>
+    void recordTestLedger(TestLedger ledger, string projectName, string framework, SupervisorResults results,
+        AbsolutePath alsoTo = null)
     {
         try
         {
@@ -79,6 +85,12 @@ partial class Build
             var artifact = LedgerDirectory / "durations" / testLedgerFileName(projectName, framework);
             artifact.Parent.CreateDirectory();
             updated.Save(artifact);
+
+            if (alsoTo is not null)
+            {
+                alsoTo.CreateDirectory();
+                updated.Save(alsoTo / testLedgerFileName(projectName, framework));
+            }
         }
         catch (Exception e)
         {
