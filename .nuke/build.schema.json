@@ -37,6 +37,7 @@
         "Init",
         "InitDb",
         "InstallMdSnippets",
+        "LocalGate",
         "NpmInstall",
         "Pack",
         "PublishDocs",
@@ -162,6 +163,44 @@
         },
         "Framework": {
           "type": "string"
+        },
+        "GateDatabase": {
+          "type": "string",
+          "description": "LocalGate: connection string of the Postgres server the units' databases are created on"
+        },
+        "GateInclude": {
+          "type": "array",
+          "description": "LocalGate: opt-in suites: postgis, timescaledb, multihost, stress",
+          "items": {
+            "type": "string"
+          }
+        },
+        "GateOnly": {
+          "type": "array",
+          "description": "LocalGate: run only these suites, by name (Linq) or project (LinqTests)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "GateSerializer": {
+          "type": "string",
+          "description": "LocalGate: DEFAULT_SERIALIZER for every unit: Newtonsoft, SystemTextJson, or split (CI's net9/net10 pairing)"
+        },
+        "GateSkipBuild": {
+          "type": "boolean",
+          "description": "LocalGate: skip the solution build, the Release hosts are already there"
+        },
+        "GateTimescaleDatabase": {
+          "type": "string",
+          "description": "LocalGate: TimescaleDB server for --gate-include timescaledb (default localhost:5433)"
+        },
+        "GateWorkerBudget": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "LocalGate: worker processes across every unit at once (default: half the cores)",
+          "format": "int32"
         },
         "PreviousTestLedger": {
           "type": "string"

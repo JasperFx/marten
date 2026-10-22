@@ -13,10 +13,6 @@
 
   <ItemGroup>
     <PackageReference Include="Bobcat.Supervisor" />
-    <!-- Bobcat.Supervisor 1.0 (through Bobcat) requires JasperFx 2.90.2 or later, one patch ahead of the
-         JasperFx Marten itself ships against. The build ships nothing, so it takes the newer one here rather
-         than moving Marten's own dependency floor for a tooling upgrade (JasperFx/bobcat#562). -->
-    <PackageReference Include="JasperFx" VersionOverride="2.90.2" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Nuke.Common" />
     <!-- Lift Nuke's vulnerable transitive packages to patched versions; see Directory.Packages.props. -->
