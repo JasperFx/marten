@@ -388,3 +388,27 @@ The reasons to be careful are more specific than the reasons to be hopeful:
 
 If you do turn it on, treat it as a per-deployment tuning decision, measure it against your own
 workload, and watch for plan regressions on your most skewed columns rather than assuming a win.
+
+## Translating Database Errors into Your Own Exceptions
+
+Marten translates the errors PostgreSQL reports before you see them. A serialization failure (`40001`) becomes a
+`ConcurrentUpdateException`, and anything else from Npgsql becomes a `MartenCommandException` carrying the failing SQL.
+If your own SQL raises errors of its own, such as a guard function queued with `QueueSqlCommand` that refuses a write
+with a custom SQLSTATE, register a transform so your callers receive a typed exception instead of digging through
+`InnerException`:
+
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection(connectionString);
+
+    opts.Advanced.ExceptionTransforms.IfExceptionIs<PostgresException>()
+        .If(e => e.SqlState == "CT001")
+        .ThenTransformTo(e => new GuardRefusedException(e));
+});
+```
+
+Your transforms are consulted before Marten's built-in ones, on writes, raw SQL and LINQ queries alike. An error none of
+them claims still gets Marten's usual translation. A transform that matches an error Marten also translates, such as
+`40001`, replaces Marten's translation for that store. Transforms belong to the store they are registered on, never to
+the whole process.

@@ -31,6 +31,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
     public TransactionalConnection(SessionOptions options)
     {
         _options = options;
+        ExceptionTransforms = options.ExceptionTransforms;
         _connection = _options.Connection;
 
         CommandTimeout = _options.Timeout ?? _connection?.CommandTimeout ?? 30;
@@ -505,7 +506,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         {
             await rollbackAfterFailureAsync().ConfigureAwait(false);
             Logger.LogFailure(new NpgsqlCommand(), e);
-            pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+            transformAndThrow(pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>(), e);
         }
 
         if (exceptions.Count == 1)

@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using JasperFx.Core.Exceptions;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading;
@@ -110,9 +111,16 @@ public sealed class SessionOptions
     /// </summary>
     public bool AllowAnyTenant { get; set; }
 
+    /// <summary>
+    ///     #5682: the store's <see cref="AdvancedOptions.ExceptionTransforms" />, picked up when the session is
+    ///     initialized so every connection lifetime built from these options reports through them.
+    /// </summary>
+    internal ExceptionTransforms? ExceptionTransforms { get; private set; }
+
     internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode,
         OpenTelemetryOptions telemetryOptions)
     {
+        ExceptionTransforms = store.Options.Advanced.ExceptionTransforms;
         Mode = mode;
         Tenant ??= TenantId != StorageConstants.DefaultTenantId ? store.Tenancy.GetTenant(store.Options.TenantIdStyle.MaybeCorrectTenantId(TenantId)) : store.Tenancy.Default;
 
@@ -224,6 +232,7 @@ public sealed class SessionOptions
 
     internal AutoClosingLifetime BuildAutoClosingLifetime(DocumentStore store)
     {
+        ExceptionTransforms = store.Options.Advanced.ExceptionTransforms;
         return store.Options.RlsTenantSessionSetting is { } rls && Tenant is not null
             ? new RlsAutoClosingLifetime(this, store.Options, Tenant.TenantId, rls)
             : new AutoClosingLifetime(this, store.Options);
@@ -232,6 +241,7 @@ public sealed class SessionOptions
     internal async Task<IConnectionLifetime> InitializeAsync(DocumentStore store, CommandRunnerMode mode,
         CancellationToken token)
     {
+        ExceptionTransforms = store.Options.Advanced.ExceptionTransforms;
         Mode = mode;
         Tenant ??= TenantId != StorageConstants.DefaultTenantId
             ? await store.Tenancy.GetTenantAsync(store.Options.TenantIdStyle.MaybeCorrectTenantId(TenantId)).ConfigureAwait(false)

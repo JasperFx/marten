@@ -122,7 +122,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(_session.Options.Advanced.ExceptionTransforms, e);
             throw;
         }
     }
@@ -164,7 +164,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(_session.Options.Advanced.ExceptionTransforms, e);
         }
 
         return default;
@@ -188,7 +188,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(_session.Options.Advanced.ExceptionTransforms, e);
         }
 
         return default;
@@ -205,7 +205,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(_session.Options.Advanced.ExceptionTransforms, e);
         }
 
         return default;

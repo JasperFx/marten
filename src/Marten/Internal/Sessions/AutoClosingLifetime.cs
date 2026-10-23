@@ -28,6 +28,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             throw new ArgumentOutOfRangeException(nameof(options), "Tenant.Database cannot be null");
 
         _options = options;
+        ExceptionTransforms = options.ExceptionTransforms;
         _database = options.Tenant!.Database;
 
         // #5269: same resolution as every other lifetime -- this one builds its own rather than being handed
@@ -271,8 +272,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 }
 
                 Logger.LogFailure(new NpgsqlCommand(), e);
-                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>()
-                    .Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+                transformAndThrow(pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>(), e);
             }
 
             if (exceptions.Count == 1)
