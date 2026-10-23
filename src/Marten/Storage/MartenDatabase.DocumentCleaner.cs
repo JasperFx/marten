@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten.Events;
+using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema;
@@ -51,7 +52,14 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         await conn.OpenAsync(ct).ConfigureAwait(false);
 
         var schemas = AllSchemaNames();
-        var tables = await conn.ExistingTablesAsync("mt_%", schemas, ct: ct).ConfigureAwait(false);
+
+        // jasperfx#809 (#5740): projection start floors are configuration an operator or a first start
+        // pinned, not data, and they have to outlive a data reset as they outlive rebuild teardown. A reset
+        // that cleared them would make the next first start re-pin at the current high water and silently
+        // skip everything appended in between. CompletelyRemoveAllAsync still drops the table.
+        var tables = (await conn.ExistingTablesAsync("mt_%", schemas, ct: ct).ConfigureAwait(false))
+            .Where(x => !x.Name.EqualsIgnoreCase(ProjectionFloorTable.Name))
+            .ToList();
 
         if (!tables.Any())
         {

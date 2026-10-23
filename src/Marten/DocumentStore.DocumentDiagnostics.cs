@@ -93,6 +93,10 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             return emptyPage(pageNumber, pageSize);
         }
 
+        // jasperfx#1058 (#5740): refused here, once the mapping is known and before anything is read, so an
+        // ordering the type cannot answer is never quietly replaced by the default one.
+        var metadataOrdering = MetadataOrdering(target, options);
+
         var database = options.AllTenants
             ? allTenantsDatabase()
             : await findDiagnosticsDatabaseAsync(options.TenantId).ConfigureAwait(false);
@@ -140,7 +144,7 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         await using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText =
-                $"select {reader.SelectList} from {target.Table}{predicate.Sql} order by {predicate.OrderBy} limit {pageSize} offset {offset}";
+                $"select {reader.SelectList} from {target.Table}{predicate.Sql} order by {predicate.OrderByWith(metadataOrdering)} limit {pageSize} offset {offset}";
             predicate.Bind(cmd);
 
             await using var dbReader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
@@ -194,6 +198,64 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         }
 
         return await reader.ReadAsync(dbReader, predicate.TenantId, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// jasperfx#1058 (#5740): the <c>order by</c> key for <see cref="DocumentQueryOptions.OrderByMetadata" />, or
+    /// null when none was asked for.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Every column is checked against the mapping first, because Marten only creates the metadata columns a
+    /// mapping asked for (see <see cref="StoredDocumentReader" />): ordering by one that is absent is a 42703.
+    /// An ordering the mapping cannot answer is refused with <see cref="DocumentCriteriaNotSupportedException" />
+    /// naming <c>OrderByMetadata</c>, never ignored — a console that asked for newest first and silently got
+    /// identity order would show the wrong rows on page one with nothing to say so.
+    /// </para>
+    /// <para>
+    /// <see cref="DocumentMetadataField.Version" /> is honoured only for a numeric revision. A Guid version
+    /// shares the <c>mt_version</c> column but has no meaningful order, so ordering by it would be a
+    /// well-formed answer that means nothing.
+    /// </para>
+    /// <para>
+    /// Descending puts nulls last, and ascending first, as the caller's own orderings do in the criteria path:
+    /// null is the smallest value in C#. None of these columns is normally null, so it only matters for a row
+    /// written before its column was added.
+    /// </para>
+    /// </remarks>
+    /// <param name="alias">The table alias to qualify the column with, or null for the unaliased raw read.</param>
+    internal static string? MetadataOrdering(DiagnosticsTarget target, DocumentQueryOptions options,
+        string? alias = null)
+    {
+        if (options.OrderByMetadata is not { } order)
+        {
+            return null;
+        }
+
+        var metadata = target.Mapping.Metadata;
+        var column = order.Field switch
+        {
+            DocumentMetadataField.LastModified when metadata.LastModified.Enabled => SchemaConstants.LastModifiedColumn,
+            DocumentMetadataField.LastModified => throw refuse("it does not track a last-modified time"),
+
+            DocumentMetadataField.Created when metadata.CreatedAt.Enabled => SchemaConstants.CreatedAtColumn,
+            DocumentMetadataField.Created => throw refuse(
+                "it does not track a created time. Enable it with Metadata(m => m.CreatedAt.Enabled = true)"),
+
+            DocumentMetadataField.Version when metadata.Revision.Enabled => SchemaConstants.VersionColumn,
+            DocumentMetadataField.Version when metadata.Version.Enabled => throw refuse(
+                "its version is a Guid, which has no meaningful order. Only a numeric revision (UseNumericRevisions) can be ordered by"),
+            DocumentMetadataField.Version => throw refuse("it does not track a version"),
+
+            _ => throw refuse($"'{order.Field}' is not a metadata column Marten knows")
+        };
+
+        var p = alias == null ? "" : alias + ".";
+        return order.Descending ? $"{p}{column} desc nulls last" : $"{p}{column} nulls first";
+
+        DocumentCriteriaNotSupportedException refuse(string reason)
+            => new(nameof(DocumentQueryOptions.OrderByMetadata),
+                $"documents of type {target.RequestedType.FullNameInCode()} cannot be ordered by {order.Field}: {reason}.");
     }
 
     private static DocumentQueryResult emptyPage(int pageNumber, int pageSize)
@@ -492,8 +554,27 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         /// on two pages and another's on none. <c>(tenant_id, id)</c> is the conjoined table's primary key, so
         /// it is both total and index-ordered.
         /// </remarks>
-        public string OrderBy
-            => _allTenants && _target.IsConjoined ? $"{TenantIdColumn.Name}, id" : "id";
+        /// <param name="metadataOrdering">
+        /// jasperfx#1058: an <see cref="DocumentQueryOptions.OrderByMetadata" /> key from
+        /// <see cref="MetadataOrdering" />, or null. It goes after the tenant and before the identity: the tenant
+        /// still leads an all-tenants read, and the identity still breaks every tie, so paging stays total.
+        /// </param>
+        public string OrderByWith(string? metadataOrdering)
+        {
+            var keys = new List<string>(3);
+            if (_allTenants && _target.IsConjoined)
+            {
+                keys.Add(TenantIdColumn.Name);
+            }
+
+            if (metadataOrdering != null)
+            {
+                keys.Add(metadataOrdering);
+            }
+
+            keys.Add("id");
+            return string.Join(", ", keys);
+        }
 
         public void Bind(NpgsqlCommand command)
         {
