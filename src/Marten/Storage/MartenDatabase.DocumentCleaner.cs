@@ -101,7 +101,7 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(cmd, e);
+            MartenExceptionTransformer.WrapAndThrow(Options.Advanced.ExceptionTransforms, cmd, e);
         }
     }
 

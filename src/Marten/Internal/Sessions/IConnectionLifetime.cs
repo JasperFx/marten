@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
+using Marten.Services;
 using Npgsql;
 
 namespace Marten.Internal.Sessions;
@@ -13,6 +15,19 @@ namespace Marten.Internal.Sessions;
 internal class ConnectionLifetimeBase
 {
     public IMartenSessionLogger Logger { get; set; } = new NulloMartenLogger();
+
+    /// <summary>
+    ///     #5682: the store's application-registered exception transforms, from the <see cref="SessionOptions" />
+    ///     this lifetime was built from.
+    /// </summary>
+    internal ExceptionTransforms? ExceptionTransforms { get; set; }
+
+    /// <summary>
+    ///     Translate a batch failure: the failing operations' own transforms, then the application's, then
+    ///     Marten's built-ins.
+    /// </summary>
+    protected void transformAndThrow(IEnumerable<IExceptionTransform> operationTransforms, Exception e)
+        => MartenExceptionTransformer.InOrder(ExceptionTransforms, operationTransforms).TransformAndThrow(e);
 
     /// <summary>
     ///     The first failure that made this lifetime unusable, or null while it is still healthy.
@@ -81,14 +96,14 @@ internal class ConnectionLifetimeBase
     {
         Logger.LogFailure(cmd, e);
 
-        MartenExceptionTransformer.WrapAndThrow(cmd, e);
+        MartenExceptionTransformer.WrapAndThrow(ExceptionTransforms, cmd, e);
     }
 
     protected void handleCommandException(NpgsqlBatch batch, Exception e)
     {
         Logger.LogFailure(batch, e);
 
-        MartenExceptionTransformer.WrapAndThrow(batch, e);
+        MartenExceptionTransformer.WrapAndThrow(ExceptionTransforms, batch, e);
     }
 }
 

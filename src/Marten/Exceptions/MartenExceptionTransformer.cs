@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using JasperFx.Core.Exceptions;
 using Marten.Services;
 using Npgsql;
@@ -39,6 +41,47 @@ internal static class MartenExceptionTransformer
     }
 
     public static ExceptionTransforms Transforms { get; } = new();
+
+    /// <summary>
+    ///     #5682: the order every failure is translated in. The failing operations' own transforms first (they
+    ///     know the most), then the application's from <see cref="AdvancedOptions.ExceptionTransforms" />, then
+    ///     Marten's built-ins, whose last entry turns any <see cref="NpgsqlException" /> into a
+    ///     <see cref="MartenCommandException" /> and so would swallow anything the application wanted to see.
+    /// </summary>
+    internal static IEnumerable<IExceptionTransform> InOrder(ExceptionTransforms? custom,
+        IEnumerable<IExceptionTransform>? operations = null)
+    {
+        IEnumerable<IExceptionTransform> ordered = operations ?? [];
+        if (custom != null)
+        {
+            ordered = ordered.Concat(custom);
+        }
+
+        return ordered.Concat(Transforms);
+    }
+
+    internal static void WrapAndThrow(ExceptionTransforms? custom, NpgsqlCommand? command, Exception exception)
+    {
+        if (command != null)
+        {
+            exception.Data[nameof(NpgsqlCommand)] = command;
+        }
+
+        InOrder(custom).TransformAndThrow(exception);
+    }
+
+    internal static void WrapAndThrow(ExceptionTransforms? custom, NpgsqlBatch? batch, Exception exception)
+    {
+        if (batch != null)
+        {
+            exception.Data[nameof(NpgsqlBatch)] = batch;
+        }
+
+        InOrder(custom).TransformAndThrow(exception);
+    }
+
+    internal static void WrapAndThrow(ExceptionTransforms? custom, Exception exception)
+        => InOrder(custom).TransformAndThrow(exception);
 
     internal static NpgsqlCommand? ReadNpgsqlCommand(this Exception ex)
     {

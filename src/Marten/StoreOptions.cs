@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using ImTools;
 using JasperFx;
 using JasperFx.Core;
+using JasperFx.Core.Exceptions;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using JasperFx.Events;
@@ -1704,6 +1705,32 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
         // Make the user opt into this
         Migrator.IsTransactional = false;
     }
+
+    /// <summary>
+    ///     #5682: the application's own exception transforms, consulted for every database failure this store
+    ///     reports BEFORE Marten's built-in ones, so an application can turn a <see cref="Npgsql.PostgresException" />
+    ///     with its own SQLSTATE into a typed exception rather than receiving a <see cref="Exceptions.MartenCommandException" />
+    ///     and walking <see cref="Exception.InnerException" /> for it.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         A transform that does not match falls through to Marten's: <c>40001</c> to
+    ///         <see cref="Exceptions.ConcurrentUpdateException" />, everything else from Npgsql to
+    ///         <see cref="Exceptions.MartenCommandException" />. Because yours run first, one that matches an error
+    ///         Marten also translates replaces Marten's translation for this store.
+    ///     </para>
+    ///     <para>
+    ///         Per store, never process-wide: two stores in one process keep their own transforms.
+    ///     </para>
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     opts.Advanced.ExceptionTransforms.IfExceptionIs&lt;PostgresException&gt;()
+    ///         .If(e =&gt; e.SqlState == "CT001")
+    ///         .ThenTransformTo(e =&gt; new MyDomainException(e));
+    ///     </code>
+    /// </example>
+    public ExceptionTransforms ExceptionTransforms { get; } = new();
 
     /// <summary>
     /// Register configurations to the ISerializer that will be applied at the last

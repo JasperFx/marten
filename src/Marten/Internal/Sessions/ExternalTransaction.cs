@@ -27,6 +27,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         Connection = options.Connection!;
         Transaction = options.Transaction;
         _options = options;
+        ExceptionTransforms = options.ExceptionTransforms;
 
         CommandTimeout = _options.Timeout ?? Connection?.CommandTimeout ?? 30;
     }
@@ -283,7 +284,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         {
             await RollbackAsync(token).ConfigureAwait(false);
             Logger.LogFailure(new NpgsqlCommand(), e);
-            pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+            transformAndThrow(pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>(), e);
         }
 
         if (exceptions.Count == 1)

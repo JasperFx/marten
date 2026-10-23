@@ -274,7 +274,8 @@ public abstract partial class DocumentSessionBase
             }
             catch (Exception e)
             {
-                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+                MartenExceptionTransformer.InOrder(Options.Advanced.ExceptionTransforms,
+                    pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>()).TransformAndThrow(e);
             }
 
             if (execution.Exceptions.Count == 1)
