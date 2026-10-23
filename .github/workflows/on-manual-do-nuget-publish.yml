@@ -23,11 +23,6 @@ jobs:
             9.0.x
             10.0.x
 
-      - name: Install .NET Aspire workload
-        run: |
-          dotnet workload update
-          dotnet workload install aspire
-
       - name: Run Pack
         run: ./build.sh pack
         shell: bash
