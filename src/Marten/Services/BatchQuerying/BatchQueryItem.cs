@@ -28,8 +28,22 @@ internal class BatchQueryItem<T>: IBatchQueryItem
 
     public async Task ReadAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
+        if (_handler is IFinishesAfterTheReader<T> finishesLater)
+        {
+            await finishesLater.ReadAsync(reader, session, token).ConfigureAwait(false);
+            return;
+        }
+
         var result = await _handler.HandleAsync(reader, session, token).ConfigureAwait(false);
         Completion.SetResult(result);
+    }
+
+    public async Task FinishAsync(IMartenSession session, CancellationToken token)
+    {
+        if (_handler is IFinishesAfterTheReader<T> finishesLater)
+        {
+            Completion.SetResult(await finishesLater.FinishAsync(session, token).ConfigureAwait(false));
+        }
     }
 
 }
