@@ -157,6 +157,18 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     public override bool SupportsTrackedDocuments => true;
 
     /// <summary>
+    /// jasperfx#1070. <c>DocumentTypesAsync</c> fills <c>DocumentTypeRef.IsSoftDeleted</c> from the mapping's
+    /// <c>DeleteStyle</c>, and a sub-class reports its root's.
+    /// </summary>
+    public override bool ReportsDocumentDeleteStyle => true;
+
+    /// <summary>
+    /// jasperfx#1071. <c>PreviewDocumentJsonAsync</c> runs the save's own deserialize and id check, then
+    /// re-serializes with the store's serializer, without opening a session.
+    /// </summary>
+    public override bool SupportsDocumentWritePreview => true;
+
+    /// <summary>
     /// One <c>Where()</c>, through Marten's own marker methods, and no filtering of our own: the parser is the
     /// thing under test, including its refusal of an operator against a type that is not soft-deleted.
     /// </summary>

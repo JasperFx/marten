@@ -17,7 +17,8 @@ namespace Marten;
 
 /// <summary>
 /// The write half of the diagnostics contract (jasperfx#870 §6, #5543): a monitoring console edits,
-/// deletes or restores (jasperfx#1059) one document by type name and raw JSON, without referencing Marten.
+/// previews an edit (jasperfx#1071), deletes or restores (jasperfx#1059) one document by type name and raw
+/// JSON, without referencing Marten.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -42,17 +43,8 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
     async Task<DocumentWriteResult> IDocumentStoreDiagnosticsWriter.SaveDocumentJsonAsync(
         DocumentWriteRequest request, CancellationToken token)
     {
-        var target = resolveDiagnosticsTargetForWrite(request.DocumentTypeName);
+        var (target, document) = deserializeForWrite(request);
         var tenantId = DocumentQueryOptions.NormalizeTenantId(request.TenantId);
-
-        var document = deserialize(target.RequestedType, request.Json);
-
-        if (!idsAgree(target.Mapping, document, request.Id))
-        {
-            throw new ArgumentException(
-                $"The id in the JSON does not match the requested id '{request.Id}'. A diagnostic save will not guess which one was meant.",
-                nameof(request));
-        }
 
         if (request.ExpectedVersion != null)
         {
@@ -117,6 +109,23 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
         }
 
         return await savedAsync(request.DocumentTypeName, request.Id, tenantId, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// jasperfx#1071: a dry run of <see cref="IDocumentStoreDiagnosticsWriter.SaveDocumentJsonAsync" />. The
+    /// same deserialize step and the same refusals as the save (<see cref="deserializeForWrite" />), then the
+    /// document re-serialized with the store's own serializer, which is what the save's upsert binds to the
+    /// <c>data</c> column. No session is opened, so nothing is read or written and
+    /// <see cref="DocumentWriteRequest.ExpectedVersion" /> plays no part.
+    /// </summary>
+    Task<string> IDocumentStoreDiagnosticsWriter.PreviewDocumentJsonAsync(
+        DocumentWriteRequest request, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+
+        var (_, document) = deserializeForWrite(request);
+
+        return Task.FromResult(Serializer.ToJson(document));
     }
 
     async Task<DocumentWriteResult> IDocumentStoreDiagnosticsWriter.DeleteDocumentAsync(
@@ -324,6 +333,30 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
             .FirstOrDefault(x => x.DocumentType.FullNameInCodeEquals(document.DocumentType));
 
         return subClass?.DocumentType ?? target.RequestedType;
+    }
+
+    /// <summary>
+    /// The half of a save that decides what would be stored, shared by
+    /// <see cref="IDocumentStoreDiagnosticsWriter.SaveDocumentJsonAsync" /> and
+    /// <see cref="IDocumentStoreDiagnosticsWriter.PreviewDocumentJsonAsync" /> so a preview can never accept
+    /// what a save refuses, or the other way round: resolve the type name (unknown is an
+    /// <see cref="ArgumentException"/>), deserialize with the store's serializer, and refuse an id in the JSON
+    /// that disagrees with the one the request names.
+    /// </summary>
+    private (DiagnosticsTarget Target, object Document) deserializeForWrite(DocumentWriteRequest request)
+    {
+        var target = resolveDiagnosticsTargetForWrite(request.DocumentTypeName);
+
+        var document = deserialize(target.RequestedType, request.Json);
+
+        if (!idsAgree(target.Mapping, document, request.Id))
+        {
+            throw new ArgumentException(
+                $"The id in the JSON does not match the requested id '{request.Id}'. A diagnostic save will not guess which one was meant.",
+                nameof(request));
+        }
+
+        return (target, document);
     }
 
     private object deserialize(Type documentType, string json)
