@@ -38,7 +38,7 @@ internal class TenantDataCleaner
             _store.Options, database, new[] { _tenantId });
 
         // The tenant's DCB tag rows go first, before both the partition drop and the deletes that follow it
-        await PerTenantPartitionedCleanup.DeleteTagRowsAsync(_store.Options, database, [_tenantId], logger, token)
+        await PerTenantPartitionedCleanup.DeleteSideTableRowsAsync(_store.Options, database, [_tenantId], logger, token)
             .ConfigureAwait(false);
 
         if (_store.Options is { TenantPartitions: not null})

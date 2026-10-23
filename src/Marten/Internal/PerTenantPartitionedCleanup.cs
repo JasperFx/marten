@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon.HighWater;
+using Marten.Events.Schema;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -21,9 +23,9 @@ namespace Marten.Internal;
 /// (via <see cref="TenantDataCleaner"/>), <c>AdvancedOperations.RemoveMartenManagedTenantsAsync</c>
 /// and <c>ShardedTenancy.RemoveTenantAsync</c>.
 /// <para>
-/// Before the partition drop, the tenant's DCB tag rows have to go (<see cref="DeleteTagRowsAsync"/>,
-/// #5694): the tag tables are not partitioned by tenant, and their foreign key to <c>mt_events</c>
-/// refuses the drop while they remain. <c>RemoveMartenManagedTenantsAsync</c> is handed partition
+/// Before the partition drop, the tenant's DCB tag rows and <c>[NaturalKey]</c> rows have to go
+/// (<see cref="DeleteSideTableRowsAsync"/>, #5694, #5742): those tables are not partitioned by tenant, and
+/// their foreign keys into <c>mt_events</c> / <c>mt_streams</c> refuse the drop while they remain. <c>RemoveMartenManagedTenantsAsync</c> is handed partition
 /// suffixes, so it maps them to tenant ids first (<see cref="FindTenantIdsForSuffixesAsync"/>).
 /// </para>
 /// <para>
@@ -39,13 +41,19 @@ namespace Marten.Internal;
 internal static class PerTenantPartitionedCleanup
 {
     /// <summary>
-    /// Delete the DCB tag rows of <paramref name="tenantIds"/>. They have to go first, before the tenants'
-    /// events are deleted or their <c>mt_events</c> partition is dropped. Each <c>mt_event_tag_*</c> table
-    /// has a foreign key to <c>mt_events</c> that does not cascade and is not itself partitioned by tenant,
-    /// so PostgreSQL refuses both while they remain (#5694). Only conjoined event stores share tag tables
-    /// between tenants.
+    /// Delete the rows of <paramref name="tenantIds"/> from the event store's side tables that are NOT
+    /// partitioned by tenant but hold a foreign key into a table that is. They have to go first, before the
+    /// tenants' events are deleted or their partitions dropped, because PostgreSQL refuses the drop while they
+    /// remain. A cascading foreign key does not help: a cascade does not apply to a partition drop.
+    /// <list type="bullet">
+    ///   <item>the DCB <c>mt_event_tag_*</c> tables, keyed to <c>mt_events</c> (#5694, #5720)</item>
+    ///   <item>the <c>[NaturalKey]</c> <c>mt_natural_key_*</c> tables, keyed to <c>mt_streams(id, tenant_id)</c>
+    ///   (#5742)</item>
+    /// </list>
+    /// Only conjoined event stores share these tables between tenants. A table the schema has not created yet
+    /// is skipped.
     /// </summary>
-    public static async Task DeleteTagRowsAsync(
+    public static async Task DeleteSideTableRowsAsync(
         StoreOptions options,
         IMartenDatabase database,
         IReadOnlyCollection<string> tenantIds,
@@ -53,19 +61,32 @@ internal static class PerTenantPartitionedCleanup
         CancellationToken token)
     {
         var events = options.EventGraph;
-        if (tenantIds.Count == 0 || events.TenancyStyle != TenancyStyle.Conjoined ||
-            events.DcbStorageMode == DcbStorageMode.HStore || events.TagTypes.Count == 0)
+        if (tenantIds.Count == 0 || events.TenancyStyle != TenancyStyle.Conjoined)
         {
             return;
         }
+
+        var candidates = new List<DbObjectName>();
+
+        // In HStore mode tags live inline on mt_events.tags; no per-type tag tables exist
+        if (events.DcbStorageMode != DcbStorageMode.HStore)
+        {
+            candidates.AddRange(events.TagTypes.Select(tagType =>
+                new DbObjectName(events.DatabaseSchemaName, $"mt_event_tag_{tagType.TableSuffix}")));
+        }
+
+        candidates.AddRange(options.Projections.All.OfType<IAggregateProjection>()
+            .Where(x => x.NaturalKeyDefinition != null)
+            .Select(x => (DbObjectName)NaturalKeyTable.TableNameFor(events, x.NaturalKeyDefinition!)));
+
+        if (candidates.Count == 0) return;
 
         var tables = await database.SchemaTables(token).ConfigureAwait(false);
         var builder = new BatchBuilder();
         var foundTables = false;
 
-        foreach (var tagType in events.TagTypes)
+        foreach (var table in candidates.Distinct())
         {
-            var table = new DbObjectName(events.DatabaseSchemaName, $"mt_event_tag_{tagType.TableSuffix}");
             if (!tables.Contains(table)) continue;
 
             foundTables = true;
