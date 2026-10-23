@@ -205,6 +205,31 @@ mark will never be projected, so reach for it when you have established that a g
 and not as routine maintenance.
 :::
 
+With `UseTenantPartitionedEvents`, each tenant has its own mark. The overload taking a tenant id advances that
+tenant's mark, and the overload without one advances every tenant's mark.
+
+Tools that work against any Critter Stack store, such as CritterWatch, use the store-agnostic form on
+`IEventStore` instead (added in JasperFx 2.92.0). It also has a read-only preview, so you can see what an
+advance would skip before you do it:
+
+```cs
+IEventStore eventStore = store;
+var database = (await eventStore.AllDatabases()).Single();
+
+// Read-only: the stored mark, the committed ceiling, and how many sequence numbers would be skipped
+var previews = await eventStore.PreviewHighWaterAdvanceAsync(database, tenantId: null, ct);
+
+// Refuses (RefusedStaleExpectation) if the mark moved after the preview
+var results = await eventStore.AdvanceHighWaterMarkToLatestAsync(
+    database, tenantId: null, expectedCurrentMark: previews[0].CurrentMark, ct);
+```
+
+These methods are stricter about the tenant than the `Advanced` methods:
+
+- Without per-tenant partitioning, every tenant shares a database's single mark. Naming a tenant throws an
+  error, because it would otherwise advance every tenant's events.
+- With partitioning, a null tenant selects every tenant's mark. `expectedCurrentMark` then needs a named tenant.
+
 ## Projection Distribution
 
 If your Marten store is only using a single database, Marten will distribute projections by projection type. If your store is using
