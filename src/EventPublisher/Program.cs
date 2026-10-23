@@ -12,6 +12,7 @@ using Marten;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -78,8 +79,11 @@ internal static class Program
 
             opts.OpenTelemetry.TrackEventCounters();
 
+            // Under the AspireHost sample, Aspire passes its PostgreSQL server in as ConnectionStrings:marten.
+            // A database-per-tenant store needs the server's connection string rather than one NpgsqlDataSource,
+            // so this reads the string instead of using AddNpgsqlDataSource + UseNpgsqlDataSource().
             opts.MultiTenantedWithSingleServer(
-                ConnectionSource.ConnectionString,
+                builder.Configuration.GetConnectionString("marten") ?? ConnectionSource.ConnectionString,
                 t => t.WithTenants("tenant1", "tenant2", "tenant3")
             );
         });
