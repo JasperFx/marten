@@ -5,25 +5,136 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events.Projections;
+using Marten.Events;
 using Marten.Events.Daemon.HighWater;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
+using Npgsql;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Internal;
 
 /// <summary>
-/// Shared per-tenant cleanup for the two paths that drop a tenant under
+/// Shared per-tenant cleanup for the paths that drop a tenant under
 /// <c>UseTenantPartitionedEvents</c>: <c>AdvancedOperations.DeleteAllTenantDataAsync</c>
-/// (via <see cref="TenantDataCleaner"/>) and <c>AdvancedOperations.RemoveMartenManagedTenantsAsync</c>.
-/// Both routes drop the tenant's partition tables but neither, until #4683, dropped:
+/// (via <see cref="TenantDataCleaner"/>), <c>AdvancedOperations.RemoveMartenManagedTenantsAsync</c>
+/// and <c>ShardedTenancy.RemoveTenantAsync</c>.
+/// <para>
+/// Before the partition drop, the tenant's DCB tag rows have to go (<see cref="DeleteTagRowsAsync"/>,
+/// #5694): the tag tables are not partitioned by tenant, and their foreign key to <c>mt_events</c>
+/// refuses the drop while they remain. <c>RemoveMartenManagedTenantsAsync</c> is handed partition
+/// suffixes, so it maps them to tenant ids first (<see cref="FindTenantIdsForSuffixesAsync"/>).
+/// </para>
+/// <para>
+/// After the drop, they remove what it leaves behind (#4683):
 ///   * the freestanding <c>mt_events_sequence_{suffix}</c> sequence (no <c>OWNED BY</c> link
 ///     to the partition, so the partition drop leaves it orphaned)
 ///   * the per-tenant <c>mt_event_progression</c> rows -- one per projection per tenant
 ///     plus the per-tenant high-water row
 /// Both leak slowly but unboundedly across drop-tenant cycles (trial-account churn, etc).
+/// Both are found from tenant ids, not partition suffixes.
+/// </para>
 /// </summary>
 internal static class PerTenantPartitionedCleanup
 {
+    /// <summary>
+    /// Delete the DCB tag rows of <paramref name="tenantIds"/>. They have to go first, before the tenants'
+    /// events are deleted or their <c>mt_events</c> partition is dropped. Each <c>mt_event_tag_*</c> table
+    /// has a foreign key to <c>mt_events</c> that does not cascade and is not itself partitioned by tenant,
+    /// so PostgreSQL refuses both while they remain (#5694). Only conjoined event stores share tag tables
+    /// between tenants.
+    /// </summary>
+    public static async Task DeleteTagRowsAsync(
+        StoreOptions options,
+        IMartenDatabase database,
+        IReadOnlyCollection<string> tenantIds,
+        ILogger logger,
+        CancellationToken token)
+    {
+        var events = options.EventGraph;
+        if (tenantIds.Count == 0 || events.TenancyStyle != TenancyStyle.Conjoined ||
+            events.DcbStorageMode == DcbStorageMode.HStore || events.TagTypes.Count == 0)
+        {
+            return;
+        }
+
+        var tables = await database.SchemaTables(token).ConfigureAwait(false);
+        var builder = new BatchBuilder();
+        var foundTables = false;
+
+        foreach (var tagType in events.TagTypes)
+        {
+            var table = new DbObjectName(events.DatabaseSchemaName, $"mt_event_tag_{tagType.TableSuffix}");
+            if (!tables.Contains(table)) continue;
+
+            foundTables = true;
+            logger.LogInformation("Trying to delete tenant information from table {Table} for tenants {TenantIds}",
+                table.QualifiedName, string.Join(", ", tenantIds));
+            builder.StartNewCommand();
+            builder.Append($"delete from {table.QualifiedName} where tenant_id = ANY(");
+            builder.AppendParameter(tenantIds.ToArray());
+            builder.Append(")");
+        }
+
+        if (!foundTables) return;
+
+        var batch = builder.Compile();
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            batch.Connection = conn;
+            await batch.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// The tenant ids that <c>mt_tenant_partitions</c> maps to <paramref name="suffixes"/> in this database,
+    /// read fresh, so they are exactly the rows <c>DropPartitionFromAllTables</c> is about to delete. A suffix
+    /// is not always the tenant id: a Guid tenant's suffix is its hyphen-free "N" form (#4567), while its
+    /// events and tag rows carry the canonical Guid string.
+    /// </summary>
+    public static async Task<IReadOnlyList<string>> FindTenantIdsForSuffixesAsync(
+        StoreOptions options,
+        IMartenDatabase database,
+        string[] suffixes,
+        CancellationToken token)
+    {
+        if (options.TenantPartitions == null || suffixes.Length == 0) return [];
+
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            await using var cmd = conn.CreateCommand(
+                $"select partition_value from {options.TenantPartitions.TenantsTableName.QualifiedName} where partition_suffix = ANY(:suffixes)");
+            cmd.Parameters.AddWithValue("suffixes", suffixes);
+
+            var tenantIds = new List<string>();
+            await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                tenantIds.Add(await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false));
+            }
+
+            return tenantIds;
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            // No tenant was ever registered in this database, so it has no tenant partition to drop
+            return [];
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
     /// <summary>
     /// Capture the per-tenant sequence suffix for <paramref name="tenantIds"/> BEFORE the
     /// partition drop runs -- the Weasel managed-list registry may forget the tenant once
