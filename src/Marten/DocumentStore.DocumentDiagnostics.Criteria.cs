@@ -337,6 +337,14 @@ public partial class DocumentStore
                 }
             }
 
+            // jasperfx#1058 (#5740): a metadata key leads the caller's own ordering, which then only breaks its
+            // ties. Inserted before the tenant below, so it ends up second under AllTenants. QueryDocumentsAsync
+            // already refused an ordering the mapping cannot answer, so this cannot throw.
+            if (MetadataOrdering(target, options, "d") is { } metadataOrdering)
+            {
+                selector.Ordering.Expressions.Insert(0, new LiteralOrdering(metadataOrdering));
+            }
+
             // Tenant first under AllTenants (jasperfx#928: a page never repeats another tenant's row), then
             // the caller's ordering as Marten translated it, then the identity column so equal keys still page
             // deterministically -- (tenant_id, id) is the conjoined primary key, so the order is total.

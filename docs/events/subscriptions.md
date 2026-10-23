@@ -363,6 +363,37 @@ await host.StartAsync();
 If you specify starting rules for a certain database, that rule will only apply to that database. Other databases will
 fall through to global rules.
 
+### Pinning the start on the first run
+
+`SubscribeFromFirstRun()` starts a brand new subscription or projection at the high water mark of the
+moment it first runs, and **persists** that sequence as its start floor in the `mt_event_projection_floors` table:
+
+```cs
+o.Options.SubscribeFromFirstRun();
+```
+
+Unlike `SubscribeFromPresent()`, which jumps to the live high water mark on every start, the floor is pinned
+once and then honoured:
+
+* Every later start resumes from its progress as usual, and never from below the floor.
+* A rebuild replays from the floor instead of from the beginning of the event store, because the floor survives the
+  rebuild's teardown.
+* Several nodes starting the projection for the first time at once agree on one floor.
+* The floor is keyed by the projection's name without its version, so a version bump inherits it. Under
+  `UseTenantPartitionedEvents` there is one floor per tenant.
+
+::: warning
+Pinning a floor deliberately skips history. That is lossless only when no events the projection handles exist below
+the floor. That is the case for a projection over brand new event types. For a projection over existing event types,
+it is a business decision.
+:::
+
+A stored floor also takes precedence over a configured `SubscribeFromSequence()` or `SubscribeFromTime()` for that
+database. That lets an operator change one database's floor through `IEventDatabase.SetProjectionFloorAsync()`, or
+clear it with a `null` floor, without a deploy. Floors are left in place by `DeleteAllEventDataAsync()`,
+`DeleteAllDocumentsAsync()` and `ResetAllData()`, and they are removed along with a tenant by
+`DeleteAllTenantDataAsync()` and `RemoveMartenManagedTenantsAsync()`.
+
 ## Event Filtering
 
 Without any explicit configuration, all subscriptions will receive all possible event types, but Marten will filter

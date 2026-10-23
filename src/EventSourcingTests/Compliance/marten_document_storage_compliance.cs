@@ -150,6 +150,19 @@ public class document_conjoined_tenancy_compliance
 public class document_store_diagnostics_compliance
     : DocumentStoreDiagnosticsCompliance<MartenDocumentComplianceFixture>;
 
+/*
+ * jasperfx#785 (#5740). Soft deletes and document metadata, held to one definition across stores. Each pins
+ * its own schema, but shares the collection for the same reason as the rest: every suite wipes document data
+ * before each test.
+ */
+[Collection(DocumentComplianceCollection.Name)]
+public class soft_delete_compliance
+    : SoftDeleteCompliance<MartenDocumentComplianceFixture>;
+
+[Collection(DocumentComplianceCollection.Name)]
+public class document_metadata_compliance
+    : DocumentMetadataCompliance<MartenDocumentComplianceFixture>;
+
 public static class DocumentComplianceCollection
 {
     public const string Name = "document storage compliance";

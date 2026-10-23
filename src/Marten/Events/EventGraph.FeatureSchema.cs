@@ -94,6 +94,9 @@ public partial class EventGraph: IFeatureSchema
 
         yield return new EventProgressionTable(this);
 
+        // jasperfx#809 (#5740): persisted projection start floors, which outlive rebuild teardown
+        yield return new ProjectionFloorTable(this);
+
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
 
         if (EnableExtendedProgressionTracking)

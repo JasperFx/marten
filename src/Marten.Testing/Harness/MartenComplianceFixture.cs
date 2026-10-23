@@ -579,6 +579,14 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsMessageOutbox => true;
 
     /// <summary>
+    ///     jasperfx#809 (#5740). <c>MartenDatabase</c> implements the persisted projection start-floor seam
+    ///     over <c>mt_event_projection_floors</c>, a table no data reset touches, so
+    ///     <c>ProjectionFloorCompliance</c> runs rather than skips -- and
+    ///     <c>AsyncOptions.SubscribeFromFirstRun()</c> works on Marten.
+    /// </summary>
+    public override bool SupportsProjectionFloors => true;
+
+    /// <summary>
     ///     jasperfx#732. Marten's documented registration -- AddMarten(...).AddAsyncDaemon(...) --
     ///     is what has to be under test here, not a hand-built daemon, because the gap this suite
     ///     exists to close (fisher#138) was a store that produced no reachable IProjectionCoordinator

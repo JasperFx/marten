@@ -189,6 +189,9 @@ internal static class PerTenantPartitionedCleanup
         if (tenantIds.Count == 0) return;
 
         var eventsSchema = options.Events.DatabaseSchemaName;
+
+        await DeleteProjectionFloorsAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
+
         var progressionRows = await CollectMatchingProgressionRowsAsync(
             eventsSchema, database, tenantIds, token).ConfigureAwait(false);
 
@@ -219,6 +222,35 @@ internal static class PerTenantPartitionedCleanup
         {
             batch.Connection = conn;
             await batch.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// jasperfx#809 (#5740): a removed tenant's projection start floors go with it. A re-added tenant starts a
+    /// fresh per-tenant sequence at 1, so a floor left behind by its previous incarnation would make its
+    /// projections skip every event below that floor -- events that, this time, are real. Unlike the
+    /// progression rows these are not leftovers of the partition drop, so they are deleted whether or not
+    /// anything else was found. A floor table the schema has not been migrated to yet has nothing to delete.
+    /// </summary>
+    private static async Task DeleteProjectionFloorsAsync(string eventsSchema, IMartenDatabase database,
+        IReadOnlyCollection<string> tenantIds, CancellationToken token)
+    {
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            var command = conn.CreateCommand(
+                $"DELETE FROM \"{eventsSchema}\".\"{Events.Schema.ProjectionFloorTable.Name}\" WHERE tenant_id = ANY(:tenants)");
+            command.Parameters.AddWithValue("tenants", tenantIds.ToArray());
+            await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            // Nothing was ever pinned in a database without the table.
         }
         finally
         {
