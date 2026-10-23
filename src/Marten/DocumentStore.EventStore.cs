@@ -44,11 +44,21 @@ namespace Marten;
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySession>, ISubscriptionRunner<ISubscription>
 {
-    static DocumentStore()
-    {
-        ProjectionExceptions.RegisterTransientExceptionType<NpgsqlException>();
-        ProjectionExceptions.RegisterTransientExceptionType<MartenCommandException>();
-    }
+    // #5741 (jasperfx#1029 part 2): Marten no longer registers NpgsqlException or MartenCommandException with
+    // ProjectionExceptions.RegisterTransientExceptionType. What that registration decided was whether an
+    // exception thrown by projection code is wrapped as an ApplyEventException. PostgresException derives from
+    // NpgsqlException, so a permanent error -- 42703 undefined_column, a permissions failure -- escaped
+    // unwrapped, and the paused shard reported it as ShardFailureCategory.Other with no event attached.
+    //
+    // ProjectionExceptions.IsExceptionTransient now falls back to TransientFailures, which walks the exception
+    // graph (so a MartenCommandException wrapper is seen through) and asks Npgsql, whose IsTransient reads the
+    // SQLSTATE. A pool timeout, a dropped connection, a deadlock or a serialization failure is still transient; a
+    // permanent error is attributed to the event that hit it. A type-only registration cannot say
+    // "NpgsqlException { IsTransient: true }", hence none at all.
+    //
+    // This was unsafe before jasperfx#1064: under SkipApplyErrors a wrapped permanent error would have been
+    // dead-lettered event after event. A non-transient DbException anywhere in the graph is now never
+    // dead-lettered; it pauses the shard, and ShardFailure.IsTransient reports false.
 
     DatabaseCardinality IEventStore.DatabaseCardinality => Options.Tenancy.Cardinality;
 
