@@ -855,7 +855,7 @@ public class AdvancedOperations
         {
             // The drop takes the tenants' mt_events partitions, which their DCB tag rows still reference
             // (#5694)
-            await Marten.Internal.PerTenantPartitionedCleanup.DeleteTagRowsAsync(
+            await Marten.Internal.PerTenantPartitionedCleanup.DeleteSideTableRowsAsync(
                 _store.Options, _store.Tenancy.Default.Database, tenantIds, logger, token).ConfigureAwait(false);
         }
 

@@ -652,7 +652,7 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
             {
                 // The drop takes the tenant's mt_events partition, which its DCB tag rows still
                 // reference (#5694)
-                await Internal.PerTenantPartitionedCleanup.DeleteTagRowsAsync(
+                await Internal.PerTenantPartitionedCleanup.DeleteSideTableRowsAsync(
                     _options, database, [tenantId], logger, ct).ConfigureAwait(false);
             }
 
