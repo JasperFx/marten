@@ -197,7 +197,11 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         var op = _storage.OverwriteProjected(aggregate, TenantId);
         if (op is IRevisionedOperation r)
         {
-            r.Revision = scope == AggregationScope.SingleStream ? (int)lastEvent.Version : (int)lastEvent.Sequence;
+            // #5723: no cast. Revision, IEvent.Version and IEvent.Sequence are all long, and a multi-stream
+            // revision is the global sequence, which passes int.MaxValue on a large store -- the case #4526 puts
+            // on ILongVersioned and a bigint column. Narrowing an IRevisioned (int) member happens where the
+            // value is written back to the document, not here.
+            r.Revision = scope == AggregationScope.SingleStream ? lastEvent.Version : lastEvent.Sequence;
             r.IgnoreConcurrencyViolation = true;
         }
 
