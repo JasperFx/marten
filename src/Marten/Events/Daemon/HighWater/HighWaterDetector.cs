@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
@@ -151,19 +152,162 @@ internal class HighWaterDetector: IHighWaterDetector
     public bool SupportsTenantPartitioning => _graph.UseTenantPartitionedEvents;
 
     /// <summary>
-    /// Advance the high water mark to the latest detected sequence
+    /// #5738 / jasperfx#1031: what advancing one high water mark to the committed ceiling WOULD do. Reads
+    /// only. A null <paramref name="tenantId"/> is the store-global <c>HighWaterMark</c> row; a tenant id is
+    /// that tenant's own <c>HighWaterMark:{tenant}</c> row under per-tenant partitioned events.
     /// </summary>
-    /// <param name="token"></param>
-    public async Task AdvanceHighWaterMarkToLatest(CancellationToken token)
+    public async Task<HighWaterMarkPreview> PreviewAdvanceToCommittedCeilingAsync(string? tenantId,
+        CancellationToken token)
     {
-        // #4953: advance to the highest COMMITTED sequence, never the reserved last_value of
-        // mt_events_sequence — reserved numbers can belong to transactions still in flight, and
-        // marking past them permanently skips their events once they commit.
-        var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
-        var committed = await _runner.Query(new CommittedSequenceHandler(_graph), token).ConfigureAwait(false);
-        if (committed > statistics.LastMark)
+        await using var conn = _database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+
+        // One snapshot for all three reads, so the count of missing sequences agrees with the mark and
+        // ceiling it is reported beside
+        await using var tx = await conn.BeginTransactionAsync(IsolationLevel.RepeatableRead, token)
+            .ConfigureAwait(false);
+
+        var (_, current) = await readMarkAsync(conn, tenantId, false, token).ConfigureAwait(false);
+        var ceiling = await readCommittedCeilingAsync(conn, tenantId, token).ConfigureAwait(false);
+        var missing = ceiling > current
+            ? await countMissingSequencesAsync(conn, tenantId, current, ceiling, token).ConfigureAwait(false)
+            : 0;
+
+        await tx.CommitAsync(token).ConfigureAwait(false);
+
+        return new HighWaterMarkPreview(DatabaseIdentity, tenantId, current, ceiling, missing);
+    }
+
+    /// <summary>
+    /// #5738 / jasperfx#1031: move one high water mark to the highest COMMITTED seq_id, refusing when
+    /// <paramref name="expectedCurrentMark"/> is given and no longer matches the stored mark. Never moves a
+    /// mark backwards. Which mark <paramref name="tenantId"/> selects is as for
+    /// <see cref="PreviewAdvanceToCommittedCeilingAsync"/>.
+    /// </summary>
+    /// <remarks>
+    /// #4953: the target is max(seq_id), never the reserved last_value of mt_events_sequence — reserved
+    /// numbers can belong to transactions still in flight, and marking past them permanently skips their
+    /// events once they commit. Whatever is still in flight BELOW the committed ceiling is skipped anyway;
+    /// that is the operation, and why it is an explicit operator action.
+    /// </remarks>
+    public async Task<HighWaterMarkAdvance> AdvanceToCommittedCeilingAsync(string? tenantId,
+        long? expectedCurrentMark, CancellationToken token)
+    {
+        await using var conn = _database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+
+        for (var attempt = 0;; attempt++)
         {
-            await MarkHighWaterMarkInDatabaseAsync(committed, token).ConfigureAwait(false);
+            await using var tx = await conn.BeginTransactionAsync(token).ConfigureAwait(false);
+
+            // FOR UPDATE holds the mark's row until commit, so the compare against expectedCurrentMark and
+            // the write are one step: a detector's mt_mark_event_progression upsert of the same row waits
+            // behind this transaction instead of landing between the read and the write.
+            var (exists, current) = await readMarkAsync(conn, tenantId, true, token).ConfigureAwait(false);
+
+            if (expectedCurrentMark.HasValue && expectedCurrentMark.Value != current)
+            {
+                await tx.CommitAsync(token).ConfigureAwait(false);
+                return new HighWaterMarkAdvance(DatabaseIdentity, tenantId,
+                    HighWaterAdvanceOutcome.RefusedStaleExpectation, current, current, 0);
+            }
+
+            var ceiling = await readCommittedCeilingAsync(conn, tenantId, token).ConfigureAwait(false);
+            if (ceiling <= current)
+            {
+                await tx.CommitAsync(token).ConfigureAwait(false);
+                return new HighWaterMarkAdvance(DatabaseIdentity, tenantId,
+                    HighWaterAdvanceOutcome.AlreadyAtCeiling, current, current, 0);
+            }
+
+            var skipped = await countMissingSequencesAsync(conn, tenantId, current, ceiling, token)
+                .ConfigureAwait(false);
+
+            var name = highWaterMarkName(tenantId);
+            if (exists)
+            {
+                await conn.CreateCommand(
+                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :ceiling, last_updated = transaction_timestamp() where name = :name")
+                    .With("ceiling", ceiling)
+                    .With("name", name)
+                    .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            }
+            else
+            {
+                // No row means nothing was locked, so a detector can write the mark's first row between the
+                // read above and this insert. Never overwrite it: go round again against the row it wrote.
+                var inserted = await conn.CreateCommand(
+                        $"insert into {_graph.DatabaseSchemaName}.mt_event_progression (name, last_seq_id, last_updated) values (:name, :ceiling, transaction_timestamp()) on conflict (name) do nothing")
+                    .With("ceiling", ceiling)
+                    .With("name", name)
+                    .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+
+                if (inserted == 0)
+                {
+                    await tx.RollbackAsync(token).ConfigureAwait(false);
+                    if (attempt == 0) continue;
+
+                    throw new InvalidOperationException(
+                        $"Could not advance high water mark '{name}' on database '{DatabaseIdentity}': its row kept appearing and disappearing while it was being written.");
+                }
+            }
+
+            await tx.CommitAsync(token).ConfigureAwait(false);
+            return new HighWaterMarkAdvance(DatabaseIdentity, tenantId, HighWaterAdvanceOutcome.Advanced, current,
+                ceiling, skipped);
+        }
+    }
+
+    private static string highWaterMarkName(string? tenantId)
+        => tenantId == null ? HighWaterShardIdentity.StoreGlobal : HighWaterShardIdentity.PerTenant(tenantId);
+
+    // The events one mark covers: all of them for the store-global mark, one tenant's partition for a
+    // per-tenant mark (each tenant draws seq_id from its own sequence there).
+    private static string tenantFilter(string? tenantId) => tenantId == null ? "true" : "e.tenant_id = :tenant";
+
+    private async Task<(bool Exists, long Mark)> readMarkAsync(NpgsqlConnection conn, string? tenantId,
+        bool forUpdate, CancellationToken token)
+    {
+        await using var cmd = conn.CreateCommand(
+                $"select last_seq_id from {_graph.DatabaseSchemaName}.mt_event_progression where name = :name{(forUpdate ? " for update" : "")}")
+            .With("name", highWaterMarkName(tenantId));
+
+        await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+        if (!await reader.ReadAsync(token).ConfigureAwait(false)) return (false, 0);
+
+        return (true, await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
+            ? 0
+            : await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false));
+    }
+
+    private async Task<long> readCommittedCeilingAsync(NpgsqlConnection conn, string? tenantId,
+        CancellationToken token)
+    {
+        var cmd = conn.CreateCommand(
+            $"select coalesce(max(e.seq_id), 0) from {_graph.DatabaseSchemaName}.mt_events e where {tenantFilter(tenantId)}");
+        if (tenantId != null) cmd.With("tenant", tenantId);
+
+        await using (cmd)
+        {
+            return (long)(await cmd.ExecuteScalarAsync(token).ConfigureAwait(false))!;
+        }
+    }
+
+    // Sequence numbers above the mark and at or below the ceiling with no committed event: the ones every
+    // async shard on this mark skips for good if it advances
+    private async Task<long> countMissingSequencesAsync(NpgsqlConnection conn, string? tenantId, long mark,
+        long ceiling, CancellationToken token)
+    {
+        var cmd = conn.CreateCommand(
+                $"select count(*) from {_graph.DatabaseSchemaName}.mt_events e where {tenantFilter(tenantId)} and e.seq_id > :mark and e.seq_id <= :ceiling")
+            .With("mark", mark)
+            .With("ceiling", ceiling);
+        if (tenantId != null) cmd.With("tenant", tenantId);
+
+        await using (cmd)
+        {
+            var committed = (long)(await cmd.ExecuteScalarAsync(token).ConfigureAwait(false))!;
+            return ceiling - mark - committed;
         }
     }
 

@@ -61,8 +61,7 @@ public class AdvancedOperations
         var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
         foreach (var database in databases.OfType<MartenDatabase>())
         {
-            var detector = new HighWaterDetector(database, _store.Events, NullLogger.Instance);
-            await detector.AdvanceHighWaterMarkToLatest(token).ConfigureAwait(false);
+            await advanceHighWaterMarkAsync(database, null, token).ConfigureAwait(false);
         }
     }
 
@@ -77,8 +76,22 @@ public class AdvancedOperations
         tenantId = _store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         var tenant = await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
 
-        var detector = new HighWaterDetector((MartenDatabase)tenant.Database, _store.Events, NullLogger.Instance);
-        await detector.AdvanceHighWaterMarkToLatest(token).ConfigureAwait(false);
+        await advanceHighWaterMarkAsync((MartenDatabase)tenant.Database, tenantId, token).ConfigureAwait(false);
+    }
+
+    private async Task advanceHighWaterMarkAsync(MartenDatabase database, string? tenantId, CancellationToken token)
+    {
+        // These overloads are more lenient about the tenant than IEventStore.AdvanceHighWaterMarkToLatestAsync
+        // (#5738 / jasperfx#1031): on a store with one mark per database, a named tenant advances its database's
+        // mark. Under per-tenant partitioned events the daemon never reads the store-global row, so they advance
+        // the tenant's own mark, or every tenant's when none is named.
+        IReadOnlyList<string?> marks = !_store.Options.Events.UseTenantPartitionedEvents
+            ? [null]
+            : tenantId == null
+                ? await DocumentStore.managedTenantMarksAsync(database, token).ConfigureAwait(false)
+                : [tenantId];
+
+        await _store.AdvanceHighWaterMarksAsync(database, marks, null, token).ConfigureAwait(false);
     }
 
 
