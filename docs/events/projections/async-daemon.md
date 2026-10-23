@@ -226,9 +226,9 @@ var results = await eventStore.AdvanceHighWaterMarkToLatestAsync(
 
 These methods are stricter about the tenant than the `Advanced` methods:
 
-- Without per-tenant partitioning, every tenant shares a database's single mark. Naming a tenant throws an
+* Without per-tenant partitioning, every tenant shares a database's single mark. Naming a tenant throws an
   error, because it would otherwise advance every tenant's events.
-- With partitioning, a null tenant selects every tenant's mark. `expectedCurrentMark` then needs a named tenant.
+* With partitioning, a null tenant selects every tenant's mark. `expectedCurrentMark` then needs a named tenant.
 
 ## Projection Distribution
 
