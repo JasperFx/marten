@@ -161,7 +161,7 @@ public class DatabaseProbe
     public Guid Id { get; set; }
 }
 
-public class DatabaseFailingProjection: EventProjection
+public partial class DatabaseFailingProjection: EventProjection
 {
     public const string MissingColumn = "missing-column";
 
@@ -185,8 +185,10 @@ public class DatabaseFailingProjection: EventProjection
 
         if (probe.Name == MissingColumn)
         {
-            // A real 42703 from PostgreSQL, through Marten's own command path
-            await operations.QueryAsync<int>("select no_such_column from mt_events", cancellation);
+            // A real 42703 from PostgreSQL, through Marten's own command path. pg_class rather than a Marten table:
+            // an unqualified mt_events resolves only if some schema on the search path happens to have one, and
+            // otherwise fails as 42P01 (undefined table) instead.
+            await operations.QueryAsync<int>("select no_such_column from pg_class", cancellation);
         }
 
         if (_failure(attempt) is { } exception) throw exception;
