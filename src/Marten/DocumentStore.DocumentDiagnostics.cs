@@ -55,8 +55,16 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
 
         foreach (var mapping in Options.Storage.DocumentMappingsWithSchema.OrderBy(x => x.Alias))
         {
+            // jasperfx#1070: whether a delete is permanent, known before it is called. A sub-class below
+            // reports the same answer, since the root's table -- and so the root's delete style -- holds
+            // its rows.
+            var isSoftDeleted = mapping.DeleteStyle == DeleteStyle.SoftDelete;
+
             refs.Add(new DocumentTypeRef(mapping.DocumentType.FullNameInCode(), mapping.Alias,
-                mapping.DatabaseSchemaName));
+                mapping.DatabaseSchemaName)
+            {
+                IsSoftDeleted = isSoftDeleted
+            });
 
             // jasperfx#932: a sub-class is listed too, because resolveDiagnosticsTarget already accepts
             // its name and narrows to its rows -- a picker that could not offer it would be hiding a
@@ -67,7 +75,8 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
                 refs.Add(new DocumentTypeRef(subClass.DocumentType.FullNameInCode(), subClass.Alias,
                     mapping.DatabaseSchemaName)
                 {
-                    RootTypeName = mapping.DocumentType.FullNameInCode()
+                    RootTypeName = mapping.DocumentType.FullNameInCode(),
+                    IsSoftDeleted = isSoftDeleted
                 });
             }
         }
