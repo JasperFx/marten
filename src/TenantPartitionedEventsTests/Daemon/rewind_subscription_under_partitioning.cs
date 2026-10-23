@@ -59,8 +59,8 @@ public class rewind_subscription_under_partitioning: PartitionedStoreContext
             Enumerable.Range(1, 5).Select(x => (alpha, (long)x)).Concat(Enumerable.Range(1, 3).Select(x => (beta, (long)x))),
             ignoreOrder: true);
 
-        (await progressForAsync(alpha, token)).ShouldBe(5);
-        (await progressForAsync(beta, token)).ShouldBe(3);
+        await waitForProgressAsync(alpha, 5, token);
+        await waitForProgressAsync(beta, 3, token);
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class rewind_subscription_under_partitioning: PartitionedStoreContext
 
         await waitForAsync(() => _subscription.Seen.Count >= 3, token);
         _subscription.Seen.ShouldBe([(alpha, 3L), (alpha, 4L), (alpha, 5L)], ignoreOrder: true);
-        (await progressForAsync(alpha, token)).ShouldBe(5);
+        await waitForProgressAsync(alpha, 5, token);
         (await deadLetterSequencesAsync(alpha, token)).ShouldBe([1L]);
 
         // The other tenant is not stopped, not rewound, and keeps its dead letters
@@ -127,12 +127,8 @@ public class rewind_subscription_under_partitioning: PartitionedStoreContext
         await daemon.StartAllAsync();
 
         await waitForAsync(() => _subscription.Seen.Count >= 8, token);
-        var stopwatch = Stopwatch.StartNew();
-        while (stopwatch.Elapsed < 30.Seconds() &&
-               (await progressForAsync(alpha, token) < 5 || await progressForAsync(beta, token) < 3))
-        {
-            await Task.Delay(100, token);
-        }
+        await waitForProgressAsync(alpha, 5, token);
+        await waitForProgressAsync(beta, 3, token);
 
         _subscription.Seen.Count.ShouldBe(8);
         runningIdentities(daemon).ShouldBe([identityFor(alpha), identityFor(beta)], ignoreOrder: true);
@@ -160,6 +156,19 @@ public class rewind_subscription_under_partitioning: PartitionedStoreContext
     private Task<long> progressForAsync(string tenantId, CancellationToken token) =>
         ((IEventDatabase)Store.Storage.Database)
         .ProjectionProgressFor(ShardName.Compose(SubscriptionName, ShardName.All, tenantId), token);
+
+    // A subscription sees a page in ProcessEventsAsync, but the page's progression row is only committed with
+    // the batch afterwards, so having seen the events does not mean the progress has moved yet
+    private async Task waitForProgressAsync(string tenantId, long expected, CancellationToken token)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        while (await progressForAsync(tenantId, token) != expected && stopwatch.Elapsed < 30.Seconds())
+        {
+            await Task.Delay(100, token);
+        }
+
+        (await progressForAsync(tenantId, token)).ShouldBe(expected);
+    }
 
     private async Task storeDeadLettersAsync(string tenantId, CancellationToken token, params long[] sequences)
     {
