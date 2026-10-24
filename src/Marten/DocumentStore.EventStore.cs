@@ -853,6 +853,45 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         return (IReadOnlyEventStore)session.Events;
     }
 
+    /// <summary>
+    ///     jasperfx#1079 (marten#5768): every tenant's streams in one queryable. The tenant-less
+    ///     <c>OpenReadOnlyEventStore()</c> opens a DEFAULT-tenant session, which a conjoined store with
+    ///     <c>Advanced.DefaultTenantUsageEnabled = false</c> refuses, so until this member there was no
+    ///     store-wide stream read on such a store at all.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///     The session behind the queryable is an <c>AllowAnyTenant</c> session bound to the one database
+    ///     (<see cref="SessionOptions.ForDatabase(IMartenDatabase)" />), so the default-tenant guard never
+    ///     applies, and the provider reads <c>mt_streams</c> with no tenant predicate. Each row carries its
+    ///     <c>tenant_id</c> as <see cref="JasperFx.Events.StreamState.TenantId" />; a single-tenanted store's
+    ///     rows all carry the default tenant id, which is the tenant-less <c>QueryStreamStates()</c> answer.
+    ///     </para>
+    ///     <para>
+    ///     A store spread over several databases is refused rather than answered from one of them, the rule
+    ///     <c>allTenantsDatabase</c> applies to <c>DocumentQueryOptions.AllTenants</c>: a union across databases
+    ///     would need paging that stays deterministic across N cursors, which is its own piece of work. Open
+    ///     <c>OpenReadOnlyEventStore(tenantId)</c> per tenant there.
+    ///     </para>
+    /// </remarks>
+    IQueryable<JasperFx.Events.StreamState> IEventStore.QueryStreamStatesForAllTenants()
+    {
+        if (Tenancy.Cardinality != DatabaseCardinality.Single)
+        {
+            throw new NotSupportedException(
+                $"QueryStreamStatesForAllTenants cannot answer on this Marten store, whose DatabaseCardinality is {Tenancy.Cardinality}: its tenants' streams live in several databases, and Marten does not fan a stream query out across them. Open OpenReadOnlyEventStore(tenantId) for each tenant instead.");
+        }
+
+        var database = Tenancy.Default.Database;
+        var session = (QuerySession)QuerySession(SessionOptions.ForDatabase(database));
+
+        // Held for the queryable's lifetime, as OpenReadOnlyEventStore holds its session: IQueryable<T>
+        // exposes no disposal.
+        return new Marten.Events.Querying.StreamStateQueryProvider(session, this,
+            new Tenant(StorageConstants.DefaultTenantId, database),
+            tenantIdOverride: null, allTenants: true).CreateRoot();
+    }
+
     // #5153 lifted both CompactStreamAsync<T> overloads off Marten.Events.IEventStoreOperations and
     // onto JasperFx.Events.IEventStoreOperations, which left the reflective lookup here resolving to
     // null on every call. Type.GetMethod does not walk an interface's base interfaces, and its

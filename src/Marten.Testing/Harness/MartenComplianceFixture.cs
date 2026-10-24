@@ -61,6 +61,13 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsDisablingDefaultTenant => true;
 
     /// <summary>
+    /// jasperfx#1079 (marten#5768). <c>IEventStore.QueryStreamStatesForAllTenants()</c> reads every tenant's
+    /// <c>mt_streams</c> rows through an AllowAnyTenant session, so it works with the default tenant disabled,
+    /// and <c>QueryStreamStates</c> fills <c>StreamState.TenantId</c> from the row's <c>tenant_id</c>.
+    /// </summary>
+    public override bool SupportsAllTenantStreamStates => true;
+
+    /// <summary>
     /// #5383 part 5 — the database a tenant's data lives in, through Marten's own tenancy rather than
     /// a test-local map, so the suite exercises the resolution the product ships.
     /// </summary>
