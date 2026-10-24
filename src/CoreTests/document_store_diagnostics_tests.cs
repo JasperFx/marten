@@ -36,6 +36,18 @@ public class DiagDog: DiagAnimal { }
 
 public class DiagCat: DiagAnimal { }
 
+public class DiagShipment
+{
+    public Guid Id { get; set; }
+    public string State { get; set; } = "";
+    public DiagAddress ShipTo { get; set; } = new();
+}
+
+public class DiagAddress
+{
+    public string City { get; set; } = "";
+}
+
 /// <summary>
 /// Coverage for #4775: the store-agnostic <see cref="IDocumentStoreDiagnostics"/> query surface
 /// (DI registration + DocumentTypesAsync/QueryDocumentsAsync/LoadDocumentJsonAsync) plus the
@@ -419,6 +431,130 @@ public class document_store_diagnostics_tests: HostedStoreContext
         await Should.ThrowAsync<ArgumentException>(
             () => diagnostics.QueryDocumentsAsync(typeof(DiagWidget).FullName!,
                 new DocumentQueryOptions(1, 10) { AllTenants = true, TenantId = "diag_contradiction" }));
+    }
+
+    // ---------------------------------------------------------------- marten#5768
+
+    [Fact]
+    public async Task a_computed_index_reports_the_members_it_was_declared_over()
+    {
+        // CritterWatch#1469: BuildIndexes filled Members only from a duplicated field's column, so an ordinary
+        // Index(x => x.State) reported Members = [] and a console matching a predicate's members against the
+        // indexes said "this will scan" for a filter the index covers.
+        var host = await BuildHost("computed_members", opts =>
+        {
+            opts.Schema.For<DiagShipment>()
+                .Index(x => x.State)
+                .Index(x => x.ShipTo.City);
+        });
+
+        var usage = await GetUsageAsync(host);
+        var descriptor = usage.Documents.Single(d => d.Alias == "diagshipment");
+
+        // Dotted, in declaration casing -- not the jsonb locator, and not the serializer's casing.
+        descriptor.Indexes.Single(x => x.Members.Contains(nameof(DiagShipment.State))).Members
+            .ShouldBe([nameof(DiagShipment.State)]);
+        descriptor.Indexes.Single(x => x.Members.Contains("ShipTo.City")).Members.ShouldBe(["ShipTo.City"]);
+    }
+
+    [Fact]
+    public async Task a_multi_member_computed_index_reports_every_member_in_order()
+    {
+        var host = await BuildHost("computed_multi", opts =>
+        {
+            opts.Schema.For<DiagShipment>().Index(x => new { x.State, x.ShipTo.City });
+        });
+
+        var usage = await GetUsageAsync(host);
+        var descriptor = usage.Documents.Single(d => d.Alias == "diagshipment");
+
+        descriptor.Indexes.ShouldHaveSingleItem().Members.ShouldBe([nameof(DiagShipment.State), "ShipTo.City"]);
+    }
+
+    [Fact]
+    public async Task indexes_and_duplicated_fields_are_reported_complete()
+    {
+        // jasperfx#1081: an empty list has to be tellable apart from "not reported". Every index on the table
+        // is in the list -- including the ones DocumentTable adds itself (mt_doc_type for a hierarchy,
+        // mt_deleted for a soft-deleted type), which mapping.Indexes alone does not hold.
+        var host = await BuildHost("reported", opts =>
+        {
+            opts.Schema.For<DiagWidget>();
+            opts.Schema.For<DiagAnimal>().AddSubClass<DiagDog>().AddSubClass<DiagCat>().SoftDeleted();
+        });
+
+        var usage = await GetUsageAsync(host);
+
+        var widget = usage.Documents.Single(d => d.Alias == "diagwidget");
+        widget.IndexesReported.ShouldBeTrue();
+        widget.Indexes.ShouldBeEmpty();
+        widget.DuplicatedFieldsReported.ShouldBeTrue();
+        widget.DuplicatedFields.ShouldBeEmpty();
+
+        var animal = usage.Documents.Single(d => d.Alias == "diaganimal");
+        animal.IndexesReported.ShouldBeTrue();
+        animal.Indexes.SelectMany(x => x.Columns).ShouldContain("mt_doc_type");
+        animal.Indexes.SelectMany(x => x.Columns).ShouldContain("mt_deleted");
+
+        // Cross-checked against the DDL, which stays the canonical view: every index it creates is listed.
+        foreach (var index in animal.Indexes)
+        {
+            animal.Ddl.ShouldContain(index.Name, Case.Insensitive);
+        }
+    }
+
+    [Fact]
+    public async Task indexes_are_not_reported_complete_when_the_mapping_ignores_some()
+    {
+        // An ignored index lives on the table but outside Marten's model, so the list cannot be the whole set.
+        var host = await BuildHost("ignored", opts =>
+        {
+            opts.Schema.For<DiagWidget>().IgnoreIndex("diag_hand_made_index");
+        });
+
+        var usage = await GetUsageAsync(host);
+
+        usage.Documents.Single(d => d.Alias == "diagwidget").IndexesReported.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task each_mapping_reports_its_own_metadata_capture()
+    {
+        // jasperfx#1077: per type, where usage.DocumentMetadata answers for the whole store. A console offers
+        // only the metadata filters QueryDocumentsAsync will accept for the type in front of it.
+        var host = await BuildHost("metadata", opts =>
+        {
+            opts.Schema.For<DiagWidget>().Metadata(m =>
+            {
+                m.CorrelationId.Enabled = true;
+                m.LastModifiedBy.Enabled = true;
+            });
+            opts.Schema.For<User>().MultiTenanted().SoftDeleted();
+        });
+
+        var usage = await GetUsageAsync(host);
+
+        var widget = usage.Documents.Single(d => d.Alias == "diagwidget").Metadata;
+        widget.ShouldNotBeNull();
+        widget.StoreType.ShouldBe("Marten");
+        widget.CorrelationId.ShouldBeTrue();
+        widget.CausationId.ShouldBeFalse();
+        widget.LastModifiedBy.ShouldBeTrue();
+        widget.TenantId.ShouldBeFalse();
+        widget.SoftDelete.ShouldBeFalse();
+        widget.Version.ShouldBeTrue();
+        widget.LastModified.ShouldBeTrue();
+
+        var user = usage.Documents.Single(d => d.Alias == "user").Metadata;
+        user.ShouldNotBeNull();
+        user.CorrelationId.ShouldBeFalse();
+        user.CausationId.ShouldBeFalse();
+        user.LastModifiedBy.ShouldBeFalse();
+        user.TenantId.ShouldBeTrue();
+        user.SoftDelete.ShouldBeTrue();
+
+        // The store-wide answer is still "some type captures it".
+        usage.DocumentMetadata!.CorrelationId.ShouldBeTrue();
     }
 
     private async Task<IHost> BuildHost(string suffix, Action<StoreOptions> configure)

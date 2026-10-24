@@ -64,6 +64,15 @@ public class ComputedIndex: IndexDefinition
 
     public override string[] Columns => buildColumns().ToArray();
 
+    /// <summary>
+    ///     marten#5768 / CritterWatch#1469: the document member paths this index is declared over, dotted and in
+    ///     declaration casing (<c>"ShipTo.City"</c>), one per indexed member in declaration order. What the
+    ///     store-usage descriptor reports as <c>DocumentIndexDescriptor.Members</c>, so a console can match a
+    ///     predicate's members against the index without parsing its jsonb locator.
+    /// </summary>
+    internal IReadOnlyList<string> MemberPaths
+        => _members.Select(path => string.Join(".", path.Select(m => m.Name))).ToArray();
+
     protected override string deriveIndexName()
     {
         var name = _mapping.TableName.Name;
