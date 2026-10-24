@@ -228,8 +228,8 @@ public partial class DocumentStore
         Justification = "jasperfx#869: DocumentQueryCriteria.ApplyCriteriaTo resolves members of the document type reflectively. Document types are preserved at the StoreOptions registration boundary per the AOT publishing guide.")]
     [UnconditionalSuppressMessage("Trimming", "IL2060",
         Justification = "jasperfx#869: MakeGenericMethod over a mapped document type, which is preserved at the StoreOptions registration boundary.")]
-    private Task<DocumentQueryResult> queryWithCriteriaAsync(DiagnosticsTarget target, IMartenDatabase database,
-        DocumentQueryOptions options, int pageNumber, int pageSize, CancellationToken token)
+    private Task<DocumentQueryOutcome> queryWithCriteriaAsync(DiagnosticsTarget target, IMartenDatabase database,
+        DocumentQueryOptions options, int pageNumber, int pageSize, bool explain, CancellationToken token)
     {
         if (!DocumentQueryCriteria.IsAvailable)
         {
@@ -241,16 +241,16 @@ public partial class DocumentStore
         }
 
         // An async method: everything it throws arrives in the task, never as a TargetInvocationException.
-        return (Task<DocumentQueryResult>)_queryWithCriteriaOfT.Value.MakeGenericMethod(target.RequestedType)
-            .Invoke(this, [target, database, options, pageNumber, pageSize, token])!;
+        return (Task<DocumentQueryOutcome>)_queryWithCriteriaOfT.Value.MakeGenericMethod(target.RequestedType)
+            .Invoke(this, [target, database, options, pageNumber, pageSize, explain, token])!;
     }
 
     [UnconditionalSuppressMessage("AOT", "IL3050",
         Justification = "jasperfx#869: only reached through queryWithCriteriaAsync, which refuses under Native AOT first.")]
     [UnconditionalSuppressMessage("Trimming", "IL2026",
         Justification = "jasperfx#869: only reached through queryWithCriteriaAsync, which refuses under Native AOT first.")]
-    private async Task<DocumentQueryResult> queryWithCriteriaOfTAsync<T>(DiagnosticsTarget target,
-        IMartenDatabase database, DocumentQueryOptions options, int pageNumber, int pageSize,
+    private async Task<DocumentQueryOutcome> queryWithCriteriaOfTAsync<T>(DiagnosticsTarget target,
+        IMartenDatabase database, DocumentQueryOptions options, int pageNumber, int pageSize, bool explain,
         CancellationToken token) where T : notnull
     {
         var tenantId = DocumentQueryOptions.NormalizeTenantId(options.TenantId) ?? StorageConstants.DefaultTenantId;
@@ -304,19 +304,24 @@ public partial class DocumentStore
         if (!idMatches)
         {
             // An id that is not a value of the identity type matches nothing -- the raw read's answer too.
-            return emptyPage(pageNumber, pageSize);
+            return DocumentQueryOutcome.Empty(pageNumber, pageSize,
+                "the id is not a value of the document's identity type, so it matches nothing without a read");
         }
 
         var provider = ((MartenLinqQueryable<T>)composed).MartenProvider;
         var reader = new StoredDocumentReader(target, "d");
         var rows = new List<StoredDocument>();
-        long total;
+        long total = 0;
 
         try
         {
-            var countHandler = new LinqQueryParser(provider, session, composed.Expression, SingleValueMode.LongCount)
-                .BuildHandler<long>();
-            total = await provider.ExecuteHandlerAsync(countHandler, token).ConfigureAwait(false);
+            // jasperfx#1078: an explain is of the page query alone, so it runs no count.
+            if (!explain)
+            {
+                var countHandler = new LinqQueryParser(provider, session, composed.Expression, SingleValueMode.LongCount)
+                    .BuildHandler<long>();
+                total = await provider.ExecuteHandlerAsync(countHandler, token).ConfigureAwait(false);
+            }
 
             var page = composed.Skip((pageNumber - 1) * pageSize).Take(pageSize);
             var statements = new LinqQueryParser(provider, session, page.Expression).BuildStatements();
@@ -357,6 +362,15 @@ public partial class DocumentStore
 
             var command = statements.Top.BuildCommand(session);
 
+            if (explain)
+            {
+                // Inside the try: a statement the provider built but PostgreSQL refuses is the same
+                // untranslatable criterion here as it is to the read. The tenant goes along so a store using
+                // row-level security explains under the same tenant setting this session would have applied.
+                return new DocumentQueryOutcome(null,
+                    await explainPageAsync(database, command, target, tenantId, token).ConfigureAwait(false));
+            }
+
             await using var dbReader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
             while (await dbReader.ReadAsync(token).ConfigureAwait(false))
             {
@@ -368,7 +382,7 @@ public partial class DocumentStore
             throw options.Untranslatable(e);
         }
 
-        return new DocumentQueryResult(rows, total, pageNumber, pageSize);
+        return new DocumentQueryOutcome(new DocumentQueryResult(rows, total, pageNumber, pageSize), null);
     }
 
     /// <summary>

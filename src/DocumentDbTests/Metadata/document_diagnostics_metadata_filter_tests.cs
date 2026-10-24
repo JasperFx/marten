@@ -21,9 +21,9 @@ namespace DocumentDbTests.Metadata;
 /// on <see cref="IDocumentStoreDiagnostics.QueryDocumentsAsync"/>. Each of the three new
 /// filters (<see cref="DocumentQueryOptions.CorrelationId"/>,
 /// <see cref="DocumentQueryOptions.CausationId"/>,
-/// <see cref="DocumentQueryOptions.LastModifiedBy"/>) is honored only when both the option
-/// is set AND the document mapping has the corresponding metadata column enabled — emitting
-/// a WHERE on a column that doesn't exist would throw <c>42703 undefined_column</c>.
+/// <see cref="DocumentQueryOptions.LastModifiedBy"/>) applies when the document mapping has the
+/// corresponding metadata column enabled, and since jasperfx#1077 is REFUSED with
+/// <see cref="DocumentCriteriaNotSupportedException"/> when it does not (it used to be skipped).
 ///
 /// Seeding strategy: 8 documents whose metadata cover every combination of
 /// <c>correlation ∈ {c0, c1}</c> × <c>causation ∈ {u0, u1}</c> × <c>last_modified_by ∈ {b0, b1}</c>,
@@ -35,10 +35,10 @@ public class document_diagnostics_metadata_filter_tests
     /// <summary>
     /// Every permutation of the three doc metadata filters being independently on/off
     /// (2^3 = 8 combos). All three metadata columns are enabled on the mapping in this
-    /// suite; the "filter set but column disabled" cases are pinned in the dedicated
-    /// <see cref="filter_is_silently_ignored_when_correlation_id_column_is_disabled"/>
-    /// / <see cref="filter_is_silently_ignored_when_causation_id_column_is_disabled"/>
-    /// / <see cref="filter_is_silently_ignored_when_last_modified_by_column_is_disabled"/>
+    /// suite; the "filter set but column disabled" refusals are pinned in the dedicated
+    /// <see cref="filter_is_refused_when_correlation_id_column_is_disabled"/>
+    /// / <see cref="filter_is_refused_when_causation_id_column_is_disabled"/>
+    /// / <see cref="filter_is_refused_when_last_modified_by_column_is_disabled"/>
     /// facts below.
     /// </summary>
     [Theory]
@@ -98,97 +98,88 @@ public class document_diagnostics_metadata_filter_tests
         result.DocumentsJson.Count.ShouldBe(0);
     }
 
+    // jasperfx#1077 (marten#5768). These four facts used to pin the opposite: a filter on a column the mapping
+    // does not capture was SKIPPED, and the unfiltered page and total came back (8 of 8) looking like a filter
+    // that matched everything. They were the reproduction of the defect, and now pin the refusal, naming the
+    // criterion, before anything is read.
+
     [Fact]
-    public async Task filter_is_silently_ignored_when_correlation_id_column_is_disabled()
+    public async Task filter_is_refused_when_correlation_id_column_is_disabled()
     {
-        // CorrelationId column NOT enabled on the mapping. Setting the filter must NOT
-        // throw 42703 undefined_column — the implementation skips the WHERE entirely.
         const string schema = "diag4791_corr_off";
         using var host = await BuildHost(schema, enableCorr: false, enableCaus: true, enableLmb: true);
         await seedMatrixOfEightDocs(host);
 
-        var diagnostics = host.Services.GetRequiredService<IDocumentStoreDiagnostics>();
+        var ex = await Should.ThrowAsync<DocumentCriteriaNotSupportedException>(() =>
+            host.Services.GetRequiredService<IDocumentStoreDiagnostics>().QueryDocumentsAsync(
+                typeof(DiagMetaDoc).FullName!,
+                new DocumentQueryOptions(PageNumber: 1, PageSize: 50) { CorrelationId = "c0" },
+                CancellationToken.None));
 
-        var result = await diagnostics.QueryDocumentsAsync(
-            typeof(DiagMetaDoc).FullName!,
-            new DocumentQueryOptions(PageNumber: 1, PageSize: 50)
-            {
-                CorrelationId = "c0" // would otherwise narrow to 4 docs
-            },
-            CancellationToken.None);
-
-        // Filter silently ignored → every seeded doc returns.
-        result.TotalCount.ShouldBe(8);
+        ex.Criterion.ShouldBe(nameof(DocumentQueryOptions.CorrelationId));
     }
 
     [Fact]
-    public async Task filter_is_silently_ignored_when_causation_id_column_is_disabled()
+    public async Task filter_is_refused_when_causation_id_column_is_disabled()
     {
         const string schema = "diag4791_caus_off";
         using var host = await BuildHost(schema, enableCorr: true, enableCaus: false, enableLmb: true);
         await seedMatrixOfEightDocs(host);
 
-        var diagnostics = host.Services.GetRequiredService<IDocumentStoreDiagnostics>();
+        var ex = await Should.ThrowAsync<DocumentCriteriaNotSupportedException>(() =>
+            host.Services.GetRequiredService<IDocumentStoreDiagnostics>().QueryDocumentsAsync(
+                typeof(DiagMetaDoc).FullName!,
+                new DocumentQueryOptions(PageNumber: 1, PageSize: 50) { CausationId = "u0" },
+                CancellationToken.None));
 
-        var result = await diagnostics.QueryDocumentsAsync(
-            typeof(DiagMetaDoc).FullName!,
-            new DocumentQueryOptions(PageNumber: 1, PageSize: 50)
-            {
-                CausationId = "u0"
-            },
-            CancellationToken.None);
-
-        result.TotalCount.ShouldBe(8);
+        ex.Criterion.ShouldBe(nameof(DocumentQueryOptions.CausationId));
     }
 
     [Fact]
-    public async Task filter_is_silently_ignored_when_last_modified_by_column_is_disabled()
+    public async Task filter_is_refused_when_last_modified_by_column_is_disabled()
     {
         const string schema = "diag4791_lmb_off";
         using var host = await BuildHost(schema, enableCorr: true, enableCaus: true, enableLmb: false);
         await seedMatrixOfEightDocs(host);
 
-        var diagnostics = host.Services.GetRequiredService<IDocumentStoreDiagnostics>();
+        var ex = await Should.ThrowAsync<DocumentCriteriaNotSupportedException>(() =>
+            host.Services.GetRequiredService<IDocumentStoreDiagnostics>().QueryDocumentsAsync(
+                typeof(DiagMetaDoc).FullName!,
+                new DocumentQueryOptions(PageNumber: 1, PageSize: 50) { LastModifiedBy = "b0" },
+                CancellationToken.None));
 
-        var result = await diagnostics.QueryDocumentsAsync(
-            typeof(DiagMetaDoc).FullName!,
-            new DocumentQueryOptions(PageNumber: 1, PageSize: 50)
-            {
-                LastModifiedBy = "b0"
-            },
-            CancellationToken.None);
-
-        result.TotalCount.ShouldBe(8);
+        ex.Criterion.ShouldBe(nameof(DocumentQueryOptions.LastModifiedBy));
     }
 
     [Fact]
-    public async Task filter_set_alongside_an_enabled_filter_when_a_column_is_disabled_still_narrows_via_the_enabled_one()
+    public async Task an_uncaptured_filter_beside_captured_ones_refuses_the_whole_query()
     {
-        // Mixed scenario: causation disabled, correlation enabled. Setting BOTH filters
-        // must still narrow the result set via the enabled column — the disabled-column
-        // filter is silently ignored, NOT propagated as "no rows".
+        // Causation disabled, correlation and last-modified-by enabled. The two honoured filters would narrow
+        // the page to 2 rows, which reads as "causation u0 matched these" when causation was never applied --
+        // the same silent widening as the single-filter case, just harder to spot. Refused instead, also with
+        // a Where present, which sends the read down the LINQ path.
         const string schema = "diag4791_mixed";
         using var host = await BuildHost(schema, enableCorr: true, enableCaus: false, enableLmb: true);
         await seedMatrixOfEightDocs(host);
 
         var diagnostics = host.Services.GetRequiredService<IDocumentStoreDiagnostics>();
 
-        var result = await diagnostics.QueryDocumentsAsync(
-            typeof(DiagMetaDoc).FullName!,
-            new DocumentQueryOptions(PageNumber: 1, PageSize: 50)
-            {
-                CorrelationId = "c0",   // honored — 4 docs
-                CausationId = "u0",      // silently ignored — column disabled
-                LastModifiedBy = "b0"    // honored — narrows to 2
-            },
-            CancellationToken.None);
+        foreach (var where in new string?[] { null, "Name != null" })
+        {
+            var ex = await Should.ThrowAsync<DocumentCriteriaNotSupportedException>(() =>
+                diagnostics.QueryDocumentsAsync(
+                    typeof(DiagMetaDoc).FullName!,
+                    new DocumentQueryOptions(PageNumber: 1, PageSize: 50)
+                    {
+                        CorrelationId = "c0",
+                        CausationId = "u0",
+                        LastModifiedBy = "b0",
+                        Where = where
+                    },
+                    CancellationToken.None));
 
-        // Without causation filtering: corr=c0 (4) ∩ lmb=b0 (4 from disjoint axis) = docs 0, 2.
-        result.TotalCount.ShouldBe(2);
-        var returnedNames = result.DocumentsJson
-            .Select(json => JsonDocument.Parse(json).RootElement.GetProperty("Name").GetString())
-            .ToList();
-        returnedNames.ShouldBe(new[] { NameForIndex(0), NameForIndex(2) }, ignoreOrder: true);
+            ex.Criterion.ShouldBe(nameof(DocumentQueryOptions.CausationId));
+        }
     }
 
     [Fact]

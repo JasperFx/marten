@@ -169,6 +169,19 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     public override bool SupportsDocumentWritePreview => true;
 
     /// <summary>
+    /// jasperfx#1077 (marten#5768). A CorrelationId / CausationId / LastModifiedBy filter on a type whose table
+    /// does not capture the column is refused through <c>AssertMetadataFiltersAreCaptured</c>; it used to be
+    /// skipped, returning the unfiltered page.
+    /// </summary>
+    public override bool RefusesUncapturedMetadataFilters => true;
+
+    /// <summary>
+    /// jasperfx#1078 (marten#5768). <c>ExplainDocumentQueryAsync</c> runs the read's own page statement under
+    /// <c>EXPLAIN (ANALYZE, FORMAT JSON)</c> in a read-only transaction that is rolled back.
+    /// </summary>
+    public override bool SupportsDocumentQueryExplain => true;
+
+    /// <summary>
     /// One <c>Where()</c>, through Marten's own marker methods, and no filtering of our own: the parser is the
     /// thing under test, including its refusal of an operator against a type that is not soft-deleted.
     /// </summary>
