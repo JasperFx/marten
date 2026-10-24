@@ -63,7 +63,10 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             refs.Add(new DocumentTypeRef(mapping.DocumentType.FullNameInCode(), mapping.Alias,
                 mapping.DatabaseSchemaName)
             {
-                IsSoftDeleted = isSoftDeleted
+                IsSoftDeleted = isSoftDeleted,
+
+                // jasperfx#1082: names the projection AggregateDocumentJsonAsync rebuilds this type through.
+                SingleStreamProjection = SingleStreamProjectionFor(mapping.DocumentType)?.Name
             });
 
             // jasperfx#932: a sub-class is listed too, because resolveDiagnosticsTarget already accepts
@@ -76,7 +79,8 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
                     mapping.DatabaseSchemaName)
                 {
                     RootTypeName = mapping.DocumentType.FullNameInCode(),
-                    IsSoftDeleted = isSoftDeleted
+                    IsSoftDeleted = isSoftDeleted,
+                    SingleStreamProjection = SingleStreamProjectionFor(subClass.DocumentType)?.Name
                 });
             }
         }
