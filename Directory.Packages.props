@@ -1060,10 +1060,43 @@
          weasel#724: MultiCommandDataReader.GetFieldType keeps DbDataReader's trim annotation, so a trimmed
          or native publish stops reporting IL2093 against Weasel.Core.
          Inert here: weasel#710 (9.45.1) pins the patched System.Security.Cryptography.Pkcs for
-         Weasel.SqlServer and Weasel.Oracle, and weasel#723 is a Firebird-only catalog re-read. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.46.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.46.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.46.0" />
+         Weasel.SqlServer and Weasel.Oracle, and weasel#723 is a Firebird-only catalog re-read.
+         9.47.0 (from 9.46.0, spanning 9.46.1). Three things, and two of them were found against Marten.
+         weasel#730 (9.46.1) is the one to read first, because the shape it breaks is Marten's own:
+         Table.PostProcess widens a foreign key through ForeignKey.TryToCorrectForLink on EVERY
+         migration, and ApplyAllConfiguredChangesToDatabaseAsync applies a sharded store's databases with
+         Parallel.ForEachAsync over ONE cached set of event-store schema objects. Two migrations that both
+         saw the key one column short both appended to the live ColumnNames array, the second onto the
+         first one's result, and the apply failed with `42830: number of referencing and referenced
+         columns for foreign key disagree` — reported against a DCB tag table under per-tenant event
+         partitioning on a sharded store. The widened key then lives on the shared Table instance, so it
+         is rendered again by every later migration in that process and does NOT clear on a retry. The
+         correction now builds in locals and publishes in one assignment. Sequential behaviour is
+         unchanged, so this is a fix with no migration-output change for a single-database apply.
+         weasel#732 (9.46.1) changes migration OUTPUT, which is the A/B part of this bump:
+         IndexDefinition.ChildIndexName past 63 bytes was truncated by PostgreSQL INTO THE SUFFIX, which
+         is the only part distinguishing one partition's child from another's, so two partitions asked for
+         the same child name and the concurrent build failed on the second every rerun (42P07 before
+         9.46.0, 2BP01 after it). The index part now gives way through PostgresqlIdentifier.Shorten and the
+         suffix stays whole. The reported name was a Marten one — mt_doc_<doc>_idx_ngram_<member>_<hash>
+         on a partitioned table — so any Marten index whose name plus partition suffix passed 63 bytes
+         has different child names after this bump. Names that fit are byte-for-byte identical, and the
+         delta reads indexes off the parent only, so a second run still reports None. Not handled: an
+         UNATTACHED child left by a pre-9.46.1 run that died between build and ATTACH stays as a stray
+         index on that partition; it no longer collides, but Weasel will not drop it by its old name.
+         weasel#747 (9.47.0) is the seam marten#5755 consumes, and it is additive and inert until a
+         dialect opts in. The Quick modes' per-event QuickAppendEventWithVersion INSERT takes seq_id from
+         an inlined nextval() that nothing reads back, so the event keeps Sequence 0 and the tombstone
+         batch a failed unit of work writes SKIPS it — the numbers it burned are never filled (marten#5454).
+         The two Quick descriptors gain AppendEventSqlReturnsSequence; setting it asserts the suffix ends
+         in `returning seq_id`, and the storage then wraps the operation so PostprocessAsync writes the
+         value onto IEvent.Sequence. The flag defaults to false, so this bump alone changes nothing —
+         PostgresEventStoreDialect has to set it, which is marten#5755. Both additions are init properties
+         on the descriptor CLASSES, not interface members, so there is no weasel#682-shaped
+         TypeLoadException against a published Marten. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.47.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.47.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.47.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
