@@ -18,6 +18,7 @@ internal class StringIsNullOrWhiteSpace: IMethodCallParser
     {
         var locator = memberCollection.MemberFor(expression.Arguments[0]).RawLocator;
 
-        return new WhereFragment($"({locator} IS NULL OR trim({locator}) = '')");
+        // trim() only strips spaces, so match tabs, line breaks and other whitespace with \s
+        return new WhereFragment($@"({locator} IS NULL OR {locator} ~ '^\s*$')");
     }
 }
