@@ -7,7 +7,7 @@
          commit-and-push Gate the LocalGate target is built on (#5725, bobcat#729). Since rc.2
          Bobcat references no JasperFx, and the Critter Stack vocabulary DaemonTests uses
          (CritterStackSpec, CritterStackScenario, EventStores) ships in WolverineFx.Bobcat below. -->
-    <BobcatVersion>1.0.0-rc.3</BobcatVersion>
+    <BobcatVersion>1.0.0-rc.4</BobcatVersion>
 
     <!-- Bobcat.Xunit 1.0 is built on xunit.v3 4.x over Microsoft.Testing.Platform 2.5.1, and the two
          xunit lines cannot share a test project. The rest of the repo stays on the xunit.v3 3.x pinned
