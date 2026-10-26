@@ -388,7 +388,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 
         var (orderedColumns, appendEventSqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
         var storageDialect = ResolveStorageDialect(graph);
-        var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
+        var quickWithVersionSuffix = BuildAppendEventQuickWithVersionReturningSequenceSuffix(graph);
         var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns, storageDialect);
         var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns, storageDialect);
 
@@ -433,6 +433,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
             AppendEventSqlPrefix = appendEventSqlPrefix,
             AppendEventSqlSuffix = quickWithVersionSuffix,
+            AppendEventSqlReturnsSequence = true,
             MetadataBinders = quickMetadataBinders,
             AppendEventFullSqlSuffix = ")",
             AppendEventFullMetadataBinders = fullMetadataBinders,
@@ -457,7 +458,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 
         var (orderedColumns, appendEventSqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
         var storageDialect = ResolveStorageDialect(graph);
-        var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
+        var quickWithVersionSuffix = BuildAppendEventQuickWithVersionReturningSequenceSuffix(graph);
         var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns, storageDialect);
         var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns, storageDialect);
 
@@ -500,6 +501,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
             AppendEventSqlPrefix = appendEventSqlPrefix,
             AppendEventSqlSuffix = quickWithVersionSuffix,
+            AppendEventSqlReturnsSequence = true,
             MetadataBinders = quickMetadataBinders,
             AppendEventFullSqlSuffix = ")",
             AppendEventFullMetadataBinders = fullMetadataBinders,
@@ -517,6 +519,15 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     /// </summary>
     private static string BuildAppendEventQuickWithVersionSuffix(EventGraph graph)
         => $", nextval('{graph.DatabaseSchemaName}.mt_events_sequence'))";
+
+    /// <summary>
+    /// The Quick paths' suffix, returning the <c>seq_id</c> the INSERT drew so the operation can write it onto
+    /// <c>IEvent.Sequence</c> (<c>AppendEventSqlReturnsSequence</c>). Without it a <c>StartStream</c> on the
+    /// per-event route keeps <c>Sequence</c> 0, and a failure later in the batch leaves numbers no tombstone fills
+    /// (#5454). Rich's side-effect replay keeps <see cref="BuildAppendEventQuickWithVersionSuffix"/>.
+    /// </summary>
+    private static string BuildAppendEventQuickWithVersionReturningSequenceSuffix(EventGraph graph)
+        => BuildAppendEventQuickWithVersionSuffix(graph) + " returning seq_id";
 
     /// <summary>
     /// Picks the metadata binders for the Quick-paths' per-event
