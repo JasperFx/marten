@@ -132,8 +132,7 @@ be appended as the default tenant id _no matter what the session's tenant id is_
 This is an advanced, opt-in option aimed at large multi-tenanted event stores where a single, shared
 event store becomes a scalability bottleneck. It builds on the conjoined event tenancy described above
 by physically isolating each tenant's events and giving the async daemon a per-tenant view of progress.
-See [JasperFx/marten#4596](https://github.com/JasperFx/marten/issues/4596) and
-[CritterStack #209](https://github.com/JasperFx/CritterWatch/issues/209) for the full design.
+See [JasperFx/marten#4596](https://github.com/JasperFx/marten/issues/4596) for the full design.
 :::
 
 For systems with many tenants and very high event volumes, you can opt into **per-tenant event partitioning**.
