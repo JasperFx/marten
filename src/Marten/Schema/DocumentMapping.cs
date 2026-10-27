@@ -361,7 +361,7 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
                 throw new ArgumentNullException(nameof(value));
             }
 
-            _alias = value.ToLower();
+            _alias = value.ToLowerInvariant();
         }
     }
 
@@ -870,10 +870,10 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
             nameToAlias = AliasSanitizer().Replace(documentType.GetPrettyName(), string.Empty).Replace(",", "_");
         }
 
-        var parts = new List<string> { nameToAlias.ToLower() };
+        var parts = new List<string> { nameToAlias.ToLowerInvariant() };
         if (documentType.IsNested)
         {
-            parts.Insert(0, documentType.DeclaringType!.Name.ToLower());
+            parts.Insert(0, documentType.DeclaringType!.Name.ToLowerInvariant());
         }
 
         return string.Join("_", parts);
