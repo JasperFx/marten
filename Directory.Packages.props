@@ -577,9 +577,9 @@
     <!-- The Bobcat.CritterStack namespace (CritterStackSpec, CritterStackScenario, EventStores) left
          Bobcat core in 1.0.0-rc.2 (bobcat#744) for this package, which carries the JasperFx.Events
          coupling. Test-only, DaemonTests only. Its JasperFx.Events floor must not be newer than the
-         one Marten builds against (bobcat docs/compatibility.md): 6.54.0-alpha.1 requires
-         JasperFx/JasperFx.Events 2.95.1, below Marten's 2.96.0. It asks for Bobcat 1.0.0-rc.4 and gets 1.0.0. -->
-    <PackageVersion Include="WolverineFx.Bobcat" Version="6.54.0-alpha.1" />
+         one Marten builds against (bobcat docs/compatibility.md): 6.55.0, the first stable WolverineFx.Bobcat,
+         requires JasperFx/JasperFx.Events 2.96.0 and Bobcat 1.0.0, the same as Marten. -->
+    <PackageVersion Include="WolverineFx.Bobcat" Version="6.55.0" />
     <!--
       2.69.1 (jasperfx#828 and jasperfx#830): two fixes on top of 2.69.0, and the first lands
       directly on what marten#5394 registered a release earlier. ProjectionEventModelSource no
