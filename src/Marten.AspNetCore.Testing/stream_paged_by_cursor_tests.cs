@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Alba;
@@ -71,6 +72,23 @@ public class stream_paged_by_cursor_tests: IntegrationContext
         envelope.Items.ShouldBe(new[] { "a", "b" });
         envelope.NextCursor.ShouldNotBeNullOrEmpty();
         result.Context.Response.Headers["Marten-Continuation"].ToString().ShouldBe(envelope.NextCursor);
+    }
+
+    [Fact]
+    public async Task content_length_counts_the_bytes_of_multi_byte_items()
+    {
+        // æ, ø, å and an emoji take two to four UTF-8 bytes each: the declared length must be the bytes sent.
+        await SeedIssues("blåbær", "smørbrød", "🦆", "zz");
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url("/minimal/issues/paged-cursor?pageSize=4");
+            s.StatusCodeShouldBe(200);
+        });
+
+        var body = result.ReadAsText();
+        result.Context.Response.ContentLength.ShouldBe(Encoding.UTF8.GetByteCount(body));
+        ReadEnvelope(body).Items.ShouldBe(new[] { "blåbær", "smørbrød", "🦆", "zz" }, ignoreOrder: true);
     }
 
     [Fact]

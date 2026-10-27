@@ -1,3 +1,7 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+
 namespace Marten.Linq.CursorPaging;
 
 /// <summary>
@@ -30,4 +34,28 @@ public sealed class CursorPageResult
     /// requested page size were available).
     /// </summary>
     public string? NextCursor { get; }
+}
+
+/// <summary>
+/// One keyset page with its items still as the UTF-8 JSON array Marten read off the reader, so a caller
+/// writing it out (<c>StreamPagedByCursor</c>) copies the bytes instead of decoding them to a string and
+/// encoding them back. The items stream is pooled: dispose the page to return its buffers.
+/// </summary>
+internal sealed class CursorPageUtf8: IAsyncDisposable
+{
+    public CursorPageUtf8(MemoryStream itemsUtf8, int count, string? nextCursor)
+    {
+        ItemsUtf8 = itemsUtf8;
+        Count = count;
+        NextCursor = nextCursor;
+    }
+
+    /// <summary>The items JSON array as UTF-8, positioned at its start.</summary>
+    public MemoryStream ItemsUtf8 { get; }
+
+    public int Count { get; }
+
+    public string? NextCursor { get; }
+
+    public ValueTask DisposeAsync() => ItemsUtf8.DisposeAsync();
 }

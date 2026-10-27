@@ -106,11 +106,12 @@ internal static class JsonStreamingExtensions
     }
 
     /// <summary>
-    /// Outcome of streaming one keyset ("cursor") page: the raw items JSON array (byte-identical
-    /// to <see cref="StreamMany"/>), the number of documents emitted, the ORDER BY key values of
+    /// Outcome of streaming one keyset ("cursor") page: the raw items JSON array as UTF-8 (byte-identical
+    /// to <see cref="StreamMany"/>, positioned at its start and owned by the caller, who must dispose it to
+    /// hand its pooled buffers back), the number of documents emitted, the ORDER BY key values of
     /// the last emitted row (for building the next cursor), and whether a further page exists.
     /// </summary>
-    internal readonly record struct CursorKeysetReadResult(string ItemsJson, int Count, object?[]? LastKeys, bool HasMore);
+    internal readonly record struct CursorKeysetReadResult(MemoryStream ItemsUtf8, int Count, object?[]? LastKeys, bool HasMore);
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, System.Reflection.MethodInfo>
         _getFieldValueMethods = new();
@@ -126,49 +127,54 @@ internal static class JsonStreamingExtensions
         Type[] keyTypes, int pageSize, CancellationToken token)
     {
         var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
-
-        var dataOrdinal = reader.GetOrdinal("data");
-        var keyOrdinals = new int[keyTypes.Length];
-        for (var i = 0; i < keyTypes.Length; i++)
+        try
         {
-            keyOrdinals[i] = reader.GetOrdinal($"cursor_key_{i}");
-        }
-
-        await stream.WriteBytes(LeftBracket, token).ConfigureAwait(false);
-
-        var count = 0;
-        var hasMore = false;
-        object?[]? lastKeys = null;
-
-        while (await reader.ReadAsync(token).ConfigureAwait(false))
-        {
-            // We fetched pageSize + 1 rows to detect a further page: the (pageSize + 1)th row is
-            // never emitted and only proves there is more to come.
-            if (count == pageSize)
+            var dataOrdinal = reader.GetOrdinal("data");
+            var keyOrdinals = new int[keyTypes.Length];
+            for (var i = 0; i < keyTypes.Length; i++)
             {
-                hasMore = true;
-                break;
+                keyOrdinals[i] = reader.GetOrdinal($"cursor_key_{i}");
             }
 
-            if (count > 0)
+            await stream.WriteBytes(LeftBracket, token).ConfigureAwait(false);
+
+            var count = 0;
+            var hasMore = false;
+            object?[]? lastKeys = null;
+
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                await stream.WriteBytes(Comma, token).ConfigureAwait(false);
+                // We fetched pageSize + 1 rows to detect a further page: the (pageSize + 1)th row is
+                // never emitted and only proves there is more to come.
+                if (count == pageSize)
+                {
+                    hasMore = true;
+                    break;
+                }
+
+                if (count > 0)
+                {
+                    await stream.WriteBytes(Comma, token).ConfigureAwait(false);
+                }
+
+                // Read the raw data payload first (WriteJsonValueAsync uses reader.GetStream), then the
+                // appended key columns for the same row, which come after data in the SELECT ordinal order.
+                await reader.WriteJsonValueAsync(dataOrdinal, stream, token).ConfigureAwait(false);
+                lastKeys = await readCursorKeys(reader, keyOrdinals, keyTypes, token).ConfigureAwait(false);
+
+                count++;
             }
 
-            // Read the raw data payload first (WriteJsonValueAsync uses reader.GetStream), then the
-            // appended key columns for the same row, which come after data in the SELECT ordinal order.
-            await reader.WriteJsonValueAsync(dataOrdinal, stream, token).ConfigureAwait(false);
-            lastKeys = await readCursorKeys(reader, keyOrdinals, keyTypes, token).ConfigureAwait(false);
+            await stream.WriteBytes(RightBracket, token).ConfigureAwait(false);
 
-            count++;
+            stream.Position = 0;
+            return new CursorKeysetReadResult(stream, count, lastKeys, hasMore);
         }
-
-        await stream.WriteBytes(RightBracket, token).ConfigureAwait(false);
-
-        stream.Position = 0;
-        var itemsJson = await stream.ReadAllTextAsync().ConfigureAwait(false);
-
-        return new CursorKeysetReadResult(itemsJson, count, lastKeys, hasMore);
+        catch
+        {
+            await stream.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     private static async Task<object?[]> readCursorKeys(DbDataReader reader, int[] keyOrdinals, Type[] keyTypes,
