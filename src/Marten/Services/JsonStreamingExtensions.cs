@@ -140,6 +140,7 @@ internal static class JsonStreamingExtensions
 
             var count = 0;
             var hasMore = false;
+            var isJson = false;
             object?[]? lastKeys = null;
 
             while (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -156,10 +157,14 @@ internal static class JsonStreamingExtensions
                 {
                     await stream.WriteBytes(Comma, token).ConfigureAwait(false);
                 }
+                else
+                {
+                    isJson = reader.IsJsonColumn(dataOrdinal);
+                }
 
                 // Read the raw data payload first (WriteJsonValueAsync uses reader.GetStream), then the
                 // appended key columns for the same row, which come after data in the SELECT ordinal order.
-                await reader.WriteJsonValueAsync(dataOrdinal, stream, token).ConfigureAwait(false);
+                await reader.WriteJsonValueAsync(dataOrdinal, isJson, stream, token).ConfigureAwait(false);
                 lastKeys = await readCursorKeys(reader, keyOrdinals, keyTypes, token).ConfigureAwait(false);
 
                 count++;
@@ -224,10 +229,12 @@ internal static class JsonStreamingExtensions
 
         await stream.WriteBytes(LeftBracket, token).ConfigureAwait(false);
 
+        var isJson = false;
         if (await reader.ReadAsync(token).ConfigureAwait(false))
         {
+            isJson = reader.IsJsonColumn(ordinal);
             count++;
-            await reader.WriteJsonValueAsync(ordinal, stream, token).ConfigureAwait(false);
+            await reader.WriteJsonValueAsync(ordinal, isJson, stream, token).ConfigureAwait(false);
         }
 
         while (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -235,7 +242,7 @@ internal static class JsonStreamingExtensions
             count++;
             await stream.WriteBytes(Comma, token).ConfigureAwait(false);
 
-            await reader.WriteJsonValueAsync(ordinal, stream, token).ConfigureAwait(false);
+            await reader.WriteJsonValueAsync(ordinal, isJson, stream, token).ConfigureAwait(false);
         }
 
         await stream.WriteBytes(RightBracket, token).ConfigureAwait(false);
@@ -311,10 +318,21 @@ internal static class JsonStreamingExtensions
     /// quoted and escaped, numerics/bools/datetimes get their JSON literal
     /// representation, and DBNull becomes <c>null</c>.
     /// </summary>
-    internal static async Task WriteJsonValueAsync(this DbDataReader reader, int ordinal, Stream stream, CancellationToken token)
+    internal static Task WriteJsonValueAsync(this DbDataReader reader, int ordinal, Stream stream, CancellationToken token) =>
+        reader.WriteJsonValueAsync(ordinal, reader.IsJsonColumn(ordinal), stream, token);
+
+    /// <summary>
+    /// Whether the column at <paramref name="ordinal"/> already holds JSON. The answer is the same for every
+    /// row of a result set, so the loops that write many rows ask once (<see cref="GetDataTypeName"/> builds
+    /// the name per call) and pass it to <see cref="WriteJsonValueAsync(DbDataReader, int, bool, Stream, CancellationToken)"/>.
+    /// </summary>
+    internal static bool IsJsonColumn(this DbDataReader reader, int ordinal) =>
+        reader.GetDataTypeName(ordinal) is "jsonb" or "json";
+
+    internal static async Task WriteJsonValueAsync(this DbDataReader reader, int ordinal, bool isJson, Stream stream,
+        CancellationToken token)
     {
-        var dataTypeName = reader.GetDataTypeName(ordinal);
-        if (dataTypeName is "jsonb" or "json")
+        if (isJson)
         {
             // #4828/Axis B: GetStream is the base DbDataReader method (no Npgsql-typed reader needed).
             await using var source = reader.GetStream(ordinal);
