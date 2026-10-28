@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Schema;
+using Marten.EventStorage.Quick;
 using Marten.EventStorage.Querying;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -50,10 +51,12 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
     private readonly object _storage;
     private readonly IReadOnlyList<IEventTableColumn> _readerColumns;
     private readonly ISerializer _serializer;
+    private readonly bool _traceAppendedEvents;
 
     public ClosedShapeEventDocumentStorage(StoreOptions options): base(options)
     {
         _serializer = options.Serializer();
+        _traceAppendedEvents = options.OpenTelemetry.TrackConnections == TrackLevel.Verbose;
 
         // #4821 event E3: the storage hierarchy + builder now live in Weasel.Storage and the
         // builder is dialect-agnostic — Marten supplies the Postgres dialect here (the same
@@ -98,9 +101,15 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
 
     public override Weasel.Storage.IStorageOperation QuickAppendEventWithVersion(StreamAction stream, IEvent e)
     {
-        return Events.StreamIdentity == StreamIdentity.AsGuid
+        var op = Events.StreamIdentity == StreamIdentity.AsGuid
             ? GuidStorage.QuickAppendEventWithVersion(stream, e)
             : StringStorage.QuickAppendEventWithVersion(stream, e);
+
+        // #5772: the variant that reads its seq_id back is not an AppendEventOperationBase, so verbose tracing
+        // could not see which event it appends. See TracedQuickAppendEventOperation.
+        return _traceAppendedEvents && op is not Weasel.Storage.AppendEventOperationBase and not NoDataReturnedCall
+            ? new TracedQuickAppendEventOperation(op, stream, e)
+            : op;
     }
 
     public override Weasel.Storage.IStorageOperation QuickAppendEvents(StreamAction stream)
