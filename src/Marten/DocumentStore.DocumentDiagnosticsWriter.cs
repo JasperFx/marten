@@ -226,7 +226,12 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
         // revision the document carries as the expected one and is refused. current + 1 is also a guard in the
         // statement itself, so a concurrent write to the same row loses with a ConcurrencyException rather than
         // being overwritten.
-        long? nextRevision = target.Mapping.UseNumericRevisions && long.TryParse(current.Version, out var revision)
+        //
+        // Not for a projection document (#5773). Its revision is the version of the stream it reflects, and
+        // current + 1 would put it ahead of the stream, so the async fetch's delta query would skip the next
+        // event. A plain Store() is accepted there, and takes the revision from the stream again.
+        long? nextRevision = target.Mapping.UseNumericRevisions && !target.Mapping.UseVersionFromMatchingStream &&
+                             long.TryParse(current.Version, out var revision)
             ? revision + 1
             : null;
 
