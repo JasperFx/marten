@@ -9,7 +9,9 @@ using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
 using JasperFx.Descriptors;
+using JasperFx.Events;
 using Marten.Events.Operations;
+using Marten.EventStorage.Quick;
 using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Operations;
 using Marten.Services;
@@ -199,23 +201,47 @@ internal class EventTracingConnectionLifetime:
             var ops = pages.SelectMany(x => x.Operations);
             foreach (var op in ops)
             {
-                // #4821 event E3: closed-shape append ops derive from the neutral
-                // Weasel.Storage.AppendEventOperationBase (the only append path in v9);
-                // Marten's like-named base has no live derivations, so probe the neutral one.
-                if (op is Weasel.Storage.AppendEventOperationBase eventOp)
+                // One marten.append.event per appended event, whichever route appended it (#5772).
+                // #4821 event E3: the closed-shape per-event ops derive from the neutral
+                // Weasel.Storage.AppendEventOperationBase; Marten's like-named base has no live
+                // derivations, so probe the neutral one.
+                switch (op)
                 {
-                    _databaseActivity?.AddEvent(new ActivityEvent("marten.append.event",
-                        tags: new ActivityTagsCollection { { "Type", eventOp.Event.EventTypeName } }));
-                }
-                else if (op.Role() != OperationRole.Events)
-                {
-                    _databaseActivity?.AddEvent(new ActivityEvent("marten." + op.Role().ToString().ToLower(),
-                        tags: new ActivityTagsCollection { { "Type", op.DocumentType?.Name } }));
-                }
+                    case Weasel.Storage.AppendEventOperationBase eventOp:
+                        writeAppendedEvent(eventOp.Event);
+                        break;
 
+                    // A Quick-mode per-event append that reads its sequence back.
+                    case TracedQuickAppendEventOperation traced:
+                        writeAppendedEvent(traced.Event);
+                        break;
 
+                    // The bulk mt_quick_append_events route: one operation for the whole stream.
+                    case QuickAppendEventsOperationBase quick:
+                        foreach (var e in quick.Stream.Events)
+                        {
+                            writeAppendedEvent(e);
+                        }
+
+                        break;
+
+                    default:
+                        if (op.Role() != OperationRole.Events)
+                        {
+                            _databaseActivity?.AddEvent(new ActivityEvent("marten." + op.Role().ToString().ToLower(),
+                                tags: new ActivityTagsCollection { { "Type", op.DocumentType?.Name } }));
+                        }
+
+                        break;
+                }
             }
         }
+    }
+
+    private void writeAppendedEvent(IEvent e)
+    {
+        _databaseActivity?.AddEvent(new ActivityEvent("marten.append.event",
+            tags: new ActivityTagsCollection { { "Type", e.EventTypeName } }));
     }
 
     public IAlwaysConnectedLifetime Start()
