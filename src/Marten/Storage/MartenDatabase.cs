@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -26,7 +28,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
 {
     private readonly StorageFeatures _features;
 
-    private Lazy<SequenceFactory> _sequences;
+    private RuntimeSequences _sequences;
 
     // #5665: the same Hi-Lo feature, built but never applied, for the paths that only describe the
     // schema. See SequenceFeature below.
@@ -265,7 +267,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
         // The runtime seam. Reading this hands out sequences that are about to be advanced against
         // mt_get_next_hi, so the storage has to be there — there is no later point at which an id
         // assignment could ask for it.
-        _sequences = new Lazy<SequenceFactory>(() =>
+        _sequences = new RuntimeSequences(() =>
         {
             var sequences = new SequenceFactory(Options, this);
 
@@ -279,5 +281,61 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
         // IFeatureSchema half is derived entirely from StoreOptions, so this describes exactly what
         // the applying instance above would — it just never touches the database to do it.
         _sequenceFeature = new Lazy<SequenceFactory>(() => new SequenceFactory(Options, this));
+    }
+
+    /// <summary>
+    ///     #5784: the runtime <see cref="Sequences" />, built once and shared exactly as the
+    ///     <see cref="Lazy{T}" /> it replaces was, except that a failed build is not kept. Lazy's default
+    ///     mode caches a factory exception for good, so a first id allocation that ran into an outage made
+    ///     every later allocation rethrow that same exception long after the database came back.
+    /// </summary>
+    /// <remarks>
+    ///     Builds still run one at a time and only a successful one is published, so there is never more
+    ///     than one <see cref="SequenceFactory" /> per database (per reset). A caller that queued behind an
+    ///     attempt which then failed gets that attempt's failure, as it would have from Lazy, instead of
+    ///     starting another connection timeout of its own. Only a call that starts after a failure retries.
+    /// </remarks>
+    private sealed class RuntimeSequences
+    {
+        private readonly Func<SequenceFactory> _build;
+        private readonly Lock _locker = new();
+        private SequenceFactory? _value;
+        private int _failures;
+        private ExceptionDispatchInfo? _lastFailure;
+
+        public RuntimeSequences(Func<SequenceFactory> build)
+        {
+            _build = build;
+        }
+
+        public SequenceFactory Value => Volatile.Read(ref _value) ?? build();
+
+        private SequenceFactory build()
+        {
+            var failuresBeforeWaiting = Volatile.Read(ref _failures);
+
+            lock (_locker)
+            {
+                if (_value != null) return _value;
+
+                if (_failures != failuresBeforeWaiting)
+                {
+                    _lastFailure!.Throw();
+                }
+
+                try
+                {
+                    var value = _build();
+                    Volatile.Write(ref _value, value);
+                    return value;
+                }
+                catch (Exception e)
+                {
+                    _lastFailure = ExceptionDispatchInfo.Capture(e);
+                    Volatile.Write(ref _failures, _failures + 1);
+                    throw;
+                }
+            }
+        }
     }
 }
