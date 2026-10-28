@@ -45,7 +45,7 @@ internal class DocumentSchema: IFeatureSchema
     public void WritePermissions(Migrator rules, TextWriter writer)
     {
         var template = _mapping.DdlTemplate.IsNotEmpty()
-            ? rules.Templates[_mapping.DdlTemplate.ToLower()]
+            ? rules.Templates[_mapping.DdlTemplate.ToLowerInvariant()]
             : rules.Templates["default"];
 
         Table.WriteTemplate(template, writer);
