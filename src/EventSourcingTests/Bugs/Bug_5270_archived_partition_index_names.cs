@@ -146,6 +146,13 @@ public class Bug_5270_archived_partition_index_names: OneOffConfigurationsContex
     /// and, when the table is partitioned, its children. Read from the catalog rather than assumed,
     /// because assuming the names is the defect.
     /// </summary>
+    /// <remarks>
+    /// Reads <c>pg_index</c>'s own columns rather than <c>pg_indexes.indexdef</c>. That column is
+    /// <c>pg_get_indexdef()</c>, which opens the index outside the query's catalog snapshot, and the
+    /// schema filter does not stop the planner calling it for other schemas' rows first — so under
+    /// parallel workers it failed with <c>XX000: could not open relation with OID</c> whenever another
+    /// test dropped an index mid-scan.
+    /// </remarks>
     private async Task<IReadOnlyList<string>> VersionGuardIndexesAsync()
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -153,13 +160,19 @@ public class Bug_5270_archived_partition_index_names: OneOffConfigurationsContex
 
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = """
-                          select indexname from pg_indexes
-                          where schemaname = @schema
-                            and tablename like 'mt_events%'
-                            and indexdef like '%UNIQUE%'
-                            and indexdef like '%stream_id%'
-                            and indexdef like '%version%'
-                          order by indexname
+                          select ic.relname
+                          from pg_index i
+                            join pg_class ic on ic.oid = i.indexrelid
+                            join pg_class tc on tc.oid = i.indrelid
+                            join pg_namespace n on n.oid = tc.relnamespace
+                          where n.nspname = @schema
+                            and tc.relname like 'mt_events%'
+                            and i.indisunique
+                            and exists (select 1 from pg_attribute a
+                                        where a.attrelid = i.indrelid and a.attnum = any(i.indkey) and a.attname = 'stream_id')
+                            and exists (select 1 from pg_attribute a
+                                        where a.attrelid = i.indrelid and a.attnum = any(i.indkey) and a.attname = 'version')
+                          order by ic.relname
                           """;
         cmd.Parameters.AddWithValue("schema", SchemaName);
 
