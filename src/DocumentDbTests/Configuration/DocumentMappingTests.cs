@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Globalization;
 using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
@@ -76,6 +77,38 @@ public class DocumentMappingTests
     {
         var mapping = DocumentMapping.For<User>();
         mapping.Alias.ShouldBe("user");
+    }
+
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("tr-TR")]
+    public void document_aliases_are_culture_invariant(string culture)
+    {
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+
+            var mapping = DocumentMapping.For<Invoice>();
+            mapping.Alias.ShouldBe("invoice");
+            mapping.TableName.Name.ShouldBe("mt_doc_invoice");
+
+            mapping.Alias = "INVOICE";
+            mapping.Alias.ShouldBe("invoice");
+            mapping.TableName.Name.ShouldBe("mt_doc_invoice");
+
+            var nested = DocumentMapping.For<Invoice.Item>();
+            nested.Alias.ShouldBe("invoice_item");
+            nested.TableName.Name.ShouldBe("mt_doc_invoice_item");
+
+            var generic = DocumentMapping.For<InvoiceItem<Invoice>>();
+            generic.Alias.ShouldNotContain('ı');
+            generic.Alias.ShouldContain("invoiceitem");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
     }
 
     [Fact]
@@ -845,4 +878,19 @@ public partial class ProjectionWithConfiguredView: MultiStreamProjection<Project
         current.ImportantField = @event.ImportantField;
         return current;
     }
+}
+
+public class Invoice
+{
+    public Guid Id { get; set; }
+
+    public class Item
+    {
+        public Guid Id { get; set; }
+    }
+}
+
+public class InvoiceItem<T>
+{
+    public Guid Id { get; set; }
 }
