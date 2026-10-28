@@ -1093,10 +1093,23 @@
          value onto IEvent.Sequence. The flag defaults to false, so this bump alone changes nothing —
          PostgresEventStoreDialect has to set it, which is marten#5755. Both additions are init properties
          on the descriptor CLASSES, not interface members, so there is no weasel#682-shaped
-         TypeLoadException against a published Marten. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.47.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.47.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.47.0" />
+         TypeLoadException against a published Marten.
+
+         weasel#751 (9.47.1) is a PostgreSQL index introspection fix, and whether it touches Marten
+         depends entirely on DatabaseSchemaName. The index query identified each row's table by
+         regclassout's rendering of it and matched that against four spellings, none of which quoted
+         the SCHEMA. regclassout quotes whatever has to be quoted, so a schema named for a reserved
+         word (order, user) or one carrying uppercase rendered as "order".docs and matched nothing:
+         no index was read back, every declared index was Missing rather than Different, the patch
+         was a bare create index, and the second apply answered 42P07 and aborted the rest of the
+         migration. Inert for the default public schema and for any lower-case unquoted name, where
+         relname and the rendering name the same table. The primary key constraint's name rides
+         those same rows and was also unread, but PrimaryKeyName falls back to Weasel's derived
+         pkey_ default, which is what Marten declares, so that half was masked here; it bites a
+         configuration that names the constraint itself. Nothing public added, removed or changed. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.47.1" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.47.1" />
+    <PackageVersion Include="Weasel.Storage" Version="9.47.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
