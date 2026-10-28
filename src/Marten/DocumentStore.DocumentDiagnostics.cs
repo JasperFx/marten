@@ -678,7 +678,7 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             if (metadata.Version.Enabled || metadata.Revision.Enabled)
             {
                 _versionIndex = columns.Count;
-                columns.Add($"{p}{SchemaConstants.VersionColumn}::text");
+                columns.Add(VersionTokenSql(target.Mapping, p));
             }
 
             if (metadata.LastModified.Enabled)
@@ -715,6 +715,39 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
 
             SelectFields = columns.ToArray();
             SelectList = string.Join(", ", columns);
+        }
+
+        /// <summary>
+        /// The opaque token <see cref="StoredDocument.Version" /> carries, which a console echoes back as
+        /// <see cref="DocumentWriteRequest.ExpectedVersion" />.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Ordinarily just <c>mt_version</c>. Not for a projection document (#5773), whose numeric revision is
+        /// the version of the stream the snapshot reflects: a write that is not the projection's leaves it where
+        /// it was, so a token made of it alone never moved and a second save at the same token was accepted.
+        /// Moving the revision instead is the wrong fix, because the async fetch's delta query reads only the
+        /// events above it and would skip the next one. So the token also captures something every write
+        /// changes: <c>mt_last_modified</c>, or a hash of the data when the mapping does not track it.
+        /// </para>
+        /// <para>
+        /// The last-modified stamp goes in as epoch microseconds rather than as text, so the token does not
+        /// depend on the connection's <c>TimeZone</c> or <c>DateStyle</c>.
+        /// </para>
+        /// </remarks>
+        internal static string VersionTokenSql(DocumentMapping mapping, string prefix)
+        {
+            var version = $"{prefix}{SchemaConstants.VersionColumn}::text";
+            if (!mapping.UseVersionFromMatchingStream || !mapping.Metadata.Revision.Enabled)
+            {
+                return version;
+            }
+
+            var stamp = mapping.Metadata.LastModified.Enabled
+                ? $"coalesce((extract(epoch from {prefix}{SchemaConstants.LastModifiedColumn}) * 1000000)::bigint::text, '')"
+                : $"md5({prefix}data::text)";
+
+            return $"{version} || ':' || {stamp}";
         }
 
         public string[] SelectFields { get; }
