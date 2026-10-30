@@ -204,20 +204,27 @@ internal partial class BatchedQuery: IBatchedQuery
 
         var command = Parent.BuildCommand(_items.Select(x => x.Handler));
 
-        await using var reader = await Parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-        await _items[0].ReadAsync(reader, Parent, token).ConfigureAwait(false);
-
-        // 9.0 (#4375): indexed loop avoids the Skip+ToArray buffer allocation per batch query.
-        for (var i = 1; i < _items.Count; i++)
+        await using (var reader = await Parent.ExecuteReaderAsync(command, token).ConfigureAwait(false))
         {
-            var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
+            await _items[0].ReadAsync(reader, Parent, token).ConfigureAwait(false);
 
-            if (!hasNext)
+            // 9.0 (#4375): indexed loop avoids the Skip+ToArray buffer allocation per batch query.
+            for (var i = 1; i < _items.Count; i++)
             {
-                throw new InvalidOperationException("There is no next result to read over.");
-            }
+                var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
 
-            await _items[i].ReadAsync(reader, Parent, token).ConfigureAwait(false);
+                if (!hasNext)
+                {
+                    throw new InvalidOperationException("There is no next result to read over.");
+                }
+
+                await _items[i].ReadAsync(reader, Parent, token).ConfigureAwait(false);
+            }
+        }
+
+        for (var i = 0; i < _items.Count; i++)
+        {
+            await _items[i].FinishAsync(Parent, token).ConfigureAwait(false);
         }
     }
 
