@@ -653,4 +653,34 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 
         return _store.QuerySession(tenantId).Events.QueryRawEventDataOnly<T>();
     }
+
+    /// <summary>
+    /// jasperfx#1094: every event as an <see cref="IQueryable{T}"/> of <see cref="IEvent"/>, so a caller
+    /// working against the JasperFx abstractions can filter and order by event metadata. This wraps
+    /// <see cref="QueryAllRawEvents"/>, so the provider is Marten's own LINQ over <c>mt_events</c>: the shared
+    /// terminators in <see cref="JasperFx.Events.Documents.DocumentQueryableExtensions"/> dispatch to it,
+    /// and a member Marten cannot translate throws <see cref="Marten.Exceptions.BadLinqExpressionException"/>
+    /// naming it rather than matching every event.
+    /// </summary>
+    /// <remarks>
+    /// The tenant rule is <see cref="QueryStreamStates"/>'s: null reads in this reader's own scope, a tenant
+    /// id is refused where the events have no tenant dimension, and otherwise the query runs on a session
+    /// opened for that tenant. That session lives behind the returned queryable, since an
+    /// <see cref="IQueryable{T}"/> exposes no disposal.
+    /// </remarks>
+    public IQueryable<IEvent> QueryRawEvents(string? tenantId = null)
+    {
+        if (tenantId != null && _store.Events.TenancyStyle != TenancyStyle.Conjoined)
+        {
+            throw new NotSupportedException(
+                $"This event store does not have a tenant dimension (TenancyStyle.{_store.Events.TenancyStyle}), so QueryRawEvents cannot scope to tenant '{tenantId}'. Omit the tenantId argument, or configure conjoined multi-tenancy.");
+        }
+
+        if (tenantId == null || string.Equals(tenantId, _tenant.TenantId, StringComparison.Ordinal))
+        {
+            return QueryAllRawEvents();
+        }
+
+        return _store.QuerySession(tenantId).Events.QueryAllRawEvents();
+    }
 }

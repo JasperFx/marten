@@ -6,6 +6,7 @@ using JasperFx.Events;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
+using Marten.Storage.Metadata;
 using Weasel.Core;
 using Weasel.Postgresql;
 
@@ -38,6 +39,10 @@ public class EventQueryMapping: DocumentMapping
         // Is archived needs to be a little different
         var member = ReflectionHelper.GetProperty<IEvent>(x => x.IsArchived);
         QueryMembers.ReplaceMember(member, new IsArchivedMember());
+
+        // Unregistered, IEvent.TenantId fell through to the JSON body as data ->> 'TenantId' and matched
+        // nothing, silently. mt_events carries the column whether or not the store is conjoined.
+        registerQueryableMember(x => x.TenantId, TenantIdColumn.Name);
 
         registerQueryableMember(x => x.EventTypeName, "type");
         registerQueryableMember(x => x.DotNetTypeName, SchemaConstants.DotNetTypeColumn);
