@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Protected;
+using Marten.Events.Archiving;
+using Marten.Internal;
 
 namespace Marten.Events.Protected;
 
@@ -29,13 +31,13 @@ public class EventDataMasking : IEventDataMasking
 
     public IEventDataMasking IncludeStream(Guid streamId)
     {
-        _sources.Add((s, t) => s.Events.FetchStreamAsync(streamId, token: t));
+        _sources.Add((s, t) => fetchStreamAsync(s, streamId, t));
         return this;
     }
 
     public IEventDataMasking IncludeStream(string streamKey)
     {
-        _sources.Add((s, t) => s.Events.FetchStreamAsync(streamKey, token: t));
+        _sources.Add((s, t) => fetchStreamAsync(s, streamKey, t));
         return this;
     }
 
@@ -43,7 +45,7 @@ public class EventDataMasking : IEventDataMasking
     {
         _sources.Add(async (s, t) =>
         {
-            var raw = await s.Events.FetchStreamAsync(streamId, token: t).ConfigureAwait(false);
+            var raw = await fetchStreamAsync(s, streamId, t).ConfigureAwait(false);
             return raw.Where(filter).ToList();
         });
 
@@ -54,7 +56,7 @@ public class EventDataMasking : IEventDataMasking
     {
         _sources.Add(async (s, t) =>
         {
-            var raw = await s.Events.FetchStreamAsync(streamKey, token: t).ConfigureAwait(false);
+            var raw = await fetchStreamAsync(s, streamKey, t).ConfigureAwait(false);
             return raw.Where(filter).ToList();
         });
 
@@ -63,7 +65,8 @@ public class EventDataMasking : IEventDataMasking
 
     public IEventDataMasking IncludeEvents(Expression<Func<IEvent, bool>> filter)
     {
-        _sources.Add((s, t) => s.Events.QueryAllRawEvents().Where(filter).ToListAsync(t));
+        // A filter that names IsArchived itself still narrows this, so it can still rule them back out
+        _sources.Add((s, t) => s.Events.QueryAllRawEvents().Where(x => x.MaybeArchived()).Where(filter).ToListAsync(t));
         return this;
     }
 
@@ -100,6 +103,30 @@ public class EventDataMasking : IEventDataMasking
         }
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    // Archiving a stream takes it out of the normal reads and leaves it on disk, so masking has to reach it.
+    // FetchStreamAsync leaves archived rows out, and skipped ones when skipping is on, which found nothing,
+    // erased nothing and reported success. This read loses the identity check FetchStreamAsync makes, and a
+    // Guid against a string store would come back as the same silent nothing, so that check is made here.
+    private Task<IReadOnlyList<IEvent>> fetchStreamAsync(IDocumentSession session, Guid streamId, CancellationToken token)
+    {
+        _store.Events.EnsureAsGuidStorage((IMartenSession)session);
+
+        return session.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId)
+            .OrderBy(x => x.Version)
+            .ToListAsync(token);
+    }
+
+    private Task<IReadOnlyList<IEvent>> fetchStreamAsync(IDocumentSession session, string streamKey, CancellationToken token)
+    {
+        _store.Events.EnsureAsStringStorage((IMartenSession)session);
+
+        return session.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamKey == streamKey)
+            .OrderBy(x => x.Version)
+            .ToListAsync(token);
     }
 
     internal IDocumentSession BuildSession()
