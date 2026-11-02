@@ -36,9 +36,12 @@ public abstract class async_fetch_reads_in_a_safe_order: OneOffConfigurationsCon
     /// before the batch is sent, and gets it only once the change is committed. A statement sees the
     /// database as it was when the statement started, so the change is invisible to the held read and
     /// visible to the read after it. Batches without both reads are left alone.
+    /// With <paramref name="streamVersionRead" /> it holds the stream version read instead, which comes before
+    /// both, and acts on any batch with that read and an events read, so a write-cache hit, which reads no
+    /// snapshot, is paused too.
     /// </summary>
     public sealed class PauseTheFirstRead(Func<Task> whilePaused, string snapshotTable = "mt_doc_simpleaggregate",
-        int fetchIndex = 0, int pauses = 1): IMartenSessionLogger
+        int fetchIndex = 0, int pauses = 1, bool streamVersionRead = false): IMartenSessionLogger
     {
         private static long _nextKey = Random.Shared.Next(1, 1 << 30);
         private readonly List<Task> _pauses = new();
@@ -59,12 +62,17 @@ public abstract class async_fetch_reads_in_a_safe_order: OneOffConfigurationsCon
             var commands = batch.BatchCommands.Cast<NpgsqlBatchCommand>().ToList();
             var snapshotReads = indexesOf(commands, isSnapshotRead);
             var eventsReads = indexesOf(commands, c => c.CommandText.Contains("mt_events as d"));
-            if (snapshotReads.Count == 0 || eventsReads.Count == 0) return;
+            var versionReads = indexesOf(commands, c => c.CommandText.Contains("mt_streams")
+                                                        && !c.CommandText.Contains("mt_events"));
+            var firstReads = streamVersionRead
+                ? versionReads
+                : snapshotReads.Zip(eventsReads, Math.Min).ToList();
+            if (eventsReads.Count == 0 || (streamVersionRead ? versionReads.Count == 0 : snapshotReads.Count == 0)) return;
 
             FetchBatches++;
             BeforeEachFetchBatch?.Invoke();
 
-            if (_pauses.Count >= pauses || fetchIndex >= snapshotReads.Count || fetchIndex >= eventsReads.Count) return;
+            if (_pauses.Count >= pauses || fetchIndex >= firstReads.Count) return;
 
             var key = Interlocked.Increment(ref _nextKey);
             var gate = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -75,7 +83,7 @@ public abstract class async_fetch_reads_in_a_safe_order: OneOffConfigurationsCon
                 take.ExecuteNonQuery();
             }
 
-            var first = commands[Math.Min(snapshotReads[fetchIndex], eventsReads[fetchIndex])];
+            var first = commands[firstReads[fetchIndex]];
             var where = first.CommandText.IndexOf(" where ", StringComparison.Ordinal) + " where ".Length;
             first.CommandText = first.CommandText.Insert(where,
                 $"(select true from pg_advisory_xact_lock_shared({key})) and ");
@@ -384,6 +392,52 @@ public abstract class async_fetch_reads_in_a_safe_order: OneOffConfigurationsCon
 
         shouldBe(await fetchWhileAsync(fetch, id, () => appendAnEventAndCatchTheDaemonUpAsync(id)), 1, 1, 1, 1, 4);
     }
+
+    // A stream that does not exist yet when the fetch reads its version, and is started and projected before
+    // the snapshot read. Its snapshot is real, so the fetch answers with it.
+
+    [Theory]
+    [MemberData(nameof(AllFetches))]
+    public async Task a_stream_is_started_and_projected_mid_fetch(Fetch fetch)
+    {
+        var id = _shape.Subject.NewId();
+        if (_shape.OtherTenant != null)
+        {
+            await appendAsync(_shape.OtherTenant, id, true, 'A', 'B', 'B', 'B', 'B');
+            await catchTheDaemonUpAsync();
+        }
+
+        shouldBeTheWholeStream(await fetchWhileAsync(fetch, id, async () =>
+        {
+            await appendAsync(_shape.Tenant, id, true, 'A', 'B', 'C');
+            await catchTheDaemonUpAsync();
+        }));
+    }
+
+    // A snapshot whose stream is gone, as DeleteAllEventDataAsync leaves it: every fetch refuses it, batched
+    // or not, rather than answer with the snapshot or with a new, empty aggregate.
+
+    private async Task deleteTheStreamAsync(object id)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"delete from {SchemaName}.mt_events where stream_id = @id; " +
+                          $"delete from {SchemaName}.mt_streams where id = @id";
+        cmd.Parameters.AddWithValue("id", id);
+        await cmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+    }
+
+    [Theory]
+    [MemberData(nameof(AllFetches))]
+    public async Task a_snapshot_that_outlived_its_stream_is_refused(Fetch fetch)
+    {
+        var id = await aStreamWithACurrentSnapshotAsync();
+        await deleteTheStreamAsync(id);
+
+        var ex = await Should.ThrowAsync<SnapshotWithoutStreamException>(() => fetchWhileAsync(fetch, id, () => Task.CompletedTask));
+        ex.Id.ShouldBe(id);
+    }
 }
 
 /// <summary>
@@ -551,6 +605,29 @@ internal static class StoreShapes
     public static readonly FetchSubject SpecialCounter = new FetchSubject<SpecialCounter>(
         "mt_doc_specialcounter", () => Guid.NewGuid(), specialEvent,
         x => new(x.ACount, x.BCount, x.CCount, x.DCount, null));
+
+    public static readonly FetchSubject StrongTypedAggregate = new FetchSubject<StrongTypedAggregate>(
+        "mt_doc_strongtypedaggregate", () => Guid.NewGuid(), simpleEvent,
+        x => new(x.ACount, x.BCount, x.CCount, x.DCount, null));
+}
+
+public readonly record struct StrongTypedAggregateId(Guid Value);
+
+/// <summary><see cref="SimpleAggregate" /> with a strong-typed id, fetched by its Guid stream id.</summary>
+public class StrongTypedAggregate: IRevisioned
+{
+    public int Version { get; set; }
+    public StrongTypedAggregateId Id { get; set; }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+
+    public void Apply(AEvent _) => ACount++;
+    public void Apply(BEvent _) => BCount++;
+    public void Apply(CEvent _) => CCount++;
+    public void Apply(DEvent _) => DCount++;
 }
 
 public class async_fetch_reads_in_a_safe_order_on_guid_streams(): async_fetch_reads_in_a_safe_order(new StoreShape(
@@ -599,3 +676,11 @@ public class async_fetch_reads_in_a_safe_order_with_the_write_cache(): async_fet
         opts.Events.CacheAggregatesForWriting<SimpleAggregate>();
     },
     StoreShapes.SimpleAggregate));
+
+public class async_fetch_reads_in_a_safe_order_with_a_strong_typed_id(): async_fetch_reads_in_a_safe_order(new StoreShape(
+    opts =>
+    {
+        opts.RegisterValueType<StrongTypedAggregateId>();
+        opts.Projections.Snapshot<StrongTypedAggregate>(SnapshotLifecycle.Async);
+    },
+    StoreShapes.StrongTypedAggregate));

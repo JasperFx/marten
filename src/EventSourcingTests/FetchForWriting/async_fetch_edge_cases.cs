@@ -350,4 +350,161 @@ public class async_fetch_edge_cases: OneOffConfigurationsContext
         await using var query = theStore.LightweightSession();
         (await query.Events.FetchStreamStateAsync(id, TestContext.Current.CancellationToken))!.Version.ShouldBe(5);
     }
+
+    private async Task appendAsync(Guid id, params object[] events)
+    {
+        await using var session = theStore.LightweightSession();
+        session.Events.Append(id, events);
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    // A write-cache hit reads the stream version and then the events after the cached version, with no
+    // snapshot read. An append between the two is in the events, so the fetch is at the newer version, and
+    // is cached at it. A batched fetch never reads the cache, so only the single fetch is run.
+
+    [Fact]
+    public async Task a_write_cache_hit_answers_at_an_event_appended_between_its_reads()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
+            opts.Events.UseIdentityMapForAggregates = false;
+            opts.Events.CacheAggregatesForWriting<SimpleAggregate>();
+        });
+
+        var id = await aStreamOfABCAsync();
+        await catchTheDaemonUpAsync();
+
+        // Fills the cache
+        await using (var warming = theStore.LightweightSession())
+        {
+            (await warming.Events.FetchForWriting<SimpleAggregate>(id, TestContext.Current.CancellationToken)).CurrentVersion.ShouldBe(3);
+        }
+
+        await using (var session = theStore.LightweightSession())
+        {
+            var pause = new async_fetch_reads_in_a_safe_order.PauseTheFirstRead(() => appendAsync(id, new DEvent()),
+                streamVersionRead: true);
+            session.Logger = pause;
+
+            var stream = await session.Events.FetchForWriting<SimpleAggregate>(id, TestContext.Current.CancellationToken);
+            await pause.Paused;
+
+            stream.CurrentVersion.ShouldBe(4);
+            shouldBeTheWholeStream(stream.Aggregate);
+            stream.Aggregate!.DCount.ShouldBe(1);
+        }
+
+        // The cached aggregate is labelled with the version it is at, so D is not applied to it again
+        await using var next = theStore.LightweightSession();
+        var nextStream = await next.Events.FetchForWriting<SimpleAggregate>(id, TestContext.Current.CancellationToken);
+        nextStream.CurrentVersion.ShouldBe(4);
+        shouldBeTheWholeStream(nextStream.Aggregate);
+        nextStream.Aggregate!.DCount.ShouldBe(1);
+    }
+
+    // When one stream's snapshot goes backwards mid-batch, FetchManyForWriting fetches every stream again, one
+    // at a time. A stream the batch had already folded comes back folded once, not twice.
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task fetch_many_for_writing_falls_back_without_applying_any_event_twice(bool useIdentityMap)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
+            opts.Events.UseIdentityMapForAggregates = useIdentityMap;
+        });
+
+        // A has a snapshot at 2 and two newer events; B's snapshot is deleted mid-batch
+        var a = await aStreamAsync(new AEvent(), new BEvent());
+        var b = await aStreamOfABCAsync();
+        await catchTheDaemonUpAsync();
+        await appendAsync(a, new CEvent(), new DEvent());
+
+        await using var session = theStore.LightweightSession();
+        var pause = new async_fetch_reads_in_a_safe_order.PauseTheFirstRead(() => deleteTheSnapshotAsync(b),
+            fetchIndex: 1);
+        session.Logger = pause;
+
+        var streams = await session.Events.FetchManyForWriting<SimpleAggregate>(new[] { a, b },
+            TestContext.Current.CancellationToken);
+        await pause.Paused;
+
+        // It did fall back
+        pause.FetchBatches.ShouldBeGreaterThan(1);
+
+        streams[0].CurrentVersion.ShouldBe(4);
+        shouldBeTheWholeStream(streams[0].Aggregate);
+        streams[0].Aggregate!.DCount.ShouldBe(1);
+
+        streams[1].CurrentVersion.ShouldBe(3);
+        shouldBeTheWholeStream(streams[1].Aggregate);
+    }
+
+    // A snapshot whose stream is gone is refused, however it is fetched. async_fetch_reads_in_a_safe_order
+    // runs every kind of fetch against one; these are the ways in that it does not cover.
+
+    private Task deleteTheStreamAsync(Guid id) => executeAsync(
+        $"delete from {SchemaName}.mt_events where stream_id = @id; delete from {SchemaName}.mt_streams where id = @id",
+        id);
+
+    [Fact]
+    public async Task a_snapshot_left_behind_by_delete_all_event_data_is_refused()
+    {
+        var id = await aStreamOfABCAsync();
+        await catchTheDaemonUpAsync();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync(TestContext.Current.CancellationToken);
+
+        await using var session = theStore.LightweightSession();
+        var ct = TestContext.Current.CancellationToken;
+        (await Should.ThrowAsync<SnapshotWithoutStreamException>(() =>
+            session.Events.FetchForWriting<SimpleAggregate>(id, ct))).Id.ShouldBe(id);
+        (await Should.ThrowAsync<SnapshotWithoutStreamException>(() =>
+            session.Events.FetchForWriting<SimpleAggregate>(id, 0, ct))).Id.ShouldBe(id);
+        (await Should.ThrowAsync<SnapshotWithoutStreamException>(async () =>
+            await session.Events.FetchLatest<SimpleAggregate>(id, ct))).Id.ShouldBe(id);
+    }
+
+    [Fact]
+    public async Task a_batch_with_an_exclusive_fetch_refuses_a_snapshot_without_its_stream_and_releases_the_lock()
+    {
+        var lockedId = await aStreamOfABCAsync();
+        var orphanId = await aStreamOfABCAsync();
+        await catchTheDaemonUpAsync();
+        await deleteTheStreamAsync(orphanId);
+
+        await using (var session = theStore.LightweightSession())
+        {
+            var batch = session.CreateBatchQuery();
+            var exclusive = batch.Events.FetchForExclusiveWriting<SimpleAggregate>(lockedId);
+            _ = batch.Events.FetchForWriting<SimpleAggregate>(orphanId);
+
+            var ex = await Should.ThrowAsync<SnapshotWithoutStreamException>(() =>
+                batch.Execute(TestContext.Current.CancellationToken));
+            ex.Id.ShouldBe(orphanId);
+
+            (await exclusive).CurrentVersion.ShouldBe(3);
+        }
+
+        // Disposing the session rolled its transaction back, so the stream can be locked again at once
+        await using var other = theStore.LightweightSession();
+        var stream = await other.Events.FetchForExclusiveWriting<SimpleAggregate>(lockedId,
+            TestContext.Current.CancellationToken).WaitAsync(5.Seconds(), TestContext.Current.CancellationToken);
+        stream.CurrentVersion.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task fetch_many_for_writing_refuses_a_snapshot_without_its_stream()
+    {
+        var ids = new[] { await aStreamOfABCAsync(), await aStreamOfABCAsync() };
+        await catchTheDaemonUpAsync();
+        await deleteTheStreamAsync(ids[1]);
+
+        await using var session = theStore.LightweightSession();
+        var ex = await Should.ThrowAsync<SnapshotWithoutStreamException>(() =>
+            session.Events.FetchManyForWriting<SimpleAggregate>(ids, TestContext.Current.CancellationToken));
+        ex.Id.ShouldBe(ids[1]);
+    }
 }
