@@ -570,6 +570,15 @@ namespace Marten.Events
         void AddMaskingRuleForProtectedInformation<T>(Func<T, T> func);
 
         /// <summary>
+        /// Whether the strong-typed identifier of an aggregate projection is automatically registered as a
+        /// tag type for Dynamic Consistency Boundary (DCB) support. Each one gets a tag table, with its
+        /// foreign key and indexes, and a parameter on <c>mt_quick_append_events</c>. Turn this off if you
+        /// use strong-typed identifiers but not DCB. Explicit <see cref="RegisterTagType{TTag}()"/> calls
+        /// work either way. Defaults to true.
+        /// </summary>
+        bool AutoDiscoverTagTypes { get; set; }
+
+        /// <summary>
         /// Register a strong-typed identifier as a tag type for Dynamic Consistency Boundary (DCB) support.
         /// This creates a dedicated tag table for efficient cross-stream querying and consistency checks.
         /// </summary>

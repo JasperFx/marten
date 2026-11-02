@@ -776,6 +776,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public IReadOnlyList<ITagTypeRegistration> TagTypes => _tagTypes;
 
     /// <summary>
+    /// Whether the strong-typed identifier of an aggregate projection is automatically registered as a
+    /// tag type. Defaults to true. Explicit registrations work either way.
+    /// </summary>
+    public bool AutoDiscoverTagTypes { get; set; } = true;
+
+    /// <summary>
     /// Derive a DCB tag from an event's own data, for every event appended through this store.
     /// <para>
     /// <see cref="Tags.EventTagInference" /> can only find a tag when the event exposes a property whose
@@ -1297,7 +1303,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     private void autoDiscoverTagTypesFromProjections(ILogger logger)
     {
-        if (CreateTagTypeMethod == null) return;
+        if (!AutoDiscoverTagTypes || CreateTagTypeMethod == null) return;
 
         foreach (var projection in Options.Projections.All.OfType<IAggregateProjection>())
         {
