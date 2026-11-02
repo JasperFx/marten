@@ -2,6 +2,18 @@ name: Marten NuGet Manual Publish
 
 on: [ workflow_dispatch ]
 
+# Trusted publishing (OIDC), rather than a long-lived NUGET_API_KEY secret, the same as Weasel,
+# JasperFx and Fisher. NuGet/login exchanges this run's GitHub OIDC token for an API key that expires
+# within the hour, so there is no durable credential to leak or rotate. `id-token: write` lets the
+# runner request that token. `contents: read` is the checkout, declared explicitly because naming any
+# permission drops the rest to none.
+#
+# The policy on nuget.org names this workflow by file name, so renaming this file means changing the
+# policy too.
+permissions:
+  id-token: write
+  contents: read
+
 env:
   config: Release
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -27,8 +39,16 @@ jobs:
         run: ./build.sh pack
         shell: bash
 
+      # Exchanges this run's OIDC token for a short-lived NuGet API key. `user` is the NuGet.org account
+      # that owns the trusted publishing policy. A mismatch fails here, before any package is pushed.
+      - name: Log in to NuGet with trusted publishing
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: jeremydmiller
+
       - name: Publish to NuGet
         run: |
-          find . -name '*.nupkg' -exec dotnet nuget push "{}" -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} --skip-duplicate \;
-          # find . -name '*.snupkg' -exec dotnet nuget push "{}" -s https://api.nuget.org/v3/index.json -k ${{ secrets.NUGET_API_KEY }} \;
+          find . -name '*.nupkg' -exec dotnet nuget push "{}" -s https://api.nuget.org/v3/index.json -k "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --skip-duplicate \;
+          # find . -name '*.snupkg' -exec dotnet nuget push "{}" -s https://api.nuget.org/v3/index.json -k "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \;
         shell: bash
