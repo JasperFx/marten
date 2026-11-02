@@ -90,10 +90,11 @@ internal static class StreamCompactingExecution
     /// <summary>
     ///     Drive the compaction against a Marten <see cref="DocumentSessionBase"/>:
     ///     fetch the events to be replaced, build a <see cref="Compacted{T}"/>
-    ///     snapshot via the aggregator, optionally invoke the archiver (if the
-    ///     request's <see cref="StreamCompactingRequest{T}.Archiver"/> closes the
-    ///     generic over Marten's <see cref="IDocumentOperations"/>), then queue the
-    ///     replacement + delete operations on the session.
+    ///     snapshot via the aggregator, invoke the request's
+    ///     <see cref="StreamCompactingRequest{T}.Archiver"/> if there is one, then queue
+    ///     the replacement + delete operations on the session. A stream that folds to no
+    ///     aggregate is left alone, and an archiver Marten cannot call refuses the
+    ///     compaction, because either way the events cannot be got back afterward.
     /// </summary>
     internal static async Task ExecuteAsync<T>(this StreamCompactingRequest<T> request, DocumentSessionBase session)
         where T : class
@@ -129,14 +130,41 @@ internal static class StreamCompactingExecution
         var aggregate = await aggregator.BuildAsync(events, session, default, request.CancellationToken)
             .ConfigureAwait(false);
 
+        // A stream deleted by its own aggregate (ShouldDelete, DeleteEvent<T>), at this cutoff if the
+        // request set one. There is no state to snapshot, so going on would swap the whole history for a
+        // Compacted<T> holding null. The stream is left as it is, the archiver included, because it has
+        // not been told about anything that is going to happen.
+        if (aggregate is null)
+        {
+            logger.LogInformation(
+                "Left stream {Id} alone. Its events through version {Version} fold to no {AggregateType}, so there is nothing to compact them into",
+                (object?)request.StreamId ?? request.StreamKey, request.Version, typeof(T).FullNameInCode());
+
+            return;
+        }
+
         // 4. Optional archiving. The lifted IEventsArchiver marker is non-generic
         //    so the data class doesn't have to flow a TOperations parameter; the
-        //    product downcasts to the closed-generic at execution time. Marten's
-        //    callbacks close on IDocumentOperations.
-        if (request.Archiver is IEventsArchiver<IDocumentOperations> archiver)
+        //    product downcasts to the closed-generic at execution time.
+        //
+        //    Both closures are accepted, as Polecat does (polecat#423). IEventsArchiver<T> is
+        //    invariant, so an IEventsArchiver<IDocumentSession> is not an
+        //    IEventsArchiver<IDocumentOperations>, and anything that matches neither has to be
+        //    refused here: skipping it would go on to delete the events it existed to keep.
+        if (request.Archiver is IEventsArchiver<IDocumentSession> sessionArchiver)
+        {
+            await sessionArchiver.MaybeArchiveAsync(session, request, events, request.CancellationToken)
+                .ConfigureAwait(false);
+        }
+        else if (request.Archiver is IEventsArchiver<IDocumentOperations> archiver)
         {
             await archiver.MaybeArchiveAsync(session, request, events, request.CancellationToken)
                 .ConfigureAwait(false);
+        }
+        else if (request.Archiver is not null)
+        {
+            throw new InvalidOperationException(
+                $"{request.Archiver.GetType().FullNameInCode()} cannot archive these events, because Marten can only call an archiver closed over {typeof(IDocumentSession).FullNameInCode()} or {typeof(IDocumentOperations).FullNameInCode()}. Nothing was compacted.");
         }
 
         if (((IMartenSession)session).Options.Events.StreamIdentity == StreamIdentity.AsGuid)
@@ -150,7 +178,7 @@ internal static class StreamCompactingExecution
                 request.StreamKey, request.Version);
         }
 
-        var compacted = new Compacted<T>(aggregate!,
+        var compacted = new Compacted<T>(aggregate,
             request.StreamId ?? Guid.Empty, request.StreamKey ?? string.Empty);
 
         session.Events.CompletelyReplaceEvent(request.Sequence, compacted);
@@ -227,8 +255,9 @@ internal static class StreamCompactingExecution
 /// interface. That contract has been lifted to
 /// <see cref="IEventsArchiver{TOperations}"/> in <c>JasperFx.Events.Protected</c>
 /// per the dedupe pillar so Marten and Polecat share a single contract — Marten
-/// archivers now close the generic over <see cref="IDocumentOperations"/>; Polecat
-/// archivers close it over <c>Polecat.IDocumentOperations</c>.
+/// archivers now close the generic over <see cref="IDocumentOperations"/> or
+/// <see cref="IDocumentSession"/>; Polecat archivers close it over the same two types of its own.
+/// Marten refuses to compact with an archiver closed over anything else.
 /// </remarks>
 public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOperations>
 {
