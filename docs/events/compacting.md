@@ -75,8 +75,9 @@ closed over Marten's `IDocumentOperations`:
 /// interface. That contract has been lifted to
 /// <see cref="IEventsArchiver{TOperations}"/> in <c>JasperFx.Events.Protected</c>
 /// per the dedupe pillar so Marten and Polecat share a single contract — Marten
-/// archivers now close the generic over <see cref="IDocumentOperations"/>; Polecat
-/// archivers close it over <c>Polecat.IDocumentOperations</c>.
+/// archivers now close the generic over <see cref="IDocumentOperations"/> or
+/// <see cref="IDocumentSession"/>; Polecat archivers close it over the same two types of its own.
+/// Marten refuses to compact with an archiver closed over anything else.
 /// </remarks>
 public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOperations>
 {
@@ -96,6 +97,20 @@ public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOpera
 <!-- endSnippet -->
 
 By default, Marten is *not* archiving events in this operation.
+
+An archiver can be closed over either `IDocumentOperations` or `IDocumentSession`. If you set one that Marten cannot call,
+`CompactStreamAsync()` throws an `InvalidOperationException` and nothing is compacted, because the alternative is deleting the events
+without archiving them.
+
+::: warning
+A stream that folds to no aggregate is left alone. That is a stream deleted by its own aggregate, through `ShouldDelete()` or
+`DeleteEvent<T>()`, at the cutoff you asked for if you set one. `CompactStreamAsync()` queues nothing for it, doesn't call the archiver,
+and doesn't record a compaction watermark.
+
+Before this was fixed, compacting such a stream replaced its whole history with a `Compacted<T>` event holding a null snapshot, and
+nothing threw. Look for those with `Compacted<T>` events whose `Snapshot` is null: the deleted events can only come back from a backup,
+or from wherever your archiver copied them to.
+:::
 
 Stream compacting will not have any adverse impact on running asynchronous projections and even carrying out a compacting operation while an 
 asynchronous projection happens to be working on exactly that stream will not cause any discrepancies with the daemon as it runs.

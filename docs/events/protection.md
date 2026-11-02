@@ -148,6 +148,18 @@ the affected tenants' events from a backup or your archival storage. Stores that
 store-unique there.
 :::
 
+::: warning
+Masking reaches archived streams, and skipped events, because neither is erased by being set aside. Every source does: both
+kinds of `IncludeStream()`, and `IncludeEvents()` unless your filter rules them out itself with `IsArchived`.
+
+Before this was fixed, masking read through the same paths as everything else and left those rows out, so protected data stayed
+in place while the pass reported success. If you relied on masking for data that was archived, or skipped, when you ran it, run the
+same `ApplyEventDataMasking()` call again after upgrading. That also runs your rules again over everything the first pass reached, so
+if a rule isn't safe to run twice, such as one that draws a new pseudonym, add `x.IsArchived` to the filter of an `IncludeEvents()` that
+still names the same subject, like `IncludeEvents(x => x.StreamId == streamId && x.IsArchived)`. Never use `x.IsArchived` as the whole
+filter for this, which masks every archived event in the store.
+:::
+
 Here's a couple more facts you might need to know:
 
 * The masking rules can only be done at configuration time (as of right now)

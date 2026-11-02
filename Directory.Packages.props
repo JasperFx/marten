@@ -875,15 +875,20 @@
          default!, as Marten 8's runtime codegen behaved. A Create taking object, a supertype or an
          interface now owns the null-snapshot case instead of failing to compile with CS8120.
          jasperfx#1086 is in JasperFx.RuntimeCompiler, which this bump does not move. -->
-    <PackageVersion Include="JasperFx" Version="2.97.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.97.0" />
+    <!-- JasperFx 2.98.0 (from 2.97.0): jasperfx#1101 and #1105, slice.PublishMessage carries the correlation id
+         the slice's events agree on, on the async path and both inline paths. jasperfx#1107, cloned events keep
+         their correlation and causation ids. jasperfx#1102, #1106 and #1108, SubscriptionDescriptor.PublishedTypes
+         and descriptors that report a projection as it was registered. jasperfx#1098, a raised event is written
+         only to the stream it was raised to. 2.97.1 reached no feed, so its fixes arrive here. -->
+    <PackageVersion Include="JasperFx" Version="2.98.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.98.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.97.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.98.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -902,11 +907,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.97.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.98.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.97.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.98.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -1113,9 +1118,57 @@
          those same rows and was also unread, but PrimaryKeyName falls back to Weasel's derived
          pkey_ default, which is what Marten declares, so that half was masked here; it bites a
          configuration that names the constraint itself. Nothing public added, removed or changed. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.47.1" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.47.1" />
-    <PackageVersion Include="Weasel.Storage" Version="9.47.1" />
+    <!-- Weasel 9.48.0 (from 9.47.1). ADOPTED as-is, no Marten code changes. Three of the six issues
+
+         The JasperFx floor: Weasel.Core 9.48.0 declares JasperFx >= 2.98.0 and Weasel.Storage
+         declares JasperFx.Events >= 2.98.0, both read from the published nuspec. Already satisfied
+         here, because the JasperFx 2.98.0 bump landed on its own ahead of this one; at 2.97.0 the
+         restore fails outright with NU1605, a package downgrade promoted to an error, rather than
+         resolving quietly upward.
+         are SQL Server only and inert here; what reaches Marten is the PostgreSQL parameter-type work
+         and one PostgreSQL partitioning fix.
+
+         weasel#758/#759: the parameter-type catch-all. A private helper in five providers ended in
+         `?? <catch-all>`, which can never return null, so determineParameterType always reported
+         success and every fall-through branch after the first was dead code. PostgreSQL was one of
+         the two providers that already fell through correctly, which is exactly why the divergence
+         read as a Postgres quirk rather than a bug in the other five, so the resolution behaviour
+         Marten sees is unchanged. What does change for Marten is the shared base: ToParameterType now
+         THROWS for a type Npgsql has no mapping for, where some providers used to answer with a
+         character type. RuntimeCompiledQueryDescriptorFactory and PostgresStorageDialect call it, and
+         both pass types Npgsql maps. StoreOptions.Identity and ExecuteSqlStorageOperation use
+         TryGetDbType, which still returns null for an unmapped type. Also fixed in the same PR, and
+         the one piece that was a hard failure rather than a slow query: both AddParameters overloads
+         resolved through ToParameterType on the TYPE, going around the value-aware seam weasel#403
+         added for Npgsql, so a UTC DateTime in a parameter bag was bound as `timestamp without time
+         zone` and Npgsql threw outright, while the same value through AddNamedParameter worked. They
+         now resolve from the value and keep the declared type for a null.
+
+         weasel#764: PostgreSQL's numeric arm in PartitionExtensions.FormatSqlValue rendered with the
+         CURRENT CULTURE, so a decimal partition bound carried a comma separator under de-DE and a
+         negative one a U+2212 minus sign under sv-SE, fi-FI, lt-LT or nb-NO. The date arms were
+         already invariant with a comment saying why, which is what made the numeric one read as
+         deliberate. Marten's tenant and list partitions are string bounds, which take the quoted
+         path, so this bites a numeric partition bound only. The SQL Server half of the issue is where
+         it was found (Polecat, under a th-TH culture).
+
+         weasel#761: an enum parameter resolves by EnumStorage now, with
+         ToParameterType/TryGetDbType/TryGetDbTypeForValue overloads taking one, and PostgreSQL keeps
+         Integer for an int-backed enum exactly as before. The one difference here: an enum now
+         resolves through its UNDERLYING type, so a long-backed enum gives Bigint rather than silently
+         narrowing to Integer, and a byte-backed one Smallint. Arrays are untouched on PostgreSQL,
+         which maps them properly as an Array composite; the four providers that bound an int[] as
+         text now defer instead.
+
+         INERT: weasel#762 (SQL Server string Unicode precedence, documentation only), weasel#763
+         (DateOnly/TimeOnly on MySQL and Oracle), weasel#765 and weasel#766 (SQL Server partition DDL
+         and sp_getapplock).
+
+         Riding along: MySqlConnector 2.6.1 for GHSA-473q-m89c-ghf8, which is not a Weasel.Postgresql
+         surface, and JasperFx / JasperFx.Events 2.98.0, which the pin above satisfies. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.48.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.48.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.48.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

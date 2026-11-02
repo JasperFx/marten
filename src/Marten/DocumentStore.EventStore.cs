@@ -811,6 +811,12 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             UserName = metadata.UserNameEnabled
         };
 
+        // #5800 — a console cannot infer this from the tenants or the document mappings: a store
+        // with single-tenanted events and conjoined documents looks the same from there. A plain
+        // value rather than a first-class property, so that absent still means "this version
+        // does not say", and spelled the way Polecat spells it because consumers read it by name.
+        usage.AddValue(nameof(Options.Events.TenancyStyle), Options.Events.TenancyStyle);
+
         return usage;
     }
 

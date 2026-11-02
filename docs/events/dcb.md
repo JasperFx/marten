@@ -64,6 +64,14 @@ opts.Events.RegisterTagType<TicketId>("custom_ticket")
 opts.Projections.Add<TicketSummaryProjection>(ProjectionLifecycle.Inline);
 ```
 
+Every discovered tag type adds a table, with its foreign key and indexes, and a parameter on `mt_quick_append_events`, whether or not you ever write a tag. If you use strong-typed identifiers but not DCB, turn auto-discovery off:
+
+```csharp
+opts.Events.AutoDiscoverTagTypes = false;
+```
+
+Explicit `RegisterTagType<T>()` calls keep working with auto-discovery off. Turning it off on an existing database leaves any tag tables already there in place, and Marten will not remove them for you.
+
 ### Registering Tag Types under Trimming or Native AOT
 
 `RegisterTagType<TTag>()` discovers the primitive inside your tag type by reflecting over its

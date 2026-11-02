@@ -6,6 +6,7 @@ using JasperFx;
 using JasperFx.Descriptors;
 using JasperFx.Events;
 using Marten;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -139,6 +140,33 @@ public class document_store_usage_tests: HostedStoreContext
         // from MultiHostSettings.
         usage.PropertyFor("ReadSessionPreference").ShouldNotBeNull();
         usage.PropertyFor("WriteSessionPreference").ShouldNotBeNull();
+    }
+
+    // #5800: the third case is the one a console could not tell apart from the second by any other
+    // signal. Conjoined documents do not mean the events need a tenant filter.
+    [Theory]
+    [InlineData(TenancyStyle.Single, TenancyStyle.Single)]
+    [InlineData(TenancyStyle.Conjoined, TenancyStyle.Conjoined)]
+    [InlineData(TenancyStyle.Single, TenancyStyle.Conjoined)]
+    public async Task event_store_usage_reports_the_tenancy_style_of_the_events(
+        TenancyStyle events, TenancyStyle documents)
+    {
+        var host = await BuildHost(opts =>
+        {
+            opts.DatabaseSchemaName = $"{SchemaName}_{events}_{documents}".ToLowerInvariant();
+            opts.Events.TenancyStyle = events;
+            if (documents == TenancyStyle.Conjoined)
+            {
+                opts.Policies.AllDocumentsAreMultiTenanted();
+            }
+        });
+
+        var usage = await host.Services.GetRequiredService<IEventStore>()
+            .TryCreateUsage(CancellationToken.None);
+
+        usage.ShouldNotBeNull();
+        // Value is what reaches a console. RawValue is not serialized, and is null for an enum.
+        usage.PropertyFor("TenancyStyle")!.Value.ShouldBe(events.ToString());
     }
 
     [Fact]
