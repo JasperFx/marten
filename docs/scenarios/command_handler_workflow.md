@@ -249,16 +249,6 @@ Marten implements this natively on top of its batch query. Other Critter Stack s
 sequential default, so the behavior above is identical everywhere while the round-trip count is not.
 :::
 
-::: warning An `Async` projection lifecycle falls back to one round trip per stream
-An aggregate projected with `ProjectionLifecycle.Async` is fetched inside
-`begin transaction isolation level repeatable read read only` … `end`, so that all of its reads share one
-snapshot. PostgreSQL only accepts that as the **first** statement in a transaction, so two such fetches
-cannot share a batch. `FetchManyForWriting()` detects this lifecycle and fetches sequentially instead —
-same results, same ordering, same per-stream version guards, just without the round-trip saving.
-
-`Inline`, `Live` and `Snapshot` aggregates get the single-round-trip path.
-:::
-
 ## Explicit Optimistic Concurrency
 
 This time let's explicitly opt into optimistic concurrency checks by telling Marten what the expected starting

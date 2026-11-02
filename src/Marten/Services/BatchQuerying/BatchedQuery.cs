@@ -29,63 +29,6 @@ internal partial class BatchedQuery: IBatchedQuery
     // exclusive fetches the batch holds, and awaited by Execute() before the batch is sent.
     private Task? _transactionStart;
 
-    // Set when a handler that brackets its own SQL in `begin transaction … end` is enlisted. Such a
-    // handler COMMITS the session's transaction when its `end` runs, so it cannot share a batch with
-    // an exclusive fetch, whose row lock has to survive until SaveChangesAsync. See assertNoTransactionConflict.
-    private bool _holdsSelfTransactingItem;
-
-    // The call that the self-transacting item in this batch came from, for MixedBatchMessage. Kept
-    // beside _holdsSelfTransactingItem because assertNoTransactionConflict() fires from the other
-    // direction too -- an exclusive fetch enlisted SECOND -- and by then the handler is long gone.
-    private string _selfTransactingCall = "FetchForWriting";
-
-    private string MixedBatchMessage =>
-        $"A batched FetchForExclusiveWriting cannot share a batch with {_selfTransactingCall} for an "
-        + "aggregate projected with ProjectionLifecycle.Async. That fetch wraps its reads in "
-        + "'begin transaction isolation level repeatable read read only' … 'end' so they share one snapshot, and "
-        + "that 'end' commits the session's transaction — releasing the exclusive fetch's row lock before "
-        + "SaveChangesAsync can use it. Use separate batches, or fetch both exclusively.";
-
-    /// <summary>
-    ///     #5532 follow-up. Refuse the combination at the call that creates it, rather than letting it
-    ///     surface later as <c>InvalidOperationException: This NpgsqlTransaction has completed</c> out of
-    ///     <c>SaveChangesAsync</c> — an Npgsql message several layers from the mistake, naming nothing the
-    ///     caller wrote.
-    /// </summary>
-    /// <remarks>
-    ///     This combination has never worked. Before #5532 the warm path already failed this way and the
-    ///     cold path silently ran the whole batch in autocommit, committing with no lock held at all; #5532
-    ///     made the cold path fail like the warm one. So refusing it takes nothing away that functioned —
-    ///     it only replaces the diagnosis.
-    /// </remarks>
-    /// <summary>
-    ///     Names the offending call in terms the caller wrote, not the internal handler type.
-    /// </summary>
-    private static string describeSelfTransactingHandler(IOpensItsOwnTransaction handler)
-    {
-        // The call name comes from the handler itself -- see IOpensItsOwnTransaction.CallName for why it
-        // is not derived from the type name.
-        //
-        // The closed type arguments are read off the nested handler type itself, NOT off its
-        // DeclaringType. For a nested type inside a constructed generic, DeclaringType hands back the
-        // generic type DEFINITION -- FetchAsyncPlan<TDoc, TId>, whose GenericTypeArguments is empty --
-        // so this always fell through to the unnamed fallback below, which is not what #5535 claimed
-        // to do. typeof(Outer<string, int>.Inner).GenericTypeArguments is [string, int]; its
-        // DeclaringType.GenericTypeArguments is [].
-        var aggregate = handler.GetType().GenericTypeArguments.FirstOrDefault();
-        return aggregate == null
-            ? $"{handler.CallName} for an aggregate projected with ProjectionLifecycle.Async"
-            : $"{handler.CallName}<{aggregate.Name}> (projected with ProjectionLifecycle.Async)";
-    }
-
-    private void assertNoTransactionConflict()
-    {
-        if (_holdsSelfTransactingItem && _transactionStart != null)
-        {
-            throw new InvalidOperationException(MixedBatchMessage);
-        }
-    }
-
     private void startTransaction()
     {
         if (_transactionStart == null)
@@ -103,8 +46,6 @@ internal partial class BatchedQuery: IBatchedQuery
                 TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
                 TaskScheduler.Default);
         }
-
-        assertNoTransactionConflict();
     }
 
     public BatchedQuery(QuerySession parent)
@@ -177,13 +118,6 @@ internal partial class BatchedQuery: IBatchedQuery
             return;
         }
 
-        // Refuse the batch here as well as at enlist time. The enlist-time check throws SYNCHRONOUSLY only
-        // when the non-exclusive fetch is added second, because FetchForExclusiveWriting is async and an
-        // exception in an async method's body arrives as a faulted task instead. In that ordering the
-        // caller following the documented shape -- enlist, Execute(), then await the items -- would reach
-        // Execute() before observing anything, and without this the bad batch would be sent.
-        assertNoTransactionConflict();
-
         // An exclusive fetch's row lock is only held if its `for update` runs inside the session's
         // transaction, and starting that transaction may still be in flight (see FetchForExclusiveWriting).
         if (_transactionStart != null)
@@ -233,38 +167,6 @@ internal partial class BatchedQuery: IBatchedQuery
 
     public Task<T> AddItem<T>(IQueryHandler<T> handler)
     {
-        if (handler is IOpensItsOwnTransaction { OpensItsOwnTransaction: true } selfTransacting)
-        {
-            // Set BEFORE either check can throw, so Execute()'s own guard stays armed even if a caller
-            // swallows the exception raised here.
-            _holdsSelfTransactingItem = true;
-            _selfTransactingCall = selfTransacting.CallName;
-
-            // Order matters. Both conditions can hold at once -- an exclusive fetch enlisted first is also
-            // "something already in the batch" -- and the mixed-batch one is the more specific and the more
-            // dangerous of the two (a silently dropped row lock rather than a refused batch), so it wins.
-            // Catches the ordering where the non-exclusive fetch is enlisted SECOND; the exclusive overloads
-            // call startTransaction(), which checks the other direction.
-            assertNoTransactionConflict();
-
-            // #5535. `begin transaction isolation level repeatable read read only` is only legal as the
-            // FIRST statement in a transaction, so this handler can only be the first item in its batch.
-            // Enlisted after anything else it failed at Execute() with PostgreSQL's
-            // `25001: SET TRANSACTION ISOLATION LEVEL must be called before any query`, which names an
-            // isolation level the caller never mentioned and says nothing about ordering. Nothing about
-            // CreateBatchQuery() suggests one of its members has to go first, so refuse it where the
-            // ordering is actually decided.
-            if (_items.Count > 0)
-            {
-                throw new InvalidOperationException(
-                    $"A batched {describeSelfTransactingHandler(selfTransacting)} has to be the FIRST operation in its "
-                    + $"batch, but {_items.Count} operation(s) are already enlisted. It wraps its reads in "
-                    + "'begin transaction isolation level repeatable read read only' … 'end' so they share one "
-                    + "snapshot, and PostgreSQL only accepts that as the first statement in a transaction. "
-                    + "Enlist it first, or give it its own batch.");
-            }
-        }
-
         var item = new BatchQueryItem<T>(handler);
         _items.Add(item);
 
