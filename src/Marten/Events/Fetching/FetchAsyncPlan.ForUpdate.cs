@@ -55,8 +55,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             {
                 // #5613. The daemon committed a snapshot between this batch's two reads. Nothing is wrong
                 // with the stream; the read just straddled the write. Go round again -- but the redo has to
-                // forget what the first attempt learned first, or it reads the same stale snapshot straight
-                // back out of the session.
+                // forget what the first attempt learned first, or a snapshot that has since gone is judged
+                // by the revision of the one that was there.
                 forgetSnapshot(session, id);
             }
         }
@@ -67,24 +67,16 @@ internal partial class FetchAsyncPlan<TDoc, TId>
     }
 
     /// <summary>
-    ///     Drops this stream's snapshot from the session's identity map and revision tracker so that a redo
-    ///     actually goes back to the database for it.
+    ///     Drops this stream's snapshot from the session's revision tracker, so that a redo judges only what
+    ///     it reads itself.
     /// </summary>
     /// <remarks>
-    ///     This plan resolves its storage with <c>DocumentTracking.IdentityOnly</c>, so the selector behind
-    ///     <see cref="LoadByIdHandler{T,TId}" /> is an identity-map selector: a second load of the same id in
-    ///     the same session hands back the FIRST instance and never reads the row again. Without this a redo
-    ///     is guaranteed to observe exactly the stale state that triggered it, the race detector fires again,
-    ///     and the retry budget is spent discovering nothing. Scoped to the one id -- EjectAllOfType would
-    ///     also throw away other streams' identity and any pending work queued against the type.
+    ///     Only the revision. The plan reads with <c>DocumentTracking.None</c> (see <see cref="AsyncFetchPlanner" />),
+    ///     so a redo goes back to the row regardless, and whatever is in the session's identity map for this id
+    ///     is the caller's own document rather than anything this fetch put there.
     /// </remarks>
     private static void forgetSnapshot(DocumentSessionBase session, TId id)
     {
-        if (session.ItemMap.TryGetValue(typeof(TDoc), out var raw) && raw is Dictionary<TId, TDoc> map)
-        {
-            map.Remove(id);
-        }
-
         ((IMartenSession)session).Versions.RevisionsFor<TDoc, TId>().Remove(id);
     }
 

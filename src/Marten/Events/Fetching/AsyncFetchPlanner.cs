@@ -43,7 +43,11 @@ internal class AsyncFetchPlanner: IFetchPlanner
             {
                 if (options.Storage.FindMapping(typeof(TDoc)) is DocumentMapping { Metadata.Revision.Enabled: true })
                 {
-                    plan = new FetchAsyncPlan<TDoc, TId>(options.EventGraph, identity, options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly));
+                    // Never through the identity map. The events after the snapshot are folded straight onto
+                    // this document, so it has to be an instance nothing else can reach: the map would hand a
+                    // second fetch the folded document, to fold the same events onto again, and would hand the
+                    // first fetch a document the caller loaded, to be changed under them.
+                    plan = new FetchAsyncPlan<TDoc, TId>(options.EventGraph, identity, options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.None));
                     return true;
                 }
             }
