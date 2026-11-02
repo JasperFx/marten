@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -72,10 +73,12 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Async;
 
     /// <summary>
-    ///     The events after the snapshot, and the snapshot version they start after (the floor):
+    ///     The events after the snapshot, the snapshot version they start after (the floor), and whether the
+    ///     stream exists:
     ///     <code>
-    ///     with floor as (select coalesce((select a.mt_version from [snapshot table] as a where a.id = :id), 0) as version)
-    ///     select [event columns], floor.version
+    ///     with floor as (select coalesce((select a.mt_version from [snapshot table] as a where a.id = :id), 0) as version,
+    ///                           exists (select 1 from mt_streams as s where s.id = :id) as stream_exists)
+    ///     select [event columns], floor.version, floor.stream_exists
     ///     from floor left outer join mt_events as d on d.stream_id = :id and d.version > floor.version
     ///     order by d.seq_id
     ///     </code>
@@ -102,9 +105,19 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
             builder.AppendParameter(builder.TenantId);
         }
 
-        builder.Append("), 0) as version) select ");
+        builder.Append("), 0) as version, exists (select 1 from ");
+        builder.Append(_events.DatabaseSchemaName);
+        builder.Append(".mt_streams as s where s.id = ");
+        builder.AppendParameter(id);
+        if (conjoined)
+        {
+            builder.Append(" and s.tenant_id = ");
+            builder.AppendParameter(builder.TenantId);
+        }
+
+        builder.Append(") as stream_exists) select ");
         builder.Append(_selectedEventFields!);
-        builder.Append(", floor.version from floor left outer join ");
+        builder.Append(", floor.version, floor.stream_exists from floor left outer join ");
         builder.Append(_events.DatabaseSchemaName);
         builder.Append(".mt_events as d on d.stream_id = ");
         builder.AppendParameter(id);
@@ -122,17 +135,20 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     }
 
     /// <summary>
-    ///     What <see cref="writeEventFetchStatement" /> read: the events after the cut-off, and the cut-off.
+    ///     What <see cref="writeEventFetchStatement" /> read: the events after the cut-off, the cut-off, and whether
+    ///     the stream exists.
     /// </summary>
-    private readonly record struct Delta(IReadOnlyList<IEvent> Events, long Floor);
+    private readonly record struct Delta(IReadOnlyList<IEvent> Events, long Floor, bool StreamExists);
 
     private async Task<Delta> readDeltaAsync(DbDataReader reader, IEventStorage selector, CancellationToken token)
     {
         var events = new List<IEvent>();
         long floor = 0;
+        var streamExists = false;
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             floor = await reader.GetFieldValueAsync<long>(_eventFieldCount, token).ConfigureAwait(false);
+            streamExists = await reader.GetFieldValueAsync<bool>(_eventFieldCount + 1, token).ConfigureAwait(false);
 
             // An empty delta still returns its floor, on one row with no event in it
             if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false)) continue;
@@ -140,7 +156,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
             events.Add(await ((ISelector<IEvent>)selector).ResolveAsync(reader, token).ConfigureAwait(false));
         }
 
-        return new Delta(events, floor);
+        return new Delta(events, floor, streamExists);
     }
 
     /// <summary>
@@ -148,25 +164,38 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     ///     than the document.
     /// </summary>
     /// <remarks>
-    ///     A document behind the floor, or missing when the floor says there was one, went backwards between the
-    ///     two reads, and the events in between were read by neither. With <paramref name="detect" /> on that
-    ///     throws <see cref="SnapshotRaceException" /> so the caller can redo the fetch; with it off, the delta is
-    ///     applied as it stands.
+    ///     A floor with no stream is a snapshot that outlived its stream, which throws
+    ///     <see cref="SnapshotWithoutStreamException" />. A document behind the floor, or missing when the floor
+    ///     says there was one, went backwards between the two reads, and the events in between were read by
+    ///     neither. With <paramref name="detect" /> on that throws <see cref="SnapshotRaceException" /> so the
+    ///     caller can redo the fetch; with it off, the delta is applied as it stands.
     /// </remarks>
     private static IReadOnlyList<IEvent> eventsAfterSnapshot(TId id, bool hasSnapshot, long? snapshotVersion,
         Delta delta, bool detect)
     {
+        if (delta.Floor > 0 && !delta.StreamExists)
+        {
+            throw new SnapshotWithoutStreamException(typeof(TDoc), id);
+        }
+
+        // Without its revision, the events a snapshot already includes cannot be told from the ones after it
+        if (hasSnapshot && snapshotVersion == null)
+        {
+            throw new InvalidOperationException(
+                $"The snapshot of {typeof(TDoc).FullName} '{id}' was loaded without its revision");
+        }
+
         if (detect && delta.Floor > 0 && (!hasSnapshot || snapshotVersion < delta.Floor))
         {
             throw new SnapshotRaceException(typeof(TDoc), id);
         }
 
-        if (!hasSnapshot || snapshotVersion is not { } version || version <= delta.Floor)
+        if (!hasSnapshot || snapshotVersion <= delta.Floor)
         {
             return delta.Events;
         }
 
-        return delta.Events.Where(e => e.Version > version).ToList();
+        return delta.Events.Where(e => e.Version > snapshotVersion).ToList();
     }
 
     /// <summary>
@@ -182,8 +211,10 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
         return reached;
     }
 
-    private static long? snapshotVersionFor(DocumentSessionBase session, TId id) =>
-        ((IMartenSession)session).Versions.RevisionFor<TDoc, TId>(id);
+    // The revision is recorded under the document's own id type, which a strong-typed id is not
+    private long? snapshotVersionFor(DocumentSessionBase session, TId id) => _storage is IValueTypeRevisions<TId> wrapped
+        ? wrapped.RevisionFor(session, id)
+        : ((IMartenSession)session).Versions.RevisionFor<TDoc, TId>(id);
 
     /// <summary>
     ///     The delta query for a cache hit: only the events after the version of the snapshot we already

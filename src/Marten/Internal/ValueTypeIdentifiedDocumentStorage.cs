@@ -54,9 +54,19 @@ internal interface IValueTypeStorage<TDoc, TValueType>
     IQueryHandler<IReadOnlyList<TDoc>> BuildLoadManyHandler(TValueType[] keys);
 }
 
+/// <summary>
+///     A session's revisions of a document with a strong-typed id, by the simple id the storage takes. The
+///     revisions are recorded under the strong-typed id.
+/// </summary>
+internal interface IValueTypeRevisions<TSimple>
+{
+    long? RevisionFor(IMartenSession session, TSimple id);
+    void ClearRevision(IMartenSession session, TSimple id);
+}
+
 [UnconditionalSuppressMessage("Trimming", "IL2026",
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>, ILinqDocumentStorage, IValueTypeStorage<TDoc, TValueType> where TDoc : notnull where TSimple : notnull where TValueType : notnull
+internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>, ILinqDocumentStorage, IValueTypeStorage<TDoc, TValueType>, IValueTypeRevisions<TSimple> where TDoc : notnull where TSimple : notnull where TValueType : notnull
 {
     private readonly Func<TSimple, TValueType> _converter;
     private readonly Func<TValueType,TSimple> _unwrapper;
@@ -76,6 +86,12 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     }
 
     public IDocumentStorage<TDoc, TValueType> Inner { get; }
+
+    public long? RevisionFor(IMartenSession session, TSimple id)
+        => session.Versions.RevisionFor<TDoc, TValueType>(_converter(id));
+
+    public void ClearRevision(IMartenSession session, TSimple id)
+        => session.Versions.ClearRevision<TDoc, TValueType>(_converter(id));
 
     public void Apply(ICommandBuilder builder) => Inner.Apply(builder);
 

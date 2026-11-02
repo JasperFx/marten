@@ -39,7 +39,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
     ///     <see cref="SnapshotRaceException" />, and once more with detection off when the redos run out.
     ///     See <see cref="SnapshotRaceRedos" />.
     /// </summary>
-    private static async Task<T> withSnapshotRaceRedos<T>(DocumentSessionBase session, TId id,
+    private async Task<T> withSnapshotRaceRedos<T>(DocumentSessionBase session, TId id,
         Func<bool, Task<T>> fetch)
     {
         for (var attempt = 0; attempt < SnapshotRaceRedos; attempt++)
@@ -98,9 +98,16 @@ internal partial class FetchAsyncPlan<TDoc, TId>
     ///     so a redo goes back to the row regardless, and whatever is in the session's identity map for this id
     ///     is the caller's own document rather than anything this fetch put there.
     /// </remarks>
-    private static void forgetSnapshot(DocumentSessionBase session, TId id)
+    private void forgetSnapshot(DocumentSessionBase session, TId id)
     {
-        ((IMartenSession)session).Versions.RevisionsFor<TDoc, TId>().Remove(id);
+        if (_storage is IValueTypeRevisions<TId> wrapped)
+        {
+            wrapped.ClearRevision(session, id);
+        }
+        else
+        {
+            ((IMartenSession)session).Versions.ClearRevision<TDoc, TId>(id);
+        }
     }
 
     [MemberNotNull(nameof(_initialSql))]
@@ -259,6 +266,9 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 // Read in any events from after the cached state of the aggregate
                 await reader.NextResultAsync(cancellation).ConfigureAwait(false);
                 events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+
+                // An event appended between the two reads is in the events, so the aggregate is at its version
+                version = reachedVersion(version, false, null, events);
             }
             else
             {
