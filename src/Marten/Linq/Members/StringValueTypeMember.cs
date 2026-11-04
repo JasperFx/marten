@@ -62,7 +62,7 @@ public class StringValueTypeMember<T>: StringMember, IValueTypeMember<T, string>
             return op == "=" ? new IsNullFilter(this) : new IsNotNullFilter(this);
         }
 
-        var value = _valueSource(constant.Value.As<T>());
+        var value = constant.Value is string inner ? inner : _valueSource(constant.Value.As<T>());
         var def = new CommandParameter(Expression.Constant(value));
         return new MemberComparisonFilter(this, def, op);
     }
