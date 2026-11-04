@@ -7,7 +7,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using Marten.Schema;
 
 namespace Marten.Linq.CursorPaging;
 
@@ -139,10 +138,8 @@ internal static class CursorPagination
     /// must be guaranteed unique (by default, the document's identity member) or
     /// seek pagination can skip or repeat rows that share the same leading sort keys.
     /// </summary>
-    public static void ValidateTerminalKeyIsUnique<T>(CursorOrdering terminal)
+    public static void ValidateTerminalKeyIsUnique<T>(CursorOrdering terminal, MemberInfo? idMember)
     {
-        var idMember = DocumentMapping.FindIdMember(typeof(T));
-
         if (idMember != null && terminal.Member != null && MemberNamesMatch(terminal.Member, idMember))
         {
             return;
