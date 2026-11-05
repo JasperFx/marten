@@ -1166,9 +1166,9 @@
 
          Riding along: MySqlConnector 2.6.1 for GHSA-473q-m89c-ghf8, which is not a Weasel.Postgresql
          surface, and JasperFx / JasperFx.Events 2.98.0, which the pin above satisfies. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.48.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.48.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.48.0" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.49.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.49.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.49.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

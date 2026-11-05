@@ -136,7 +136,7 @@ public class User
 ## Polymorphic Serialization <Badge type="warning" text=".NET 9+ & System.Text.Json Only" />
 
 ::: tip
-This is specifically to do with types stored _within_ documents. For polymorphism at the root document level see [Multi Level Hierarchies](/documents/hierarchies#multi-level-hierarchies)
+This is specifically to do with types stored *within* documents. For polymorphism at the root document level see [Multi Level Hierarchies](/documents/hierarchies#multi-level-hierarchies)
 :::
 
 Due to `jsonb` providing no guarantee on what order it stores properties in, metadata fields that usually sit at the start of a type can be in any position.
@@ -175,8 +175,8 @@ var store = DocumentStore.For(opts =>
 Types known to the context use its precompiled metadata, while everything else — Marten's internal documents, dynamic types, and any type the context does not cover — falls back to reflection. The reflection fallback is preserved on purpose, so covering only a subset of your types is safe.
 
 Note the difference between `UseTypeInfoResolver(MyContext.Default)` above and assigning
-`JsonSerializerOptions.TypeInfoResolver = MyContext.Default` yourself: the first _combines_ your
-context with a reflection-based resolver behind it, the second _replaces_ the reflection resolver
+`JsonSerializerOptions.TypeInfoResolver = MyContext.Default` yourself: the first *combines* your
+context with a reflection-based resolver behind it, the second *replaces* the reflection resolver
 outright. Replacing it is the stricter, fully trimmable posture — and it means a
 `Select(x => new { ... })` projection can no longer be materialized at all, because an anonymous type
 cannot be named by a `[JsonSerializable]` attribute. Marten refuses that query with the remedy rather
@@ -246,7 +246,7 @@ var store = DocumentStore.For(_ =>
 ::: warning Newtonsoft date parsing
 `Marten.Newtonsoft` reads JSON with `DateParseHandling.None`, so a date token stays a string until the
 serializer converts it to whatever the target member actually is. This is deliberate: `JsonTextReader`
-otherwise converts every date token to a `DateTime` _before_ the target type is known, and a
+otherwise converts every date token to a `DateTime` *before* the target type is known, and a
 `DateTimeOffset` member was then rebuilt from that `DateTime` and silently picked up the **host
 machine's** UTC offset. The same instant, the wrong offset — and because a `DateTimeOffset` duplicated
 column is `timestamp with time zone`, which Npgsql accepts only at offset zero, storing a loaded
