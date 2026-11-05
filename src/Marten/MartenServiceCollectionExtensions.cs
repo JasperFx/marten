@@ -302,6 +302,10 @@ public static class MartenServiceCollectionExtensions
                 options.DisableNpgsqlLogging = true;
             }
 
+            // A custom IMartenLogger replaces the session logging only; the daemon,
+            // MartenDatabase etc. still need the ILoggerFactory
+            options.LogFactory = s.GetService<ILoggerFactory>();
+
             if (options.Logger().GetType() != typeof(NulloMartenLogger))
             {
                 return new DocumentStore(options);
@@ -309,8 +313,6 @@ public static class MartenServiceCollectionExtensions
 
             var logger = s.GetService<ILogger<IDocumentStore>>() ?? new NullLogger<IDocumentStore>();
             options.Logger(new DefaultMartenLogger(logger));
-
-            options.LogFactory = s.GetService<ILoggerFactory>();
 
             return new DocumentStore(options);
         });
