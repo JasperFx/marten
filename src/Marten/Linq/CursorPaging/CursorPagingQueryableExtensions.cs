@@ -97,8 +97,8 @@ public static class CursorPagingQueryableExtensions
 
         if (!string.IsNullOrEmpty(cursor))
         {
-            var values = CursorPagination.DecodeCursor(cursor!, orderings, session.Serializer);
-            var predicate = CursorPagination.BuildSeekPredicate<T>(orderings, values);
+            var values = CursorPagination.DecodeCursor(cursor!, orderings, session.Serializer, session.Options);
+            var predicate = CursorPagination.BuildSeekPredicate<T>(orderings, values, session.Options);
             working = working.Where(predicate);
         }
 
@@ -116,7 +116,9 @@ public static class CursorPagingQueryableExtensions
         {
             var member = queryMembers.MemberFor(orderings[i].Selector.Body);
             keyColumns[i] = $"{member.TypedLocator} as cursor_key_{i}";
-            keyTypes[i] = orderings[i].KeyType;
+
+            // Npgsql reads the column as the value type's inner type, not as the wrapper around it.
+            keyTypes[i] = orderings[i].FindValueType(session.Options)?.SimpleType ?? orderings[i].KeyType;
         }
 
         return (martenQueryable.MartenProvider, working.As<MartenLinqQueryable<T>>().Expression, keyColumns, keyTypes);
