@@ -618,7 +618,7 @@ The `IMartenLogger` can be swapped out on any `IQuerySession` or `IDocumentSessi
 // session to pipe Marten logging to the xUnit.Net output
 theSession.Logger = new TestOutputMartenLogger(_output);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L134-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L135-L139' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Previewing the PostgreSQL Query Plan
