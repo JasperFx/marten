@@ -681,7 +681,7 @@ builder.Services.AddOpenTelemetry()
         metrics.AddMeter("Marten");
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L22-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 *And* you are running the async daemon in your system, you should see potentially activities for each running projection
@@ -898,7 +898,7 @@ builder.Services.AddMarten(opts =>
     opts.Events.EnableAdvancedAsyncTracking = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L190-L200' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_advanced_tracking' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L195-L205' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_advanced_tracking' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Non Stale Data
