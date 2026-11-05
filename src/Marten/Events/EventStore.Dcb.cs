@@ -230,6 +230,9 @@ internal partial class EventStore
             paramValues.Add(_session.TenantId);
         }
 
+        // #5677: archived events are excluded, as in every other event query
+        sb.Append(" and e.is_archived = false");
+
         // If the aggregator has event type filtering, apply it to limit the returned events
         if (aggregatorEventTypeNames is { Length: > 0 })
         {
