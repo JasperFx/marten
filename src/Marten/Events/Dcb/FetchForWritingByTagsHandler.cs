@@ -131,6 +131,9 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
             builder.AppendParameter(session.TenantId);
         }
 
+        // #5677: archived events are excluded, as in every other event query
+        builder.Append(" and e.is_archived = false");
+
         // If the aggregator has event type filtering, apply it to limit the returned events
         var eventTypeNames = resolveAggregatorEventTypeNames();
         if (eventTypeNames != null)
