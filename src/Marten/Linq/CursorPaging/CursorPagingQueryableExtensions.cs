@@ -88,7 +88,10 @@ public static class CursorPagingQueryableExtensions
                 "OrderBy/OrderByDescending clause so that keyset pagination is deterministic.");
         }
 
-        CursorPagination.ValidateTerminalKeyIsUnique<T>(orderings[^1]);
+        // Ask the store's mapping rather than the type: only the mapping knows an identity
+        // configured through Schema.For<T>().Identity(...).
+        var idMember = session.Options.Storage.FindMapping(martenQueryable.MartenProvider.SourceType).IdMember;
+        CursorPagination.ValidateTerminalKeyIsUnique<T>(orderings[^1], idMember);
 
         var working = queryable;
 
