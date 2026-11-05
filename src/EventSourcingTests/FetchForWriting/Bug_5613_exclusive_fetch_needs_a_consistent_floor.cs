@@ -32,19 +32,16 @@ namespace EventSourcingTests.FetchForWriting;
 /// </para>
 ///
 /// <para>
-/// The #5604 bracket is not available here: this path already owns a transaction, PostgreSQL will not
-/// change the isolation level of a transaction that has run a statement, and the bracket's <c>end</c>
-/// would commit the transaction holding the row lock. Raising the session's isolation level is worse
-/// than the bug — that transaction carries the whole <c>SaveChangesAsync</c>, and per #5528 Marten
+/// Raising the session's isolation level is worse than the bug — that transaction carries the whole <c>SaveChangesAsync</c>, and per #5528 Marten
 /// deliberately does not retry writes at RepeatableRead or above.
 /// </para>
 /// </summary>
 public class Bug_5613_exclusive_fetch_needs_a_consistent_floor: OneOffConfigurationsContext
 {
     /// <summary>
-    /// Holds the snapshot document read open long enough for the daemon to commit a snapshot
-    /// underneath it. Keyed off the SHAPE of the batch — a document load by id followed by an
-    /// mt_events read — so it only stretches the read under test and goes inert rather than silently
+    /// Holds the first read open long enough for the daemon to commit a snapshot
+    /// underneath it. Keyed off the SHAPE of the batch — a document load by id and an
+    /// mt_events read, in either order — so it only stretches the read under test and goes inert rather than silently
     /// delaying something else if the batch stops being built this way.
     /// </summary>
     public sealed class DelaySnapshotRead(double seconds): IMartenSessionLogger
@@ -54,12 +51,15 @@ public class Bug_5613_exclusive_fetch_needs_a_consistent_floor: OneOffConfigurat
             var commands = batch.BatchCommands.Cast<NpgsqlBatchCommand>().ToList();
             var snapshotRead = commands.FindIndex(c =>
                 c.CommandText.Contains("mt_doc_simpleaggregate") && c.CommandText.Contains("where id = "));
+            var eventsRead = commands.FindIndex(c => c.CommandText.Contains("mt_events as d"));
 
-            if (snapshotRead >= 0 &&
-                commands.Skip(snapshotRead + 1).Any(c => c.CommandText.Contains("mt_events as d")))
+            if (snapshotRead >= 0 && eventsRead >= 0)
             {
-                commands[snapshotRead].CommandText +=
-                    $" and (select true from pg_sleep({seconds.ToString(CultureInfo.InvariantCulture)}))";
+                // Whichever of the two reads comes first
+                var first = commands[Math.Min(snapshotRead, eventsRead)];
+                var where = first.CommandText.IndexOf(" where ", StringComparison.Ordinal) + " where ".Length;
+                first.CommandText = first.CommandText.Insert(where,
+                    $"(select true from pg_sleep({seconds.ToString(CultureInfo.InvariantCulture)})) and ");
             }
         }
 
@@ -171,12 +171,8 @@ public class Bug_5613_exclusive_fetch_needs_a_consistent_floor: OneOffConfigurat
     }
 
     [Fact]
-    public async Task the_batched_exclusive_fetch_refuses_rather_than_answering_wrongly()
+    public async Task the_batched_exclusive_fetch_answers_rightly_when_the_daemon_writes_mid_fetch()
     {
-        // A batch handler is handed one reader and cannot issue another statement, so it has no redo
-        // available. The choice there is a wrong aggregate or an exception, and for a fetch whose whole
-        // purpose is to decide what to write, the exception is the better answer. On the unfixed code this
-        // returned a null Aggregate for a perfectly healthy stream.
         anAsyncSnapshot();
         var id = await appendThreeEventStreamAsync();
 
@@ -189,19 +185,14 @@ public class Bug_5613_exclusive_fetch_needs_a_consistent_floor: OneOffConfigurat
 
         await Task.Delay(500, TestContext.Current.CancellationToken);
         await catchTheDaemonUpAsync();
+        await execute;
 
-        // It surfaces from Execute(), which is where the reader is consumed.
-        var ex = await Should.ThrowAsync<SnapshotRaceException>(async () => await execute);
-        ex.AggregateType.ShouldBe(typeof(SimpleAggregate));
-        ex.Id.ShouldBe(id);
-        ex.Message.ShouldContain("Retry the batch");
-
-        // Deliberately NOT awaiting `query`. When Execute() faults it never completes the individual
-        // BatchQueryItem tasks, and BatchedQuery.FetchForExclusiveWriting ends in `return await
-        // resultTask`, so that task is orphaned and awaiting it blocks forever. Doing so here hung a test
-        // run for eight hours. That dangling-task behaviour is pre-existing for any batched handler that
-        // throws, not something this fix introduced, but it is the reason this assertion stops at Execute.
-        query.IsCompleted.ShouldBeFalse();
+        var stream = await query;
+        stream.CurrentVersion.ShouldBe(3);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.Aggregate.ACount.ShouldBe(1);
+        stream.Aggregate.BCount.ShouldBe(1);
+        stream.Aggregate.CCount.ShouldBe(1);
     }
 
     [Fact]

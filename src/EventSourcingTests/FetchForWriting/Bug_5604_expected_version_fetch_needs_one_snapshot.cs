@@ -44,8 +44,8 @@ namespace EventSourcingTests.FetchForWriting;
 ///
 /// <para>
 /// The window is microseconds wide, which is why the reporter saw it only intermittently and under
-/// load. It is widened here deterministically: a session logger appends a <c>pg_sleep</c> to the
-/// snapshot read, and the daemon is started while that read is sleeping. Wolverine's
+/// load. It is widened here deterministically: a session logger puts a <c>pg_sleep</c> in whichever of
+/// the snapshot read and the events read comes first, and the daemon is started while that read is sleeping. Wolverine's
 /// <c>[WriteAggregate]</c> with a <c>Version</c> member on the command reaches the same overload,
 /// where the null case surfaced as an HTTP 500.
 /// </para>
@@ -53,9 +53,9 @@ namespace EventSourcingTests.FetchForWriting;
 public class Bug_5604_expected_version_fetch_needs_one_snapshot: OneOffConfigurationsContext
 {
     /// <summary>
-    /// Holds the snapshot read open long enough for the daemon to commit a snapshot underneath it.
-    /// The predicate deliberately keys off the SHAPE of the batch — a document load by id followed
-    /// by an mt_events read — so it only ever stretches the fetch under test, and goes inert the day
+    /// Holds the first read open long enough for the daemon to commit a snapshot underneath it.
+    /// The predicate deliberately keys off the SHAPE of the batch — a document load by id and an
+    /// mt_events read, in either order — so it only ever stretches the fetch under test, and goes inert the day
     /// the batch stops being built that way rather than silently delaying something else.
     /// </summary>
     public sealed class DelaySnapshotRead(double seconds): IMartenSessionLogger
@@ -65,12 +65,15 @@ public class Bug_5604_expected_version_fetch_needs_one_snapshot: OneOffConfigura
             var commands = batch.BatchCommands.Cast<NpgsqlBatchCommand>().ToList();
             var snapshotRead = commands.FindIndex(c =>
                 c.CommandText.Contains("mt_doc_simpleaggregate") && c.CommandText.Contains("where id = "));
+            var eventsRead = commands.FindIndex(c => c.CommandText.Contains("mt_events as d"));
 
-            if (snapshotRead >= 0 &&
-                commands.Skip(snapshotRead + 1).Any(c => c.CommandText.Contains("mt_events as d")))
+            if (snapshotRead >= 0 && eventsRead >= 0)
             {
-                commands[snapshotRead].CommandText +=
-                    $" and (select true from pg_sleep({seconds.ToString(CultureInfo.InvariantCulture)}))";
+                // Whichever of the two reads comes first
+                var first = commands[Math.Min(snapshotRead, eventsRead)];
+                var where = first.CommandText.IndexOf(" where ", StringComparison.Ordinal) + " where ".Length;
+                first.CommandText = first.CommandText.Insert(where,
+                    $"(select true from pg_sleep({seconds.ToString(CultureInfo.InvariantCulture)})) and ");
             }
         }
 
@@ -206,34 +209,30 @@ public class Bug_5604_expected_version_fetch_needs_one_snapshot: OneOffConfigura
     }
 
     [Fact]
-    public async Task a_batched_expected_version_fetch_has_to_be_first_in_its_batch()
+    public async Task a_batched_expected_version_fetch_can_come_after_other_operations()
     {
-        // The cost of the bracket, and a deliberate behaviour change: PostgreSQL accepts 'begin
-        // transaction isolation level …' only as a transaction's first statement, so this overload
-        // inherits the #5535 must-be-first rule its non-version sibling already had. Refused at the
-        // enlisting call, where the caller can see which call to move, rather than as a bare 25001
-        // out of Execute().
         StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
 
         var id = await appendThreeEventStreamAsync();
 
         await using var session = theStore.LightweightSession();
         var batch = session.CreateBatchQuery();
-        batch.Load<SimpleAggregate>(Guid.NewGuid());
+        var load = batch.Load<SimpleAggregate>(Guid.NewGuid());
+        var query = batch.Events.FetchForWriting<SimpleAggregate>(id, 3);
+        await batch.Execute(TestContext.Current.CancellationToken);
 
-        var ex = Should.Throw<InvalidOperationException>(() =>
-            batch.Events.FetchForWriting<SimpleAggregate>(id, 3));
-
-        ex.Message.ShouldContain("has to be the FIRST operation in its batch");
-        ex.Message.ShouldContain("SimpleAggregate");
+        (await load).ShouldBeNull();
+        var stream = await query;
+        stream.StartingVersion.ShouldBe(3);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.Aggregate.CCount.ShouldBe(1);
     }
 
     [Fact]
     public async Task the_non_version_overload_is_already_correct()
     {
-        // The control. Identical interleaving through FetchForWriting(id), which does wrap its reads
-        // in one repeatable-read read-only transaction. This must pass before and after the fix --
-        // it is the behaviour the expected-version path is being held to.
+        // The control. Identical interleaving through FetchForWriting(id), the behaviour the
+        // expected-version path is being held to.
         StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
 
         var id = await appendThreeEventStreamAsync();

@@ -1,10 +1,20 @@
+using System;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
+using Marten.Exceptions;
+using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Storage;
 using Weasel.Postgresql;
+using Weasel.Storage;
 using System.Diagnostics.CodeAnalysis;
 using JasperFx.Events.Fetching;
 
@@ -20,11 +30,12 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
     private readonly IDocumentStorage<TDoc, TId> _storage;
-    private readonly string _versionSelectionSql;
     private readonly string _aggregateTypeName = typeof(TDoc).FullNameInCode();
     private readonly string _cachedVersionSelectionSql;
     private readonly IAggregateWriteCache? _cache;
     private string? _initialSql;
+    private string? _selectedEventFields;
+    private int _eventFieldCount;
 
     public FetchAsyncPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
         IDocumentStorage<TDoc, TId> storage)
@@ -41,17 +52,6 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
                       ?? typeof(IdentityForwardingAggregator<,,,>)
                           .CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _storage, typeof(TDoc),
                               _storage.IdType, typeof(TId), typeof(IQuerySession));
-
-        if (_events.TenancyStyle == TenancyStyle.Single || _events.GlobalAggregates.Contains(typeof(TDoc)))
-        {
-            _versionSelectionSql =
-                $" left outer join {storage.TableName.QualifiedName} as a on d.stream_id = a.id where (a.mt_version is NULL or d.version > a.mt_version) and d.stream_id = ";
-        }
-        else
-        {
-            _versionSelectionSql =
-                $" left outer join {storage.TableName.QualifiedName} as a on d.stream_id = a.id and d.tenant_id = a.tenant_id where (a.mt_version is NULL or d.version > a.mt_version) and d.stream_id = ";
-        }
 
         // The cached path knows its baseline version up front, so it needs no join to the aggregate
         // table at all -- just the events after the snapshot we already hold.
@@ -73,86 +73,59 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Async;
 
     /// <summary>
-    ///     Whether a fetch on this session may bracket its reads so they all see ONE snapshot of the
-    ///     database -- and therefore whether <see cref="beginSharedSnapshot" /> emits anything.
+    ///     The events after the snapshot, the snapshot version they start after (the floor), and whether the
+    ///     stream exists:
+    ///     <code>
+    ///     with floor as (select coalesce((select a.mt_version from [snapshot table] as a where a.id = :id), 0) as version,
+    ///                           exists (select 1 from mt_streams as s where s.id = :id) as stream_exists)
+    ///     select [event columns], floor.version, floor.stream_exists
+    ///     from floor left outer join mt_events as d on d.stream_id = :id and d.version > floor.version
+    ///     order by d.seq_id
+    ///     </code>
+    ///     With no events, the left join still returns one row, so the floor always comes back.
     /// </summary>
     /// <remarks>
-    ///     <para>
-    ///         An async-plan fetch reads the stream version, the snapshot document and the events after the
-    ///         snapshot as separate statements. Under READ COMMITTED each of those takes its own snapshot,
-    ///         and the async daemon writing the snapshot document in between is enough to make them
-    ///         disagree: the delta query re-reads <c>a.mt_version</c> and therefore excludes the very events
-    ///         the snapshot read never saw. The aggregate then comes back null for an existing stream, or
-    ///         silently stale. Hence the bracket.
-    ///     </para>
-    ///     <para>
-    ///         #5611: but only when the session is not already inside a transaction that outlives this call.
-    ///         Marten cannot change the isolation level of a transaction it did not open -- PostgreSQL
-    ///         answers <c>25001</c> the moment that transaction has run a single statement -- and the
-    ///         <c>end</c> that closes the bracket would COMMIT it, so a caller composing Marten with
-    ///         <see cref="SessionOptions.ForTransaction" />, an ambient <c>TransactionScope</c> or an
-    ///         explicit <c>BeginTransaction</c> silently lost atomicity. Those callers keep their
-    ///         transaction and give up the shared snapshot, which is the right way round: a read race is
-    ///         recoverable, a committed transaction the caller meant to roll back is not. A caller who
-    ///         wants both opens their own transaction at <c>RepeatableRead</c>, which gives the reads one
-    ///         snapshot with nothing for Marten to emit.
-    ///     </para>
+    ///     Every Async fetch runs this BEFORE it loads the snapshot document. Each statement sees the database as
+    ///     it is when that statement starts, and the async daemon only moves a snapshot forward, so the document
+    ///     loaded afterwards is at or past the floor: only the events newer than it are applied. A document behind
+    ///     the floor was deleted or rebuilt in between, which <see cref="eventsAfterSnapshot" /> detects.
     /// </remarks>
-    /// <remarks>
-    ///     Takes a <see cref="QuerySession" /> rather than a <see cref="DocumentSessionBase" /> on purpose:
-    ///     the read paths reach it from a plain query session too, and the only thing it needs is a
-    ///     property QuerySession already has. Narrowing it would have meant an
-    ///     <c>AssertIsDocumentSession()</c> on the FetchLatest path, which throws "only possible for full,
-    ///     writeable IDocumentSession" — a message about a call the caller did not make, raised earlier
-    ///     than the cast that used to raise it.
-    /// </remarks>
-    private static bool canShareOneSnapshot(QuerySession session)
-    {
-        return !session.HasSurvivingTransaction;
-    }
-
-    /// <summary>
-    ///     Opens the bracket described on <see cref="canShareOneSnapshot" />, and reports whether it
-    ///     actually emitted anything so that <see cref="endSharedSnapshot" /> closes exactly what was
-    ///     opened. The two halves have to agree, and nothing but this return value makes that structural.
-    /// </summary>
-    /// <remarks>
-    ///     Factored out because <c>begin transaction isolation level repeatable read read only</c> is only
-    ///     legal as the FIRST statement of a transaction -- a constraint that is invisible at the call site
-    ///     and surfaces as a bare <c>25001</c> when it is broken (#5535).
-    /// </remarks>
-    private static bool beginSharedSnapshot(ICommandBuilder builder, QuerySession session)
-    {
-        if (!canShareOneSnapshot(session)) return false;
-
-        builder.Append("begin transaction isolation level repeatable read read only");
-        builder.StartNewCommand();
-        return true;
-    }
-
-    /// <summary>
-    ///     Closes the bracket opened by <see cref="beginSharedSnapshot" />, and only if it was opened.
-    ///     Note this <c>end</c> commits the transaction it is in, which is why a fetch that emits it cannot
-    ///     share a batch with one holding a row lock for a later SaveChanges.
-    /// </summary>
-    private static void endSharedSnapshot(ICommandBuilder builder, bool opened)
-    {
-        if (!opened) return;
-
-        builder.StartNewCommand();
-        builder.Append("end");
-    }
-
     private void writeEventFetchStatement(TId id,
         ICommandBuilder builder)
     {
-        builder.Append(_initialSql!);
-        builder.Append(_versionSelectionSql);
+        var conjoined = _events.TenancyStyle == TenancyStyle.Conjoined && !IsGlobal;
+
+        builder.Append("with floor as (select coalesce((select a.mt_version from ");
+        builder.Append(_storage.TableName.QualifiedName);
+        builder.Append(" as a where a.id = ");
         builder.AppendParameter(id);
+        if (conjoined)
+        {
+            builder.Append(" and a.tenant_id = ");
+            builder.AppendParameter(builder.TenantId);
+        }
+
+        builder.Append("), 0) as version, exists (select 1 from ");
+        builder.Append(_events.DatabaseSchemaName);
+        builder.Append(".mt_streams as s where s.id = ");
+        builder.AppendParameter(id);
+        if (conjoined)
+        {
+            builder.Append(" and s.tenant_id = ");
+            builder.AppendParameter(builder.TenantId);
+        }
+
+        builder.Append(") as stream_exists) select ");
+        builder.Append(_selectedEventFields!);
+        builder.Append(", floor.version, floor.stream_exists from floor left outer join ");
+        builder.Append(_events.DatabaseSchemaName);
+        builder.Append(".mt_events as d on d.stream_id = ");
+        builder.AppendParameter(id);
+        builder.Append(" and d.version > floor.version");
 
         // You must do this for performance even if the stream ids were
         // magically unique across tenants
-        if (_events.TenancyStyle == TenancyStyle.Conjoined && !_events.GlobalAggregates.Contains(typeof(TDoc)))
+        if (conjoined)
         {
             builder.Append(" and d.tenant_id = ");
             builder.AppendParameter(builder.TenantId);
@@ -160,6 +133,88 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
 
         builder.Append(" order by d.seq_id");
     }
+
+    /// <summary>
+    ///     What <see cref="writeEventFetchStatement" /> read: the events after the cut-off, the cut-off, and whether
+    ///     the stream exists.
+    /// </summary>
+    private readonly record struct Delta(IReadOnlyList<IEvent> Events, long Floor, bool StreamExists);
+
+    private async Task<Delta> readDeltaAsync(DbDataReader reader, IEventStorage selector, CancellationToken token)
+    {
+        var events = new List<IEvent>();
+        long floor = 0;
+        var streamExists = false;
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            floor = await reader.GetFieldValueAsync<long>(_eventFieldCount, token).ConfigureAwait(false);
+            streamExists = await reader.GetFieldValueAsync<bool>(_eventFieldCount + 1, token).ConfigureAwait(false);
+
+            // An empty delta still returns its floor, on one row with no event in it
+            if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false)) continue;
+
+            events.Add(await ((ISelector<IEvent>)selector).ResolveAsync(reader, token).ConfigureAwait(false));
+        }
+
+        return new Delta(events, floor, streamExists);
+    }
+
+    /// <summary>
+    ///     The events still to apply to the snapshot document, which was loaded after the delta: the ones newer
+    ///     than the document.
+    /// </summary>
+    /// <remarks>
+    ///     A floor with no stream is a snapshot that outlived its stream, which throws
+    ///     <see cref="SnapshotWithoutStreamException" />. A document behind the floor, or missing when the floor
+    ///     says there was one, went backwards between the two reads, and the events in between were read by
+    ///     neither. With <paramref name="detect" /> on that throws <see cref="SnapshotRaceException" /> so the
+    ///     caller can redo the fetch; with it off, the delta is applied as it stands.
+    /// </remarks>
+    private static IReadOnlyList<IEvent> eventsAfterSnapshot(TId id, bool hasSnapshot, long? snapshotVersion,
+        Delta delta, bool detect)
+    {
+        if (delta.Floor > 0 && !delta.StreamExists)
+        {
+            throw new SnapshotWithoutStreamException(typeof(TDoc), id);
+        }
+
+        // Without its revision, the events a snapshot already includes cannot be told from the ones after it
+        if (hasSnapshot && snapshotVersion == null)
+        {
+            throw new InvalidOperationException(
+                $"The snapshot of {typeof(TDoc).FullName} '{id}' was loaded without its revision");
+        }
+
+        if (detect && delta.Floor > 0 && (!hasSnapshot || snapshotVersion < delta.Floor))
+        {
+            throw new SnapshotRaceException(typeof(TDoc), id);
+        }
+
+        if (!hasSnapshot || snapshotVersion <= delta.Floor)
+        {
+            return delta.Events;
+        }
+
+        return delta.Events.Where(e => e.Version > snapshotVersion).ToList();
+    }
+
+    /// <summary>
+    ///     The stream version the fetched aggregate reflects. The stream version is read first, so the
+    ///     snapshot or the events can be past it, and the aggregate is then at the later version.
+    /// </summary>
+    private static long reachedVersion(long streamVersion, bool hasSnapshot, long? snapshotVersion,
+        IReadOnlyList<IEvent> events)
+    {
+        var reached = streamVersion;
+        if (hasSnapshot && snapshotVersion > reached) reached = snapshotVersion.Value;
+        if (events.Count > 0 && events[^1].Version > reached) reached = events[^1].Version;
+        return reached;
+    }
+
+    // The revision is recorded under the document's own id type, which a strong-typed id is not
+    private long? snapshotVersionFor(DocumentSessionBase session, TId id) => _storage is IValueTypeRevisions<TId> wrapped
+        ? wrapped.RevisionFor(session, id)
+        : ((IMartenSession)session).Versions.RevisionFor<TDoc, TId>(id);
 
     /// <summary>
     ///     The delta query for a cache hit: only the events after the version of the snapshot we already
