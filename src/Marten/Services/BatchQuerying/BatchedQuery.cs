@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +13,9 @@ using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Util;
+using Npgsql;
 using System.Diagnostics.CodeAnalysis;
+using Weasel.Postgresql;
 
 namespace Marten.Services.BatchQuerying;
 
@@ -204,13 +207,31 @@ internal partial class BatchedQuery: IBatchedQuery
 
         var command = Parent.BuildCommand(_items.Select(x => x.Handler));
 
-        await using var reader = await Parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        DbDataReader opened;
+        try
+        {
+            opened = await Parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (asStreamLocked(_items[0], e) is { } locked)
+        {
+            throw locked;
+        }
+
+        await using var reader = opened;
         await _items[0].ReadAsync(reader, Parent, token).ConfigureAwait(false);
 
         // 9.0 (#4375): indexed loop avoids the Skip+ToArray buffer allocation per batch query.
         for (var i = 1; i < _items.Count; i++)
         {
-            var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
+            bool hasNext;
+            try
+            {
+                hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception e) when (asStreamLocked(_items[i], e) is { } locked)
+            {
+                throw locked;
+            }
 
             if (!hasNext)
             {
@@ -219,6 +240,30 @@ internal partial class BatchedQuery: IBatchedQuery
 
             await _items[i].ReadAsync(reader, Parent, token).ConfigureAwait(false);
         }
+    }
+
+    // An exclusive fetch writes its `for update` first, so a failure while the reader advances INTO that
+    // item's results is the wait on that stream's row lock, and only that failure is translated.
+    private static StreamLockedException? asStreamLocked(IBatchQueryItem item, Exception e)
+    {
+        if (item.Handler is not IExclusiveFetchHandler exclusive || exclusive.ExclusiveStreamId is null)
+        {
+            return null;
+        }
+
+        var npgsql = e is MartenCommandException command
+            ? command.InnerException as NpgsqlException
+            : e as NpgsqlException;
+
+        if (npgsql is null)
+        {
+            return null;
+        }
+
+        var waitedOnLock = npgsql.SqlState == PostgresErrorCodes.InFailedSqlTransaction
+                           || MartenCommandException.IsReadTimeout(npgsql);
+
+        return waitedOnLock ? new StreamLockedException(exclusive.ExclusiveStreamId, npgsql) : null;
     }
 
     public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query) where TDoc : class

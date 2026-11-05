@@ -10,6 +10,7 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
+using Marten.Services.BatchQuerying;
 using Npgsql;
 using Weasel.Postgresql;
 using JasperFx.Events.Fetching;
@@ -236,7 +237,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         return new QueryHandler(this, id, handler, forUpdate);
     }
 
-    internal class QueryHandler: IQueryHandler<IEventStream<TDoc>>
+    internal class QueryHandler: IQueryHandler<IEventStream<TDoc>>, IExclusiveFetchHandler
     {
         private readonly FetchInlinedPlan<TDoc, TId> _parent;
         private readonly TId _id;
@@ -251,6 +252,8 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             _handler = handler;
             _forUpdate = forUpdate;
         }
+
+        public object? ExclusiveStreamId => _forUpdate ? _id : null;
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {

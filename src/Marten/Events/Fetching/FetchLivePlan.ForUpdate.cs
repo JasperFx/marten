@@ -10,6 +10,7 @@ using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
+using Marten.Services.BatchQuerying;
 using Npgsql;
 using Weasel.Postgresql;
 
@@ -114,7 +115,7 @@ internal partial class FetchLivePlan<TDoc, TId>
         return new ForUpdateQueryHandler(this, id, forUpdate);
     }
 
-    public class ForUpdateQueryHandler : IQueryHandler<IEventStream<TDoc>>
+    public class ForUpdateQueryHandler : IQueryHandler<IEventStream<TDoc>>, IExclusiveFetchHandler
     {
         private readonly FetchLivePlan<TDoc, TId> _parent;
         private readonly TId _id;
@@ -129,6 +130,8 @@ internal partial class FetchLivePlan<TDoc, TId>
 
             _handler = _parent._identityStrategy.BuildEventQueryHandler(_parent.IsGlobal, _id);
         }
+
+        public object? ExclusiveStreamId => _forUpdate ? _id : null;
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {

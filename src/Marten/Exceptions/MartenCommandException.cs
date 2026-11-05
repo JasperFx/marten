@@ -104,16 +104,21 @@ public class MartenCommandException: MartenException
 
         var explanation = "";
 
-        if (innerException is NpgsqlException
-            {
-                InnerException: TimeoutException { Message: "Timeout during reading attempt" }
-            })
+        if (IsReadTimeout(innerException))
         {
             explanation = Environment.NewLine + MaybeLockedRowsMessage + Environment.NewLine;
         }
 
         return
             $"Marten Command Failure:${Environment.NewLine}{prefix}{explanation}{ResolveCommandText(command, innerException)}${Environment.NewLine}${Environment.NewLine}";
+    }
+
+    internal static bool IsReadTimeout(Exception exception)
+    {
+        return exception is NpgsqlException
+        {
+            InnerException: TimeoutException { Message: "Timeout during reading attempt" }
+        };
     }
 
     /// <summary>
