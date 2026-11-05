@@ -87,6 +87,39 @@ public class cursor_paging_with_value_type_ids: OneOffConfigurationsContext
         paged.ShouldBe(expected);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task pages_through_every_row_when_a_nullable_value_type_leading_key_holds_nulls(bool descending)
+    {
+        // Nulls at a page boundary, inside a page, and trailing; ties on the non-null key
+        var shared = newId();
+        GuidId?[] keys = [null, null, shared, null, shared, newId(), null];
+        theSession.Store(keys.Select(key => new NullableValueTypeKeyDoc { Id = Guid.NewGuid(), Key = key }).ToArray());
+        await theSession.SaveChangesAsync();
+
+        var ordered = descending
+            ? theSession.Query<NullableValueTypeKeyDoc>().OrderByDescending(x => x.Key).ThenByDescending(x => x.Id)
+            : theSession.Query<NullableValueTypeKeyDoc>().OrderBy(x => x.Key).ThenBy(x => x.Id);
+
+        var expected = await ordered.Select(x => x.Id).ToListAsync();
+        expected.Count.ShouldBe(keys.Length);
+
+        var paged = new List<Guid>();
+        string cursor = null;
+        do
+        {
+            var page = await ordered.ToJsonPageByCursorAsync(cursor, pageSize: 2);
+
+            using var items = new MemoryStream(Encoding.UTF8.GetBytes(page.ItemsJson));
+            paged.AddRange(theStore.Serializer.FromJson<NullableValueTypeKeyDoc[]>(items).Select(x => x.Id));
+
+            cursor = page.NextCursor;
+        } while (cursor != null);
+
+        paged.ShouldBe(expected);
+    }
+
     [Fact]
     public async Task pages_through_all_documents_when_the_value_type_wraps_a_number()
     {
@@ -224,4 +257,10 @@ public class NullableValueTypeIdDoc
 {
     public GuidId? Id { get; set; }
     public int Rank { get; set; }
+}
+
+public class NullableValueTypeKeyDoc
+{
+    public Guid Id { get; set; }
+    public GuidId? Key { get; set; }
 }
