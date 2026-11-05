@@ -43,6 +43,7 @@ namespace TenantRebuildStress
         int BatchSize,
         int Concurrency,
         bool? Serialize,
+        int? LoadBudget,
         bool Seed,
         bool Rebuild)
     {
@@ -78,6 +79,7 @@ namespace TenantRebuildStress
                     "off" => false,
                     _ => null
                 },
+                values.ContainsKey("load-budget") ? number("load-budget", 0) : null,
                 mode is "seed" or "both",
                 mode is "rebuild" or "both");
         }
@@ -85,7 +87,7 @@ namespace TenantRebuildStress
         public override string ToString() =>
             $"tenants={Tenants}, events/tenant={StreamsPerTenant * EventsPerStream}, buckets/tenant={Buckets}, " +
             $"buckets/event={BucketsPerEvent}, payload={PayloadBytes / 1024}KB, batch={BatchSize}, " +
-            $"concurrency={Concurrency}, serialize={(Serialize?.ToString() ?? "unset")}";
+            $"concurrency={Concurrency}, serialize={(Serialize?.ToString() ?? "unset")}, load-budget={(LoadBudget?.ToString() ?? "unset")}";
     }
 
     // One bucket per (tenant, bucket id); every event touches BucketsPerEvent of them, so a page of events builds a
@@ -164,6 +166,15 @@ namespace TenantRebuildStress
                     property.SetValue(opts.Projections, serialize);
                 }
 
+                if (options.LoadBudget is { } budget)
+                {
+                    // jasperfx#1130's governor, by reflection for the same reason
+                    var property = opts.Projections.GetType().GetProperty("TenantLoadBudget")
+                                   ?? throw new InvalidOperationException(
+                                       "This JasperFx has no DaemonSettings.TenantLoadBudget (jasperfx#1130); run without --load-budget");
+                    property.SetValue(opts.Projections, budget);
+                }
+
                 opts.Projections.CompositeProjectionFor(Composite, c =>
                 {
                     c.Options.BatchSize = options.BatchSize;
@@ -237,7 +248,7 @@ namespace TenantRebuildStress
             Console.WriteLine($"Rebuilt in {elapsed.TotalSeconds:N1}s");
             Console.WriteLine($"Peak physical footprint (top MEM): {peak.Mem / 1024.0 / 1024.0:N0} MB, compressed (CMPRS) at that sample: {peak.CmprsAtMemPeak / 1024.0 / 1024.0:N0} MB, peak MEM+CMPRS: {peak.MemPlusCmprs / 1024.0 / 1024.0:N0} MB, {peak.Samples} samples");
             Console.WriteLine($"Buckets projected: {buckets:N0}, touches counted: {touches:N0} (at most {options.Tenants * options.StreamsPerTenant * options.EventsPerStream * options.BucketsPerEvent:N0}; an event that draws a bucket twice touches it once)");
-            Console.WriteLine($"RESULT|{typeof(IEvent).Assembly.GetName().Version}|{options.Serialize?.ToString() ?? "unset"}|{elapsed.TotalSeconds:F1}|{peak.Mem / 1024 / 1024}|{peak.MemPlusCmprs / 1024 / 1024}|{buckets}|{touches}");
+            Console.WriteLine($"RESULT|{typeof(IEvent).Assembly.GetName().Version}|{options.Serialize?.ToString() ?? "unset"}|{options.LoadBudget?.ToString() ?? "unset"}|{elapsed.TotalSeconds:F1}|{peak.Mem / 1024 / 1024}|{peak.MemPlusCmprs / 1024 / 1024}|{buckets}|{touches}");
         }
 
         private static async Task<(long buckets, long touches)> countAsync(DocumentStore store, HarnessOptions options)
