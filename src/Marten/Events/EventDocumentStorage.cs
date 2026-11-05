@@ -346,7 +346,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         {
             var dotnetTypeName = reader.GetFieldValue<string>(2);
 
-            mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName, readSequence(reader));
+            mapping = Events.EventMappingForDotNetTypeName(dotnetTypeName, eventTypeName, readSequence(reader));
         }
         // #4680: an upcaster mapping is the authoritative interpretation of the stored
         // event-type name (it was registered with that name as its SOURCE). Skip the
@@ -405,7 +405,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         {
             var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
 
-            mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName,
+            mapping = Events.EventMappingForDotNetTypeName(dotnetTypeName, eventTypeName,
                 await readSequenceAsync(reader, token).ConfigureAwait(false));
         }
         // #4680: see the sync Resolve overload above -- upcaster mappings are authoritative
@@ -493,31 +493,6 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         {
             return UnknownEventTypeException.UnknownSequence;
         }
-    }
-
-    /// <summary>
-    ///     #5048 / jasperfx#565: <paramref name="sequence" /> is threaded down from the row being read so the
-    ///     resulting <see cref="UnknownEventTypeException" /> can name the event that paused the shard, not
-    ///     just its unresolvable alias.
-    /// </summary>
-    private EventMapping eventMappingForDotNetTypeName(string dotnetTypeName, string eventTypeName, long sequence)
-    {
-        if (dotnetTypeName.IsEmpty())
-        {
-            throw new UnknownEventTypeException(eventTypeName, sequence);
-        }
-
-        Type type;
-        try
-        {
-            type = Events.TypeForDotNetName(dotnetTypeName);
-        }
-        catch (ArgumentNullException)
-        {
-            throw new UnknownEventTypeException(dotnetTypeName, sequence);
-        }
-
-        return Events.EventMappingFor(type);
     }
 
     public virtual Weasel.Storage.IStorageOperation

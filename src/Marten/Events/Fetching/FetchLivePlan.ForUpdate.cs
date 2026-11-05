@@ -5,12 +5,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
-using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
-using Npgsql;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Fetching;
@@ -32,77 +30,26 @@ internal partial class FetchLivePlan<TDoc, TId>
         _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, forUpdate);
 
         builder.StartNewCommand();
+        configureColdBoundary(builder, id);
 
         var handler = _identityStrategy.BuildEventQueryHandler(IsGlobal, id, selector);
         handler.ConfigureCommand(builder, session);
 
         try
         {
-            await using var reader =
-                await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+            LiveRead read;
+            await using (var reader =
+                         await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false))
+            {
+                read = await readAsync(reader, session, handler, true, cancellation).ConfigureAwait(false);
+            }
 
-            return await ReadIntoStream(session, id, cancellation, reader, handler).ConfigureAwait(false);
+            return await buildStreamAsync(session, id, read, cancellation).ConfigureAwait(false);
         }
         catch (Exception e)
         {
-            if (e.InnerException is NpgsqlException { SqlState: PostgresErrorCodes.InFailedSqlTransaction })
-            {
-                throw new StreamLockedException(id, e.InnerException);
-            }
-
-            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
-            {
-                throw new StreamLockedException(id, e.InnerException);
-            }
-
-            throw;
-        }
-    }
-
-    private async Task<IEventStream<TDoc>> ReadIntoStream(DocumentSessionBase session, TId id, CancellationToken cancellation,
-        DbDataReader reader, IQueryHandler<IReadOnlyList<IEvent>> handler)
-    {
-        long version = 0;
-        try
-        {
-            if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
-            {
-                version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
-            }
-
-            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
-            var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-            _telemetry.RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.LivePlan);
-
-            var document = await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
-            if (document != null)
-            {
-                _documentStorage.SetIdentity(document, id);
-            }
-
-            var stream = version == 0
-                ? _identityStrategy.StartStream(document, session, id, cancellation)
-                : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
-
-            // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
-            if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
-            {
-                session.StoreDocumentInItemMap(id, stream);
-            }
-
-            return stream;
-        }
-        catch (Exception e)
-        {
-            if (e.InnerException is NpgsqlException { SqlState: PostgresErrorCodes.InFailedSqlTransaction })
-            {
-                throw new StreamLockedException(id, e.InnerException);
-            }
-
-            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
-            {
-                throw new StreamLockedException(id, e.InnerException);
-            }
+            var locked = asStreamLocked(e, id);
+            if (locked != null) throw locked;
 
             throw;
         }
@@ -114,12 +61,13 @@ internal partial class FetchLivePlan<TDoc, TId>
         return new ForUpdateQueryHandler(this, id, forUpdate);
     }
 
-    public class ForUpdateQueryHandler : IQueryHandler<IEventStream<TDoc>>
+    public class ForUpdateQueryHandler : IFinishesAfterTheReader<IEventStream<TDoc>>
     {
         private readonly FetchLivePlan<TDoc, TId> _parent;
         private readonly TId _id;
         private readonly bool _forUpdate;
         private readonly IQueryHandler<IReadOnlyList<IEvent>> _handler;
+        private LiveRead _read;
 
         public ForUpdateQueryHandler(FetchLivePlan<TDoc, TId> parent, TId id, bool forUpdate)
         {
@@ -135,13 +83,35 @@ internal partial class FetchLivePlan<TDoc, TId>
             _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, _forUpdate);
 
             builder.StartNewCommand();
+            _parent.configureColdBoundary(builder, _id);
 
             _handler.ConfigureCommand(builder, session);
         }
 
-        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
-            return _parent.ReadIntoStream((DocumentSessionBase)session, _id, token, reader, _handler);
+            try
+            {
+                _read = await _parent.readAsync(reader, session, _handler, true, token).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                var locked = asStreamLocked(e, _id);
+                if (locked != null) throw locked;
+
+                throw;
+            }
+        }
+
+        public Task<IEventStream<TDoc>> FinishAsync(IStorageSession session, CancellationToken token)
+        {
+            return _parent.buildStreamAsync((DocumentSessionBase)session, _id, _read, token);
+        }
+
+        public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
+            await ReadAsync(reader, session, token).ConfigureAwait(false);
+            return await FinishAsync(session, token).ConfigureAwait(false);
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

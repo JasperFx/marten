@@ -32,6 +32,13 @@ internal class StreamsTable: Table
     /// </summary>
     public const string CompactedVersionColumn = "compacted_version";
 
+    /// <summary>
+    ///     The last version of the stream that lives in the application's cold event store rather than in
+    ///     <c>mt_events</c>, or null when none does. Only exists with a cold event store configured, and like
+    ///     <see cref="CompactedVersionColumn" /> it is written only by its own operation.
+    /// </summary>
+    public const string ColdVersionColumn = "cold_version";
+
     public StreamsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, TableName))
     {
         foreach (var index in events.IgnoredIndexes)
@@ -74,6 +81,11 @@ internal class StreamsTable: Table
         }
 
         AddColumn<long>(CompactedVersionColumn).NotNull().DefaultValueByExpression("0");
+
+        if (events.ColdEventStore != null)
+        {
+            AddColumn<long>(ColdVersionColumn).AllowNulls();
+        }
 
         var archiving = AddColumn<IsArchivedColumn>();
         if (events.UseArchivedStreamPartitioning)

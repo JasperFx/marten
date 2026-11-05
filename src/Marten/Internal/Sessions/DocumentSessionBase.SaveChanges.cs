@@ -58,6 +58,8 @@ public abstract partial class DocumentSessionBase
             await listener.BeforeSaveChangesAsync(this, token).ConfigureAwait(false);
         }
 
+        queueColdVersionVerification();
+
         // #5343 wired up IMessageBatch.BeforeCommitAsync, which Marten promised (IMessageBatch :
         // IMessageSink, IChangeListener) but never called. #5353 moved WHERE it is called from. It
         // used to run here, before the UpdateBatch was built and before the transaction was even
@@ -68,6 +70,7 @@ public abstract partial class DocumentSessionBase
         var batch = new UpdateBatch(_workTracker.AllOperations);
 
         await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
+        forgetObservedColdVersions();
 
         if (_messageBatch != null)
         {

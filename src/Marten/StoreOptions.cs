@@ -1240,6 +1240,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         // themselves. Mirrors the user-facing helper but skips registering the
         // policy that would partition every multi-tenanted document — opting in
         // to per-tenant events doesn't implicitly opt in document tables.
+        if (EventGraph.ColdEventStore != null && EventGraph.StreamIdentity != StreamIdentity.AsString)
+        {
+            throw new InvalidOperationException(
+                "Cold event storage supports string stream identity only. Use Events.StreamIdentity = " +
+                "StreamIdentity.AsString with Events.UseColdEventStore().");
+        }
+
         if (Events.UseTenantPartitionedEvents && TenantPartitions == null)
         {
             _ = new Schema.MartenManagedTenantListPartitions(this, schemaName: null);
