@@ -186,15 +186,47 @@ internal static class CursorPagination
                 andExpression = andExpression == null ? equals : Expression.AndAlso(andExpression, equals);
             }
 
-            var comparison = BuildComparison(orderings[i], values[i], parameter,
-                orderings[i].Descending ? ComparisonKind.LessThan : ComparisonKind.GreaterThan, options);
+            var after = BuildAfter(orderings[i], values[i], parameter, options);
+            if (after == null)
+            {
+                // Nothing sorts after a null boundary in this key, so only the tie-breaking terms can match
+                continue;
+            }
 
-            andExpression = andExpression == null ? comparison : Expression.AndAlso(andExpression, comparison);
+            andExpression = andExpression == null ? after : Expression.AndAlso(andExpression, after);
 
             orExpression = orExpression == null ? andExpression : Expression.OrElse(orExpression, andExpression);
         }
 
+        orExpression ??= Expression.Constant(false);
+
         return Expression.Lambda<Func<T, bool>>(orExpression!, parameter);
+    }
+
+    /// <summary>
+    /// The term selecting rows that sort strictly after <paramref name="value"/> in this ordering, or null
+    /// when no row can. PostgreSQL sorts NULL last ascending and first descending, and a plain comparison
+    /// against NULL is never true, so a nullable key needs explicit terms or its null rows are dropped.
+    /// </summary>
+    private static Expression? BuildAfter(CursorOrdering ordering, object? value, ParameterExpression parameter,
+        StoreOptions options)
+    {
+        var left = new ReplaceParameterVisitor(ordering.Selector.Parameters[0], parameter).Visit(ordering.Selector.Body)!;
+        var canBeNull = !left.Type.IsValueType || Nullable.GetUnderlyingType(left.Type) != null;
+
+        Expression IsNull() => Expression.Equal(left, Expression.Constant(null, left.Type));
+
+        if (value == null)
+        {
+            // Ascending: null is last, nothing follows it. Descending: null is first, every non-null row follows.
+            return ordering.Descending && canBeNull ? Expression.Not(IsNull()) : null;
+        }
+
+        var comparison = BuildComparison(ordering, value, parameter,
+            ordering.Descending ? ComparisonKind.LessThan : ComparisonKind.GreaterThan, options);
+
+        // Ascending: null rows come after every non-null boundary. Descending: they came before it.
+        return !ordering.Descending && canBeNull ? Expression.OrElse(comparison, IsNull()) : comparison;
     }
 
     private enum ComparisonKind
@@ -326,6 +358,19 @@ internal static class CursorPagination
                 if (root[i].ValueKind is JsonValueKind.Object or JsonValueKind.Array)
                 {
                     throw new ArgumentException("Invalid cursor.", nameof(cursor));
+                }
+
+                if (root[i].ValueKind == JsonValueKind.Null)
+                {
+                    // The last row of the page held no value for this key. Only a key that can hold null
+                    // produces that, so anything else is a tampered cursor.
+                    var keyType = orderings[i].KeyType;
+                    if (keyType.IsValueType && Nullable.GetUnderlyingType(keyType) == null)
+                    {
+                        throw new ArgumentException("Invalid cursor.", nameof(cursor));
+                    }
+
+                    continue;
                 }
 
                 try
