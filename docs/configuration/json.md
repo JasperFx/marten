@@ -58,6 +58,16 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L123-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: warning
+With `EnumStorage.AsString`, an enum member renamed for the serializer (`[JsonStringEnumMemberName]` for System.Text.Json,
+`[EnumMember]` for Newtonsoft) is spelled differently in two places. The JSON body holds the serializer's name
+(for example `apotheek-houdend`), but a [duplicated field](/documents/indexing/duplicated-fields) column holds the member's
+*declared* name (`Apotheek`), because the column is written by the document storage rather than the serializer. Marten's
+LINQ provider compares against whichever one it targets, so queries through Marten are correct. Anything reading the column
+directly, such as SQL written outside Marten, needs to use the declared name. This is a known limitation
+([#5388](https://github.com/JasperFx/marten/issues/5388)); aligning the column would rewrite existing data.
+:::
+
 ## Field Names Casing
 
 By default, Marten stores field names "as they are" (C# naming convention is PascalCase for public properties).
