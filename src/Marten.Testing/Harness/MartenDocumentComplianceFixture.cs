@@ -64,7 +64,14 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     /// and <c>Metadata.Revision</c>, so the per-tenant revision fact runs rather than skipping.
     /// BuildStoreAsync replays <c>DocumentComplianceConfig.NumericRevisionTypes</c> to match.
     /// </summary>
-    public override bool SupportsNumericRevisions => true;
+    /// <remarks>
+    /// FALSE since marten#5827, until marten#5788 lands. This one flag gates both the per-tenant revision fact of
+    /// DocumentConjoinedTenancyCompliance AND the whole NumericRevisionCompliance suite, and that suite fails 6 of 9
+    /// facts because Store() on an IRevisioned document ignores its Version (marten#5788). ComplianceSuiteInventory
+    /// refuses to excuse a suite whose flag is true, so the suite is excused for #5788 and the flag has to say the
+    /// same. Restore it to true, and enroll the suite, in the fix for #5788.
+    /// </remarks>
+    public override bool SupportsNumericRevisions => false;
 
     public override bool SupportsConjoinedDocuments => true;
 
