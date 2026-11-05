@@ -368,7 +368,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         return new ForUpdateQueryHandler(this, id, forUpdate, !forUpdate && canShareOneSnapshot(dsb));
     }
 
-    public class ForUpdateQueryHandler: IQueryHandler<IEventStream<TDoc>>, IOpensItsOwnTransaction
+    public class ForUpdateQueryHandler: IQueryHandler<IEventStream<TDoc>>, IOpensItsOwnTransaction, IExclusiveFetchHandler
     {
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
@@ -387,6 +387,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         public bool OpensItsOwnTransaction => _sharedSnapshot;
 
         public string CallName => "FetchForWriting";
+
+        public object? ExclusiveStreamId => _forUpdate ? _id : null;
 
         public ForUpdateQueryHandler(FetchAsyncPlan<TDoc,TId> parent, TId id, bool forUpdate, bool sharedSnapshot)
         {

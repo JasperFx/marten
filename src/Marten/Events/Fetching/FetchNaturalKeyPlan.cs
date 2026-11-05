@@ -13,6 +13,7 @@ using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
+using Marten.Services.BatchQuerying;
 using Npgsql;
 using Weasel.Postgresql;
 
@@ -582,7 +583,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         return await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
     }
 
-    internal class NaturalKeyQueryHandler: IQueryHandler<IEventStream<TDoc>>
+    internal class NaturalKeyQueryHandler: IQueryHandler<IEventStream<TDoc>>, IExclusiveFetchHandler
     {
         private readonly FetchNaturalKeyPlan<TDoc, TNaturalKey> _parent;
         private readonly TNaturalKey _id;
@@ -599,6 +600,8 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
             _forUpdate = forUpdate;
             _checkVersion = checkVersion;
         }
+
+        public object? ExclusiveStreamId => _forUpdate ? _id : null;
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
