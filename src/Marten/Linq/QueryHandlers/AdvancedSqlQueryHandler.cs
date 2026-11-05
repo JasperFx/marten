@@ -22,7 +22,7 @@ namespace Marten.Linq.QueryHandlers;
 [UnconditionalSuppressMessage("Trimming", "IL2090",
     Justification = "Class-level: generic class type-argument flow on the aggregator / storage instantiation. Types preserved at the projection-registration boundary.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase<T>, IQueryHandler<IReadOnlyList<T>>
 {
     public AdvancedSqlQueryHandler(IStorageSession session, char placeholder, string sql, object[] parameters): base(placeholder, sql, parameters)
@@ -86,7 +86,7 @@ internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase<
 [UnconditionalSuppressMessage("Trimming", "IL2090",
     Justification = "Class-level: generic class type-argument flow on the aggregator / storage instantiation. Types preserved at the projection-registration boundary.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal abstract class AdvancedSqlQueryHandlerBase<TResult>
 {
     protected readonly char Placeholder;
