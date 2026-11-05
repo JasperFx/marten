@@ -271,6 +271,60 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
     public override IDocumentOperations OpenSession() => _store.LightweightSession();
 
+    /// <summary>
+    ///     Marten switches tenants on an open session through <c>IDocumentOperations.ForTenant</c>, which
+    ///     returns an <c>ITenantOperations</c> sharing the parent's unit of work. The session is not an
+    ///     <c>ITenantedQuerySession&lt;IDocumentOperations&gt;</c> (only the query side is), hence the override.
+    /// </summary>
+    public override bool SupportsSessionTenantSwitching => true;
+
+    public override IDocumentOperations ForTenant(IDocumentOperations session, string tenantId)
+        => session.ForTenant(tenantId);
+
+    /// <summary>
+    ///     Held open by a session on this fixture's own connection and transaction, via
+    ///     <c>SessionOptions.ForTransaction</c>, so the row is written by the store's own append SQL
+    ///     (the quick-append function, which allocates the sequence number) and committed only when the
+    ///     returned handle is disposed.
+    /// </summary>
+    public override bool SupportsHoldingAnAppendOpen => true;
+
+    public override async Task<IAsyncDisposable> HoldAppendOpenAsync(Guid streamId, object @event,
+        CancellationToken token)
+    {
+        var connection = _store.Storage.Database.CreateConnection();
+        try
+        {
+            await connection.OpenAsync(token).ConfigureAwait(false);
+            var transaction = await connection.BeginTransactionAsync(token).ConfigureAwait(false);
+            var session = _store.LightweightSession(SessionOptions.ForTransaction(transaction));
+
+            session.Events.StartStream(streamId, @event);
+            await session.SaveChangesAsync(token).ConfigureAwait(false);
+
+            return new HeldAppend(connection, transaction, session);
+        }
+        catch
+        {
+            await connection.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    private sealed class HeldAppend(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        IDocumentSession session): IAsyncDisposable
+    {
+        public async ValueTask DisposeAsync()
+        {
+            await transaction.CommitAsync().ConfigureAwait(false);
+            await session.DisposeAsync().ConfigureAwait(false);
+            await transaction.DisposeAsync().ConfigureAwait(false);
+            await connection.DisposeAsync().ConfigureAwait(false);
+        }
+    }
+
     // No shared JasperFx interface declares SaveChangesAsync -- in Marten it lives on
     // IDocumentSession, which every session handed out by OpenSession() actually is.
     public override Task SaveChangesAsync(IDocumentOperations session, CancellationToken token)
