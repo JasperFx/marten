@@ -246,20 +246,24 @@ internal partial class BatchedQuery: IBatchedQuery
     // item's results is the wait on that stream's row lock, and only that failure is translated.
     private static StreamLockedException? asStreamLocked(IBatchQueryItem item, Exception e)
     {
-        if (item.Handler is not IExclusiveFetchHandler { ExclusiveStreamId: { } streamId }
-            || e switch
-            {
-                NpgsqlException raw => raw,
-                MartenCommandException { InnerException: NpgsqlException wrapped } => wrapped,
-                _ => null
-            } is not { } npgsql)
+        if (item.Handler is not IExclusiveFetchHandler exclusive || exclusive.ExclusiveStreamId is null)
         {
             return null;
         }
 
-        return npgsql.SqlState == PostgresErrorCodes.InFailedSqlTransaction || MartenCommandException.IsReadTimeout(npgsql)
-            ? new StreamLockedException(streamId, npgsql)
-            : null;
+        var npgsql = e is MartenCommandException command
+            ? command.InnerException as NpgsqlException
+            : e as NpgsqlException;
+
+        if (npgsql is null)
+        {
+            return null;
+        }
+
+        var waitedOnLock = npgsql.SqlState == PostgresErrorCodes.InFailedSqlTransaction
+                           || MartenCommandException.IsReadTimeout(npgsql);
+
+        return waitedOnLock ? new StreamLockedException(exclusive.ExclusiveStreamId, npgsql) : null;
     }
 
     public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query) where TDoc : class
