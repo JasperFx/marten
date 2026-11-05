@@ -116,7 +116,7 @@ namespace TenantRebuildStress
             Identities<Touched>(e => e.Buckets);
         }
 
-        public StressBucket Create(Touched e) => new() { Payload = new string('x', PayloadBytes) };
+        public StressBucket Create(Touched e) => new() { Count = 1, Payload = new string('x', PayloadBytes) };
 
         public void Apply(StressBucket bucket, Touched e) => bucket.Count++;
     }
@@ -236,7 +236,7 @@ namespace TenantRebuildStress
 
             Console.WriteLine($"Rebuilt in {elapsed.TotalSeconds:N1}s");
             Console.WriteLine($"Peak physical footprint (top MEM): {peak.Mem / 1024.0 / 1024.0:N0} MB, compressed (CMPRS) at that sample: {peak.CmprsAtMemPeak / 1024.0 / 1024.0:N0} MB, peak MEM+CMPRS: {peak.MemPlusCmprs / 1024.0 / 1024.0:N0} MB, {peak.Samples} samples");
-            Console.WriteLine($"Buckets projected: {buckets:N0}, touches counted: {touches:N0} (expected {options.Tenants * options.StreamsPerTenant * options.EventsPerStream * options.BucketsPerEvent:N0} at most, fewer where an event drew a bucket twice)");
+            Console.WriteLine($"Buckets projected: {buckets:N0}, touches counted: {touches:N0} (at most {options.Tenants * options.StreamsPerTenant * options.EventsPerStream * options.BucketsPerEvent:N0}; an event that draws a bucket twice touches it once)");
             Console.WriteLine($"RESULT|{typeof(IEvent).Assembly.GetName().Version}|{options.Serialize?.ToString() ?? "unset"}|{elapsed.TotalSeconds:F1}|{peak.Mem / 1024 / 1024}|{peak.MemPlusCmprs / 1024 / 1024}|{buckets}|{touches}");
         }
 
