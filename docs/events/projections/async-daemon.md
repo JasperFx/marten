@@ -270,6 +270,74 @@ behavior. The governors apply to continuous (running daemon) work only — proje
 by `MaxConcurrentRebuildsPerDatabase`, which derives its default from the Npgsql connection pool size. See
 [Capping Rebuild Concurrency](/events/projections/rebuilding#capping-rebuild-concurrency).
 
+## Bounding Daemon Memory Under Per-Tenant Partitioning <Badge type="tip" text="9.58" />
+
+The connection governors above bound how many agents talk to the database at once. They do not bound how much the
+daemon holds in **memory**. Under [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning),
+every (projection × tenant) agent loads its own pages of events and builds its own batch of projected documents,
+and `MaxConcurrentBatchWritesPerDatabase` is only taken *after* a batch is built. So the memory held in loaded
+events and built batches grows with the number of tenant agents on the node. That number is often in the hundreds
+when a rebuild or a blue/green warm-up starts every tenant at once. A projection whose events fan out to many
+documents (a multi-stream projection touching thousands of aggregates per page) makes each of those batches large.
+
+The recommended bound is a **tenant load budget**: one budget of loaded-but-uncommitted events, shared by every
+per-tenant agent of the store on this node, across all of its projections and databases:
+
+```cs
+// Recommended: a few pages' worth of events for the whole node
+opts.Projections.TenantLoadBudget = 2000;
+
+// Optional, and on by default once a budget is set: stop letting agents load new pages
+// while GC memory load is at or above this fraction of the GC's high memory load threshold
+opts.Projections.TenantLoadMemoryThreshold = 0.9;
+```
+
+* **Each page reserves part of the budget before it loads.** An agent reserves a page's worth (`BatchSize` events)
+  before it loads, keeps what the page actually holds, and gives it back once the page commits. While there's room
+  and nobody is waiting, loads go straight through, so a quiet node runs exactly as it would without a budget.
+* **When the budget is tight, tenants take turns.** Agents wait in line, first come first served, and are let in one
+  page at a time. Every tenant keeps moving and none falls behind indefinitely. A waiting agent stays running and
+  assigned (Wolverine and CritterWatch see no stop/start churn); it just doesn't load.
+* **It reacts to memory pressure.** With `TenantLoadMemoryThreshold` set (0.9 by default; `null` turns it off), no new
+  pages are handed out while GC memory load is at or above that fraction, however much budget is left.
+* **It always makes progress.** A page is always allowed when nothing at all is in flight, so a budget smaller than
+  one page slows the node to one page at a time rather than stopping it.
+* **It covers rebuilds and continuous work.** Composite rebuilds reserve for each page they replay and hold it until
+  the page has been processed, so the budget bounds built batches there too.
+* **Size it in pages.** Something like 2 to 8 × `BatchSize` is the useful range. Zero or negative (the default) is
+  unbounded. It applies only to per-tenant shards; store-global shards are unaffected.
+
+`SerializeTenantProjectionBatches` is a stricter alternative. Each projection's tenants on the node build and commit
+their batches one at a time, through a single queue shared by every database of the store:
+
+```cs
+opts.Projections.SerializeTenantProjectionBatches = true;
+```
+
+It holds at most one built batch per projection on the node. The cost is throughput: one projection's tenants no
+longer build in parallel, in continuous mode as well as in rebuilds. A budget of about one page gets the same memory
+for the same cost, and a budget of a few pages keeps nearly all of the saving at full speed, so prefer the budget.
+Turning both on adds nothing over the queue alone.
+
+### Measured
+
+Marten's `src/TenantRebuildStress` harness rebuilds a two-stage composite whose first stage is a multi-stream
+projection. Each page builds about 3,000 upserts of 8 KB documents. The run: 24 tenants rebuilding at once, 1,000
+events per tenant, `BatchSize` 500. The figures are peak physical footprint on a MacBook, and every configuration
+projected identical results:
+
+| Configuration | Workstation GC | Server GC | Rebuild time (workstation GC) |
+|---|---|---|---|
+| Unbounded | 8.2 GB | 5.8 GB | 8.6 s |
+| `TenantLoadBudget = 2000` (4 pages) | 1.2–1.4 GB | 3.8 GB | 7.6 s |
+| `TenantLoadBudget = 500` (1 page) | 0.35 GB | 2.1 GB | 17.8 s |
+| `SerializeTenantProjectionBatches = true` | 0.36 GB | 5.0 GB | 16.4 s |
+
+Under server GC on a many-core machine, the GC's own per-heap budgets set much of the footprint, which is why the
+queue barely helps there. The load budget still cuts it, because it bounds how many pages are loaded and built at
+once. Measure your own workload, ideally in a memory-limited container like the one you deploy to. The harness takes
+`--load-budget`, `--serialize on|off` and the scenario's sizes on the command line.
+
 ## Graceful Shutdown and the Drain Timeout <Badge type="tip" text="9.20" />
 
 When a projection or subscription shard is stopped, the daemon does not simply cancel it. It first tries to

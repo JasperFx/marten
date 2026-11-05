@@ -199,6 +199,13 @@ combination with no further configuration:
   `Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()` (though the two compose if you want partitioned
   document tables too).
 
+::: tip Bounding the daemon's memory
+One agent per tenant means the daemon's memory grows with the number of tenant agents on a node: each one holds its
+own loaded events and its own built batch. The connection governors and the rebuild cap don't bound that. To bound
+it, set `opts.Projections.TenantLoadBudget`, which is opt-in and the recommended setting for stores with many
+tenants. See [Bounding Daemon Memory Under Per-Tenant Partitioning](/events/projections/async-daemon#bounding-daemon-memory-under-per-tenant-partitioning).
+:::
+
 ### Constraints
 
 Per-tenant partitioning is validated at `DocumentStore` construction. The following combinations throw immediately
