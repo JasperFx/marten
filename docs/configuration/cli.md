@@ -104,6 +104,19 @@ dotnet run -- help [command]
 
 To see more information about the use of that command.
 
+::: info Where the commands come from
+The `db-apply`, `db-assert`, `db-dump`, `db-list` and `db-patch` commands are [Weasel](https://weasel.jasperfx.net/cli/)'s, and Marten registers
+its databases, every tenant database included, with Weasel so that they see them. Each has its own reference page:
+[db-apply](https://weasel.jasperfx.net/cli/db-apply.html), [db-assert](https://weasel.jasperfx.net/cli/db-assert.html),
+[db-patch](https://weasel.jasperfx.net/cli/db-patch.html), [db-dump](https://weasel.jasperfx.net/cli/db-dump.html) and
+[db-list](https://weasel.jasperfx.net/cli/db-list.html).
+
+The `resources` command is JasperFx's [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html) model. Marten's database is one
+such resource, so `resources setup` applies the same migration `db-apply` does, and `resources check` runs the same comparison as `db-assert`,
+but across *every* resource in the application: Wolverine's message storage and message broker objects too. See
+[Schema Migrations and Patches](/schema/migrations#choosing-an-approach) for when to reach for which.
+:::
+
 ## Example Commands
 
 Run these commands in your project's directory.

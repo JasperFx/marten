@@ -17,6 +17,23 @@ While it's going to be far less mechanical work than persisting an application v
 matching schema objects in your Postgresql database and you'll need some mechanism for keeping your database schema up to date
 with the Marten `StoreOptions` configuration in your system.
 
+## Choosing an Approach
+
+Marten always computes the migration the same way: Weasel compares the schema objects your `StoreOptions` describe against the live
+database and produces the DDL for the difference. What you choose is *when* that runs and *who* runs it:
+
+| Approach | How | Typical use |
+|---|---|---|
+| Lazily, on first use of each document type or the event store | A permissive `AutoCreateSchemaObjects` mode, described in the next section | Local development |
+| Once at application startup | `.ApplyAllDatabaseChangesOnStartup()` on `AddMarten()`, or `services.AddResourceSetupOnStartup()` to set up every [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html) in the application, Wolverine's message storage and broker objects included | Development, integration tests, and production deployments where the application owns its schema |
+| As an explicit deployment step | `dotnet run -- `[`db-apply`](https://weasel.jasperfx.net/cli/db-apply.html), or `dotnet run -- resources setup` for every resource at once, with the application itself on `AutoCreate.None` | Production, when the deployment identity may run DDL |
+| From reviewed SQL scripts | `dotnet run -- `[`db-patch`](https://weasel.jasperfx.net/cli/db-patch.html) and [`db-dump`](https://weasel.jasperfx.net/cli/db-dump.html), applied by a DBA or a migration tool, with the application on `AutoCreate.None` | Production, when the application's credentials cannot run DDL |
+
+In every case, `dotnet run -- `[`db-assert`](https://weasel.jasperfx.net/cli/db-assert.html) (or `resources check`) tells you whether the database matches the
+configuration without changing anything, and is the right gate for a deployment pipeline. The rest of this page covers each option
+for Marten; the Weasel documentation has the engine-level view of the [migration model and `AutoCreate` policy](https://weasel.jasperfx.net/core/schema-migrations.html)
+and the [command line tools](https://weasel.jasperfx.net/cli/).
+
 ## Development Time with "Auto Create" Mode
 
 ::: warning
@@ -116,7 +133,8 @@ using var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MigrationSamples.cs#L11-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-document-types-upfront' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The easiest possible way to export SQL migration files is to use Marten's [command line tooling](/configuration/cli) with the single command:
+The easiest possible way to export SQL migration files is to use Marten's [command line tooling](/configuration/cli) with the single command
+(see [db-patch](https://weasel.jasperfx.net/cli/db-patch.html) in the Weasel documentation for its options):
 
 ```bash
 dotnet run -- db-patch [filename]
@@ -166,7 +184,8 @@ await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MigrationSamples.cs#L25-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_applyallconfiguredchangestodatabase' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-With the [command line tooling](/configuration/cli), it's:
+With the [command line tooling](/configuration/cli), it's ([db-apply](https://weasel.jasperfx.net/cli/db-apply.html) in the Weasel documentation,
+including the `--parallel` flag for a store with many tenant databases):
 
 ```bash
 dotnet run -- db-apply
@@ -204,6 +223,18 @@ services.AddMarten(opts =>
 
 In the option above, Marten is calling the same functionality within an `IHostedService` background task.
 
+Marten's database is also a JasperFx [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html), so the same migration runs when
+you set up every resource in the application at once. `services.AddResourceSetupOnStartup()` does it at startup, and covers Wolverine's
+message storage and any message broker queues alongside the Marten schema, while the command line equivalent is:
+
+```bash
+dotnet run -- resources setup
+```
+
+Both `db-apply` and `resources setup` are an explicit instruction to migrate, so both apply the changes as `CreateOrUpdate` even when
+`AutoCreateSchemaObjects` is `None`. That is the recommended production recipe when the deployment identity is allowed to run DDL:
+leave the application on `None`, and run one of these as a deployment step.
+
 ## Assert that a Schema Matches the Configuration
 
 As a possible [environment test](http://codebetter.com/jeremymiller/2006/04/06/environment-tests-and-self-diagnosing-configuration-with-structuremap/), Marten can do a complete check of its known configuration versus the active Postgresql database and assert any differences
@@ -219,7 +250,7 @@ await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
 
 The exception will list out all the DDL changes that are missing.
 
-With the [command line tooling](/configuration/cli), it's:
+With the [command line tooling](/configuration/cli), it's ([db-assert](https://weasel.jasperfx.net/cli/db-assert.html) in the Weasel documentation):
 
 ```bash
 dotnet run -- db-assert
