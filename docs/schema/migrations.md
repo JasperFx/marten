@@ -23,13 +23,13 @@ Marten always computes the migration the same way: Weasel compares the schema ob
 database and produces the DDL for the difference. What you choose is *when* that runs and *who* runs it:
 
 | Approach | How | Typical use |
-|---|---|---|
+| --- | --- | --- |
 | Lazily, on first use of each document type or the event store | A permissive `AutoCreateSchemaObjects` mode, described in the next section | Local development |
 | Once at application startup | `.ApplyAllDatabaseChangesOnStartup()` on `AddMarten()`, or `services.AddResourceSetupOnStartup()` to set up every [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html) in the application, Wolverine's message storage and broker objects included | Development, integration tests, and production deployments where the application owns its schema |
-| As an explicit deployment step | `dotnet run -- `[`db-apply`](https://weasel.jasperfx.net/cli/db-apply.html), or `dotnet run -- resources setup` for every resource at once, with the application itself on `AutoCreate.None` | Production, when the deployment identity may run DDL |
-| From reviewed SQL scripts | `dotnet run -- `[`db-patch`](https://weasel.jasperfx.net/cli/db-patch.html) and [`db-dump`](https://weasel.jasperfx.net/cli/db-dump.html), applied by a DBA or a migration tool, with the application on `AutoCreate.None` | Production, when the application's credentials cannot run DDL |
+| As an explicit deployment step | `dotnet run -- db-apply` ([reference](https://weasel.jasperfx.net/cli/db-apply.html)), or `dotnet run -- resources setup` for every resource at once, with the application itself on `AutoCreate.None` | Production, when the deployment identity may run DDL |
+| From reviewed SQL scripts | `dotnet run -- db-patch` and `dotnet run -- db-dump` ([db-patch](https://weasel.jasperfx.net/cli/db-patch.html), [db-dump](https://weasel.jasperfx.net/cli/db-dump.html)), applied by a DBA or a migration tool, with the application on `AutoCreate.None` | Production, when the application's credentials cannot run DDL |
 
-In every case, `dotnet run -- `[`db-assert`](https://weasel.jasperfx.net/cli/db-assert.html) (or `resources check`) tells you whether the database matches the
+In every case, `dotnet run -- db-assert` ([reference](https://weasel.jasperfx.net/cli/db-assert.html)) or `resources check` tells you whether the database matches the
 configuration without changing anything, and is the right gate for a deployment pipeline. The rest of this page covers each option
 for Marten; the Weasel documentation has the engine-level view of the [migration model and `AutoCreate` policy](https://weasel.jasperfx.net/core/schema-migrations.html)
 and the [command line tools](https://weasel.jasperfx.net/cli/).
@@ -80,7 +80,7 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L58-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-As long as you're using a permissive auto creation mode (i.e., not _None_), you should be able to code in your application model
+As long as you're using a permissive auto creation mode (i.e., not *None*), you should be able to code in your application model
 and let Marten change your development database as needed behind the scenes to match the active configuration.
 
 ::: warning
@@ -92,7 +92,7 @@ Two things about these modes are commonly misread, and both matter for choosing 
 * **`None` does not validate anything.** The lazy `EnsureStorageExistsAsync()` path returns without touching the database, so a
   missing or stale table surfaces later as a raw PostgreSQL error (`42P01 relation does not exist`) rather than as a Marten
   message about configuration drift. Validation is a separate, explicit call: `AssertDatabaseMatchesConfigurationAsync()` or the
-  `db-assert` command. And `None` does not block the _apply_ commands either —
+  `db-assert` command. And `None` does not block the *apply* commands either —
   `ApplyAllConfiguredChangesToDatabaseAsync()`, `db-apply` and `resources setup` deliberately treat `None` as `CreateOrUpdate`
   and migrate anyway, on the reasoning that you only run those when you mean to.
 :::

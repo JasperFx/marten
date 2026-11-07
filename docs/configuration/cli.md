@@ -129,7 +129,7 @@ dotnet run -- projections list
 
 ### Rebuild Your Projections
 
-To rebuild _all_ of your projections:
+To rebuild *all* of your projections:
 
 ```bash
 dotnet run -- projections rebuild
