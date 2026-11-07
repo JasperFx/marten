@@ -81,8 +81,13 @@ The second option is to supply a [nested closure](https://martinfowler.com/dslCa
 The samples below use `CritterStackDefaults(...)` to wire per-environment defaults for resource
 auto-create and code generation mode. `CritterStackDefaults` and the underlying `JasperFxOptions`
 are part of the shared JasperFx infrastructure that Marten and Wolverine consume in common — see
-the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/) for the full set
+the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/configuration/critter-stack-defaults.html) for the full set
 of options and how development / production defaults are resolved.
+
+`ResourceAutoCreate` is the default `AutoCreate` for every [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html)
+in the application, so setting it to `None` for `Production` turns off automatic schema migration for Marten *and* for Wolverine's
+message storage in one place. The schema still has to get there somehow; see
+[Schema Migrations and Patches](/schema/migrations#choosing-an-approach) for the deployment-time options.
 :::
 
 <!-- snippet: sample_addmartenbynestedclosure -->

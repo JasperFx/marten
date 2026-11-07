@@ -55,6 +55,13 @@ To prevent unnecessary loss of data, even in development, on the first usage of 
 
 Our thought is that in development you probably run in the "All" mode, but in production use one of the more restrictive auto creation modes.
 
+::: tip
+The `AutoCreate` policy and the migration engine behind it belong to [Weasel](https://weasel.jasperfx.net/core/schema-migrations.html#autocreate-policy),
+which Marten shares with Polecat, Fisher and Wolverine. For the choice between letting Marten migrate lazily, applying the schema at startup,
+running `db-apply` or `resources setup` as a deployment step, or handing `db-patch` scripts to a DBA, see
+[Schema Migrations and Patches](/schema/migrations#choosing-an-approach).
+:::
+
 **As of Marten v0.9.2, Marten will also check if the existing _upsert_ function and any table indexes match
 what is configured in the document store, and attempts to update these objects if necessary based on the same
 All/None/CreateOnly/CreateOrUpdate rules as the table storage.**

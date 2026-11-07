@@ -219,7 +219,7 @@ newly discovered tenant. If a record is found, the new tenancy strategy caches t
 Now, let me try to anticipate a couple questions you might have here:
 
 * **Can Marten track and apply database schema changes to new tenant databases at runtime?** Yes, Marten does the schema check tracking on a database by database basis. This means that if you add a new tenant database to that underlying table, Marten will absolutely be able to make schema changes as needed to just that tenant database regardless of the state of other tenant databases.
-* **Will the Marten command line tools recognize new tenant databases?** Yes, same thing. If you call dotnet run -- marten-apply for example, Marten will do the schema migrations independently for each tenant database, so any outstanding changes will be performed on each tenant database.
+* **Will the Marten command line tools recognize new tenant databases?** Yes, same thing. If you call `dotnet run -- db-apply` for example (see [db-apply](https://weasel.jasperfx.net/cli/db-apply.html), whose `--parallel` flag exists for exactly this case), Marten will do the schema migrations independently for each tenant database, so any outstanding changes will be performed on each tenant database. The same goes for `db-assert`, `db-patch` and `resources setup`.
 * **Can Marten spin up asynchronous projections for a new tenant database without requiring downtime?** Yes! Check out this big ol’ integration test proving that the new Marten V7 version of the async daemon can handle that just fine:
 
 ```csharp
