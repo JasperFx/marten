@@ -2,8 +2,19 @@
 
 ::: tip
 The command line tooling described on this page is provided by the shared JasperFx infrastructure
-libraries. For the full reference of available commands, extensibility points, and `JasperFxOptions`,
-see the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
+libraries, and the [JasperFx command line documentation](https://shared-libs.jasperfx.net/cli/) is the
+reference for it: [writing your own commands](https://shared-libs.jasperfx.net/cli/writing-commands),
+[arguments and flags](https://shared-libs.jasperfx.net/cli/arguments-flags),
+[environment checks](https://shared-libs.jasperfx.net/cli/environment-checks),
+[`describe`](https://shared-libs.jasperfx.net/cli/describe) and
+[stateful resources](https://shared-libs.jasperfx.net/cli/resources). This page covers what Marten adds.
+:::
+
+::: info Native AOT
+Since JasperFx 2.101.0 the command line also runs from a Native AOT binary, not just under `dotnet run`,
+provided every assembly that contributes commands is built with `JasperFx.SourceGenerator`. Marten is.
+See [Native AOT](https://shared-libs.jasperfx.net/cli/#native-aot) in the JasperFx documentation for what
+your application needs, and [Publishing Marten with Native AOT](/configuration/aot-publishing#the-command-line-in-the-native-binary).
 :::
 
 ::: tip

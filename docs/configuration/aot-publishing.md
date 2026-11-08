@@ -22,7 +22,7 @@ AOT publishing is the right choice for serverless / Lambda / fast-restart worklo
 
 ## How Marten 9 differs from the broader Critter Stack AOT story
 
-The [JasperFx AOT publishing guide](https://github.com/JasperFx/jasperfx/blob/main/docs/codegen/aot.md) describes a **two-phase model** where dev-time `dotnet run -- codegen write` produces pre-built `Internal/Generated/*.cs` files that the publish-time AOT compile then consumes. **That two-phase model does not apply to Marten 9.**
+The [JasperFx AOT publishing guide](https://shared-libs.jasperfx.net/codegen/aot) describes a **two-phase model** where dev-time `dotnet run -- codegen write` produces pre-built `Internal/Generated/*.cs` files that the publish-time AOT compile then consumes. **That two-phase model does not apply to Marten 9.**
 
 ```mermaid
 graph LR
@@ -130,6 +130,26 @@ dotnet publish -c Release /p:PublishAot=true -r linux-x64 -o ./publish
 ```
 
 A successful publish produces a single self-contained binary (plus a few native dependency `.so` / `.dll` files) under `./publish`. The Roslyn graph is absent; the binary loads pre-generated source-generator output baked into the assembly directly.
+
+## The command line in the native binary
+
+An application that ends in `RunJasperFxCommands(args)` goes through the JasperFx command line on every
+start, because `run` is the default command. Since JasperFx 2.101.0 that works from the native binary, and
+so do `help`, `describe`, `check-env`, `resources`, `projections` and Marten's own `marten` command. The
+commands are found and created through registrations that `JasperFx.SourceGenerator` emits at compile time
+instead of by reflection, so:
+
+- **Every assembly that contributes commands must be built with the generator.** Marten, JasperFx and
+  JasperFx.Events are. Add it to your own application for your own commands. A command from an assembly
+  built without it is simply missing from `help` in the native binary.
+- **The `db-*` commands are Weasel's,** so they are available natively from the Weasel release built with
+  the generator.
+- `ApplyJasperFxExtensions` and `RunJasperFxCommands` still carry trimming warnings for assemblies built
+  without the generator. Suppress them on an explicit `Main`, as shown in
+  [Running the command line in an AOT binary](https://shared-libs.jasperfx.net/codegen/aot#running-the-command-line-in-an-aot-binary).
+
+See [Native AOT](https://shared-libs.jasperfx.net/cli/#native-aot) in the JasperFx command line
+documentation for the package reference and the details.
 
 ## What works, what doesn't
 
@@ -395,7 +415,7 @@ Native AOT publish layers an additional speedup on top by eliminating JIT warmup
 
 - [Master plan: Marten 9.0](https://github.com/JasperFx/marten/issues/4349)
 - [AOT compliance pillar (JasperFx)](https://github.com/JasperFx/jasperfx/issues/213)
-- [JasperFx AOT publishing guide](https://github.com/JasperFx/jasperfx/blob/main/docs/codegen/aot.md) — the broader Critter Stack story (Wolverine + the two-phase model)
+- [JasperFx AOT publishing guide](https://shared-libs.jasperfx.net/codegen/aot) — the broader Critter Stack story (Wolverine + the two-phase model)
 - [Marten.SourceGenerator README](https://github.com/JasperFx/marten/blob/master/src/Marten.SourceGenerator/README.md) — the compiled-query AOT story
 - [Migration Guide: Runtime code generation removed](/migration-guide#runtime-code-generation-removed) — the 8.x → 9.0 migration for the codegen pipeline
 - [.NET trim warning reference](https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trim-warnings/) — Microsoft's catalog of IL warning codes
