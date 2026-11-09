@@ -68,6 +68,12 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsAllTenantStreamStates => true;
 
     /// <summary>
+    /// jasperfx#1150. <c>MartenDatabase.FetchFirstEventTimestampsAfterAsync</c> answers every position in one
+    /// batched round trip, each an <c>order by seq_id limit 1</c> seek over <c>mt_events</c>.
+    /// </summary>
+    public override bool SupportsPendingEventAges => true;
+
+    /// <summary>
     /// #5383 part 5 — the database a tenant's data lives in, through Marten's own tenancy rather than
     /// a test-local map, so the suite exercises the resolution the product ships.
     /// </summary>
