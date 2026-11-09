@@ -291,6 +291,95 @@ public partial class MartenDatabase : IEventDatabase
         }
     }
 
+    /// <summary>
+    ///     jasperfx#1150: for each position, the timestamp of the first non-archived event past it, which is
+    ///     the age of the oldest event a shard at that position has not processed yet. Null when nothing lies
+    ///     past the position. Answers come back one per position, in the order asked, duplicates included.
+    ///     <para>
+    ///     One round trip: every distinct position becomes its own <c>order by seq_id limit 1</c> seek in a
+    ///     single <see cref="NpgsqlBatch" />, so each lookup reads at most one row off the seq_id index
+    ///     instead of counting or scanning. Separate statements rather than one <c>LATERAL</c> join over the
+    ///     positions so that a tenant-filtered seek gets a plan with the tenant fixed, which is what lets
+    ///     Postgres prune <c>mt_events</c> to one partition under <c>UseTenantPartitionedEvents</c>.
+    ///     </para>
+    ///     <para>
+    ///     A tenant narrows the seek only when events are conjoined (which includes per-tenant partitioning,
+    ///     where each tenant draws its own sequence); otherwise the database is the scope and the tenant is
+    ///     ignored, as in <see cref="markEventsAsSkippedAsync" />. Archived events are skipped, as the daemon's
+    ///     <c>EventLoader</c> skips them.
+    ///     </para>
+    /// </summary>
+    public async Task<IReadOnlyList<PendingEventAge>> FetchFirstEventTimestampsAfterAsync(
+        IReadOnlyList<(string? TenantId, long Sequence)> positions, CancellationToken token = default)
+    {
+        if (positions.Count == 0)
+        {
+            return [];
+        }
+
+        var filterByTenant = Options.Events.TenancyStyle == TenancyStyle.Conjoined ||
+                             Options.Events.UseTenantPartitionedEvents;
+
+        // The tenant that actually narrows each seek, so two positions that differ only by an ignored
+        // tenant share one statement
+        (string? TenantId, long Sequence) lookupFor((string? TenantId, long Sequence) position) =>
+            (filterByTenant ? position.TenantId : null, position.Sequence);
+
+        var lookups = positions.Select(lookupFor).Distinct().ToArray();
+        var timestamps = new Dictionary<(string? TenantId, long Sequence), DateTimeOffset?>(lookups.Length);
+
+        var table = $"{Options.Events.DatabaseSchemaName}.mt_events";
+
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+
+            await using var batch = new NpgsqlBatch(conn);
+            foreach (var (tenantId, sequence) in lookups)
+            {
+                var command = new NpgsqlBatchCommand(tenantId == null
+                    ? $"select timestamp from {table} where seq_id > $1 and is_archived = false order by seq_id limit 1"
+                    : $"select timestamp from {table} where seq_id > $1 and is_archived = false and tenant_id = $2 order by seq_id limit 1");
+
+                command.Parameters.Add(new NpgsqlParameter { Value = sequence, NpgsqlDbType = NpgsqlDbType.Bigint });
+                if (tenantId != null)
+                {
+                    command.Parameters.Add(new NpgsqlParameter { Value = tenantId, NpgsqlDbType = NpgsqlDbType.Varchar });
+                }
+
+                batch.BatchCommands.Add(command);
+            }
+
+            await using var reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false);
+            foreach (var lookup in lookups)
+            {
+                timestamps[lookup] = await reader.ReadAsync(token).ConfigureAwait(false)
+                    ? await reader.GetFieldValueAsync<DateTimeOffset>(0, token).ConfigureAwait(false)
+                    : null;
+
+                await reader.NextResultAsync(token).ConfigureAwait(false);
+            }
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            // No event storage means no events, so every position is caught up
+            logMissingEventStorage(e, nameof(FetchFirstEventTimestampsAfterAsync));
+            timestamps.Clear();
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+
+        return positions
+            .Select(p => new PendingEventAge(p.TenantId, p.Sequence,
+                timestamps.TryGetValue(lookupFor(p), out var timestamp) ? timestamp : null))
+            .ToList();
+    }
+
     string IEventDatabase.StorageIdentifier => _storageIdentifier;
 
     /// <summary>
