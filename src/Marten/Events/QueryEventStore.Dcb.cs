@@ -1,0 +1,228 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
+using JasperFx.Events.Tags;
+using Marten.Events.Dcb;
+using Marten.Internal.Sessions;
+using Marten.Storage;
+using Npgsql;
+
+namespace Marten.Events;
+
+internal partial class QueryEventStore
+{
+    public async Task<bool> EventsExistAsync(EventTagQuery query, CancellationToken cancellation = default)
+    {
+        await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), cancellation).ConfigureAwait(false);
+
+        var handler = new EventsExistByTagsHandler(_store, query);
+        return await _session.ExecuteHandlerAsync(handler, cancellation).ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<IEvent>> QueryByTagsAsync(EventTagQuery query,
+        CancellationToken cancellation = default)
+    {
+        return await QueryByTagsAsync(query, null, cancellation).ConfigureAwait(false);
+    }
+
+    private async Task<IReadOnlyList<IEvent>> QueryByTagsAsync(EventTagQuery query,
+        string[]? aggregatorEventTypeNames, CancellationToken cancellation)
+    {
+        await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), cancellation).ConfigureAwait(false);
+
+        var storage = (EventDocumentStorage)_session.EventStorage();
+        var (sql, paramValues) = BuildTagQuerySql(query, storage.SelectFields(), aggregatorEventTypeNames);
+        var cmd = new NpgsqlCommand(sql);
+        for (var i = 0; i < paramValues.Count; i++)
+        {
+            cmd.Parameters.AddWithValue($"p{i}", paramValues[i]);
+        }
+
+        await using var reader = await _session.ExecuteReaderAsync(cmd, cancellation).ConfigureAwait(false);
+        return await ReadEventsFromReaderAsync(reader, storage, cancellation).ConfigureAwait(false);
+    }
+
+    public async Task<T?> AggregateByTagsAsync<T>(EventTagQuery query,
+        CancellationToken cancellation = default) where T : class
+    {
+        var events = await QueryByTagsAsync(query, cancellation).ConfigureAwait(false);
+        if (events.Count == 0) return default;
+
+        return await AggregateEventsAsync<T>(events, cancellation).ConfigureAwait(false);
+    }
+
+    private async Task<T?> AggregateEventsAsync<T>(IReadOnlyList<IEvent> events,
+        CancellationToken cancellation) where T : class
+    {
+        var aggregator = _store.Options.Projections.AggregatorFor<T>();
+        if (aggregator == null)
+        {
+            throw new InvalidOperationException(
+                $"Cannot find an aggregator for type '{typeof(T).Name}'. " +
+                "Ensure the type has Apply methods or a registered projection.");
+        }
+
+        return await aggregator.BuildAsync(events, _session, default, cancellation)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<IReadOnlyList<IEvent>> ReadEventsFromReaderAsync(DbDataReader reader,
+        EventDocumentStorage storage, CancellationToken cancellation)
+    {
+        var events = new List<IEvent>();
+
+        while (await reader.ReadAsync(cancellation).ConfigureAwait(false))
+        {
+            var @event = await storage.ResolveAsync(reader, cancellation).ConfigureAwait(false);
+            events.Add(@event);
+        }
+
+        return events;
+    }
+
+    private (string sql, List<object> parameters) BuildTagQuerySql(EventTagQuery query, string[] selectFields,
+        string[]? aggregatorEventTypeNames = null)
+    {
+        var conditions = query.Conditions;
+        if (conditions.Count == 0)
+        {
+            throw new ArgumentException("EventTagQuery must have at least one condition.");
+        }
+
+        var schema = _store.Events.DatabaseSchemaName;
+        var paramValues = new List<object>();
+        var sb = new StringBuilder();
+        var isHStore = _store.Events.DcbStorageMode == DcbStorageMode.HStore;
+
+        // SELECT with explicit columns matching EventDocumentStorage expectations
+        sb.Append("select ");
+        for (var f = 0; f < selectFields.Length; f++)
+        {
+            if (f > 0) sb.Append(", ");
+            sb.Append("e.");
+            sb.Append(selectFields[f]);
+        }
+
+        sb.Append(" from ");
+        sb.Append(schema);
+        sb.Append(".mt_events e");
+
+        List<Type>? distinctTagTypes = null;
+        if (!isHStore)
+        {
+            distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
+
+            // LEFT JOINs to tag tables — an event may only have tags in some of the
+            // tag tables, so inner joins would incorrectly filter out events that
+            // don't appear in every tag type table.
+            for (var i = 0; i < distinctTagTypes.Count; i++)
+            {
+                var tagType = distinctTagTypes[i];
+                var registration = _store.Events.FindTagType(tagType)
+                                   ?? throw new InvalidOperationException(
+                                       $"Tag type '{tagType.Name}' is not registered. Call RegisterTagType<{tagType.Name}>() first.");
+
+                sb.Append(" left join ");
+                sb.Append(schema);
+                sb.Append(".mt_event_tag_");
+                sb.Append(registration.TableSuffix);
+                sb.Append(" t");
+                sb.Append(i);
+                sb.Append(" on e.seq_id = t");
+                sb.Append(i);
+                sb.Append(".seq_id");
+
+                // #4645: under UseTenantPartitionedEvents the per-tenant
+                // mt_events_sequence_{suffix} sequences make seq_id alone
+                // non-unique across tenants — seq_id=1 exists in EVERY tenant's
+                // mt_events partition. Without the tenant_id JOIN predicate
+                // alpha's event row matches BOTH alpha's tag row AND beta's
+                // tag row sharing the same seq_id, duplicating alpha's event
+                // in the result. The trailing `e.tenant_id = @p` filter only
+                // constrains the events side and doesn't deduplicate.
+                //
+                // Only emit the predicate under conjoined tenancy — that's the
+                // only mode where EventTagTable carries a tenant_id column
+                // (see EventTagTable.cs). For non-conjoined tenancy seq_id IS
+                // unique store-wide (single global mt_events_sequence) so the
+                // predicate isn't needed anyway.
+                if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
+                {
+                    sb.Append(" and e.tenant_id = t");
+                    sb.Append(i);
+                    sb.Append(".tenant_id");
+                }
+            }
+        }
+
+        // WHERE clause with OR conditions
+        sb.Append(" where ");
+        if (isHStore)
+        {
+            HStoreDcbQueryFragment.AppendOrPredicate(sb, _store.Events, conditions, "e", paramValues);
+        }
+        else
+        {
+            sb.Append('(');
+            for (var i = 0; i < conditions.Count; i++)
+            {
+                if (i > 0) sb.Append(" or ");
+
+                var condition = conditions[i];
+                var tagIndex = distinctTagTypes!.IndexOf(condition.TagType);
+
+                sb.Append("(t");
+                sb.Append(tagIndex);
+                sb.Append(".value = @p");
+                sb.Append(paramValues.Count);
+
+                var registration = _store.Events.FindTagType(condition.TagType)!;
+                var value = registration.ExtractValue(condition.TagValue);
+                paramValues.Add(value);
+
+                if (condition.EventType != null)
+                {
+                    sb.Append(" and e.type = @p");
+                    sb.Append(paramValues.Count);
+                    var eventTypeName = _store.Events.EventMappingFor(condition.EventType).EventTypeName;
+                    paramValues.Add(eventTypeName);
+                }
+
+                sb.Append(')');
+            }
+
+            sb.Append(')');
+        }
+
+        // Filter by tenant_id for conjoined tenancy
+        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            sb.Append(" and e.tenant_id = @p");
+            sb.Append(paramValues.Count);
+            paramValues.Add(_session.TenantId);
+        }
+
+        // #5677: archived events are excluded, as in every other event query
+        sb.Append(" and e.is_archived = false");
+
+        // If the aggregator has event type filtering, apply it to limit the returned events
+        if (aggregatorEventTypeNames is { Length: > 0 })
+        {
+            sb.Append(" and e.type = ANY(@p");
+            sb.Append(paramValues.Count);
+            sb.Append(')');
+            paramValues.Add(aggregatorEventTypeNames);
+        }
+
+        sb.Append(" order by e.seq_id");
+
+        return (sb.ToString(), paramValues);
+    }
+}

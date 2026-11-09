@@ -18,7 +18,7 @@ using Marten.Storage;
 
 namespace Marten.Events;
 
-internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
+internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 {
     private readonly QuerySession _session;
     private readonly DocumentStore _store;
