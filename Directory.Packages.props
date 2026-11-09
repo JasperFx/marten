@@ -1169,9 +1169,26 @@
 
          Riding along: MySqlConnector 2.6.1 for GHSA-473q-m89c-ghf8, which is not a Weasel.Postgresql
          surface, and JasperFx / JasperFx.Events 2.98.0, which the pin above satisfies. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.49.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.49.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.49.0" />
+    <!-- Weasel 9.50.0 (from 9.49.0). ADOPTED as-is, no Marten code changes. No runtime code changed
+         in Weasel between the two tags: the diff is two csproj files, the package pins and docs.
+
+         weasel#787: Weasel.Core and Weasel.EntityFrameworkCore are now built with
+         JasperFx.SourceGenerator, so the db-* commands (db-apply, db-assert, db-patch, db-dump,
+         db-list, db-ef-migration), their inputs and their parsers are registered by a generated
+         [ModuleInitializer] instead of being found through reflection (jasperfx#1141). What that
+         changes for Marten: those commands now appear in, and run from, a Native AOT Marten app,
+         where before they were missing from `help`. Nothing changes for a JIT app. The generator is
+         a PrivateAssets reference inside Weasel, so it does not flow here; Marten already carries its
+         own JasperFx.SourceGenerator reference above.
+
+         The JasperFx floor: Weasel.Core 9.50.0 declares JasperFx >= 2.101.0 and Weasel.Postgresql and
+         Weasel.Storage declare JasperFx.Events >= 2.101.0, read from the published nuspec. Already
+         satisfied by the 2.102.0 pin above.
+
+         weasel#786 is documentation only (a schema management guide). -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.50.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.50.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.50.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
