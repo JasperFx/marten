@@ -246,6 +246,12 @@ var events = await theSession.Events.QueryByTagsAsync(query);
 
 Events are always returned ordered by sequence number (global append order).
 
+::: tip
+The read-only tag queries, `QueryByTagsAsync`, `AggregateByTagsAsync` and `EventsExistAsync`, are on
+`IQuerySession.Events` as well as on `IDocumentSession.Events`, so a read-only endpoint can call them
+through a query session. `FetchForWritingByTags` needs a document session.
+:::
+
 ## Aggregating by Tags
 
 Build an aggregate from tagged events, similar to `AggregateStreamAsync` but across streams. First define an aggregate that applies the tagged events:

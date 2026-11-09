@@ -63,7 +63,7 @@ internal static class HStoreDcbQueryFragment
 
     /// <summary>
     /// String-builder variant of <see cref="AppendOrPredicate(ICommandBuilder, EventGraph, IReadOnlyList{EventTagQueryCondition}, string)"/>,
-    /// used by the <see cref="EventStore.BuildTagQuerySql"/> path that constructs SQL into a
+    /// used by the <see cref="QueryEventStore.BuildTagQuerySql"/> path that constructs SQL into a
     /// <see cref="System.Text.StringBuilder"/> with positional <c>@p{n}</c> parameters.
     /// </summary>
     public static void AppendOrPredicate(System.Text.StringBuilder sb, EventGraph events,
