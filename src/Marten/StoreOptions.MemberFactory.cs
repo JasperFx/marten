@@ -5,10 +5,12 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
+using Marten.Linq.Members.Unions;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Schema.Identity;
@@ -48,6 +50,14 @@ public partial class StoreOptions
         }
 
         if (memberType == typeof(string)) return new StringMember(parent, casing, member);
+
+        // #5735: a C# union member (.NET 11; never true before). Ahead of the jsonb fallback below, which
+        // would read the union's Value as a JSON key that STJ never writes.
+        var unionType = Nullable.GetUnderlyingType(memberType) ?? memberType;
+        if (unionType.IsUnion())
+        {
+            return UnionMember.Create(this, parent, member, unionType);
+        }
 
         // 9.0: opaque-container types registered via the optional Marten.Newtonsoft
         // package land here (e.g. JObject). Must be tested before the IDictionary<,>

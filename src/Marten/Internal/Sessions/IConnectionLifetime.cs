@@ -162,15 +162,10 @@ public interface IConnectionLifetime: IAsyncDisposable, IDisposable
     IMartenSessionLogger Logger { get; set; }
     int CommandTimeout { get; }
 
-    int Execute(NpgsqlCommand cmd);
     Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new());
-
-    DbDataReader ExecuteReader(NpgsqlCommand command);
 
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command,
         CancellationToken token = default);
-
-    DbDataReader ExecuteReader(NpgsqlBatch batch);
 
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch,
         CancellationToken token = default);

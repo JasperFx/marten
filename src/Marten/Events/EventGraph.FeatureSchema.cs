@@ -99,11 +99,6 @@ public partial class EventGraph: IFeatureSchema
 
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
 
-        if (EnableExtendedProgressionTracking)
-        {
-            yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression_extended",
-                "varchar, bigint, timestamp with time zone, varchar, text, integer");
-        }
         yield return new ArchiveStreamFunction(this);
 
         yield return new QuickAppendEventFunction(this);

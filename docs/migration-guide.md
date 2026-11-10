@@ -21,6 +21,23 @@ when skipping is enabled, and metadata is only written and selected when its fla
 Deliberately still conditional, because they are expensive or change the table's shape: tenant partitioning of
 `mt_events`, table fillfactor, and the DCB `hstore` tags column and its GIN index.
 
+### `EnableExtendedProgressionTracking` is on by default
+
+`opts.Events.EnableExtendedProgressionTracking` now defaults to `true`: the async daemon writes
+`heartbeat`, `agent_status`, `pause_reason`, `running_on_node` and the `failure_*` columns of
+`mt_event_progression`. `IEventStoreInstrumentation.ExtendedProgressionEnabled` is the same switch
+under its storage-agnostic name. To keep the 9.x behavior:
+
+```cs
+opts.Events.EnableExtendedProgressionTracking = false;
+```
+
+No DDL is needed on a database migrated by 9.31 or later (the columns have been unconditional since
+9.31). The unused `mt_mark_event_progression_extended` function is no longer part of the schema; a
+copy already installed is left in place and can be dropped by hand. The `warning_behind_threshold` and
+`critical_behind_threshold` columns are never written; drop them only as a deliberate migration step
+(`alter table ... drop column` takes an ACCESS EXCLUSIVE lock on a hot table).
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
@@ -210,6 +227,19 @@ Marten's automatic schema migration handles all of these. None need manual SQL.
   ALTER TABLE my_schema.mt_streams DROP COLUMN snapshot;
   ALTER TABLE my_schema.mt_streams DROP COLUMN snapshot_version;
   ```
+
+#### Restoring V9 defaults {#restoring-v9-defaults}
+
+Marten 10 follows the same rule: every changed default can be put back with one call,
+`opts.RestoreV9Defaults()`. It does not call `RestoreV8Defaults()`. `RestoreV9Defaults()` puts these
+`StoreOptions` settings back to their Marten 9 values:
+
+| Setting | Marten 9 value | Docs |
+| --- | --- | --- |
+| `Events.EnableExtendedProgressionTracking` | `false` | [Async Projection Daemon](events/projections/async-daemon.md) |
+
+The side-effect gate default is not listed yet: it is not a `StoreOptions` setting, and its flip has
+not landed. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
 
 ### Breaking changes {#breaking-changes-in-9-0-0}
 

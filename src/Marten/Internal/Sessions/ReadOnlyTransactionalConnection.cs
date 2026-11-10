@@ -14,15 +14,6 @@ internal class ReadOnlyTransactionalConnection: TransactionalConnection
     {
     }
 
-    public override void Apply(NpgsqlCommand command)
-    {
-        EnsureConnected();
-
-        command.Connection = _connection;
-        command.Transaction = Transaction;
-        command.CommandTimeout = CommandTimeout;
-    }
-
     public override async Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
     {
         await EnsureConnectedAsync(token).ConfigureAwait(false);

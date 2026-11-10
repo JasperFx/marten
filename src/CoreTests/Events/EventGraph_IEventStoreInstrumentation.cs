@@ -14,43 +14,30 @@ namespace CoreTests.Events;
 public class EventGraph_IEventStoreInstrumentation
 {
 
-    // The default is OFF, deliberately and permanently, and this is the third time it has come up --
-    // so the reasoning lives here rather than in a commit message.
-    //
-    // #4687 argued for flipping it to true, on the grounds that the columns are cheap because they
-    // carry daemon runtime state that already exists. #5310 then found that the flip had landed in
-    // 824e3b783 and been lost the next day in 769a6fd5e, and restored it as an unintended regression.
-    //
-    // That restoration was reversed. Turning this on by default is a BREAKING change: every existing
-    // store that never asked for monitoring silently starts writing six columns on every shard state
-    // transition after an upgrade. "It was originally meant to be true" is a reason to document the
-    // opt-in well; it is not a reason to change what someone else's deployment does without them
-    // asking. The cheapness argument is a fine argument for turning it ON and no argument at all for
-    // turning it on for somebody else.
-    //
-    // If you are here because you are about to flip it again: don't, without a major version.
+    // The default is ON since 10.0 (#5763; it was flipped in 9.7.0, reverted in 9.7.1, and #5318 said to
+    // wait for a major). Opt out with `opts.Events.EnableExtendedProgressionTracking = false`.
     [Fact]
-    public void default_is_disabled()
+    public void default_is_enabled()
     {
-        new StoreOptions().EventGraph.EnableExtendedProgressionTracking.ShouldBeFalse();
+        new StoreOptions().EventGraph.EnableExtendedProgressionTracking.ShouldBeTrue();
     }
 
     // The DI path is pinned separately from the bare constructor because it runs the
-    // SetEventStoreInstrumentation adapters and the constructor does not -- so "off by default" has to
+    // SetEventStoreInstrumentation adapters and the constructor does not -- so "on by default" has to
     // be true of both, and an adapter that clobbers is exactly how that would stop being true.
     [Fact]
-    public void add_marten_alone_is_disabled()
+    public void add_marten_alone_is_enabled()
     {
         var collection = new ServiceCollection();
         collection.AddMarten(ConnectionSource.ConnectionString);
 
         using var provider = collection.BuildServiceProvider();
         provider.GetRequiredService<IDocumentStore>()
-            .Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+            .Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
     }
 
-    // The adapter distinguishes unset from explicitly-false, which is a no-op against today's false
-    // default -- kept because it is the difference between an opt-out that works and one that silently
+    // The adapter distinguishes unset from explicitly-false, which matters now that the default is true
+    // -- it is it is the difference between an opt-out that works and one that silently
     // does nothing, and #4981's `if (ExtendedProgressionEnabled)` could not tell those apart. Pinned so
     // that a future default change does not quietly break the opt-out the way it nearly did.
     [Fact]
@@ -137,7 +124,7 @@ public class EventGraph_IEventStoreInstrumentation
 
         // Never assigned, so the adapter has nothing to apply and the direct toggle stands. The getter
         // reports the EventGraph default it would leave in place.
-        provider.GetRequiredService<IEventStoreInstrumentation>().ExtendedProgressionEnabled.ShouldBeFalse();
+        provider.GetRequiredService<IEventStoreInstrumentation>().ExtendedProgressionEnabled.ShouldBeTrue();
 
         var store = provider.GetRequiredService<IDocumentStore>();
         store.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();

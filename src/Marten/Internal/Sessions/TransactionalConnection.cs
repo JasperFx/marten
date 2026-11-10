@@ -78,24 +78,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         _connection?.SafeDispose();
     }
 
-    public virtual void Apply(NpgsqlCommand command)
-    {
-        EnsureConnected();
-
-        command.Connection = _connection;
-        command.Transaction = Transaction;
-        command.CommandTimeout = CommandTimeout;
-    }
-
-    public void Apply(NpgsqlBatch batch)
-    {
-        EnsureConnected();
-
-        batch.Connection = _connection;
-        batch.Transaction = Transaction;
-        batch.Timeout = CommandTimeout;
-    }
-
     public virtual void BeginTransaction()
     {
         EnsureConnected();
@@ -310,7 +292,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
     ///         Npgsql reports a broken connection as <see cref="ConnectionState.Closed" /> -- the break shows only
     ///         in <see cref="NpgsqlConnection.FullState" /> -- so testing <c>State</c> alone made the reopen below
     ///         look like the ordinary "not connected yet" path. It is not. Reopening acquires a <i>different</i>
-    ///         backend, and <see cref="Apply(NpgsqlCommand)" /> then hands the command the stale
+    ///         backend, and <see cref="ApplyAsync(NpgsqlCommand, CancellationToken)" /> then hands the command the stale
     ///         <see cref="NpgsqlTransaction" />, which Npgsql accepts without complaint. The command runs with no
     ///         transaction at all, and a <c>Serializable</c> session quietly starts answering from a newer
     ///         snapshot than the one it was opened to hold.
@@ -363,25 +345,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         return Task.CompletedTask;
     }
 
-    public int Execute(NpgsqlCommand cmd)
-    {
-        Apply(cmd);
-
-        try
-        {
-            var returnValue = cmd.ExecuteNonQuery();
-            Logger.LogSuccess(cmd);
-
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(cmd, e);
-            throw;
-        }
-    }
-
     public async Task<int> ExecuteAsync(NpgsqlCommand command,
         CancellationToken token = new())
     {
@@ -395,24 +358,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
                 .ConfigureAwait(false);
             Logger.LogSuccess(command);
 
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(command, e);
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlCommand command)
-    {
-        Apply(command);
-
-        try
-        {
-            var returnValue = command.ExecuteReader();
-            Logger.LogSuccess(command);
             return returnValue;
         }
         catch (Exception e)
@@ -442,24 +387,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         {
             noteTransactionFailure(e);
             handleCommandException(command, e);
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlBatch batch)
-    {
-        Apply(batch);
-
-        try
-        {
-            var reader = batch.ExecuteReader();
-            Logger.LogSuccess(batch);
-            return reader;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(batch, e);
             throw;
         }
     }

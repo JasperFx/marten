@@ -6,7 +6,9 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using JasperFx.Core;
 using JasperFx.Events;
+using Marten.Exceptions;
 using Marten.Internal.Sessions;
+using Marten.Linq.Members.Unions;
 using Marten.Linq.Parsing;
 using Marten.Util;
 using Weasel.Core;
@@ -347,6 +349,16 @@ internal class PatchExpression<T>: IPatchExpression<T>
     {
         var visitor = new PatchingMemberFinder();
         visitor.Visit(expression);
+
+        // #5735: a union is stored as its bare active case, so neither IUnion.Value nor a cast to a case is a
+        // key in the JSON. A patch path through one would write a phantom node beside the real data.
+        if (visitor.Members.Any(x => x is UnionCaseCast ||
+                                     (x.Name == "Value" && x.DeclaringType != null && x.DeclaringType.IsUnion())))
+        {
+            throw new BadLinqExpressionException(
+                $"Marten cannot patch '{expression}': a C# union is stored as its active case, so a member of a "
+                + "case has no fixed path. Patch the whole union member instead, e.g. Set(x => x.Payment, value).");
+        }
 
         // #5290: ToJsonKey, not Name.FormatCase. Casing alone ignores serializer member aliases
         // ([JsonPropertyName], and [JsonProperty] through Marten.Newtonsoft's resolver), so a patch

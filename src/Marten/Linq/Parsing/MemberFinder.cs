@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Exceptions;
+using Marten.Linq.Members.Unions;
 using Marten.Linq.QueryHandlers;
 
 namespace Marten.Linq.Parsing;
@@ -106,6 +107,11 @@ public class MemberFinder: ExpressionVisitor
         if (node.NodeType == ExpressionType.ArrayLength)
         {
             Members.Insert(0, LinqConstants.ArrayLength);
+        }
+        else if (UnionMembers.CaseCastFor(node) is { } cast)
+        {
+            // #5735: ((Card)x.Payment.Value).Last4 keeps the case it names in the chain
+            Members.Insert(0, cast);
         }
 
         return base.VisitUnary(node);

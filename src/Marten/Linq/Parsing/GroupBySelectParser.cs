@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.Members.Unions;
 using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
@@ -59,7 +60,15 @@ internal class GroupBySelectParser: ExpressionVisitor
         _options = options;
         _collection = collection;
         _hasCustomMemberResolver = memberFor != null;
-        _memberFor = memberFor ?? (expression => collection.MemberFor(expression));
+        var resolve = memberFor ?? (expression => collection.MemberFor(expression));
+
+        // #5735: a union stored as whichever case it holds has no one value to group by
+        _memberFor = expression =>
+        {
+            var member = resolve(expression);
+            UnionMembers.AssertNotGroupingKey(member, expression);
+            return member;
+        };
         _keySelector = keySelector;
         _groupingParameter = groupingParameter;
 
