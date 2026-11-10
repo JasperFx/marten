@@ -332,6 +332,35 @@ the default.
 is limited only by the daemon's own cancellation. Be aware that this means a genuinely wedged shard can hold up
 shutdown indefinitely.
 
+## Waking the Daemon with LISTEN/NOTIFY <Badge type="tip" text="9.0" />
+
+By default the async daemon discovers new events by polling the high water mark. If you want projections
+and subscriptions to react to an append almost immediately, opt into PostgreSQL `LISTEN`/`NOTIFY`:
+
+```cs
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Off by default
+    opts.Events.UseListenNotifyForEventAppends = true;
+});
+```
+
+With the flag on, every `SaveChangesAsync()` that appends events also issues a `NOTIFY` on the
+`mt_events_appended` channel, and the daemon holds a dedicated connection that `LISTEN`s on it and wakes the
+high water detection as soon as a notification arrives. Polling stays in place as the safety net: if the
+listening connection cannot be established or is lost, the daemon falls back to timed polling and
+reconnects on a later cycle, so a missed notification only costs latency, never events.
+
+Things to be aware of:
+
+* The daemon needs one extra, long-lived connection per database for the `LISTEN`.
+* `LISTEN` is a session-level feature, so the listening connection cannot go through PgBouncer in
+  transaction pooling mode. Connect it to the database directly or use session pooling.
+* The flag does nothing for events appended by other tools that do not send the `NOTIFY`; those are still
+  picked up by polling.
+
 ## Daemon Logging
 
 The daemon logs through the standard .Net `ILogger` interface service registered in your application's underlying DI container. In the case of the daemon having to skip
