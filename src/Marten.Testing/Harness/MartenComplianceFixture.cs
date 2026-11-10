@@ -859,7 +859,7 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
                 typeof(Marten.Exceptions.ExistingStreamIdCollisionException),
             ComplianceExceptionKind.EventDeserializationFailure =>
                 typeof(Marten.Exceptions.EventDeserializationFailureException),
-            ComplianceExceptionKind.StreamLocked => typeof(Marten.Exceptions.StreamLockedException),
+            ComplianceExceptionKind.StreamLocked => typeof(JasperFx.Events.StreamLockedException),
             ComplianceExceptionKind.DefaultTenantUsageDisabled =>
                 typeof(Marten.Exceptions.DefaultTenantUsageDisabledException),
             // #5476 / jasperfx#871/#878 lifted a canonical ArchivedStreamException in

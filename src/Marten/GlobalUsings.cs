@@ -21,6 +21,6 @@ global using UnknownEventTypeException = Marten.Exceptions.UnknownEventTypeExcep
 global using NonExistentStreamException = Marten.Exceptions.NonExistentStreamException;
 global using ExistingStreamIdCollisionException = Marten.Exceptions.ExistingStreamIdCollisionException;
 global using EventDeserializationFailureException = Marten.Exceptions.EventDeserializationFailureException;
-global using StreamLockedException = Marten.Exceptions.StreamLockedException;
+global using StreamLockedException = JasperFx.Events.StreamLockedException;
 global using DefaultTenantUsageDisabledException = Marten.Exceptions.DefaultTenantUsageDisabledException;
 

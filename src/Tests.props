@@ -75,7 +75,7 @@
         <Using Include="Marten.Exceptions.NonExistentStreamException" Alias="NonExistentStreamException" />
         <Using Include="Marten.Exceptions.ExistingStreamIdCollisionException" Alias="ExistingStreamIdCollisionException" />
         <Using Include="Marten.Exceptions.EventDeserializationFailureException" Alias="EventDeserializationFailureException" />
-        <Using Include="Marten.Exceptions.StreamLockedException" Alias="StreamLockedException" />
+        <Using Include="JasperFx.Events.StreamLockedException" Alias="StreamLockedException" />
         <Using Include="Marten.Exceptions.DefaultTenantUsageDisabledException" Alias="DefaultTenantUsageDisabledException" />
     </ItemGroup>
 
