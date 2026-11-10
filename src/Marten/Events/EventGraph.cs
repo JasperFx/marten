@@ -278,6 +278,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         }
         else
         {
+            // #5735 / jasperfx#1053: a C# union is stored as its active case, so each case gets its own
+            // event type name and the stored JSON (which STJ writes as the bare case anyway) reads back by
+            // that name. The base EventRegistry.BuildEvent does this too, but this override never reaches
+            // it. Before .NET 11 no type is a union and this hands back eventData unchanged.
+            eventData = UnionTypes.Unwrap(eventData);
+
             var mapping = EventMappingFor(eventData.GetType());
             var wrapped = mapping.Wrap(eventData);
             if (_tagRules.Count > 0) applyTagRules(wrapped);
@@ -501,7 +507,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <param name="eventType"></param>
     public override void AddEventType(Type eventType)
     {
-        _events.FillDefault(eventType);
+        // #5735: a union is never stored as itself (BuildEvent unwraps it), so registering one registers
+        // each of its cases, nested unions included. Just eventType when it is not a union.
+        foreach (var type in eventType.ExpandToCaseTypes())
+        {
+            _events.FillDefault(type);
+        }
     }
 
     // #4515: per-event-type binary serializer registry. EventMapping<T>'s

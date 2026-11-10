@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.Members.Unions;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -124,6 +125,9 @@ public class WhereClauseParser: ExpressionVisitor
 
             var fragment = left.CompareTo(right, op);
 
+            // #5735: a comparison on a member of a union case only matches rows holding that case
+            fragment = UnionMembers.GuardComparison(fragment, left.Member, right.Member);
+
             _holder.Register(fragment);
 
             return null;
@@ -173,6 +177,19 @@ public class WhereClauseParser: ExpressionVisitor
 
             _holder = original;
         }
+    }
+
+    protected override Expression VisitTypeBinary(TypeBinaryExpression node)
+    {
+        // #5735: x.Payment.Value is Card, the type test over a C# union member
+        if (node.NodeType == ExpressionType.TypeIs && UnionMembers.IsUnionValue(node.Expression) &&
+            _members.MemberFor(node.Expression) is UnionValueMember value)
+        {
+            _holder.Register(new WhereFragment(value.Union.TypeTest(node.TypeOperand, node.ToString())));
+            return null;
+        }
+
+        return base.VisitTypeBinary(node);
     }
 
     protected override Expression VisitUnary(UnaryExpression node)
