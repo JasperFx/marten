@@ -50,9 +50,9 @@ public interface IReadOnlyEventStoreOptions
     /// be helpful if you need to create an external reference id to another system, or need to
     /// load events by their Id
     /// </summary>
-    bool EnableUniqueIndexOnEventId { get; set; }
+    bool EnableUniqueIndexOnEventId { get; }
 
-    public EventAppendMode AppendMode { get; set; }
+    public EventAppendMode AppendMode { get; }
 
     /// <summary>
     ///     Configuration for all event store projections
@@ -65,7 +65,7 @@ public interface IReadOnlyEventStoreOptions
     /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
     /// *if* you are also aggressively using event stream archiving
     /// </summary>
-    bool UseArchivedStreamPartitioning { get; set; }
+    bool UseArchivedStreamPartitioning { get; }
 
     /// <summary>
     /// Opt into a global, partition-spanning unique constraint on stream
@@ -76,34 +76,35 @@ public interface IReadOnlyEventStoreOptions
     /// an identity even after the original stream was archived under
     /// <see cref="UseArchivedStreamPartitioning"/>. Defaults to false.
     /// </summary>
-    bool EnableStrictStreamIdentityEnforcement { get; set; }
+    bool EnableStrictStreamIdentityEnforcement { get; }
 
     /// <summary>
     /// Per-tenant partitioning master flag (CritterStack #209 / Marten #4596).
     /// See <see cref="IEventStoreOptions.UseTenantPartitionedEvents"/>
     /// on the writable interface for the full contract.
     /// </summary>
-    bool UseTenantPartitionedEvents { get; set; }
+    bool UseTenantPartitionedEvents { get; }
 
     /// <summary>
     /// Optional extension point to receive published messages as a side effect from
     /// aggregation projections
     /// </summary>
-    IMessageOutbox MessageOutbox { get; set; }
+    IMessageOutbox MessageOutbox { get; }
 
     /// <summary>
     /// Opt into some performance optimizations for projection rebuilds for both single stream and
     /// multi-stream projections. This will result in new table columns and a potential database
-    /// migration. This will be a default in Marten 8.
+    /// migration. Opt-in: the extra columns and the per-stream rebuild mode only suit
+    /// projections that are the sole single stream projection over their events.
     /// </summary>
-    bool UseOptimizedProjectionRebuilds { get; set; }
+    bool UseOptimizedProjectionRebuilds { get; }
 
     /// <summary>
     /// Does Marten require a stream type for any new event streams? This will also
     /// validate that an event stream already exists as part of appending events. Default in 7.0 is false,
     /// but this will be true in 8.0
     /// </summary>
-    bool UseMandatoryStreamTypeDeclaration { get; set; }
+    bool UseMandatoryStreamTypeDeclaration { get; }
 
     /// <summary>
     /// Enables a background monitor to detect if the advisory lock is lost due to database restart or fail-over. Prevents situations where concurrent running of async daemons may occur on system recovery.
@@ -112,29 +113,29 @@ public interface IReadOnlyEventStoreOptions
     /// <remarks>
     /// This will show up as a SELECT SLEEP query with a 60-second sleep interval. This does not add any additional load to your database, regardless of what your monitoring tools might say.
     /// </remarks>
-    public bool UseMonitoredAdvisoryLock { get; set; }
+    public bool UseMonitoredAdvisoryLock { get; }
 
     /// <summary>
     /// Uses a transaction-scoped advisory lock for HotCold leadership instead of a session-scoped one. This improves compatibility with PgBouncer in transaction pooling mode, but keeps a transaction open on the leader's connection for as long as it holds leadership. Disabled by default.
     /// </summary>
-    public bool UseAdvisoryLockTransaction { get; set; }
+    public bool UseAdvisoryLockTransaction { get; }
 
     /// <summary>
     /// Opt into different aliasing styles for .NET event types
     /// </summary>
-    EventNamingStyle EventNamingStyle { get; set; }
+    EventNamingStyle EventNamingStyle { get; }
 
     /// <summary>
     /// Opt into more robust tracking of asynchronous projection behavior. Default is false. This will add
     /// extra tables, functions, and columns to your Marten event store schema
     /// </summary>
-    public bool EnableAdvancedAsyncTracking { get; set; }
+    public bool EnableAdvancedAsyncTracking { get; }
 
     /// <summary>
     /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
     /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
     /// </summary>
-    bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
+    bool EnableEventSkippingInProjectionsOrSubscriptions { get; }
 
     /// <summary>
     /// Index names that the schema migration functionality should ignore on the event-store tables.
@@ -154,5 +155,5 @@ public interface IReadOnlyEventStoreOptions
     /// prefer <c>ExtendedProgressionEnabled</c> on the interface.
     /// </para>
     /// </summary>
-    bool EnableExtendedProgressionTracking { get; set; }
+    bool EnableExtendedProgressionTracking { get; }
 }
