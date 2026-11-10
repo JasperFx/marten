@@ -68,7 +68,7 @@ Newtonsoft serializer, and a patch path through a case. On `net10.0` no type is 
 | Change | Restore Marten 9 behavior |
 | --- | --- |
 | [`EnableExtendedProgressionTracking`](#enableextendedprogressiontracking-is-on-by-default) is on | `opts.RestoreV9Defaults()`, or `opts.Events.EnableExtendedProgressionTracking = false` |
-| [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created) | none; schema change, see below |
+| [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created-) | none; schema change, see below |
 
 `opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0
 ([details](#restoring-v9-defaults)). The side-effect gate default flip ([jasperfx#1075](https://github.com/JasperFx/jasperfx/issues/1075))
