@@ -189,7 +189,7 @@
         },
         "GateSerializer": {
           "type": "string",
-          "description": "LocalGate: DEFAULT_SERIALIZER for every unit: Newtonsoft, SystemTextJson, or split (CI's net9/net10 pairing)"
+          "description": "LocalGate: DEFAULT_SERIALIZER for every unit: Newtonsoft, SystemTextJson, or split (CI's net10/net11 pairing)"
         },
         "GateSkipBuild": {
           "type": "boolean",

@@ -300,6 +300,9 @@ public static class TestingExtensions
             // them fall through to the TimeoutException below
         }
 
+        // net11 adds StringWriter.WriteLineAsync(string, CancellationToken); the in-memory writer must not observe
+        // the (possibly already cancelled) timeout token, so the token-less overload is deliberate. (MA0040)
+#pragma warning disable MA0040
         if (projections.Count < projectionsCount)
         {
             var writer = new StringWriter();
@@ -321,6 +324,7 @@ public static class TestingExtensions
 
             throw new TimeoutException(writer.ToString());
         }
+#pragma warning restore MA0040
     }
 
     // A cancellation, however the layer that observed it chose to report it

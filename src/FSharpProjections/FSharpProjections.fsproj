@@ -11,7 +11,7 @@
     <PropertyGroup>
         <!-- Directory.Build.props sets LangVersion=13.0 (a C# value); clear it for F#. -->
         <LangVersion></LangVersion>
-        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
         <IsPackable>false</IsPackable>
         <!-- The F# SDK's implicit FSharp.Core reference tracks the SDK (10.x) and was

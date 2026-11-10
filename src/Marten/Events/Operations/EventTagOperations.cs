@@ -1,3 +1,4 @@
+using JasperFx.Events.Tags;
 using System;
 using System.Collections.Generic;
 using JasperFx.Core.Reflection;

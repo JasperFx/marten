@@ -8,7 +8,7 @@
 
 ## Tech Stack
 
-- **Language:** C# 13.0, targets net9.0 / net10.0 (`Directory.Build.props:5,12`)
+- **Language:** C# 13.0, targets net10.0 / net11.0 (`Directory.Build.props:5,12`)
 - **Database:** PostgreSQL 13+ (via Npgsql)
 - **Key deps:** JasperFx, JasperFx.Events, JasperFx.RuntimeCompiler, Weasel.Postgresql, Newtonsoft.Json (`src/Marten/Marten.csproj:39-46`)
 - **Build system:** Nuke (`build/build.cs`)
