@@ -618,7 +618,8 @@ partial class Build : NukeBuild
         foreach (var item in testProjects)
         {
             var assemblyInfoFile = Path.Combine(item, "AssemblyInfo.cs");
-            File.WriteAllText(assemblyInfoFile, $"using Xunit;{Environment.NewLine}[assembly: CollectionBehavior(DisableTestParallelization = {DisableTestParallelization.ToString().ToLower()})]");
+            // xunit.v3 4.x: CollectionBehavior(DisableTestParallelization = true) is a compile error there.
+            File.WriteAllText(assemblyInfoFile, $"[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]");
         }
     }
 }
