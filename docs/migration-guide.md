@@ -68,11 +68,11 @@ Newtonsoft serializer, and a patch path through a case. On `net10.0` no type is 
 | Change | Restore Marten 9 behavior |
 | --- | --- |
 | [`EnableExtendedProgressionTracking`](#enableextendedprogressiontracking-is-on-by-default) is on | `opts.RestoreV9Defaults()`, or `opts.Events.EnableExtendedProgressionTracking = false` |
+| [Side-effect gate](/events/projections/rebuilding#suppressing-side-effects-during-the-blue-green-warm-up) (`GateSideEffectsBehindPriorVersion`, jasperfx#1075) is on | `opts.RestoreV9Defaults()`, or `GateSideEffectsBehindPriorVersion = false` on the projection |
 | [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created-) | none; schema change, see below |
 
 `opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0
-([details](#restoring-v9-defaults)). The side-effect gate default flip ([jasperfx#1075](https://github.com/JasperFx/jasperfx/issues/1075))
-has not landed in Marten yet. `UseExclusiveLockOnConcurrentAppends` was measured under contention and stays off;
+([details](#restoring-v9-defaults)). `UseExclusiveLockOnConcurrentAppends` was measured under contention and stays off;
 see [Appending](/events/appending).
 
 Defaults that already turned on during 9.x minors, for readers coming from an older 9.x: the daemon's connection
@@ -352,8 +352,10 @@ Marten 10 follows the same rule: every changed default can be put back with one 
 | --- | --- | --- |
 | `Events.EnableExtendedProgressionTracking` | `false` | [Async Projection Daemon](events/projections/async-daemon.md) |
 
-The side-effect gate default is not listed yet: it is not a `StoreOptions` setting, and its flip has
-not landed. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
+| `GateSideEffectsBehindPriorVersion` on every registered projection | `false` | [Rebuilding](events/projections/rebuilding.md) |
+
+The side-effect gate is a per-projection setting in JasperFx, so `RestoreV9Defaults()` turns it off for every
+projection registered when the store is built, overriding a projection's own value. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
 
 ### Breaking changes {#breaking-changes-in-9-0-0}
 

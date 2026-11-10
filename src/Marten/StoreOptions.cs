@@ -16,6 +16,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -1143,12 +1144,31 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///     Restored settings:
     ///     <list type="bullet">
     ///       <item><see cref="EventGraph.EnableExtendedProgressionTracking"/> &rarr; <c>false</c></item>
+    ///       <item>
+    ///         <c>GateSideEffectsBehindPriorVersion</c> &rarr; <c>false</c> on every registered
+    ///         projection (JasperFx 3.0 turned it on, jasperfx#1075). JasperFx has no store-wide
+    ///         switch, so this is applied when the store is built and overrides a projection's own
+    ///         value; to keep the gate on for one projection, do not call this method.
+    ///       </item>
     ///     </list>
     ///     </para>
     /// </remarks>
     public void RestoreV9Defaults()
     {
         Events.EnableExtendedProgressionTracking = false;
+        _restoreV9SideEffectGate = true;
+    }
+
+    private bool _restoreV9SideEffectGate;
+
+    internal void ApplyRestoredV9SideEffectGate()
+    {
+        if (!_restoreV9SideEffectGate) return;
+
+        foreach (var projection in Projections.All.OfType<ProjectionBase>())
+        {
+            projection.GateSideEffectsBehindPriorVersion = false;
+        }
     }
 
     /// <summary>
@@ -1164,6 +1184,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     internal void ApplyConfiguration()
     {
+        ApplyRestoredV9SideEffectGate();
+
         // 9.0: BuildAllMappings is no longer called here (#4303). Mappings
         // are now materialized lazily on first MappingFor(type) call, with
         // CompileAndValidate moved into that path. This removes a meaningful
