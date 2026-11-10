@@ -1128,6 +1128,30 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     /// <summary>
+    ///     Put back every <see cref="StoreOptions"/> default that Marten 10 flipped from its V9
+    ///     value. The single opt-out for the 10.0 default flips, the way
+    ///     <see cref="RestoreV8Defaults"/> was for 9.0. Call it first and add your own overrides
+    ///     afterward.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///     This does not call <see cref="RestoreV8Defaults"/>; chain the two to go back two majors.
+    ///     </para>
+    ///     <para>
+    ///     Every 10.0 default flip must be restored here and listed in the 10.0 section of
+    ///     <c>docs/migration-guide.md</c>; <c>RestoreV9DefaultsTests</c> pins each one.
+    ///     Restored settings:
+    ///     <list type="bullet">
+    ///       <item><see cref="EventGraph.EnableExtendedProgressionTracking"/> &rarr; <c>false</c></item>
+    ///     </list>
+    ///     </para>
+    /// </remarks>
+    public void RestoreV9Defaults()
+    {
+        Events.EnableExtendedProgressionTracking = false;
+    }
+
+    /// <summary>
     ///     Replace the Marten logging strategy
     /// </summary>
     /// <param name="logger"></param>
