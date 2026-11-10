@@ -244,6 +244,18 @@ one after the other. DaemonTests is the longest unit at about 6m45s and sets the
 CoreTests and MultiTenancyTests share its `tenant-databases` track, so they run after it. On a stock
 100-connection server (budget 2) the units take 11m30s.
 
+### Local packs for the .NET 11 release train (#5727)
+
+```bash
+./build.sh Pack --version 10.0.0-local.1 --feed ~/code/_local_nuget_feed   # the nine shipped packages
+scripts/take-local-upstream.sh 3.0.0-local.1 10.0.0-local.1 ~/code/_local_nuget_feed   # JasperFx, Weasel, feed
+```
+
+`take-local-upstream.sh` rewrites the `JasperFx*` and `Weasel*` pins in `Directory.Packages.props` and registers
+the feed in a gitignored `nuget.config`; pass `""` to leave a family alone, and run it with the released versions
+(or `git checkout Directory.Packages.props`) to put the pins back. Supervised runs also announce themselves to a
+Bobcat monitor (`PublishToMonitor`); `BOBCAT_MONITOR=0` turns that off.
+
 ## Test Harness
 
 Base classes in `src/Marten.Testing/Harness/`:

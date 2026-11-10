@@ -45,6 +45,7 @@
         "RebuildDb",
         "RecordBenchmarks",
         "Restore",
+        "TakeLocalUpstream",
         "Test",
         "TestAotRuntime",
         "TestAspnetcore",
@@ -161,6 +162,10 @@
         "DisableTestRetry": {
           "type": "boolean"
         },
+        "Feed": {
+          "type": "string",
+          "description": "Folder Pack copies the .nupkg files into, and TakeLocalUpstream adds as a NuGet source"
+        },
         "Framework": {
           "type": "string"
         },
@@ -221,6 +226,18 @@
             "null"
           ],
           "format": "int32"
+        },
+        "UpstreamVersion": {
+          "type": "string",
+          "description": "TakeLocalUpstream: version of the local JasperFx packages to pin (e.g. 3.0.0-local.1)"
+        },
+        "Version": {
+          "type": "string",
+          "description": "Package version for Pack, overriding <Version> in Directory.Build.props (e.g. 10.0.0-local.1)"
+        },
+        "WeaselVersion": {
+          "type": "string",
+          "description": "TakeLocalUpstream: version of the local Weasel packages to pin (e.g. 10.0.0-local.1)"
         }
       }
     },
