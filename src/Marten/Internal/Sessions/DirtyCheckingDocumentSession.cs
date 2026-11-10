@@ -6,6 +6,7 @@ using JasperFx.Core;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Services;
+using Weasel.Storage;
 
 namespace Marten.Internal.Sessions;
 
@@ -23,34 +24,17 @@ public class DirtyCheckingDocumentSession: DocumentSessionBase
         return provider.DirtyTracking;
     }
 
+    // #5733: the detect and re-baseline passes are Weasel.Storage's DirtyTrackingSweep, the same
+    // two loops Polecat and Fisher used to carry. Indexed rather than foreach, because detecting a
+    // change resolves storage and can append to the same list.
     protected internal override void processChangeTrackers()
     {
-        foreach (var tracker in ChangeTrackers)
-        {
-            if (tracker.DetectChanges(this, out var operation))
-            {
-                _workTracker.Add(operation);
-            }
-        }
+        DirtyTrackingSweep.DetectChanges(ChangeTrackers, this, _workTracker.Add);
     }
 
     protected internal override void resetDirtyChecking()
     {
-        foreach (var tracker in ChangeTrackers) tracker.Reset(this);
-
-        var knownDocuments = new HashSet<object>(
-            ChangeTrackers.Select(x => x.Document),
-            ReferenceEqualityComparer.Instance);
-
-        var operations = _workTracker.AllOperations;
-        for (int i = 0; i < operations.Count; i++)
-        {
-            if (operations[i] is IDocumentStorageOperation op && !knownDocuments.Contains(op.Document))
-            {
-                var tracker = op.ToTracker(this);
-                ChangeTrackers.Add(tracker);
-            }
-        }
+        DirtyTrackingSweep.Reset(ChangeTrackers, this, _workTracker.AllOperations);
     }
 
 
