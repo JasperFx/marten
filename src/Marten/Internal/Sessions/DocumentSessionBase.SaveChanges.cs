@@ -29,6 +29,10 @@ public abstract partial class DocumentSessionBase
             // written, so nothing enforces the boundary -- and the read does not carry over to the
             // next unit of work either.
             ForgetPendingDcbBoundaryAssertions();
+
+            // jasperfx#1050: nothing to commit, so nothing to roll back either. What a fetch registered is
+            // what the database holds, so it is written back as long as this session owns its transaction.
+            publishAggregateWrites(_workTracker);
             return;
         }
 
@@ -38,6 +42,8 @@ public abstract partial class DocumentSessionBase
         }
         catch (Exception)
         {
+            // An inline projection may already have applied this unit of work to a registered instance
+            discardAggregateWrites();
             await tryApplyTombstoneEventsAsync(token).ConfigureAwait(false);
 
             throw;
@@ -67,7 +73,19 @@ public abstract partial class DocumentSessionBase
         // immediately before the COMMIT. See MessageBatchTransactionParticipant.
         var batch = new UpdateBatch(_workTracker.AllOperations);
 
-        await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
+        try
+        {
+            await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // jasperfx#1050: nothing reaches the aggregate write cache from a failed commit, and nothing
+            // it owed is carried over to the next one
+            discardAggregateWrites();
+            throw;
+        }
+
+        publishAggregateWrites(_workTracker);
 
         if (_messageBatch != null)
         {

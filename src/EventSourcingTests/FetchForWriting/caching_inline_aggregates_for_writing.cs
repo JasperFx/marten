@@ -226,8 +226,8 @@ public class caching_inline_aggregates_for_writing: OneOffConfigurationsContext
     {
         // #5260. Take-on-read is what stops two callers folding events onto the same mutable aggregate, and on
         // the Async side that is covered under contention. The Inline write path is genuinely different: the
-        // entry is not written at fetch time at all, it is queued into the session's item map as
-        // PendingAggregateCacheWrites and stored by AggregateWriteCacheListener.AfterCommitAsync at the version
+        // entry is not written at fetch time at all, it is registered with the session's
+        // AggregateWriteCacheSession (jasperfx#1050), advanced at commit to the projected instance, at the version
         // the committed StreamAction landed on. That write-back is the piece with no concurrency coverage.
         UseCachedInlineSnapshots();
 
@@ -260,7 +260,7 @@ public class caching_inline_aggregates_for_writing: OneOffConfigurationsContext
 
         await winner.SaveChangesAsync();
 
-        // The loser fails on optimistic concurrency, its listener never runs, and it therefore contributes no
+        // The loser fails on optimistic concurrency, its pending write-back is discarded, and it contributes no
         // entry. The failure path needs no compensation precisely because nothing was written at fetch time.
         await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(() => loser.SaveChangesAsync());
 
@@ -281,7 +281,7 @@ public class caching_inline_aggregates_for_writing: OneOffConfigurationsContext
     [Fact]
     public async Task entries_do_not_cross_between_sessions_committing_different_streams()
     {
-        // Same machinery, the other way round: PendingAggregateCacheWrites lives in the session item map, so
+        // Same machinery, the other way round: the AggregateWriteCacheSession belongs to one session, so
         // two sessions sharing one cache instance must not be able to write each other's aggregates back.
         UseCachedInlineSnapshots();
 

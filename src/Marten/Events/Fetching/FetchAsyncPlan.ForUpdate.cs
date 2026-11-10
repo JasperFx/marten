@@ -94,11 +94,17 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
         ensureInitialSql(selector);
 
-        var cacheKey = cache == null ? default : cacheKeyFor(session, id);
-        object? cachedAggregate = null;
-        var cachedVersion = 0L;
-        var cacheHit = cache != null && useCachedSnapshot &&
-                       cache.TryTake(cacheKey, out cachedAggregate, out cachedVersion);
+        // jasperfx#1050: the claim goes through the session's AggregateWriteCacheSession, which refuses a
+        // snapshot at version zero or of the wrong type, and owes the aggregate back only after a commit
+        // this session owns. A redo after an unusable snapshot gives up the snapshot but keeps the slot,
+        // so the uncached fetch still writes back.
+        var baseline = cache == null
+            ? default
+            : session.AggregateWriteCache.TakeBaseline<TDoc>(cache, cacheKeyFor(session, id));
+        if (!useCachedSnapshot) baseline = baseline.WithoutAggregate();
+
+        var cacheHit = baseline.HasAggregate;
+        var cachedVersion = baseline.Version;
 
         if (forUpdate)
         {
@@ -140,8 +146,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
 
             return await ReadIntoStream(session, id, cancellation, reader, loadHandler, selector,
-                new CacheAttempt(cache, cacheKey, cacheHit, cachedAggregate, cachedVersion),
-                detectSnapshotRace).ConfigureAwait(false);
+                baseline, detectSnapshotRace).ConfigureAwait(false);
         }
         catch (CacheAheadOfDatabaseException)
         {
@@ -228,16 +233,6 @@ internal partial class FetchAsyncPlan<TDoc, TId>
     }
 
     /// <summary>
-    ///     Everything the read side needs to know about a cache attempt. Default value == caching off.
-    /// </summary>
-    private readonly record struct CacheAttempt(
-        IAggregateWriteCache? Cache,
-        AggregateCacheKey Key,
-        bool Hit,
-        object? Aggregate,
-        long Version);
-
-    /// <summary>
     ///     Signals that a cached snapshot was ahead of the database and the fetch must be redone uncached.
     ///     Never escapes <see cref="FetchForWriting" />.
     /// </summary>
@@ -257,7 +252,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
     private async Task<IEventStream<TDoc>> ReadIntoStream(DocumentSessionBase session, TId id, CancellationToken cancellation,
         DbDataReader reader, LoadByIdHandler<TDoc, TId> loadHandler, IEventStorage selector,
-        CacheAttempt cacheAttempt = default, bool detectSnapshotRace = false)
+        AggregateWriteBaseline<TDoc> cacheAttempt = default, bool detectSnapshotRace = false)
     {
         long version = 0;
         try
@@ -269,7 +264,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             }
 
             TDoc? document;
-            if (cacheAttempt.Hit)
+            if (cacheAttempt.HasAggregate)
             {
                 if (cacheAttempt.Version > version)
                 {
@@ -283,7 +278,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                     throw new CacheAheadOfDatabaseException();
                 }
 
-                document = (TDoc)cacheAttempt.Aggregate!;
+                document = cacheAttempt.Aggregate;
             }
             else
             {
@@ -298,7 +293,18 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             _events.Options.OpenTelemetry
                 .RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.AsyncPlan);
 
-            if (detectSnapshotRace && !cacheAttempt.Hit
+            // The stream says there are events past the snapshot and the delta returned none: they were
+            // archived out from under it, and folding nothing would hand back a stale aggregate
+            if (cacheAttempt.NeedsArchivalRefetch(events, version))
+            {
+                while (await reader.NextResultAsync(cancellation).ConfigureAwait(false))
+                {
+                }
+
+                throw new CacheAheadOfDatabaseException();
+            }
+
+            if (detectSnapshotRace && !cacheAttempt.HasAggregate
                                    && snapshotAndDeltaDisagree(session, id, version, document, events))
             {
                 throw new SnapshotRaceException(typeof(TDoc), id);
@@ -314,13 +320,12 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 _storage.SetIdentity(document, id);
             }
 
-            // The aggregate is now at the stream version, which is durable truth regardless of what the
-            // caller does with the stream next. Under the Async lifecycle any events the caller appends are
-            // not applied to this instance in session, so it cannot drift ahead of the database.
-            if (cacheAttempt.Cache != null && document != null && version > 0)
-            {
-                cacheAttempt.Cache.Store(cacheAttempt.Key, document, version);
-            }
+            // The aggregate is now at the stream version. Under the Async lifecycle the events the caller
+            // appends are not applied to this instance in session, so that label stays true through the
+            // commit. jasperfx#1050: owed to the cache, not stored in it. Storing at fetch time put an
+            // instance the caller was still reading where a second session could claim it and fold onto
+            // it, and left it there when the caller's commit failed.
+            session.AggregateWriteCache.Register(cacheAttempt, document, version);
 
             var stream = version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
