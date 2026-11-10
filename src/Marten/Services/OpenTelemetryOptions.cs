@@ -11,7 +11,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Services;
 
-public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOptions
+/// <summary>
+///     Marten's OpenTelemetry configuration. The meter, the activity source, the connection tracking level
+///     and the change set counters come from JasperFx's <see cref="JasperFx.OpenTelemetry.OpenTelemetryOptions{TChangeSet}" />
+///     (jasperfx#1054): one <c>Meter</c> and one <c>ActivitySource</c> named "Marten" for the whole process.
+/// </summary>
+public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOptions<IChangeSet>
 {
     public OpenTelemetryOptions(): base("Marten")
     {
@@ -34,8 +39,6 @@ public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOp
     // Null until TrackFetchForWritingMetrics() opts in, so an application that never asks for these
     // metrics pays a null check on the fetch path and nothing else.
     private Histogram<long>? _eventsReplayed;
-
-    internal List<Action<IChangeSet>> Applications { get; } = new();
 
     /// <summary>
     ///     Opt into the <c>marten.fetch_for_writing.events_replayed</c> histogram: how many events a
@@ -75,22 +78,6 @@ public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOp
     }
 
     /// <summary>
-    /// Add a custom counter that will be applied after a DocumentSession is committed
-    /// </summary>
-    /// <param name="name"></param>
-    /// <param name="units"></param>
-    /// <param name="recordAction"></param>
-    /// <typeparam name="T"></typeparam>
-    public void ExportCounterOnChangeSets<T>(string name, string units, Action<Counter<T>, IChangeSet> recordAction) where T : struct
-    {
-        var counter = Meter.CreateCounter<T>(name, units);
-        Applications.Add(commit =>
-        {
-            recordAction(counter, commit);
-        });
-    }
-
-    /// <summary>
     /// Direct Marten to export counters on the events being appended
     /// </summary>
     public void TrackEventCounters()
@@ -109,24 +96,12 @@ public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOp
     }
 }
 
-internal class MartenCommitMetrics(ILogger Logger, List<Action<IChangeSet>> applications): DocumentSessionListenerBase
+internal class MartenCommitMetrics(ILogger Logger, OpenTelemetryOptions options): DocumentSessionListenerBase
 {
-    public List<Action<IChangeSet>> Applications { get; } = applications;
-
     public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
     {
-        foreach (var application in Applications)
-        {
-            try
-            {
-                application(commit);
-            }
-            catch (Exception e)
-            {
-                // Really don't expect this as the metrics should be
-                Logger.LogError(e, "Metrics gathering failure");
-            }
-        }
+        // Each counter is caught and logged on its own: the commit is already durable here.
+        options.RecordCommit(commit, Logger);
         return Task.CompletedTask;
     }
 }
