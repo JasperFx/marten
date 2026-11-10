@@ -693,8 +693,11 @@ public static class MartenServiceCollectionExtensions
                     Services.AddScoped<TSubscription>();
                     Services.ConfigureMarten<T>((s, opts) =>
                     {
-                        var subscription = new ScopedSubscriptionServiceWrapper<TSubscription>(s);
-                        opts.Projections.Subscribe(subscription, configure);
+                        // jasperfx#1050: the shared wrapper, which keeps the container scope open around
+                        // the whole page, commit and listener included, rather than only ProcessEventsAsync
+                        var subscription =
+                            new ScopedSubscriptionServiceWrapper<TSubscription, IDocumentOperations, IQuerySession, ISubscription>(s);
+                        opts.Projections.SubscribeScoped(subscription, configure);
                     });
                     break;
             }
@@ -1019,8 +1022,11 @@ public static class MartenServiceCollectionExtensions
                     Services.AddScoped<T>();
                     Services.ConfigureMarten((s, opts) =>
                     {
-                        var subscription = new ScopedSubscriptionServiceWrapper<T>(s);
-                        opts.Projections.Subscribe(subscription, configure);
+                        // jasperfx#1050: the shared wrapper, which keeps the container scope open around
+                        // the whole page, commit and listener included, rather than only ProcessEventsAsync
+                        var subscription =
+                            new ScopedSubscriptionServiceWrapper<T, IDocumentOperations, IQuerySession, ISubscription>(s);
+                        opts.Projections.SubscribeScoped(subscription, configure);
                     });
                     break;
             }

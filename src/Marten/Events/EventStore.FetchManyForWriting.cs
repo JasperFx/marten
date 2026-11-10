@@ -32,7 +32,7 @@ internal partial class EventStore
     public Task<IReadOnlyList<IEventStream<T>>> FetchManyForWriting<T>(IReadOnlyList<Guid> ids,
         CancellationToken cancellation = default) where T : class
         => fetchManyForWritingAsync<T, Guid>(ids, nameof(ids), (batch, id) => batch.Events.FetchForWriting<T>(id),
-            id => FetchForWriting<T>(id, cancellation), cancellation);
+            id => Operations.FetchForWriting<T>(id, cancellation), cancellation);
 
     /// <inheritdoc cref="FetchManyForWriting{T}(IReadOnlyList{Guid}, CancellationToken)" />
     /// <exception cref="ArgumentException">When <paramref name="keys" /> repeats a key.</exception>
@@ -40,7 +40,7 @@ internal partial class EventStore
         CancellationToken cancellation = default) where T : class
         => fetchManyForWritingAsync<T, string>(keys, nameof(keys),
             (batch, key) => batch.Events.FetchForWriting<T>(key),
-            key => FetchForWriting<T>(key, cancellation), cancellation);
+            key => Operations.FetchForWriting<T>(key, cancellation), cancellation);
 
     private async Task<IReadOnlyList<IEventStream<T>>> fetchManyForWritingAsync<T, TId>(
         IReadOnlyList<TId> identities,

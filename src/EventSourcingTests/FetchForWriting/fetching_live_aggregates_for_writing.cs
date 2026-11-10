@@ -468,7 +468,10 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
             var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
         });
 
-        ex.Message.ShouldBe(EventGraph.StringIdentityMismatchMessage);
+        // jasperfx#1047: the identity check is EventOperationsBase's now, shared with every store, so the
+        // message names the setting and the overloads without naming Marten
+        ex.Message.ShouldContain("configured for string stream identity (opts.Events.StreamIdentity = StreamIdentity.AsString)");
+        ex.Message.ShouldContain("Use the string stream key overloads");
     }
 
     [Fact]
@@ -483,7 +486,10 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
             var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
         });
 
-        ex.Message.ShouldBe(EventGraph.GuidIdentityMismatchMessage);
+        // jasperfx#1047: the identity check is EventOperationsBase's now, shared with every store, so the
+        // message names the setting and the overloads without naming Marten
+        ex.Message.ShouldContain("configured for Guid stream identity (opts.Events.StreamIdentity = StreamIdentity.AsGuid)");
+        ex.Message.ShouldContain("Use the Guid stream id overloads");
     }
 
     [Fact]

@@ -108,6 +108,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     {
         _workTracker.EjectAll();
         ChangeTrackers.Clear();
+        discardAggregateWrites();
     }
 
     public void Store<T>(IEnumerable<T> entities) where T : notnull

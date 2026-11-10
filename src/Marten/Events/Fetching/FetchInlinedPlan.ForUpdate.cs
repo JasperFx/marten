@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,12 +62,13 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             await session.BeginTransactionAsync(cancellation).ConfigureAwait(false);
         }
 
-        var cache = _cache;
-        var cacheKey = cache == null ? default : cacheKeyFor(session, id);
-        object? cachedAggregate = null;
-        var cachedVersion = 0L;
-        var cacheHit = cache != null && useCachedSnapshot &&
-                       cache.TryTake(cacheKey, out cachedAggregate, out cachedVersion);
+        // jasperfx#1050: claimed through the session's AggregateWriteCacheSession. See FetchAsyncPlan.
+        var baseline = _cache == null
+            ? default
+            : session.AggregateWriteCache.TakeBaseline<TDoc>(_cache, cacheKeyFor(session, id));
+        if (!useCachedSnapshot) baseline = baseline.WithoutAggregate();
+
+        var cacheHit = baseline.HasAggregate;
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
         _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, forUpdate);
@@ -86,8 +89,8 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             await using var reader =
                 await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
 
-            return await ReadIntoStream(session, id, cancellation, reader, handler,
-                new CacheAttempt(cache, cacheKey, cacheHit, cachedAggregate, cachedVersion)).ConfigureAwait(false);
+            return await ReadIntoStream(session, id, cancellation, reader, handler, storage, baseline)
+                .ConfigureAwait(false);
         }
         catch (CachedSnapshotUnusableException)
         {
@@ -111,16 +114,6 @@ internal partial class FetchInlinedPlan<TDoc, TId>
 
 
     /// <summary>
-    ///     Everything the read side needs to know about a cache attempt. Default value == caching off.
-    /// </summary>
-    private readonly record struct CacheAttempt(
-        IAggregateWriteCache? Cache,
-        AggregateCacheKey Key,
-        bool Hit,
-        object? Aggregate,
-        long Version);
-
-    /// <summary>
     ///     Signals that a cached snapshot did not match the stream's current version and the fetch must be
     ///     redone uncached. Never escapes <see cref="FetchForWriting" />.
     /// </summary>
@@ -132,7 +125,8 @@ internal partial class FetchInlinedPlan<TDoc, TId>
     private sealed class CachedSnapshotUnusableException: MartenException;
 
     private async Task<IEventStream<TDoc>> ReadIntoStream(DocumentSessionBase session, TId id, CancellationToken cancellation,
-        DbDataReader reader, LoadByIdHandler<TDoc, TId> handler, CacheAttempt cacheAttempt = default)
+        DbDataReader reader, LoadByIdHandler<TDoc, TId> handler, IDocumentStorage<TDoc, TId>? storage = null,
+        AggregateWriteBaseline<TDoc> cacheAttempt = default)
     {
         long version = 0;
         try
@@ -143,7 +137,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             }
 
             TDoc? document;
-            if (cacheAttempt.Hit)
+            if (cacheAttempt.HasAggregate)
             {
                 if (cacheAttempt.Version != version)
                 {
@@ -158,7 +152,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
                     throw new CachedSnapshotUnusableException();
                 }
 
-                document = (TDoc)cacheAttempt.Aggregate!;
+                document = cacheAttempt.Aggregate;
             }
             else
             {
@@ -181,12 +175,15 @@ internal partial class FetchInlinedPlan<TDoc, TId>
                 session.StoreDocumentInItemMap(id, document);
             }
 
-            // Deliberately NOT stored in the cache here -- see PendingAggregateCacheWrites. Under Inline the
-            // commit mutates this instance, so an entry written now would describe state that is only
-            // durable if SaveChangesAsync succeeds. Queue it for write back after the commit instead.
-            if (cacheAttempt.Cache != null && document != null)
+            // jasperfx#1050: owed to the cache at the version it was fetched at, which is what this
+            // instance reflects. Under Inline the commit's own projection moves the aggregate on, so the
+            // write-back is advanced to whatever instance that projection stored. Relabelling the fetched
+            // instance with the committed version, as Marten used to, was false whenever Apply returns a
+            // new instance or UseIdentityMapForAggregates is off.
+            if (_cache != null && document != null && version > 0 && storage != null)
             {
-                trackForWriteBack(session, cacheAttempt.Cache, cacheAttempt.Key, document, id, version);
+                session.AggregateWriteCache.Register(cacheAttempt, document, version);
+                advanceAfterCommit(session, storage, cacheKeyFor(session, id), id);
             }
 
             return version == 0
@@ -214,18 +211,54 @@ internal partial class FetchInlinedPlan<TDoc, TId>
     }
 
 
-    private static void trackForWriteBack(DocumentSessionBase session, IAggregateWriteCache cache,
-        AggregateCacheKey key, TDoc document, TId id, long version)
+    /// <summary>
+    ///     After a commit this session owns: if it appended to this stream, write back the instance the
+    ///     inline projection stored for it, at the stream's committed version. Exactly one candidate or
+    ///     nothing is written back, because guessing would put a wrong aggregate where the next writer
+    ///     decides from it.
+    /// </summary>
+    private void advanceAfterCommit(DocumentSessionBase session, IDocumentStorage<TDoc, TId> storage,
+        AggregateCacheKey key, TId id)
     {
-        var map = ((IMartenSession)session).ItemMap;
-        if (!map.TryGetValue(typeof(PendingAggregateCacheWrites), out var raw) ||
-            raw is not PendingAggregateCacheWrites pending)
-        {
-            pending = new PendingAggregateCacheWrites();
-            map[typeof(PendingAggregateCacheWrites)] = pending;
-        }
+        var tenantId = session.TenantId;
 
-        pending.Track(cache, key, document, id, version);
+        session.OnAggregateCommitted(commit =>
+        {
+            StreamAction? stream = null;
+            foreach (var candidate in commit.GetStreams())
+            {
+                var sameStream = id is Guid guid ? candidate.Id == guid : Equals(candidate.Key, id as string);
+                if (sameStream && (IsGlobal || candidate.TenantId == tenantId))
+                {
+                    stream = candidate;
+                    break;
+                }
+            }
+
+            // Nothing appended: the registered instance is still exactly what was fetched
+            if (stream == null || stream.Events.Count == 0) return;
+
+            TDoc? projected = null;
+            foreach (var document in commit.Updated.Concat(commit.Inserted).OfType<TDoc>())
+            {
+                if (!EqualityComparer<TId>.Default.Equals(storage.Identity(document), id)) continue;
+                if (ReferenceEquals(projected, document)) continue;
+
+                if (projected != null)
+                {
+                    session.AggregateWriteCache.Discard(key);
+                    return;
+                }
+
+                projected = document;
+            }
+
+            // A projection that deleted the aggregate, or stored nothing for it, leaves nothing to cache
+            if (projected == null || !session.AggregateWriteCache.Advance(key, projected, stream.Version))
+            {
+                session.AggregateWriteCache.Discard(key);
+            }
+        });
     }
 
     public IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id, bool forUpdate)
