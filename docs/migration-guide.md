@@ -2,6 +2,25 @@
 
 ## Key Changes in 10.0.0
 
+### Event-store objects that used to depend on configuration are always created <Badge type="warning" text="schema change" />
+
+Two stores, or two applications, sharing one schema with different settings used to drop each other's
+event-store objects when either applied its schema (#5309). The cheap ones are now part of the schema
+whatever the flags say; the flags keep governing *behavior* only:
+
+| Object | Used to exist when | Now |
+| --- | --- | --- |
+| `mt_events.is_skipped` column | `Events.EnableEventSkippingInProjectionsOrSubscriptions` | always |
+| `mt_events` `correlation_id`, `causation_id`, `headers`, `user_name` columns | the matching `Events.MetadataConfig.*Enabled` flag | always (nullable) |
+| `mt_high_water_skips` table and `mt_mark_progression_with_skip` function | `Events.EnableAdvancedAsyncTracking` | always |
+
+The first schema apply after upgrading adds whichever of these were missing. Adding a nullable column to
+`mt_events` is a metadata-only change in PostgreSQL. Reads and writes are unchanged: events are only skipped
+when skipping is enabled, and metadata is only written and selected when its flag is on.
+
+Deliberately still conditional, because they are expensive or change the table's shape: tenant partitioning of
+`mt_events`, table fillfactor, and the DCB `hstore` tags column and its GIN index.
+
 ### `EnableExtendedProgressionTracking` is on by default
 
 `opts.Events.EnableExtendedProgressionTracking` now defaults to `true`: the async daemon writes

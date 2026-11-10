@@ -67,7 +67,7 @@ public partial class EventGraph: IFeatureSchema
             yield return new StreamIdentityEnforcementTable(this);
         }
 
-        var eventsTable = new EventsTable(this);
+        var eventsTable = new EventsTable(this, true);
         yield return eventsTable;
 
         #region sample_using-sequence
@@ -118,12 +118,12 @@ public partial class EventGraph: IFeatureSchema
             }
         }
 
-        if (EnableAdvancedAsyncTracking)
-        {
-            yield return new EventProgressionSkippingTable(this);
-            yield return new SystemFunction(DatabaseSchemaName, "mt_mark_progression_with_skip",
-                "varchar, bigint, bigint");
-        }
+        // #5765: always created. EnableAdvancedAsyncTracking governs whether the daemon USES the skip
+        // table and function, not whether they exist, so a store with it off cannot drop them from a
+        // schema another store has it on for.
+        yield return new EventProgressionSkippingTable(this);
+        yield return new SystemFunction(DatabaseSchemaName, "mt_mark_progression_with_skip",
+            "varchar, bigint, bigint");
 
         // In HStore mode tags live inline on mt_events.tags; no per-type tag tables exist.
         if (DcbStorageMode != DcbStorageMode.HStore)
