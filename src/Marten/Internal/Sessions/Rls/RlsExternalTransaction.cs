@@ -19,22 +19,10 @@ internal sealed class RlsExternalTransaction: ExternalTransaction
         _settingName = settingName;
     }
 
-    public override void Apply(NpgsqlCommand command)
-    {
-        EnsureApplied();
-        base.Apply(command);
-    }
-
     public override async Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
     {
         await EnsureAppliedAsync(token).ConfigureAwait(false);
         await base.ApplyAsync(command, token).ConfigureAwait(false);
-    }
-
-    public override void Apply(NpgsqlBatch batch)
-    {
-        EnsureApplied();
-        base.Apply(batch);
     }
 
     public override async Task ApplyAsync(NpgsqlBatch batch, CancellationToken token)
@@ -59,13 +47,6 @@ internal sealed class RlsExternalTransaction: ExternalTransaction
             await RlsSessionVariableApplier.ResetAsync(Connection, _settingName).ConfigureAwait(false);
         }
         await base.DisposeAsync().ConfigureAwait(false);
-    }
-
-    private void EnsureApplied()
-    {
-        if (_applied || Connection.State != ConnectionState.Open) return;
-        RlsSessionVariableApplier.Apply(Connection, _settingName, _tenantId);
-        _applied = true;
     }
 
     private async ValueTask EnsureAppliedAsync(CancellationToken token)
