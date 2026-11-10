@@ -94,6 +94,8 @@ internal class MartenActivator: StoreActivator<IDocumentStore, IDatabase>, IGlob
         return conn.ReleaseGlobalLock(DocumentStore.Options.ApplyChangesLockId, cancellation: ct);
     }
 
+    private IReadOnlyList<IDatabase>? _databases;
+
     protected override async Task CreateDatabasesAsync(CancellationToken token)
     {
         if (DocumentStore.Options.CreateDatabases != null)
@@ -103,11 +105,18 @@ internal class MartenActivator: StoreActivator<IDocumentStore, IDatabase>, IGlob
                 .CreateDatabasesAsync(DocumentStore.Tenancy, DocumentStore.Options.CreateDatabases, token)
                 .ConfigureAwait(false);
         }
+
+        // Always build the databases, as MartenActivator always has, even when neither apply nor assert
+        // is opted in. Master-table tenancy migrates its control table and writes its seeded tenants
+        // there, and an IInitialData that writes into a seeded tenant depends on that having happened.
+        // StoreActivator only asks for the databases when it is going to migrate or assert, so they are
+        // built here and handed back from BuildDatabasesAsync.
+        _databases = await DocumentStore.Tenancy.BuildDatabases().ConfigureAwait(false);
     }
 
     protected override async ValueTask<IReadOnlyList<IDatabase>> BuildDatabasesAsync(CancellationToken token)
     {
-        return await DocumentStore.Tenancy.BuildDatabases().ConfigureAwait(false);
+        return _databases ?? await DocumentStore.Tenancy.BuildDatabases().ConfigureAwait(false);
     }
 
     protected override async Task ApplyChangesAsync(IDatabase database, CancellationToken token)
