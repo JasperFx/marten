@@ -778,15 +778,16 @@ past the event type's introduction.
 A shard that recovers clears its failure columns on the next successful start, so a supervisor built on
 them does not keep alerting on a failure that was fixed an hour ago.
 
-**Default: off.** Opt in explicitly. The columns are useful for any stuck-shard diagnosis -- not just
-CritterWatch -- and the write-side cost is negligible, because they carry already-computed
-daemon-internal values. That is a good reason to turn it on, and not a reason for Marten to turn it on
-for you: an existing store that never asked for monitoring should not start writing six columns on
-every shard state transition because it upgraded.
+**Default: on** <Badge type="tip" text="10.0" />. The columns are useful for any stuck-shard diagnosis -- not
+just CritterWatch -- and the write-side cost is negligible, because they carry already-computed
+daemon-internal values. It was on by default in 9.7.0, reverted in 9.7.1, and is on again in 10.0
+(see [marten#5763](https://github.com/JasperFx/marten/issues/5763)). The `mt_mark_event_progression_extended`
+database function is no longer part of the schema -- the daemon always wrote through plain `UPDATE`
+statements -- so the flip needs no DDL on a database migrated by 9.31 or later.
 
 The columns themselves are created for **every** store regardless of this setting, and the next
 `ApplyAllConfiguredChangesToDatabaseAsync()` adds them to an existing database. They are nullable, so
-no backfill is required, and a store that leaves tracking off never writes them.
+no backfill is required.
 
 That the shape does not depend on the setting is deliberate. It used to, and two `DocumentStore`s
 pointed at the same `DatabaseSchemaName` that disagreed about the flag then stripped each other's
@@ -795,16 +796,17 @@ processes over one schema is an ordinary arrangement (a service beside a seeder,
 a migration tool), so the table shape is now the same for all of them
 (see [marten#5309](https://github.com/JasperFx/marten/issues/5309)).
 
-Opt in (e.g. for CritterWatch monitoring or your own shard health tooling) by setting the toggle:
+To restore the 9.x behavior, opt out by setting the toggle (`IEventStoreInstrumentation.ExtendedProgressionEnabled`
+is the same switch under its storage-agnostic name; both read and write one field):
 
 ```cs
-opts.Events.EnableExtendedProgressionTracking = true;
+opts.Events.EnableExtendedProgressionTracking = false;
 ```
 
 Marten registers a storage-agnostic
 [`IEventStoreInstrumentation`](https://github.com/JasperFx/jasperfx/blob/main/src/JasperFx.Events/IEventStoreInstrumentation.cs)
 adapter (from JasperFx.Events 2.9.0) in the container. Satellite packages such as
-`Wolverine.CritterWatch.Marten` enable the same columns by resolving that service
+`Wolverine.CritterWatch.Marten` control the same columns by resolving that service
 from DI and setting the interface property -- no reference to Marten's concrete
 `EventGraph` required:
 

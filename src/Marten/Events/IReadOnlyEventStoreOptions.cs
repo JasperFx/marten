@@ -150,7 +150,7 @@ public interface IReadOnlyEventStoreOptions
     /// <see cref="IEventStoreInstrumentation.ExtendedProgressionEnabled"/> as a sibling so
     /// store-agnostic monitoring tooling (e.g. <c>Wolverine.CritterWatch.Marten</c>) can flip
     /// the switch via the JasperFx.Events abstraction without referencing Marten's concrete
-    /// option type. Both names refer to the same underlying field; new code is encouraged to
+    /// option type. Both names refer to the same underlying field (on by default since 10.0, #5763); new code is encouraged to
     /// prefer <c>ExtendedProgressionEnabled</c> on the interface.
     /// </para>
     /// </summary>

@@ -1,5 +1,24 @@
 # Migration Guide
 
+## Key Changes in 10.0.0
+
+### `EnableExtendedProgressionTracking` is on by default
+
+`opts.Events.EnableExtendedProgressionTracking` now defaults to `true`: the async daemon writes
+`heartbeat`, `agent_status`, `pause_reason`, `running_on_node` and the `failure_*` columns of
+`mt_event_progression`. `IEventStoreInstrumentation.ExtendedProgressionEnabled` is the same switch
+under its storage-agnostic name. To keep the 9.x behavior:
+
+```cs
+opts.Events.EnableExtendedProgressionTracking = false;
+```
+
+No DDL is needed on a database migrated by 9.31 or later (the columns have been unconditional since
+9.31). The unused `mt_mark_event_progression_extended` function is no longer part of the schema; a
+copy already installed is left in place and can be dropped by hand. The `warning_behind_threshold` and
+`critical_behind_threshold` columns are never written; drop them only as a deliberate migration step
+(`alter table ... drop column` takes an ACCESS EXCLUSIVE lock on a hot table).
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
