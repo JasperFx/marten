@@ -1186,7 +1186,7 @@
          satisfied by the 2.102.0 pin above.
 
          weasel#786 is documentation only (a schema management guide). -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.50.1" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.1" />
     <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.1" />
     <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
