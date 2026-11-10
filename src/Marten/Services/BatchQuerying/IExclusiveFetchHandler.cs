@@ -4,7 +4,7 @@ namespace Marten.Services.BatchQuerying;
 
 /// <summary>
 ///     Marks a batch query handler that can read a stream's version with <c>for update</c>, so a batch that
-///     times out waiting on that row lock can report it as a <see cref="Marten.Exceptions.StreamLockedException" />.
+///     times out waiting on that row lock can report it as a <see cref="JasperFx.Events.StreamLockedException" />.
 /// </summary>
 internal interface IExclusiveFetchHandler
 {

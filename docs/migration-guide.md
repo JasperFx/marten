@@ -21,6 +21,16 @@ when skipping is enabled, and metadata is only written and selected when its fla
 Deliberately still conditional, because they are expensive or change the table's shape: tenant partitioning of
 `mt_events`, table fillfactor, and the DCB `hstore` tags column and its GIN index.
 
+### `StreamLockedException` now lives in `JasperFx.Events` and derives from `ConcurrencyException`
+
+`Marten.Exceptions.StreamLockedException` is gone; Marten now throws `JasperFx.Events.StreamLockedException`, the
+type shared with Polecat so that Wolverine.Http can map both to one `409 Conflict`. The message is unchanged, and the
+stream id is available as `StreamId` (and `ConcurrencyException.Id`).
+
+- It derives from `JasperFx.ConcurrencyException`, so `catch (ConcurrencyException)` now also catches a lock timeout.
+- It no longer derives from `MartenException`, so `catch (MartenException)` no longer sees it.
+- The type moved namespaces, so assemblies compiled against Marten 9 must be recompiled, and source that names `Marten.Exceptions.StreamLockedException` needs `using JasperFx.Events;` instead.
+
 ### `EnableExtendedProgressionTracking` is on by default
 
 `opts.Events.EnableExtendedProgressionTracking` now defaults to `true`: the async daemon writes
