@@ -830,46 +830,15 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsTombstoneStream => true;
 
     /// <summary>
-    ///     Marten names its own six exceptions rather than the ones lifted into JasperFx.Events by
-    ///     jasperfx#751.
+    ///     marten#5847 (Marten 10): Marten throws the exception types lifted into JasperFx.Events
+    ///     directly, so the base nominations hold for every kind but one. DefaultTenantUsageDisabled is
+    ///     still Marten's own type.
     /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         Not an oversight and not a gap. Marten enforces
-    ///         CoreTests.all_exceptions_should_derive_from_MartenException:
-    ///         every exception Marten throws must derive from MartenException, so that a caller can
-    ///         catch the whole family in one clause. C# has single inheritance, so a Marten type
-    ///         cannot derive from both MartenException and the lifted JasperFx type -- adopting the
-    ///         shared types by subclassing, the way Polecat and Fisher did, would break that
-    ///         convention. Marten therefore keeps all six in Marten.Exceptions and nominates them
-    ///         here. Revisiting the convention is deferred to Marten 10 (marten#5346).
-    ///     </para>
-    ///     <para>
-    ///         Fully qualified because JasperFx.Events is imported above and declares six types of
-    ///         exactly these names; the unqualified name would silently resolve to the wrong one and
-    ///         the assertion would fail with a type mismatch rather than a compile error.
-    ///     </para>
-    /// </remarks>
     public override Type ExceptionTypeFor(ComplianceExceptionKind kind) =>
         kind switch
         {
-            ComplianceExceptionKind.UnknownEventType => typeof(Marten.Exceptions.UnknownEventTypeException),
-            ComplianceExceptionKind.NonExistentStream => typeof(Marten.Exceptions.NonExistentStreamException),
-            ComplianceExceptionKind.ExistingStreamIdCollision =>
-                typeof(Marten.Exceptions.ExistingStreamIdCollisionException),
-            ComplianceExceptionKind.EventDeserializationFailure =>
-                typeof(Marten.Exceptions.EventDeserializationFailureException),
-            ComplianceExceptionKind.StreamLocked => typeof(JasperFx.Events.StreamLockedException),
             ComplianceExceptionKind.DefaultTenantUsageDisabled =>
                 typeof(Marten.Exceptions.DefaultTenantUsageDisabledException),
-            // #5476 / jasperfx#871/#878 lifted a canonical ArchivedStreamException in
-            // JasperFx.Events 2.74.0. Marten still refuses an append to an archived stream with the
-            // generic InvalidStreamOperationException, from RichEventAppender and from the MT001
-            // translation in QuickAppendEventsOperationBase. Adopting the lifted type is BREAKING
-            // twice over -- it changes what an existing catch(InvalidStreamOperationException) sees,
-            // and a Marten subclass cannot also derive from MartenException -- so it is on the 10.0
-            // milestone with the rest of the reparenting, and this nominates what Marten throws today.
-            ComplianceExceptionKind.ArchivedStream => typeof(Marten.Exceptions.InvalidStreamOperationException),
             _ => base.ExceptionTypeFor(kind)
         };
 

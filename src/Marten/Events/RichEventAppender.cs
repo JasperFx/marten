@@ -141,8 +141,8 @@ internal class RichStreamAppendingStep: IEventAppendingStep
         {
             if (state.IsArchived)
             {
-                throw new InvalidStreamOperationException(
-                    $"Attempted to append event to archived stream with Id '{state.Id}'.");
+                // marten#5476 / marten#5847: the shared JasperFx.Events type, as Polecat and Fisher throw.
+                throw new ArchivedStreamException(_stream.Key ?? (object)_stream.Id);
             }
 
             _stream.PrepareEvents(state.Version, eventGraph, sequences, metadataContext);

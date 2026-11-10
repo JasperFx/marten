@@ -40,7 +40,7 @@ public class query_event_data_tests: OneOffConfigurationsContext
 
         var query = reader.QueryEventData<CargoLoaded>().Where(x => x.Cargo.GetHashCode() == 7);
 
-        var ex = await Should.ThrowAsync<Marten.Exceptions.BadLinqExpressionException>(
+        var ex = await Should.ThrowAsync<BadLinqExpressionException>(
             () => DocumentQueryableExtensions.ToListAsync(query, CancellationToken.None));
 
         ex.Message.ShouldContain("GetHashCode");

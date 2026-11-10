@@ -97,10 +97,10 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
         var failure = new ShardFailure
         {
             Category = category,
-            ExceptionType = "Marten.Exceptions.EventDeserializationFailureException",
+            ExceptionType = "JasperFx.Events.EventDeserializationFailureException",
             RootExceptionType = "System.DivideByZeroException",
             Message = "Boom!",
-            Detail = "Marten.Exceptions.EventDeserializationFailureException: Boom!\n   at Somewhere",
+            Detail = "JasperFx.Events.EventDeserializationFailureException: Boom!\n   at Somewhere",
             OccurredAt = DateTimeOffset.UtcNow,
             Event = new EventFailureDetails
             {

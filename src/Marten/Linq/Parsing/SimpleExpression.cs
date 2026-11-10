@@ -280,7 +280,7 @@ internal class SimpleExpression: ExpressionVisitor
                 return null;
         }
 
-        throw new BadLinqExpressionException(node);
+        throw new BadLinqExpressionException($"Marten can not (yet) support the Linq expression '{node}'");
     }
 
     protected override Expression VisitMember(MemberExpression node)

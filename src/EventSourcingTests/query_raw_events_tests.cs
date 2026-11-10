@@ -110,7 +110,7 @@ public class query_raw_events_tests: OneOffConfigurationsContext
         var query = ((IReadOnlyEventStore)theSession.Events).QueryRawEvents()
             .Where(x => x.EventTypeName.GetHashCode() == 7);
 
-        var ex = await Should.ThrowAsync<Marten.Exceptions.BadLinqExpressionException>(
+        var ex = await Should.ThrowAsync<BadLinqExpressionException>(
             () => DocumentQueryableExtensions.ToListAsync(query, CancellationToken.None));
 
         ex.Message.ShouldContain("GetHashCode");

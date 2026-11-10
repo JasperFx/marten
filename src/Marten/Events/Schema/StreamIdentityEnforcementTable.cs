@@ -20,7 +20,7 @@ namespace Marten.Events.Schema;
 /// This sibling table holds just the identity tuple — never archived, never
 /// partitioned — so its primary key truly enforces "this id has been used,
 /// regardless of archive state." A duplicate INSERT here is the trigger for
-/// <see cref="Marten.Exceptions.ExistingStreamIdCollisionException"/>.
+/// <see cref="JasperFx.Events.ExistingStreamIdCollisionException"/>.
 /// </summary>
 internal class StreamIdentityEnforcementTable: Table
 {

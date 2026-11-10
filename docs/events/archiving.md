@@ -83,11 +83,11 @@ var events = await theSession.Events.QueryAllRawEvents()
 ## Appending to an Archived Stream
 
 An archived stream is closed to new events. Appending to one fails the transaction with
-`Marten.Exceptions.InvalidStreamOperationException` and the message
-`Attempted to append event to archived stream with Id '{id}'.` — in Rich append mode the stream state is read before the
+`JasperFx.Events.ArchivedStreamException`, whose `Id` is the stream's id or key — the same type Polecat and Fisher throw
+(before Marten 10 this was the generic `Marten.Exceptions.InvalidStreamOperationException`). In Rich append mode the stream state is read before the
 append and the check happens in Marten (`RichEventAppender`), and in Quick append mode the `mt_quick_append_events` function
-raises SQLSTATE `MT001` which Marten translates into the same exception. Either way you get one exception type and one
-message, so this does not change with `EventAppendMode`.
+raises SQLSTATE `MT001` which Marten translates into the same exception. Either way you get the same exception, so this
+does not change with `EventAppendMode`.
 
 There is no un-archive API in Marten. Archiving is a terminal step for a stream — a stream that should keep receiving events
 should not have been archived. Recovering one means flipping `is_archived` back with SQL on both `mt_streams` and

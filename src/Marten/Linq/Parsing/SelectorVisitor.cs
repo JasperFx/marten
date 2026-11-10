@@ -135,7 +135,7 @@ public class SelectorVisitor: ExpressionVisitor
             var parameter = ParameterFinder.FindIn(selectExpression);
             if (parameter == null)
             {
-                throw new Marten.Exceptions.BadLinqExpressionException(
+                throw new BadLinqExpressionException(
                     "Marten is not (yet) able to process this Select() transform");
             }
 

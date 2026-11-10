@@ -22,7 +22,7 @@ namespace TenantPartitionedEventsTests.AppendWrite;
 /// After archive: the owning tenant's <c>FetchStreamStateAsync.IsArchived</c>
 /// reads <c>true</c>; the other tenant's same-id stream stays
 /// <c>IsArchived = false</c>; and any re-append to the archived stream throws
-/// <see cref="InvalidStreamOperationException"/> (MT001).
+/// <see cref="ArchivedStreamException"/> (MT001).
 /// </para>
 /// </summary>
 [Collection("guid-partitioned")]
@@ -83,11 +83,11 @@ public class archive_stream_under_partitioning
     }
 
     [Fact]
-    public async Task re_append_to_archived_stream_throws_InvalidStreamOperationException()
+    public async Task re_append_to_archived_stream_throws_ArchivedStreamException()
     {
         // The archive function flips is_archived on mt_streams; subsequent
         // appends hit the MT001 guard in mt_quick_append_events and surface as
-        // InvalidStreamOperationException via TryTransform.
+        // ArchivedStreamException via TryTransform.
         var tenant = PartitionedFixtureBase.NewTenant();
         await _fixture.Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
 
@@ -107,7 +107,7 @@ public class archive_stream_under_partitioning
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.Append(streamId, new TripLeg(99));
-            await Should.ThrowAsync<InvalidStreamOperationException>(async () =>
+            await Should.ThrowAsync<ArchivedStreamException>(async () =>
                 await s.SaveChangesAsync());
         }
     }
