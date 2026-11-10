@@ -85,14 +85,14 @@ jobs:
         include:
           # ─── The core suites, on both supported combinations ───────────────
           #
-          # net9.0/PG15/Newtonsoft and net10.0/PGlatest/System.Text.Json were the two workflows
+          # The old net9.0/PG15/Newtonsoft and net10.0/PGlatest/System.Text.Json workflows (net9.0 is dropped; both legs now run on net10.0)
           # every one of these already ran under. That coverage is preserved exactly; it is only
           # the packaging that changed.
 
-          - name: BaseLib (net9, PG15, Newtonsoft)
+          - name: BaseLib (net10, PG15, Newtonsoft)
             target: TestBaseLib
             project: src/Marten.Testing/Marten.Testing.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
           - name: BaseLib (net10, PGlatest, STJ)
@@ -102,10 +102,10 @@ jobs:
             serializer: SystemTextJson
             pg_image: postgres:latest
 
-          - name: Core (net9, PG15, Newtonsoft)
+          - name: Core (net10, PG15, Newtonsoft)
             target: TestCore
             project: src/CoreTests/CoreTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
           - name: Core (net10, PGlatest, STJ)
@@ -115,10 +115,10 @@ jobs:
             serializer: SystemTextJson
             pg_image: postgres:latest
 
-          - name: DocumentDb (net9, PG15, Newtonsoft)
+          - name: DocumentDb (net10, PG15, Newtonsoft)
             target: TestDocumentDb
             project: src/DocumentDbTests/DocumentDbTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
           - name: DocumentDb (net10, PGlatest, STJ)
@@ -128,10 +128,10 @@ jobs:
             serializer: SystemTextJson
             pg_image: postgres:latest
 
-          - name: EventSourcing (net9, PG15, Newtonsoft)
+          - name: EventSourcing (net10, PG15, Newtonsoft)
             target: TestEventSourcing
             project: src/EventSourcingTests/EventSourcingTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
           - name: EventSourcing (net10, PGlatest, STJ)
@@ -141,10 +141,10 @@ jobs:
             serializer: SystemTextJson
             pg_image: postgres:latest
 
-          - name: Linq (net9, PG15, Newtonsoft)
+          - name: Linq (net10, PG15, Newtonsoft)
             target: TestLinq
             project: src/LinqTests/LinqTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
           - name: Linq (net10, PGlatest, STJ)
@@ -154,10 +154,10 @@ jobs:
             serializer: SystemTextJson
             pg_image: postgres:latest
 
-          - name: Patching (net9, PG15, Newtonsoft)
+          - name: Patching (net10, PG15, Newtonsoft)
             target: TestPatching
             project: src/PatchingTests/PatchingTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
           - name: Patching (net10, PGlatest, STJ)
@@ -167,10 +167,10 @@ jobs:
             serializer: SystemTextJson
             pg_image: postgres:latest
 
-          - name: ModularConfig (net9, PG15, Newtonsoft)
+          - name: ModularConfig (net10, PG15, Newtonsoft)
             target: TestModularConfig
             project: src/ModularConfigTests/ModularConfigTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
           - name: ModularConfig (net10, PGlatest, STJ)

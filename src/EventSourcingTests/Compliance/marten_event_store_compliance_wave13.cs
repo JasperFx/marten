@@ -28,5 +28,6 @@ namespace EventSourcingTests.Compliance;
 public class composite_projection_compliance
     : CompositeProjectionCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
 
-public class single_tenanted_event_slicing_compliance
-    : SingleTenantedEventSlicingCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+// SingleTenantedEventSlicingCompliance (jasperfx#724) was removed in JasperFx 3.0 (jasperfx#727): its
+// precondition cannot be built on Polecat or Fisher. Marten's own regression test for marten#4085
+// (marten#5305) is the coverage that stays.

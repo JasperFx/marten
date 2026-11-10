@@ -14,4 +14,4 @@ using Xunit;
 // alongside the correctness gate's "source_gen_path_is_actually_engaged" assertion
 // would race on the registry state. Matches the convention used elsewhere in the
 // Marten test suite (LinqTests/AssemblyInfo.cs).
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]

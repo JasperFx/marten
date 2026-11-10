@@ -9,7 +9,7 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735;0618</NoWarn>
         <RepositoryUrl>https://github.com/JasperFx/marten</RepositoryUrl>
-        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>

@@ -159,7 +159,7 @@ for i in $(seq 1 90); do docker exec "$PG" pg_isready -U postgres >/dev/null 2>&
 export TZ=UTC
 export DISABLE_TEST_PARALLELIZATION=true
 for pass in 1 2; do
-  ( cd src/CoreTests && dotnet run --no-build -f net9.0 > "/tmp/weasel937-core-$pass.log" 2>&1 )
+  ( cd src/CoreTests && dotnet run --no-build -f net10.0 > "/tmp/weasel937-core-$pass.log" 2>&1 )
   echo "  pass $pass :: $(grep -E '^  total:|^  failed:' "/tmp/weasel937-core-$pass.log" | tr '\n' ' ')"
   grep -E "^failed " "/tmp/weasel937-core-$pass.log" | sed 's/^/        /' | head -8
 done

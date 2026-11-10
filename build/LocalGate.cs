@@ -56,10 +56,10 @@ partial class Build
 
     /// <summary>
     /// LocalGate: DEFAULT_SERIALIZER for every unit — <c>Newtonsoft</c>, <c>SystemTextJson</c>, or
-    /// <c>split</c> for CI's pairing (net9.0 on Newtonsoft, net10.0 on System.Text.Json). Unset
+    /// <c>split</c> for CI's pairing (net10.0 on Newtonsoft, net11.0 on System.Text.Json). Unset
     /// leaves the suites on their own default (Newtonsoft) or whatever the shell exported.
     /// </summary>
-    [Parameter("LocalGate: DEFAULT_SERIALIZER for every unit: Newtonsoft, SystemTextJson, or split (CI's net9/net10 pairing)")]
+    [Parameter("LocalGate: DEFAULT_SERIALIZER for every unit: Newtonsoft, SystemTextJson, or split (CI's net10/net11 pairing)")]
     readonly string GateSerializer;
 
     /// <summary>
@@ -368,7 +368,7 @@ partial class Build
 
         return GateSerializer.Trim().ToLowerInvariant() switch
         {
-            "split" => framework == "net9.0" ? "Newtonsoft" : "SystemTextJson",
+            "split" => framework == "net10.0" ? "Newtonsoft" : "SystemTextJson",
             "newtonsoft" => "Newtonsoft",
             "systemtextjson" or "stj" => "SystemTextJson",
             _ => throw new ArgumentException(

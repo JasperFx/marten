@@ -7,7 +7,7 @@
              which breaks `dotnet test` adapter discovery on this SDK. Use the
              multi-TFM form to stay consistent with every other test project in the
              solution. -->
-        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>

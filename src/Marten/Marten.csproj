@@ -63,7 +63,7 @@
          so it must be contributed exactly once — guard on a single TFM to avoid a
          duplicate-package-file conflict. -->
     <Target Name="_BundleEventsSourceGeneratorAnalyzer"
-            Condition="'$(TargetFramework)' == 'net9.0' And '$(PkgJasperFx_Events_SourceGenerator)' != ''">
+            Condition="'$(TargetFramework)' == 'net10.0' And '$(PkgJasperFx_Events_SourceGenerator)' != ''">
         <ItemGroup>
             <TfmSpecificPackageFile Include="$(PkgJasperFx_Events_SourceGenerator)\analyzers\dotnet\cs\JasperFx.Events.SourceGenerator.dll">
                 <PackagePath>analyzers/dotnet/cs</PackagePath>

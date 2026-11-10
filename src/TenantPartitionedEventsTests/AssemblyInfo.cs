@@ -8,4 +8,4 @@ using Xunit;
 // (in-assembly), (2) Environment.ProcessId in the fixture schema names
 // (cross-TFM), (3) unique-per-test tenant ids (same-assembly siblings) — see
 // the issue text for the full rationale.
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]
