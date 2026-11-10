@@ -66,6 +66,12 @@ public class SystemTextJsonSerializer: ISerializer
         syncDocumentDeserializeOptions();
     }
 
+    /// <summary>
+    ///     #5735: the options documents are written with, after casing and enum storage are applied. LINQ
+    ///     reads a union member's case shapes from these; never mutate them.
+    /// </summary>
+    internal JsonSerializerOptions WriteOptions => _options;
+
     public string ToJson(object? document)
     {
         if (document is null)
