@@ -401,12 +401,23 @@ public class JsonNetSerializer: ISerializer
     ///         A <c>JsonConverter</c> cannot substitute for this. By the time <c>ReadJson</c> runs, the reader
     ///         has already turned the token into a <c>DateTime</c> and the original offset is gone.
     ///     </para>
+    ///     <para>
+    ///         <c>FloatParseHandling.Decimal</c> is load-bearing for the same reason (#5876). The serializer runs
+    ///         with <c>MetadataPropertyHandling.ReadAhead</c>, so each object is first buffered as a
+    ///         <c>JObject</c>, and the reader's default turns every fractional token into a <c>double</c> there.
+    ///         A <c>decimal</c> member was then rebuilt from that double. Up to .NET 10 the double-to-decimal
+    ///         conversion rounded to 15 significant digits and hid it for ordinary values; .NET 11 converts the
+    ///         exact binary value, so <c>123.45m</c> came back as <c>123.45000000000000284217094304m</c>.
+    ///         A <c>double</c> member converts from the decimal token as before; an undeclared
+    ///         <c>object</c>/<c>dynamic</c> member now materialises a fractional number as <c>decimal</c>.
+    ///     </para>
     /// </remarks>
     private JsonTextReader GetJsonTextReader(Stream stream)
     {
         return new(stream.GetStreamReader())
         {
-            ArrayPool = _jsonArrayPool, CloseInput = false, DateParseHandling = DateParseHandling.None
+            ArrayPool = _jsonArrayPool, CloseInput = false, DateParseHandling = DateParseHandling.None,
+            FloatParseHandling = FloatParseHandling.Decimal
         };
     }
 
@@ -415,7 +426,8 @@ public class JsonNetSerializer: ISerializer
     {
         return new(textReader)
         {
-            ArrayPool = _jsonArrayPool, CloseInput = false, DateParseHandling = DateParseHandling.None
+            ArrayPool = _jsonArrayPool, CloseInput = false, DateParseHandling = DateParseHandling.None,
+            FloatParseHandling = FloatParseHandling.Decimal
         };
     }
 }
