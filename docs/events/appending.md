@@ -276,7 +276,7 @@ opts.Events.UseExclusiveLockOnConcurrentAppends = true;
 ```
 
 It adds `FOR UPDATE` to the version `select`, so the losing transaction waits on the stream's
-`mt_streams` row, then sees the winner's version and raises the concurrency exception *before*
+`mt_streams` row, then sees the winner's version and raises the concurrency exception _before_
 any sequence number is drawn. It takes a row lock on one stream only: no table lock, and appends
 without an expected version are not affected. The setting is off by default.
 Measurements under contention are in `src/EventAppenderPerfTester/Results.md`.
