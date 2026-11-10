@@ -361,6 +361,19 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     }
 
     /// <summary>
+    ///     Register a subscription resolved from the container per page of events, through the shared
+    ///     <see cref="JasperFx.Events.Subscriptions.ScopedSubscriptionServiceWrapper{T, TOperations, TQuerySession, TSubscription}"/>
+    ///     (jasperfx#1050), which is not itself one of Marten's <see cref="ISubscription"/> types.
+    /// </summary>
+    internal void SubscribeScoped<T>(
+        JasperFx.Events.Subscriptions.ScopedSubscriptionServiceWrapper<T, IDocumentOperations, IQuerySession, ISubscription> subscription,
+        Action<ISubscriptionOptions>? configure) where T : notnull, ISubscription
+    {
+        configure?.Invoke(subscription);
+        registerSubscription(subscription);
+    }
+
+    /// <summary>
     /// Adds a single stream projection to this Marten application and marks the aggregate type
     /// as being globally tenanted. Use this option *if* you have an otherwise multi-tenanted event store,
     /// but a particular type of stream and aggregate should be stored globally (single tenanted).

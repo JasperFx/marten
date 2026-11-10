@@ -65,19 +65,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </remarks>
     public const string HStoreTagIndexName = "idx_mt_events_tags";
 
-    private readonly Cache<Type, string> _aggregateNameByType =
-        new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
-
-    private readonly Cache<string, Type> _aggregateTypeByName;
-
     private readonly Cache<string, EventMapping?> _byEventName = new();
     private readonly CancellationTokenSource _cancellation = new();
 
     private readonly Cache<Type, EventMapping> _events = new();
 
     private readonly Lazy<IInlineProjection<IDocumentOperations>[]> _inlineProjections;
-
-    private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
 
     private string? _databaseSchemaName;
 
@@ -90,7 +83,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     // SessionOptions.ForDatabase(...) to query Marten documents with LINQ.
     internal DocumentStore Store => _store;
 
-    private readonly List<ITagTypeRegistration> _tagTypes = new();
     private readonly List<IEventTagRule> _tagRules = new();
 
     // Roots EventMapping<>'s constructor for trimming / Native AOT. Without this root the constructor metadata is trimmed
@@ -115,6 +107,9 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 static closed => parent => (EventMapping)Activator.CreateInstance(closed, parent)!);
             Options.Storage.AddMapping(mapping);
 
+            // jasperfx#1043: seeds EventRegistry's dotnet-name cache, and expires its cached misses
+            RegisterDotNetTypeNames(mapping);
+
             return mapping;
         };
 
@@ -123,8 +118,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         _inlineProjections =
             new Lazy<IInlineProjection<IDocumentOperations>[]>(() =>
                 options.Projections.BuildInlineProjections(_store));
-
-        _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
 
         AddEventType<Archived>();
 
@@ -250,18 +243,24 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         _tombstones?.SafeDispose();
     }
 
-    public override Type AggregateTypeFor(string aggregateTypeName)
+    // jasperfx#1043: the alias caches, both directions, are EventRegistry's. Marten only says what an
+    // aggregate type's persisted name is, and how to find a type by a name this process has not seen yet.
+    protected override string AliasFor(Type aggregateType)
     {
-        return _aggregateTypeByName[aggregateTypeName];
+        return aggregateType.IsGenericType ? aggregateType.ShortNameInCode() : aggregateType.Name.ToTableAlias();
     }
 
-    public override string AggregateAliasFor(Type aggregateType)
+    protected override Type? FindAggregateType(string aggregateTypeName)
     {
-        var alias = _aggregateNameByType[aggregateType];
+        foreach (var aggregateType in Options.Projections.AllAggregateTypes())
+        {
+            if (aggregateTypeName.EqualsIgnoreCase(AggregateAliasFor(aggregateType)))
+            {
+                return aggregateType;
+            }
+        }
 
-        _aggregateTypeByName.Fill(alias, aggregateType);
-
-        return alias;
+        return null;
     }
 
     public override IEvent BuildEvent(object eventData)
@@ -504,73 +503,21 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         }
     }
 
-    // #4515: per-event-type binary serializer registry. EventMapping<T>'s
-    // constructor calls ResolveBinarySerializerFor when the mapping is built
-    // (lazily on first use); UseBinarySerializer<T> populates this dictionary
-    // ahead of time so the resolution lands on the registered instance.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<Type, JasperFx.Events.IEventBinarySerializer> _binarySerializerByType = new();
-
-    /// <inheritdoc />
-    public JasperFx.Events.IEventBinarySerializer? DefaultBinarySerializer { get; set; }
-
-    /// <inheritdoc />
-    public IEventStoreOptions UseBinarySerializer<TEvent>(JasperFx.Events.IEventBinarySerializer serializer)
+    // #4515 / jasperfx#1043: the per-event-type binary serializer registry, DefaultBinarySerializer and the
+    // [BinaryEvent] resolution are EventRegistry's. IEventStoreOptions' fluent form returns the options.
+    IEventStoreOptions IEventStoreOptions.UseBinarySerializer<TEvent>(JasperFx.Events.IEventBinarySerializer serializer)
     {
-        if (serializer == null) throw new ArgumentNullException(nameof(serializer));
-
-        var eventType = typeof(TEvent);
-        _binarySerializerByType[eventType] = serializer;
-
-        // Make sure the mapping exists and is wired with this serializer.
-        // EventMapping<T> reads its BinarySerializer from
-        // ResolveBinarySerializerFor in its constructor, so if the mapping
-        // already exists (e.g. another store-options call referenced the type
-        // first) we need to refresh its serializer reference here too.
-        AddEventType(eventType);
-        var mapping = EventMappingFor(eventType);
-        if (mapping is not null)
-        {
-            mapping.BinarySerializer = serializer;
-        }
-
+        UseBinarySerializer<TEvent>(serializer);
         return this;
     }
 
-    /// <summary>
-    ///     #4515: resolve the binary serializer for an event type. Called from
-    ///     <see cref="EventMapping"/>'s constructor. Precedence: explicit
-    ///     per-type registration via <see cref="UseBinarySerializer{TEvent}"/>
-    ///     beats <see cref="BinaryEventAttribute"/> + <see cref="DefaultBinarySerializer"/>.
-    ///     Returns <c>null</c> for plain JSON events.
-    /// </summary>
-    internal JasperFx.Events.IEventBinarySerializer? ResolveBinarySerializerFor(Type eventType)
+    // A mapping built before a serializer was configured may have latched the old answer
+    protected override void OnBinarySerializersChanged()
     {
-        if (_binarySerializerByType.TryGetValue(eventType, out var explicitSerializer))
+        foreach (var mapping in _events)
         {
-            return explicitSerializer;
+            mapping.ResetBinarySerializer();
         }
-
-        // jasperfx#669/#672: BOTH spellings are honored, in ONE lookup. Marten.Events
-        // .BinaryEventAttribute is what every existing user wrote; JasperFx.Events
-        // .BinaryEventAttribute is the promoted one an event type shared across Marten / Polecat /
-        // Fisher can declare. Marten's now derives from the promoted one (2.51.0 unsealed it for
-        // exactly this), and IsDefined matches attributes assignable to the requested type, so the
-        // base lookup finds the subclass. `inherit: false` is unrelated and stays as it was — it
-        // governs the EVENT type's hierarchy, not the attribute class's.
-        if (eventType.IsDefined(typeof(JasperFx.Events.BinaryEventAttribute), inherit: false))
-        {
-            if (DefaultBinarySerializer is null)
-            {
-                throw new InvalidOperationException(
-                    $"Event type '{eventType.FullName}' is marked with [BinaryEvent] but no IEventBinarySerializer was registered. " +
-                    $"Either call opts.Events.UseBinarySerializer<{eventType.Name}>(...) explicitly, " +
-                    $"or set opts.Events.DefaultBinarySerializer to a store-wide fallback.");
-            }
-
-            return DefaultBinarySerializer;
-        }
-
-        return null;
     }
 
     /// <summary>
@@ -584,196 +531,9 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         types.Each(AddEventType);
     }
 
-    /// <summary>
-    /// Register a strong-typed identifier as a tag type for DCB support.
-    /// </summary>
-    [RequiresUnreferencedCode("Discovers the tag type's inner value by reflecting over its members (TagTypeRegistration.Create). Under trimming or Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
-    [RequiresDynamicCode("Closes TagTypeRegistration<TTag, TInner> with MakeGenericType (TagTypeRegistration.Create). Under Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
-    public ITagTypeRegistration RegisterTagType<TTag>() where TTag : notnull
-    {
-        var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
-        if (existing != null) return existing;
-
-        var registration = CreateTagType(typeof(TTag), null, TagTypeRegistration.Create<TTag>,
-            RuntimeFeature.IsDynamicCodeSupported);
-        _tagTypes.Add(registration);
-        return registration;
-    }
-
-    /// <summary>
-    /// Register a strong-typed identifier as a tag type with a custom table name suffix.
-    /// </summary>
-    [RequiresUnreferencedCode("Discovers the tag type's inner value by reflecting over its members (TagTypeRegistration.Create). Under trimming or Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
-    [RequiresDynamicCode("Closes TagTypeRegistration<TTag, TInner> with MakeGenericType (TagTypeRegistration.Create). Under Native AOT use RegisterTagType<TTag, TInner>(unwrapper), backed by TagTypeRegistration.FromUnwrapper.")]
-    public ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull
-    {
-        assertUsableTableSuffix(tableSuffix);
-
-        var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
-        if (existing != null) return existing;
-
-        var registration = CreateTagType(typeof(TTag), tableSuffix, TagTypeRegistration.Create<TTag>,
-            RuntimeFeature.IsDynamicCodeSupported);
-        _tagTypes.Add(registration);
-        return registration;
-    }
-
-    /// <summary>
-    /// Register a strong-typed identifier as a tag type with an explicit unwrapper, the trim- and
-    /// Native AOT-safe form of <see cref="RegisterTagType{TTag}()"/> (jasperfx#1012). Nothing is
-    /// discovered by reflection and no generic type is closed at runtime.
-    /// </summary>
-    /// <param name="unwrapper">Reads the inner value out of the tag, e.g. <c>x =&gt; x.Value</c></param>
-    /// <param name="tableSuffix">
-    ///     Table name suffix. <c>null</c> takes the same default the inferring overloads use — the tag
-    ///     type's name as a table alias — and an empty or whitespace suffix is refused.
-    /// </param>
-    /// <exception cref="InvalidOperationException">
-    ///     The tag type is already registered with a different inner type
-    /// </exception>
-    public ITagTypeRegistration RegisterTagType<TTag, TInner>(Func<TTag, TInner> unwrapper, string? tableSuffix = null)
-        where TTag : notnull
-    {
-        ArgumentNullException.ThrowIfNull(unwrapper);
-        assertUsableTableSuffix(tableSuffix);
-
-        var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
-        if (existing != null)
-        {
-            // The first registration of a tag type wins, as it does for the inferring overloads. But a
-            // DIFFERENT inner type is a conflicting registration rather than a repeated one, and silently
-            // keeping the first would leave the unwrapper this call passed unused -- every tag value would
-            // then be read by the other registration's rule. Inference can only ever produce one inner
-            // type for a given tag, so a disagreement means one of the two call sites is wrong.
-            if (existing.SimpleType != typeof(TInner))
-            {
-                throw new InvalidOperationException(
-                    $"The tag type {typeof(TTag).FullNameInCode()} is already registered with the inner type "
-                    + $"{existing.SimpleType.FullNameInCode()}, so it cannot be registered again with {typeof(TInner).FullNameInCode()}.");
-            }
-
-            return existing;
-        }
-
-        var registration = TagTypeRegistration.FromUnwrapper(unwrapper, tableSuffix);
-        _tagTypes.Add(registration);
-        return registration;
-    }
-
-    /// <remarks>
-    ///     A tag table is named <c>mt_event_tag_&lt;suffix&gt;</c>, so an empty suffix names
-    ///     <c>mt_event_tag_</c> — a real table, which is why nothing failed before, and a table every tag
-    ///     type registered that way would share. <c>null</c> is the way to ask for the default; "" never
-    ///     meant anything a caller wanted.
-    /// </remarks>
-    private static void assertUsableTableSuffix(string? tableSuffix)
-    {
-        if (tableSuffix == null) return;
-
-        if (tableSuffix.IsEmpty() || tableSuffix.Trim().Length == 0)
-        {
-            throw new ArgumentException(
-                "An empty tag table suffix would name the table mt_event_tag_, which every tag type registered "
-                + "that way would share. Pass a suffix, or null for the tag type's own name.",
-                nameof(tableSuffix));
-        }
-    }
-
-    /// <remarks>
-    ///     <para>
-    ///         #5649. <see cref="TagTypeRegistration.Create{TTag}" /> reads the inner type with
-    ///         <c>ValueTypeInfo</c>, which reflects over the tag's members, and closes
-    ///         <c>TagTypeRegistration&lt;TTag, TInner&gt;</c> with <c>MakeGenericType</c>. A Native AOT image
-    ///         has no code for that instantiation, and a trimmed one may have lost the tag's members. Neither
-    ///         failure says that the fix is one registration call, and the
-    ///         <c>[RequiresDynamicCode]</c>/<c>[RequiresUnreferencedCode]</c> annotations only reach an
-    ///         application that is itself AOT-analyzed — a store configured from inside a library is not.
-    ///     </para>
-    ///     <para>
-    ///         The two halves are gated differently on purpose.
-    ///         <see cref="NotSupportedException" />/<see cref="MissingMethodException" /> mean the generic
-    ///         could not be closed, which only happens with no JIT, so they are reinterpreted only when
-    ///         <paramref name="canEmit" /> is false. <see cref="InvalidValueTypeException" /> is
-    ///         <i>ambiguous</i> — the tag may genuinely not be a single-value wrapper, or its members may
-    ///         have been trimmed away — and no runtime flag separates those two, because a trimmed
-    ///         non-AOT image still has dynamic code. It is reinterpreted either way, with a message that
-    ///         covers both readings, because the explicit overload is the answer to both.
-    ///     </para>
-    ///     <para>
-    ///         <paramref name="create" /> and <paramref name="canEmit" /> are parameters so that a JIT test
-    ///         can exercise the native branch, as in <c>ValueTypeIdGeneration.BuildSelectClause</c> (#5600).
-    ///         A guard reachable only by publishing natively is a guard nothing checks.
-    ///     </para>
-    /// </remarks>
-    internal static ITagTypeRegistration CreateTagType(Type tagType, string? tableSuffix,
-        Func<string?, ITagTypeRegistration> create, bool canEmit)
-    {
-        try
-        {
-            return create(tableSuffix);
-        }
-        catch (InvalidValueTypeException e)
-        {
-            throw new InvalidOperationException(
-                $"The tag type {tagType.FullNameInCode()} could not be read as a strong-typed identifier. Either it is not a "
-                + "single-value wrapper, or this image was trimmed and has lost the members that say so. Naming the inner "
-                + $"type and how to read it needs neither:{Environment.NewLine}{Environment.NewLine}"
-                + $"    {TagTypeRegistrationLine(tagType, tableSuffix, null)}{Environment.NewLine}{Environment.NewLine}"
-                + "The unwrapper replaces reflecting over the tag's members, and naming the inner type closes the generic at "
-                + "compile time. The overload works the same under a JIT. "
-                + "See https://martendb.io/configuration/aot-publishing and https://github.com/JasperFx/marten/issues/5649.",
-                e);
-        }
-        catch (Exception e) when (!canEmit && e is NotSupportedException or MissingMethodException)
-        {
-            throw new InvalidOperationException(
-                $"The tag type {tagType.FullNameInCode()} could not be registered by inference, and this is a Native AOT image, "
-                + $"which cannot close TagTypeRegistration<,> over it at runtime. Register it with its inner type and unwrapper instead:{Environment.NewLine}{Environment.NewLine}"
-                + $"    {TagTypeRegistrationLine(tagType, tableSuffix, null)}{Environment.NewLine}{Environment.NewLine}"
-                + "Naming the inner type is what closes the generic at compile time. The overload works the same under a JIT. "
-                + "See https://martendb.io/configuration/aot-publishing and https://github.com/JasperFx/marten/issues/5649.",
-                e);
-        }
-    }
-
-    /// <summary>
-    /// The explicit registration of <paramref name="tagType" /> as a line of code. The inner type and member
-    /// follow the tag when it can be read, with <c>TInner</c> and <c>Value</c> as placeholders when it can't, and a
-    /// missing or empty suffix becomes the one the inferring overload uses by default.
-    /// </summary>
-    /// <remarks>
-    ///     <c>NameInCode()</c> rather than <c>FullNameInCode()</c> for the types inside the line, matching the
-    ///     #5600 and #5635 remedies — the fully qualified name is in the sentence above it. A tag type nested
-    ///     inside another type therefore prints a line that needs its outer scope added; that is true of all
-    ///     three remedies and is not worth diverging here.
-    /// </remarks>
-    [UnconditionalSuppressMessage("Trimming", "IL2067",
-        Justification = "Diagnostic text only; if the tag type's members were trimmed the line falls back to placeholders.")]
-    internal static string TagTypeRegistrationLine(Type tagType, string? tableSuffix, Type? aggregateType)
-    {
-        var inner = "TInner";
-        var member = "Value";
-        try
-        {
-            var valueType = ValueTypeInfo.ForType(tagType);
-            inner = valueType.SimpleType.NameInCode();
-            member = valueType.ValueProperty.Name;
-        }
-        catch (Exception)
-        {
-            // Not a shape ValueTypeInfo understands, or its members were trimmed; the placeholders still name
-            // the overload
-        }
-
-        var suffix = string.IsNullOrEmpty(tableSuffix) ? tagType.Name.ToTableAlias() : tableSuffix;
-        var forAggregate = aggregateType == null ? "" : $".ForAggregate<{aggregateType.NameInCode()}>()";
-        return $"opts.Events.RegisterTagType<{tagType.NameInCode()}, {inner}>(x => x.{member}, \"{suffix}\"){forAggregate};";
-    }
-
-    /// <summary>
-    /// The registered tag types for DCB support.
-    /// </summary>
-    public IReadOnlyList<ITagTypeRegistration> TagTypes => _tagTypes;
+    // jasperfx#1043: RegisterTagType (all three forms), TagTypes and FindTagType are EventRegistry's, along
+    // with the table-suffix check and the Native AOT remedy in its refusals. Marten adds auto-discovery from
+    // projection identities (autoDiscoverTagTypesFromProjections) through AddTagType.
 
     /// <summary>
     /// Whether the strong-typed identifier of an aggregate projection is automatically registered as a
@@ -858,7 +618,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 if (alreadyTagged) return;
             }
 
-            if (!_tagTypes.Any(x => x.TagType == tagType))
+            if (FindTagType(tagType) == null)
             {
                 throw new InvalidOperationException(
                     $"The tag rule for '{rule.Description}' produced a tag of type "
@@ -951,14 +711,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 });
             }
         }
-    }
-
-    /// <summary>
-    /// Find a tag type registration by type, or null if not registered.
-    /// </summary>
-    public ITagTypeRegistration? FindTagType(Type tagType)
-    {
-        return _tagTypes.FirstOrDefault(t => t.TagType == tagType);
     }
 
     public void MapEventType<TEvent>(string eventTypeName) where TEvent : class
@@ -1097,20 +849,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         return new DocumentMapping(aggregateType, Options).IdType;
     }
 
-    private Type findAggregateType(string name)
-    {
-        foreach (var aggregateType in Options.Projections.AllAggregateTypes())
-        {
-            var possibleName = _aggregateNameByType[aggregateType];
-            if (name.EqualsIgnoreCase(possibleName))
-            {
-                return aggregateType;
-            }
-        }
-
-        return null;
-    }
-
     public override EventMapping EventMappingFor(Type eventType)
     {
         return _events[eventType];
@@ -1172,32 +910,24 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         return StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
     }
 
-    internal Type TypeForDotNetName(string assemblyQualifiedName)
+    /// <summary>
+    ///     The names <see cref="JasperFx.Events.EventRegistry.ResolveEventType"/> cannot load as written.
+    ///     <see cref="Archived"/> and <see cref="Tombstone"/> have moved assembly over Marten's history, so a
+    ///     row written under an older name still resolves to them. The type name is compared whole, not as a
+    ///     substring, which used to send an application's own <c>*.ArchivedOrder</c> to <see cref="Archived"/>.
+    /// </summary>
+    protected override Type? LoadEventType(string dotNetTypeName)
     {
-        if (!_nameToType.Value.TryFind(assemblyQualifiedName, out var value))
-        {
-            if (assemblyQualifiedName.Contains(".Archived"))
-            {
-                value = typeof(Archived);
-            }
-            else if (assemblyQualifiedName.Contains(".Tombstone"))
-            {
-                value = typeof(Tombstone);
-            }
-            else
-            {
-                value = Type.GetType(assemblyQualifiedName);
-            }
+        var loaded = base.LoadEventType(dotNetTypeName);
+        if (loaded != null) return loaded;
 
-            if (value == null)
-            {
-                throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
-            }
+        var comma = dotNetTypeName.IndexOf(',');
+        var typeName = (comma < 0 ? dotNetTypeName : dotNetTypeName[..comma]).Trim();
 
-            _nameToType.Swap(n => n.AddOrUpdate(assemblyQualifiedName, value));
-        }
+        if (typeName.EndsWith(".Archived", StringComparison.Ordinal)) return typeof(Archived);
+        if (typeName.EndsWith(".Tombstone", StringComparison.Ordinal)) return typeof(Tombstone);
 
-        return value;
+        return null;
     }
 
     /// <summary>
@@ -1242,45 +972,22 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
         _tombstones = new RetryBlock<UpdateBatch>(executeTombstoneBlock, logger, _cancellation.Token);
 
-        // Pre-warm name->type so the first read of each event type from the database
-        // doesn't fall through Type.GetType(assemblyQualifiedName) in TypeForDotNetName,
-        // which is itself O(loaded-assemblies). Populate both AssemblyQualifiedName and
-        // FullName since both shapes appear in event metadata over the lifetime of a
-        // store. Done as a single Swap so we don't churn ImHashMap. Also pre-fill
-        // _byEventName so EventMappingFor(string) skips its O(n) AllEvents() walk on
-        // first lookup of every registered event-type alias.
-        _nameToType.Swap(map =>
+        // Pre-fill _byEventName so EventMappingFor(string) skips its O(n) AllEvents() walk on first lookup
+        // of every registered event-type alias. The name->type cache needs no pre-warming: each mapping
+        // seeded it when it was built (RegisterDotNetTypeNames in _events.OnMissing).
+        foreach (var mapping in _events)
         {
-            foreach (var mapping in _events)
-            {
-                mapping.JsonTransformation(null);
-
-                var docType = mapping.DocumentType;
-                if (docType.AssemblyQualifiedName is { } aqn)
-                {
-                    map = map.AddOrUpdate(aqn, docType);
-                }
-                if (docType.FullName is { } fullName)
-                {
-                    map = map.AddOrUpdate(fullName, docType);
-                }
-
-                _byEventName.Fill(mapping.EventTypeName, mapping);
-            }
-
-            return map;
-        });
+            mapping.JsonTransformation(null);
+            _byEventName.Fill(mapping.EventTypeName, mapping);
+        }
 
         // Pre-warm the aggregate-name -> aggregate-type cache so AggregateTypeFor
         // (and therefore the LINQ-from-aggregate-alias path) doesn't pay the linear
         // AllAggregateTypes() walk on the first lookup of each aggregate alias.
-        // findAggregateType is the OnMissing on _aggregateTypeByName and would do
-        // exactly this work lazily; pre-populating moves the cost off the request
-        // path and into the once-per-store Initialize.
+        // AggregateAliasFor fills both directions of EventRegistry's cache.
         foreach (var aggregateType in Options.Projections.AllAggregateTypes())
         {
-            var alias = _aggregateNameByType[aggregateType];
-            _aggregateTypeByName.Fill(alias, aggregateType);
+            AggregateAliasFor(aggregateType);
         }
 
         autoDiscoverTagTypesFromProjections(logger);
@@ -1309,14 +1016,14 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         {
             var identityType = projection.IdentityType;
             if (identityType == null || PrimitiveIdentityTypes.Contains(identityType)) continue;
-            if (_tagTypes.Any(t => t.TagType == identityType)) continue;
+            if (FindTagType(identityType) != null) continue;
 
             try
             {
                 var generic = CreateTagTypeMethod.MakeGenericMethod(identityType);
                 var registration = (ITagTypeRegistration)generic.Invoke(null, [null])!;
                 registration.ForAggregate(projection.AggregateType);
-                _tagTypes.Add(registration);
+                AddTagType(registration);
             }
             catch (Exception e) when (IsToleratedDiscoveryFailure(e, RuntimeFeature.IsDynamicCodeSupported))
             {
@@ -1340,7 +1047,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 logger.LogWarning(e,
                     "Unable to automatically register the identity type {IdentityType} of projection {Projection} as an event tag type. Tag queries and boundary-aggregate fetches using this tag will not work. Register it explicitly with {Registration}",
                     identityType.FullNameInCode(), projection.GetType().FullNameInCode(),
-                    TagTypeRegistrationLine(identityType, null, projection.AggregateType));
+                    TagTypeRegistration.RegistrationLine(identityType, null, projection.AggregateType));
             }
         }
     }
@@ -1366,7 +1073,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     ///     </para>
     ///     <para>
     ///         A parameter rather than a direct <see cref="RuntimeFeature.IsDynamicCodeSupported" /> read so
-    ///         a JIT test can exercise the native branch, as in <see cref="CreateTagType" /> and
+    ///         a JIT test can exercise the native branch, as in EventRegistry.CreateTagType and
     ///         <c>ValueTypeIdGeneration.BuildSelectClause</c> (#5600).
     ///     </para>
     /// </remarks>

@@ -53,7 +53,7 @@ public partial class EventGraph: IFeatureSchema
     {
         // DCB in HStore mode requires the Postgres hstore extension. Register it before
         // any table that depends on the hstore type is created.
-        if (DcbStorageMode == DcbStorageMode.HStore && _tagTypes.Count > 0)
+        if (DcbStorageMode == DcbStorageMode.HStore && TagTypes.Count > 0)
         {
             yield return new Extension("hstore");
         }
@@ -128,7 +128,7 @@ public partial class EventGraph: IFeatureSchema
         // In HStore mode tags live inline on mt_events.tags; no per-type tag tables exist.
         if (DcbStorageMode != DcbStorageMode.HStore)
         {
-            foreach (var tagRegistration in _tagTypes)
+            foreach (var tagRegistration in TagTypes)
             {
                 yield return new EventTagTable(this, tagRegistration);
             }
@@ -138,7 +138,7 @@ public partial class EventGraph: IFeatureSchema
         // Only relevant if at least one DCB tag type is registered (since the
         // table is keyed by tag_table/tag_value and would be dead weight in
         // event stores that don't use tags at all).
-        if (_tagTypes.Count > 0)
+        if (TagTypes.Count > 0)
         {
             yield return new DcbTagVersionTable(this);
         }

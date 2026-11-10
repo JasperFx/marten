@@ -3,9 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -848,14 +850,23 @@ public partial class DocumentStore
         return states;
     }
 
+    /// <summary>
+    /// The shared step-through (jasperfx#1049), built over Marten's event type lookup and the store's own
+    /// serializer. Every path folds through the projection's real dispatch
+    /// (<see cref="ISteppableAggregation{TQuerySession}"/>), so <c>Create</c>, <c>ShouldDelete</c>, an
+    /// <c>Evolve</c> override and a generated evolver behave as they do in the daemon. Each recorded state
+    /// is a detached copy read back through the serializer a document write uses, which is what keeps one
+    /// step's state from being a live reference the next step mutates.
+    /// </summary>
+    private ProjectionStepThrough<IQuerySession> stepThrough()
+    {
+        var serializer = Options.Serializer();
+        return Options.Projections.StepThrough(toDomainEvent, new ProjectionStateSerializer(
+            state => toJsonElement(serializer.ToJson(state)),
+            (json, type) => serializer.FromJson(type, utf8(json.GetRawText()))));
+    }
+
     /// <inheritdoc />
-    /// <remarks>
-    /// Strong-typed projection step-through: feeds <paramref name="events"/> into the
-    /// named projection one at a time and captures Before / After state plus elapsed time
-    /// at each step. Per-step exceptions are caught and surfaced on
-    /// <see cref="ProjectionStepResult{TState}.Error"/> — the timeline continues so the
-    /// UI can show "this event broke this projection." Stateless: nothing is persisted.
-    /// </remarks>
     async Task<ProjectionTimeline<TState>> IEventStore.RunProjectionAsync<TState>(
         string projectionName,
         object identity,
@@ -864,40 +875,14 @@ public partial class DocumentStore
         CancellationToken ct)
         where TState : default
     {
-        var aggregateType = findProjectionAggregateType(projectionName);
-        if (aggregateType != typeof(TState))
-        {
-            throw new ArgumentException(
-                $"Projection '{projectionName}' is over '{aggregateType.FullNameInCode()}', not '{typeof(TState).FullNameInCode()}'.",
-                nameof(projectionName));
-        }
+        await using var session = openExplorerSession();
 
-        var rawSteps = await runProjectionStepsAsync(aggregateType, startingState, events, ct).ConfigureAwait(false);
-
-        var typedSteps = new List<ProjectionStepResult<TState>>(rawSteps.Count);
-        foreach (var s in rawSteps)
-        {
-            typedSteps.Add(new ProjectionStepResult<TState>(s.Event, castToTState<TState>(s.Before), castToTState<TState>(s.After), s.Elapsed, s.Error));
-        }
-
-        var finalState = rawSteps.LastOrDefault(x => x.Error == null)?.After ?? rawSteps.LastOrDefault()?.After;
-        return new ProjectionTimeline<TState>(typedSteps, castToTState<TState>(finalState));
-    }
-
-    private static TState? castToTState<TState>(object? value)
-    {
-        if (value is null) return default;
-        return (TState)value;
+        return await stepThrough()
+            .RunProjectionAsync(projectionName, identity, events, startingState, session, ct)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// Untyped projection step-through: looks up the projection by name, resolves its
-    /// aggregate CLR type from <see cref="IAggregateProjection.AggregateType"/>, runs the
-    /// events through it, and serializes each per-step state snapshot to
-    /// <see cref="JsonElement"/>. The error is reduced to its message so the record can
-    /// round-trip over the wire.
-    /// </remarks>
     async Task<ProjectionTimelineRaw> IEventStore.RunProjectionByNameAsync(
         string projectionName,
         object identity,
@@ -905,182 +890,50 @@ public partial class DocumentStore
         JsonElement? startingState,
         CancellationToken ct)
     {
-        var aggregateType = findProjectionAggregateType(projectionName);
-        var startObj = startingState?.Deserialize(aggregateType, ExplorerJson);
+        await using var session = openExplorerSession();
 
-        var rawSteps = await runProjectionStepsAsync(aggregateType, startObj, events, ct).ConfigureAwait(false);
-
-        var stepRecords = new List<ProjectionStepResultRaw>(rawSteps.Count);
-        foreach (var s in rawSteps)
-        {
-            JsonElement? beforeJson = s.Before == null ? null : JsonSerializer.SerializeToElement(s.Before, aggregateType, ExplorerJson);
-            JsonElement? afterJson = s.After == null ? null : JsonSerializer.SerializeToElement(s.After, aggregateType, ExplorerJson);
-            stepRecords.Add(new ProjectionStepResultRaw(s.Event, beforeJson, afterJson, s.Elapsed, s.Error?.Message));
-        }
-
-        var finalObj = rawSteps.LastOrDefault(x => x.Error == null)?.After ?? rawSteps.LastOrDefault()?.After;
-        JsonElement? finalJson = finalObj == null ? null : JsonSerializer.SerializeToElement(finalObj, aggregateType, ExplorerJson);
-
-        return new ProjectionTimelineRaw(stepRecords, finalJson);
+        return await stepThrough()
+            .RunProjectionByNameAsync(projectionName, identity, events, startingState, session, ct)
+            .ConfigureAwait(false);
     }
 
     /// <inheritdoc />
-    /// <remarks>
-    /// Multi-stream projection step-through: unlike <see cref="IEventStore.RunProjectionByNameAsync"/>
-    /// (a single-identity, reflection-<c>Apply</c>, sessionless replay) this drives the projection's
-    /// REAL execution path — the same slicer/grouper the async daemon uses, <c>EnrichEventsAsync</c> per
-    /// group, then a one-event-at-a-time fold through <c>Create</c>/<c>Apply</c>/<c>ShouldDelete</c> —
-    /// against a read-only <see cref="IQuerySession"/>. A flat event list spanning multiple streams fans
-    /// out into one <see cref="ProjectionTimelineRaw"/> per resulting aggregate identity; a single-stream
-    /// projection collapses to exactly one. The shared fold lives in JasperFx.Events
-    /// (<see cref="ISteppableAggregation{TQuerySession}.BuildTimelinesAsync"/>) so Marten and Polecat
-    /// can't diverge. Stateless: nothing is persisted.
-    /// </remarks>
     async Task<MultiAggregateProjectionResult> IEventStore.RunMultiStreamProjectionAsync(
         string projectionName,
         IReadOnlyList<EventRecord> events,
         CancellationToken ct)
     {
-        var source = Options.Projections.All.FirstOrDefault(x => x.Name.EqualsIgnoreCase(projectionName))
-            ?? throw new ArgumentOutOfRangeException(nameof(projectionName),
-                $"No projection named '{projectionName}' is registered. Available projections: {Options.Projections.All.Select(p => p.Name).Join(", ")}");
-
-        if (source is not ISteppableAggregation<IQuerySession> steppable)
-        {
-            throw new ArgumentException(
-                $"Projection '{projectionName}' is not an aggregate projection that supports multi-stream step-through.",
-                nameof(projectionName));
-        }
-
-        // Rebuild real IEvent instances from the wire records so the projection's slicer/grouper can run.
-        // Remember the source record per event (by reference) so the fold can map each folded event back
-        // to exactly the record the caller supplied — preserving the original Data/Metadata JSON verbatim.
-        var recordByEvent = new Dictionary<IEvent, EventRecord>(ReferenceEqualityComparer.Instance);
-        var domainEvents = new List<IEvent>(events.Count);
-        foreach (var record in events)
-        {
-            var built = buildEventFromRecord(record);
-            recordByEvent[built] = record;
-            domainEvents.Add(built);
-        }
-
         await using var session = openExplorerSession();
 
-        JsonElement? serialize(object? state) =>
-            state is null ? null : JsonSerializer.SerializeToElement(state, state.GetType(), ExplorerJson);
-
-        EventRecord toRecord(IEvent e) =>
-            recordByEvent.TryGetValue(e, out var record) ? record : buildRecordFromEvent(e);
-
-        return await steppable
-            .BuildTimelinesAsync(domainEvents, session, serialize, toRecord, observer: null, ct)
+        return await stepThrough()
+            .RunMultiStreamProjectionAsync(projectionName, events, session, ct)
             .ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Rebuild a real Marten <see cref="IEvent"/> from an explorer <see cref="EventRecord"/> so the
-    /// projection's slicer/grouper (which read stream id, version, and the deserialized event body) can
-    /// run against it. The event body is deserialized to its registered CLR type and wrapped via
-    /// <see cref="EventGraph.BuildEvent"/>; stream identity, version, sequence, timestamp, and tenant are
-    /// copied across so grouping-by-stream and grouping-by-event-data both behave as in the daemon.
-    /// </summary>
-    private IEvent buildEventFromRecord(EventRecord record)
+    private static JsonElement toJsonElement(string json)
     {
-        var data = deserializeEventBody(record);
-        var e = Options.EventGraph.BuildEvent(data);
-
-        e.Id = record.EventId;
-        e.Sequence = record.Sequence;
-        e.Version = record.StreamVersion;
-        e.Timestamp = record.Timestamp;
-        e.TenantId = record.TenantId ?? StorageConstants.DefaultTenantId;
-
-        if (Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            if (Guid.TryParse(record.StreamId, out var streamGuid))
-            {
-                e.StreamId = streamGuid;
-            }
-        }
-        else
-        {
-            e.StreamKey = record.StreamId;
-        }
-
-        return e;
+        using var document = JsonDocument.Parse(json);
+        return document.RootElement.Clone();
     }
 
-    /// <summary>
-    /// Fallback used by <see cref="IEventStore.RunMultiStreamProjectionAsync"/>'s <c>toRecord</c> when a
-    /// folded event isn't one of the instances we built (defensive — the slicer preserves references, so
-    /// this normally never runs). Reconstructs an <see cref="EventRecord"/> straight off the
-    /// <see cref="IEvent"/>.
-    /// </summary>
-    private EventRecord buildRecordFromEvent(IEvent e)
-    {
-        var streamId = Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid
-            ? e.StreamId.ToString()
-            : e.StreamKey ?? string.Empty;
-
-        var data = JsonSerializer.SerializeToElement(e.Data, e.Data.GetType(), ExplorerJson);
-
-        return new EventRecord(e.Id, e.Sequence, e.Version, streamId, e.EventTypeName, data, null,
-            e.Timestamp, e.TenantId, null);
-    }
-
-    private Type findProjectionAggregateType(string projectionName)
-    {
-        var source = Options.Projections.All.FirstOrDefault(x => x.Name.EqualsIgnoreCase(projectionName))
-            ?? throw new ArgumentOutOfRangeException(nameof(projectionName),
-                $"No projection named '{projectionName}' is registered. Available projections: {Options.Projections.All.Select(p => p.Name).Join(", ")}");
-
-        if (source is not IAggregateProjection aggregateProjection)
-        {
-            throw new ArgumentException(
-                $"Projection '{projectionName}' is not an aggregate projection.",
-                nameof(projectionName));
-        }
-
-        return aggregateProjection.AggregateType;
-    }
+    private static MemoryStream utf8(string json) => new(Encoding.UTF8.GetBytes(json), writable: false);
 
     /// <summary>
-    /// Replay events through a projection's Apply methods one event at a time using
-    /// reflection. Stateless: no database session is opened, no persistence happens.
-    /// Per-step exceptions are caught and surfaced on the step result so the caller's
-    /// timeline can show "this event broke this projection." Suitable for the
-    /// explorer's stepper view; not for projections that depend on session lookups
-    /// inside Apply (those need the full aggregator machinery).
+    /// A wire record as a real Marten <see cref="IEvent"/>, or null when this process has no event type by
+    /// that name, which the step-through reports as a step that changed nothing.
     /// </summary>
-    private Task<IReadOnlyList<ObjectStepResult>> runProjectionStepsAsync(
-        Type aggregateType, object? startingState, IReadOnlyList<EventRecord> events, CancellationToken ct)
+    private IEvent? toDomainEvent(EventRecord record)
     {
-        var steps = new List<ObjectStepResult>(events.Count);
-        var current = startingState;
+        var mapping = Options.EventGraph.AllEvents()
+            .FirstOrDefault(m => m.EventTypeName.EqualsIgnoreCase(record.EventTypeName));
 
-        foreach (var record in events)
+        if (mapping is null ||
+            Options.Serializer().FromJson(mapping.DocumentType, utf8(record.Data.GetRawText())) is not { } data)
         {
-            ct.ThrowIfCancellationRequested();
-            var before = cloneViaJson(current, aggregateType);
-            var sw = Stopwatch.StartNew();
-            object? after;
-            Exception? error = null;
-            try
-            {
-                var domainEventData = deserializeEventBody(record);
-                current = applyEventToAggregate(aggregateType, current, domainEventData);
-                after = cloneViaJson(current, aggregateType);
-            }
-            catch (Exception ex)
-            {
-                error = ex;
-                after = before;
-            }
-            sw.Stop();
-            steps.Add(new ObjectStepResult(record, before, after, sw.Elapsed, error));
+            return null;
         }
 
-        return Task.FromResult<IReadOnlyList<ObjectStepResult>>(steps);
+        return Options.EventGraph.BuildEvent(data).WithRecordMetadata(record, Options.EventGraph.StreamIdentity);
     }
 
     private async Task<(object? state, long count)> replayAggregatorAsync(
@@ -1147,13 +1000,6 @@ public partial class DocumentStore
             ?? throw new InvalidOperationException(
                 $"Failed to deserialize event of type '{record.EventTypeName}' from supplied JSON.");
         return dataObj;
-    }
-
-    private static object? cloneViaJson(object? value, Type type)
-    {
-        if (value is null) return null;
-        var json = JsonSerializer.SerializeToElement(value, type, ExplorerJson);
-        return json.Deserialize(type, ExplorerJson);
     }
 
     private async Task<object?> invokeAggregateStreamAsync(
@@ -1424,5 +1270,4 @@ public partial class DocumentStore
         return map;
     }
 
-    private sealed record ObjectStepResult(EventRecord Event, object? Before, object? After, TimeSpan Elapsed, Exception? Error);
 }

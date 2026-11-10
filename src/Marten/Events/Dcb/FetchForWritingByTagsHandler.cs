@@ -274,7 +274,11 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         // ProcessEventsAsync time, ahead of the producer-side bumps.
         docSession.CaptureDcbBoundary(capturedVersions);
 
-        return new EventBoundary<T>(docSession, _store.Events, aggregate, events, lastSeenSequence);
+        // jasperfx#1044: the shared boundary appends through the operations it is handed, which stamp the
+        // tenant of the session this fetch ran on (a ForTenant session's own). Marten's former copy put a
+        // StreamAction in the work tracker itself and left its TenantId null.
+        return new JasperFx.Events.Tags.EventBoundary<T>(docSession.Events, _store.Events, _store.Events.TagTypes,
+            aggregate, events);
     }
 
     private static async Task<Dictionary<(string, string), long>> readCapturedVersions(
