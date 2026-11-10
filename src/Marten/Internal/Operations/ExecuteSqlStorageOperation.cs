@@ -1,64 +1,43 @@
+#nullable enable
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
-using System.Threading;
-using System.Threading.Tasks;
-using Marten.Services;
 using Marten.Storage;
+using Npgsql;
 using Weasel.Postgresql;
+using Weasel.Storage;
 
 namespace Marten.Internal.Operations;
 
-internal class ExecuteSqlStorageOperation: IStorageOperation, NoDataReturnedCall
+/// <summary>
+///     What <c>QueueSqlCommand</c> enrolls in the unit of work. The placeholder parsing, the
+///     parameter-count check and the trailing-<c>;</c> trim are Weasel.Storage's
+///     <see cref="QueuedSqlOperation" /> (#5733); Marten keeps the <c>NpgsqlDbType</c> it infers from
+///     each value's CLR type, and reports <see cref="StorageFeatures" /> as its document type.
+/// </summary>
+internal class ExecuteSqlStorageOperation: QueuedSqlOperation, IStorageOperation
 {
-    private readonly string _commandText;
-    private readonly char _placeholder;
-    private readonly object[] _parameterValues;
-
     public ExecuteSqlStorageOperation(char placeholder, string commandText, params object[] parameterValues)
+        : base(commandText, placeholder, parameterValues)
     {
-        _commandText = commandText.TrimEnd(';');
-        _placeholder = placeholder;
-        _parameterValues = parameterValues;
+        DocumentType = typeof(StorageFeatures);
     }
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var parameters = builder.AppendWithParameters(_commandText, _placeholder);
-        if (parameters.Length != _parameterValues.Length)
-        {
-            throw new InvalidOperationException(
-                $"Wrong number of parameter values to SQL '{_commandText}', got {_parameterValues.Length} parameters");
-        }
-
-        for (var i = 0; i < parameters.Length; i++)
-        {
-            if (_parameterValues[i] == null)
-            {
-                parameters[i].Value = DBNull.Value;
-            }
-            else
-            {
-                var dbType = PostgresqlProvider.Instance.TryGetDbType(_parameterValues[i].GetType());
-                if (dbType != null)
-                {
-                    parameters[i].NpgsqlDbType = dbType.Value;
-                }
-
-                parameters[i].Value = _parameterValues[i];
-            }
-        }
+        base.ConfigureCommand(builder, session);
     }
 
-    public Type DocumentType => typeof(StorageFeatures);
-
-    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    protected override void BindParameter(DbParameter parameter, object? value)
     {
-        return Task.CompletedTask;
-    }
+        if (value != null && parameter is NpgsqlParameter npgsqlParameter)
+        {
+            var dbType = PostgresqlProvider.Instance.TryGetDbType(value.GetType());
+            if (dbType != null)
+            {
+                npgsqlParameter.NpgsqlDbType = dbType.Value;
+            }
+        }
 
-    public OperationRole Role()
-    {
-        return OperationRole.Other;
+        base.BindParameter(parameter, value);
     }
 }

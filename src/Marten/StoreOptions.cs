@@ -1608,10 +1608,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     internal void ApplyMetricsIfAny()
     {
-        if (OpenTelemetry.Applications.Any())
+        if (OpenTelemetry.Applications.Count > 0)
         {
             var logger = DotNetLogger ?? LogFactory?.CreateLogger<MartenCommitMetrics>() ?? NullLogger<MartenCommitMetrics>.Instance;
-            var metrics = new MartenCommitMetrics(logger, OpenTelemetry.Applications);
+            var metrics = new MartenCommitMetrics(logger, OpenTelemetry);
             Listeners.Add(metrics);
         }
     }
