@@ -229,7 +229,16 @@ public class no_data_returned_call_sql_audit
             return instance;
         }
 
-        foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+        // #5733: walk the whole hierarchy. GetFields does not return a base class's private fields, and
+        // ExecuteSqlStorageOperation now keeps its statement in Weasel.Storage's QueuedSqlOperation.
+        var fields = new List<FieldInfo>();
+        for (var current = type; current != null && current != typeof(object); current = current.BaseType)
+        {
+            fields.AddRange(current.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
+                                              BindingFlags.DeclaredOnly));
+        }
+
+        foreach (var field in fields)
         {
             var fieldType = field.FieldType;
 
