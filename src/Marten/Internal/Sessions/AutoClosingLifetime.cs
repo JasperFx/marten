@@ -52,39 +52,9 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
 
     }
 
-    protected virtual void AfterOpened(NpgsqlConnection connection)
-    {
-    }
-
     protected virtual Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
     {
         return Task.CompletedTask;
-    }
-
-    public int Execute(NpgsqlCommand cmd)
-    {
-        Logger.OnBeforeExecute(cmd);
-        using var conn = _database.CreateConnection();
-        conn.Open();
-        AfterOpened(conn);
-        try
-        {
-            cmd.Connection = conn;
-            cmd.CommandTimeout = CommandTimeout;
-            var returnValue = cmd.ExecuteNonQuery();
-
-            Logger.LogSuccess(cmd);
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            handleCommandException(cmd, e);
-            throw;
-        }
-        finally
-        {
-            conn.Close();
-        }
     }
 
     public async Task<int> ExecuteAsync(NpgsqlCommand command,
@@ -115,31 +85,6 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         }
     }
 
-    public DbDataReader ExecuteReader(NpgsqlCommand command)
-    {
-        Logger.OnBeforeExecute(command);
-
-        // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection(_readerConnectionUsage);
-        conn.Open();
-        AfterOpened(conn);
-
-        try
-        {
-            command.Connection = conn;
-            command.CommandTimeout = CommandTimeout;
-            var returnValue = command.ExecuteReader(CommandBehavior.CloseConnection);
-            Logger.LogSuccess(command);
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            conn.Close();
-            handleCommandException(command, e);
-            throw;
-        }
-    }
-
     public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
         Logger.OnBeforeExecute(command);
@@ -161,30 +106,6 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         {
             await conn.CloseAsync().ConfigureAwait(false);
             handleCommandException(command, e);
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlBatch batch)
-    {
-        Logger.OnBeforeExecute(batch);
-
-        // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection(_readerConnectionUsage);
-        conn.Open();
-        AfterOpened(conn);
-
-        try
-        {
-            batch.Connection = conn;
-            batch.Timeout = CommandTimeout;
-            var reader = batch.ExecuteReader(CommandBehavior.CloseConnection);
-            Logger.LogSuccess(batch);
-            return reader;
-        }
-        catch (Exception)
-        {
-            conn.Close();
             throw;
         }
     }

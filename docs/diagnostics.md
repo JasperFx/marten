@@ -682,7 +682,7 @@ Marten provides a helper method to fetch the PostgreSQL server version exposed v
 <!-- snippet: sample_get_postgres_version -->
 <a id='snippet-sample_get_postgres_version'></a>
 ```cs
-var pgVersion = theStore.Diagnostics.GetPostgresVersion();
+var pgVersion = await theStore.Diagnostics.GetPostgresVersionAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Diagnostics/ability_to_fetch_postgres_server_version.cs#L12-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_postgres_version' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Diagnostics/ability_to_fetch_postgres_server_version.cs#L13-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_postgres_version' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

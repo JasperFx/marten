@@ -50,12 +50,6 @@ public partial class QuerySession
 
     internal record BatchExecution(NpgsqlBatch Batch, IConnectionLifetime Lifetime);
 
-    public DbDataReader ExecuteReader(NpgsqlBatch batch)
-    {
-        RequestCount++;
-        return _resilience.Execute(static e => e.Lifetime.ExecuteReader(e.Batch), new BatchExecution(batch, _connection));
-    }
-
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {
         RequestCount++;
