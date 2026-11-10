@@ -29,6 +29,18 @@ partial class Build : NukeBuild
     [Parameter] readonly string ConnectionString ="Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
     [Parameter] readonly string Project;
 
+    [Parameter("Package version for Pack, overriding <Version> in Directory.Build.props (e.g. 10.0.0-local.1)")]
+    readonly string Version;
+
+    [Parameter("Folder Pack copies the .nupkg files into, and TakeLocalUpstream adds as a NuGet source")]
+    readonly string Feed;
+
+    [Parameter("TakeLocalUpstream: version of the local JasperFx packages to pin (e.g. 3.0.0-local.1)")]
+    readonly string UpstreamVersion;
+
+    [Parameter("TakeLocalUpstream: version of the local Weasel packages to pin (e.g. 10.0.0-local.1)")]
+    readonly string WeaselVersion;
+
     // Everything that runs against the ordinary marten_testing database. CI does not use this
     // target — .github/workflows/tests.yml gives each project its own job — but a local
     // `./build.sh test` should still mean "run the suite", so anything added below belongs here.
@@ -440,9 +452,24 @@ partial class Build : NukeBuild
             foreach (var project in projects)
             {
                 DotNetPack(s => s
-                    .SetProject(project) 
+                    .SetProject(project)
                     .SetOutputDirectory("./artifacts")
-                    .SetConfiguration(Configuration.Release));
+                    .SetConfiguration(Configuration.Release)
+                    .When(_ => !string.IsNullOrEmpty(Version), x => x.SetProperty("Version", Version)));
+            }
+
+            // --feed copies the packs into a local NuGet folder (marten#5727), for the .NET 11 train
+            // to consume before the nuget.org replay.
+            if (!string.IsNullOrEmpty(Feed))
+            {
+                Directory.CreateDirectory(Feed);
+                var pattern = string.IsNullOrEmpty(Version) ? "*.nupkg" : $"*.{Version}.nupkg";
+                foreach (var package in Directory.GetFiles("./artifacts", pattern))
+                {
+                    File.Copy(package, Path.Combine(Feed, Path.GetFileName(package)), true);
+                }
+
+                Log.Information("Copied packed packages into the local feed {Feed}", Feed);
             }
         });
 

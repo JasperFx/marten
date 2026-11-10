@@ -129,6 +129,10 @@ partial class Build
         var supervisor = new Supervisor(factory)
         {
             MaxParallelWorkers = workers,
+            // Announces the run to a Bobcat monitor when one answers at BOBCAT_MONITOR_URL. On a CI
+            // runner nothing listens: one refused local connection, nothing published.
+            // BOBCAT_MONITOR=0 turns it off.
+            PublishToMonitor = true,
             Log = message => Log.Information("  {Message}", message)
         };
         configureSupervisor(supervisor, ledger);

@@ -195,17 +195,17 @@ jobs:
 
           # #4617. Kept on PG15 because the partition DDL this exercises is the oldest supported
           # shape, not the newest.
-          - name: TenantPartitionedEvents (net9, PG15, Newtonsoft)
+          - name: TenantPartitionedEvents (net10, PG15, Newtonsoft)
             target: TestTenantPartitionedEvents
             project: src/TenantPartitionedEventsTests/TenantPartitionedEventsTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
-          - name: NodaTime (net9, PG15, Newtonsoft)
+          - name: NodaTime (net10, PG15, Newtonsoft)
             target: TestNodaTime
             project: src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
@@ -214,33 +214,33 @@ jobs:
           # Dark for the same reason as the projects below, just less visibly: a commented-out
           # step reads as a deliberate exclusion long after whoever wrote it has forgotten why.
 
-          - name: MultiTenancy (net9, PG15, Newtonsoft)
+          - name: MultiTenancy (net10, PG15, Newtonsoft)
             target: TestMultiTenancy
             project: src/MultiTenancyTests/MultiTenancyTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
-          - name: ValueTypes (net9, PG15, Newtonsoft)
+          - name: ValueTypes (net10, PG15, Newtonsoft)
             target: TestValueTypes
             project: src/ValueTypeTests/ValueTypeTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
-          - name: AspNetCore (net9, PG15, Newtonsoft)
+          - name: AspNetCore (net10, PG15, Newtonsoft)
             target: TestAspnetcore
             project: src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
           # ─── Wired up by #5096: no target and no job before this ───────────
 
-          - name: ContainerScopedProjections (net9, PG15, Newtonsoft)
+          - name: ContainerScopedProjections (net10, PG15, Newtonsoft)
             target: TestContainerScopedProjections
             project: src/ContainerScopedProjectionTests/ContainerScopedProjectionTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
@@ -254,34 +254,34 @@ jobs:
           # for is precisely how ten suites went dark in the first place (#5096). If you are reading
           # this because you want the coverage back, nothing is stopping you — add the entry.
 
-          - name: CompiledQueries (net9, PG15, Newtonsoft)
+          - name: CompiledQueries (net10, PG15, Newtonsoft)
             target: TestCompiledQueries
             project: src/CompiledQueryTests/CompiledQueryTests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
-          - name: EntityFrameworkCore (net9, PG15, Newtonsoft)
+          - name: EntityFrameworkCore (net10, PG15, Newtonsoft)
             target: TestEntityFrameworkCore
             project: src/Marten.EntityFrameworkCore.Tests/Marten.EntityFrameworkCore.Tests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
           # Had a build target since it was written; nothing ever invoked it.
-          - name: MemoryPack (net9, PG15, Newtonsoft)
+          - name: MemoryPack (net10, PG15, Newtonsoft)
             target: TestMemoryPack
             project: src/Marten.MemoryPack.Tests/Marten.MemoryPack.Tests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
           # Pure Roslyn — the service container below goes unused here, which costs a few seconds
           # of startup and buys one uniform job shape.
-          - name: SourceGenerator (net9)
+          - name: SourceGenerator (net10)
             target: TestSourceGenerator
             project: src/Marten.SourceGenerator.Tests/Marten.SourceGenerator.Tests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
 
@@ -300,24 +300,24 @@ jobs:
           # These were already one-project-per-job in their own workflows; folded in here so that
           # this file is the single answer to "what does CI run".
 
-          - name: PostGIS (net9, postgis:17-3.5)
+          - name: PostGIS (net10, postgis:17-3.5)
             target: TestPostGIS
             project: src/Marten.PostGIS.Tests/Marten.PostGIS.Tests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: postgis/postgis:17-3.5
 
-          - name: PgVector (net9, pgvector:pg17)
+          - name: PgVector (net10, pgvector:pg17)
             target: TestPgVector
             project: src/Marten.PgVector.Tests/Marten.PgVector.Tests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: pgvector/pgvector:pg17
 
-          - name: TimescaleDB (net9, timescaledb-ha:pg17)
+          - name: TimescaleDB (net10, timescaledb-ha:pg17)
             target: TestTimescaleDB
             project: src/Marten.TimescaleDB.Tests/Marten.TimescaleDB.Tests.csproj
-            framework: net9.0
+            framework: net10.0
             serializer: Newtonsoft
             pg_image: timescale/timescaledb-ha:pg17
 
