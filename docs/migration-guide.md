@@ -190,6 +190,19 @@ Marten's automatic schema migration handles all of these. None need manual SQL.
   ALTER TABLE my_schema.mt_streams DROP COLUMN snapshot_version;
   ```
 
+#### Restoring V9 defaults {#restoring-v9-defaults}
+
+Marten 10 follows the same rule: every changed default can be put back with one call,
+`opts.RestoreV9Defaults()`. It does not call `RestoreV8Defaults()`. `RestoreV9Defaults()` puts these
+`StoreOptions` settings back to their Marten 9 values:
+
+| Setting | Marten 9 value | Docs |
+| --- | --- | --- |
+| `Events.EnableExtendedProgressionTracking` | `false` | [Async Projection Daemon](events/projections/async-daemon.md) |
+
+The side-effect gate default is not listed yet: it is not a `StoreOptions` setting, and its flip has
+not landed. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
+
 ### Breaking changes {#breaking-changes-in-9-0-0}
 
 #### Platform and packages
