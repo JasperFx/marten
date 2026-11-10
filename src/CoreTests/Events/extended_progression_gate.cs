@@ -18,10 +18,10 @@ namespace CoreTests.Events;
 public class extended_progression_gate
 {
     [Fact]
-    public void event_store_reports_extended_progression_disabled_by_default()
+    public void event_store_reports_extended_progression_enabled_by_default()
     {
         using var store = DocumentStore.For(ConnectionSource.ConnectionString);
-        ((IEventStore)store).ExtendedProgressionEnabled.ShouldBeFalse();
+        ((IEventStore)store).ExtendedProgressionEnabled.ShouldBeTrue();
     }
 
     [Fact]

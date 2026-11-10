@@ -108,7 +108,7 @@ public partial class MartenDatabase : IEventDatabase
     ///     Deliberately plain UPDATE statements instead of a database function, so no schema object is
     ///     added and deployments running <c>AutoCreate.None</c> pick it up without a migration. Semantics
     ///     match the <c>mt_mark_event_progression_extended</c> function this replaced (the function is
-    ///     still installed for anything calling it directly): update-only telemetry decoration of
+    ///     no longer created; a copy left by an older version is harmless): update-only telemetry decoration of
     ///     existing progression rows — never INSERT, never touch <c>last_seq_id</c> / <c>last_updated</c>,
     ///     shards without a progression row yet are skipped silently.
     ///     <para>

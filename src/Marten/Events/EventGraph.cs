@@ -299,31 +299,20 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <summary>
     /// When enabled, the daemon writes heartbeat, agent_status, pause_reason, running_on_node and the
     /// failure_* columns of the event progression table, and progression reads hydrate them, for
-    /// CritterWatch monitoring. Defaults to <c>false</c>; opt in explicitly.
+    /// CritterWatch monitoring. Defaults to <c>true</c> since 10.0 (#5763); set <c>false</c> to opt out.
     /// </summary>
     /// <remarks>
-    /// #5310 restored a `= true` default here, on the reading that #4687 had intended it and the flip was
-    /// lost to a refactor. That was reversed deliberately: turning it on by default is a BREAKING change,
-    /// because every existing store that never asked for monitoring would silently start writing six
-    /// columns on every shard state transition. "It was meant to be true" is not sufficient reason to
-    /// change what a deployment does on upgrade without it opting in.
-    /// <para>
-    /// The default is therefore false and stays false. #4687's argument -- the values are cheap because
-    /// they come from daemon runtime state that already exists -- remains a fine argument for turning it
-    /// ON, and none at all for turning it on for somebody else.
-    /// </para>
-    /// <para>
     /// This does not decide the SHAPE of mt_event_progression either way. Since #5309 the columns are
     /// always created, because a table shape that depends on configuration means two stores over one
     /// schema can disagree about it and strip each other's columns. This flag gates only reads and
-    /// writes, so leaving it off costs nothing but the (nullable, never-written) columns.
-    /// </para>
+    /// writes. The writes are plain UPDATE statements; the <c>mt_mark_event_progression_extended</c>
+    /// function is no longer part of the schema.
     /// </remarks>
     public bool EnableExtendedProgressionTracking
     {
         get;
         set;
-    }
+    } = true;
 
     /// <summary>
     /// Optional best-effort observer invoked after each successful <c>SaveChangesAsync</c> with the
