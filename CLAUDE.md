@@ -210,7 +210,7 @@ runs even when another fails. The target fails when any unit failed or could not
   (`configureSupervisor` in `build/SupervisedTests.cs`): retries only for `[Trait("Retry", "N")]`, in a
   fresh process, the stall report, the heartbeat, and the same worker counts (EventSourcing and Linq
   at 4). `--disable-test-retry` and `--test-workers` apply as they do there.
-- **A database per lane.** Each unit runs on its own databases, `marten_testing_<project>_<tfm>_w{n}`,
+- **A database per lane.** Each unit runs on its own databases, `marten_testing_<project>_<tfm>_<tag>_w{n}` (the tag is four hex digits of the checkout path, so gates in different worktrees on one server never share a lane database; `--gate-lane-tag` overrides),
   handed over through `marten_testing_database`, so two suites never share a schema.
 - **Tracks for fixed names.** Some suites create whole databases with fixed names on the server, or
   reach for the default database directly. Those suites hold an exclusive track while they run, so the

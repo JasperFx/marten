@@ -180,6 +180,10 @@
             "type": "string"
           }
         },
+        "GateLaneTag": {
+          "type": "string",
+          "description": "LocalGate: tag in every lane database name; default is a hash of this checkout's path"
+        },
         "GateOnly": {
           "type": "array",
           "description": "LocalGate: run only these suites, by name (Linq) or project (LinqTests)",

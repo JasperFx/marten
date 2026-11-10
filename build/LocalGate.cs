@@ -38,7 +38,7 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 // Databases. Every suite defaults to `marten_testing` on 5432 and hard-codes its schema names, so two
 // units on one database collide however their classes are split. Each unit therefore gets its own
 // databases through `marten_testing_database` (which ConnectionSource reads), one per lane:
-// `marten_testing_<project>_<tfm>_w{n}` — never the `marten_testing_w{n}` a CI target's lanes use,
+// `marten_testing_<project>_<tfm>_<tag>_w{n}` (tag: a hash of the checkout path, #5869) — never the `marten_testing_w{n}` a CI target's lanes use,
 // and never anything another repository's lanes (Weasel's) are named.
 //
 // What a unit's own database cannot isolate is a name a suite reaches PAST its lane for: a whole
@@ -72,6 +72,14 @@ partial class Build
     /// <summary>LocalGate: run only these suites (by name, e.g. <c>Linq</c>, or project, e.g. <c>LinqTests</c>).</summary>
     [Parameter("LocalGate: run only these suites, by name (Linq) or project (LinqTests)")]
     readonly string[] GateOnly = [];
+
+    /// <summary>
+    /// LocalGate: tag woven into every lane database name (<c>..._{tag}_w{n}</c>). Defaults to four hex
+    /// digits of this checkout's path, so gates run from different worktrees against one Postgres
+    /// server (#5869) never share a lane database.
+    /// </summary>
+    [Parameter("LocalGate: tag in every lane database name; default is a hash of this checkout's path")]
+    readonly string GateLaneTag;
 
     /// <summary>LocalGate: worker processes across every unit at once. Defaults to half the cores.</summary>
     [Parameter("LocalGate: worker processes across every unit at once (default: half the cores)")]
@@ -334,7 +342,7 @@ partial class Build
 
         var server = suite.Server ?? gateBaseConnectionString;
         var lanes = Enumerable.Range(0, Math.Max(1, unit.Workers))
-            .Select(lane => gateLaneConnectionString(server, unit, lane))
+            .Select(lane => gateLaneConnectionString(server, unit, lane, laneTag()))
             .ToArray();
         ensureLaneDatabases(server, lanes);
 
@@ -347,11 +355,11 @@ partial class Build
     /// one project apart; the base database's name keeps a gate's lanes off a CI target's
     /// (<c>marten_testing_w{n}</c>).
     /// </summary>
-    static string gateLaneConnectionString(string server, GateUnit unit, int lane)
+    static string gateLaneConnectionString(string server, GateUnit unit, int lane, string tag)
     {
         var builder = new NpgsqlConnectionStringBuilder(server);
         var slug = new string(unit.Name.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '_').ToArray());
-        var database = $"{builder.Database}_{slug}_w{lane}";
+        var database = $"{builder.Database}_{slug}_{tag}_w{lane}";
 
         // Postgres truncates an identifier past NAMEDATALEN - 1 (63 by default) and two long
         // names could then land on one database. Refuse instead.
@@ -360,6 +368,18 @@ partial class Build
 
         builder.Database = database;
         return builder.ConnectionString;
+    }
+
+    /// <summary>
+    /// Two gates on one server (two worktrees, two agents) used to build identical lane names and
+    /// ran their suites into one schema (#5869). Four hex digits keep the longest unit name at 63.
+    /// </summary>
+    string laneTag()
+    {
+        if (!string.IsNullOrWhiteSpace(GateLaneTag)) return GateLaneTag.Trim().ToLowerInvariant();
+
+        var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(RootDirectory.ToString()));
+        return Convert.ToHexString(hash, 0, 2).ToLowerInvariant();
     }
 
     string gateSerializerFor(string framework)
