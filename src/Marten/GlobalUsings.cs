@@ -9,18 +9,16 @@ global using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 global using ISqlFragment = Weasel.Postgresql.SqlGeneration.ISqlFragment;
 global using ICompoundFragment = Weasel.Postgresql.SqlGeneration.ICompoundFragment;
 
-// jasperfx#756 (marten#5343): JasperFx.Events 2.64.0 adds canonical versions of the six event
-// exception types that until now were declared once per store, so every file importing both
-// JasperFx.Events and Marten.Exceptions sees an ambiguous simple name. Marten's own copies are
-// public API that callers catch by name, and the lift commit is explicit that "stores will
-// subclass or type-forward in a later node" -- so the resolution here is deliberately the
-// API-preserving one: alias the simple names to Marten's types assembly-wide, exactly as the
-// Weasel aliases above do, and leave the consolidation to the node that owns it. Code that wants
-// the shared type fully-qualifies it, which overrides these aliases.
-global using UnknownEventTypeException = Marten.Exceptions.UnknownEventTypeException;
-global using NonExistentStreamException = Marten.Exceptions.NonExistentStreamException;
-global using ExistingStreamIdCollisionException = Marten.Exceptions.ExistingStreamIdCollisionException;
-global using EventDeserializationFailureException = Marten.Exceptions.EventDeserializationFailureException;
+// jasperfx#756 (marten#5343) lifted the event exception types every store declared into JasperFx.Events,
+// and marten#5847 (Marten 10) deleted Marten's own copies: Marten throws the JasperFx types directly, with
+// no Marten subclass. These aliases keep the simple names resolving to the shared types in every file,
+// including the ones that import Marten.Exceptions but not JasperFx.Events or JasperFx.
+global using UnknownEventTypeException = JasperFx.Events.UnknownEventTypeException;
+global using NonExistentStreamException = JasperFx.Events.NonExistentStreamException;
+global using ExistingStreamIdCollisionException = JasperFx.Events.ExistingStreamIdCollisionException;
+global using EventDeserializationFailureException = JasperFx.Events.EventDeserializationFailureException;
+global using ArchivedStreamException = JasperFx.Events.ArchivedStreamException;
 global using StreamLockedException = JasperFx.Events.StreamLockedException;
+global using BadLinqExpressionException = JasperFx.BadLinqExpressionException;
+// Still Marten's own type; JasperFx.Events declares one of the same name.
 global using DefaultTenantUsageDisabledException = Marten.Exceptions.DefaultTenantUsageDisabledException;
-

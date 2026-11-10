@@ -1,4 +1,3 @@
-using Marten.Exceptions;
 using Shouldly;
 using Xunit;
 
@@ -21,12 +20,11 @@ public class UnknownEventTypeExceptionTests
     }
 
     [Fact]
-    public void names_both_remedies()
+    public void names_the_registration_remedy()
     {
         var ex = new UnknownEventTypeException("trip_started");
 
         ex.Message.ShouldContain("StoreOptions.Events.AddEventType(type)");
-        ex.Message.ShouldContain("StoreOptions.Projections.Errors.SkipUnknownEvents");
     }
 
     [Fact]

@@ -369,7 +369,7 @@ public class document_store_diagnostics_criteria_tests
         refused.Criterion.ShouldBe(nameof(DocumentQueryOptions.Where));
         // Marten's BadLinqExpressionException stays on Marten's hierarchy (marten#5346), so it is the store,
         // not JasperFx's IsTranslationFailure, that has to recognise it.
-        refused.InnerException.ShouldBeOfType<Marten.Exceptions.BadLinqExpressionException>();
+        refused.InnerException.ShouldBeOfType<BadLinqExpressionException>();
     }
 
     [Fact]

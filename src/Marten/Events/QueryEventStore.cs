@@ -628,7 +628,7 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
     /// <see cref="Marten.Linq.MartenLinqQueryProvider"/>, which already implements
     /// <see cref="JasperFx.Events.Documents.IDocumentQueryExecutor"/>, so the shared terminators in
     /// <see cref="JasperFx.Events.Documents.DocumentQueryableExtensions"/> dispatch to it, and a member
-    /// Marten cannot translate throws <see cref="Marten.Exceptions.BadLinqExpressionException"/> naming it rather
+    /// Marten cannot translate throws <see cref="JasperFx.BadLinqExpressionException" /> naming it rather
     /// than matching everything.
     /// </summary>
     /// <remarks>
@@ -659,7 +659,7 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
     /// working against the JasperFx abstractions can filter and order by event metadata. This wraps
     /// <see cref="QueryAllRawEvents"/>, so the provider is Marten's own LINQ over <c>mt_events</c>: the shared
     /// terminators in <see cref="JasperFx.Events.Documents.DocumentQueryableExtensions"/> dispatch to it,
-    /// and a member Marten cannot translate throws <see cref="Marten.Exceptions.BadLinqExpressionException"/>
+    /// and a member Marten cannot translate throws <see cref="JasperFx.BadLinqExpressionException" />
     /// naming it rather than matching every event.
     /// </summary>
     /// <remarks>

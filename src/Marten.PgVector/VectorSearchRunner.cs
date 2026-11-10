@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
+using JasperFx;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;

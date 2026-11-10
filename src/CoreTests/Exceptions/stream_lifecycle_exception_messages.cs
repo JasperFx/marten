@@ -1,5 +1,4 @@
 using System;
-using Marten.Exceptions;
 using Shouldly;
 using Xunit;
 
@@ -7,7 +6,8 @@ namespace CoreTests.Exceptions;
 
 /// <summary>
 ///     #5475. Both messages used to state the failure and stop there. These facts pin the remedy
-///     half so a later edit cannot quietly drop it.
+///     half so a later edit cannot quietly drop it. marten#5847: Marten now throws the JasperFx.Events
+///     types, so these pin the shared messages.
 /// </summary>
 public class stream_lifecycle_exception_messages
 {
@@ -17,7 +17,7 @@ public class stream_lifecycle_exception_messages
         var id = Guid.NewGuid();
         var ex = new ExistingStreamIdCollisionException(id, typeof(string));
 
-        ex.Message.ShouldStartWith($"Stream #{id} already exists in the database.");
+        ex.Message.ShouldStartWith($"Stream with id '{id}' already exists.");
         ex.Message.ShouldContain("StartStream requires a new id");
         ex.Message.ShouldContain("Append");
         ex.Message.ShouldContain("FetchForWriting");
@@ -34,7 +34,6 @@ public class stream_lifecycle_exception_messages
         ex.Message.ShouldContain("AppendOptimistic");
         ex.Message.ShouldContain("AppendExclusive");
         ex.Message.ShouldContain("StartStream");
-        ex.Message.ShouldContain("UseMandatoryStreamTypeDeclaration");
         ex.Id.ShouldBe("quest-1");
     }
 }

@@ -38,8 +38,8 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         var pg = original as PostgresException ?? original.InnerException as PostgresException;
         if (pg is { SqlState: ArchivedStreamSqlState })
         {
-            transformed = new InvalidStreamOperationException(
-                $"Attempted to append event to archived stream with Id '{Stream.Id}'.");
+            // marten#5476 / marten#5847: the shared JasperFx.Events type, as Polecat and Fisher throw.
+            transformed = new ArchivedStreamException(Stream.Key ?? (object)Stream.Id);
             return true;
         }
 

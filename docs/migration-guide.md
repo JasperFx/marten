@@ -109,6 +109,32 @@ stream id is available as `StreamId` (and `ConcurrencyException.Id`).
 - It no longer derives from `MartenException`, so `catch (MartenException)` no longer sees it.
 - The type moved namespaces, so assemblies compiled against Marten 9 must be recompiled, and source that names `Marten.Exceptions.StreamLockedException` needs `using JasperFx.Events;` instead.
 
+### Marten throws the shared `JasperFx.Events` exception types
+
+Marten's own copies of the exception types that Marten, Polecat and Fisher share are gone (#5847). Marten now throws the
+`JasperFx.Events` (or `JasperFx`) type directly, with no Marten subclass, so a store-agnostic `catch` works the same
+on all three stores:
+
+| Marten 9 | Marten 10 |
+| --- | --- |
+| `Marten.Exceptions.ExistingStreamIdCollisionException` | `JasperFx.Events.ExistingStreamIdCollisionException` |
+| `Marten.Exceptions.NonExistentStreamException` | `JasperFx.Events.NonExistentStreamException` |
+| `Marten.Exceptions.UnknownEventTypeException` | `JasperFx.Events.UnknownEventTypeException` |
+| `Marten.Exceptions.EventDeserializationFailureException` | `JasperFx.Events.EventDeserializationFailureException` |
+| `Marten.Exceptions.BadLinqExpressionException` | `JasperFx.BadLinqExpressionException` |
+| `Marten.Exceptions.InvalidStreamOperationException`, when appending to an archived stream | `JasperFx.Events.ArchivedStreamException` |
+| `Marten.Exceptions.ApplyEventException` (`[Obsolete]`, never thrown since 9.x) | removed; catch `JasperFx.Events.Daemon.ApplyEventException` |
+
+- None of these derive from `MartenException` any longer, so `catch (MartenException)` no longer sees them.
+  `MartenException` stays the root of Marten-only failures, and `MartenCommandException` is unchanged.
+- The members are the same (`Id`, `AggregateType`, `EventTypeName`, `Sequence`, `Category`), and
+  `ArchivedStreamException.Id` carries the stream's id or key.
+- Some message text changed to the shared wording. In particular the unknown-event-type message no longer suggests
+  `StoreOptions.Projections.Errors.SkipUnknownEvents`, and the nonexistent-stream message no longer mentions
+  `UseMandatoryStreamTypeDeclaration`. Match on the type and its members, not on the message.
+- Source that names the old types needs `using JasperFx.Events;` (or `using JasperFx;` for `BadLinqExpressionException`),
+  and assemblies compiled against Marten 9 must be recompiled.
+
 ### `EnableExtendedProgressionTracking` is on by default
 
 `opts.Events.EnableExtendedProgressionTracking` now defaults to `true`: the async daemon writes
