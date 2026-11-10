@@ -19,7 +19,7 @@ public class Bug5603Doc
 }
 
 /// <summary>
-/// #5603 added <see cref="ITransactionParticipant.AfterCommitAsync" />, because
+/// #5603 added <c>ITransactionParticipant.AfterCommitAsync</c>, because
 /// <c>BeforeCommitAsync</c> runs inside the block Marten's write resilience pipeline retries and so
 /// could never be the place a participant learns its work became durable.
 ///
