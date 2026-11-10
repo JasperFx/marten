@@ -955,6 +955,9 @@
            System.Security.Cryptography.Xml   GHSA-37gx-xxp4-5rgx (high)
            NuGet.Packaging                    GHSA-g4vj-cjjj-v7hg (low) -->
     <PackageVersion Include="NuGet.Packaging" Version="6.12.5" />
+    <!-- Nuke's telemetry check parses a project through the SDK's MSBuild, which under the .NET 11 SDKs
+         asks for NuGet.Frameworks 7.9.0.0 (marten#5870). Build-only. -->
+    <PackageVersion Include="NuGet.Frameworks" Version="7.9.0" />
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.13" />
     <PackageVersion Include="OpenTelemetry" Version="1.20.1" />
