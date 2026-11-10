@@ -2,6 +2,84 @@
 
 ## Key Changes in 10.0.0
 
+### Platform and packages {#platform-and-packages-in-10-0-0}
+
+**.NET 9 is no longer supported.** Marten 10 targets `net10.0` and `net11.0`. Stay on Marten 9 if you need
+`net9.0`.
+
+**The shared Critter Stack packages moved up a major version together:**
+
+| Package | Marten 9 | Marten 10 |
+| --- | --- | --- |
+| `JasperFx`, `JasperFx.Events` | 2.x | 3.x |
+| `Weasel.Postgresql`, `Weasel.Storage` | 9.x | 10.x |
+| `Npgsql` (and its plugin packages) | 9.x | 10.x |
+| `Npgsql.EntityFrameworkCore.PostgreSQL` (for `Marten.EntityFrameworkCore`) | 9.0.x / 10.0.x per TFM | 10.0.x |
+
+You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
+On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605.
+
+### Synchronous connection access is gone <Badge type="warning" text="breaking" />
+
+Npgsql 10 removed its synchronous APIs, and Marten 9 already made the synchronous data-access methods throw
+`NotSupportedException` ([Synchronous data access removed](#synchronous-data-access-removed)). Marten 10 deletes
+what was left of that half:
+
+- `IConnectionLifetime` no longer has `Execute`, `ExecuteReader(NpgsqlCommand)` or `ExecuteReader(NpgsqlBatch)`.
+  Only implementers of that interface are affected.
+- `QuerySession.ExecuteReader(NpgsqlBatch)` is deleted; use `ExecuteReaderAsync`.
+- `IDiagnostics.GetPostgresVersion()` is replaced by `GetPostgresVersionAsync(CancellationToken)`.
+
+The public entry points that still open or close a connection without awaiting (`IQuerySession.Connection`,
+`IDocumentSession.BeginTransaction()`, the synchronous `Serializable` session factories and synchronous
+`Dispose()`) remain. Async Hi-Lo sequences wait on Weasel ([weasel#808](https://github.com/JasperFx/weasel/issues/808)).
+
+### Abstractions lifted into JasperFx and Weasel <Badge type="warning" text="recompile" />
+
+Marten 10 shares more of its machinery with Polecat and Fisher. The behavior is the same unless listed here, but
+assemblies compiled against Marten 9 must be recompiled.
+
+- `Marten.ITransactionParticipant` is now `ITransactionParticipant<NpgsqlConnection, NpgsqlTransaction>` from
+  `Weasel.Storage`. `BeforeCommitAsync` and `AfterCommitAsync` keep their signatures, so an implementer's source is
+  unchanged.
+- `OpenTelemetryOptions` derives from JasperFx's `OpenTelemetryOptions<IChangeSet>`, and Marten uses the process-wide
+  `Marten` `ActivitySource`, so a listener on `Marten` hears one source rather than two.
+- `MartenActivator` derives from JasperFx's `StoreActivator`. Behavior changes: databases are built only when apply or
+  assert is opted in (Marten's activator still builds them at startup for master-table tenancy); under
+  `ContinueOnFailures`, a database that failed to migrate skips its seeders and rolling-partition pass; a cancelled
+  startup is no longer logged as a failed migration; each seeder checks the startup token before it runs.
+- A document stored twice in one unit of work by a dirty-tracking session now gets one tracker, not two.
+- `Marten.Services.VersionTracker` (unused) and `Marten.Events.Dcb.TagValueStringifier` (now in `JasperFx.Events.Tags`)
+  are deleted.
+- The `IReadOnlyEventStoreOptions` properties lost their setters (`AppendMode`, `UseArchivedStreamPartitioning`,
+  `UseTenantPartitionedEvents`, `MessageOutbox` and so on). Set them on `StoreOptions.Events` as before.
+
+### C# 15 union types on `net11.0` <Badge type="tip" text="new" />
+
+On `net11.0`, a document member or an event may be a C# union. An appended union is recorded as its active case,
+and `Apply(TUnion)` projections see every case. LINQ reaches a union member through `.Value`:
+`x.Payment.Value is Card`, `((Card)x.Payment.Value).Last4`, `(x.Payment.Value as Cash).Amount`, and `== null`.
+Marten refuses with `BadLinqExpressionException` a type no case is, cases the stored JSON cannot tell apart, a nested
+union case, an enum case read, ordering or grouping by the union, a union inside a child collection predicate, the
+Newtonsoft serializer, and a patch path through a case. On `net10.0` no type is a union, so none of this applies.
+
+### Default changes in 10.0 and how to restore Marten 9 behavior
+
+| Change | Restore Marten 9 behavior |
+| --- | --- |
+| [`EnableExtendedProgressionTracking`](#enableextendedprogressiontracking-is-on-by-default) is on | `opts.RestoreV9Defaults()`, or `opts.Events.EnableExtendedProgressionTracking = false` |
+| [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created-) | none; schema change, see below |
+
+`opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0
+([details](#restoring-v9-defaults)). The side-effect gate default flip ([jasperfx#1075](https://github.com/JasperFx/jasperfx/issues/1075))
+has not landed in Marten yet. `UseExclusiveLockOnConcurrentAppends` was measured under contention and stays off;
+see [Appending](/events/appending).
+
+Defaults that already turned on during 9.x minors, for readers coming from an older 9.x: the daemon's connection
+governors (`MaxConcurrentEventLoadsPerDatabase` and `MaxConcurrentBatchWritesPerDatabase`, both 4, since 9.13;
+[details](/events/projections/async-daemon#daemon-connection-governors)) and `StreamOne<T>` emitting an `ETag`
+(opt out with `EmitETag = false`; [details](/documents/aspnetcore)).
+
 ### Event-store objects that used to depend on configuration are always created <Badge type="warning" text="schema change" />
 
 Two stores, or two applications, sharing one schema with different settings used to drop each other's
