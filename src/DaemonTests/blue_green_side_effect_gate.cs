@@ -130,7 +130,42 @@ public class blue_green_side_effect_gate : IAsyncLifetime
     }
 
     [Fact]
-    public async Task without_the_opt_in_the_new_version_re_fires_side_effects_over_all_history()
+    public async Task by_default_the_new_version_suppresses_side_effects_over_the_prior_history()
+    {
+        const int N = 15;
+        const int M = 5;
+
+        using (var blue = SeparateStore(opts =>
+               {
+                   opts.Projections.Add(new GateTripProjection { Version = 2 }, ProjectionLifecycle.Async);
+               }))
+        {
+            await AppendSingleEventStreams(blue, N);
+            var blueDaemon = await blue.BuildProjectionDaemonAsync();
+            await blueDaemon.StartAllAsync();
+            await blueDaemon.Tracker.WaitForShardState("GateTrip:V2:All", N, 60.Seconds());
+            await blueDaemon.StopAllAsync();
+        }
+
+        var greenOutbox = new RecordingMessageOutbox();
+        using var green = SeparateStore(opts =>
+        {
+            opts.Projections.Add(new GateTripProjection { Version = 3 }, ProjectionLifecycle.Async);
+            opts.Events.MessageOutbox = greenOutbox;
+        });
+
+        await AppendSingleEventStreams(green, M);
+
+        var greenDaemon = await green.BuildProjectionDaemonAsync();
+        await greenDaemon.StartAllAsync();
+        await greenDaemon.Tracker.WaitForShardState("GateTrip:V3:All", N + M, 60.Seconds());
+        await greenDaemon.StopAllAsync();
+
+        FiredSideEffects(greenOutbox).Count.ShouldBe(M);
+    }
+
+    [Fact]
+    public async Task restoring_the_v9_defaults_the_new_version_re_fires_side_effects_over_all_history()
     {
         const int N = 15;
         const int M = 5;
@@ -149,11 +184,13 @@ public class blue_green_side_effect_gate : IAsyncLifetime
             await blueDaemon.StopAllAsync();
         }
 
-        // V3 WITHOUT the opt-in: today's behavior — one continuous catch-up over the whole history, so
+        // V3 with RestoreV9Defaults(): the gate is off (it is on by default since JasperFx 3.0,
+        // jasperfx#1075) — one continuous catch-up over the whole history, so
         // side effects fire for all N+M events. This is exactly the re-emission the gate exists to avoid.
         var greenOutbox = new RecordingMessageOutbox();
         using var green = SeparateStore(opts =>
         {
+            opts.RestoreV9Defaults();
             opts.Projections.Add(new GateTripProjection { Version = 3 }, ProjectionLifecycle.Async);
             opts.Events.MessageOutbox = greenOutbox;
         });

@@ -1,4 +1,6 @@
+using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events.Aggregation;
 using Shouldly;
 using Xunit;
 
@@ -23,6 +25,39 @@ public class RestoreV9DefaultsTests
     }
 
     [Fact]
+    public void the_side_effect_gate_is_on_by_default_in_jasperfx_3()
+    {
+        new GateProjection().GateSideEffectsBehindPriorVersion.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void restores_the_side_effect_gate_off_for_registered_projections_when_the_store_is_built()
+    {
+        var opts = new StoreOptions();
+        opts.RestoreV9Defaults();
+        var projection = new GateProjection();
+        opts.Projections.Add(projection, ProjectionLifecycle.Async);
+
+        projection.GateSideEffectsBehindPriorVersion.ShouldBeTrue(); // not until the store is built
+
+        opts.ApplyConfiguration();
+
+        projection.GateSideEffectsBehindPriorVersion.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void leaves_the_gate_on_without_the_restore()
+    {
+        var opts = new StoreOptions();
+        var projection = new GateProjection();
+        opts.Projections.Add(projection, ProjectionLifecycle.Async);
+
+        opts.ApplyConfiguration();
+
+        projection.GateSideEffectsBehindPriorVersion.ShouldBeTrue();
+    }
+
+    [Fact]
     public void does_not_touch_the_v9_defaults_that_restore_v8_defaults_owns()
     {
         var opts = new StoreOptions();
@@ -42,5 +77,17 @@ public class RestoreV9DefaultsTests
         opts.Events.EnableExtendedProgressionTracking = true;
 
         opts.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
+    }
+
+    public record GateStarted(System.Guid Id);
+
+    public class GateDoc
+    {
+        public System.Guid Id { get; set; }
+    }
+
+    public partial class GateProjection: SingleStreamProjection<GateDoc, System.Guid>
+    {
+        public void Apply(GateDoc doc, GateStarted _){}
     }
 }
