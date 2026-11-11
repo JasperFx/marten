@@ -351,8 +351,8 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            9.0.x
             10.0.x
+            11.0.x
 
       - name: Optimize database for running tests faster
         run: |
@@ -468,8 +468,8 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            9.0.x
             10.0.x
+            11.0.x
 
       # ILC shells out to the platform linker and toolchain; the ubuntu runner image has clang
       # but not the zlib/objcopy pieces a native link needs.
