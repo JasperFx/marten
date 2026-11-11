@@ -19,7 +19,7 @@
     <BobcatXunitRunnerVersion>4.0.1</BobcatXunitRunnerVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Alba" Version="9.0.0-rc.3" />
+    <PackageVersion Include="Alba" Version="9.0.0" />
     <!-- #5724: the AspireHost sample is on Aspire.AppHost.Sdk/13.6.3, which references Aspire.Hosting.AppHost
          implicitly at its own version, so that package must NOT have an entry here (NU1009). Keep this in step
          with the Sdk version in src/samples/AspireHost/AspireHost.csproj. -->
