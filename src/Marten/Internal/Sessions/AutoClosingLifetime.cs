@@ -34,8 +34,10 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         // #5269: same resolution as every other lifetime -- this one builds its own rather than being handed
         // one by SessionOptions, and it is the lifetime the default (non-sticky) write path uses.
         CommandTimeout = _options.ResolveCommandTimeout(storeOptions);
+        // #5888: ReadFromPrimary keeps a read-only session off the standby, for readers like the async
+        // daemon's event loader whose results must agree with state read on the primary.
         _readerConnectionUsage =
-            options.Mode == CommandRunnerMode.ReadOnly
+            options.Mode == CommandRunnerMode.ReadOnly && !options.ReadFromPrimary
             ? ConnectionUsage.Read
             : ConnectionUsage.ReadWrite;
     }

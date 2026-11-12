@@ -105,6 +105,15 @@ public sealed class SessionOptions
     internal bool OwnsConnection { get; set; } = true;
 
     /// <summary>
+    ///     #5888: a read-only session that must still run on the primary, whatever
+    ///     <see cref="MultiHostSettings.ReadSessionPreference" /> says. The async daemon's event loader pairs
+    ///     every page it reads with a high-water mark taken on the primary; reading that page from a lagging
+    ///     standby returns a short page whose ceiling is the high-water mark, and progression is written past
+    ///     events the standby has not replayed yet.
+    /// </summary>
+    internal bool ReadFromPrimary { get; set; }
+
+    /// <summary>
     ///     If set to true, this allows a session to be opened for "any"
     ///     tenant even if the StoreOptions.Advanced.DefaultTenantUsageEnabled is disabled normally
     ///     in this DocumentStore
