@@ -270,6 +270,138 @@ behavior. The governors apply to continuous (running daemon) work only — proje
 by `MaxConcurrentRebuildsPerDatabase`, which derives its default from the Npgsql connection pool size. See
 [Capping Rebuild Concurrency](/events/projections/rebuilding#capping-rebuild-concurrency).
 
+## Bounding Daemon Memory with Per-Tenant Agents <Badge type="tip" text="9.58" />
+
+With [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning) the daemon runs one agent
+per (projection × tenant). Each of those agents loads its own pages of events and builds its own batch of projected
+documents, so the memory the daemon holds grows with the number of tenant agents running on a node. With a few
+hundred tenant agents starting at once, typically when a projection is being rebuilt for every tenant, that can
+exhaust the memory of the process.
+
+The [connection governors](#daemon-connection-governors) above do not bound this memory:
+
+* `MaxConcurrentBatchWritesPerDatabase` is taken only *after* a batch has been built. Every agent can load its
+  events, run its projection and serialize every document, then wait for a write slot holding the finished batch.
+* Both governors apply per database. On a store with many databases, the number of agents allowed to work at once
+  on one node is still large.
+* Lowering `BatchSize` does not help when one event fans out to many documents, because a page is bounded by its
+  event count and not by the work inside it.
+
+Marten has two opt-in settings for this. Both are off by default, and both apply only to agents that run for one
+tenant. A store without per-tenant partitioning already builds one batch at a time per projection and is unaffected.
+
+### The tenant load budget
+
+`TenantLoadBudget` is the recommended setting. It gives all of a store's tenant agents on a node one shared budget
+of events that may be loaded but not yet committed, across every projection and every database of the store:
+
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+    opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+    opts.Events.UseTenantPartitionedEvents = true;
+
+    // The most events this store's tenant agents may hold on this node,
+    // loaded but not yet committed. Zero or negative (the default) is unbounded
+    opts.Projections.TenantLoadBudget = 2000;
+
+    // Hand out no new pages once the process reaches this fraction of
+    // the GC's high memory load threshold. 0.9 is the default
+    opts.Projections.TenantLoadMemoryThreshold = 0.9;
+});
+```
+
+With a budget set:
+
+* **An agent reserves a page before it loads.** It reserves `BatchSize` events, trims the reservation to the number
+  of events the page really held, and gives it back when the page commits.
+* **Loads go straight through while there is room.** If the budget has room and no agent is waiting, nothing is
+  delayed. A store that is caught up does not notice the budget.
+* **Tenants take turns when there is not.** Agents wait in a first in, first out line. Each is let in for one page,
+  then goes to the back of the line, so every tenant keeps moving and none falls behind indefinitely. The agent at
+  the head of the line is never passed by one that needs less room.
+* **A waiting agent is still running.** It stays assigned and keeps reporting its health, so neither Marten's own
+  daemon nor [Wolverine-managed distribution](https://wolverinefx.net/guide/durability/marten/distribution.html)
+  stops or reassigns it. It just does not load.
+* **The store always makes progress.** A reservation is always granted when nothing at all is in flight. A budget
+  smaller than one page slows the store down to one page at a time, and does not stop it.
+
+`TenantLoadMemoryThreshold` is a second limit on top of the event count. It is a fraction of the garbage collector's
+high memory load threshold (`GCMemoryInfo.HighMemoryLoadThresholdBytes`). Once the process reaches it, no new
+pages are handed out until the events already in flight have been committed, whatever the budget still allows. The
+default is `0.9`. Set it to `null` to use the event budget alone. It has no effect unless `TenantLoadBudget` is set.
+
+::: warning
+Set `TenantLoadBudget` in your `AddMarten()` configuration. The budget is read once per store per process, when
+the first tenant agent starts, and a later change is ignored.
+:::
+
+The budget covers continuously running projections and rebuilds, including composite projection rebuilds, where
+it also bounds the built batches because each page keeps its reservation until it has been processed.
+
+### Choosing a budget
+
+Think of the budget as a number of pages, where a page is your projection's `BatchSize` (500 by default). A budget
+of a few pages is usually the right place to start.
+
+These measurements are from the `TenantRebuildStress` project in the Marten repository. It rebuilds a two-stage
+composite projection for 24 tenants at once with a `BatchSize` of 500, where each page builds about 3,000 upserts
+of 8 KB documents:
+
+| Configuration | Peak memory (workstation GC) | Rebuild time |
+|---|---|---|
+| No budget | 8,215 MB | 8.6 s |
+| `TenantLoadBudget = 4000` (8 pages) | 6,198 MB | 6.7 s |
+| `TenantLoadBudget = 2000` (4 pages) | 1,185 to 1,410 MB | 7.6 to 7.9 s |
+| `TenantLoadBudget = 500` (1 page) | 351 MB | 17.8 s |
+| `SerializeTenantProjectionBatches` | 355 MB | 16.4 s |
+
+Four pages kept the rebuild at about the speed of no budget with roughly a sixth of the memory. One page used the
+least memory and took about twice as long. Eight pages was already close to no budget at all.
+
+Under server GC the same runs peaked at 5,766 MB with no budget, 3,819 MB with a budget of 2000, and 2,138 MB with
+a budget of 500. Server GC keeps more memory by design, so the absolute numbers are higher, but the budget still
+reduces the footprint.
+
+These numbers come from a laptop with about ±20% variance between runs. Use them to compare settings, and measure
+your own system in a container with its real memory limit before you settle on a value.
+
+### One batch at a time per projection
+
+`SerializeTenantProjectionBatches` is the simpler and blunter of the two settings:
+
+```cs
+opts.Projections.SerializeTenantProjectionBatches = true;
+```
+
+When it is on, the tenant agents of one projection build and commit their batches one at a time on a node, in
+turn, across every database of the store. The node holds one built batch per projection instead of one for every
+running tenant agent.
+
+* Each agent's pages stay in order, and an agent has at most one batch waiting for its turn.
+* Turns are first in, first out, so the queue rotates through the tenants.
+* A composite projection takes one turn per page for all of its members.
+* A page that is still waiting for its turn when the agent is stopped is abandoned, and is picked up by whichever
+  node runs the agent next. A page that has started runs to the end.
+
+The trade-off is throughput. One projection's tenants no longer build in parallel on a node, in continuous mode as
+well as in rebuilds. It also bounds only the built batches: every waiting agent can still hold up to
+`MaximumHopperSize` (5,000 by default) loaded events.
+
+Prefer `TenantLoadBudget`. A budget of one page uses about the same memory as the queue, a larger budget gives back
+the speed, and the budget still helps under server GC, where the queue saved little. Turning both on gains nothing
+over the queue alone.
+
+### What is not governed
+
+* A one-off `CatchUpAsync()` call loads one page at a time and does not go through the budget.
+* With `RebuildFlushThreshold` set, a rebuild keeps snapshots in memory across pages until they are flushed. Neither
+  setting bounds that memory.
+* Event subscriptions build no projection batch, so `SerializeTenantProjectionBatches` does not apply to them.
+
 ## Graceful Shutdown and the Drain Timeout <Badge type="tip" text="9.20" />
 
 When a projection or subscription shard is stopped, the daemon does not simply cancel it. It first tries to

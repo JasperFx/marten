@@ -339,6 +339,20 @@ data set is in your Marten database. To that end, you have a pair of complementa
 * [Event Archiving](/events/archiving)
 * [Stream Compacting](/events/compacting)
 
+## Bounding Memory in the Async Daemon <Badge type="tip" text="9.58" />
+
+With [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning), the async daemon runs one
+agent per (projection × tenant), and the events and batches those agents hold in memory add up on a node. The
+opt-in `TenantLoadBudget` setting puts one shared limit on the events a node's tenant agents may have loaded but
+not yet committed, and makes the tenants take turns when that limit is reached:
+
+```cs
+opts.Projections.TenantLoadBudget = 2000;
+```
+
+See [Bounding Daemon Memory with Per-Tenant Agents](/events/projections/async-daemon#bounding-daemon-memory-with-per-tenant-agents)
+for how it behaves and how to choose a value.
+
 ## Distributed Async Projections with Wolverine
 
 By default, async projection and subscription processing is coordinated across your application cluster using

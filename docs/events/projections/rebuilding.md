@@ -73,6 +73,9 @@ Two things to know about the shape of the throttle:
 - **It's a two-layer model.** The cap bounds how many cells run at once; each cell still uses its own internal
   slice workers while it runs. A cap of 4 therefore means "4 rebuilding projections/tenants at a time," not 4
   concurrent database operations.
+- **It does not bound memory.** Each rebuilding cell loads its own pages and builds its own batch. If a rebuild
+  across many tenants runs a node short of memory, set `opts.Projections.TenantLoadBudget`. See
+  [Bounding Daemon Memory with Per-Tenant Agents](/events/projections/async-daemon#bounding-daemon-memory-with-per-tenant-agents).
 
 For one-off operational rebuilds, the `--max-concurrent` flag on the [command line](/configuration/cli) overrides
 the configured value for that run:
