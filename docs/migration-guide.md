@@ -68,6 +68,7 @@ Newtonsoft serializer, and a patch path through a case. On `net10.0` no type is 
 | Change | Restore Marten 9 behavior |
 | --- | --- |
 | [`EnableExtendedProgressionTracking`](#enableextendedprogressiontracking-is-on-by-default) is on | `opts.RestoreV9Defaults()`, or `opts.Events.EnableExtendedProgressionTracking = false` |
+| [DCB conflicts scoped by event type](#dcb-conflicts-are-scoped-by-event-type-by-default-) (`DcbConflictScope.TagValueAndEventType`) | `opts.RestoreV9Defaults()`, or `opts.Events.DcbConflictScope = DcbConflictScope.TagValue` |
 | [Side-effect gate](/events/projections/rebuilding#suppressing-side-effects-during-the-blue-green-warm-up) (`GateSideEffectsBehindPriorVersion`, jasperfx#1075) is on | `opts.RestoreV9Defaults()`, or `GateSideEffectsBehindPriorVersion = false` on the projection |
 | [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created-) | none; schema change, see below |
 
@@ -151,6 +152,62 @@ No DDL is needed on a database migrated by 9.31 or later (the columns have been 
 copy already installed is left in place and can be dropped by hand. The `warning_behind_threshold` and
 `critical_behind_threshold` columns are never written; drop them only as a deliberate migration step
 (`alter table ... drop column` takes an ACCESS EXCLUSIVE lock on a hot table).
+
+### DCB conflicts are scoped by event type by default <Badge type="warning" text="rolling upgrade" />
+
+`opts.Events.DcbConflictScope` now defaults to `DcbConflictScope.TagValueAndEventType`
+([#5887](https://github.com/JasperFx/marten/issues/5887)). A `FetchForWritingByTags` query condition that names
+event types with `AndEventsOfType` now only conflicts with later events of those types, as the
+[DCB specification](https://dcb.events/specification/) does; Marten 9 conflicted on any later event carrying the
+tag value. Expect fewer `DcbConcurrencyException`s. No schema change is involved.
+
+::: danger Rolling upgrades from Marten 9 can miss conflicts
+Marten 10 checks a version per (tag value, event type) that Marten 9 nodes do not maintain by default. While any
+node is still running Marten 9 with its default, its appends are invisible to a Marten 10 node's boundary check,
+and two decisions that should have conflicted can both commit. Before a rolling upgrade, do **one** of:
+
+- deploy Marten 9.60 or later with `opts.Events.DcbConflictScope = DcbConflictScope.TagValueRecordingEventTypes`
+  to every node first, then roll out Marten 10; or
+- roll out Marten 10 with `opts.Events.DcbConflictScope = DcbConflictScope.TagValueRecordingEventTypes` (or
+  `opts.RestoreV9Defaults()`, which sets `TagValue`), and remove that line in a later deployment once no Marten 9
+  node is left.
+
+A deployment that stops every node before starting Marten 10 needs neither step. A store that never calls
+`FetchForWritingByTags` is unaffected.
+:::
+
+To keep the Marten 9 behavior:
+
+```cs
+opts.Events.DcbConflictScope = DcbConflictScope.TagValue;
+```
+
+## Key Changes in 9.60.0
+
+### A DCB boundary save no longer conflicts with boundaries it did not change <Badge type="warning" text="behavior change" />
+
+A `FetchForWritingByTags` boundary now fails with `DcbConcurrencyException` only when an event carrying
+a tag value it read was appended after the read. Before 9.60 a boundary save also bumped the version of
+every tag value it read, so two boundaries reading the same tag value always conflicted, even when
+neither appended anything the other reads
+([#5887](https://github.com/JasperFx/marten/issues/5887)). Expect fewer `DcbConcurrencyException`s
+under contention. Nothing that was a conflict under the DCB append condition stops being one.
+
+Two saves that each read a tag value the other appended to could also deadlock (PostgreSQL error
+`40P01`), surfacing as a `MartenCommandException` or as a one-second stall before a write retry. They
+now lock their rows in one order, and the loser fails with `DcbConcurrencyException`.
+
+No schema change is involved, and nodes on 9.59 and 9.60 can run side by side: an older node only
+reports more conflicts, never fewer.
+
+### Opt-in: scope DCB conflicts by event type <Badge type="tip" text="new" />
+
+`opts.Events.DcbConflictScope = DcbConflictScope.TagValueAndEventType` makes the conflict check honour
+the event types a query condition names with `AndEventsOfType`, as the DCB specification does. The
+default stays `DcbConflictScope.TagValue`. Turning it on for a running system takes **two
+deployments**, through `DcbConflictScope.TagValueRecordingEventTypes` — a rolling deployment straight
+to `TagValueAndEventType` can miss conflicts. See
+[scoping conflicts by event type](/events/dcb#scoping-conflicts-by-event-type).
 
 ## Key Changes in 9.41.0
 
@@ -351,6 +408,7 @@ Marten 10 follows the same rule: every changed default can be put back with one 
 | Setting | Marten 9 value | Docs |
 | --- | --- | --- |
 | `Events.EnableExtendedProgressionTracking` | `false` | [Async Projection Daemon](events/projections/async-daemon.md) |
+| `Events.DcbConflictScope` | `TagValue` | [Dynamic Consistency Boundaries](events/dcb.md#scoping-conflicts-by-event-type) |
 
 | `GateSideEffectsBehindPriorVersion` on every registered projection | `false` | [Rebuilding](events/projections/rebuilding.md) |
 
