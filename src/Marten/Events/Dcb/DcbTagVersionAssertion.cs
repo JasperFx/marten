@@ -13,7 +13,7 @@ using Weasel.Postgresql;
 namespace Marten.Events.Dcb;
 
 /// <summary>
-/// One captured-and-bumped tag-version row carried from FetchForWritingByTags
+/// One captured tag-version row carried from FetchForWritingByTags
 /// through to SaveChangesAsync.
 /// </summary>
 /// <param name="TagTable">
@@ -22,7 +22,7 @@ namespace Marten.Events.Dcb;
 ///     <c>mt_dcb_tag_version.tag_table</c>.
 /// </param>
 /// <param name="TagValue">Canonical string form of the tag value (see <see cref="TagValueStringifier"/>).</param>
-/// <param name="CapturedVersion">The version observed at fetch time. The save's UPDATE WHERE version = $captured is the optimistic check.</param>
+/// <param name="CapturedVersion">The version observed at fetch time. The save's <c>where version = $captured</c> is the optimistic check.</param>
 /// <param name="Query">The boundary query this row was captured for — carried per row rather than per assertion so a merged assertion can still name the boundary that failed. See #5280.</param>
 /// <param name="LastSeenSequence">The event sequence <paramref name="Query"/> had read up to, for the exception message.</param>
 internal readonly record struct DcbTagVersionEntry(
@@ -33,83 +33,82 @@ internal readonly record struct DcbTagVersionEntry(
     long LastSeenSequence);
 
 /// <summary>
-/// Storage operation that enforces the DCB tag boundary by bumping the
-/// <c>mt_dcb_tag_version</c> rows captured at fetch time. Replaces the racy
-/// SELECT-EXISTS over <c>mt_events</c> that <see cref="AssertDcbConsistency"/>
-/// emitted. Each UPDATE is the serialization point: at READ COMMITTED, the
-/// row-level lock + <c>version = $captured</c> predicate converts what was a
-/// predicate read into a row-level write conflict. Fixes #4591.
+/// Storage operation that enforces the DCB tag boundary against the
+/// <c>mt_dcb_tag_version</c> rows captured at fetch time, and applies the producer-side
+/// bumps of the tags the save's own events carry. Replaces the racy SELECT-EXISTS over
+/// <c>mt_events</c> that <see cref="AssertDcbConsistency"/> emitted. Each statement is the
+/// serialization point: at READ COMMITTED, the row-level lock + <c>version = $captured</c>
+/// predicate converts what was a predicate read into a row-level write conflict. Fixes #4591.
 /// </summary>
 /// <remarks>
-/// Multi-tag queries emit one UPDATE per (tag_table, tag_value) tuple. The
-/// tuples are sorted by (tag_table, tag_value) before SQL is built so two
-/// concurrent appenders touching the same tag set acquire locks in identical
-/// order — no risk of deadlock from cross-locking.
+/// #5887: the check LOCKS and COMPARES a row it read; it does not bump it. Only a tag carried
+/// by an appended event moves a version, so a boundary conflicts with a later save exactly when
+/// that save appended an event carrying a tag the boundary read -- the DCB append condition.
+/// Bumping every row it read made two boundaries over one tag value conflict even when neither
+/// appended anything the other reads. A no-op <c>DO UPDATE</c> still takes the row lock, so
+/// concurrent boundary saves over one row still serialize: the second waits, then compares
+/// against the committed row.
 ///
-/// #5280: one save carries ONE of these, covering every boundary the session
-/// read. A row named by two boundaries — the same query fetched twice, or two
-/// overlapping queries — appears once. Two assertions over one row would each
-/// carry the same captured version, and the first one's bump would make the
-/// second one's <c>where version = $captured</c> miss: a session reporting a
-/// concurrency conflict against itself.
+/// The rows checked and the rows bumped are one sorted set, locked in (tag_table, tag_value)
+/// order in one pass. Sorting each half on its own is not enough: a save that checks row c and
+/// bumps row w can then deadlock against a save that checks w and bumps c.
+///
+/// #5280: one save carries ONE of these, covering every boundary the session read. A row named
+/// by two boundaries — the same query fetched twice, or two overlapping queries — appears once,
+/// held to the oldest version the session captured for it.
 /// </remarks>
 internal class DcbTagVersionAssertion: IStorageOperation
 {
     private readonly EventGraph _events;
-    private readonly IReadOnlyList<DcbTagVersionEntry> _orderedEntries;
+    private readonly IReadOnlyList<Row> _orderedRows;
+
+    private readonly record struct Row(string TagTable, string TagValue, DcbTagVersionEntry? Captured, bool Bump);
 
     public DcbTagVersionAssertion(
         EventGraph events,
-        IReadOnlyList<DcbTagVersionEntry> capturedEntries)
+        IReadOnlyList<DcbTagVersionEntry> capturedEntries,
+        IReadOnlyList<(string TagTable, string TagValue)> bumps)
     {
         _events = events;
 
-        // Sort once, here — both ConfigureCommand and PostprocessAsync iterate
-        // in the same order, and the deterministic order is what keeps two
-        // concurrent appenders touching the same tag rows from deadlocking.
-        // Sorting the merged set is also what makes that guarantee hold across
-        // boundaries: two sessions holding the same pair of boundaries in
-        // opposite fetch order would otherwise take the row locks in opposite
-        // order too.
-        var sorted = new DcbTagVersionEntry[capturedEntries.Count];
-        for (var i = 0; i < capturedEntries.Count; i++) sorted[i] = capturedEntries[i];
-        Array.Sort(sorted, static (a, b) =>
+        // Oldest capture first within a (tag_table, tag_value) run, so collapsing the run keeps the
+        // strictest check of the row: every read the session made has to still be valid, not just
+        // the most recent one.
+        var captured = new DcbTagVersionEntry[capturedEntries.Count];
+        for (var i = 0; i < capturedEntries.Count; i++) captured[i] = capturedEntries[i];
+        Array.Sort(captured, static (a, b) =>
         {
-            var byTable = string.CompareOrdinal(a.TagTable, b.TagTable);
-            if (byTable != 0) return byTable;
-
-            var byValue = string.CompareOrdinal(a.TagValue, b.TagValue);
-            if (byValue != 0) return byValue;
-
-            // Oldest capture first, so collapsing a duplicate run below keeps the
-            // strictest check of the row: every read the session made has to still
-            // be valid, not just the most recent one.
-            return a.CapturedVersion.CompareTo(b.CapturedVersion);
+            var byKey = compareKeys(a.TagTable, a.TagValue, b.TagTable, b.TagValue);
+            return byKey != 0 ? byKey : a.CapturedVersion.CompareTo(b.CapturedVersion);
         });
 
-        _orderedEntries = collapseDuplicateRows(sorted);
-    }
-
-    // Duplicates are adjacent after the sort, so one pass over the run keeps the
-    // first (oldest captured version) of each (tag_table, tag_value).
-    private static DcbTagVersionEntry[] collapseDuplicateRows(DcbTagVersionEntry[] sorted)
-    {
-        if (sorted.Length < 2) return sorted;
-
-        var kept = 1;
-        for (var i = 1; i < sorted.Length; i++)
+        var rows = new Dictionary<(string, string), Row>(captured.Length + bumps.Count);
+        foreach (var entry in captured)
         {
-            var previous = sorted[kept - 1];
-            if (sorted[i].TagTable == previous.TagTable && sorted[i].TagValue == previous.TagValue) continue;
-
-            sorted[kept++] = sorted[i];
+            rows.TryAdd((entry.TagTable, entry.TagValue), new Row(entry.TagTable, entry.TagValue, entry, false));
         }
 
-        if (kept == sorted.Length) return sorted;
+        foreach (var (tagTable, tagValue) in bumps)
+        {
+            var key = (tagTable, tagValue);
+            rows[key] = rows.TryGetValue(key, out var existing)
+                ? existing with { Bump = true }
+                : new Row(tagTable, tagValue, null, true);
+        }
 
-        var collapsed = new DcbTagVersionEntry[kept];
-        Array.Copy(sorted, collapsed, kept);
-        return collapsed;
+        // One deterministic order over everything the save locks -- this is what keeps two
+        // concurrent saves touching overlapping rows from deadlocking. ConfigureCommand and
+        // PostprocessAsync both iterate it.
+        var ordered = new Row[rows.Count];
+        rows.Values.CopyTo(ordered, 0);
+        Array.Sort(ordered, static (a, b) => compareKeys(a.TagTable, a.TagValue, b.TagTable, b.TagValue));
+        _orderedRows = ordered;
+    }
+
+    private static int compareKeys(string tableA, string valueA, string tableB, string valueB)
+    {
+        var byTable = string.CompareOrdinal(tableA, tableB);
+        return byTable != 0 ? byTable : string.CompareOrdinal(valueA, valueB);
     }
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
@@ -117,7 +116,7 @@ internal class DcbTagVersionAssertion: IStorageOperation
         var schema = _events.DatabaseSchemaName;
         var tenantId = session.TenantId;
 
-        for (var i = 0; i < _orderedEntries.Count; i++)
+        for (var i = 0; i < _orderedRows.Count; i++)
         {
             // StartNewCommand (not `; <sql>`) so Npgsql sends each statement
             // as a separate batched command — multiple `;`-separated
@@ -125,31 +124,43 @@ internal class DcbTagVersionAssertion: IStorageOperation
             // SQLSTATE 42601.
             if (i > 0) builder.StartNewCommand();
 
-            var entry = _orderedEntries[i];
+            var row = _orderedRows[i];
 
-            // INSERT … ON CONFLICT DO UPDATE WHERE handles the two cases the
-            // fetch path delegates to us:
-            //   - captured = 0 + row missing → INSERT(version=1) succeeds; first save wins.
-            //   - row exists → ON CONFLICT branch; the WHERE filters to captured-match
-            //     only, so any save that observed a stale version returns no row.
-            // INSERT … ON CONFLICT waits on the conflicting row's xact, so two
-            // first-time creators serialize on the unique-PK insert path the same
-            // way subsequent versioned-update saves serialize on the row lock.
+            // What the row holds once this save commits, and what a missing row is created with.
+            // Version 0 means "no event carrying this tag has been appended", whether or not the
+            // row exists, so a check that creates the row creates it at the version it captured.
+            var captured = row.Captured?.CapturedVersion ?? 0;
+            var increment = row.Bump ? 1 : 0;
+
+            // INSERT … ON CONFLICT DO UPDATE WHERE handles both cases:
+            //   - row missing → INSERT succeeds. Concurrent first-time creators serialize on the
+            //     unique-PK insert, and the loser then takes the ON CONFLICT branch.
+            //   - row exists → ON CONFLICT branch. It locks the row even when the update changes
+            //     nothing, waits out a concurrent holder, and evaluates the WHERE against the
+            //     committed row -- so a save that observed a stale version returns no row.
             builder.Append("insert into ");
             builder.Append(schema);
             builder.Append(".mt_dcb_tag_version (tag_table, tag_value, tenant_id, version) values (");
-            builder.AppendParameter(entry.TagTable);
+            builder.AppendParameter(row.TagTable);
             builder.Append(", ");
-            builder.AppendParameter(entry.TagValue);
+            builder.AppendParameter(row.TagValue);
             builder.Append(", ");
             builder.AppendParameter(tenantId);
             builder.Append(", ");
-            builder.AppendParameter(entry.CapturedVersion + 1);
+            builder.AppendParameter(captured + increment);
             // ON CONFLICT DO UPDATE references the existing row via the
             // unqualified table name (`mt_dcb_tag_version.version`) — Postgres
             // does not accept the schema prefix in this clause.
-            builder.Append(") on conflict (tag_table, tag_value, tenant_id) do update set version = mt_dcb_tag_version.version + 1 where mt_dcb_tag_version.version = ");
-            builder.AppendParameter(entry.CapturedVersion);
+            builder.Append(row.Bump
+                ? ") on conflict (tag_table, tag_value, tenant_id) do update set version = mt_dcb_tag_version.version + 1"
+                : ") on conflict (tag_table, tag_value, tenant_id) do update set version = mt_dcb_tag_version.version");
+
+            if (row.Captured.HasValue)
+            {
+                builder.Append(" where mt_dcb_tag_version.version = ");
+                builder.AppendParameter(captured);
+            }
+
             builder.Append(" returning 1");
         }
     }
@@ -160,7 +171,7 @@ internal class DcbTagVersionAssertion: IStorageOperation
     {
         DcbTagVersionEntry? conflicted = null;
 
-        for (var i = 0; i < _orderedEntries.Count; i++)
+        for (var i = 0; i < _orderedRows.Count; i++)
         {
             if (i > 0)
             {
@@ -170,15 +181,16 @@ internal class DcbTagVersionAssertion: IStorageOperation
             }
 
             var hasRow = await reader.ReadAsync(token).ConfigureAwait(false);
-            if (!hasRow)
+
+            // A bump-only row has no WHERE and always returns its row. Keep iterating either way
+            // so we consume the remaining result sets — the batch protocol requires every
+            // statement's result set to be walked before the next operation can read its own.
+            if (!hasRow && _orderedRows[i].Captured.HasValue)
             {
                 // First loser wins the exception — the row carries the boundary
                 // query that captured it, so the message names a query the caller
                 // actually made even when the save spans several boundaries.
-                conflicted ??= _orderedEntries[i];
-                // Keep iterating so we consume the remaining result sets — the
-                // batch protocol requires every statement's result set to be
-                // walked before the next operation can read its own.
+                conflicted ??= _orderedRows[i].Captured;
             }
         }
 

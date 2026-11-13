@@ -1,5 +1,32 @@
 # Migration Guide
 
+## Key Changes in 9.60.0
+
+### A DCB boundary save no longer conflicts with boundaries it did not change <Badge type="warning" text="behavior change" />
+
+A `FetchForWritingByTags` boundary now fails with `DcbConcurrencyException` only when an event carrying
+a tag value it read was appended after the read. Before 9.60 a boundary save also bumped the version of
+every tag value it read, so two boundaries reading the same tag value always conflicted, even when
+neither appended anything the other reads
+([#5887](https://github.com/JasperFx/marten/issues/5887)). Expect fewer `DcbConcurrencyException`s
+under contention. Nothing that was a conflict under the DCB append condition stops being one.
+
+Two saves that each read a tag value the other appended to could also deadlock (PostgreSQL error
+`40P01`), surfacing as a `MartenCommandException` or as a one-second stall before a write retry. They
+now lock their rows in one order, and the loser fails with `DcbConcurrencyException`.
+
+No schema change is involved, and nodes on 9.59 and 9.60 can run side by side: an older node only
+reports more conflicts, never fewer.
+
+### Opt-in: scope DCB conflicts by event type <Badge type="tip" text="new" />
+
+`opts.Events.DcbConflictScope = DcbConflictScope.TagValueAndEventType` makes the conflict check honour
+the event types a query condition names with `AndEventsOfType`, as the DCB specification does. The
+default stays `DcbConflictScope.TagValue`. Turning it on for a running system takes **two
+deployments**, through `DcbConflictScope.TagValueRecordingEventTypes` — a rolling deployment straight
+to `TagValueAndEventType` can miss conflicts. See
+[scoping conflicts by event type](/events/dcb#scoping-conflicts-by-event-type).
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
