@@ -292,6 +292,8 @@ One of the consequences is that you won't be able to [query event data](/events/
 
 Sometimes with more extensive schema changes, you'd like more flexibility in payload transformations. Upcasting is a process of transforming the old JSON schema into the new one. It's performed on the fly each time the event is read. You can think of it as a pluggable middleware between the deserialization and application logic. Having that, we can either grab raw JSON or a deserialized object of the old CLR type and transform them into the new schema. Thanks to that, we can keep only the last version of the event schema in our stream aggregation or projection handling.
 
+Because the stored rows never change, the upcaster runs on every read for as long as they exist. [Rewriting the stored events](/events/rewriting) stores them in the new shape, after which the upcaster can be removed.
+
 There are two main ways of upcasting the old schema into the new one:
 
 - **CLR types transformation** - if we're okay with keeping the old CLR class in the codebase, we could define a function that takes the instance of the old type and returns the new one. Internally it will use default deserialization and event type mapping for the old CLR type and calls the upcasting function.
