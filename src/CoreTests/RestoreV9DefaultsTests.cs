@@ -1,5 +1,6 @@
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events;
 using Marten.Events.Aggregation;
 using Shouldly;
 using Xunit;
@@ -22,6 +23,22 @@ public class RestoreV9DefaultsTests
         opts.RestoreV9Defaults();
 
         opts.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void dcb_conflicts_are_scoped_by_event_type_by_default()
+    {
+        new StoreOptions().Events.DcbConflictScope.ShouldBe(DcbConflictScope.TagValueAndEventType);
+    }
+
+    [Fact]
+    public void restores_the_dcb_conflict_scope_to_the_v9_value()
+    {
+        var opts = new StoreOptions();
+
+        opts.RestoreV9Defaults();
+
+        opts.Events.DcbConflictScope.ShouldBe(DcbConflictScope.TagValue);
     }
 
     [Fact]

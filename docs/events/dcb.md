@@ -382,7 +382,7 @@ catch (DcbConcurrencyException ex)
 <!-- endSnippet -->
 
 ::: tip
-The consistency check only detects events appended **after the read that carry a tag value the query reads**. Events appended to unrelated tags or streams never cause a violation, and neither does another boundary's save that appends nothing carrying one of those tag values. By default the check does not look at event types: an event of a type the query does not select still conflicts if it carries a tag value the query reads. To honour `AndEventsOfType` in the check as well, see [scoping conflicts by event type](#scoping-conflicts-by-event-type).
+The consistency check only detects events appended **after the read that carry a tag value the query reads**. Events appended to unrelated tags or streams never cause a violation, and neither does another boundary's save that appends nothing carrying one of those tag values. Since Marten 10 the check also honours the event types a condition names with `AndEventsOfType`: an event of a type the query does not select does not conflict. See [scoping conflicts by event type](#scoping-conflicts-by-event-type).
 :::
 
 ### How the boundary check serializes <Badge type="tip" text="9.4" />
@@ -409,7 +409,7 @@ The side table grows with **distinct boundary-tag values**, not with event volum
 
 ### Scoping conflicts by event type
 
-Marten 9.60 adds `opts.Events.DcbConflictScope`. A query condition can name event types with `AndEventsOfType`, and the [DCB specification](https://dcb.events/specification/) only fails an append when a later event matches the query — event type included. By default Marten keeps its versions per tag value, so an event of a type the condition does not name still conflicts when it carries the same tag value. That is never wrong, but it reports conflicts the specification would not, and under load those cost retries:
+A query condition can name event types with `AndEventsOfType`, and the [DCB specification](https://dcb.events/specification/) only fails an append when a later event matches the query — event type included. Marten 10 does the same by default: alongside its version per tag value it keeps one per (tag value, event type), and a condition naming event types checks those. Marten 9 kept versions per tag value only, so an event of a type the condition does not name still conflicted when it carried the same tag value — never wrong, but it reports conflicts the specification would not, and under load those cost retries. `opts.Events.DcbConflictScope` chooses between the two:
 
 <!-- snippet: sample_marten_dcb_conflict_scope -->
 <a id='snippet-sample_marten_dcb_conflict_scope'></a>
@@ -442,13 +442,13 @@ var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(quer
 
 | Setting | A condition naming event types conflicts with… | Extra version rows written |
 | --- | --- | --- |
-| `TagValue` (default in 9.x) | any later event carrying the tag value | none |
+| `TagValue` (Marten 9 default) | any later event carrying the tag value | none |
 | `TagValueRecordingEventTypes` | any later event carrying the tag value | one per (tag value, event type) appended |
-| `TagValueAndEventType` | later events of those types carrying the tag value | one per (tag value, event type) appended |
+| `TagValueAndEventType` (default) | later events of those types carrying the tag value | one per (tag value, event type) appended |
 
 A condition without event types conflicts with any event carrying its tag value under every setting.
 
-`TagValueAndEventType` checks a version per (tag value, event type), which is only maintained by nodes running `TagValueRecordingEventTypes` or `TagValueAndEventType`. No schema change is involved — the extra versions are rows in the same `mt_dcb_tag_version` table — but **switching a running system takes two deployments**:
+`TagValueAndEventType` checks a version per (tag value, event type), which is only maintained by nodes running `TagValueRecordingEventTypes` or `TagValueAndEventType`. No schema change is involved — the extra versions are rows in the same `mt_dcb_tag_version` table — but **switching a running system takes two deployments**, and that includes [upgrading from Marten 9](/migration-guide#dcb-conflicts-are-scoped-by-event-type-by-default-):
 
 1. Deploy `TagValueRecordingEventTypes` to every node. Conflicts are still detected per tag value, and every append now also maintains the per-type versions.
 2. Once no node is left on `TagValue`, deploy `TagValueAndEventType`.

@@ -16,7 +16,8 @@ namespace Marten.Events;
 /// <see cref="TagValueAndEventType"/> maintain. While any node still appends tagged events under
 /// <see cref="TagValue"/>, a node checking per event type can miss that node's conflicting appends.
 /// Roll out <see cref="TagValueRecordingEventTypes"/> to every node first, then switch to
-/// <see cref="TagValueAndEventType"/>.
+/// <see cref="TagValueAndEventType"/>. That includes upgrading from Marten 9, whose default is
+/// <see cref="TagValue"/>.
 /// </para>
 /// </remarks>
 public enum DcbConflictScope
@@ -37,7 +38,7 @@ public enum DcbConflictScope
     TagValueRecordingEventTypes,
 
     /// <summary>
-    /// The DCB specification's append condition. A query condition that names event types only
+    /// The default since Marten 10, and the DCB specification's append condition. A query condition that names event types only
     /// conflicts with appended events of those types; a condition without event types conflicts with
     /// any event carrying its tag value. Maintains the same extra versions as
     /// <see cref="TagValueRecordingEventTypes"/>. Every node appending tagged events must be running

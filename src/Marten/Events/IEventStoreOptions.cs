@@ -239,13 +239,13 @@ namespace Marten.Events
 
         /// <summary>
         /// #5887. What makes a later append conflict with a Dynamic Consistency Boundary read by
-        /// <c>FetchForWritingByTags</c>. Defaults to <see cref="Marten.Events.DcbConflictScope.TagValue"/>:
-        /// any appended event carrying a tag value the boundary read is a conflict, whatever its type.
-        /// <see cref="Marten.Events.DcbConflictScope.TagValueAndEventType"/> honours the event types a
-        /// query condition names (<c>AndEventsOfType</c>), as the DCB specification does. Switching a
-        /// running system to it is a two-step rollout through
-        /// <see cref="Marten.Events.DcbConflictScope.TagValueRecordingEventTypes"/> — see the remarks
-        /// on <see cref="Marten.Events.DcbConflictScope"/>.
+        /// <c>FetchForWritingByTags</c>. Defaults to <see cref="Marten.Events.DcbConflictScope.TagValueAndEventType"/>
+        /// since Marten 10: a query condition naming event types (<c>AndEventsOfType</c>) only conflicts
+        /// with later events of those types, as the DCB specification does.
+        /// <see cref="Marten.Events.DcbConflictScope.TagValue"/>, the Marten 9 default, conflicts on any
+        /// appended event carrying a tag value the boundary read. Upgrading a running Marten 9 system is a
+        /// two-step rollout through <see cref="Marten.Events.DcbConflictScope.TagValueRecordingEventTypes"/> —
+        /// see the remarks on <see cref="Marten.Events.DcbConflictScope"/>.
         /// </summary>
         public DcbConflictScope DcbConflictScope { get; set; }
 
