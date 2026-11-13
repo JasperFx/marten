@@ -238,6 +238,18 @@ namespace Marten.Events
         public int? DcbTagVersionFillFactor { get; set; }
 
         /// <summary>
+        /// #5887. What makes a later append conflict with a Dynamic Consistency Boundary read by
+        /// <c>FetchForWritingByTags</c>. Defaults to <see cref="Marten.Events.DcbConflictScope.TagValue"/>:
+        /// any appended event carrying a tag value the boundary read is a conflict, whatever its type.
+        /// <see cref="Marten.Events.DcbConflictScope.TagValueAndEventType"/> honours the event types a
+        /// query condition names (<c>AndEventsOfType</c>), as the DCB specification does. Switching a
+        /// running system to it is a two-step rollout through
+        /// <see cref="Marten.Events.DcbConflictScope.TagValueRecordingEventTypes"/> — see the remarks
+        /// on <see cref="Marten.Events.DcbConflictScope"/>.
+        /// </summary>
+        public DcbConflictScope DcbConflictScope { get; set; }
+
+        /// <summary>
         /// When enabled, adds FOR UPDATE to the stream version SELECT inside
         /// mt_quick_append_events for OCC (optimistic concurrency) appends.
         /// This prevents a READ COMMITTED race where two concurrent transactions
