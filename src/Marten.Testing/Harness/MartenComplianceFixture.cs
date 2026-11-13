@@ -175,6 +175,14 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             options.Listeners.Add(new DocumentCommitListenerAdapter(listener));
         }
 
+        // #5887: the DCB append condition facts race saves against each other, and a retried
+        // deadlock (40P01) commits about a second later -- with the default write retry on, those
+        // facts cannot tell a save that queued for a lock from one that deadlocked.
+        if (config.DisableWriteRetries)
+        {
+            options.ConfigureWritePolly(_ => { });
+        }
+
         config.ApplyTo(new MartenComplianceRegistrar(options));
 
         // #5540: a daemon from an earlier configuration holds the store it was built from, so it has to be

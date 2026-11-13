@@ -62,6 +62,10 @@ public class ExplorationUsernameState
 // restated against Marten's API. Each test names the case it adapts. Shapes Marten's EventTagQuery
 // cannot express -- several tags AND'd inside one condition, a condition with no tag at all, an
 // explicit `after` position -- are left out rather than approximated.
+//
+// The store-agnostic facts that used to live here run for every Critter Stack store in
+// JasperFx.Events.ComplianceTests' DcbAppendConditionCompliance (dcb_append_condition_compliance).
+// What stays is Marten's own: version rows, HStore mode and the TagValue conflict scope.
 [Collection("OneOffs")]
 public class dcb_append_condition_exploration: OneOffConfigurationsContext
 {
@@ -94,29 +98,6 @@ public class dcb_append_condition_exploration: OneOffConfigurationsContext
         var e = session.Events.BuildEvent(data);
         e.WithTag(tags);
         return e;
-    }
-
-    // Happenstance E2E-06 / kraken: a batch is not checked against its own events. A boundary that
-    // appends several events its own query matches commits all of them.
-    [Fact]
-    public async Task a_batch_matching_its_own_query_commits_every_event()
-    {
-        var store = Use(DcbConflictScope.TagValueAndEventType);
-        var series = new ExplorationSeriesId(Guid.NewGuid());
-        var query = new EventTagQuery().Or(series).AndEventsOfType<ExplorationInvoiceCreated>();
-
-        await using (var session = store.LightweightSession())
-        {
-            var boundary = await session.Events.FetchForWritingByTags<ExplorationInvoiceSeries>(query);
-            boundary.AppendMany(
-                Build(session, new ExplorationInvoiceCreated(1), series),
-                Build(session, new ExplorationInvoiceCreated(2), series),
-                Build(session, new ExplorationInvoiceCreated(3), series));
-            await session.SaveChangesAsync();
-        }
-
-        await using var query2 = store.LightweightSession();
-        (await query2.Events.QueryByTagsAsync(query)).Count.ShouldBe(3);
     }
 
     // Happenstance / kraken / sliceworkz: a rejected append writes nothing -- not its events, not its
@@ -155,7 +136,6 @@ public class dcb_append_condition_exploration: OneOffConfigurationsContext
     // concurrent decisions over disjoint boundaries never conflict, and never deadlock.
     [Theory]
     [InlineData(DcbConflictScope.TagValue)]
-    [InlineData(DcbConflictScope.TagValueAndEventType)]
     public async Task disjoint_boundaries_in_parallel_never_conflict(DcbConflictScope scope)
     {
         var store = Use(scope);
@@ -240,35 +220,11 @@ public class dcb_append_condition_exploration: OneOffConfigurationsContext
         await Should.ThrowAsync<DcbConcurrencyException>(() => decision.SaveChangesAsync());
     }
 
-    // Happenstance condition_with_an_unheld_tag_does_not_reject: an event of a selected type carrying
-    // a DIFFERENT value of the tag is not a match.
-    [Fact]
-    public async Task an_event_of_a_selected_type_with_another_tag_value_does_not_conflict()
-    {
-        var store = Use(DcbConflictScope.TagValueAndEventType);
-        var mine = new ExplorationUsername("alice-" + Guid.NewGuid());
-        var other = new ExplorationUsername("bob-" + Guid.NewGuid());
-
-        await using var session = store.LightweightSession();
-        var boundary = await session.Events.FetchForWritingByTags<ExplorationUsernameState>(
-            new EventTagQuery().Or(mine).AndEventsOfType<ExplorationUsernameClaimed, ExplorationAccountClosed>());
-
-        await using (var elsewhere = store.LightweightSession())
-        {
-            elsewhere.Events.Append(Guid.NewGuid(), Build(elsewhere, new ExplorationUsernameClaimed(other.Value), other));
-            await elsewhere.SaveChangesAsync();
-        }
-
-        boundary.AppendOne(Build(session, new ExplorationUsernameClaimed(mine.Value), mine));
-        await Should.NotThrowAsync(() => session.SaveChangesAsync());
-    }
-
     // dcb.events "unique username" example, raced. One tag value, several selected types, and a
     // stream of events of an UNSELECTED type (look-ups) on the same tag value landing throughout.
     // Never more than one claim, and nothing but a DcbConcurrencyException is ever thrown.
     [Theory]
     [InlineData(DcbConflictScope.TagValue, DcbStorageMode.TagTables)]
-    [InlineData(DcbConflictScope.TagValueAndEventType, DcbStorageMode.TagTables)]
     [InlineData(DcbConflictScope.TagValueAndEventType, DcbStorageMode.HStore)]
     public async Task a_raced_username_is_claimed_exactly_once(DcbConflictScope scope, DcbStorageMode mode)
     {
@@ -344,7 +300,6 @@ public class dcb_append_condition_exploration: OneOffConfigurationsContext
     // no duplicate -- whatever the scope.
     [Theory]
     [InlineData(DcbConflictScope.TagValue, DcbStorageMode.TagTables)]
-    [InlineData(DcbConflictScope.TagValueAndEventType, DcbStorageMode.TagTables)]
     [InlineData(DcbConflictScope.TagValueAndEventType, DcbStorageMode.HStore)]
     public async Task concurrently_allocated_invoice_numbers_are_gapless_and_unique(DcbConflictScope scope,
         DcbStorageMode mode)
@@ -416,7 +371,6 @@ public class dcb_append_condition_exploration: OneOffConfigurationsContext
     // be exceeded.
     [Theory]
     [InlineData(DcbConflictScope.TagValue, DcbStorageMode.TagTables)]
-    [InlineData(DcbConflictScope.TagValueAndEventType, DcbStorageMode.TagTables)]
     [InlineData(DcbConflictScope.TagValueAndEventType, DcbStorageMode.HStore)]
     public async Task raced_course_subscriptions_respect_both_limits(DcbConflictScope scope, DcbStorageMode mode)
     {
