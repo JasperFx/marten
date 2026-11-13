@@ -36,6 +36,10 @@ public class LibraryLoanState
 // conflict versions per tag value, so by default an event of an unselected type carrying the same
 // tag value still conflicts. DcbConflictScope.TagValueAndEventType keeps a version per
 // (tag value, event type) as well and checks the one the condition names.
+//
+// The store-agnostic facts that used to live here run for every Critter Stack store in
+// JasperFx.Events.ComplianceTests' DcbAppendConditionCompliance (dcb_append_condition_compliance).
+// What stays is Marten's own: the TagValue and TagValueRecordingEventTypes scopes, HStore mode and the rollout.
 [Collection("OneOffs")]
 public class dcb_conflict_scope_by_event_type: OneOffConfigurationsContext
 {
@@ -114,7 +118,6 @@ public class dcb_conflict_scope_by_event_type: OneOffConfigurationsContext
     [Theory]
     [InlineData(DcbConflictScope.TagValue, DcbStorageMode.TagTables, true)]
     [InlineData(DcbConflictScope.TagValueRecordingEventTypes, DcbStorageMode.TagTables, true)]
-    [InlineData(DcbConflictScope.TagValueAndEventType, DcbStorageMode.TagTables, false)]
     [InlineData(DcbConflictScope.TagValueAndEventType, DcbStorageMode.HStore, false)]
     public async Task an_event_of_a_type_the_condition_does_not_name(DcbConflictScope scope, DcbStorageMode mode,
         bool conflicts)
@@ -140,7 +143,6 @@ public class dcb_conflict_scope_by_event_type: OneOffConfigurationsContext
     }
 
     [Theory]
-    [InlineData(DcbStorageMode.TagTables)]
     [InlineData(DcbStorageMode.HStore)]
     public async Task an_event_of_a_type_the_condition_names_still_conflicts(DcbStorageMode mode)
     {
@@ -154,63 +156,6 @@ public class dcb_conflict_scope_by_event_type: OneOffConfigurationsContext
 
         boundary.AppendOne(Tagged(session, new LibraryBookReturned(0), loan));
         await Should.ThrowAsync<DcbConcurrencyException>(() => session.SaveChangesAsync());
-    }
-
-    [Fact]
-    public async Task a_condition_naming_no_event_type_conflicts_with_any_type()
-    {
-        var store = UseScope(DcbConflictScope.TagValueAndEventType);
-        var loan = new LibraryLoanId(Guid.NewGuid());
-
-        await using var session = store.LightweightSession();
-        var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(new EventTagQuery().Or(loan));
-
-        await AppendElsewhere(store, new LibraryLoanExtended(7), loan);
-
-        boundary.AppendOne(Tagged(session, new LibraryBookReturned(0), loan));
-        await Should.ThrowAsync<DcbConcurrencyException>(() => session.SaveChangesAsync());
-    }
-
-    // Several types in one condition: a later event of ANY of them conflicts, any other type does not
-    [Fact]
-    public async Task a_condition_naming_several_types_conflicts_with_each_of_them_only()
-    {
-        var store = UseScope(DcbConflictScope.TagValueAndEventType);
-        var loan = new LibraryLoanId(Guid.NewGuid());
-        var query = new EventTagQuery().Or(loan).AndEventsOfType<LibraryBookReturned, LibraryReminderSent>();
-
-        await using (var session = store.LightweightSession())
-        {
-            var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(query);
-            await AppendElsewhere(store, new LibraryLoanExtended(7), loan);
-            boundary.AppendOne(Tagged(session, new LibraryReminderSent(DateTimeOffset.UtcNow), loan));
-            await Should.NotThrowAsync(() => session.SaveChangesAsync());
-        }
-
-        await using (var session = store.LightweightSession())
-        {
-            var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(query);
-            await AppendElsewhere(store, new LibraryReminderSent(DateTimeOffset.UtcNow), loan);
-            boundary.AppendOne(Tagged(session, new LibraryBookReturned(1), loan));
-            await Should.ThrowAsync<DcbConcurrencyException>(() => session.SaveChangesAsync());
-        }
-    }
-
-    // The folded state is unchanged by the scope: the decision still sees every selected event
-    [Fact]
-    public async Task the_boundary_still_reads_the_events_it_selects()
-    {
-        var store = UseScope(DcbConflictScope.TagValueAndEventType);
-        var loan = new LibraryLoanId(Guid.NewGuid());
-        await AppendElsewhere(store, new LibraryReminderSent(DateTimeOffset.UtcNow), loan);
-        await AppendElsewhere(store, new LibraryReminderSent(DateTimeOffset.UtcNow), loan);
-        await AppendElsewhere(store, new LibraryLoanExtended(7), loan);
-
-        await using var session = store.LightweightSession();
-        var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(RemindersOf(loan));
-
-        boundary.Aggregate!.Reminders.ShouldBe(2);
-        boundary.Events.Count.ShouldBe(2);
     }
 
     // The rollout: every node first records the per-type versions, then nodes switch to checking
@@ -250,126 +195,5 @@ public class dcb_conflict_scope_by_event_type: OneOffConfigurationsContext
 
         boundary.AppendOne(Tagged(session, new LibraryBookReturned(0), loan));
         await Should.NotThrowAsync(() => session.SaveChangesAsync());
-    }
-
-    // The reporter's load shape with SHARED tags: many concurrent decisions over one loan that each
-    // select returns and append a reminder. None appends what the others select, so all commit.
-    [Fact]
-    public async Task concurrent_decisions_appending_types_the_others_do_not_select_all_commit()
-    {
-        var store = UseScope(DcbConflictScope.TagValueAndEventType);
-        const int racers = 16;
-
-        for (var round = 0; round < 20; round++)
-        {
-            var loan = new LibraryLoanId(Guid.NewGuid());
-            await AppendElsewhere(store, new LibraryBookReturned(0), loan);
-
-            var gate = new AsyncGate(racers);
-            var failures = new ConcurrentBag<Exception>();
-
-            await Task.WhenAll(Enumerable.Range(0, racers).Select(_ => Task.Run(async () =>
-            {
-                try
-                {
-                    await using var session = store.LightweightSession();
-                    var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(ReturnsOf(loan));
-                    await gate.ArriveAndWaitAsync();
-                    boundary.AppendOne(Tagged(session, new LibraryReminderSent(DateTimeOffset.UtcNow), loan));
-                    await session.SaveChangesAsync();
-                }
-                catch (Exception e)
-                {
-                    failures.Add(e);
-                }
-            })));
-
-            failures.ShouldBeEmpty();
-        }
-    }
-
-    // Exactly one of N decisions appending the type they all select may commit
-    [Fact]
-    public async Task concurrent_decisions_appending_the_type_they_select_elect_one_winner()
-    {
-        var store = UseScope(DcbConflictScope.TagValueAndEventType);
-        const int racers = 16;
-
-        for (var round = 0; round < 20; round++)
-        {
-            var loan = new LibraryLoanId(Guid.NewGuid());
-            var gate = new AsyncGate(racers);
-            var failures = new ConcurrentBag<Exception>();
-
-            await Task.WhenAll(Enumerable.Range(0, racers).Select(_ => Task.Run(async () =>
-            {
-                try
-                {
-                    await using var session = store.LightweightSession();
-                    var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(ReturnsOf(loan));
-                    await gate.ArriveAndWaitAsync();
-                    boundary.AppendOne(Tagged(session, new LibraryBookReturned(0), loan));
-                    await session.SaveChangesAsync();
-                }
-                catch (Exception e)
-                {
-                    failures.Add(e);
-                }
-            })));
-
-            failures.Count.ShouldBe(racers - 1);
-            failures.ShouldAllBe(e => e is DcbConcurrencyException);
-        }
-    }
-
-    // Per-type versions make crossed decisions routine: one decision selects returns and appends a
-    // reminder, the other selects reminders and appends a return, on the same loan. One of them may
-    // lose, but only ever with a DcbConcurrencyException -- never a deadlock.
-    [Fact]
-    public async Task crossed_decisions_lose_with_a_dcb_conflict_not_a_deadlock()
-    {
-        var store = UseScope(DcbConflictScope.TagValueAndEventType);
-
-        for (var round = 0; round < 50; round++)
-        {
-            var loan = new LibraryLoanId(Guid.NewGuid());
-            var gate = new AsyncGate(2);
-            var failures = new ConcurrentBag<Exception>();
-
-            async Task Decide(EventTagQuery query, Func<IDocumentSession, IEvent> append)
-            {
-                try
-                {
-                    await using var session = store.LightweightSession();
-                    var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(query);
-                    await gate.ArriveAndWaitAsync();
-                    boundary.AppendOne(append(session));
-                    await session.SaveChangesAsync();
-                }
-                catch (Exception e)
-                {
-                    failures.Add(e);
-                }
-            }
-
-            await Task.WhenAll(
-                Task.Run(() => Decide(ReturnsOf(loan), s => Tagged(s, new LibraryReminderSent(DateTimeOffset.UtcNow), loan))),
-                Task.Run(() => Decide(RemindersOf(loan), s => Tagged(s, new LibraryBookReturned(0), loan))));
-
-            failures.Count.ShouldBe(1);
-            failures.ShouldAllBe(e => e is DcbConcurrencyException);
-        }
-    }
-
-    private class AsyncGate(int count)
-    {
-        private int _arrived;
-        private readonly TaskCompletionSource _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public Task ArriveAndWaitAsync()
-        {
-            if (Interlocked.Increment(ref _arrived) == count) _open.TrySetResult();
-            return _open.Task.WaitAsync(TimeSpan.FromSeconds(30));
-        }
     }
 }
