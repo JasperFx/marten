@@ -27,6 +27,14 @@ internal class OperatorLibrary
 
         Add<SelectManyOperator>();
         Add<GroupJoinOperator>();
+
+        // #5731: refused, each with the GroupJoin() rewrite that answers it. LeftJoin/RightJoin are
+        // .NET 10 operators and FullJoin a .NET 11 one; matching on the name alone keeps this
+        // independent of the target framework.
+        addRefusal(new UnsupportedJoinOperator("Join"));
+        addRefusal(new UnsupportedJoinOperator("LeftJoin"));
+        addRefusal(new UnsupportedJoinOperator("RightJoin"));
+        addRefusal(new UnsupportedJoinOperator("FullJoin"));
         Add<SelectOperator>();
         Add<GroupByOperator>();
         Add<AnyOperator>();
@@ -47,6 +55,11 @@ internal class OperatorLibrary
     public void Add<T>() where T : LinqOperator, new()
     {
         var op = new T();
+        _operators = _operators.AddOrUpdate(op.MethodName, op);
+    }
+
+    private void addRefusal(LinqOperator op)
+    {
         _operators = _operators.AddOrUpdate(op.MethodName, op);
     }
 

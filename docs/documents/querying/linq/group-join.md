@@ -218,6 +218,36 @@ var first = await session.Query<Customer>()
     .FirstAsync();
 ```
 
+## Join, LeftJoin, RightJoin and FullJoin
+
+Marten does not translate `Queryable.Join()`, the `LeftJoin()` and `RightJoin()` operators added in .NET 10, or
+the `FullJoin()` operator added in .NET 11. Each one throws `BadLinqExpressionException` with the rewrite that
+answers it:
+
+| Operator | Write it as |
+| --- | --- |
+| `Join()` | `GroupJoin()` + `SelectMany()` (inner join, above) |
+| `LeftJoin()` | `GroupJoin()` + `SelectMany()` over `DefaultIfEmpty()` (left join, above) |
+| `RightJoin()` | A left join with the two sources swapped |
+| `FullJoin()` | No translation. Query each side and combine in memory, or use `session.QueryAsync<T>(sql)` |
+
+.NET 11 also adds overloads of all four without a result selector, which return `(outer, inner)` tuples. They are
+refused the same way. With `GroupJoin()`, the `SelectMany()` result selector names the shape of each row instead:
+
+```cs
+// Instead of session.Query<Customer>().LeftJoin(session.Query<Order>(), c => c.Id, o => o.CustomerId)
+var rows = await session.Query<Customer>()
+    .GroupJoin(
+        session.Query<Order>(),
+        c => c.Id,
+        o => o.CustomerId,
+        (c, orders) => new { c, orders })
+    .SelectMany(
+        x => x.orders.DefaultIfEmpty(),
+        (x, o) => new { Customer = x.c.Name, Amount = (decimal?)o.Amount })
+    .ToListAsync();
+```
+
 ## Limitations
 
 The following patterns are **not yet supported** and will throw `NotSupportedException`:
