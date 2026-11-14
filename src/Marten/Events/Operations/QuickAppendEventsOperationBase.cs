@@ -351,6 +351,34 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         }
     }
 
+    /// <summary>
+    /// #5896: in <see cref="DcbStorageMode.HStore"/> the bulk function takes the events' tags as one
+    /// <c>hstore[]</c> parallel to the events array and writes them in its own insert. Bound in the slot the
+    /// TagTables mode's per-type arrays occupy; the two never both apply.
+    /// </summary>
+    protected bool writesHstoreTags => Events is { DcbStorageMode: DcbStorageMode.HStore, TagTypes.Count: > 0 };
+
+    protected void writeHstoreTagValues(IGroupedParameterBuilder builder)
+    {
+        var events = Stream.Events;
+        var count = events.Count;
+
+        // Null where an event carries no tag of a registered type -- the same rule, and the same refusal of
+        // two values of one tag type, as BuildHstore applies everywhere else hstore tags are written.
+        var values = new Dictionary<string, string>?[count];
+        for (var i = 0; i < count; i++)
+        {
+            var tags = events[i].Tags;
+            if (tags is not { Count: > 0 }) continue;
+
+            var hstore = EventTagOperations.BuildHstore(Events, tags);
+            values[i] = hstore.Count == 0 ? null : hstore;
+        }
+
+        var param = builder.AppendParameter<IList<Dictionary<string, string>?>>(values);
+        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Hstore;
+    }
+
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (await reader.ReadAsync(token).ConfigureAwait(false))

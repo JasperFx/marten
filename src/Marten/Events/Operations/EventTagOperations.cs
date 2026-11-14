@@ -107,6 +107,7 @@ internal static class EventTagOperations
         var isConjoined = eventGraph.TenancyStyle == TenancyStyle.Conjoined;
         var useArchived = eventGraph.UseArchivedStreamPartitioning;
         var isHStore = eventGraph.DcbStorageMode == DcbStorageMode.HStore;
+        var streamIdentity = StreamIdentityOf(eventGraph, stream);
 
         foreach (var @event in stream.Events)
         {
@@ -118,7 +119,7 @@ internal static class EventTagOperations
                 var hstore = BuildHstore(eventGraph, tags);
                 if (hstore.Count == 0) continue;
 
-                session.QueueOperation(new SetEventTagsHstoreByEventIdOperation(schema, @event.Id, hstore, isConjoined));
+                session.QueueOperation(new SetEventTagsHstoreByEventIdOperation(schema, @event.Id, streamIdentity, hstore, isConjoined));
                 continue;
             }
 
@@ -127,7 +128,7 @@ internal static class EventTagOperations
                 var registration = eventGraph.FindTagType(tag.TagType);
                 if (registration == null) continue;
 
-                session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id, tag.Value, isConjoined, useArchived));
+                session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id, streamIdentity, tag.Value, isConjoined, useArchived));
             }
         }
     }
@@ -154,6 +155,7 @@ internal static class EventTagOperations
         var schema = eventGraph.DatabaseSchemaName;
         var isConjoined = eventGraph.TenancyStyle == TenancyStyle.Conjoined;
         var useArchived = eventGraph.UseArchivedStreamPartitioning;
+        var streamIdentity = StreamIdentityOf(eventGraph, stream);
 
         foreach (var @event in stream.Events)
         {
@@ -170,10 +172,17 @@ internal static class EventTagOperations
                 if (seen.Add(registration.TagType)) continue;
 
                 session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id,
-                    tag.Value, isConjoined, useArchived));
+                    streamIdentity, tag.Value, isConjoined, useArchived));
             }
         }
     }
+
+    /// <summary>
+    /// #5896: the stream's identity as <c>mt_events.stream_id</c> stores it, for the by-event-id operations to
+    /// find their row through <c>pk_mt_events_stream_and_version</c> rather than an unindexed <c>id</c>.
+    /// </summary>
+    private static object StreamIdentityOf(EventGraph eventGraph, StreamAction stream)
+        => eventGraph.StreamIdentity == StreamIdentity.AsGuid ? stream.Id : stream.Key!;
 
     /// <summary>
     /// Build an HSTORE-compatible <c>Dictionary&lt;string, string&gt;</c> from an event's

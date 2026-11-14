@@ -585,8 +585,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     /// <c>EventDocumentStorageGenerator.buildQuickAppendOperation</c>:
     /// presence of optional metadata columns, tenancy style, stream identity,
     /// and the DCB tag-write predicate (<c>TagTypes.Count &gt; 0 &amp;&amp;
-    /// DcbStorageMode != HStore</c>; HStore mode writes tags via a follow-up
-    /// UPDATE, see <c>QuickEventAppender</c>).
+    /// DcbStorageMode != HStore</c>; HStore mode binds one <c>hstore[]</c> instead, see
+    /// <c>QuickAppendEventsOperationBase.writeHstoreTagValues</c>, #5896).
     /// </summary>
     private static (bool IsConjoined, bool IsGuid, bool HasCausation, bool HasCorrelation,
         bool HasHeaders, bool HasUserName, bool HasTagWrites) ReadQuickFlags(EventGraph graph)

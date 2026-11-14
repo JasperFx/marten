@@ -74,6 +74,7 @@ internal sealed class QuickAppendEventsOperation: QuickAppendEventsOperationBase
         // appender), so the operation just calls the helper when the
         // dialect flagged this configuration as needing tag writes.
         if (_descriptor.HasTagWrites) writeAllTagValues(pb);
+        else if (writesHstoreTags) writeHstoreTagValues(pb);
 
         // #4614 / #4765: the trailing optimistic-concurrency parameter is now
         // always on the function signature (default NULL). Every Quick append —
