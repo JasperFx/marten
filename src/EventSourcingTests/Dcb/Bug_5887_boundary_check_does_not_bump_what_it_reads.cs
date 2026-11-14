@@ -34,6 +34,10 @@ public class ClassSeating
 // so two boundaries reading the same tag value conflicted even when neither one appended an event
 // carrying that tag. The check now locks and compares the rows it read and leaves the versions
 // alone; only the producer-side bump of the appended events' own tags moves a version.
+//
+// The store-agnostic facts that used to live here run for every Critter Stack store in
+// JasperFx.Events.ComplianceTests' DcbAppendConditionCompliance (dcb_append_condition_compliance).
+// What stays is Marten's own: the mt_dcb_tag_version rows a check does not move.
 [Collection("OneOffs")]
 public class Bug_5887_boundary_check_does_not_bump_what_it_reads: OneOffConfigurationsContext
 {
@@ -83,27 +87,6 @@ public class Bug_5887_boundary_check_does_not_bump_what_it_reads: OneOffConfigur
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task two_boundaries_whose_appends_carry_no_tag_the_other_reads_both_commit(bool rowExists)
-    {
-        ConfigureStore();
-        var classId = Guid.NewGuid();
-        if (rowExists) await SeedSeatAsync(classId);
-
-        await using var a = theStore.LightweightSession();
-        await using var b = theStore.LightweightSession();
-        var boundaryA = await a.Events.FetchForWritingByTags<ClassSeating>(SeatingQuery(classId));
-        var boundaryB = await b.Events.FetchForWritingByTags<ClassSeating>(SeatingQuery(classId));
-
-        boundaryA.AppendOne(JoinWaitlist(a, classId));
-        boundaryB.AppendOne(JoinWaitlist(b, classId));
-
-        await a.SaveChangesAsync();
-        await Should.NotThrowAsync(() => b.SaveChangesAsync());
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
     public async Task the_check_leaves_the_version_of_a_row_it_only_read_alone(bool rowExists)
     {
         ConfigureStore();
@@ -123,129 +106,6 @@ public class Bug_5887_boundary_check_does_not_bump_what_it_reads: OneOffConfigur
         (await TagVersionAsync("waitlist_class", classId)).ShouldBe(1);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task an_append_matching_the_query_still_conflicts(bool rowExists)
-    {
-        ConfigureStore();
-        var classId = Guid.NewGuid();
-        if (rowExists) await SeedSeatAsync(classId);
-
-        await using var a = theStore.LightweightSession();
-        await using var b = theStore.LightweightSession();
-        var boundaryA = await a.Events.FetchForWritingByTags<ClassSeating>(SeatingQuery(classId));
-        var boundaryB = await b.Events.FetchForWritingByTags<ClassSeating>(SeatingQuery(classId));
-
-        boundaryA.AppendOne(TakeSeat(a, classId));
-        boundaryB.AppendOne(JoinWaitlist(b, classId));
-
-        await a.SaveChangesAsync();
-        await Should.ThrowAsync<DcbConcurrencyException>(() => b.SaveChangesAsync());
-    }
-
-    [Fact]
-    public async Task a_plain_append_matching_the_query_still_conflicts()
-    {
-        ConfigureStore();
-        var classId = Guid.NewGuid();
-
-        await using var a = theStore.LightweightSession();
-        var boundaryA = await a.Events.FetchForWritingByTags<ClassSeating>(SeatingQuery(classId));
-
-        await using (var other = theStore.LightweightSession())
-        {
-            other.Events.Append(Guid.NewGuid(), TakeSeat(other, classId));
-            await other.SaveChangesAsync();
-        }
-
-        boundaryA.AppendOne(JoinWaitlist(a, classId));
-        await Should.ThrowAsync<DcbConcurrencyException>(() => a.SaveChangesAsync());
-    }
-
-    // The reporter's load shape: many concurrent decisions over one boundary, none of which appends
-    // anything the others read. They serialize on the row lock, and every one of them commits.
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task concurrent_boundaries_whose_appends_the_others_do_not_read_all_commit(bool rowExists)
-    {
-        ConfigureStore();
-        const int racers = 16;
-
-        for (var round = 0; round < 20; round++)
-        {
-            var classId = Guid.NewGuid();
-            if (rowExists) await SeedSeatAsync(classId);
-
-            var fetched = new AsyncGate(racers);
-            var failures = new ConcurrentBag<Exception>();
-
-            await Task.WhenAll(Enumerable.Range(0, racers).Select(_ => Task.Run(async () =>
-            {
-                try
-                {
-                    await using var session = theStore.LightweightSession();
-                    var boundary =
-                        await session.Events.FetchForWritingByTags<ClassSeating>(SeatingQuery(classId));
-                    await fetched.ArriveAndWaitAsync();
-                    boundary.AppendOne(JoinWaitlist(session, classId));
-                    await session.SaveChangesAsync();
-                }
-                catch (Exception e)
-                {
-                    failures.Add(e);
-                }
-            })));
-
-            failures.ShouldBeEmpty();
-        }
-    }
-
-    // Two decisions that read each other's tags: A reads the seating tag and appends a waitlist
-    // event, B reads the waitlist tag and appends a seat. Each one's append matches the other's
-    // query, so exactly one of them commits -- and the loser must lose with a DcbConcurrencyException,
-    // never a deadlock. The check's row locks and the producer bumps' row locks are taken in one
-    // sorted pass, so two such saves cannot each hold the row the other is waiting on.
-    [Fact]
-    public async Task crossed_boundaries_lose_with_a_dcb_conflict_not_a_deadlock()
-    {
-        ConfigureStore();
-
-        for (var round = 0; round < 50; round++)
-        {
-            var classId = Guid.NewGuid();
-            var fetched = new AsyncGate(2);
-            var failures = new ConcurrentBag<Exception>();
-
-            async Task Decide(EventTagQuery query, Func<IDocumentSession, IEvent> append)
-            {
-                try
-                {
-                    await using var session = theStore.LightweightSession();
-                    var boundary = await session.Events.FetchForWritingByTags<ClassSeating>(query);
-                    await fetched.ArriveAndWaitAsync();
-                    boundary.AppendOne(append(session));
-                    await session.SaveChangesAsync();
-                }
-                catch (Exception e)
-                {
-                    failures.Add(e);
-                }
-            }
-
-            await Task.WhenAll(
-                Task.Run(() => Decide(SeatingQuery(classId), s => JoinWaitlist(s, classId))),
-                Task.Run(() => Decide(new EventTagQuery().Or(new WaitlistClassId(classId)), s => TakeSeat(s, classId))));
-
-            failures.Count.ShouldBe(1);
-            foreach (var failure in failures)
-            {
-                failure.ShouldBeOfType<DcbConcurrencyException>();
-            }
-        }
-    }
-
     private async Task<long?> TagVersionAsync(string tagTable, Guid value)
     {
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -261,18 +121,5 @@ public class Bug_5887_boundary_check_does_not_bump_what_it_reads: OneOffConfigur
 
         var raw = await cmd.ExecuteScalarAsync();
         return raw == null || raw == DBNull.Value ? null : Convert.ToInt64(raw);
-    }
-
-    // Every racer captures its version before any of them saves, without parking thread-pool threads
-    private class AsyncGate(int count)
-    {
-        private int _arrived;
-        private readonly TaskCompletionSource _open = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        public Task ArriveAndWaitAsync()
-        {
-            if (Interlocked.Increment(ref _arrived) == count) _open.TrySetResult();
-            return _open.Task.WaitAsync(TimeSpan.FromSeconds(30));
-        }
     }
 }

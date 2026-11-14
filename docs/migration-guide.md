@@ -325,10 +325,10 @@ NuGet package** — regardless of which version of the function your database ho
 
 #### What you will see, and when
 
-* **Default (`AutoCreate.CreateOrUpdate` or `All`)** — the function is refreshed the next time
+- **Default (`AutoCreate.CreateOrUpdate` or `All`)** — the function is refreshed the next time
   Marten ensures event storage exists. Nothing to do; it is a `CREATE OR REPLACE FUNCTION` with no
   lock on your event data.
-* **`AutoCreate.None` with `db-patch` / `db-apply` pipelines** — your next patch will contain one
+- **`AutoCreate.None` with `db-patch` / `db-apply` pipelines** — your next patch will contain one
   extra `CREATE OR REPLACE FUNCTION … mt_quick_append_events` statement. Apply it whenever it suits
   your normal cadence. It is idempotent, and Weasel will stop reporting the delta once applied.
 
@@ -374,11 +374,11 @@ defaults to the values recommended for new projects.
 
 This section has three parts:
 
-* [Upgrading from Marten 8](#upgrading-from-marten-8): the shortest path to running Marten 9 with the
+- [Upgrading from Marten 8](#upgrading-from-marten-8): the shortest path to running Marten 9 with the
   same behavior you have today.
-* [Breaking changes](#breaking-changes-in-9-0-0): everything that can stop your code compiling or change
+- [Breaking changes](#breaking-changes-in-9-0-0): everything that can stop your code compiling or change
   how it behaves.
-* [New features](#new-features-in-9-0-0): additions you can adopt when you are ready. None of them are
+- [New features](#new-features-in-9-0-0): additions you can adopt when you are ready. None of them are
   required to upgrade.
 
 ### Upgrading from Marten 8 {#upgrading-from-marten-8}
@@ -440,12 +440,12 @@ why the example above also calls `UseNewtonsoftForSerialization()` and `UseIdent
 
 Marten's automatic schema migration handles all of these. None need manual SQL.
 
-* **`mt_version` becomes `bigint`.** Document tables with numeric revisions are altered from `integer`,
+- **`mt_version` becomes `bigint`.** Document tables with numeric revisions are altered from `integer`,
   and the `mt_upsert_*`, `mt_update_*` and `mt_overwrite_*` functions are rewritten to match. Existing
   values are kept.
-* **Event sequence and version functions become `bigint`** when `EnableBigIntEvents` is on, which is the
+- **Event sequence and version functions become `bigint`** when `EnableBigIntEvents` is on, which is the
   new default. See [Changed defaults](#changed-defaults).
-* **`mt_streams` loses its `snapshot` and `snapshot_version` columns** in new databases. Marten never
+- **`mt_streams` loses its `snapshot` and `snapshot_version` columns** in new databases. Marten never
   used them. Existing databases keep them, because Marten does not drop columns automatically. They are
   harmless, but you can remove them once per event store schema
   ([#4316](https://github.com/JasperFx/marten/issues/4316)):
@@ -575,16 +575,16 @@ that used generated code now has a fixed implementation:
 
 What you need to change:
 
-* **Drop the Marten part of `codegen write`.** Delete any pre-generated `Internal/Generated/` folders and
+- **Drop the Marten part of `codegen write`.** Delete any pre-generated `Internal/Generated/` folders and
   their `.gitignore` entries. Wolverine and other JasperFx tools still generate code, so keep the step if
   they need it.
-* **Remove the code generation settings.** `StoreOptions.GeneratedCodeMode`,
+- **Remove the code generation settings.** `StoreOptions.GeneratedCodeMode`,
   `SourceCodeWritingEnabled`, `GeneratedCodeOutputPath` and `AllowRuntimeCodeGeneration` no longer exist.
   That includes `x.Production.GeneratedCodeMode` in `CritterStackDefaults()`; the `ResourceAutoCreate`
   settings there are unchanged. `StoreOptions.ApplicationAssembly` stays, since assembly scanning uses it.
-* **Update links to the pre-building page.** `/configuration/prebuilding` no longer exists. For
+- **Update links to the pre-building page.** `/configuration/prebuilding` no longer exists. For
   ahead-of-time work, use [source-generated compiled queries](#source-gen-compiled-queries).
-* **Expect mapping errors on first use.** Document mappings are now built the first time a session uses
+- **Expect mapping errors on first use.** Document mappings are now built the first time a session uses
   that document type rather than at startup, which makes startup faster for applications with many
   document types. The downside is that a bad mapping (a misplaced `[Identity]`, conflicting metadata
   columns) is reported by the first session that touches it instead of by `IHost.StartAsync()`. To keep
@@ -719,9 +719,9 @@ setters; only the members Marten calls need to be public.
 
 When converting lambdas to methods, name the event parameter whatever you like. Marten picks it by type:
 
-* A parameter of type `IEvent<T>` is the event, with event type `T`. Use this form when you need
+- A parameter of type `IEvent<T>` is the event, with event type `T`. Use this form when you need
   [event metadata](/events/metadata).
-* Otherwise, the event is the one concrete parameter that is not the aggregate, `IEvent`, a
+- Otherwise, the event is the one concrete parameter that is not the aggregate, `IEvent`, a
   `CancellationToken`, or a session interface such as `IQuerySession` or `IDocumentOperations`.
 
 The name only matters when a signature has more than one candidate. Then Marten looks for a parameter
@@ -733,11 +733,11 @@ called `@event`, `event`, `e` or `ev`. See
 Marten 8 rejected some invalid projections when they were registered. Marten 9 does not, so check for
 these yourself:
 
-* **Methods with other names** on a projection class are ignored instead of throwing
+- **Methods with other names** on a projection class are ignored instead of throwing
   `InvalidProjectionException`. Rename them, or mark them `[JasperFxIgnore]`.
-* **An `Apply` on a projection class without an aggregate parameter** is called, but cannot change the
+- **An `Apply` on a projection class without an aggregate parameter** is called, but cannot change the
   aggregate. Add the aggregate parameter.
-* **A `SingleStreamProjection` whose document type is soft-deleted** is no longer rejected by
+- **A `SingleStreamProjection` whose document type is soft-deleted** is no longer rejected by
   `ValidateConfiguration`.
 
 ##### Composite projections have a single shard name
@@ -805,12 +805,12 @@ array.
 
 The other synchronous members go the same way:
 
-* `Load<T>`, `LoadMany<T>`, `Query<T>(sql, ...)` and the `Json` methods on `IQuerySession` become
+- `Load<T>`, `LoadMany<T>`, `Query<T>(sql, ...)` and the `Json` methods on `IQuerySession` become
   `LoadAsync`, `LoadManyAsync`, `QueryAsync` and the `Json.*Async` methods.
-* `PagedList<T>.Create()` and `PagedList<T>.Init()` throw; use `ToPagedListAsync()`.
-* `IQueryHandler<T>` no longer has a synchronous `Handle(DbDataReader, IMartenSession)`. Delete your
+- `PagedList<T>.Create()` and `PagedList<T>.Init()` throw; use `ToPagedListAsync()`.
+- `IQueryHandler<T>` no longer has a synchronous `Handle(DbDataReader, IMartenSession)`. Delete your
   override and implement only `HandleAsync`.
-* `ExecuteHandler<T>()` throws; use `ExecuteHandlerAsync()`.
+- `ExecuteHandler<T>()` throws; use `ExecuteHandlerAsync()`.
 
 If you genuinely have to block, call `.GetAwaiter().GetResult()` on the async method yourself.
 
@@ -829,8 +829,8 @@ Marten now tracks revisions as 64-bit values, and these members widened from `in
 
 Calls that pass an `int` still compile. You only need to change:
 
-* a custom `IRevisionedOperation`, whose `Revision` is now `long`;
-* a custom `IBulkLoader<T>` for a revisioned document, which must write the expected version as
+- a custom `IRevisionedOperation`, whose `Revision` is now `long`;
+- a custom `IBulkLoader<T>` for a revisioned document, which must write the expected version as
   `NpgsqlDbType.Bigint` instead of `NpgsqlDbType.Integer`.
 
 A `[Version]` property can be `int` or `long`. The `mt_version` column is migrated to `bigint`
@@ -846,9 +846,9 @@ version for that alpha, implement [`ILongVersioned`](#ilongversioned) instead.
 
 **Moved to Weasel.** Only the namespace changes:
 
-* `Marten.Internal.Operations.OperationRole` is now `Weasel.Core.OperationRole`
+- `Marten.Internal.Operations.OperationRole` is now `Weasel.Core.OperationRole`
   ([#4350](https://github.com/JasperFx/marten/issues/4350)).
-* `Marten.BulkInsertMode` is now `Weasel.Core.BulkInsertMode`
+- `Marten.BulkInsertMode` is now `Weasel.Core.BulkInsertMode`
   ([weasel#264](https://github.com/JasperFx/weasel/issues/264)).
 
 **`IStorageOperation` lost its synchronous `Postprocess()`.** It now extends
@@ -872,12 +872,12 @@ properties `IDocumentSession.LastModifiedBy` and `DocumentMetadata.LastModifiedB
 
 **Removed:**
 
-* `IEventStore.TeardownExistingProjectionProgressAsync()`. Use `TeardownExistingProjectionStateAsync()`,
+- `IEventStore.TeardownExistingProjectionProgressAsync()`. Use `TeardownExistingProjectionStateAsync()`,
   which has the same signature. The old method always removed the projected documents too, so the
   behavior is the same.
-* `MultiStreamProjection.CustomGrouping(IEventSlicer<...>)`. Pass a grouping lambda or an
+- `MultiStreamProjection.CustomGrouping(IEventSlicer<...>)`. Pass a grouping lambda or an
   `IAggregateGrouper<TId>` instead.
-* Every other member that was `[Obsolete]` in Marten 8. Clear your obsolete warnings on Marten 8 before
+- Every other member that was `[Obsolete]` in Marten 8. Clear your obsolete warnings on Marten 8 before
   upgrading.
 
 `CombGuidIdGeneration` is still `[Obsolete]` but has not been removed yet.
@@ -905,10 +905,10 @@ faster per call, and they work with AOT publishing.
 Queries the generator cannot handle still work, through a reflection-based handler built once on first
 use ([#4405](https://github.com/JasperFx/marten/issues/4405)). That covers:
 
-* queries whose SQL needs an `ICompiledQueryAwareFilter`: string `Contains`, `StartsWith` and `EndsWith`,
+- queries whose SQL needs an `ICompiledQueryAwareFilter`: string `Contains`, `StartsWith` and `EndsWith`,
   `HashSet<T>.Contains`, `Dictionary<,>.ContainsKey`, and counts over child collections;
-* generic or nested compiled query types;
-* compiled queries in an assembly without `[JasperFxAssembly]`.
+- generic or nested compiled query types;
+- compiled queries in an assembly without `[JasperFxAssembly]`.
 
 #### `ILongVersioned` for 64-bit document versions {#ilongversioned}
 
@@ -997,51 +997,51 @@ The V8 release was much smaller than the preceding V7 release, but there are som
 
 ### General
 
-* 8.0 depends on Npgsql 9 and requires Postgres 13+. Postgres 12 is no longer supported.
+- 8.0 depends on Npgsql 9 and requires Postgres 13+. Postgres 12 is no longer supported.
 
-* Marten 8 drops support for .NET 6 and .NET 7. Only .NET 8 and 9 are supported at the moment (.NET 10 is untested).
+- Marten 8 drops support for .NET 6 and .NET 7. Only .NET 8 and 9 are supported at the moment (.NET 10 is untested).
 
-* Marten 8 **eliminated almost all synchronous API signatures that result in database calls**. Instead you will need to use
+- Marten 8 **eliminated almost all synchronous API signatures that result in database calls**. Instead you will need to use
 asynchronous APIs. For example, a call to `IQuerySession.Load<MyEntity(id)` will have to be changed to `await IQuerySession.LoadAsync<MyEntity>(id)`.
 The only exception is the LINQ `ToList()/ToArray()` type operators that result in making database calls with synchronous
 APIs. Due to Npgsql dropping support for sync APIs in Npgsql 10, these APIs will be removed in Marten 9 and throw `NotSupportedException` exceptions asking
 you to switch to asynchronous methods instead.
 
-* Nullable Reference Types has been enabled across the entire project which will result in some APIs appearing nullable or non-nullable when they weren't in the past. Please open an issue if you run into incorrect annotations.
+- Nullable Reference Types has been enabled across the entire project which will result in some APIs appearing nullable or non-nullable when they weren't in the past. Please open an issue if you run into incorrect annotations.
 
-* The basic shared dependencies underneath Marten and its partner project [Wolverine](https://wolverinefx.net) were consolidated
+- The basic shared dependencies underneath Marten and its partner project [Wolverine](https://wolverinefx.net) were consolidated
 for the V8 release into the new, core [JasperFx and JasperFx.Events](https://github.com/jasperfx/jasperfx) libraries. This is
 going to cause some changes to your Marten system when you upgrade:
 
-* Some core types like `IEvent` and `StreamAction` moved into the new JasperFx.Events library. Hopefully your IDE can help you change namespace references in your code
+- Some core types like `IEvent` and `StreamAction` moved into the new JasperFx.Events library. Hopefully your IDE can help you change namespace references in your code
 
-* JasperFx subsumed what had been "Oakton" for command line parsing. There are temporarily shims for all the public Oakton types and methods, but from
+- JasperFx subsumed what had been "Oakton" for command line parsing. There are temporarily shims for all the public Oakton types and methods, but from
   this point forward, the core JasperFx library has all the command line parsing and you can pretty well change "Oakton" in your code to "JasperFx"
 
-* The previous "Marten.CommandLine" Nuget was combined into the core Marten library. You will need to remove any explicit references to this Nuget.
+- The previous "Marten.CommandLine" Nuget was combined into the core Marten library. You will need to remove any explicit references to this Nuget.
 
-* The new projection support in JasperFx.Events no longer uses any code generation for any of the projections. The code generation
+- The new projection support in JasperFx.Events no longer uses any code generation for any of the projections. The code generation
 for entity types, ancillary document stores, and some internals of the event store still exists unchanged.
 
-* The Open Telemetry span names inside the async daemon do not embed the database identifier in the case of multi-tenancy through separate databases. Instead,
+- The Open Telemetry span names inside the async daemon do not embed the database identifier in the case of multi-tenancy through separate databases. Instead,
   all projection and subscription activity has the same naming, but the database is a tag on the span if you want to disambiguate the work. 
 
-* If you create a custom implementation of `IProjection` in Marten 8, the projection name is the type name instead of the earlier full name. You may need to override
+- If you create a custom implementation of `IProjection` in Marten 8, the projection name is the type name instead of the earlier full name. You may need to override
   the projection name in this case to reflect your older usage.
 
 ### Event Sourcing
 
 The projection base classes have minor changes in Marten 8:
 
-* The `SingleStreamProjection` now requires 2 generic type arguments for both the projected document type and the identity type of that document. This compromise was made to better support the increasing widespread usage of strong typed identifiers.
+- The `SingleStreamProjection` now requires 2 generic type arguments for both the projected document type and the identity type of that document. This compromise was made to better support the increasing widespread usage of strong typed identifiers.
 
 v7: `InvoiceProjection : SingleStreamProjection<Invoice>`
 
 v8: `InvoiceProjection : SingleStreamProjection<Invoice, InvoiceId>`
 
-* Both `SingleStreamProjection` and `MultiStreamProjection` have improved options for writing explicit code for projections for more complex scenarios or if you just prefer that over the conventional `Apply` / `Create` method approach
-* `CustomProjection` has been deprecated and marked as `[Obsolete]`! Moreover, it's just a direct subclass of `MultiStreamProjection` now
-* There is also an option in `EventProjection` to use explicit code in place of the its conventional usage, and this is the new recommended approach
+- Both `SingleStreamProjection` and `MultiStreamProjection` have improved options for writing explicit code for projections for more complex scenarios or if you just prefer that over the conventional `Apply` / `Create` method approach
+- `CustomProjection` has been deprecated and marked as `[Obsolete]`! Moreover, it's just a direct subclass of `MultiStreamProjection` now
+- There is also an option in `EventProjection` to use explicit code in place of the its conventional usage, and this is the new recommended approach
   for projections that do not fit either of the aggregation use cases (`SingleStream/MultiStreamProjection`)
 
 On the bright side, we believe that the "event slicing" usage in Marten 8 is significantly easier to use than it was before.
@@ -1087,13 +1087,13 @@ In addition, Marten 7.0 requires at least PostgreSQL 12 because of the dependenc
 
 Marten 7 includes a large overhaul of the LINQ provider support, with highlights including:
 
-* Very significant improvements to querying through document child collections by being able to opt into
+- Very significant improvements to querying through document child collections by being able to opt into
   JSONPath or containment operator querying in many cases. Early reports suggest an order of magnitude improvement in
   query times. 
-* GIST/GIN indexes should be effective with Marten queries again
-* The `IMethodCallParser` interface changed slightly, and any custom implementations will have to be adjusted
-* Covers significantly more use cases within the LINQ `Where()` filtering
-* `Select()` support was widened to include constructor functions
+- GIST/GIN indexes should be effective with Marten queries again
+- The `IMethodCallParser` interface changed slightly, and any custom implementations will have to be adjusted
+- Covers significantly more use cases within the LINQ `Where()` filtering
+- `Select()` support was widened to include constructor functions
 
 The database connection lifetime logic in `IDocumentSession` or `IQuerySession` was changed from the original Marten 1-6 "sticky" connection behavior. Instead
 of Marten trying to keep a database connection open from first usage through any call to `SaveChangesAsync()`, Marten
@@ -1117,46 +1117,46 @@ The scope of breaking changes is limited, but we highly encourage migrating from
 
 ### Guide on migration from v5 to v6:
 
-* **We Dropped support of .NET Core 3.1 and .NET 5** following the [Official .NET Support Policy](https://dotnet.microsoft.com/en-us/platform/support/policy). That allowed us to benefit fully from recent .NET improvements around asynchronous code, performance etc. Plus made maintenance easier by removing branches of code. If you're using those .NET versions, you need to upgrade to .NET 6 or 7.
-* **Upgraded Npgsql version to 7.** If your project uses an explicitly lower version of Npgsql than 7, you'll need to bump it. We didn't face substantial issues this time, so you might not need to do around it, but you can double-check in the [Npgsql 7 release notes](https://www.npgsql.org/doc/release-notes/7.0.html#breaking-changes) for detailed information about breaking changes on their side.
-* **Generic `OpenSession` store options (`OpenSession(SessionOptions options)` does not track changes by default.** Previously, it was using [identity map](https://martendb.io/documents/sessions.md#identity-map-mechanics). Other overloads of `OpenSession` didn't change the default behavior but were made obsolete. We encourage using explicit session creation and `LightweightSession` by default, as in the next major version, we plan to do the full switch. Read more about the [Unit of Work mechanics](/documents/sessions.md#unit-of-work-mechanics).
-* **Renamed asynchronous session creation to include explicit Serializable name.** `OpenSessionAsync` was misleading, as the intention behind it was to enable proper handling of Postgres' serialized transaction level. Renamed the method to `OpenSerializableSessionAsync` and added explicit methods for session types. Check more in [handling Transaction Isolation Level](/documents/sessions.md#enlisting-in-existing-transactions).
-* **Removed obsolete methods marked as to be removed in the previous versions.**:
-  * Removed synchronous'BuildProjectionDaemon`from the`IDocumentStore` method. Use the asynchronous version instead.
-  * Removed `Schema` from `IDocumentStore`. Use `Storage` instead.
-  * Replaced `GroupEventRange` in `IAggregationRuntime` with `Slicer` reference.
-  * Removed unused `UseAppendEventForUpdateLock` setting.
-  * Removed the `Searchable` method from `MartenRegistry`. Use `Index` instead.
+- **We Dropped support of .NET Core 3.1 and .NET 5** following the [Official .NET Support Policy](https://dotnet.microsoft.com/en-us/platform/support/policy). That allowed us to benefit fully from recent .NET improvements around asynchronous code, performance etc. Plus made maintenance easier by removing branches of code. If you're using those .NET versions, you need to upgrade to .NET 6 or 7.
+- **Upgraded Npgsql version to 7.** If your project uses an explicitly lower version of Npgsql than 7, you'll need to bump it. We didn't face substantial issues this time, so you might not need to do around it, but you can double-check in the [Npgsql 7 release notes](https://www.npgsql.org/doc/release-notes/7.0.html#breaking-changes) for detailed information about breaking changes on their side.
+- **Generic `OpenSession` store options (`OpenSession(SessionOptions options)` does not track changes by default.** Previously, it was using [identity map](https://martendb.io/documents/sessions.md#identity-map-mechanics). Other overloads of `OpenSession` didn't change the default behavior but were made obsolete. We encourage using explicit session creation and `LightweightSession` by default, as in the next major version, we plan to do the full switch. Read more about the [Unit of Work mechanics](/documents/sessions.md#unit-of-work-mechanics).
+- **Renamed asynchronous session creation to include explicit Serializable name.** `OpenSessionAsync` was misleading, as the intention behind it was to enable proper handling of Postgres' serialized transaction level. Renamed the method to `OpenSerializableSessionAsync` and added explicit methods for session types. Check more in [handling Transaction Isolation Level](/documents/sessions.md#enlisting-in-existing-transactions).
+- **Removed obsolete methods marked as to be removed in the previous versions.**:
+  - Removed synchronous'BuildProjectionDaemon`from the`IDocumentStore` method. Use the asynchronous version instead.
+  - Removed `Schema` from `IDocumentStore`. Use `Storage` instead.
+  - Replaced `GroupEventRange` in `IAggregationRuntime` with `Slicer` reference.
+  - Removed unused `UseAppendEventForUpdateLock` setting.
+  - Removed the `Searchable` method from `MartenRegistry`. Use `Index` instead.
     **[ASP.NET JSON streaming `WriteById`](/documents/aspnetcore.md#single-document) is now using correctly custom `onFoundStatus`.** We had the bug and always used the default status. It's enhancement but also technically a breaking change to the behavior. We also added `onFoundStatus` to other methods, so you could specify, e.g. `201 Created` status for creating a new record.
-* **Added [Optimistic concurrency checks](/documents/concurrency.md#optimistic-concurrency) during documents' updates.** Previously, they were only handled when calling the `Store` method; now `Update` uses the same logic.
-* **Base state passed as parameter is returned from `AggregateStreamAsync` instead of null when the stream is empty.** `AggregateStreamAsync` allows passing the default state on which we're applying events. When no events were found, we were always returning null. Now we'll return the passed value. It is helpful when you filter events from a certain version or timestamp. It'll also be useful in the future for archiving scenarios
-* **Ensured events with both `Create` and `Apply` in stream aggregation were handled only once.** When you defined both Create and Apply methods for the specific event, both methods were called for the single event. That wasn't expected behavior. Now they'll be only handled once.
-* **Added missing passing Cancellation Tokens in all async methods in public API.** That ensures that cancellation is handled correctly across the whole codebase. Added the static analysis to ensure we won't miss them in the future.
-* **All the Critter Stack dependencies like `Weasel`, `Lamar`, `JasperFx.Core`, `Oakton`, and `JasperFx.CodeGeneration` were bumped to the latest major versions.** If you use them explicitly, you'll need to align the versions.
+- **Added [Optimistic concurrency checks](/documents/concurrency.md#optimistic-concurrency) during documents' updates.** Previously, they were only handled when calling the `Store` method; now `Update` uses the same logic.
+- **Base state passed as parameter is returned from `AggregateStreamAsync` instead of null when the stream is empty.** `AggregateStreamAsync` allows passing the default state on which we're applying events. When no events were found, we were always returning null. Now we'll return the passed value. It is helpful when you filter events from a certain version or timestamp. It'll also be useful in the future for archiving scenarios
+- **Ensured events with both `Create` and `Apply` in stream aggregation were handled only once.** When you defined both Create and Apply methods for the specific event, both methods were called for the single event. That wasn't expected behavior. Now they'll be only handled once.
+- **Added missing passing Cancellation Tokens in all async methods in public API.** That ensures that cancellation is handled correctly across the whole codebase. Added the static analysis to ensure we won't miss them in the future.
+- **All the Critter Stack dependencies like `Weasel`, `Lamar`, `JasperFx.Core`, `Oakton`, and `JasperFx.CodeGeneration` were bumped to the latest major versions.** If you use them explicitly, you'll need to align the versions.
 
 ### Besides that, non-breaking but important changes to upgrade are:
 
-* **Added explicit `LightweightSession` and `IdentitySession` creation methods to `DocumentStore`**. Previously you could create `DirtyTrackedSession` explicitly. Now you can create all types of sessions explicitly. We recommend using them explicitly instead of the generic `OpenSession` method.
-* **Renamed aggregations into projections and `SelfAggregate` into `Snapshot` and `LiveStreamAggregation`.** The established terms in the Event Sourcing community are Projection and Snapshot. Even though our naming was more precise on the implementation behind the scenes, it could be confusing. We decided to align it with the common naming and be more explicit about the intention. Old methods were marked as obsolete and will be removed in the next major release.
+- **Added explicit `LightweightSession` and `IdentitySession` creation methods to `DocumentStore`**. Previously you could create `DirtyTrackedSession` explicitly. Now you can create all types of sessions explicitly. We recommend using them explicitly instead of the generic `OpenSession` method.
+- **Renamed aggregations into projections and `SelfAggregate` into `Snapshot` and `LiveStreamAggregation`.** The established terms in the Event Sourcing community are Projection and Snapshot. Even though our naming was more precise on the implementation behind the scenes, it could be confusing. We decided to align it with the common naming and be more explicit about the intention. Old methods were marked as obsolete and will be removed in the next major release.
 
 ### Other notable new features:
 
-* **[Added support for reusing Documents in the same async projection batch](/events/projections/event-projections.md#reusing-documents-in-the-same-batch).** By default, Marten does batch to handle multiple events for the projection in one update. When using `EventProjection` and updating data manually using `IDocumentOperations`, this may cause changes made for previous batch items not to be visible. Now you can opt-in for tracking documents by an identity within a batch using the `EnableDocumentTrackingByIdentity` async projection option. Read more in [related docs](/events/projections/event-projections.md#reusing-documents-in-the-same-batch).
-* **Enabled the possibility of applying projections with different Conjoined Tenancy scopes for projections.** Enabled global projection for events with a conjoined tenancy style. Read more in [multi-tenancy documentation](/documents/multi-tenancy.md)
-* **Added automatic retries when schema updates are running in parallel.** Marten locks the schema update using advisory locks. Previously when acquiring lock failed, then schema update also failed. Now it will be retried, which enables easier parallel automated tests and running schema migration during the startup for the containerized environment.
+- **[Added support for reusing Documents in the same async projection batch](/events/projections/event-projections.md#reusing-documents-in-the-same-batch).** By default, Marten does batch to handle multiple events for the projection in one update. When using `EventProjection` and updating data manually using `IDocumentOperations`, this may cause changes made for previous batch items not to be visible. Now you can opt-in for tracking documents by an identity within a batch using the `EnableDocumentTrackingByIdentity` async projection option. Read more in [related docs](/events/projections/event-projections.md#reusing-documents-in-the-same-batch).
+- **Enabled the possibility of applying projections with different Conjoined Tenancy scopes for projections.** Enabled global projection for events with a conjoined tenancy style. Read more in [multi-tenancy documentation](/documents/multi-tenancy.md)
+- **Added automatic retries when schema updates are running in parallel.** Marten locks the schema update using advisory locks. Previously when acquiring lock failed, then schema update also failed. Now it will be retried, which enables easier parallel automated tests and running schema migration during the startup for the containerized environment.
 
 ## Key Changes in 5.0.0
 
 V5 was a much smaller release for Marten than V4, and should require much less effort to move from V4 to V5 as it did from V2/3 to V4.
 
-* The [async daemon](/events/projections/async-daemon) has to be explicitly added with a chained call to `AddAsyncDaemon(mode)`
-* The [Marten integration with .Net bootstrapping](/getting-started) now has the ability to split the Marten configuration for testing overrides or modular configuration
-* `IInitialData` services are executed within IHost bootstrapping. See [Initial Baseline Data](/documents/initial-data).
-* New facility to [apply all detected database changes on application startup](/schema/migrations.html#apply-all-outstanding-changes-upfront).
-* Ability to [register multiple Marten document stores in one .Net IHost](/configuration/hostbuilder.html#working-with-multiple-marten-databases)
-* The "pre-built code generation" feature had a new, easier to use option in V5 (retired in 9.0 — see [Runtime code generation removed](#runtime-code-generation-removed))
-* New ["Optimized Artifact Workflow"](/configuration/optimized_artifact_workflow) option
-* Some administrative or diagnostic methods that were previously on `IDocumentStore.Advanced` migrated to database specific access [as shown here](/configuration/multitenancy.html#administering-multiple-databases).
+- The [async daemon](/events/projections/async-daemon) has to be explicitly added with a chained call to `AddAsyncDaemon(mode)`
+- The [Marten integration with .Net bootstrapping](/getting-started) now has the ability to split the Marten configuration for testing overrides or modular configuration
+- `IInitialData` services are executed within IHost bootstrapping. See [Initial Baseline Data](/documents/initial-data).
+- New facility to [apply all detected database changes on application startup](/schema/migrations.html#apply-all-outstanding-changes-upfront).
+- Ability to [register multiple Marten document stores in one .Net IHost](/configuration/hostbuilder.html#working-with-multiple-marten-databases)
+- The "pre-built code generation" feature had a new, easier to use option in V5 (retired in 9.0 — see [Runtime code generation removed](#runtime-code-generation-removed))
+- New ["Optimized Artifact Workflow"](/configuration/optimized_artifact_workflow) option
+- Some administrative or diagnostic methods that were previously on `IDocumentStore.Advanced` migrated to database specific access [as shown here](/configuration/multitenancy.html#administering-multiple-databases).
 
 ## Key Changes in 4.0.0
 
@@ -1165,18 +1165,18 @@ earlier alphas or RC releases of 4.0 -- you will need to run a [database migrati
 
 Other key, breaking changes:
 
-* All schema management methods, including assertions on the schema, are now asynchronous. We had to do this for Npgsql connection multiplexing.
-* The [compiled query](/documents/querying/compiled-queries) syntax changed
-* The [event store](/events/) support has quite a few additions
-* [Projections](/events/projections/) in Marten have moved to an all new programming model. Some of it is at least similar, but read the documentation on projection types before moving a Marten application over
-* The [async daemon](/events/projections/async-daemon) was completely rewritten, and is now about to run in application clusters and handle multi-tenancy
-* A few diagnostic methods moved within the API
-* Document types need to be public now, and Marten will alert you if document types are not public
-* The dynamic code in Marten moved to a runtime code generation model. (Marten 9.0 retired that path entirely — see [Runtime code generation removed](#runtime-code-generation-removed).)
-* If an application bootstraps Marten through the `IServiceCollection.AddMarten()` extension methods, the default logging in Marten is through the standard
+- All schema management methods, including assertions on the schema, are now asynchronous. We had to do this for Npgsql connection multiplexing.
+- The [compiled query](/documents/querying/compiled-queries) syntax changed
+- The [event store](/events/) support has quite a few additions
+- [Projections](/events/projections/) in Marten have moved to an all new programming model. Some of it is at least similar, but read the documentation on projection types before moving a Marten application over
+- The [async daemon](/events/projections/async-daemon) was completely rewritten, and is now about to run in application clusters and handle multi-tenancy
+- A few diagnostic methods moved within the API
+- Document types need to be public now, and Marten will alert you if document types are not public
+- The dynamic code in Marten moved to a runtime code generation model. (Marten 9.0 retired that path entirely — see [Runtime code generation removed](#runtime-code-generation-removed).)
+- If an application bootstraps Marten through the `IServiceCollection.AddMarten()` extension methods, the default logging in Marten is through the standard
   `ILogger` of the application
-* In order to support more LINQ query permutations, LINQ queries are temporarily not using the GIN indexable operators on documents that have `GinIndexJsonData()` set. Support for this can be tracked [in this GitHub issue](https://github.com/JasperFx/marten/issues/2051)
-* PLV8 support is disabled by default and moved to a separate package.
+- In order to support more LINQ query permutations, LINQ queries are temporarily not using the GIN indexable operators on documents that have `GinIndexJsonData()` set. Support for this can be tracked [in this GitHub issue](https://github.com/JasperFx/marten/issues/2051)
+- PLV8 support is disabled by default and moved to a separate package.
   If an application was setting `StoreOptions.PLV8Enabled = false` to disable PLV8,
   that line should be removed as the setting no longer exists. If an application
   had `StoreOptions.PLV8Enabled = true` and was using PLV8, you will need to add
@@ -1196,19 +1196,19 @@ You can also read more in [Jeremy's blog post from](https://jeremydmiller.com/20
 
 ## Migration from 2.\*
 
-* To keep Marten fully rebuilding your schema (so to allow Marten drop tables) set store options to:
+- To keep Marten fully rebuilding your schema (so to allow Marten drop tables) set store options to:
 
 ```csharp
 AutoCreateSchemaObjects = AutoCreate.All
 ```
 
-* To keep [enum fields](/documents/indexing/duplicated-fields) being stored as `varchar` set store options to:
+- To keep [enum fields](/documents/indexing/duplicated-fields) being stored as `varchar` set store options to:
 
 ```csharp
 DuplicatedFieldEnumStorage = EnumStorage.AsString;
 ```
 
-* To keep [duplicated DateTime fields](/documents/indexing/duplicated-fields) being stored as `timestamp with time zone` set store options to:
+- To keep [duplicated DateTime fields](/documents/indexing/duplicated-fields) being stored as `timestamp with time zone` set store options to:
 
 ```csharp
 DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = false;

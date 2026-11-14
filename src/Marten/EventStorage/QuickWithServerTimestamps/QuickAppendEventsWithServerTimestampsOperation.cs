@@ -62,6 +62,7 @@ internal sealed class QuickAppendEventsWithServerTimestampsOperation: QuickAppen
         writeTimestamps(pb);
 
         if (_descriptor.HasTagWrites) writeAllTagValues(pb);
+        else if (writesHstoreTags) writeHstoreTagValues(pb);
 
         // #4614 / #4765: trailing optimistic-concurrency parameter, now always
         // on the function signature (default NULL) and always bound. See

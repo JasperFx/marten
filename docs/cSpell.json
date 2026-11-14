@@ -101,6 +101,7 @@
     "firstname",
     "lastname",
     "fkey",
+    "fillfactor",
     "Netram",
     "namelast",
     "gwid",

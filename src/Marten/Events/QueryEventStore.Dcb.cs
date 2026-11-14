@@ -114,55 +114,6 @@ internal partial class QueryEventStore
         sb.Append(schema);
         sb.Append(".mt_events e");
 
-        List<Type>? distinctTagTypes = null;
-        if (!isHStore)
-        {
-            distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
-
-            // LEFT JOINs to tag tables — an event may only have tags in some of the
-            // tag tables, so inner joins would incorrectly filter out events that
-            // don't appear in every tag type table.
-            for (var i = 0; i < distinctTagTypes.Count; i++)
-            {
-                var tagType = distinctTagTypes[i];
-                var registration = _store.Events.FindTagType(tagType)
-                                   ?? throw new InvalidOperationException(
-                                       $"Tag type '{tagType.Name}' is not registered. Call RegisterTagType<{tagType.Name}>() first.");
-
-                sb.Append(" left join ");
-                sb.Append(schema);
-                sb.Append(".mt_event_tag_");
-                sb.Append(registration.TableSuffix);
-                sb.Append(" t");
-                sb.Append(i);
-                sb.Append(" on e.seq_id = t");
-                sb.Append(i);
-                sb.Append(".seq_id");
-
-                // #4645: under UseTenantPartitionedEvents the per-tenant
-                // mt_events_sequence_{suffix} sequences make seq_id alone
-                // non-unique across tenants — seq_id=1 exists in EVERY tenant's
-                // mt_events partition. Without the tenant_id JOIN predicate
-                // alpha's event row matches BOTH alpha's tag row AND beta's
-                // tag row sharing the same seq_id, duplicating alpha's event
-                // in the result. The trailing `e.tenant_id = @p` filter only
-                // constrains the events side and doesn't deduplicate.
-                //
-                // Only emit the predicate under conjoined tenancy — that's the
-                // only mode where EventTagTable carries a tenant_id column
-                // (see EventTagTable.cs). For non-conjoined tenancy seq_id IS
-                // unique store-wide (single global mt_events_sequence) so the
-                // predicate isn't needed anyway.
-                if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
-                {
-                    sb.Append(" and e.tenant_id = t");
-                    sb.Append(i);
-                    sb.Append(".tenant_id");
-                }
-            }
-        }
-
-        // WHERE clause with OR conditions
         sb.Append(" where ");
         if (isHStore)
         {
@@ -170,35 +121,11 @@ internal partial class QueryEventStore
         }
         else
         {
-            sb.Append('(');
-            for (var i = 0; i < conditions.Count; i++)
-            {
-                if (i > 0) sb.Append(" or ");
-
-                var condition = conditions[i];
-                var tagIndex = distinctTagTypes!.IndexOf(condition.TagType);
-
-                sb.Append("(t");
-                sb.Append(tagIndex);
-                sb.Append(".value = @p");
-                sb.Append(paramValues.Count);
-
-                var registration = _store.Events.FindTagType(condition.TagType)!;
-                var value = registration.ExtractValue(condition.TagValue);
-                paramValues.Add(value);
-
-                if (condition.EventType != null)
-                {
-                    sb.Append(" and e.type = @p");
-                    sb.Append(paramValues.Count);
-                    var eventTypeName = _store.Events.EventMappingFor(condition.EventType).EventTypeName;
-                    paramValues.Add(eventTypeName);
-                }
-
-                sb.Append(')');
-            }
-
-            sb.Append(')');
+            // #5897: one index probe per condition, combined on seq_id -- see TagTablesDcbQueryFragment.
+            // The LEFT JOINs this replaced also needed #4645's tenant_id join predicate; each probe now
+            // carries the tenant filter itself.
+            TagTablesDcbQueryFragment.AppendSeqIdPredicate(sb, _store.Events, conditions, "e", _session.TenantId,
+                paramValues);
         }
 
         // Filter by tenant_id for conjoined tenancy
