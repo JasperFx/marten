@@ -242,7 +242,11 @@ will end up running on the first process to start up. If your system requires be
 contact [JasperFx Software](https://jasperfx.net) about their "Critter Stack Pro" product.
 :::
 
-## Daemon Connection Governors <Badge type="tip" text="9.13" />
+## Daemon Connection Governors
+
+::: tip
+Available since Marten 9.13.
+:::
 
 Every running projection or subscription agent opens its own database session both to load pages of events and to
 commit each batch of projected documents plus its progression update. On a wide store — many projections, or
@@ -352,7 +356,7 @@ composite projection for 24 tenants at once with a `BatchSize` of 500, where eac
 of 8 KB documents:
 
 | Configuration | Peak memory (workstation GC) | Rebuild time |
-|---|---|---|
+| --- | --- | --- |
 | No budget | 8,215 MB | 8.6 s |
 | `TenantLoadBudget = 4000` (8 pages) | 6,198 MB | 6.7 s |
 | `TenantLoadBudget = 2000` (4 pages) | 1,185 to 1,410 MB | 7.6 to 7.9 s |
