@@ -122,8 +122,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession OpenSession(SessionOptions options);
 
@@ -144,8 +145,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
@@ -156,8 +158,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession LightweightSession(
         string tenantId,
@@ -171,8 +174,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession LightweightSession(SessionOptions options);
 
@@ -207,8 +211,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession IdentitySession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
@@ -219,8 +224,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession IdentitySession(
         string tenantId,
@@ -234,8 +240,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession IdentitySession(SessionOptions options);
 
@@ -270,8 +277,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
@@ -282,8 +290,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession DirtyTrackedSession(
         string tenantId,
@@ -296,8 +305,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IDocumentSession DirtyTrackedSession(SessionOptions options);
 
@@ -347,8 +357,9 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     /// <remarks>
     ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
-    ///     <see cref="System.NotSupportedException" />, because a Serializable session has to open its connection and
-    ///     begin its transaction as it is created. Use the matching <c>*SerializableSessionAsync</c> method.
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
     /// </remarks>
     IQuerySession QuerySession(SessionOptions options);
 
