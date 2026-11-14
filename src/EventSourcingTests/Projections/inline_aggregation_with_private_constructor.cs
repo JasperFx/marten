@@ -31,11 +31,15 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
     }
 
     // Until #5861 this test called the async Verify<T>() without awaiting it, so every failure inside it landed in a
-    // discarded Task and the test always passed. Awaited, the first check fails in SaveChangesAsync: the inline
-    // snapshot's assembly-registered evolver throws a NullReferenceException for QuestMonstersWithPrivateConstructor
-    // (JasperFxAggregationProjectionBase.tryUseAssemblyRegisteredEvolver). That is a pre-existing product bug, not
-    // something this test conversion introduced, so the test is skipped with the reason rather than hidden again.
-    [Fact(Skip = "Pre-existing failure exposed by awaiting Verify<T>(): NullReferenceException from the assembly-registered evolver for a private-constructor inline snapshot. Was silently unawaited before #5861.")]
+    // discarded Task and the test always passed. Awaited, it fails the same way on origin/master. For an aggregate
+    // with no PUBLIC parameterless constructor, JasperFx.Events.SourceGenerator 3.0.0 builds the missing snapshot
+    // with RuntimeHelpers.GetUninitializedObject, so the private constructor and the field and property initializers
+    // never run. QuestMonstersWithPrivateConstructor's `_monsters = new List<string>()` stays null, and Apply() throws a
+    // NullReferenceException. That is documented Marten 9 behaviour (migration guide, "Handler methods must be
+    // public"), so these aggregates are stale rather than Marten being wrong. The test is skipped with the reason
+    // rather than hidden again. Whether the generator should invoke a private parameterless constructor instead
+    // (UnsafeAccessor) is a JasperFx question.
+    [Fact(Skip = "Stale since Marten 9: the generated evolver builds private-constructor aggregates with GetUninitializedObject, so their initializers never run. Was silently unawaited before #5861.")]
     public async Task run_inline_aggregation_with_private_constructor()
     {
         await Verify<QuestMonstersWithPrivateConstructor>();
