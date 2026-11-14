@@ -66,6 +66,20 @@ assemblies compiled against Marten 9 must be recompiled.
   - Seeded tenant ids go through `TenantIdStyle` like every other tenant id.
   - The lifecycle methods (`AddDatabaseRecordAsync`, `DeleteDatabaseRecordAsync`, `DisableTenantAsync`, `EnableTenantAsync`,
     `AllDisabledAsync`, `ClearAllDatabaseRecordsAsync`) take an optional `CancellationToken`.
+- Document storage is Weasel's closed-shape storage family (`Weasel.Storage`), the one Polecat and Fisher share:
+  `QueryOnlyClosedShapeDocumentStorage`, `LightweightClosedShapeDocumentStorage`,
+  `IdentityMapClosedShapeDocumentStorage`, `DirtyTrackingClosedShapeDocumentStorage` and
+  `ClosedShapeSubClassDocumentStorage`, each carrying Marten's rules. The SQL and the write operations are unchanged.
+  `Marten.Internal.Storage.DocumentStorage<T, TId>` and its `LightweightDocumentStorage`, `IdentityMapDocumentStorage`,
+  `DirtyCheckedDocumentStorage` and `QueryOnlyDocumentStorage` subclasses are deleted, and the
+  `Marten.Internal.ClosedShape` storage classes are internal; use `IDocumentStorage<T, TId>`. Behavior changes:
+  - Storing a second instance under an id already in the identity map still throws `InvalidOperationException`, with
+    a message that says how to get out of it.
+  - An identity map holding a different id type is refused with Weasel's `IdentityMapIdTypeMismatchException`. The
+    session's own id-type check, which is what a wrong-typed `LoadAsync` hits, still throws
+    `DocumentIdTypeMismatchException`.
+  - A sub-class storage reports its root's `UseNumericRevisions` and `HardDeleteFragment`, which used to be `false` and
+    `null`.
 - A document stored twice in one unit of work by a dirty-tracking session now gets one tracker, not two.
 - `Marten.Services.VersionTracker` (unused) and `Marten.Events.Dcb.TagValueStringifier` (now in `JasperFx.Events.Tags`)
   are deleted.

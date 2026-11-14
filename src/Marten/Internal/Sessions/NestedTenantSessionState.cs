@@ -25,7 +25,7 @@ internal static class NestedTenantSessionState
         }
 
         // Only identity-mapped (identity map + dirty checking) storage tracks documents in the session
-        if (storage is not ISharedTenantNeutralSessionState shared)
+        if (storage is not IClosedShapeDocumentStorage shared)
         {
             return;
         }
