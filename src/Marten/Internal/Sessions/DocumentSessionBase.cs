@@ -555,8 +555,19 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     public void EjectPatchedTypes(IUnitOfWork changes)
     {
-        var patchedTypes = changes.Operations().Where(x => x.Role() == OperationRole.Patch).Select(x => x.DocumentType)
-            .Distinct().ToArray();
+        // #5730: runs after every SaveChangesAsync, and almost no unit of work holds a patch, so walk the
+        // operations without allocating and only build the set of patched types once a patch turns up
+        HashSet<Type>? patchedTypes = null;
+        foreach (var operation in changes.Operations())
+        {
+            if (operation.Role() == OperationRole.Patch)
+            {
+                (patchedTypes ??= new HashSet<Type>()).Add(operation.DocumentType);
+            }
+        }
+
+        if (patchedTypes == null) return;
+
         foreach (var type in patchedTypes) EjectAllOfType(type);
     }
 
