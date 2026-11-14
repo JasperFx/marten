@@ -32,7 +32,18 @@ what was left of that half:
 
 The public entry points that still open or close a connection without awaiting (`IQuerySession.Connection`,
 `IDocumentSession.BeginTransaction()`, the synchronous `Serializable` session factories and synchronous
-`Dispose()`) remain. Async Hi-Lo sequences wait on Weasel ([weasel#808](https://github.com/JasperFx/weasel/issues/808)).
+`Dispose()`) remain. Hi-Lo sequences now reserve their next block asynchronously; see below.
+
+### HiLo blocks are reserved one block ahead
+
+HiLo ids are still assigned synchronously in `session.Store()`, but each sequence now reserves its **next** block in the
+background with an asynchronous database call as soon as it starts using the current one (#5862). Exhausting a block normally
+no longer blocks the storing thread on the database; the synchronous fetch is kept only as a fallback for when the next block
+has not arrived yet, or the background fetch failed.
+
+Each process can therefore hold one unused block, so expect gaps of up to `MaxLo` ids when a process stops, and ids are no
+longer guaranteed to be contiguous across a block boundary. They are still unique and, within one process, increasing.
+Nothing needs to change in your code. See [How HiLo blocks are fetched](/documents/identity#how-hilo-blocks-are-fetched).
 
 ### Abstractions lifted into JasperFx and Weasel <Badge type="warning" text="recompile" />
 

@@ -202,6 +202,35 @@ This functionality was added specifically to aid in importing data from an exist
 that all new IDs assigned for the document type will be higher than the new floor. It is perfectly possible, and even likely, that there will be some
 gaps in the id sequence.
 
+## How HiLo Blocks Are Fetched
+
+::: tip
+Fetching the next block ahead of time is new in Marten 10.
+:::
+
+A HiLo sequence hands out ids from a block of `MaxLo` numbers that it reserves from the database (the "hi") with one round trip.
+The id is still assigned synchronously inside `session.Store()`, so a document's id is set the moment it is stored.
+
+As of Marten 10, the sequence reserves the **next** block in the background, with an asynchronous database call, as soon as it
+starts using the current one. When `Store()` exhausts the current block, the block that was fetched ahead of time is swapped in
+without a database round trip, so as long as a block lasts longer than one database round trip, storing a document never
+blocks a thread on the database. Only if the background fetch has not completed yet, because the block was used up faster than
+that (a small `MaxLo`, or a tight loop storing thousands of documents), does `Store()` fall back to fetching a block
+synchronously, as every block was fetched before Marten 10. A background fetch that fails
+is logged as a warning and the next block is simply fetched synchronously; it never surfaces as an exception of its own.
+
+What this means for the ids you see:
+
+- Ids are still unique, and the ids one application process issues for a document type are still increasing.
+- Each process reserves up to one block more than it has used. Ids in a block that was fetched ahead of time but never used,
+  because the process shut down or the floor was reset, are never issued, which leaves a gap of up to `MaxLo` ids.
+- Ids are not guaranteed to be contiguous across a block boundary. If the synchronous fallback reserves a block while the
+  background fetch is still in flight, and the background fetch turns out to have reserved the lower block, that lower block is
+  discarded rather than issued out of order.
+
+HiLo ids were never guaranteed to be gap-free, since several processes share one sequence and a process that stops loses the rest
+of its block. Use a database sequence of your own if you need contiguous numbers.
+
 ## String Identity
 
 If you use a document type with a `string` identity member, you will be responsible for supplying the
