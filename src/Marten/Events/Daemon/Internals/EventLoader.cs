@@ -179,6 +179,19 @@ internal sealed class EventLoader: IEventLoader
     // #4745 archived-stream-partition pruning predicate). Not used at runtime.
     internal string CommandText => _command.CommandText;
 
+    /// <summary>
+    /// #5888: every page is read against a high-water mark the daemon took on the PRIMARY, so the page
+    /// has to come from the primary too. A plain QuerySession follows ReadSessionPreference, and a
+    /// lagging standby returns a short page whose ceiling is the high-water mark -- progression then
+    /// moves past events the standby has not replayed, and they are never projected.
+    /// </summary>
+    private QuerySession openSession()
+    {
+        var options = SessionOptions.ForDatabase(Database);
+        options.ReadFromPrimary = true;
+        return (QuerySession)_store.QuerySession(options);
+    }
+
     public async Task<EventPage> LoadAsync(EventRequest request, CancellationToken token)
     {
         try
@@ -252,7 +265,7 @@ internal sealed class EventLoader: IEventLoader
         // window-step loader already keeps the original floor for the same reason.
         var page = new EventPage(pageFloor ?? request.Floor);
 
-        await using var session = (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(Database));
+        await using var session = openSession();
         _floor.Value = request.Floor;
         _ceiling.Value = request.HighWater;
 
@@ -405,7 +418,7 @@ internal sealed class EventLoader: IEventLoader
     /// </summary>
     private async Task<EventPage> loadWithSkipAheadAsync(EventRequest request, CancellationToken token)
     {
-        await using var session = (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(Database));
+        await using var session = openSession();
 
         var probeCommand = buildSkipAheadCommand(request.Floor);
         long? nextMatchingSeqId;
@@ -464,7 +477,7 @@ internal sealed class EventLoader: IEventLoader
             _floor.Value = currentFloor;
             _ceiling.Value = windowCeiling;
 
-            await using var session = (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(Database));
+            await using var session = openSession();
             var page = new EventPage(request.Floor); // Use original floor for page tracking
 
             // #5239: both counters exist to keep the page's ceiling honest about what this window
