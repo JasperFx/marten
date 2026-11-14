@@ -101,6 +101,9 @@ public partial class EventGraph: IFeatureSchema
 
         yield return new ArchiveStreamFunction(this);
 
+        // marten#5476: the reverse of mt_archive_stream, behind IEventStoreOperations.UnArchiveStream
+        yield return new ArchiveStreamFunction(this, unarchive: true);
+
         yield return new QuickAppendEventFunction(this);
 
         foreach (var schemaSource in Options.Projections.All.OfType<IProjectionSchemaSource>())

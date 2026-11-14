@@ -63,6 +63,19 @@ Marten refuses with `BadLinqExpressionException` a type no case is, cases the st
 union case, an enum case read, ordering or grouping by the union, a union inside a child collection predicate, the
 Newtonsoft serializer, and a patch path through a case. On `net10.0` no type is a union, so none of this applies.
 
+### `UnArchiveStream` <Badge type="tip" text="new" />
+
+`session.Events.UnArchiveStream(Guid)` and `UnArchiveStream(string)` reverse `ArchiveStream()`. The stream and its
+events become live again and accept appends, including under `UseArchivedStreamPartitioning`, where the rows (and
+their DCB tag and natural key rows) move back out of the archived partitions. This is the operation the
+`ArchivedStreamException` message points to. See
+[Un-archiving a Stream](/events/archiving.html#un-archiving-a-stream).
+
+The schema gains one function, `mt_unarchive_stream`. With `UseArchivedStreamPartitioning` and natural keys,
+`mt_archive_stream` also changes: it now copies the natural key rows into the archived partition instead of letting
+the foreign key cascade delete them, so un-archiving can restore them. Both changes apply with your normal schema
+migration.
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |

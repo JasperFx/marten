@@ -119,14 +119,22 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
             : StringStorage.QuickAppendEvents(stream);
     }
 
-    // #4968: route stream archive through the shared Weasel seam. Marten only ever archives (never
-    // un-archives through this path), so pass archived: true; the dialect's factory builds the Postgres
+    // #4968: route stream archive through the shared Weasel seam; the dialect's factory builds the Postgres
     // ArchiveStreamOperation.
     public override Weasel.Storage.IStorageOperation ArchiveStream(object streamId, string tenantId)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
             ? GuidStorage.ArchiveStream(streamId, tenantId, true)
             : StringStorage.ArchiveStream(streamId, tenantId, true);
+    }
+
+    // marten#5476: the same seam slot with archived: false, which the dialect builds as a call to
+    // mt_unarchive_stream.
+    public override Weasel.Storage.IStorageOperation UnArchiveStream(object streamId, string tenantId)
+    {
+        return Events.StreamIdentity == StreamIdentity.AsGuid
+            ? GuidStorage.ArchiveStream(streamId, tenantId, false)
+            : StringStorage.ArchiveStream(streamId, tenantId, false);
     }
 
     // marten#5673: the hard delete rides the seam's TombstoneStream slot, which the dialect fills with

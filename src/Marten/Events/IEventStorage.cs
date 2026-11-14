@@ -83,6 +83,13 @@ public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocu
     Weasel.Storage.IStorageOperation ArchiveStream(object streamId, string tenantId);
 
     /// <summary>
+    /// marten#5476: create a storage operation that reverses <see cref="ArchiveStream"/>, so the stream and
+    /// its events are live again. Routed through the same seam slot with <c>archived: false</c>; backs
+    /// <c>IEventStoreOperations.UnArchiveStream</c>.
+    /// </summary>
+    Weasel.Storage.IStorageOperation UnArchiveStream(object streamId, string tenantId);
+
+    /// <summary>
     /// marten#5673: create a storage operation that hard-deletes a single stream, its events and their
     /// DCB tag rows, routed through the shared seam's <c>TombstoneStream</c> slot. Backs
     /// <c>IEventStoreOperations.TombstoneStream</c>; see <see cref="Marten.Events.Operations.DeleteStreamOperation"/>.
