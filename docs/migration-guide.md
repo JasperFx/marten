@@ -152,6 +152,12 @@ The schema gains one function, `mt_unarchive_stream`. With `UseArchivedStreamPar
 the foreign key cascade delete them, so un-archiving can restore them. Both changes apply with your normal schema
 migration.
 
+### LINQ `jsonb` filter parameters
+
+- The containment (`@>`) and JSONPath filters LINQ builds for child-collection and dictionary queries bind their
+  `jsonb` parameter as UTF-8 `byte[]` rather than a string, as document writes already did. A logger that prints
+  `NpgsqlParameter.Value` shows `System.Byte[]` for that parameter; `Encoding.UTF8.GetString` recovers the JSON.
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |
