@@ -57,6 +57,7 @@ public class hilo_prefetch_tests: OneOffConfigurationsContext
         sequence.SynchronousFetchCount.ShouldBe(1); // the very first block has nothing to prefetch from
 
         await sequence.WaitForPrefetchAsync();
+        sequence.PrefetchFailureCount.ShouldBe(0, sequence.LastPrefetchFailure?.ToString());
 
         var ids = Enumerable.Range(0, 9).Select(_ => sequence.NextLong()).ToArray();
 
@@ -193,6 +194,7 @@ public class hilo_prefetch_tests: OneOffConfigurationsContext
 
         sequence.NextLong().ShouldBe(1);
         await sequence.WaitForPrefetchAsync(); // hi 1 is now reserved and waiting
+        sequence.PrefetchFailureCount.ShouldBe(0, sequence.LastPrefetchFailure?.ToString());
 
         await sequence.SetFloor(1000);
         sequence.DiscardedPrefetchCount.ShouldBe(1);
