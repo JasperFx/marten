@@ -423,12 +423,12 @@ Marten 7.31.0 "fixed" it so that you don't have to use `Nullable<T>` for the ide
 
 As you might infer -- or not -- there's a couple rules and internal behavior:
 
-* The identity selection is done just the same as the primitive types, Marten is either looking for an `id`/`Id` member, or a member decorated with
+- The identity selection is done just the same as the primitive types, Marten is either looking for an `id`/`Id` member, or a member decorated with
   `[Identity]`
-* There is a new `IQuerySession.LoadAsync<T>(object id)` overload that was specifically built for strong typed identifiers
-* For `Guid`-wrapped values, Marten is assigning missing identity values based on its sequential `Guid` support
-* For `int` or `long`-wrapped values, Marten is using its HiLo support to define the wrapped values
-* For `string`-wrapped values, Marten is going to require you to assign the identity to documents yourself
+- There is a new `IQuerySession.LoadAsync<T>(object id)` overload that was specifically built for strong typed identifiers
+- For `Guid`-wrapped values, Marten is assigning missing identity values based on its sequential `Guid` support
+- For `int` or `long`-wrapped values, Marten is using its HiLo support to define the wrapped values
+- For `string`-wrapped values, Marten is going to require you to assign the identity to documents yourself
 
 For another example, here's a usage of an `int` wrapped identifier:
 
@@ -453,8 +453,8 @@ Sorry folks, only the asynchronous APIs for loading documents are supported for 
 
 As of now, Marten supports:
 
-* Loading a single document by its identifier
-* Loading multiple documents using `IsOneOf()` as shown below:
+- Loading a single document by its identifier
+- Loading multiple documents using `IsOneOf()` as shown below:
 
 <!-- snippet: sample_strong_typed_identifier_and_is_one_of -->
 <a id='snippet-sample_strong_typed_identifier_and_is_one_of'></a>
@@ -503,9 +503,9 @@ public async Task load_many()
 LoadManyAsync()_ is not supported for strong typed identifiers
 :::
 
-* Deleting a document by identity
-* Deleting a document by the document itself
-* Within `Include()` queries:
+- Deleting a document by identity
+- Deleting a document by the document itself
+- Within `Include()` queries:
 
 <!-- snippet: sample_include_a_single_reference_with_strong_identifier -->
 <a id='snippet-sample_include_a_single_reference_with_strong_identifier'></a>
@@ -538,11 +538,11 @@ public async Task include_a_single_reference()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/include_usage.cs#L15-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_a_single_reference_with_strong_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-* Within LINQ `Where()` clauses
-* Within LINQ `Select()` clauses
-* Within LINQ `OrderBy()` clauses
-* Identity map resolution
-* Automatic dirty checks
+- Within LINQ `Where()` clauses
+- Within LINQ `Select()` clauses
+- Within LINQ `OrderBy()` clauses
+- Identity map resolution
+- Automatic dirty checks
 
 ### LINQ Support
 
