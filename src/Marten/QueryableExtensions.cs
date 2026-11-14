@@ -20,16 +20,12 @@ using Marten.Util;
 
 namespace Marten;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2060",
     Justification = "Class-level: Expression.Call(Type, string, ...) on framework Queryable / Enumerable intrinsics that the trimmer preserves.")]
 [UnconditionalSuppressMessage("Trimming", "IL2070",
     Justification = "Class-level: reflects PublicMethods/PublicProperties on a Type whose runtime instance is preserved at the StoreOptions / projection-registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2075",
     Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public static class QueryableExtensions
 {
     /// <summary>
@@ -634,6 +630,8 @@ public static class QueryableExtensions
     /// <param name="comparer"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public static IOrderedQueryable<T> OrderBy<T>(this IQueryable<T> queryable, string property, StringComparer comparer)
     {
         var call = Expression.Call(null, OrderByFieldNameAndComparerMethod.MakeGenericMethod(typeof(T)), queryable.Expression,
@@ -730,6 +728,10 @@ public static class QueryableExtensions
         return ApplyOrder(queryable, property, "ThenByDescending");
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     private static IOrderedQueryable<T> ApplyOrder<T>(
         IQueryable<T> queryable,
         string property,
@@ -746,6 +748,8 @@ public static class QueryableExtensions
         return (IOrderedQueryable<T>)result!;
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     private static IBatchedOrderedQueryable<T> ApplyOrder<T>(
         IBatchedQueryable<T> queryable,
         string property,
@@ -762,6 +766,8 @@ public static class QueryableExtensions
         return (IBatchedOrderedQueryable<T>)result!;
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     internal static LambdaExpression CompileOrderBy<T>(string property, out Type targetType)
     {
         var props = property.Split('.');
@@ -802,6 +808,8 @@ public static class QueryableExtensions
     /// <param name="queryable"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public static IQueryable<T> OrderBySql<T>(this IQueryable<T> queryable, string sql)
     {
         return queryable.Provider.CreateQuery<T>(Expression.Call(null, _orderBySqlMethod.Value.MakeGenericMethod(typeof(T)), queryable.Expression,
@@ -815,6 +823,8 @@ public static class QueryableExtensions
     /// <param name="queryable"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public static IQueryable<T> ThenBySql<T>(this IQueryable<T> queryable, string sql)
     {
         return queryable.Provider.CreateQuery<T>(Expression.Call(null, _thenBySqlMethod.Value.MakeGenericMethod(typeof(T)), queryable.Expression,
@@ -833,6 +843,8 @@ public static class QueryableExtensions
     /// <param name="memberExpression">The string property to rank on (same as the NgramSearch target)</param>
     /// <param name="searchTerm">The search term to rank against</param>
     /// <typeparam name="T"></typeparam>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public static IQueryable<T> OrderByNgramRank<T>(this IQueryable<T> queryable,
         Expression<Func<T, string>> memberExpression, string searchTerm)
     {
@@ -878,6 +890,8 @@ public static class QueryableExtensions
     /// <param name="searchTerm">The term to rank against — normally the same one the Where clause used</param>
     /// <param name="function">The tsquery function, which must match the one the Where clause used</param>
     /// <param name="regConfig">The text search configuration, defaulting to 'english'</param>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public static IQueryable<T> OrderByTextRank<T>(this IQueryable<T> queryable, string searchTerm,
         TextSearchFunction function, string regConfig = FullTextIndexDefinition.DefaultRegConfig)
     {
@@ -894,6 +908,8 @@ public static class QueryableExtensions
     ///     Add a <c>ts_rank</c> relevance ordering after an existing ordering. See
     ///     <see cref="OrderByTextRank{T}" />.
     /// </summary>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public static IQueryable<T> ThenByTextRank<T>(this IQueryable<T> queryable, string searchTerm,
         TextSearchFunction function, string regConfig = FullTextIndexDefinition.DefaultRegConfig)
     {
@@ -925,6 +941,8 @@ public static class QueryableExtensions
     internal static readonly MethodInfo IncludePlanMethod =
         typeof(QueryableExtensions).RequireMethod(nameof(IncludePlan), BindingFlags.Static | BindingFlags.NonPublic);
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     internal static IMartenQueryable<T> IncludePlan<T>(this IQueryable<T> queryable, IIncludePlan include)
     {
         var method = IncludePlanMethod.MakeGenericMethod(typeof(T));

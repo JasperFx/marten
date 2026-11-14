@@ -7,8 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2070",
     Justification = "Class-level: reflects PublicMethods/PublicProperties on a Type whose runtime instance is preserved at the StoreOptions / projection-registration boundary.")]
 public partial class StoreOptions
@@ -24,6 +22,8 @@ public partial class StoreOptions
     ///     The assembly to search for the generated manifest. Defaults to the entry assembly.
     /// </param>
     /// <returns>True if a source-generated manifest was found and applied; false otherwise.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public bool TryUseSourceGeneratedDiscovery(Assembly? assembly = null)
     {
         assembly ??= ApplicationAssembly ?? Assembly.GetEntryAssembly();

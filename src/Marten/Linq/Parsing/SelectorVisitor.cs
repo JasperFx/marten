@@ -11,10 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Parsing;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer. #5624: a projection into an ANONYMOUS type is the one shape that contract cannot cover -- no [JsonSerializable] attribute can name one -- so Marten refuses that query with the remedy rather than leaning on this suppression.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. The select clauses closed over a PROJECTED type now resolve through SelectClauseResolvers, which holds a compile-time instantiation for every type that reached MartenLinqQueryable<T>; the reflective path here remains the fallback for a JIT (#5624). Marten 9 retired the codegen-write step the earlier wording cited.")]
 public class SelectorVisitor: ExpressionVisitor
 {
     private readonly IQueryableMemberCollection _collection;
@@ -115,6 +111,10 @@ public class SelectorVisitor: ExpressionVisitor
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer. #5624: a projection into an ANONYMOUS type is the one shape that contract cannot cover -- no [JsonSerializable] attribute can name one -- so Marten refuses that query with the remedy rather than leaning on this suppression.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. The select clauses closed over a PROJECTED type now resolve through SelectClauseResolvers, which holds a compile-time instantiation for every type that reached MartenLinqQueryable<T>; the reflective path here remains the fallback for a JIT (#5624). Marten 9 retired the codegen-write step the earlier wording cited.")]
     public void ToSelectTransform(Expression selectExpression, ISerializer serializer)
     {
         try

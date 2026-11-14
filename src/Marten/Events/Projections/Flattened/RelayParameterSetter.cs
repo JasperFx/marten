@@ -7,14 +7,14 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Events.Projections.Flattened;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 internal class RelayParameterSetter<TSource, TValue>: IParameterSetter<TSource>
 {
     private readonly NpgsqlDbType _dbType;
     private readonly IParameterSetter<TValue> _relay;
     private readonly Func<TSource, TValue> _source;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public RelayParameterSetter(NpgsqlDbType dbType, IParameterSetter<TValue> relay, MemberInfo member)
         : this(dbType, relay, LambdaBuilder.GetProperty<TSource, TValue>((PropertyInfo)member))
     {

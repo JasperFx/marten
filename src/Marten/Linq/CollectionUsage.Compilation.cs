@@ -18,12 +18,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer. #5624: a projection into an ANONYMOUS type is the one shape that contract cannot cover -- no [JsonSerializable] attribute can name one -- so Marten refuses that query with the remedy rather than leaning on this suppression.")]
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. The select clauses closed over a PROJECTED type now resolve through SelectClauseResolvers, which holds a compile-time instantiation for every type that reached MartenLinqQueryable<T>; the reflective path here remains the fallback for a JIT (#5624). Marten 9 retired the codegen-write step the earlier wording cited.")]
 public partial class CollectionUsage
 {
     private bool _hasCompiledMany;
@@ -323,6 +319,8 @@ public partial class CollectionUsage
     private static Ordering CopyOrdering(Ordering source, LambdaExpression rewritten) =>
         new(rewritten, source.Direction) { CasingRule = source.CasingRule, IsTransformed = source.IsTransformed };
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. The select clauses closed over a PROJECTED type now resolve through SelectClauseResolvers, which holds a compile-time instantiation for every type that reached MartenLinqQueryable<T>; the reflective path here remains the fallback for a JIT (#5624). Marten 9 retired the codegen-write step the earlier wording cited.")]
     public Statement CompileGroupJoin(IStorageSession session,
         SelectorStatement outerStatement, QueryStatistics? statistics)
     {

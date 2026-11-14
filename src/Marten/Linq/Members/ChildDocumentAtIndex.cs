@@ -16,10 +16,6 @@ namespace Marten.Linq.Members;
 ///     x.Children[2] or x.Children.ElementAt(2) — locator "d.data -> 'Children' -> 2".
 ///     Member access chains through it like any other child document
 /// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members through StoreOptions.CreateQueryableMember; document types are preserved per the AOT publishing guide.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: member creation goes through StoreOptions.CreateQueryableMember (runtime codegen); AOT consumers pre-generate codegen artifacts.")]
 internal class ChildDocumentAtIndex: QueryableMember, IQueryableMemberCollection, IComparableMember
 {
     private readonly StoreOptions _options;

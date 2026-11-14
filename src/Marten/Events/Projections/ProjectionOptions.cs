@@ -23,10 +23,6 @@ namespace Marten.Events.Projections;
 /// <summary>
 ///     Used to register projections with Marten
 /// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations, IQuerySession>
 {
     internal readonly IFetchPlanner[] _builtInPlanners =
@@ -292,6 +288,10 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         return SingleStreamProjection<T>(lifecycle.Map(), configureProjection, asyncConfiguration);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     internal MartenRegistry.DocumentMappingExpression<T> SingleStreamProjection<T>(
         ProjectionLifecycle lifecycle,
         Action<ProjectionBase>? configureProjection = null,

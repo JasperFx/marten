@@ -12,6 +12,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Documents;
 using Marten.Schema;
 using Marten.Util;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten;
 
@@ -40,6 +41,8 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
         typeof(IDocumentOperations).RequireMethod(nameof(IDocumentOperations.UpdateExpectedVersion),
             BindingFlags.Public | BindingFlags.Instance));
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     async Task<DocumentWriteResult> IDocumentStoreDiagnosticsWriter.SaveDocumentJsonAsync(
         DocumentWriteRequest request, CancellationToken token)
     {
@@ -187,6 +190,8 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
     /// same window as <see cref="IDocumentStoreDiagnosticsWriter.DeleteDocumentAsync" />.
     /// </para>
     /// </remarks>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     async Task<DocumentWriteResult> IDocumentStoreDiagnosticsWriter.UndeleteDocumentAsync(
         DocumentUndeleteRequest request, CancellationToken token)
     {
