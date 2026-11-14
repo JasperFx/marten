@@ -42,12 +42,44 @@ assemblies compiled against Marten 9 must be recompiled.
 - `Marten.ITransactionParticipant` is now `ITransactionParticipant<NpgsqlConnection, NpgsqlTransaction>` from
   `Weasel.Storage`. `BeforeCommitAsync` and `AfterCommitAsync` keep their signatures, so an implementer's source is
   unchanged.
+- `Marten.ISerializer` also extends `Weasel.Core.ISerializer`, the serializer contract Polecat and Fisher share, so
+  a Marten serializer can be passed to code written against it. It gains `FromJson<T>(string)` and
+  `FromJson(Type, string)`, default-implemented over the stream overloads. A custom serializer's source is unchanged.
 - `OpenTelemetryOptions` derives from JasperFx's `OpenTelemetryOptions<IChangeSet>`, and Marten uses the process-wide
   `Marten` `ActivitySource`, so a listener on `Marten` hears one source rather than two.
 - `MartenActivator` derives from JasperFx's `StoreActivator`. Behavior changes: databases are built only when apply or
   assert is opted in (Marten's activator still builds them at startup for master-table tenancy); under
   `ContinueOnFailures`, a database that failed to migrate skips its seeders and rolling-partition pass; a cancelled
   startup is no longer logged as a failed migration; each seeder checks the startup token before it runs.
+- `MasterTableTenancy` derives from Weasel's `MasterTableTenancyBase<MartenDatabase, NpgsqlDataSource>`, the
+  control-table runtime Polecat and Fisher share. The control table, its SQL and the exceptions are unchanged.
+  Behavior changes:
+  - Refreshing the tenant databases (`BuildDatabases()`, which the async daemon calls to discover tenants) now evicts
+    a cached tenant whose row was deleted or disabled elsewhere. It used to only add, so such a tenant kept resolving
+    until the process restarted. A tenant whose connection string changed gets a new database.
+  - `DeleteDatabaseRecordAsync` and `ClearAllDatabaseRecordsAsync` evict the tenants they remove from the cache.
+  - `AddDatabaseRecordAsync` caches the tenant's database straight away, as `AddTenantAsync` already did.
+  - `FindOrCreateDatabase` and `TryFindDatabase` cache what they resolve rather than building a new database, and a
+    new data source, on every call.
+  - Any lookup, not only `BuildDatabases()`, applies the control table's migration first when `AutoCreate` allows it.
+  - A data source supplied through `MasterTableTenancyOptions.DataSource` is no longer disposed with the store.
+  - Seeded tenant ids go through `TenantIdStyle` like every other tenant id.
+  - The lifecycle methods (`AddDatabaseRecordAsync`, `DeleteDatabaseRecordAsync`, `DisableTenantAsync`, `EnableTenantAsync`,
+    `AllDisabledAsync`, `ClearAllDatabaseRecordsAsync`) take an optional `CancellationToken`.
+- Document storage is Weasel's closed-shape storage family (`Weasel.Storage`), the one Polecat and Fisher share:
+  `QueryOnlyClosedShapeDocumentStorage`, `LightweightClosedShapeDocumentStorage`,
+  `IdentityMapClosedShapeDocumentStorage`, `DirtyTrackingClosedShapeDocumentStorage` and
+  `ClosedShapeSubClassDocumentStorage`, each carrying Marten's rules. The SQL and the write operations are unchanged.
+  `Marten.Internal.Storage.DocumentStorage<T, TId>` and its `LightweightDocumentStorage`, `IdentityMapDocumentStorage`,
+  `DirtyCheckedDocumentStorage` and `QueryOnlyDocumentStorage` subclasses are deleted, and the
+  `Marten.Internal.ClosedShape` storage classes are internal; use `IDocumentStorage<T, TId>`. Behavior changes:
+  - Storing a second instance under an id already in the identity map still throws `InvalidOperationException`, with
+    a message that says how to get out of it.
+  - An identity map holding a different id type is refused with Weasel's `IdentityMapIdTypeMismatchException`. The
+    session's own id-type check, which is what a wrong-typed `LoadAsync` hits, still throws
+    `DocumentIdTypeMismatchException`.
+  - A sub-class storage reports its root's `UseNumericRevisions` and `HardDeleteFragment`, which used to be `false` and
+    `null`.
 - A document stored twice in one unit of work by a dirty-tracking session now gets one tracker, not two.
 - `Marten.Services.VersionTracker` (unused) and `Marten.Events.Dcb.TagValueStringifier` (now in `JasperFx.Events.Tags`)
   are deleted.

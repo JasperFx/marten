@@ -216,6 +216,11 @@ This new Marten tenancy strategy will first look for a database with the “tena
 and if it’s not found, will try to reach into the database table to “find” the connection string for this 
 newly discovered tenant. If a record is found, the new tenancy strategy caches the information, and proceeds just like normal.
 
+The cache follows the table. Disabling, removing or clearing tenants through the tenancy evicts them straight away, and
+whenever Marten re-reads the table (as the async daemon does to discover new tenant databases), a cached tenant whose
+row has since been deleted or disabled, by another node or by hand, is evicted too. A disabled tenant is refused with
+`DisabledTenantException`, an unregistered one with `UnknownTenantIdException`.
+
 Now, let me try to anticipate a couple questions you might have here:
 
 * **Can Marten track and apply database schema changes to new tenant databases at runtime?** Yes, Marten does the schema check tracking on a database by database basis. This means that if you add a new tenant database to that underlying table, Marten will absolutely be able to make schema changes as needed to just that tenant database regardless of the state of other tenant databases.
