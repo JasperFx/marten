@@ -137,11 +137,16 @@ A custom `ISessionFactory` that returned `LightweightSession(IsolationLevel.Seri
 #### Sessions are still `IDisposable`, but prefer `await using`
 
 Sessions keep `Dispose()`, so `using var session = store.LightweightSession();` still compiles and works. With
-[row level security](/documents/multi-tenancy#row-level-security-) on, though, a synchronous `Dispose()` no longer
-resets the tenant setting (`set_config(...)`) on the connection before it is released. Npgsql discards session state
-when a connection goes back to its pool, so this only matters if your connection string sets `No Reset On Close=true`,
-or if the session ran on a connection you supplied through `SessionOptions.ForTransaction()`, which keeps the setting
-after a synchronous `Dispose()`. `DisposeAsync()` still resets it, so dispose sessions with `await using`.
+[row level security](/documents/multi-tenancy#row-level-security-) on, a synchronous `Dispose()` makes one synchronous
+database call: it resets the tenant setting on a connection the session opened, before releasing that connection to
+the pool. This is the only synchronous database call left in Marten 10. It is there so a stale tenant cannot outlive
+the session on a pooled connection when the connection string sets `No Reset On Close=true`. If the reset fails,
+`Dispose()` does not throw. Marten logs the failure and makes sure the connection is not returned to the pool as
+healthy.
+
+A connection you supplied (`SessionOptions.ForTransaction()`) is yours, so a synchronous `Dispose()` leaves its tenant
+setting alone. `DisposeAsync()` resets it. Either way, `await using` is still the recommended way to dispose a
+session.
 
 #### Lower-level changes
 
