@@ -176,17 +176,28 @@ public class Reservation: IRevisioned
     public int Version { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L83-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_reservation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L90-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_reservation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
-If using the `IRevisioned` interface, or by mapping another property to the version metadata, Marten will pass the 
-version number from the document itself such that `IDocumentSession.Store()` is essentially `IDocumentSession.UpdateRevision(entity, entity.Version)`
+If using the `IRevisioned` or `ILongVersioned` interface, or by mapping another property to the revision metadata, Marten will pass the
+revision number from the document itself such that `IDocumentSession.Store()` is essentially `IDocumentSession.UpdateRevision(entity, entity.Version)`:
+
+- A **non-zero** revision is the revision you are asking the document to _become_. It is accepted only when it is strictly
+  greater than the revision currently stored, and the document lands at exactly that revision (so it may skip ahead, say from 3 to 10).
+  Otherwise `SaveChangesAsync()` throws a `ConcurrencyException`. On a brand-new document the row is created at exactly that revision.
+- A revision of **0** is the "auto" sentinel: no concurrency check, and the stored revision is simply incremented (a new document starts at 1).
+
+This is the same contract Polecat and Fisher implement.
 :::
 
 ::: warning
-Marten will not perfectly keep incrementing the IRevisioned.Version number if the same document is repeatedly stored by the 
-same session. Prefer using `UpdateRevision()` if you try to continuously update the same document from the same session!
+Marten writes the new revision back onto the document after `SaveChangesAsync()`, so a document you just loaded or saved
+carries the revision that is _already stored_. Calling `Store()` on it again unchanged asks for that same revision, which is
+not greater than itself, and is refused with a `ConcurrencyException`. To move a loaded document forward, either name the next
+revision with `UpdateRevision(doc, doc.Version + 1)` (or by incrementing `Version` before `Store()`), or set `Version = 0` to
+opt out of the check and let Marten assign the next revision. Before Marten 10 `Store()` ignored the document's revision
+entirely, which let a stale writer silently overwrite a newer revision.
 :::
 
 ::: tip `IRevisioned` (int) vs `ILongVersioned` (long)
@@ -229,7 +240,7 @@ public class Order
     public long Version { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L68-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_order' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L75-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_order' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And here's an attempt to explain the usage and behavior:
@@ -242,12 +253,19 @@ public static async Task try_revisioning(IDocumentSession session, Reservation r
     // This will create a new document with Version = 1
     session.Insert(reservation);
 
-    // "Store" is an upsert, but if the revisioned document
-    // is all new, the Version = 1 after changes are committed
+    // "Store" is an upsert. A Version of 0 is the "auto" sentinel:
+    // an all new document lands at Version = 1, and an existing
+    // document just gets the next revision, with no concurrency check
+    reservation.Version = 0;
     session.Store(reservation);
 
-    // If Store() is called on an existing document
-    // this will just assign the next revision
+    // A non-zero Version is the revision you are asking the document
+    // to *become*, so this Store() is UpdateRevision(reservation, 5).
+    // It is rejected with a ConcurrencyException when SaveChanges() is
+    // called unless 5 is strictly greater than the stored revision, and
+    // the document lands at exactly 5. Re-storing a loaded document that
+    // still carries the revision it was loaded with is therefore refused
+    reservation.Version = 5;
     session.Store(reservation);
 
     // *This* operation will enforce the optimistic concurrency
@@ -267,7 +285,7 @@ public static async Task try_revisioning(IDocumentSession session, Reservation r
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L27-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_numeric_revisioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L27-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_numeric_revisioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip

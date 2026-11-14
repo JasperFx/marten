@@ -241,15 +241,21 @@ public class closed_shape_optimistic_concurrency_mapped_member_tests: BugIntegra
 
         doc.Rev.ShouldBeGreaterThan(0);
 
+        // #5788: the mapped member is the revision the document asks to BECOME. Re-storing it still at the
+        // revision it was saved with is refused (not greater than the stored one), so name the next one.
+        var next = doc.Rev + 1;
         await using (var session = store.LightweightSession())
         {
             doc.Name = "v2";
+            doc.Rev = next;
             session.Store(doc);
             await session.SaveChangesAsync();
         }
 
         await using var query = store.QuerySession();
-        (await query.LoadAsync<MappedRevisionDoc>(doc.Id))!.Name.ShouldBe("v2");
+        var loaded = await query.LoadAsync<MappedRevisionDoc>(doc.Id);
+        loaded!.Name.ShouldBe("v2");
+        (await query.MetadataForAsync(loaded))!.CurrentRevision.ShouldBe(next);
     }
 }
 

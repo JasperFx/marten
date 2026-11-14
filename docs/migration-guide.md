@@ -54,6 +54,39 @@ assemblies compiled against Marten 9 must be recompiled.
 - The `IReadOnlyEventStoreOptions` properties lost their setters (`AppendMode`, `UseArchivedStreamPartitioning`,
   `UseTenantPartitionedEvents`, `MessageOutbox` and so on). Set them on `StoreOptions.Events` as before.
 
+### `Store()` checks a numerically revisioned document's revision <Badge type="warning" text="breaking" />
+
+`IDocumentSession.Store()` on a document using numeric revisions (`IRevisioned`, `ILongVersioned`, a `[Version]` member
+or `Metadata.Revision.MapTo(...)`) now honours the revision the document carries, as the
+[concurrency docs](/documents/concurrency#numeric-revisioned-documents) always said it did and as Polecat and Fisher
+already do ([#5788](https://github.com/JasperFx/marten/issues/5788)):
+
+- A **non-zero** revision is the revision the document is asked to *become*. It is accepted only when strictly greater
+  than the stored revision, and the row lands at exactly that value. Otherwise `SaveChangesAsync()` throws
+  `ConcurrencyException`.
+- A revision of **0** is the "auto" sentinel and behaves as before: no check, the next revision is assigned.
+
+Marten 9 ignored the document's revision on `Store()` and always took the auto path, so a stale writer silently
+overwrote a newer revision. The visible change is in ordinary read-modify-write code: **re-storing a loaded
+`IRevisioned` document now throws `ConcurrencyException`**, because after a load or a save the document carries the
+revision that is already stored, and that is not greater than itself. Either of these restores a working write:
+
+```cs
+var doc = await session.LoadAsync<Reservation>(id);
+doc.Name = "changed";
+
+// Name the revision the document becomes -- the optimistic check still applies
+session.UpdateRevision(doc, doc.Version + 1);
+
+// ...or opt out of the check and let Marten assign the next revision
+doc.Version = 0;
+session.Store(doc);
+```
+
+Sessions opened with `ConcurrencyChecks.Disabled` still overwrite without a check. Also fixed along the way: in a
+dirty-tracking session, a loaded document that was changed and then passed to `UpdateRevision()`/`TryUpdateRevision()`
+lost its explicit revision to the automatically detected change, so the revision check never ran.
+
 ### C# 15 union types on `net11.0` <Badge type="tip" text="new" />
 
 On `net11.0`, a document member or an event may be a C# union. An appended union is recorded as its active case,

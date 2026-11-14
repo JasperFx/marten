@@ -27,10 +27,7 @@ public class compliance_suite_inventory
             {
                 [typeof(DocumentSearchCompliance<>)] =
                     "Enrolled in Marten.PgVector.Tests (pgvector_document_search_compliance), which has the "
-                    + "pgvector image the suite needs; this assembly runs against plain PostgreSQL",
-                [typeof(NumericRevisionCompliance<>)] =
-                    "marten#5788: Store() ignores an IRevisioned version, so the numeric revision facts cannot "
-                    + "pass yet (10.0 milestone). Enrolling it is that issue's job"
+                    + "pgvector image the suite needs; this assembly runs against plain PostgreSQL"
             });
     }
 }
