@@ -618,7 +618,7 @@ The `IMartenLogger` can be swapped out on any `IQuerySession` or `IDocumentSessi
 // session to pipe Marten logging to the xUnit.Net output
 theSession.Logger = new TestOutputMartenLogger(_output);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L134-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L135-L139' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Previewing the PostgreSQL Query Plan
@@ -682,7 +682,7 @@ Marten provides a helper method to fetch the PostgreSQL server version exposed v
 <!-- snippet: sample_get_postgres_version -->
 <a id='snippet-sample_get_postgres_version'></a>
 ```cs
-var pgVersion = theStore.Diagnostics.GetPostgresVersion();
+var pgVersion = await theStore.Diagnostics.GetPostgresVersionAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Diagnostics/ability_to_fetch_postgres_server_version.cs#L12-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_postgres_version' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Diagnostics/ability_to_fetch_postgres_server_version.cs#L13-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_postgres_version' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

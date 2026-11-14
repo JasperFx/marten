@@ -69,59 +69,15 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         builder.Append(schema);
         builder.Append(".mt_events e");
 
-        if (!isHStore)
+        builder.Append(" where ");
+        if (isHStore)
         {
-            var distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
-            for (var i = 0; i < distinctTagTypes.Count; i++)
-            {
-                var tagType = distinctTagTypes[i];
-                var registration = _store.Events.FindTagType(tagType)
-                                   ?? throw new InvalidOperationException(
-                                       $"Tag type '{tagType.Name}' is not registered.");
-
-                builder.Append(" left join ");
-                builder.Append(schema);
-                builder.Append(".mt_event_tag_");
-                builder.Append(registration.TableSuffix);
-                builder.Append(" t");
-                builder.Append(i.ToString());
-                builder.Append(" on e.seq_id = t");
-                builder.Append(i.ToString());
-                builder.Append(".seq_id");
-            }
-
-            builder.Append(" where (");
-            for (var i = 0; i < conditions.Count; i++)
-            {
-                if (i > 0) builder.Append(" or ");
-
-                var condition = conditions[i];
-                var tagIndex = distinctTagTypes.IndexOf(condition.TagType);
-
-                builder.Append("(t");
-                builder.Append(tagIndex.ToString());
-                builder.Append(".value = ");
-
-                var registration = _store.Events.FindTagType(condition.TagType)!;
-                var value = registration.ExtractValue(condition.TagValue);
-                builder.AppendParameter(value);
-
-                if (condition.EventType != null)
-                {
-                    builder.Append(" and e.type = ");
-                    var eventTypeName = _store.Events.EventMappingFor(condition.EventType).EventTypeName;
-                    builder.AppendParameter(eventTypeName);
-                }
-
-                builder.Append(")");
-            }
-
-            builder.Append(")");
+            HStoreDcbQueryFragment.AppendOrPredicate(builder, _store.Events, conditions, "e");
         }
         else
         {
-            builder.Append(" where ");
-            HStoreDcbQueryFragment.AppendOrPredicate(builder, _store.Events, conditions, "e");
+            // #5897: one index probe per condition, combined on seq_id -- see TagTablesDcbQueryFragment
+            TagTablesDcbQueryFragment.AppendSeqIdPredicate(builder, _store.Events, conditions, "e", session.TenantId);
         }
 
         // Filter by tenant_id for conjoined tenancy
@@ -130,6 +86,9 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
             builder.Append(" and e.tenant_id = ");
             builder.AppendParameter(session.TenantId);
         }
+
+        // #5677: archived events are excluded, as in every other event query
+        builder.Append(" and e.is_archived = false");
 
         // If the aggregator has event type filtering, apply it to limit the returned events
         var eventTypeNames = resolveAggregatorEventTypeNames();
@@ -150,8 +109,13 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         var schema = _store.Events.DatabaseSchemaName;
 
         // Distinct by (TagTable, TagValue) — the side table is keyed by table
-        // suffix + canonical string value (see TagValueStringifier), not by the
-        // condition's optional EventType filter.
+        // suffix + canonical string value (see TagValueStringifier). Under the
+        // default DcbConflictScope.TagValue that ignores the condition's optional
+        // EventType filter, so an appended event of any type carrying the tag value
+        // is a conflict. #5887: under TagValueAndEventType a condition naming an
+        // event type captures that type's own version instead, which only appends
+        // of that type move.
+        var scopeByEventType = _store.Events.DcbConflictScope == DcbConflictScope.TagValueAndEventType;
         var targets = new List<(string TagTable, string TagValue)>(conditions.Count);
         var seen = new HashSet<(string, string)>();
         foreach (var condition in conditions)
@@ -161,10 +125,17 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
                                    $"Tag type '{condition.TagType.Name}' is not registered.");
             var raw = registration.ExtractValue(condition.TagValue);
             var tagValue = TagValueStringifier.Stringify(raw);
-            var key = (registration.TableSuffix, tagValue);
+
+            // The same event type name the events SELECT below filters on, so the version checked
+            // and the events read always describe the same set of events.
+            var tagTable = scopeByEventType && condition.EventType != null
+                ? DcbTagVersionKeys.ForEventType(registration.TableSuffix,
+                    _store.Events.EventMappingFor(condition.EventType).EventTypeName)
+                : registration.TableSuffix;
+            var key = (tagTable, tagValue);
             if (seen.Add(key))
             {
-                targets.Add((registration.TableSuffix, tagValue));
+                targets.Add(key);
             }
         }
 
@@ -271,7 +242,11 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         // ProcessEventsAsync time, ahead of the producer-side bumps.
         docSession.CaptureDcbBoundary(capturedVersions);
 
-        return new EventBoundary<T>(docSession, _store.Events, aggregate, events, lastSeenSequence);
+        // jasperfx#1044: the shared boundary appends through the operations it is handed, which stamp the
+        // tenant of the session this fetch ran on (a ForTenant session's own). Marten's former copy put a
+        // StreamAction in the work tracker itself and left its TenantId null.
+        return new JasperFx.Events.Tags.EventBoundary<T>(docSession.Events, _store.Events, _store.Events.TagTypes,
+            aggregate, events);
     }
 
     private static async Task<Dictionary<(string, string), long>> readCapturedVersions(

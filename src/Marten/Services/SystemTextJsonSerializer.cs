@@ -25,7 +25,7 @@ namespace Marten.Services;
 [UnconditionalSuppressMessage("Trimming", "IL2026",
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class SystemTextJsonSerializer: ISerializer
 {
     private readonly JsonSerializerOptions _clean;
@@ -65,6 +65,12 @@ public class SystemTextJsonSerializer: ISerializer
 
         syncDocumentDeserializeOptions();
     }
+
+    /// <summary>
+    ///     #5735: the options documents are written with, after casing and enum storage are applied. LINQ
+    ///     reads a union member's case shapes from these; never mutate them.
+    /// </summary>
+    internal JsonSerializerOptions WriteOptions => _options;
 
     public string ToJson(object? document)
     {

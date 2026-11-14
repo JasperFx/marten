@@ -75,22 +75,6 @@ internal class EventTracingConnectionLifetime:
 
     public IMartenSessionLogger Logger { get => InnerConnectionLifetime.Logger; set => InnerConnectionLifetime.Logger = value; }
     public int CommandTimeout { get; }
-    public int Execute(NpgsqlCommand cmd)
-    {
-        _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
-
-        try
-        {
-            return InnerConnectionLifetime.Execute(cmd);
-        }
-        catch (Exception e)
-        {
-            _databaseActivity?.AddException(e);
-
-            throw;
-        }
-    }
-
     public async Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new CancellationToken())
     {
         _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
@@ -107,22 +91,6 @@ internal class EventTracingConnectionLifetime:
         }
     }
 
-    public DbDataReader ExecuteReader(NpgsqlCommand command)
-    {
-        _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
-
-        try
-        {
-            return InnerConnectionLifetime.ExecuteReader(command);
-        }
-        catch (Exception e)
-        {
-            _databaseActivity?.AddException(e);
-
-            throw;
-        }
-    }
-
     public async Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
     {
         _databaseActivity?.AddEvent(new ActivityEvent(MartenCommandExecutionStarted));
@@ -130,22 +98,6 @@ internal class EventTracingConnectionLifetime:
         try
         {
             return await InnerConnectionLifetime.ExecuteReaderAsync(command, token).ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            _databaseActivity?.AddException(e);
-
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlBatch batch)
-    {
-        _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchExecutionStarted));
-
-        try
-        {
-            return InnerConnectionLifetime.ExecuteReader(batch);
         }
         catch (Exception e)
         {

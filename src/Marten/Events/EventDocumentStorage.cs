@@ -254,6 +254,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
     public abstract Weasel.Storage.IStorageOperation UpdateStreamVersion(StreamAction stream);
     public abstract Weasel.Storage.IStorageOperation AssertStreamVersion(StreamAction stream);
     public abstract Weasel.Storage.IStorageOperation ArchiveStream(object streamId, string tenantId);
+    public abstract Weasel.Storage.IStorageOperation UnArchiveStream(object streamId, string tenantId);
     public abstract Weasel.Storage.IStorageOperation DeleteStream(object streamId, string tenantId);
 
     public string StreamStateSelectSql => Marten.EventStorage.StreamStateSql.Build(Events);
@@ -277,7 +278,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
             var typeName = reader.GetFieldValue<string>(2);
             if (typeName.IsNotEmpty())
             {
-                state.AggregateType = Events.AggregateTypeFor(typeName);
+                state.AggregateType = Events.TryResolveAggregateType(typeName);
             }
         }
 
@@ -314,7 +315,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
             var typeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             if (typeName.IsNotEmpty())
             {
-                state.AggregateType = Events.AggregateTypeFor(typeName);
+                state.AggregateType = Events.TryResolveAggregateType(typeName);
             }
         }
 
@@ -507,15 +508,8 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
             throw new UnknownEventTypeException(eventTypeName, sequence);
         }
 
-        Type type;
-        try
-        {
-            type = Events.TypeForDotNetName(dotnetTypeName);
-        }
-        catch (ArgumentNullException)
-        {
-            throw new UnknownEventTypeException(dotnetTypeName, sequence);
-        }
+        var type = Events.ResolveEventType(dotnetTypeName)
+                   ?? throw new UnknownEventTypeException(dotnetTypeName, sequence);
 
         return Events.EventMappingFor(type);
     }

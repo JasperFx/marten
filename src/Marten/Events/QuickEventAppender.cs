@@ -128,10 +128,9 @@ internal class QuickEventAppender: IEventAppender
                 // IProjectionBatch.QuickAppendEventWithVersion, #4428) and the
                 // StartStream branch above both still use it.
                 //
-                // Tags in TagTables mode are written inside the PostgreSQL
-                // function via array parameters. In HStore mode the function
-                // signature is trimmed (no per-tag varchar[] params), so tags are
-                // written via a follow-up UPDATE keyed on the event's id.
+                // Tags are written inside the PostgreSQL function via array
+                // parameters: one varchar[] per tag type in TagTables mode, one
+                // hstore[] in HStore mode (#5896).
                 //
                 // PrepareEvents gets ExpectedVersionOnServer (or 0) as the current
                 // version so the client-side optimistic-concurrency guard
@@ -145,26 +144,25 @@ internal class QuickEventAppender: IEventAppender
                 quickAppendEvents.Events = eventGraph;
                 session.QueueOperation(quickAppendEvents);
 
-                if (eventGraph.DcbStorageMode == DcbStorageMode.HStore)
-                {
-                    EventTagOperations.QueueTagOperationsByEventId(eventGraph, session, stream);
-                }
-                else
+                // #5896: in HStore mode the function writes mt_events.tags in its own insert (one hstore[]
+                // parallel to the events array), so there is nothing to follow up with -- this used to queue an
+                // UPDATE per tagged event that found its row by the unindexed id.
+                if (eventGraph.DcbStorageMode != DcbStorageMode.HStore)
                 {
                     // #5265: the function's tag parameters are one varchar[] per registered tag
                     // type, parallel to the events array, so it can only carry the FIRST tag of
                     // each type on each event. Anything beyond that is written here as ordinary
-                    // tag-table rows, keyed on the event id exactly like the HStore path above.
+                    // tag-table rows, found by event id within the stream (#5896).
                     EventTagOperations.QueueSurplusTagOperationsByEventId(eventGraph, session, stream);
                 }
             }
 
-            // #4591: queue the DCB tag-version producer-bump once per stream,
+            // #4591: collect the DCB tag-version producer-bump once per stream,
             // regardless of which tag-write path above ran. The non-HStore
             // bulk QuickAppend code path writes tags inside the PostgreSQL
             // function — without this hook, those commits would silently
             // bypass any in-flight DCB boundary check.
-            EventTagOperations.QueueDcbVersionBumpIfNeeded(eventGraph, session, stream);
+            EventTagOperations.CollectDcbVersionBumps(eventGraph, session, stream);
         }
     }
 

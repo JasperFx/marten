@@ -391,14 +391,12 @@ public partial class DocumentStore
     /// themselves.
     /// </summary>
     /// <remarks>
-    /// JasperFx's own test plus Marten's <see cref="Marten.Exceptions.BadLinqExpressionException" />, which
-    /// stays on Marten's exception hierarchy (marten#5346) rather than deriving from the JasperFx type
-    /// <see cref="DocumentQueryCriteria.IsTranslationFailure" /> recognizes.
+    /// JasperFx's own test, which already recognizes the <see cref="JasperFx.BadLinqExpressionException" />
+    /// Marten throws (marten#5847), plus Marten's DateTime-kind refusals.
     /// </remarks>
     private static bool isCriteriaTranslationFailure(Exception e)
         => e is not DocumentCriteriaNotSupportedException
            && (DocumentQueryCriteria.IsTranslationFailure(e)
-               || e is Marten.Exceptions.BadLinqExpressionException
                // A DateTime of the wrong Kind for the column it is compared with -- the arm
                // DateTimeKindAdapter does not cover, e.g. an in-process Local argument against a
                // timestamptz duplicated field.

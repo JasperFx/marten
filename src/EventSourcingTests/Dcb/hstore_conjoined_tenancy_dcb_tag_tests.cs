@@ -15,7 +15,7 @@ namespace EventSourcingTests.Dcb;
 /// <summary>
 /// Parallel of <see cref="conjoined_tenancy_dcb_tag_tests"/> for
 /// <see cref="DcbStorageMode.HStore"/>. Validates that the per-tenant filters added
-/// to the HStore branches in <c>EventStore.Dcb.BuildTagQuerySql</c>,
+/// to the HStore branches in <c>QueryEventStore.Dcb.BuildTagQuerySql</c>,
 /// <c>EventsExistByTagsHandler</c>, <c>FetchForWritingByTagsHandler</c>,
 /// <c>DcbTagVersionAssertion</c>, and <c>SetEventTagsHstoreOperation</c> correctly
 /// isolate DCB query, exists, aggregate, fetch-for-writing, and consistency-check

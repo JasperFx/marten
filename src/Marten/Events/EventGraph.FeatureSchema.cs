@@ -53,7 +53,7 @@ public partial class EventGraph: IFeatureSchema
     {
         // DCB in HStore mode requires the Postgres hstore extension. Register it before
         // any table that depends on the hstore type is created.
-        if (DcbStorageMode == DcbStorageMode.HStore && _tagTypes.Count > 0)
+        if (DcbStorageMode == DcbStorageMode.HStore && TagTypes.Count > 0)
         {
             yield return new Extension("hstore");
         }
@@ -67,7 +67,7 @@ public partial class EventGraph: IFeatureSchema
             yield return new StreamIdentityEnforcementTable(this);
         }
 
-        var eventsTable = new EventsTable(this);
+        var eventsTable = new EventsTable(this, true);
         yield return eventsTable;
 
         #region sample_using-sequence
@@ -99,12 +99,10 @@ public partial class EventGraph: IFeatureSchema
 
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
 
-        if (EnableExtendedProgressionTracking)
-        {
-            yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression_extended",
-                "varchar, bigint, timestamp with time zone, varchar, text, integer");
-        }
         yield return new ArchiveStreamFunction(this);
+
+        // marten#5476: the reverse of mt_archive_stream, behind IEventStoreOperations.UnArchiveStream
+        yield return new ArchiveStreamFunction(this, unarchive: true);
 
         yield return new QuickAppendEventFunction(this);
 
@@ -123,17 +121,17 @@ public partial class EventGraph: IFeatureSchema
             }
         }
 
-        if (EnableAdvancedAsyncTracking)
-        {
-            yield return new EventProgressionSkippingTable(this);
-            yield return new SystemFunction(DatabaseSchemaName, "mt_mark_progression_with_skip",
-                "varchar, bigint, bigint");
-        }
+        // #5765: always created. EnableAdvancedAsyncTracking governs whether the daemon USES the skip
+        // table and function, not whether they exist, so a store with it off cannot drop them from a
+        // schema another store has it on for.
+        yield return new EventProgressionSkippingTable(this);
+        yield return new SystemFunction(DatabaseSchemaName, "mt_mark_progression_with_skip",
+            "varchar, bigint, bigint");
 
         // In HStore mode tags live inline on mt_events.tags; no per-type tag tables exist.
         if (DcbStorageMode != DcbStorageMode.HStore)
         {
-            foreach (var tagRegistration in _tagTypes)
+            foreach (var tagRegistration in TagTypes)
             {
                 yield return new EventTagTable(this, tagRegistration);
             }
@@ -143,7 +141,7 @@ public partial class EventGraph: IFeatureSchema
         // Only relevant if at least one DCB tag type is registered (since the
         // table is keyed by tag_table/tag_value and would be dead weight in
         // event stores that don't use tags at all).
-        if (_tagTypes.Count > 0)
+        if (TagTypes.Count > 0)
         {
             yield return new DcbTagVersionTable(this);
         }

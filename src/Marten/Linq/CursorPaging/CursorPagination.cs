@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using Marten.Schema;
+using JasperFx.Core.Reflection;
 
 namespace Marten.Linq.CursorPaging;
 
@@ -37,6 +37,12 @@ internal sealed class CursorOrdering
     /// validate the terminal ordering is unique.
     /// </summary>
     public MemberInfo? Member => (StripConvert(Selector.Body) as MemberExpression)?.Member;
+
+    /// <summary>
+    /// The registered value type this ordering's key is, or a nullable of, if any.
+    /// </summary>
+    public ValueTypeInfo? FindValueType(StoreOptions options) =>
+        options.TryFindValueType(Nullable.GetUnderlyingType(KeyType) ?? KeyType);
 
     private Delegate? _boxedAccessor;
 
@@ -139,10 +145,8 @@ internal static class CursorPagination
     /// must be guaranteed unique (by default, the document's identity member) or
     /// seek pagination can skip or repeat rows that share the same leading sort keys.
     /// </summary>
-    public static void ValidateTerminalKeyIsUnique<T>(CursorOrdering terminal)
+    public static void ValidateTerminalKeyIsUnique<T>(CursorOrdering terminal, MemberInfo? idMember)
     {
-        var idMember = DocumentMapping.FindIdMember(typeof(T));
-
         if (idMember != null && terminal.Member != null && MemberNamesMatch(terminal.Member, idMember))
         {
             return;
@@ -165,7 +169,8 @@ internal static class CursorPagination
     /// <c>(k1 &gt; v1) OR (k1 == v1 AND k2 &gt; v2) OR ... OR (k1==v1 AND ... AND kn &gt; vn)</c>
     /// flipping &gt;/&lt; per ordering direction, given the cursor's decoded boundary values.
     /// </summary>
-    public static Expression<Func<T, bool>> BuildSeekPredicate<T>(IReadOnlyList<CursorOrdering> orderings, object?[] values)
+    public static Expression<Func<T, bool>> BuildSeekPredicate<T>(IReadOnlyList<CursorOrdering> orderings, object?[] values,
+        StoreOptions options)
     {
         var parameter = Expression.Parameter(typeof(T), "x");
 
@@ -177,19 +182,51 @@ internal static class CursorPagination
 
             for (var j = 0; j < i; j++)
             {
-                var equals = BuildComparison(orderings[j], values[j], parameter, ComparisonKind.Equal);
+                var equals = BuildComparison(orderings[j], values[j], parameter, ComparisonKind.Equal, options);
                 andExpression = andExpression == null ? equals : Expression.AndAlso(andExpression, equals);
             }
 
-            var comparison = BuildComparison(orderings[i], values[i], parameter,
-                orderings[i].Descending ? ComparisonKind.LessThan : ComparisonKind.GreaterThan);
+            var after = BuildAfter(orderings[i], values[i], parameter, options);
+            if (after == null)
+            {
+                // Nothing sorts after a null boundary in this key, so only the tie-breaking terms can match
+                continue;
+            }
 
-            andExpression = andExpression == null ? comparison : Expression.AndAlso(andExpression, comparison);
+            andExpression = andExpression == null ? after : Expression.AndAlso(andExpression, after);
 
             orExpression = orExpression == null ? andExpression : Expression.OrElse(orExpression, andExpression);
         }
 
+        orExpression ??= Expression.Constant(false);
+
         return Expression.Lambda<Func<T, bool>>(orExpression!, parameter);
+    }
+
+    /// <summary>
+    /// The term selecting rows that sort strictly after <paramref name="value"/> in this ordering, or null
+    /// when no row can. PostgreSQL sorts NULL last ascending and first descending, and a plain comparison
+    /// against NULL is never true, so a nullable key needs explicit terms or its null rows are dropped.
+    /// </summary>
+    private static Expression? BuildAfter(CursorOrdering ordering, object? value, ParameterExpression parameter,
+        StoreOptions options)
+    {
+        var left = new ReplaceParameterVisitor(ordering.Selector.Parameters[0], parameter).Visit(ordering.Selector.Body)!;
+        var canBeNull = !left.Type.IsValueType || Nullable.GetUnderlyingType(left.Type) != null;
+
+        Expression IsNull() => Expression.Equal(left, Expression.Constant(null, left.Type));
+
+        if (value == null)
+        {
+            // Ascending: null is last, nothing follows it. Descending: null is first, every non-null row follows.
+            return ordering.Descending && canBeNull ? Expression.Not(IsNull()) : null;
+        }
+
+        var comparison = BuildComparison(ordering, value, parameter,
+            ordering.Descending ? ComparisonKind.LessThan : ComparisonKind.GreaterThan, options);
+
+        // Ascending: null rows come after every non-null boundary. Descending: they came before it.
+        return !ordering.Descending && canBeNull ? Expression.OrElse(comparison, IsNull()) : comparison;
     }
 
     private enum ComparisonKind
@@ -200,7 +237,7 @@ internal static class CursorPagination
     }
 
     private static Expression BuildComparison(CursorOrdering ordering, object? value, ParameterExpression parameter,
-        ComparisonKind kind)
+        ComparisonKind kind, StoreOptions options)
     {
         var left = new ReplaceParameterVisitor(ordering.Selector.Parameters[0], parameter).Visit(ordering.Selector.Body)!;
         var right = Expression.Constant(value, left.Type);
@@ -217,6 +254,16 @@ internal static class CursorPagination
         // Marten's own Linq provider already knows how to translate `x.CompareTo(y) > 0`/`< 0` into SQL
         // comparisons (see Marten.Linq.Parsing.CompareToComparable), so route every non-equal comparison
         // through that same shape instead of the raw binary operator.
+        //
+        // Nullable<T> has no CompareTo of its own. A nullable value type key is cast to T so that T's
+        // CompareTo applies, since T usually has no comparison operators for the raw operator below.
+        if (value != null && Nullable.GetUnderlyingType(left.Type) is { } underlying
+                          && ordering.FindValueType(options) != null)
+        {
+            left = Expression.Convert(left, underlying);
+            right = Expression.Constant(value, underlying);
+        }
+
         var compareToMethod = left.Type.GetMethod("CompareTo", new[] { left.Type })
             ?? left.Type.GetMethod("CompareTo", new[] { typeof(object) });
 
@@ -266,7 +313,8 @@ internal static class CursorPagination
     /// each element back to the CLR type produced by its matching ordering's key
     /// selector with the same <paramref name="serializer"/> that wrote it.
     /// </summary>
-    public static object?[] DecodeCursor(string cursor, IReadOnlyList<CursorOrdering> orderings, ISerializer serializer)
+    public static object?[] DecodeCursor(string cursor, IReadOnlyList<CursorOrdering> orderings, ISerializer serializer,
+        StoreOptions options)
     {
         if (!cursor.StartsWith(CursorPrefix, StringComparison.Ordinal))
         {
@@ -312,10 +360,31 @@ internal static class CursorPagination
                     throw new ArgumentException("Invalid cursor.", nameof(cursor));
                 }
 
+                if (root[i].ValueKind == JsonValueKind.Null)
+                {
+                    // The last row of the page held no value for this key. Only a key that can hold null
+                    // produces that, so anything else is a tampered cursor.
+                    var keyType = orderings[i].KeyType;
+                    if (keyType.IsValueType && Nullable.GetUnderlyingType(keyType) == null)
+                    {
+                        throw new ArgumentException("Invalid cursor.", nameof(cursor));
+                    }
+
+                    continue;
+                }
+
                 try
                 {
+                    var valueType = orderings[i].FindValueType(options);
+
                     using var element = new MemoryStream(Encoding.UTF8.GetBytes(root[i].GetRawText()));
-                    values[i] = serializer.FromJson(orderings[i].KeyType, element);
+                    var value = serializer.FromJson(valueType?.SimpleType ?? orderings[i].KeyType, element);
+
+                    // The cursor holds a value type's inner value (see PreparePage), so wrap it back up
+                    // here rather than relying on the store's serializer to read the wrapper from a scalar.
+                    values[i] = valueType == null ? value
+                        : valueType.Builder != null ? valueType.Builder.Invoke(null, [value])
+                        : valueType.Ctor!.Invoke([value]);
                 }
                 catch (Exception e)
                 {

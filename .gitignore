@@ -240,3 +240,6 @@ src/CommandLineRunner/Internal/*
 
 # Local Netlify folder
 .netlify
+
+# Machine-local NuGet feed written by TakeLocalUpstream
+/nuget.config

@@ -12,4 +12,4 @@ using Xunit;
 // its tests passing only on the supervisor's fresh-process retry — where each runs alone, which is
 // what the class-level parallelism was denying them. Matches the convention in the thirteen other
 // database-backed suites (CoreTests, LinqTests, DaemonTests, ...).
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]

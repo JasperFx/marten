@@ -162,75 +162,15 @@ public class explicit_tag_type_registration: OneOffConfigurationsContext
         }
     }
 
-    [Fact]
-    public void a_generic_that_cannot_be_closed_natively_names_the_explicit_overload()
-    {
-        var failure = new NotSupportedException("missing native code or metadata");
-
-        var ex = Should.Throw<InvalidOperationException>(() =>
-            EventGraph.CreateTagType(typeof(EnrolleeId), "enrollee", _ => throw failure, canEmit: false));
-
-        ex.Message.ShouldContain("opts.Events.RegisterTagType<EnrolleeId, Guid>(x => x.Value, \"enrollee\");");
-        ex.Message.ShouldContain("Native AOT");
-        ex.InnerException.ShouldBeSameAs(failure);
-    }
-
-    [Fact]
-    public void a_missing_constructor_natively_names_the_explicit_overload_too()
-    {
-        var failure = new MissingMethodException("no parameterless constructor");
-
-        Should.Throw<InvalidOperationException>(() =>
-                EventGraph.CreateTagType(typeof(EnrolleeId), "enrollee", _ => throw failure, canEmit: false))
-            .InnerException.ShouldBeSameAs(failure);
-    }
-
-    [Fact]
-    public void an_unreadable_tag_names_the_explicit_overload_under_a_jit_as_well()
-    {
-        // #5649 follow-up. InvalidValueTypeException is ambiguous: the tag may genuinely not be a
-        // single-value wrapper, or a trimmed image may have lost the members that say so. A trimmed
-        // non-AOT image still has dynamic code, so no runtime flag separates the two -- and the explicit
-        // overload is the answer either way, so it is named either way.
-        var failure = new InvalidValueTypeException(typeof(EnrolleeId), "Must be only a single public, 'gettable' property");
-
-        foreach (var canEmit in new[] { true, false })
-        {
-            var ex = Should.Throw<InvalidOperationException>(() =>
-                EventGraph.CreateTagType(typeof(EnrolleeId), "enrollee", _ => throw failure, canEmit));
-
-            ex.Message.ShouldContain("opts.Events.RegisterTagType<EnrolleeId, Guid>(x => x.Value, \"enrollee\");");
-            ex.Message.ShouldContain("trimmed");
-            ex.InnerException.ShouldBeSameAs(failure);
-        }
-    }
-
-    [Fact]
-    public void an_unrelated_failure_is_not_reinterpreted()
-    {
-        var failure = new ArgumentException("something else");
-
-        Should.Throw<ArgumentException>(() =>
-                EventGraph.CreateTagType(typeof(EnrolleeId), null, _ => throw failure, canEmit: false))
-            .ShouldBeSameAs(failure);
-    }
-
-    [Fact]
-    public void a_closing_failure_under_a_jit_is_not_reinterpreted()
-    {
-        // Unlike the unreadable-tag case above, this one is unambiguous: a JIT closed the generic, so a
-        // NotSupportedException from inside the registration is about something else entirely.
-        var failure = new NotSupportedException("something else");
-
-        Should.Throw<NotSupportedException>(() =>
-                EventGraph.CreateTagType(typeof(EnrolleeId), null, _ => throw failure, canEmit: true))
-            .ShouldBeSameAs(failure);
-    }
+    // The refusals CreateTagType makes when a tag type cannot be registered by inference (Native AOT, a
+    // trimmed image) are EventRegistry's since jasperfx#1043, and are tested there
+    // (EventTests.Tags.EventRegistryTagTypeTests). The remedy line Marten logs from tag auto-discovery is
+    // TagTypeRegistration.RegistrationLine, pinned below for Marten's own tag shapes.
 
     [Fact]
     public void the_remedy_uses_placeholders_when_the_tag_cannot_be_read()
     {
-        EventGraph.TagTypeRegistrationLine(typeof(TwoPropertyTagId), "two", null)
+        TagTypeRegistration.RegistrationLine(typeof(TwoPropertyTagId), "two", null)
             .ShouldBe("opts.Events.RegisterTagType<TwoPropertyTagId, TInner>(x => x.Value, \"two\");");
     }
 
@@ -239,14 +179,14 @@ public class explicit_tag_type_registration: OneOffConfigurationsContext
     {
         // A string-backed id has to get a line that compiles, not a hard-coded Guid, and the suffix the
         // inferring overload would have used keeps the same tag table
-        EventGraph.TagTypeRegistrationLine(typeof(StringTagId), null, null)
+        TagTypeRegistration.RegistrationLine(typeof(StringTagId), null, null)
             .ShouldBe("opts.Events.RegisterTagType<StringTagId, string>(x => x.Value, \"string_tag_id\");");
     }
 
     [Fact]
     public void the_remedy_follows_the_member_name()
     {
-        EventGraph.TagTypeRegistrationLine(typeof(CodeTagId), "code", null)
+        TagTypeRegistration.RegistrationLine(typeof(CodeTagId), "code", null)
             .ShouldBe("opts.Events.RegisterTagType<CodeTagId, string>(x => x.Code, \"code\");");
     }
 
@@ -286,7 +226,7 @@ public class explicit_tag_type_registration: OneOffConfigurationsContext
     public void the_discovery_line_keeps_the_aggregate()
     {
         // Auto-discovery registers the tag for the projection's aggregate, and a boundary append routes by it
-        EventGraph.TagTypeRegistrationLine(typeof(EnrolleeId), null, typeof(SubscriptionState))
+        TagTypeRegistration.RegistrationLine(typeof(EnrolleeId), null, typeof(SubscriptionState))
             .ShouldBe("opts.Events.RegisterTagType<EnrolleeId, Guid>(x => x.Value, \"enrollee_id\").ForAggregate<SubscriptionState>();");
     }
 }

@@ -54,13 +54,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         // Nothing
     }
 
-    public virtual void Apply(NpgsqlCommand command)
-    {
-        command.Connection = Connection;
-        command.Transaction = Transaction;
-        command.CommandTimeout = CommandTimeout;
-    }
-
     public virtual Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
     {
         command.Connection = Connection;
@@ -68,13 +61,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         command.CommandTimeout = CommandTimeout;
 
         return Task.CompletedTask;
-    }
-
-    public virtual void Apply(NpgsqlBatch batch)
-    {
-        batch.Connection = Connection;
-        batch.Transaction = Transaction;
-        batch.Timeout = CommandTimeout;
     }
 
     public virtual Task ApplyAsync(NpgsqlBatch batch, CancellationToken token)
@@ -139,25 +125,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         // Nothing
     }
 
-    public int Execute(NpgsqlCommand cmd)
-    {
-        Apply(cmd);
-
-        try
-        {
-            var returnValue = cmd.ExecuteNonQuery();
-            Logger.LogSuccess(cmd);
-
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(cmd, e);
-            throw;
-        }
-    }
-
     public async Task<int> ExecuteAsync(NpgsqlCommand command,
         CancellationToken token = new())
     {
@@ -171,24 +138,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
                 .ConfigureAwait(false);
             Logger.LogSuccess(command);
 
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(command, e);
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlCommand command)
-    {
-        Apply(command);
-
-        try
-        {
-            var returnValue = command.ExecuteReader();
-            Logger.LogSuccess(command);
             return returnValue;
         }
         catch (Exception e)
@@ -218,24 +167,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         {
             noteTransactionFailure(e);
             handleCommandException(command, e);
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlBatch batch)
-    {
-        Apply(batch);
-
-        try
-        {
-            var reader = batch.ExecuteReader();
-            Logger.LogSuccess(batch);
-            return reader;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(batch, e);
             throw;
         }
     }

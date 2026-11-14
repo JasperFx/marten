@@ -174,8 +174,11 @@ public class identity_map_mechanics: IntegrationContext
         var session = OpenSession(tracking);
         session.Store(user1);
 
-        Should.Throw<InvalidOperationException>(() => session.Store(user2))
-            .Message.ShouldBe("Document 'Marten.Testing.Documents.User' with same Id already added to the session.");
+        // #5733: the identity map is Weasel's closed-shape storage now, and so is this message. Same
+        // exception type, same refusal; the wording says how to get out of it.
+        var ex = Should.Throw<InvalidOperationException>(() => session.Store(user2));
+        ex.Message.ShouldContain("A different instance of 'Marten.Testing.Documents.User'");
+        ex.Message.ShouldContain("is already in this session's identity map");
     }
 
     [Fact]

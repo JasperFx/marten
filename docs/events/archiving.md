@@ -83,23 +83,78 @@ var events = await theSession.Events.QueryAllRawEvents()
 ## Appending to an Archived Stream
 
 An archived stream is closed to new events. Appending to one fails the transaction with
-`Marten.Exceptions.InvalidStreamOperationException` and the message
-`Attempted to append event to archived stream with Id '{id}'.` — in Rich append mode the stream state is read before the
+`JasperFx.Events.ArchivedStreamException`, whose `Id` is the stream's id or key — the same type Polecat and Fisher throw
+(before Marten 10 this was the generic `Marten.Exceptions.InvalidStreamOperationException`). In Rich append mode the stream state is read before the
 append and the check happens in Marten (`RichEventAppender`), and in Quick append mode the `mt_quick_append_events` function
-raises SQLSTATE `MT001` which Marten translates into the same exception. Either way you get one exception type and one
-message, so this does not change with `EventAppendMode`.
+raises SQLSTATE `MT001` which Marten translates into the same exception. Either way you get the same exception, so this
+does not change with `EventAppendMode`.
 
-There is no un-archive API in Marten. Archiving is a terminal step for a stream — a stream that should keep receiving events
-should not have been archived. Recovering one means flipping `is_archived` back with SQL on both `mt_streams` and
-`mt_events` (and, under [hot/cold partitioning](/events/archiving.html#hot-cold-storage-partitioning), moving the rows back
-out of the archived partitions), which is exactly the kind of direct manipulation the warning at the top of this page
-cautions about.
+To reopen an archived stream, un-archive it first. See [Un-archiving a Stream](#un-archiving-a-stream) below.
 
 Note that `StartStream` against an archived stream's id is a **different** failure. The id is still in use, so it is an
 identity collision (`ExistingStreamIdCollisionException`), not an archived-stream error — except under
 `UseArchivedStreamPartitioning`, where the archived row lives in a different partition and the reuse is silently allowed
 unless you also set `EnableStrictStreamIdentityEnforcement`. See
 [Strict Stream Identity After Archive](/events/archiving.html#strict-stream-identity-after-archive) below.
+
+## Un-archiving a Stream
+
+`UnArchiveStream()` reverses `ArchiveStream()`. The stream and all of its events become live again: they come back in
+`FetchStreamAsync()`, live aggregation, `FetchForWriting()`, raw event queries and tag queries, and the stream
+accepts appends again.
+
+<!-- snippet: sample_unarchive_stream -->
+<a id='snippet-sample_unarchive_stream'></a>
+```cs
+await using var session = theStore.LightweightSession();
+
+// Queue the un-archive. Like ArchiveStream, nothing touches the
+// database until SaveChangesAsync
+session.Events.UnArchiveStream(streamId);
+
+// The string-keyed overload is used when StreamIdentity is AsString:
+// session.Events.UnArchiveStream("customer-123");
+
+await session.SaveChangesAsync();
+
+// The stream and its events are live again, and can be appended to
+session.Events.Append(streamId, new LedgerOpened("appended after un-archiving"));
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Archiving/unarchiving_streams.cs#L847-L864' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_unarchive_stream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`UnArchiveStream()` has a `Guid` overload and a `string` overload, matching your `StreamIdentity`. Calling the
+overload that does not match the store's configured identity throws an `InvalidOperationException` right away.
+
+Some details worth knowing:
+
+* **It is queued.** Nothing happens until you call `SaveChangesAsync()`, and the un-archive commits or rolls back
+  with the rest of the unit of work.
+* **Un-archive in its own save.** Save the un-archive before you append to the stream. Appending in the same
+  `SaveChangesAsync()` as the un-archive is not supported: in Rich append mode the append is still refused with
+  `ArchivedStreamException`.
+* **The version does not change.** The stream keeps the version it had when it was archived, so an append with an
+  expected version, or through `FetchForWriting()`, works as it did before the archive.
+* **It is safe to repeat.** Un-archiving a stream that is not archived does nothing. Un-archiving a stream that does
+  not exist is not an error and creates nothing. A stream can be archived and un-archived any number of times.
+* **Only the named stream changes.** Under conjoined tenancy, only the stream in the session's tenant is un-archived.
+  The same stream id in another tenant stays archived.
+* **Hot/cold partitioning.** Under `UseArchivedStreamPartitioning`, the stream and event rows move from the archived
+  partitions back to the active ones. The DCB tag rows and natural key rows move with them, so tag queries and
+  natural key lookups find the stream again. If another stream has claimed the natural key while this one was
+  archived, the other stream keeps it.
+* **A reused identity is refused.** Under `UseArchivedStreamPartitioning` without
+  [strict stream identity](/events/archiving.html#strict-stream-identity-after-archive), a new stream can be started with an archived
+  stream's id. Two live streams cannot share an id, so un-archiving the old stream then fails on
+  `SaveChangesAsync()` with an `InvalidStreamOperationException`, and nothing is changed. Archive or delete the new
+  stream first.
+* **Projections are not rewound.** `ArchiveStream()` appends no event, so projections never see the archive or the
+  un-archive. An inline or async snapshot stays as it was and picks up new events as usual. The restored events keep
+  their sequence numbers, which the async daemon has already passed, so they are not processed a second time. If the
+  stream was archived by an [`Archived` event](/events/archiving.html#archived-event), that event is still in the stream after un-archiving,
+  and any document your projection deleted or changed when it handled that event stays as it is. Rebuild the
+  projection if it should reflect the reopened stream.
 
 ## Hot/Cold Storage Partitioning <Badge type="tip" text="7.25" />
 
@@ -407,7 +462,7 @@ What `TombstoneStream()` does, compared with `ArchiveStream()`:
 | Stream row in `mt_streams` | kept, marked archived (or moved to the archived partition) | deleted |
 | Event rows in `mt_events` | kept, marked archived | deleted |
 | DCB tag rows (`mt_event_tag_*`) | kept | deleted |
-| Can be undone | the data is still there | no |
+| Can be undone | yes, with `UnArchiveStream()` | no |
 | Stream id can start a new stream | depends on partitioning and strict identity settings | yes |
 | Projected documents | left alone | left alone |
 

@@ -41,7 +41,7 @@ using Marten.Util;
 namespace Marten;
 
 [UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySession>, ISubscriptionRunner<ISubscription>
 {
     // #5741 (jasperfx#1029 part 2): Marten no longer registers NpgsqlException or MartenCommandException with
@@ -424,7 +424,14 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             teardownProjectionStorageForTenant(source, session, tenantId);
         }
 
-        foreach (var agent in source.Shards())
+        // A composite's members keep progression rows of their own, per tenant like the composite's, and the
+        // store-global teardown drops them with each leaf. Leaving them here made the rebuild's first batch,
+        // which inserts every member's progression from the floor, fail on pk_mt_event_progression.
+        IEnumerable<IProjectionSource<IDocumentOperations, IQuerySession>> progressed = source is CompositeProjection members
+            ? members.AllProjections().Append(source)
+            : [source];
+
+        foreach (var agent in progressed.SelectMany(x => x.Shards()))
         {
             // Compose the per-tenant ShardName so its Identity carries the
             // trailing :tenantId — that's the row this DELETE targets.

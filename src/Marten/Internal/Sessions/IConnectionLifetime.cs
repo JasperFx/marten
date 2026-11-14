@@ -100,6 +100,36 @@ internal class ConnectionLifetimeBase
     }
 }
 
+internal static class ConnectionLifetimeExtensions
+{
+    /// <summary>
+    ///     Whether this lifetime is inside a transaction that outlives the current call, so that work done
+    ///     through it is not yet committed when the call returns.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         <see cref="ConnectionLifetimeBase.HasSurvivingTransaction" /> answers this with the right
+    ///         precision per lifetime. This wrapper exists because <see cref="EventTracingConnectionLifetime" />
+    ///         decorates an inner lifetime without deriving from the base, so asking the outer object directly
+    ///         would answer <c>false</c> for a session that is inside a transaction whenever OpenTelemetry
+    ///         tracing is on.
+    ///     </para>
+    ///     <para>
+    ///         An implementation Marten does not recognise answers <c>false</c>. Every lifetime Marten itself
+    ///         builds is covered by one of the two branches below.
+    ///     </para>
+    /// </remarks>
+    internal static bool HasSurvivingTransaction(this IConnectionLifetime lifetime)
+    {
+        return lifetime switch
+        {
+            EventTracingConnectionLifetime tracing => tracing.InnerConnectionLifetime.HasSurvivingTransaction(),
+            ConnectionLifetimeBase lifetimeBase => lifetimeBase.HasSurvivingTransaction,
+            _ => false
+        };
+    }
+}
+
 public interface ITransactionStarter
 {
     IAlwaysConnectedLifetime Start();
@@ -120,15 +150,10 @@ public interface IConnectionLifetime: IAsyncDisposable, IDisposable
     IMartenSessionLogger Logger { get; set; }
     int CommandTimeout { get; }
 
-    int Execute(NpgsqlCommand cmd);
     Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new());
-
-    DbDataReader ExecuteReader(NpgsqlCommand command);
 
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command,
         CancellationToken token = default);
-
-    DbDataReader ExecuteReader(NpgsqlBatch batch);
 
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch,
         CancellationToken token = default);

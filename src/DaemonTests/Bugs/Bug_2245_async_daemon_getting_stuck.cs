@@ -52,7 +52,7 @@ public partial class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
 
             await theSession.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
-        catch (ApplyEventException e)
+        catch (JasperFx.Events.Daemon.ApplyEventException)
         {
             // this should fail on save as the sync projection does not handle an updated event correctly.
         }

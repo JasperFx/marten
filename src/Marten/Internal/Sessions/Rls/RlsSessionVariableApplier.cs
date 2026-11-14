@@ -6,6 +6,14 @@ using Npgsql;
 
 namespace Marten.Internal.Sessions.Rls;
 
+/// <remarks>
+///     Marten 10 (#5729): every command path is async, so <see cref="ApplyAsync" /> and
+///     <see cref="ResetAsync" /> are the applier. The synchronous <see cref="Apply" /> and
+///     <see cref="Reset" /> remain only for the public synchronous entry points that still open or close
+///     a connection without awaiting: <c>IQuerySession.Connection</c>, <c>IDocumentSession.BeginTransaction()</c>,
+///     the synchronous <c>Serializable</c> session factories, and synchronous <c>Dispose()</c>. They go when
+///     those APIs do.
+/// </remarks>
 internal static class RlsSessionVariableApplier
 {
     private const string SetConfigSql = "SELECT set_config(@name, @value, false)";

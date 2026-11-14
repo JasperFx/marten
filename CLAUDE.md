@@ -8,7 +8,7 @@
 
 ## Tech Stack
 
-- **Language:** C# 13.0, targets net9.0 / net10.0 (`Directory.Build.props:5,12`)
+- **Language:** C# 13.0, targets net10.0 / net11.0 (`Directory.Build.props:5,12`)
 - **Database:** PostgreSQL 13+ (via Npgsql)
 - **Key deps:** JasperFx, JasperFx.Events, JasperFx.RuntimeCompiler, Weasel.Postgresql, Newtonsoft.Json (`src/Marten/Marten.csproj:39-46`)
 - **Build system:** Nuke (`build/build.cs`)
@@ -210,7 +210,7 @@ runs even when another fails. The target fails when any unit failed or could not
   (`configureSupervisor` in `build/SupervisedTests.cs`): retries only for `[Trait("Retry", "N")]`, in a
   fresh process, the stall report, the heartbeat, and the same worker counts (EventSourcing and Linq
   at 4). `--disable-test-retry` and `--test-workers` apply as they do there.
-- **A database per lane.** Each unit runs on its own databases, `marten_testing_<project>_<tfm>_w{n}`,
+- **A database per lane.** Each unit runs on its own databases, `marten_testing_<project>_<tfm>_<tag>_w{n}` (the tag is four hex digits of the checkout path, so gates in different worktrees on one server never share a lane database; `--gate-lane-tag` overrides),
   handed over through `marten_testing_database`, so two suites never share a schema.
 - **Tracks for fixed names.** Some suites create whole databases with fixed names on the server, or
   reach for the default database directly. Those suites hold an exclusive track while they run, so the
@@ -243,6 +243,18 @@ gate takes about 8 minutes end to end. The units themselves take 7m40s, against 
 one after the other. DaemonTests is the longest unit at about 6m45s and sets the wall clock.
 CoreTests and MultiTenancyTests share its `tenant-databases` track, so they run after it. On a stock
 100-connection server (budget 2) the units take 11m30s.
+
+### Local packs for the .NET 11 release train (#5727)
+
+```bash
+./build.sh Pack --version 10.0.0-local.1 --feed ~/code/_local_nuget_feed   # the nine shipped packages
+scripts/take-local-upstream.sh 3.0.0-local.1 10.0.0-local.1 ~/code/_local_nuget_feed   # JasperFx, Weasel, feed
+```
+
+`take-local-upstream.sh` rewrites the `JasperFx*` and `Weasel*` pins in `Directory.Packages.props` and registers
+the feed in a gitignored `nuget.config`; pass `""` to leave a family alone, and run it with the released versions
+(or `git checkout Directory.Packages.props`) to put the pins back. Supervised runs also announce themselves to a
+Bobcat monitor (`PublishToMonitor`); `BOBCAT_MONITOR=0` turns that off.
 
 ## Test Harness
 

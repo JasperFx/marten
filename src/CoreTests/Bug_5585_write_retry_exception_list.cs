@@ -54,13 +54,10 @@ public class Bug_5585_write_retry_exception_list
         public int CommandTimeout => 30;
         public void Dispose() { }
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-        public int Execute(NpgsqlCommand cmd) => throw new NotSupportedException();
         public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = default) =>
             throw new NotSupportedException();
-        public DbDataReader ExecuteReader(NpgsqlCommand command) => throw new NotSupportedException();
         public Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default) =>
             throw new NotSupportedException();
-        public DbDataReader ExecuteReader(NpgsqlBatch batch) => throw new NotSupportedException();
         public Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default) =>
             throw new NotSupportedException();
     }

@@ -18,6 +18,14 @@ public partial class QuerySession
 {
     internal IConnectionLifetime _connection;
 
+    /// <summary>
+    ///     Whether this session is inside a transaction that outlives the current call -- one the caller
+    ///     opened with <see cref="SessionOptions.ForTransaction" />, an ambient <c>TransactionScope</c>, or an
+    ///     explicit <c>BeginTransaction</c>. A flush on such a session is not a commit: the owner of the
+    ///     transaction can still roll it back.
+    /// </summary>
+    internal bool HasSurvivingTransaction => _connection.HasSurvivingTransaction();
+
     internal record CommandExecution(NpgsqlCommand Command, IConnectionLifetime Lifetime);
 
     public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new())
@@ -39,12 +47,6 @@ public partial class QuerySession
         => ExecuteReaderAsync((NpgsqlCommand)command, token);
 
     internal record BatchExecution(NpgsqlBatch Batch, IConnectionLifetime Lifetime);
-
-    public DbDataReader ExecuteReader(NpgsqlBatch batch)
-    {
-        RequestCount++;
-        return _resilience.Execute(static e => e.Lifetime.ExecuteReader(e.Batch), new BatchExecution(batch, _connection));
-    }
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch, CancellationToken token = default)
     {

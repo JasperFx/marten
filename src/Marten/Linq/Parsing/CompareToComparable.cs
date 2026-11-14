@@ -21,10 +21,7 @@ internal class CompareToComparable: IComparableMember
         // Only compare to 0 is valid: CompareTo() > 0 → ">", CompareTo() == 0 → "=", etc.
         if (constant.Value is int intValue && intValue == 0)
         {
-            var leftFragment = _left.FindValueFragment();
-            var rightFragment = _right.FindValueFragment();
-
-            return new ComparisonFilter(leftFragment, rightFragment, op);
+            return _left.CompareTo(_right, op);
         }
 
         throw new BadLinqExpressionException(

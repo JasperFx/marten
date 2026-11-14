@@ -197,7 +197,7 @@ public class Bug_4677_groupjoin_post_selectmany: BugIntegrationContext
         // A filter referencing both x.p.* and c.* on the projected anon type can't be folded
         // onto either CTE -- pinned as a clear-error limitation rather than silently dropped
         // or mis-rendered.
-        await Should.ThrowAsync<Marten.Exceptions.BadLinqExpressionException>(async () =>
+        await Should.ThrowAsync<BadLinqExpressionException>(async () =>
             await q.Query<Parent>()
                 .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
                 .SelectMany(x => x.children, (x, c) => new { c.Amount, x.p.Name, x.p.Score })

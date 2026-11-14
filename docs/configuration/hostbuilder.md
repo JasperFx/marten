@@ -81,8 +81,13 @@ The second option is to supply a [nested closure](https://martinfowler.com/dslCa
 The samples below use `CritterStackDefaults(...)` to wire per-environment defaults for resource
 auto-create and code generation mode. `CritterStackDefaults` and the underlying `JasperFxOptions`
 are part of the shared JasperFx infrastructure that Marten and Wolverine consume in common — see
-the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/) for the full set
+the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/configuration/critter-stack-defaults.html) for the full set
 of options and how development / production defaults are resolved.
+
+`ResourceAutoCreate` is the default `AutoCreate` for every [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html)
+in the application, so setting it to `None` for `Production` turns off automatic schema migration for Marten *and* for Wolverine's
+message storage in one place. The schema still has to get there somehow; see
+[Schema Migrations and Patches](/schema/migrations#choosing-an-approach) for the deployment-time options.
 :::
 
 <!-- snippet: sample_addmartenbynestedclosure -->
@@ -274,7 +279,7 @@ public interface IConfigureMarten: JasperFx.IConfigureStore<StoreOptions>
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1093-L1103' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1102-L1112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're working with multiple databases class like so:
@@ -337,7 +342,7 @@ public interface IAsyncConfigureMarten: JasperFx.IAsyncConfigureStore<StoreOptio
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1105-L1116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1114-L1125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As an example from the tests, here's a custom version that uses the Feature Management service:

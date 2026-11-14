@@ -88,14 +88,17 @@ public static class CursorPagingQueryableExtensions
                 "OrderBy/OrderByDescending clause so that keyset pagination is deterministic.");
         }
 
-        CursorPagination.ValidateTerminalKeyIsUnique<T>(orderings[^1]);
+        // Ask the store's mapping rather than the type: only the mapping knows an identity
+        // configured through Schema.For<T>().Identity(...).
+        var idMember = session.Options.Storage.FindMapping(martenQueryable.MartenProvider.SourceType).IdMember;
+        CursorPagination.ValidateTerminalKeyIsUnique<T>(orderings[^1], idMember);
 
         var working = queryable;
 
         if (!string.IsNullOrEmpty(cursor))
         {
-            var values = CursorPagination.DecodeCursor(cursor!, orderings, session.Serializer);
-            var predicate = CursorPagination.BuildSeekPredicate<T>(orderings, values);
+            var values = CursorPagination.DecodeCursor(cursor!, orderings, session.Serializer, session.Options);
+            var predicate = CursorPagination.BuildSeekPredicate<T>(orderings, values, session.Options);
             working = working.Where(predicate);
         }
 
@@ -113,7 +116,9 @@ public static class CursorPagingQueryableExtensions
         {
             var member = queryMembers.MemberFor(orderings[i].Selector.Body);
             keyColumns[i] = $"{member.TypedLocator} as cursor_key_{i}";
-            keyTypes[i] = orderings[i].KeyType;
+
+            // Npgsql reads the column as the value type's inner type, not as the wrapper around it.
+            keyTypes[i] = orderings[i].FindValueType(session.Options)?.SimpleType ?? orderings[i].KeyType;
         }
 
         return (martenQueryable.MartenProvider, working.As<MartenLinqQueryable<T>>().Expression, keyColumns, keyTypes);

@@ -17,6 +17,7 @@
     <PackageReference Include="Nuke.Common" />
     <!-- Lift Nuke's vulnerable transitive packages to patched versions; see Directory.Packages.props. -->
     <PackageReference Include="NuGet.Packaging" />
+    <PackageReference Include="NuGet.Frameworks" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>

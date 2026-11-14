@@ -6,6 +6,7 @@ using JasperFx.Core;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Services;
+using Weasel.Storage;
 
 namespace Marten.Internal.Sessions;
 
@@ -23,34 +24,55 @@ public class DirtyCheckingDocumentSession: DocumentSessionBase
         return provider.DirtyTracking;
     }
 
+    // #5733: the detect and re-baseline passes are Weasel.Storage's DirtyTrackingSweep, the same
+    // two loops Polecat and Fisher used to carry. Indexed rather than foreach, because detecting a
+    // change resolves storage and can append to the same list.
     protected internal override void processChangeTrackers()
     {
-        foreach (var tracker in ChangeTrackers)
+        var explicitRevisions = documentsWithAnExplicitRevision();
+        if (explicitRevisions == null)
         {
-            if (tracker.DetectChanges(this, out var operation))
+            DirtyTrackingSweep.DetectChanges(ChangeTrackers, this, _workTracker.Add);
+            return;
+        }
+
+        DirtyTrackingSweep.DetectChanges(ChangeTrackers, this, operation =>
+        {
+            if (operation is IDocumentStorageOperation detected && explicitRevisions.Contains(detected.Document))
             {
-                _workTracker.Add(operation);
+                return;
+            }
+
+            _workTracker.Add(operation);
+        });
+    }
+
+    // #5788: a detected change is an upsert at the auto revision, and UnitOfWork.Add replaces any pending
+    // operation for the same document instance. An explicit numeric revision -- Store() on a document
+    // carrying a non-zero revision, or UpdateRevision / TryUpdateRevision -- lives only on that pending
+    // operation's Revision, so letting the sweep replace it threw the revision (and with it the concurrency
+    // guard) away: a loaded-then-changed document always took the auto path. The explicit operation
+    // serializes the document when its command is built, so it already writes the detected change.
+    // (Guid-versioned operations are unaffected: their expected version is read from the session's version
+    // map, which a replacement operation sees just the same.)
+    private HashSet<object>? documentsWithAnExplicitRevision()
+    {
+        HashSet<object>? documents = null;
+        foreach (var operation in _workTracker.AllOperations)
+        {
+            if (operation is IDocumentStorageOperation pending and IRevisionedOperation { Revision: not 0 })
+            {
+                documents ??= new HashSet<object>(ReferenceEqualityComparer.Instance);
+                documents.Add(pending.Document);
             }
         }
+
+        return documents;
     }
 
     protected internal override void resetDirtyChecking()
     {
-        foreach (var tracker in ChangeTrackers) tracker.Reset(this);
-
-        var knownDocuments = new HashSet<object>(
-            ChangeTrackers.Select(x => x.Document),
-            ReferenceEqualityComparer.Instance);
-
-        var operations = _workTracker.AllOperations;
-        for (int i = 0; i < operations.Count; i++)
-        {
-            if (operations[i] is IDocumentStorageOperation op && !knownDocuments.Contains(op.Document))
-            {
-                var tracker = op.ToTracker(this);
-                ChangeTrackers.Add(tracker);
-            }
-        }
+        DirtyTrackingSweep.Reset(ChangeTrackers, this, _workTracker.AllOperations);
     }
 
 

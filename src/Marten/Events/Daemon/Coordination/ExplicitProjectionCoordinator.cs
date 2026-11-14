@@ -26,6 +26,14 @@ public class ExplicitProjectionCoordinator: IProjectionCoordinator
     private readonly System.Threading.Lock _daemonLock = new();
     private readonly ILogger _logger;
 
+    // #5842 (jasperfx#1148): one lifecycle transition at a time. Overlapping callers are real: JasperFx's
+    // RunCommand stops the host again when ApplicationStopping fires, so a WebApplicationFactory/Alba teardown
+    // has two IHost.StopAsync calls in flight, and both reach this coordinator. Unserialized, both took the same
+    // _daemons snapshot, ran StopAllAsync on the same daemons at once and disposed each one twice, possibly
+    // while the other caller was still inside its StopAllAsync. A start racing a stop could likewise
+    // StartAllAsync a daemon the other caller was disposing.
+    private readonly SemaphoreSlim _lifecycle = new(1, 1);
+
 
     private ImHashMap<string, IProjectionDaemon> _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
 
@@ -65,6 +73,19 @@ public class ExplicitProjectionCoordinator: IProjectionCoordinator
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        await _lifecycle.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await startAllAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            _lifecycle.Release();
+        }
+    }
+
+    private async Task startAllAsync()
+    {
         foreach (var pair in _daemons.Enumerate())
         {
             try
@@ -88,9 +109,39 @@ public class ExplicitProjectionCoordinator: IProjectionCoordinator
         return StartAsync(default);
     }
 
+    /// <remarks>
+    ///     Safe to call concurrently with itself and with <see cref="StartAsync" />: lifecycle calls are serialized,
+    ///     so an overlapping stop waits for the one in flight and then finds no daemons left to stop (#5842). The
+    ///     token is deliberately not used for that wait, so a shutdown always completes its teardown.
+    /// </remarks>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        foreach (var pair in _daemons.Enumerate())
+        await _lifecycle.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+        try
+        {
+            await stopAllAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            _lifecycle.Release();
+        }
+    }
+
+    private async Task stopAllAsync()
+    {
+        // marten#5056 (jasperfx#574): same posture as ProjectionCoordinatorBase.StopAsync. These daemons are about
+        // to be disposed, so drop them from the cache -- a repeated Pause/Stop has nothing to fan out over, and the
+        // external manager re-acquires fresh daemons through the accessors. The cache is taken and cleared in one
+        // step BEFORE the fan-out (#5842): clearing it afterwards also dropped any daemon an accessor created during
+        // the stop, which then leaked without ever being stopped or disposed.
+        ImHashMap<string, IProjectionDaemon> daemons;
+        lock (_daemonLock)
+        {
+            daemons = _daemons;
+            _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
+        }
+
+        foreach (var pair in daemons.Enumerate())
         {
             try
             {
@@ -103,13 +154,17 @@ public class ExplicitProjectionCoordinator: IProjectionCoordinator
 
             pair.Value.SafeDispose();
         }
+    }
 
-        // marten#5056 (jasperfx#574): same posture as ProjectionCoordinatorBase.StopAsync. The daemons
-        // above were just disposed, so drop them from the cache — a repeated Pause/Stop has nothing to
-        // fan out over, and the external manager re-acquires fresh daemons through the accessors.
+    /// <summary>
+    ///     Test seam: put a daemon in the cache as though an accessor had resolved it, so lifecycle tests can run
+    ///     against a fake daemon without a database.
+    /// </summary>
+    internal void UseDaemon(string databaseIdentifier, IProjectionDaemon daemon)
+    {
         lock (_daemonLock)
         {
-            _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
+            _daemons = _daemons.AddOrUpdate(databaseIdentifier, daemon);
         }
     }
 

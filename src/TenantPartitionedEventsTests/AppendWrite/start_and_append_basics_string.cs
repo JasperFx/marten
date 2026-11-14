@@ -17,7 +17,7 @@ namespace TenantPartitionedEventsTests.AppendWrite;
 /// Covers plain <c>StartStream</c> + plain <c>Append</c> happy paths, per-tenant
 /// sequence + version contiguity, same-stream-key-cross-tenant isolation (the
 /// silent-split that's correct under partitioning), archived-stream rejection
-/// (MT001 → <see cref="InvalidStreamOperationException"/>), and the
+/// (MT001 → <see cref="ArchivedStreamException"/>), and the
 /// duplicate-key-within-tenant collision shape. Guid identity parallel lives
 /// in <see cref="start_and_append_basics_guid"/>.
 /// </summary>
@@ -202,10 +202,10 @@ public class start_and_append_basics_string
     }
 
     [Fact]
-    public async Task Append_to_archived_stream_throws_InvalidStreamOperationException()
+    public async Task Append_to_archived_stream_throws_ArchivedStreamException()
     {
         // Archive raises MT001 server-side; TryTransform on the bulk operation
-        // surfaces it as InvalidStreamOperationException client-side.
+        // surfaces it as ArchivedStreamException client-side.
         var tenant = PartitionedFixtureBase.NewTenant();
         await _fixture.Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
 
@@ -225,7 +225,7 @@ public class start_and_append_basics_string
         await using (var s = _fixture.Store.LightweightSession(tenant))
         {
             s.Events.Append(streamId, new StringTripLeg(99));
-            await Should.ThrowAsync<InvalidStreamOperationException>(async () => await s.SaveChangesAsync());
+            await Should.ThrowAsync<ArchivedStreamException>(async () => await s.SaveChangesAsync());
         }
     }
 

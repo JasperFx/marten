@@ -246,6 +246,12 @@ var events = await theSession.Events.QueryByTagsAsync(query);
 
 Events are always returned ordered by sequence number (global append order).
 
+::: tip
+The read-only tag queries, `QueryByTagsAsync`, `AggregateByTagsAsync` and `EventsExistAsync`, are on
+`IQuerySession.Events` as well as on `IDocumentSession.Events`, so a read-only endpoint can call them
+through a query session. `FetchForWritingByTags` needs a document session.
+:::
+
 ## Aggregating by Tags
 
 Build an aggregate from tagged events, similar to `AggregateStreamAsync` but across streams. First define an aggregate that applies the tagged events:
@@ -376,7 +382,7 @@ catch (DcbConcurrencyException ex)
 <!-- endSnippet -->
 
 ::: tip
-The consistency check only detects events that match the **same tag query**. Events appended to unrelated tags or streams will not cause a violation.
+The consistency check only detects events appended **after the read that carry a tag value the query reads**. Events appended to unrelated tags or streams never cause a violation, and neither does another boundary's save that appends nothing carrying one of those tag values. Since Marten 10 the check also honours the event types a condition names with `AndEventsOfType`: an event of a type the query does not select does not conflict. See [scoping conflicts by event type](#scoping-conflicts-by-event-type).
 :::
 
 ### How the boundary check serializes <Badge type="tip" text="9.4" />
@@ -385,15 +391,73 @@ The consistency check only detects events that match the **same tag query**. Eve
 Marten 9.4 added a new schema object — `mt_dcb_tag_version` — to fix [#4591](https://github.com/JasperFx/marten/issues/4591). Deployments with `AutoCreate.None` must run `db-patch` / `db-apply` before deploying 9.4. See [Migration Guide → 9.4 schema migration](/migration-guide#required-schema-migration-dcb-tag-version-side-table).
 :::
 
-Internally, `FetchForWritingByTags` records the captured version of every tag value referenced by the query in a side table (`mt_dcb_tag_version`, one row per `(tag_table, tag_value, tenant_id)`). At `SaveChangesAsync` time Marten emits an `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured RETURNING 1` for each captured row. The row-level lock plus the captured-version predicate is the serialization point: two truly-concurrent appenders observing the same captured version both attempt to bump the row — the first wins, the second's `RETURNING` matches no rows and surfaces `DcbConcurrencyException`. This works at PostgreSQL's default `READ COMMITTED` isolation; no `SERIALIZABLE`, no advisory locks.
+Internally, `FetchForWritingByTags` records the captured version of every tag value referenced by the query in a side table (`mt_dcb_tag_version`, one row per `(tag_table, tag_value, tenant_id)`). A version only moves when an event carrying that tag value is appended: every save that appends a tagged event — boundary or otherwise — bumps the row of each tag value its events carry. That's what keeps a plain `session.Events.Append(streamId, taggedEvent)` from silently committing past an in-flight boundary fetch held by another session.
 
-Every save that appends a tagged event — boundary or otherwise — also queues a producer-side bump against the same row. That's what keeps a plain `session.Events.Append(streamId, taggedEvent)` from silently committing past an in-flight boundary fetch held by another session: the version moves on every commit, not only on boundary saves.
+At `SaveChangesAsync` time a boundary save emits an `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured RETURNING 1` for each captured row. For a row the save's own events do not carry, the update leaves the version as it is: the statement exists to **lock** the row and **compare** it. The row-level lock plus the captured-version predicate is the serialization point. Two concurrent boundary saves over the same tag value take turns; the second waits for the first to commit and then compares against the committed row, so it fails with `DcbConcurrencyException` only if the first appended an event carrying that tag value. This works at PostgreSQL's default `READ COMMITTED` isolation; no `SERIALIZABLE`, no advisory locks.
+
+The rows a save checks and the rows its events bump are locked together, in one sorted order, so two saves that each check a tag value the other one appends to cannot deadlock: one of them commits, and the other fails with `DcbConcurrencyException`.
+
+::: tip Changed in 9.60
+Before 9.60 the check also bumped every row it read. Two boundaries reading the same tag value therefore always conflicted, even when neither appended anything the other reads, and two saves that each read a tag the other appended to could deadlock instead of failing cleanly ([#5887](https://github.com/JasperFx/marten/issues/5887)). If you relied on a boundary save invalidating every concurrent boundary over the same tag value, append an event carrying that tag value.
+:::
 
 A save asserts each row once, however many boundaries named it. Fetching one query twice on a session, or fetching two queries that overlap on a tag value, is not a conflict with itself — the oldest captured version of the row is the one enforced, so every read the session made still has to be valid.
 
 A boundary that decides there is **nothing to append** is not a save at all as far as the side table is concerned. The check guards an append, so a session that fetches a boundary and then calls `SaveChangesAsync()` without appending anything leaves `mt_dcb_tag_version` exactly as it found it, and never throws `DcbConcurrencyException` — even if another session moved the boundary in the meantime. Two sessions can reach the same "nothing to do" conclusion about one boundary and both commit, and a no-op decision never invalidates a concurrent session that does have events to append. The boundary is released by that commit: to act on it afterwards, fetch it again.
 
 The side table grows with **distinct boundary-tag values**, not with event volume, and is never deleted automatically — the same `StudentId` or `CourseId` reuses its row across every save. Avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
+
+### Scoping conflicts by event type
+
+A query condition can name event types with `AndEventsOfType`, and the [DCB specification](https://dcb.events/specification/) only fails an append when a later event matches the query — event type included. Marten 10 does the same by default: alongside its version per tag value it keeps one per (tag value, event type), and a condition naming event types checks those. Marten 9 kept versions per tag value only, so an event of a type the condition does not name still conflicted when it carried the same tag value — never wrong, but it reports conflicts the specification would not, and under load those cost retries. `opts.Events.DcbConflictScope` chooses between the two:
+
+<!-- snippet: sample_marten_dcb_conflict_scope -->
+<a id='snippet-sample_marten_dcb_conflict_scope'></a>
+```cs
+var store = StoreOptions(opts =>
+{
+    opts.Events.RegisterTagType<LibraryLoanId>("library_loan");
+
+    // Honour AndEventsOfType in the DCB conflict check, as the DCB specification does.
+    // On a running system, deploy TagValueRecordingEventTypes to every node first.
+    opts.Events.DcbConflictScope = DcbConflictScope.TagValueAndEventType;
+});
+
+await using var session = store.LightweightSession();
+
+// The decision only folds returns...
+var query = new EventTagQuery()
+    .Or(new LibraryLoanId(loanId))
+    .AndEventsOfType<LibraryBookReturned>();
+
+var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(query);
+
+// ...so a reminder for the same loan appended in the meantime by another session
+// no longer fails this save with a DcbConcurrencyException
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_conflict_scope_by_event_type.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_conflict_scope' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`DcbConflictScope` has three settings:
+
+| Setting | A condition naming event types conflicts with… | Extra version rows written |
+| --- | --- | --- |
+| `TagValue` (Marten 9 default) | any later event carrying the tag value | none |
+| `TagValueRecordingEventTypes` | any later event carrying the tag value | one per (tag value, event type) appended |
+| `TagValueAndEventType` (default) | later events of those types carrying the tag value | one per (tag value, event type) appended |
+
+A condition without event types conflicts with any event carrying its tag value under every setting.
+
+`TagValueAndEventType` checks a version per (tag value, event type), which is only maintained by nodes running `TagValueRecordingEventTypes` or `TagValueAndEventType`. No schema change is involved — the extra versions are rows in the same `mt_dcb_tag_version` table — but **switching a running system takes two deployments**, and that includes [upgrading from Marten 9](/migration-guide#dcb-conflicts-are-scoped-by-event-type-by-default-):
+
+1. Deploy `TagValueRecordingEventTypes` to every node. Conflicts are still detected per tag value, and every append now also maintains the per-type versions.
+2. Once no node is left on `TagValue`, deploy `TagValueAndEventType`.
+
+::: warning
+Switching straight from `TagValue` to `TagValueAndEventType` with a rolling deployment can **miss conflicts**. While any node still runs `TagValue`, its appends do not move the per-type versions, so a node already checking them does not see those appends as conflicts. A deployment that stops every node before starting the new version does not need the intermediate step.
+:::
+
+Each appended event carrying a tag writes one extra `mt_dcb_tag_version` row per (tag value, event type), so the side table holds roughly one row per tag value per event type that has been appended with it.
 
 ### Tuning the side table for a large tag set <Badge type="tip" text="9.47" />
 
@@ -482,7 +546,7 @@ CREATE TABLE IF NOT EXISTS mt_event_tag_student (
 CREATE INDEX idx_mt_event_tag_student_seq_id ON mt_event_tag_student USING btree (seq_id);
 ```
 
-DCB queries `LEFT JOIN` across each referenced tag table. Strengths: native column types preserve `Guid`/`int`/`string`/`long`/`short` semantics, and single-tag `EventsExistAsync` checks hit a small dedicated table via its primary-key index. Trade-offs: every distinct tag type adds a table, two indexes, and a foreign key; queries spanning N tag types pay N JOINs.
+DCB queries probe each referenced tag table through its primary key, one probe per query condition, and combine the matches on `seq_id`. Strengths: native column types preserve `Guid`/`int`/`string`/`long`/`short` semantics, and single-tag `EventsExistAsync` checks hit a small dedicated table via its primary-key index. Trade-offs: every distinct tag type adds a table, two indexes, and a foreign key.
 
 The foreign key does not cascade. Whenever Marten deletes events — stream compaction, `TombstoneStream`, archiving under `UseArchivedStreamPartitioning`, `DeleteSingleEventStreamAsync`, `DeleteAllTenantDataAsync`, and removing a tenant under `UseTenantPartitionedEvents` with `RemoveMartenManagedTenantsAsync` or `RemoveTenantFromShardAsync` — it deletes their tag rows first. The index on `seq_id` keeps the deletes that go by event, and the foreign key's own check on every deleted event, from scanning the whole tag table. The tenant-scoped deletes, `DeleteAllTenantDataAsync` and the two tenant removals, go by `tenant_id` instead. Neither the primary key nor the `seq_id` index leads with `tenant_id`, so each of them scans the tag table.
 
@@ -520,7 +584,7 @@ Trade-offs:
 
 - All tag values are stored as text — Npgsql automatically converts `Dictionary<string, string>` to `hstore` via `NpgsqlDbType.Hstore`, and `Guid`/`int`/`long`/`short` are stringified at the database boundary. Tag-type **registration** (`RegisterTagType<StudentId>("student")`) and **usage** (`event.WithTag(new StudentId(...))`) are unchanged — only the on-disk representation is different.
 - The `hstore` extension must be installable on the target database. Most managed Postgres providers ship it; bare-metal installations may need `CREATE EXTENSION` privileges on first run.
-- The `mt_quick_append_events` Postgres function does not take per-tag-type arrays — Marten writes the inline hstore as a follow-up `UPDATE` after the event INSERT.
+- The `mt_quick_append_events` Postgres function takes the tags as one `hstore[]` parallel to the events and writes `mt_events.tags` in its own insert, rather than per-tag-type arrays. Before 10.0 (#5896) Marten wrote them with a follow-up `UPDATE` per tagged event that found the row by its unindexed `id`, which made every tagged append scan `mt_events`.
 - **Each tag type is single-valued per event.** An hstore is a map with unique keys, and Marten uses the registered tag's table-suffix as the key, so there is nowhere to put a second value of one tag type. Appending an event that carries two different values of the same tag type throws `MartenNotSupportedException` rather than silently keeping one of them — a dropped tag is not an error to a DCB query, it is simply absent from the answer, and that is the one failure a consistency boundary must not have. TagTables has no such restriction (see below). Cross-type merging (e.g. adding a `StudentId` tag to an event that already has a `RegionId` tag) works correctly in both modes — HStore uses Postgres' `hstore || hstore` concatenation to preserve the existing keys.
 
 ### Enabling HStore on an existing store <Badge type="tip" text="9.29" />
@@ -590,32 +654,32 @@ event table is slow enough to matter. Build it before you rely on DCB queries in
 
 ### Choosing a Storage Mode
 
-The HStore mode trades native column types and small-table primary-key lookups for index-of-one and JOIN elimination. The right choice depends on your DCB query shape.
+Choose on the shape of your data, not on speed: since 10.0 the two modes perform comparably. The differences that matter:
 
-A reproducible side-by-side benchmark lives at `src/DcbLoadTest` and can be re-run with `dotnet run --project src/DcbLoadTest -c Release` against any Marten dev Postgres. Numbers below were measured against PostgreSQL 15 with 10,000 seeded tagged events and 200 iterations per scenario after a warmup pass:
+- **Pick TagTables when one event carries two values of the same tag type**, such as a `HomeworkCopied` naming both students. HStore refuses such an event rather than dropping a tag.
+- **Pick HStore** if you would rather keep one GIN index on `mt_events` than a table per tag type. It is a little faster for tagged appends.
+- **Stay where you are** on an existing store. Neither mode is a reason to migrate.
 
-| Scenario                              | TagTables (ms/op) | HStore (ms/op) | HStore vs TagTables |
-| ------------------------------------- | ----------------: | -------------: | ------------------- |
-| `append`, no tags                     |             0.157 |          0.155 | 1% faster           |
-| `append`, 2 tags/event                |             0.194 |          0.137 | **29% faster**      |
-| `QueryByTagsAsync`, 1 tag             |             0.622 |          0.601 | 3% faster           |
-| `QueryByTagsAsync`, 2 tags OR         |            12.880 |          0.989 | **92% faster**      |
-| `EventsExistAsync`, 1 tag             |             0.404 |          0.910 | 125% slower         |
-| `EventsExistAsync`, 2 tags OR         |             3.164 |          0.962 | **70% faster**      |
-| `FetchForWritingByTags + commit`      |             0.931 |          0.571 | **39% faster**      |
+The harness at `src/DcbLoadTest` measures both, and `src/DcbLoadTest/RESULTS-10.0.md` has the full 10.0 results. The numbers below were measured against PostgreSQL 17 with the default `QuickWithServerTimestamps` append mode; reads use a store of **1,000,000** tagged events.
 
-Guidance:
+| Scenario | TagTables | HStore |
+| -------- | --------: | -----: |
+| append, 10 events × 2 tags per save, sequential (saves/s) | 1,135 | 1,449 |
+| same, 16 concurrent writers (saves/s) | 5,319 | 5,758 |
+| `FetchForWritingByTags`, 1 tag, ~10 events (p50 ms) | 0.30 | 0.24 |
+| `FetchForWritingByTags`, 2 tag types OR'd, ~1,010 events (p50 ms) | 3.93 | 4.98 |
+| decision: fetch + append + save, 1 tag (p50 ms) | 0.89 | 0.80 |
 
-- **Prefer HStore** when your DCB queries match on **two or more tag types** (the common case — most projection boundaries combine an aggregate-id tag with one or more domain tags). The JOIN cost on TagTables grows with each additional tag type; HStore stays flat.
-- **Prefer HStore** when your hot path is `FetchForWritingByTags` (consistency-boundary read-modify-write). The fetch round-trip drops because the events `SELECT` is a single-table lookup instead of an N-way JOIN.
-- **Stay on TagTables** if your DCB workload is dominated by **single-tag `EventsExistAsync` probes**. That case is what the per-type tables are optimized for — a primary-key lookup on a small dedicated table — and HStore's GIN containment is slightly slower per probe.
-- **Either mode is fine** for append throughput. With tags, HStore is about 30% faster than TagTables because it issues one `UPDATE` per tagged event instead of one `INSERT` per `(event, tag)` pair.
+::: warning Before 10.0
+Two bugs made one or the other mode far slower on a large store. Benchmarks on a small store hide both.
 
-If you're starting a new event store on Marten 9.0 and most of your projections key off `(aggregateId, someOtherTag)`, HStore is the recommended choice. If you're upgrading from Marten 8 and already have a populated TagTables-mode store, there is no compelling reason to switch.
+- **HStore** wrote each tagged event's tags with a follow-up `UPDATE` that found the row by `mt_events.id`. That column has no index unless `EnableUniqueIndexOnEventId` is on, so every tagged append scanned the events table: a 42–60 ms decision at 1M events ([#5896](https://github.com/JasperFx/marten/issues/5896)). On an earlier version, turn on `opts.Events.EnableUniqueIndexOnEventId = true`.
+- **TagTables** answered a query spanning two or more tag types with `LEFT JOIN`s under an `OR`, which reads the whole store: 301 ms at 1M events ([#5897](https://github.com/JasperFx/marten/issues/5897)). The same query also returned, and folded, an event twice when two values of one tag type both matched it.
+:::
 
 ### Consistency Check <Badge type="tip" text="9.4" />
 
-At `SaveChangesAsync` time, Marten emits a per-tag `UPDATE … WHERE version = $captured` against the `mt_dcb_tag_version` side table — one statement per distinct `(tag_table, tag_value)` tuple in the boundary query, in deterministic sort order. The row-level write lock plus the version predicate is the serialization point: two concurrent appenders capturing the same version both try to bump it; one wins, the other's `UPDATE` matches zero rows and surfaces `DcbConcurrencyException`. This works at PostgreSQL's default `READ COMMITTED` isolation — no advisory locks, no `SERIALIZABLE` transactions.
+At `SaveChangesAsync` time, Marten emits one `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured` per distinct `(tag_table, tag_value)` row the boundary read against the `mt_dcb_tag_version` side table, together with the bumps of the tag values the save's own events carry, all in one deterministic sort order. The row-level write lock plus the version predicate is the serialization point: concurrent saves over the same row take turns, and a save fails with `DcbConcurrencyException` when an event carrying one of its tag values was committed after its read. This works at PostgreSQL's default `READ COMMITTED` isolation — no advisory locks, no `SERIALIZABLE` transactions. See [how the boundary check serializes](#how-the-boundary-check-serializes-) for the detail.
 
 The check shape no longer depends on `DcbStorageMode`. Both `TagTables` and `HStore` share the same side-table mechanism for the consistency check; the storage mode only affects how tags are physically read at fetch time and written at append time.
 

@@ -75,12 +75,25 @@ namespace Marten.Events.Schema;
                 metadataParameters += ", timestamps timestamp with time zone[]";
             }
 
-            // Add tag type parameters. In DcbStorageMode.HStore the function does NOT
-            // accept per-tag-table arrays — tags are written via a follow-up UPDATE
-            // (SetEventTagsHstoreByEventIdOperation) by the QuickEventAppender so the
-            // function stays mode-agnostic.
+            // Add tag type parameters: one varchar[] per registered tag type in TagTables mode, written to the
+            // per-type tag tables below.
+            //
+            // #5896: in DcbStorageMode.HStore one hstore[] parallel to the events array, written to
+            // mt_events.tags by the insert itself. This used to be a follow-up
+            // `update mt_events set tags = ... where id = $1` per tagged event, and mt_events has no index on
+            // id, so every tagged event scanned the whole table (a 62 ms decision at 1M events) and then
+            // rewrote its row without HOT, the tags column being GIN-indexed.
             var tagParameters = "";
             var tagInserts = "";
+            var tagColumn = "";
+            var tagValue = "";
+            if (_events.DcbStorageMode == DcbStorageMode.HStore && _events.TagTypes.Count > 0)
+            {
+                tagParameters = ", tag_hstores hstore[]";
+                tagColumn = ", tags";
+                tagValue = ", tag_hstores[index]";
+            }
+
             if (_events.DcbStorageMode != DcbStorageMode.HStore)
             {
                 foreach (var tagType in _events.TagTypes)
@@ -258,9 +271,9 @@ BEGIN{sequenceResolveUpFront}{expectedVersionCheck}
 		-- bodies[index] is the {{}} JSON placeholder for those events so the
 		-- existing data jsonb NOT NULL constraint stays intact.
 		insert into {databaseSchema}.mt_events
-			(seq_id, id, stream_id, version, data, bdata, type, tenant_id, timestamp, {SchemaConstants.DotNetTypeColumn}, is_archived{metadataColumns})
+			(seq_id, id, stream_id, version, data, bdata, type, tenant_id, timestamp, {SchemaConstants.DotNetTypeColumn}, is_archived{metadataColumns}{tagColumn})
 		values
-			(seq, event_id, stream, event_version, body, bdatas[index], event_type, tenantid, {timestampValue}, dotnet_types[index], FALSE{metadataValues});
+			(seq, event_id, stream, event_version, body, bdatas[index], event_type, tenantid, {timestampValue}, dotnet_types[index], FALSE{metadataValues}{tagValue});
 {tagInserts}
 		index := index + 1;
 	end loop;

@@ -28,4 +28,6 @@ using JasperFx.Core.TypeScanning;
 [assembly: InternalsVisibleTo("ValueTypeTests")]
 [assembly: InternalsVisibleTo("StressTests")]
 [assembly: InternalsVisibleTo("ContainerScopedProjectionTests")]
+// #5888: so the daemon's EventLoader can be driven directly against a primary/standby pair.
+[assembly: InternalsVisibleTo("MultiHostTests")]
 [assembly: InternalsVisibleTo("Marten.AspNetCore")]

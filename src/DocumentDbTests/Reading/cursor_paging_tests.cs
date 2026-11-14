@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Linq.CursorPaging;
@@ -240,5 +242,46 @@ public class cursor_paging_tests: IntegrationContext
         await Should.ThrowAsync<ArgumentException>(async () =>
             await theSession.Query<User>().OrderBy(x => x.FirstName).ThenBy(x => x.Id)
                 .ToJsonPageByCursorAsync(tampered, pageSize: 2));
+    }
+}
+
+public class cursor_paging_with_fluent_identity: OneOffConfigurationsContext
+{
+    public class FluentIdentityDoc
+    {
+        public Guid Key { get; set; }
+        public int Rank { get; set; }
+    }
+
+    [Fact]
+    public async Task pages_through_all_documents_when_terminal_ordering_is_the_configured_identity()
+    {
+        StoreOptions(opts => opts.Schema.For<FluentIdentityDoc>().Identity(x => x.Key));
+
+        var ranks = new[] { 1, 2, 2, 2, 3 };
+        var documents = ranks.Select(rank => new FluentIdentityDoc { Key = Guid.NewGuid(), Rank = rank }).ToArray();
+        theSession.Store(documents);
+        await theSession.SaveChangesAsync();
+
+        var keysInPageOrder = new List<Guid>();
+        string? cursor = null;
+        do
+        {
+            var page = await theSession.Query<FluentIdentityDoc>()
+                .OrderByDescending(x => x.Rank).ThenByDescending(x => x.Key)
+                .ToJsonPageByCursorAsync(cursor, pageSize: 2);
+
+            keysInPageOrder.AddRange(theStore.Serializer.FromJson<FluentIdentityDoc[]>(new MemoryStream(Encoding.UTF8.GetBytes(page.ItemsJson)))
+                .Select(x => x.Key));
+            cursor = page.NextCursor;
+        } while (cursor != null);
+
+        var expected = await theSession.Query<FluentIdentityDoc>()
+            .OrderByDescending(x => x.Rank).ThenByDescending(x => x.Key)
+            .Select(x => x.Key)
+            .ToListAsync();
+
+        expected.Count.ShouldBe(documents.Length);
+        keysInPageOrder.ShouldBe(expected);
     }
 }

@@ -32,11 +32,11 @@ public class Bug_5675_archiving_a_tagged_stream: OneOffConfigurationsContext
     public record AuditorId(string Value);
 
     private void configure(TenancyStyle tenancy = TenancyStyle.Single, DcbStorageMode mode = DcbStorageMode.TagTables,
-        bool twoTagTypes = false)
+        bool twoTagTypes = false, bool partitioned = true)
     {
         StoreOptions(opts =>
         {
-            opts.Events.UseArchivedStreamPartitioning = true;
+            opts.Events.UseArchivedStreamPartitioning = partitioned;
             opts.Events.TenancyStyle = tenancy;
             opts.Events.DcbStorageMode = mode;
             opts.Events.AddEventType<LedgerOpened>();
@@ -206,21 +206,22 @@ public class Bug_5675_archiving_a_tagged_stream: OneOffConfigurationsContext
         (await countEventRows(streamId, isArchived: false)).ShouldBe(0);
     }
 
-    [Fact]
-    public async Task a_tag_query_still_sees_the_archived_events_which_is_a_separate_bug()
+    [Theory]
+    [InlineData(DcbStorageMode.TagTables, true)]
+    [InlineData(DcbStorageMode.TagTables, false)]
+    [InlineData(DcbStorageMode.HStore, true)]
+    [InlineData(DcbStorageMode.HStore, false)]
+    public async Task tag_queries_exclude_archived_events(DcbStorageMode mode, bool partitioned)
     {
-        // Pinning what it DOES, not what it should. #5675 asked that tag queries "behave as documented"
-        // after archiving, and they do not behave like any other event query: QueryAllRawEvents() excludes
-        // archived events by default, and QueryByTagsAsync / EventsExistAsync do not. Verified independent
-        // of this fix -- the same two counts come back with UseArchivedStreamPartitioning OFF, which the
-        // archive function change here never touches -- so it is pre-existing and filed as #5677. Change
-        // this test when that one is fixed; it is here so the current answer is written down rather than
-        // discovered again.
-        configure();
+        // #5677: QueryByTagsAsync / EventsExistAsync / AggregateByTagsAsync / FetchForWritingByTags used to
+        // return archived events, unlike QueryAllRawEvents() and the rest of the event-query surface.
+        configure(mode: mode, partitioned: partitioned);
 
         var archived = Guid.NewGuid();
         var kept = Guid.NewGuid();
+        var archivedOnly = Guid.NewGuid();
         var tag = new LedgerId(Guid.NewGuid());
+        var onlyArchivedTag = new LedgerId(Guid.NewGuid());
 
         await using (var session = theStore.LightweightSession())
         {
@@ -232,24 +233,39 @@ public class Bug_5675_archiving_a_tagged_stream: OneOffConfigurationsContext
             second.WithTag(tag);
             session.Events.StartStream(kept, second);
 
+            var third = session.Events.BuildEvent(new LedgerOpened("archived only"));
+            third.WithTag(onlyArchivedTag);
+            session.Events.StartStream(archivedOnly, third);
+
             await session.SaveChangesAsync();
         }
 
         await using (var session = theStore.LightweightSession())
         {
             session.Events.ArchiveStream(archived);
+            session.Events.ArchiveStream(archivedOnly);
             await session.SaveChangesAsync();
         }
 
-        await using (var query = theStore.LightweightSession())
-        {
-            // The archived row moved partitions and is still reachable by tag -- which is the point worth
-            // pinning here: the move does not LOSE the tag rows either
-            (await query.Events.QueryByTagsAsync(new EventTagQuery().Or<LedgerId>(tag))).Count.ShouldBe(2);
+        await using var query = theStore.LightweightSession();
+        var events = await query.Events.QueryByTagsAsync(new EventTagQuery().Or<LedgerId>(tag));
+        events.Count.ShouldBe(1);
+        events[0].StreamId.ShouldBe(kept);
 
-            // While the ordinary event query does exclude it
-            (await query.Events.QueryAllRawEvents().ToListAsync()).Count.ShouldBe(1);
-        }
+        (await query.Events.EventsExistAsync(new EventTagQuery().Or<LedgerId>(tag))).ShouldBeTrue();
+        (await query.Events.EventsExistAsync(new EventTagQuery().Or<LedgerId>(onlyArchivedTag))).ShouldBeFalse();
+        (await query.Events.EventsExistAsync(new EventTagQuery().Or<LedgerId>(onlyArchivedTag)
+            .Or<LedgerId>(onlyArchivedTag))).ShouldBeFalse();
+
+        var boundary = await query.Events.FetchForWritingByTags<LedgerState>(
+            new EventTagQuery().Or<LedgerId>(onlyArchivedTag));
+        boundary.Events.Count.ShouldBe(0);
+    }
+
+    public class LedgerState
+    {
+        public Guid Id { get; set; }
+        public void Apply(LedgerOpened _) { }
     }
 
     private async Task<long> countTagRows(string suffix, object value, bool isArchived, string? tenantId = null)

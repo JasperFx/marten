@@ -26,7 +26,7 @@ namespace Marten.Events.Projections;
 [UnconditionalSuppressMessage("Trimming", "IL2026",
     Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations, IQuerySession>
 {
     internal readonly IFetchPlanner[] _builtInPlanners =
@@ -358,6 +358,19 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         }
 
         registerSubscription(source);
+    }
+
+    /// <summary>
+    ///     Register a subscription resolved from the container per page of events, through the shared
+    ///     <see cref="JasperFx.Events.Subscriptions.ScopedSubscriptionServiceWrapper{T, TOperations, TQuerySession, TSubscription}"/>
+    ///     (jasperfx#1050), which is not itself one of Marten's <see cref="ISubscription"/> types.
+    /// </summary>
+    internal void SubscribeScoped<T>(
+        JasperFx.Events.Subscriptions.ScopedSubscriptionServiceWrapper<T, IDocumentOperations, IQuerySession, ISubscription> subscription,
+        Action<ISubscriptionOptions>? configure) where T : notnull, ISubscription
+    {
+        configure?.Invoke(subscription);
+        registerSubscription(subscription);
     }
 
     /// <summary>

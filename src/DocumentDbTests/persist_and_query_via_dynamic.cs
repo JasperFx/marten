@@ -50,7 +50,8 @@ public class persist_and_query_via_dynamic: IntegrationContext
 
         var temperatures = tempsFromDb.Select(x => (decimal)x.Values.temperature);
 
-        Assert.Equal(15.675m, temperatures.Average());
+        // Values are read as doubles; .NET 11 no longer rounds double-to-decimal to 15 digits
+        Assert.Equal(15.675m, temperatures.Average(), 6);
         Assert.Equal(4, tempsFromDb.Length);
 
         #endregion

@@ -58,6 +58,16 @@ var store = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L123-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: warning
+With `EnumStorage.AsString`, an enum member renamed for the serializer (`[JsonStringEnumMemberName]` for System.Text.Json,
+`[EnumMember]` for Newtonsoft) is spelled differently in two places. The JSON body holds the serializer's name
+(for example `apotheek-houdend`), but a [duplicated field](/documents/indexing/duplicated-fields) column holds the member's
+*declared* name (`Apotheek`), because the column is written by the document storage rather than the serializer. Marten's
+LINQ provider compares against whichever one it targets, so queries through Marten are correct. Anything reading the column
+directly, such as SQL written outside Marten, needs to use the declared name. This is a known limitation
+([#5388](https://github.com/JasperFx/marten/issues/5388)); aligning the column would rewrite existing data.
+:::
+
 ## Field Names Casing
 
 By default, Marten stores field names "as they are" (C# naming convention is PascalCase for public properties).
@@ -126,7 +136,7 @@ public class User
 ## Polymorphic Serialization <Badge type="warning" text=".NET 9+ & System.Text.Json Only" />
 
 ::: tip
-This is specifically to do with types stored _within_ documents. For polymorphism at the root document level see [Multi Level Hierarchies](/documents/hierarchies#multi-level-hierarchies)
+This is specifically to do with types stored *within* documents. For polymorphism at the root document level see [Multi Level Hierarchies](/documents/hierarchies#multi-level-hierarchies)
 :::
 
 Due to `jsonb` providing no guarantee on what order it stores properties in, metadata fields that usually sit at the start of a type can be in any position.
@@ -165,8 +175,8 @@ var store = DocumentStore.For(opts =>
 Types known to the context use its precompiled metadata, while everything else — Marten's internal documents, dynamic types, and any type the context does not cover — falls back to reflection. The reflection fallback is preserved on purpose, so covering only a subset of your types is safe.
 
 Note the difference between `UseTypeInfoResolver(MyContext.Default)` above and assigning
-`JsonSerializerOptions.TypeInfoResolver = MyContext.Default` yourself: the first _combines_ your
-context with a reflection-based resolver behind it, the second _replaces_ the reflection resolver
+`JsonSerializerOptions.TypeInfoResolver = MyContext.Default` yourself: the first *combines* your
+context with a reflection-based resolver behind it, the second *replaces* the reflection resolver
 outright. Replacing it is the stricter, fully trimmable posture — and it means a
 `Select(x => new { ... })` projection can no longer be materialized at all, because an anonymous type
 cannot be named by a `[JsonSerializable]` attribute. Marten refuses that query with the remedy rather
@@ -236,7 +246,7 @@ var store = DocumentStore.For(_ =>
 ::: warning Newtonsoft date parsing
 `Marten.Newtonsoft` reads JSON with `DateParseHandling.None`, so a date token stays a string until the
 serializer converts it to whatever the target member actually is. This is deliberate: `JsonTextReader`
-otherwise converts every date token to a `DateTime` _before_ the target type is known, and a
+otherwise converts every date token to a `DateTime` *before* the target type is known, and a
 `DateTimeOffset` member was then rebuilt from that `DateTime` and silently picked up the **host
 machine's** UTC offset. The same instant, the wrong offset — and because a `DateTimeOffset` duplicated
 column is `timestamp with time zone`, which Npgsql accepts only at offset zero, storing a loaded
@@ -318,7 +328,7 @@ public enum ValueCasting
     Relaxed
 }
 
-public interface ISerializer: IStorageSerializer
+public interface ISerializer: IStorageSerializer, Weasel.Core.ISerializer
 {
     // #4819: the db-neutral WriteToParameter(DbParameter) from IStorageSerializer bridges to
     // Marten's Npgsql-typed WriteToParameter below. Every Marten serializer is Npgsql-backed, so
@@ -326,16 +336,58 @@ public interface ISerializer: IStorageSerializer
     void IStorageSerializer.WriteToParameter(DbParameter parameter, object? value)
         => WriteToParameter((NpgsqlParameter)parameter, value);
 
+    // #5733: Marten's serializer is also the Critter Stack's shared Weasel.Core.ISerializer, so a
+    // Marten serializer can be handed to anything written against that contract. It also brings
+    // FromJson<T>(string) / FromJson(Type, string), default-implemented over the stream overloads.
+    // The members both bases declare are re-declared here so a call through Marten's ISerializer
+    // binds to one member instead of being ambiguous between the two; one public implementation
+    // satisfies all three slots.
+
     /// <summary>
     ///     Just gotta tell Marten if enum's are stored
     ///     as int's or string's in the JSON
     /// </summary>
-    EnumStorage EnumStorage { get; }
+    new EnumStorage EnumStorage { get; }
 
     /// <summary>
     ///     Specify whether properties in the JSON document should use Camel or Pascal casing.
     /// </summary>
-    Casing Casing { get; }
+    new Casing Casing { get; }
+
+    /// <summary>
+    ///     Serialize a document object into a JSON string.
+    /// </summary>
+    new string ToJson(object? document);
+
+    /// <summary>
+    ///     Deserialize a JSON stream into an object of type T.
+    /// </summary>
+    new T FromJson<T>(Stream stream);
+
+    /// <summary>
+    ///     Deserialize a JSON value from a data-reader column into an object of type T.
+    /// </summary>
+    new T FromJson<T>(DbDataReader reader, int index);
+
+    /// <summary>
+    ///     Deserialize a JSON stream into the supplied type.
+    /// </summary>
+    new object FromJson(Type type, Stream stream);
+
+    /// <summary>
+    ///     Deserialize a JSON value from a data-reader column into the supplied type.
+    /// </summary>
+    new object FromJson(Type type, DbDataReader reader, int index);
+
+    /// <summary>
+    ///     Asynchronously deserialize a JSON stream into an object of type T.
+    /// </summary>
+    new ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Asynchronously deserialize a JSON stream into the supplied type.
+    /// </summary>
+    new ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Controls how the Linq Select() behavior needs to work in the database
@@ -386,7 +438,7 @@ public interface ISerializer: IStorageSerializer
     void WriteToJsonWithTypes(IBufferWriter<byte> writer, object value);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L13-L103' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L13-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To support a new serialization library or customize the JSON serialization options, you can write a new version of `ISerializer` and plug it

@@ -169,4 +169,15 @@
     </PropertyGroup>
     <Import Project="../Tests.props" />
 
+    <!-- #5735: C# 15 unions only exist on .NET 11, and the `union` keyword needs LangVersion preview (as
+         JasperFx's EventTests and Polecat.Tests). The union tests compile on net11.0 only; Marten itself
+         needs no #if, because UnionTypes.IsUnion is false for every type before .NET 11. -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net11.0'">
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' != 'net11.0'">
+        <Compile Remove="Unions/**/*.cs" />
+    </ItemGroup>
+
 </Project>

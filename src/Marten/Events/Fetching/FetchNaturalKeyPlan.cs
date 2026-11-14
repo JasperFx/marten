@@ -13,6 +13,7 @@ using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
+using Marten.Services.BatchQuerying;
 using Npgsql;
 using Weasel.Postgresql;
 
@@ -309,8 +310,9 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         // stream we are already joined to is what Fisher does, and it needs no schema change, no
         // migration of existing lookup tables, and covers every route into the archive (the explicit
         // call, the Archived marker event, and the daemon) with one predicate. nk.is_archived above
-        // is kept because it is genuinely maintained under UseArchivedStreamPartitioning, where the
-        // cascading FK moves the lookup row along with its stream.
+        // is kept because it is genuinely maintained under UseArchivedStreamPartitioning, where
+        // mt_archive_stream / mt_unarchive_stream copy the lookup row between partitions with its stream
+        // (marten#5476).
         builder.Append(" and s.is_archived = false");
 
         if (_isConjoined && !_isGlobal)
@@ -582,7 +584,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         return await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
     }
 
-    internal class NaturalKeyQueryHandler: IQueryHandler<IEventStream<TDoc>>
+    internal class NaturalKeyQueryHandler: IQueryHandler<IEventStream<TDoc>>, IExclusiveFetchHandler
     {
         private readonly FetchNaturalKeyPlan<TDoc, TNaturalKey> _parent;
         private readonly TNaturalKey _id;
@@ -599,6 +601,8 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
             _forUpdate = forUpdate;
             _checkVersion = checkVersion;
         }
+
+        public object? ExclusiveStreamId => _forUpdate ? _id : null;
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
