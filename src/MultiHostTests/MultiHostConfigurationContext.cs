@@ -24,6 +24,12 @@ namespace MultiHostTests
 
         public string SchemaName => _schemaName;
 
+        /// <summary>
+        ///     The multi-host data source behind the most recently built store, for tests that need a
+        ///     connection pinned to one node: e.g. pausing WAL replay on the standby (#5888).
+        /// </summary>
+        protected NpgsqlMultiHostDataSource theDataSource { get; private set; } = null!;
+
         protected MultiHostConfigurationContext()
         {
             _schemaName = GetType().Name.ToLower().Sanitize();
@@ -56,6 +62,7 @@ namespace MultiHostTests
             }
 
             _store = new DocumentStore(options);
+            theDataSource = host;
 
             _disposables.Add(_store);
             _disposables.Add(host);
