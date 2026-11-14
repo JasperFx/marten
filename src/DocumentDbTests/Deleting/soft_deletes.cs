@@ -105,54 +105,54 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.Store(user);
         await session.SaveChangesAsync();
 
-        userIsNotMarkedAsDeleted(session, user.Id);
+        await userIsNotMarkedAsDeleted(session, user.Id);
     }
 
-    private static void userIsNotMarkedAsDeleted(IDocumentSession session, Guid userId)
+    private static async Task userIsNotMarkedAsDeleted(IDocumentSession session, Guid userId)
     {
-        var cmd = session.Connection.CreateCommand("select mt_deleted, mt_deleted_at from softdelete.mt_doc_user where id = :id")
+        var cmd = (await session.GetConnectionAsync()).CreateCommand("select mt_deleted, mt_deleted_at from softdelete.mt_doc_user where id = :id")
             .With("id", userId);
 
-        using var reader = cmd.ExecuteReader();
-        reader.Read();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        await reader.ReadAsync();
 
         reader.GetFieldValue<bool>(0).ShouldBeFalse();
         reader.IsDBNull(1).ShouldBeTrue();
     }
 
-    private void assertDocumentIsHardDeleted<T>(IDocumentSession session, object id)
+    private async Task assertDocumentIsHardDeleted<T>(IDocumentSession session, object id)
     {
         var mapping = theStore.Options.Storage.MappingFor(typeof(T));
 
 
-        var cmd = session.Connection.CreateCommand($"select count(*) from {mapping.TableName} where id = :id")
+        var cmd = (await session.GetConnectionAsync()).CreateCommand($"select count(*) from {mapping.TableName} where id = :id")
             .With("id", id);
 
-        var count = (long)cmd.ExecuteScalar();
+        var count = (long)(await cmd.ExecuteScalarAsync())!;
         count.ShouldBe(0);
     }
 
-    private void plantDeletedAt<T>(IDocumentSession session, object id, DateTimeOffset instant)
+    private async Task plantDeletedAt<T>(IDocumentSession session, object id, DateTimeOffset instant)
     {
         var mapping = theStore.Options.Storage.MappingFor(typeof(T));
 
-        var cmd = session.Connection
+        var cmd = (await session.GetConnectionAsync())
             .CreateCommand($"update {mapping.TableName} set mt_deleted_at = :at where id = :id")
             .With("at", instant.UtcDateTime)
             .With("id", id);
 
-        cmd.ExecuteNonQuery();
+        await cmd.ExecuteNonQueryAsync();
     }
 
-    private DateTimeOffset? readDeletedAt<T>(IDocumentSession session, object id)
+    private async Task<DateTimeOffset?> readDeletedAt<T>(IDocumentSession session, object id)
     {
         var mapping = theStore.Options.Storage.MappingFor(typeof(T));
 
-        var cmd = session.Connection
+        var cmd = (await session.GetConnectionAsync())
             .CreateCommand($"select mt_deleted_at from {mapping.TableName} where id = :id")
             .With("id", id);
 
-        var raw = cmd.ExecuteScalar();
+        var raw = await cmd.ExecuteScalarAsync();
         if (raw == null || raw == DBNull.Value)
         {
             return null;
@@ -188,19 +188,19 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await theSession.SaveChangesAsync();
 
         // Plant a deletion instant well in the past, so a re-stamp is unmistakable.
-        plantDeletedAt<StringDoc>(theSession, alreadyDeleted.Id, planted);
+        await plantDeletedAt<StringDoc>(theSession, alreadyDeleted.Id, planted);
 
         // A later bulk delete whose predicate still matches the already-deleted row.
         theSession.DeleteWhere<StringDoc>(x => x.Size == "big");
         await theSession.SaveChangesAsync();
 
         // The already-deleted row keeps the instant it was actually deleted.
-        var untouched = readDeletedAt<StringDoc>(theSession, alreadyDeleted.Id);
+        var untouched = await readDeletedAt<StringDoc>(theSession, alreadyDeleted.Id);
         untouched.ShouldNotBeNull();
         untouched.Value.ToUniversalTime().ShouldBe(planted.ToUniversalTime());
 
         // ... and the row that was still live is deleted now, with a real (recent) timestamp.
-        var freshlyDeleted = readDeletedAt<StringDoc>(theSession, stillLive.Id);
+        var freshlyDeleted = await readDeletedAt<StringDoc>(theSession, stillLive.Id);
         freshlyDeleted.ShouldNotBeNull();
         freshlyDeleted.Value.ShouldBeGreaterThan(planted);
     }
@@ -225,7 +225,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         theSession.HardDeleteWhere<StringDoc>(x => x.Size == "big");
         await theSession.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<StringDoc>(theSession, doc.Id);
+        await assertDocumentIsHardDeleted<StringDoc>(theSession, doc.Id);
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.Delete(user);
         await session.SaveChangesAsync();
 
-        userIsMarkedAsDeleted(session, user.Id);
+        await userIsMarkedAsDeleted(session, user.Id);
     }
 
     [Fact]
@@ -253,7 +253,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.HardDelete(user);
         await session.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<User>(session, user.Id);
+        await assertDocumentIsHardDeleted<User>(session, user.Id);
     }
 
     [Fact]
@@ -270,8 +270,8 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         theSession.HardDeleteWhere<StringDoc>(x => x.Size == "big");
         await theSession.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<StringDoc>(theSession,"red");
-        assertDocumentIsHardDeleted<StringDoc>(theSession, "green");
+        await assertDocumentIsHardDeleted<StringDoc>(theSession,"red");
+        await assertDocumentIsHardDeleted<StringDoc>(theSession, "green");
 
         var count = await theSession.Query<StringDoc>().Where(x => x.MaybeDeleted()).CountAsync();
         count.ShouldBe(2);
@@ -288,7 +288,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.HardDelete<IntDoc>(doc.Id);
         await session.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<IntDoc>(session, doc.Id);
+        await assertDocumentIsHardDeleted<IntDoc>(session, doc.Id);
     }
 
     [Fact]
@@ -302,7 +302,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.HardDelete<LongDoc>(doc.Id);
         await session.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<LongDoc>(session, doc.Id);
+        await assertDocumentIsHardDeleted<LongDoc>(session, doc.Id);
     }
 
     [Fact]
@@ -316,17 +316,17 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.HardDelete<StringDoc>(doc.Id);
         await session.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<StringDoc>(session, doc.Id);
+        await assertDocumentIsHardDeleted<StringDoc>(session, doc.Id);
     }
 
-    private static void userIsMarkedAsDeleted(IDocumentSession session, Guid userId)
+    private static async Task userIsMarkedAsDeleted(IDocumentSession session, Guid userId)
     {
-        var cmd = session.Connection.CreateCommand()
+        var cmd = (await session.GetConnectionAsync()).CreateCommand()
             .Sql("select mt_deleted, mt_deleted_at from softdelete.mt_doc_user where id = :id")
             .With("id", userId);
 
-        using var reader = cmd.ExecuteReader();
-        reader.Read();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        await reader.ReadAsync();
 
         reader.GetFieldValue<bool>(0).ShouldBeTrue();
         reader.IsDBNull(1).ShouldBeFalse();
@@ -346,9 +346,9 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
         await session.SaveChangesAsync();
 
-        userIsNotMarkedAsDeleted(session, user1.Id);
-        userIsMarkedAsDeleted(session, user2.Id);
-        userIsMarkedAsDeleted(session, user3.Id);
+        await userIsNotMarkedAsDeleted(session, user1.Id);
+        await userIsMarkedAsDeleted(session, user2.Id);
+        await userIsMarkedAsDeleted(session, user3.Id);
     }
 
     [Fact]
@@ -365,16 +365,16 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
         await session.SaveChangesAsync();
 
-        userIsNotMarkedAsDeleted(session, user1.Id);
-        userIsMarkedAsDeleted(session, user2.Id);
-        userIsMarkedAsDeleted(session, user3.Id);
+        await userIsNotMarkedAsDeleted(session, user1.Id);
+        await userIsMarkedAsDeleted(session, user2.Id);
+        await userIsMarkedAsDeleted(session, user3.Id);
 
         session.UndoDeleteWhere<User>(x => x.UserName == "bar");
         await session.SaveChangesAsync();
 
-        userIsNotMarkedAsDeleted(session, user1.Id);
-        userIsNotMarkedAsDeleted(session, user2.Id);
-        userIsMarkedAsDeleted(session, user3.Id);
+        await userIsNotMarkedAsDeleted(session, user1.Id);
+        await userIsNotMarkedAsDeleted(session, user2.Id);
+        await userIsMarkedAsDeleted(session, user3.Id);
     }
 
     #region sample_query_soft_deleted_docs
@@ -903,30 +903,30 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.Store(user);
         await session.SaveChangesAsync();
 
-        userIsNotMarkedAsDeleted(session, user.Id);
+        await userIsNotMarkedAsDeleted(session, user.Id);
     }
 
-    private void userIsNotMarkedAsDeleted(IDocumentSession session, Guid userId)
+    private async Task userIsNotMarkedAsDeleted(IDocumentSession session, Guid userId)
     {
-        var cmd = session.Connection.CreateCommand($"select mt_deleted, mt_deleted_at from {SchemaName}.mt_doc_user where id = :id")
+        var cmd = (await session.GetConnectionAsync()).CreateCommand($"select mt_deleted, mt_deleted_at from {SchemaName}.mt_doc_user where id = :id")
             .With("id", userId);
 
-        using var reader = cmd.ExecuteReader();
-        reader.Read();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        await reader.ReadAsync();
 
         reader.GetFieldValue<bool>(0).ShouldBeFalse();
         reader.IsDBNull(1).ShouldBeTrue();
     }
 
-    private void assertDocumentIsHardDeleted<T>(IDocumentSession session, object id)
+    private async Task assertDocumentIsHardDeleted<T>(IDocumentSession session, object id)
     {
         var mapping = theStore.Options.Storage.MappingFor(typeof(T));
 
 
-        var cmd = session.Connection.CreateCommand($"select count(*) from {mapping.TableName} where id = :id")
+        var cmd = (await session.GetConnectionAsync()).CreateCommand($"select count(*) from {mapping.TableName} where id = :id")
             .With("id", id);
 
-        var count = (long)cmd.ExecuteScalar();
+        var count = (long)(await cmd.ExecuteScalarAsync())!;
         count.ShouldBe(0);
     }
 
@@ -941,7 +941,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.Delete(user);
         await session.SaveChangesAsync();
 
-        userIsMarkedAsDeleted(session, user.Id);
+        await userIsMarkedAsDeleted(session, user.Id);
     }
 
     [Fact]
@@ -955,7 +955,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.HardDelete(user);
         await session.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<User>(session, user.Id);
+        await assertDocumentIsHardDeleted<User>(session, user.Id);
     }
 
     [Fact]
@@ -972,8 +972,8 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         theSession.HardDeleteWhere<StringDoc>(x => x.Size == "big");
         await theSession.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<StringDoc>(theSession,"red");
-        assertDocumentIsHardDeleted<StringDoc>(theSession, "green");
+        await assertDocumentIsHardDeleted<StringDoc>(theSession,"red");
+        await assertDocumentIsHardDeleted<StringDoc>(theSession, "green");
 
         var count = await theSession.Query<StringDoc>().Where(x => x.MaybeDeleted()).CountAsync();
         count.ShouldBe(2);
@@ -990,7 +990,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.HardDelete<IntDoc>(doc.Id);
         await session.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<IntDoc>(session, doc.Id);
+        await assertDocumentIsHardDeleted<IntDoc>(session, doc.Id);
     }
 
     [Fact]
@@ -1004,7 +1004,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.HardDelete<LongDoc>(doc.Id);
         await session.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<LongDoc>(session, doc.Id);
+        await assertDocumentIsHardDeleted<LongDoc>(session, doc.Id);
     }
 
     [Fact]
@@ -1018,17 +1018,17 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.HardDelete<StringDoc>(doc.Id);
         await session.SaveChangesAsync();
 
-        assertDocumentIsHardDeleted<StringDoc>(session, doc.Id);
+        await assertDocumentIsHardDeleted<StringDoc>(session, doc.Id);
     }
 
-    private void userIsMarkedAsDeleted(IDocumentSession session, Guid userId)
+    private async Task userIsMarkedAsDeleted(IDocumentSession session, Guid userId)
     {
-        var cmd = session.Connection.CreateCommand()
+        var cmd = (await session.GetConnectionAsync()).CreateCommand()
             .Sql($"select mt_deleted, mt_deleted_at from {SchemaName}.mt_doc_user where id = :id")
             .With("id", userId);
 
-        using var reader = cmd.ExecuteReader();
-        reader.Read();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        await reader.ReadAsync();
 
         reader.GetFieldValue<bool>(0).ShouldBeTrue();
         reader.IsDBNull(1).ShouldBeFalse();
@@ -1048,9 +1048,9 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
         await session.SaveChangesAsync();
 
-        userIsNotMarkedAsDeleted(session, user1.Id);
-        userIsMarkedAsDeleted(session, user2.Id);
-        userIsMarkedAsDeleted(session, user3.Id);
+        await userIsNotMarkedAsDeleted(session, user1.Id);
+        await userIsMarkedAsDeleted(session, user2.Id);
+        await userIsMarkedAsDeleted(session, user3.Id);
     }
 
     [Fact]
@@ -1067,16 +1067,16 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
         await session.SaveChangesAsync();
 
-        userIsNotMarkedAsDeleted(session, user1.Id);
-        userIsMarkedAsDeleted(session, user2.Id);
-        userIsMarkedAsDeleted(session, user3.Id);
+        await userIsNotMarkedAsDeleted(session, user1.Id);
+        await userIsMarkedAsDeleted(session, user2.Id);
+        await userIsMarkedAsDeleted(session, user3.Id);
 
         session.UndoDeleteWhere<User>(x => x.UserName == "bar");
         await session.SaveChangesAsync();
 
-        userIsNotMarkedAsDeleted(session, user1.Id);
-        userIsNotMarkedAsDeleted(session, user2.Id);
-        userIsMarkedAsDeleted(session, user3.Id);
+        await userIsNotMarkedAsDeleted(session, user1.Id);
+        await userIsNotMarkedAsDeleted(session, user2.Id);
+        await userIsMarkedAsDeleted(session, user3.Id);
     }
 
     #region sample_query_soft_deleted_docs

@@ -63,7 +63,7 @@ namespace CoreTests.Bugs
             await using (var session =
                          await testStore.LightweightSerializableSessionAsync(SessionOptions.ForConnectionString(connectionString)))
             {
-                new NpgsqlConnectionStringBuilder(session.Connection.ConnectionString).Timeout.ShouldBe(11);
+                new NpgsqlConnectionStringBuilder((await session.GetConnectionAsync()).ConnectionString).Timeout.ShouldBe(11);
                 session.Store(new TestEntity { Name = "Test 2" });
                 await session.SaveChangesAsync();
             }
@@ -71,7 +71,7 @@ namespace CoreTests.Bugs
             await using (var session =
                          await testStore.LightweightSerializableSessionAsync(SessionOptions.ForConnectionString(connectionString)))
             {
-                new NpgsqlConnectionStringBuilder(session.Connection.ConnectionString).Timeout.ShouldBe(11);
+                new NpgsqlConnectionStringBuilder((await session.GetConnectionAsync()).ConnectionString).Timeout.ShouldBe(11);
                 var entities = await session.Query<TestEntity>()
                     .ToListAsync();
 

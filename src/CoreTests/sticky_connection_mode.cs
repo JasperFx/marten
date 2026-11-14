@@ -15,12 +15,12 @@ public class sticky_connection_mode : OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.UseStickyConnectionLifetimes = true);
 
-        var connection = theSession.Connection;
+        var connection = await theSession.GetConnectionAsync();
         connection.ShouldNotBeNull();
         var target = Target.Random();
 
         theSession.Store(target);
-        theSession.Connection.ShouldBeSameAs(connection);
+        (await theSession.GetConnectionAsync()).ShouldBeSameAs(connection);
 
         await theSession.SaveChangesAsync();
     }

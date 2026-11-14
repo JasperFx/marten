@@ -21,7 +21,7 @@ namespace EventSourcingTests.Bugs
                 var product = new Bug1019.Product { Id = 1, Name = "prod1", Price = 108 };
                 session.Events.Append(streamGuid, product);
                 await session.SaveChangesAsync();
-                var command = session.Connection.CreateCommand();
+                var command = (await session.GetConnectionAsync()).CreateCommand();
                 command.CommandText = @"
 update
 	bugs.mt_events
@@ -34,7 +34,7 @@ where
                 command.AddNamedParameter("newDotnetTypeName", newTypeName);
                 command.AddNamedParameter("newTypeName", "foo");
                 command.AddNamedParameter("originalTypeName", typeName);
-                command.ExecuteNonQuery();
+                await command.ExecuteNonQueryAsync();
 
                 var ex = await Should.ThrowAsync<UnknownEventTypeException>(async () =>
                 {

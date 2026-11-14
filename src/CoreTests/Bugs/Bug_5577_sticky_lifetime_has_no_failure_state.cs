@@ -64,7 +64,7 @@ public class Bug_5577_sticky_lifetime_has_no_failure_state: OneOffConfigurations
 
         // establishes the connection and the serializable snapshot
         (await session.LoadAsync<Bug5577Doc>(id))!.Value.ShouldBe(1);
-        var pid = session.Connection!.ProcessID;
+        var pid = (await session.GetConnectionAsync()).ProcessID;
 
         await using (var other = theStore.LightweightSession())
         {

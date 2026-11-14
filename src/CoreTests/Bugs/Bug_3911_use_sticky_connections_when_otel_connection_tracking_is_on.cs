@@ -2,6 +2,7 @@ using System.Threading;
 using Marten.Testing.Harness;
 using System.Threading.Tasks;
 using Marten.Services;
+using Shouldly;
 using Xunit;
 
 namespace CoreTests.Bugs;
@@ -13,7 +14,9 @@ public class Bug_3911_use_sticky_connections_when_otel_connection_tracking_is_on
     {
         StoreOptions(opts => opts.OpenTelemetry.TrackConnections = TrackLevel.Verbose);
 
-        using var conn = theSession.Connection;
+        // The session owns the connection, so it is not disposed here
+        var conn = await theSession.GetConnectionAsync();
+        conn.ShouldNotBeNull();
     }
 
     [Fact]

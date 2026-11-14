@@ -101,7 +101,7 @@ public class rebuild_mode_start_resumes_after_a_failure: DaemonContext
     private async Task<(long lastSeqId, string? agentStatus, string? failureCategory)> readProgressionAsync()
     {
         await using var session = theStore.QuerySession();
-        await using var reader = await session.Connection
+        await using var reader = await (await session.GetConnectionAsync())
             .CreateCommand(
                 $"select last_seq_id, agent_status, failure_category from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = :name")
             .With("name", TheShard.Identity)

@@ -134,13 +134,13 @@ public class start_stream_with_id_of_previously_archived_stream: OneOffConfigura
         //   - mt_streams_archived still has the original archived row
         await using var query = theStore.QuerySession();
 
-        var defaultCount = (long)(await query.Connection
+        var defaultCount = (long)(await (await query.GetConnectionAsync())
             .CreateCommand($"select count(*) from {SchemaName}.mt_streams_default where id = :id")
             .With("id", stream)
             .ExecuteScalarAsync())!;
         defaultCount.ShouldBe(1);
 
-        var archivedCount = (long)(await query.Connection
+        var archivedCount = (long)(await (await query.GetConnectionAsync())
             .CreateCommand($"select count(*) from {SchemaName}.mt_streams_archived where id = :id")
             .With("id", stream)
             .ExecuteScalarAsync())!;
@@ -175,13 +175,13 @@ public class start_stream_with_id_of_previously_archived_stream: OneOffConfigura
 
         await using var query = theStore.QuerySession();
 
-        var defaultCount = (long)(await query.Connection
+        var defaultCount = (long)(await (await query.GetConnectionAsync())
             .CreateCommand($"select count(*) from {SchemaName}.mt_streams_default where id = :id")
             .With("id", streamKey)
             .ExecuteScalarAsync())!;
         defaultCount.ShouldBe(1);
 
-        var archivedCount = (long)(await query.Connection
+        var archivedCount = (long)(await (await query.GetConnectionAsync())
             .CreateCommand($"select count(*) from {SchemaName}.mt_streams_archived where id = :id")
             .With("id", streamKey)
             .ExecuteScalarAsync())!;
