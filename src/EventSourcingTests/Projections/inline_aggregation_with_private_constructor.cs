@@ -31,15 +31,15 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
     }
 
     [Fact]
-    public void run_inline_aggregation_with_private_constructor()
+    public async Task run_inline_aggregation_with_private_constructor()
     {
-        Verify<QuestMonstersWithPrivateConstructor>();
-        Verify<QuestMonstersWithNonDefaultPublicConstructor>();
-        Verify<WithDefaultPrivateConstructorNonDefaultPublicConstructor>();
-        Verify<WithMultiplePublicNonDefaultConstructors>();
-        Verify<WithMultiplePrivateNonDefaultConstructors>();
-        Verify<WithMultiplePrivateNonDefaultConstructorsAndAttribute>();
-        Verify<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>();
+        await Verify<QuestMonstersWithPrivateConstructor>();
+        await Verify<QuestMonstersWithNonDefaultPublicConstructor>();
+        await Verify<WithDefaultPrivateConstructorNonDefaultPublicConstructor>();
+        await Verify<WithMultiplePublicNonDefaultConstructors>();
+        await Verify<WithMultiplePrivateNonDefaultConstructors>();
+        await Verify<WithMultiplePrivateNonDefaultConstructorsAndAttribute>();
+        await Verify<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>();
     }
 
     private async Task Verify<T>() where T : IMonstersView
@@ -57,8 +57,8 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
         loadedView!.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 
-        var queriedView = theSession.Query<T>()
-            .Single(x => x.Id == streamId);
+        var queriedView = await theSession.Query<T>()
+            .SingleAsync(x => x.Id == streamId);
 
         queriedView.Id.ShouldBe(streamId);
         queriedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
