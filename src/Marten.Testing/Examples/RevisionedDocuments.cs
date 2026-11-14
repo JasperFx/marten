@@ -31,12 +31,19 @@ public static class NumericRevisioningSample
         // This will create a new document with Version = 1
         session.Insert(reservation);
 
-        // "Store" is an upsert, but if the revisioned document
-        // is all new, the Version = 1 after changes are committed
+        // "Store" is an upsert. A Version of 0 is the "auto" sentinel:
+        // an all new document lands at Version = 1, and an existing
+        // document just gets the next revision, with no concurrency check
+        reservation.Version = 0;
         session.Store(reservation);
 
-        // If Store() is called on an existing document
-        // this will just assign the next revision
+        // A non-zero Version is the revision you are asking the document
+        // to *become*, so this Store() is UpdateRevision(reservation, 5).
+        // It is rejected with a ConcurrencyException when SaveChanges() is
+        // called unless 5 is strictly greater than the stored revision, and
+        // the document lands at exactly 5. Re-storing a loaded document that
+        // still carries the revision it was loaded with is therefore refused
+        reservation.Version = 5;
         session.Store(reservation);
 
         // *This* operation will enforce the optimistic concurrency

@@ -502,9 +502,20 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
             {
                 foreach (var entity in entities)
                 {
-                    storeEntity(entity, storage);
+                    var revision = storeEntity(entity, storage);
 
                     var upsert = storage.Upsert(entity, this, TenantId);
+
+                    // #5788 (jasperfx#785): a non-zero numeric revision on the document is the revision
+                    // the caller asks it to BECOME -- accepted only when strictly greater than the stored
+                    // one, landing at exactly that value -- so Store() is UpdateRevision(entity, Version).
+                    // storeEntity used to hand the revision to the identity map only, and the upsert went
+                    // out with its Revision at the 0 "auto" sentinel: the guard never ran and a stale
+                    // writer silently won. 0 stays the auto sentinel, so this is only ever an explicit ask.
+                    if (revision != 0 && storage.UseNumericRevisions && upsert is IRevisionedOperation revisioned)
+                    {
+                        revisioned.Revision = revision;
+                    }
 
                     _workTracker.Add(upsert);
                 }
@@ -512,19 +523,24 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    private void storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
+    /// <summary>
+    ///     Registers the entity with the session's identity map / version tracking. Returns the explicit
+    ///     numeric revision the document carries (IRevisioned, ILongVersioned or a mapped revision
+    ///     member), or 0 when it carries none -- 0 being the "auto" sentinel.
+    /// </summary>
+    private long storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
     {
         switch (entity)
         {
             case IVersioned versioned when versioned.Version != Guid.Empty:
                 storage.Store(this, entity, versioned.Version);
-                return;
+                return 0;
             case IRevisioned revisioned when revisioned.Version != 0:
                 storage.Store(this, entity, revisioned.Version);
-                return;
+                return revisioned.Version;
             case ILongVersioned longVersioned when longVersioned.Version != 0:
                 storage.Store(this, entity, longVersioned.Version);
-                return;
+                return longVersioned.Version;
         }
 
         // #5372: a member mapped with Metadata.Version.MapTo(...) / Metadata.Revision.MapTo(...)
@@ -540,17 +556,18 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         if (storage.MappedVersionFor(entity) is { } mappedVersion && mappedVersion != Guid.Empty)
         {
             storage.Store(this, entity, mappedVersion);
-            return;
+            return 0;
         }
 
         if (storage.MappedRevisionFor(entity) is { } mappedRevision && mappedRevision != 0)
         {
             storage.Store(this, entity, mappedRevision);
-            return;
+            return mappedRevision;
         }
 
         // Put it in the identity map -- if necessary
         storage.Store(this, entity);
+        return 0;
     }
 
     public void EjectPatchedTypes(IUnitOfWork changes)

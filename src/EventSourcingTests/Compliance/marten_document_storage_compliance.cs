@@ -163,6 +163,19 @@ public class soft_delete_compliance
 public class document_metadata_compliance
     : DocumentMetadataCompliance<MartenDocumentComplianceFixture>;
 
+/*
+ * #5788 (jasperfx#785). Numeric revisions through plain Store(): a non-zero IRevisioned.Version is the
+ * revision the caller asks the document to BECOME, accepted only when strictly greater than the stored
+ * one and landing at exactly that value; 0 is the auto sentinel. The fixture has declared
+ * SupportsNumericRevisions since the suite shipped, but nothing closed it over Marten's fixture, so the
+ * suite never ran here -- and Store() quietly took the auto path for every revision, letting a stale
+ * writer overwrite a newer row with no ConcurrencyException. Pins its own schema
+ * (compliance_revisions) and shares the collection for the same reason as the rest.
+ */
+[Collection(DocumentComplianceCollection.Name)]
+public class numeric_revision_compliance
+    : NumericRevisionCompliance<MartenDocumentComplianceFixture>;
+
 public static class DocumentComplianceCollection
 {
     public const string Name = "document storage compliance";
