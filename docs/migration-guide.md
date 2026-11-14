@@ -51,6 +51,21 @@ assemblies compiled against Marten 9 must be recompiled.
   assert is opted in (Marten's activator still builds them at startup for master-table tenancy); under
   `ContinueOnFailures`, a database that failed to migrate skips its seeders and rolling-partition pass; a cancelled
   startup is no longer logged as a failed migration; each seeder checks the startup token before it runs.
+- `MasterTableTenancy` derives from Weasel's `MasterTableTenancyBase<MartenDatabase, NpgsqlDataSource>`, the
+  control-table runtime Polecat and Fisher share. The control table, its SQL and the exceptions are unchanged.
+  Behavior changes:
+  - Refreshing the tenant databases (`BuildDatabases()`, which the async daemon calls to discover tenants) now evicts
+    a cached tenant whose row was deleted or disabled elsewhere. It used to only add, so such a tenant kept resolving
+    until the process restarted. A tenant whose connection string changed gets a new database.
+  - `DeleteDatabaseRecordAsync` and `ClearAllDatabaseRecordsAsync` evict the tenants they remove from the cache.
+  - `AddDatabaseRecordAsync` caches the tenant's database straight away, as `AddTenantAsync` already did.
+  - `FindOrCreateDatabase` and `TryFindDatabase` cache what they resolve rather than building a new database, and a
+    new data source, on every call.
+  - Any lookup, not only `BuildDatabases()`, applies the control table's migration first when `AutoCreate` allows it.
+  - A data source supplied through `MasterTableTenancyOptions.DataSource` is no longer disposed with the store.
+  - Seeded tenant ids go through `TenantIdStyle` like every other tenant id.
+  - The lifecycle methods (`AddDatabaseRecordAsync`, `DeleteDatabaseRecordAsync`, `DisableTenantAsync`, `EnableTenantAsync`,
+    `AllDisabledAsync`, `ClearAllDatabaseRecordsAsync`) take an optional `CancellationToken`.
 - A document stored twice in one unit of work by a dirty-tracking session now gets one tracker, not two.
 - `Marten.Services.VersionTracker` (unused) and `Marten.Events.Dcb.TagValueStringifier` (now in `JasperFx.Events.Tags`)
   are deleted.

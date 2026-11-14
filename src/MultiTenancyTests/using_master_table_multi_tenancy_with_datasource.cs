@@ -127,7 +127,10 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
 
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
 
-        await _host.ClearAllTenantDatabaseRecordsAsync();
+        // #5733: no ClearAllTenantDatabaseRecordsAsync here. The "tenants" schema is dropped above, so
+        // there is nothing stale to clear, and these tests are about the SEEDED tenants: clearing the
+        // records used to leave them resolving only because the cache was never evicted. Clearing now
+        // evicts (MasterTableTenancyBase), so it would leave nothing to test.
     }
 
     public async ValueTask DisposeAsync()
