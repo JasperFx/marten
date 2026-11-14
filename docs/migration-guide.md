@@ -42,6 +42,9 @@ assemblies compiled against Marten 9 must be recompiled.
 - `Marten.ITransactionParticipant` is now `ITransactionParticipant<NpgsqlConnection, NpgsqlTransaction>` from
   `Weasel.Storage`. `BeforeCommitAsync` and `AfterCommitAsync` keep their signatures, so an implementer's source is
   unchanged.
+- `Marten.ISerializer` also extends `Weasel.Core.ISerializer`, the serializer contract Polecat and Fisher share, so
+  a Marten serializer can be passed to code written against it. It gains `FromJson<T>(string)` and
+  `FromJson(Type, string)`, default-implemented over the stream overloads. A custom serializer's source is unchanged.
 - `OpenTelemetryOptions` derives from JasperFx's `OpenTelemetryOptions<IChangeSet>`, and Marten uses the process-wide
   `Marten` `ActivitySource`, so a listener on `Marten` hears one source rather than two.
 - `MartenActivator` derives from JasperFx's `StoreActivator`. Behavior changes: databases are built only when apply or
