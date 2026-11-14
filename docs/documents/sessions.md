@@ -523,7 +523,7 @@ var user = new User { FirstName = "Jeremy", LastName = "Miller" };
 // Manually adding the new user to the session
 session.Store(user);
 
-var existing = session.Query<User>().Single(x => x.FirstName == "Max");
+var existing = await session.Query<User>().SingleAsync(x => x.FirstName == "Max");
 existing.Internal = false;
 
 // Manually marking an existing user as changed
@@ -555,7 +555,7 @@ var user = new User { FirstName = "Jeremy", LastName = "Miller" };
 // Manually adding the new user to the session
 session.Store(user);
 
-var existing = session.Query<User>().Single(x => x.FirstName == "Max");
+var existing = await session.Query<User>().SingleAsync(x => x.FirstName == "Max");
 existing.Internal = false;
 
 // Marking another existing User document as deleted
