@@ -72,14 +72,30 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
     }
 
     /// <remarks>
-    ///     #5861: no <c>BeforeClose</c> hook here any more. The RLS lifetimes used it to reset their session
-    ///     variable synchronously; Npgsql discards session state when the connection goes back to the pool,
-    ///     and <see cref="DisposeAsync" /> still resets it explicitly.
+    ///     #5861: the only synchronous database call this lifetime still makes is the RLS lifetimes' tenant reset in
+    ///     <see cref="resetBeforeSynchronousRelease" />. It runs only for a connection this lifetime opened, never a
+    ///     caller-supplied one, and only after the transaction is gone, because a reset inside an aborted transaction
+    ///     would fail.
     /// </remarks>
     public void Dispose()
     {
         Transaction?.SafeDispose();
+        Transaction = null;
+
+        if (_connection is { State: ConnectionState.Open } && !ReferenceEquals(_connection, _options.Connection))
+        {
+            resetBeforeSynchronousRelease(_connection);
+        }
+
         _connection?.SafeDispose();
+    }
+
+    /// <summary>
+    ///     #5861: the hook a synchronous <see cref="Dispose" /> calls before it releases a connection this lifetime
+    ///     opened. Only the RLS lifetimes use it. It must not throw.
+    /// </summary>
+    protected virtual void resetBeforeSynchronousRelease(NpgsqlConnection connection)
+    {
     }
 
     // TODO -- this should be ValueTask

@@ -22,6 +22,12 @@ internal class RlsTransactionalConnection: TransactionalConnection
         return RlsSessionVariableApplier.ApplyAsync(connection, _settingName, _tenantId, token);
     }
 
+    // #5861: the one synchronous call Marten 10 keeps. See RlsSessionVariableApplier.ResetBeforeSynchronousRelease.
+    protected override void resetBeforeSynchronousRelease(NpgsqlConnection connection)
+    {
+        RlsSessionVariableApplier.ResetBeforeSynchronousRelease(connection, _settingName, _options.Tenant?.Database, Logger);
+    }
+
     protected override Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)
     {
         return RlsSessionVariableApplier.ResetAsync(connection, _settingName, token);

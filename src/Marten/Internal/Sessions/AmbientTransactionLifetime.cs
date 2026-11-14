@@ -79,10 +79,14 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
 
     public void Dispose()
     {
-        // #5861: no synchronous RLS reset. Npgsql discards session state when the connection goes back to
-        // the pool, and DisposeAsync still resets it explicitly.
         if (OwnsConnection)
         {
+            // #5861: the RLS lifetime's one synchronous tenant reset, for a connection this lifetime opened itself
+            if (_connection is { State: ConnectionState.Open } && _options.Connection == null)
+            {
+                resetBeforeSynchronousRelease(_connection);
+            }
+
             _connection?.Close();
             _connection?.Dispose();
         }
@@ -119,6 +123,14 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
             _connection.EnlistTransaction(_options.DotNetTransaction);
         }
+    }
+
+    /// <summary>
+    ///     #5861: the hook a synchronous <see cref="Dispose" /> calls before it releases a connection this lifetime
+    ///     opened. Only the RLS lifetime uses it. It must not throw.
+    /// </summary>
+    protected virtual void resetBeforeSynchronousRelease(NpgsqlConnection connection)
+    {
     }
 
     protected virtual Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
