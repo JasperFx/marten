@@ -814,14 +814,28 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsUpcasting => false;
 
     /// <summary>
-    ///     Left FALSE because the operation genuinely does not exist in Marten. ArchiveStream is on
-    ///     the shared IEventStoreOptions surface but its reverse is not: Polecat declares
-    ///     UnArchiveStream on its own IEventOperations and Marten has no equivalent at all (nothing
-    ///     in src/Marten matches "UnArchive"), which is why the shared fixture gates it rather than
-    ///     putting it on IEventStoreOperations. The unarchive facts of StreamArchivingCompliance skip;
-    ///     every archiving fact around them still runs.
+    ///     marten#5476: <c>IEventStoreOperations.UnArchiveStream</c> calls <c>mt_unarchive_stream</c>, the
+    ///     reverse of <c>mt_archive_stream</c>, so the unarchive facts of <c>StreamArchivingCompliance</c> run.
+    ///     The method lives on Marten's own <c>IEventStoreOperations</c> until it is lifted onto the shared
+    ///     interface, which is why the fixture still reaches it through the hook below.
     /// </summary>
-    public override bool SupportsUnarchiveStream => false;
+    public override bool SupportsUnarchiveStream => true;
+
+    public override void UnArchiveStream(IDocumentOperations session, object streamIdentity)
+    {
+        switch (streamIdentity)
+        {
+            case Guid streamId:
+                session.Events.UnArchiveStream(streamId);
+                break;
+            case string streamKey:
+                session.Events.UnArchiveStream(streamKey);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(streamIdentity),
+                    $"Marten streams are identified by Guid or string, not {streamIdentity.GetType().FullName}");
+        }
+    }
 
     /// <summary>
     ///     marten#5673: IEventStoreOperations.TombstoneStream is implemented by DeleteStreamOperation,

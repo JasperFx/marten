@@ -783,7 +783,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 
     /// <summary>
     /// #4968: vend the shared Weasel.Storage.Events auxiliary-operation seam. Marten routes the stream
-    /// ARCHIVE operation through it, single-sourcing the invocation contract with Polecat, and (marten#5673)
+    /// ARCHIVE operation through it, and (marten#5476) its reverse behind
+    /// <c>IEventStoreOperations.UnArchiveStream</c> as the same slot with <c>archived: false</c>, single-sourcing the invocation contract with Polecat, and (marten#5673)
     /// the stream hard delete behind <c>IEventStoreOperations.TombstoneStream</c>. Progression stays
     /// Marten-local and is intentionally left null:
     /// <list type="bullet">
@@ -801,16 +802,10 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     {
         var graph = (EventGraph)registry;
         return new EventAuxiliaryOperations(
+            // marten#5476: archived: false is IEventStoreOperations.UnArchiveStream, which calls
+            // mt_unarchive_stream rather than mt_archive_stream.
             ArchiveStream: (streamId, tenantId, archived) =>
-            {
-                if (!archived)
-                {
-                    throw new NotSupportedException(
-                        "Marten does not support un-archiving a stream; only archive is issued through the event-store seam.");
-                }
-
-                return new ArchiveStreamOperation(graph, streamId) { TenantId = tenantId };
-            },
+                new ArchiveStreamOperation(graph, streamId, archived) { TenantId = tenantId },
             TombstoneStream: (streamId, tenantId) => new DeleteStreamOperation(graph, streamId, tenantId));
     }
 }
