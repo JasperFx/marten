@@ -39,13 +39,16 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         CommandTimeout = _options.Timeout ?? _connection?.CommandTimeout ?? StoreOptions.DefaultTimeout;
     }
 
-    public NpgsqlConnection Connection
+    /// <summary>
+    ///     The current connection, without opening one. Null until the lifetime has connected; use
+    ///     <see cref="OpenConnectionAsync" /> to connect first.
+    /// </summary>
+    public NpgsqlConnection? Connection => _connection;
+
+    public async ValueTask<NpgsqlConnection> OpenConnectionAsync(CancellationToken token)
     {
-        get
-        {
-            EnsureConnected();
-            return _connection!;
-        }
+        await BeginTransactionAsync(token).ConfigureAwait(false);
+        return _connection!;
     }
 
     public bool OwnsConnection { get; }
@@ -76,12 +79,10 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
 
     public void Dispose()
     {
+        // #5861: no synchronous RLS reset. Npgsql discards session state when the connection goes back to
+        // the pool, and DisposeAsync still resets it explicitly.
         if (OwnsConnection)
         {
-            if (_connection is { State: ConnectionState.Open })
-            {
-                BeforeClose(_connection);
-            }
             _connection?.Close();
             _connection?.Dispose();
         }
@@ -102,24 +103,6 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         batch.Timeout = CommandTimeout;
     }
 
-    public void BeginTransaction()
-    {
-        EnsureConnected();
-    }
-
-    public void EnsureConnected()
-    {
-        if (_connection == null)
-        {
-#pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
-            _connection.Open();
-            AfterOpened(_connection);
-            _connection.EnlistTransaction(_options.DotNetTransaction);
-        }
-    }
-
     public ValueTask EnsureConnectedAsync(CancellationToken token)
     {
         return BeginTransactionAsync(token);
@@ -138,17 +121,9 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         }
     }
 
-    protected virtual void AfterOpened(NpgsqlConnection connection)
-    {
-    }
-
     protected virtual Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
     {
         return Task.CompletedTask;
-    }
-
-    protected virtual void BeforeClose(NpgsqlConnection connection)
-    {
     }
 
     protected virtual Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)

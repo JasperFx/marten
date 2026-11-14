@@ -7,25 +7,19 @@ using Npgsql;
 namespace Marten.Internal.Sessions.Rls;
 
 /// <remarks>
-///     Marten 10 (#5729): every command path is async, so <see cref="ApplyAsync" /> and
-///     <see cref="ResetAsync" /> are the applier. The synchronous <see cref="Apply" /> and
-///     <see cref="Reset" /> remain only for the public synchronous entry points that still open or close
-///     a connection without awaiting: <c>IQuerySession.Connection</c>, <c>IDocumentSession.BeginTransaction()</c>,
-///     the synchronous <c>Serializable</c> session factories, and synchronous <c>Dispose()</c>. They go when
-///     those APIs do.
+///     Marten 10 (#5729, #5861): the applier is asynchronous only. The synchronous <c>Apply</c>/<c>Reset</c>
+///     went with the public synchronous entry points that were their last callers --
+///     <c>IQuerySession.Connection</c>, <c>IDocumentSession.BeginTransaction()</c> and the synchronous
+///     <c>Serializable</c> session factories. A synchronous <c>Dispose()</c> no longer resets the setting:
+///     Npgsql discards session state when the connection goes back to its pool (unless the connection string
+///     sets <c>No Reset On Close</c>), and every Marten RLS lifetime applies its own tenant on open anyway.
+///     <c>DisposeAsync()</c> still resets it, which matters for a connection the caller supplied
+///     (<c>SessionOptions.ForTransaction</c>): that one is not returned to the pool by the session, so after a
+///     synchronous <c>Dispose()</c> it keeps the session's tenant setting.
 /// </remarks>
 internal static class RlsSessionVariableApplier
 {
     private const string SetConfigSql = "SELECT set_config(@name, @value, false)";
-
-    public static void Apply(NpgsqlConnection connection, string settingName, string tenantId)
-    {
-        using var cmd = connection.CreateCommand();
-        cmd.CommandText = SetConfigSql;
-        cmd.Parameters.AddWithValue("name", settingName);
-        cmd.Parameters.AddWithValue("value", tenantId);
-        cmd.ExecuteNonQuery();
-    }
 
     public static async Task ApplyAsync(NpgsqlConnection connection, string settingName, string tenantId, CancellationToken token)
     {
@@ -34,16 +28,6 @@ internal static class RlsSessionVariableApplier
         cmd.Parameters.AddWithValue("name", settingName);
         cmd.Parameters.AddWithValue("value", tenantId);
         await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-    }
-
-    public static void Reset(NpgsqlConnection connection, string settingName)
-    {
-        if (connection.State != ConnectionState.Open) return;
-
-        using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT set_config(@name, NULL, false)";
-        cmd.Parameters.AddWithValue("name", settingName);
-        cmd.ExecuteNonQuery();
     }
 
     public static async Task ResetAsync(NpgsqlConnection connection, string settingName, CancellationToken token = default)

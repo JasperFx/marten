@@ -112,7 +112,7 @@ public class PagedList<T>: IPagedList<T>
     /// <param name="pageSize"></param>
     public static PagedList<T> Create(IQueryable<T> queryable, int pageNumber, int pageSize, bool useCountQuery = false)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw new NotSupportedException(QuerySession.ToPagedListNotSupportedMessage);
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ public class PagedList<T>: IPagedList<T>
     /// <param name="useCountQuery">Use a separate count query rather than using Stats. Default is false and uses Stats</param>
     public void Init(IQueryable<T> queryable, int pageNumber, int pageSize, bool useCountQuery=false)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw new NotSupportedException(QuerySession.ToPagedListNotSupportedMessage);
     }
 
     /// <summary>

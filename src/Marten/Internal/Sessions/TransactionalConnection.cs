@@ -37,13 +37,16 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         CommandTimeout = _options.Timeout ?? _connection?.CommandTimeout ?? 30;
     }
 
-    public NpgsqlConnection Connection
+    /// <summary>
+    ///     The current connection, without opening one. Null until the lifetime has connected; use
+    ///     <see cref="OpenConnectionAsync" /> to connect first.
+    /// </summary>
+    public NpgsqlConnection? Connection => _connection;
+
+    public async ValueTask<NpgsqlConnection> OpenConnectionAsync(CancellationToken token)
     {
-        get
-        {
-            EnsureConnected();
-            return _connection!;
-        }
+        await EnsureConnectedAsync(token).ConfigureAwait(false);
+        return _connection!;
     }
 
     public int CommandTimeout { get; set; }
@@ -68,23 +71,15 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
     }
 
+    /// <remarks>
+    ///     #5861: no <c>BeforeClose</c> hook here any more. The RLS lifetimes used it to reset their session
+    ///     variable synchronously; Npgsql discards session state when the connection goes back to the pool,
+    ///     and <see cref="DisposeAsync" /> still resets it explicitly.
+    /// </remarks>
     public void Dispose()
     {
         Transaction?.SafeDispose();
-        if (_connection is { State: ConnectionState.Open })
-        {
-            BeforeClose(_connection);
-        }
         _connection?.SafeDispose();
-    }
-
-    public virtual void BeginTransaction()
-    {
-        EnsureConnected();
-        if (Transaction == null)
-        {
-            Transaction = _connection.BeginTransaction(_options.IsolationLevel);
-        }
     }
 
     // TODO -- this should be ValueTask
@@ -113,25 +108,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             .BeginTransactionAsync(_options.IsolationLevel, token).ConfigureAwait(false);
     }
 
-    public void Commit()
-    {
-        if (Transaction == null)
-        {
-            throw new InvalidOperationException("Trying to commit a transaction that was never started");
-        }
-
-        Transaction.Commit();
-        Transaction.Dispose();
-        Transaction = null;
-
-        if (_connection is { State: ConnectionState.Open })
-        {
-            BeforeClose(_connection);
-        }
-        _connection?.Close();
-        _connection = null;
-    }
-
     public async Task CommitAsync(CancellationToken token)
     {
         if (Transaction == null)
@@ -157,24 +133,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
 
         _connection = null;
-    }
-
-    public void Rollback()
-    {
-        if (Transaction != null)
-        {
-            Transaction.Rollback();
-            Transaction.Dispose();
-            Transaction = null;
-
-            if (_connection is { State: ConnectionState.Open })
-            {
-                BeforeClose(_connection);
-            }
-            _connection?.Close();
-            _connection?.Dispose();
-            _connection = null;
-        }
     }
 
     /// <remarks>
@@ -237,29 +195,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
     }
 
-
-    public void EnsureConnected()
-    {
-        if (_connection == null)
-        {
-#pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
-        }
-        else if (discardBrokenConnection())
-        {
-            _connection.SafeDispose();
-#pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
-        }
-
-        if (_connection.State == ConnectionState.Closed)
-        {
-            _connection.Open();
-            AfterOpened(_connection);
-        }
-    }
 
     public async ValueTask EnsureConnectedAsync(CancellationToken token)
     {
@@ -327,17 +262,9 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         return true;
     }
 
-    protected virtual void AfterOpened(NpgsqlConnection connection)
-    {
-    }
-
     protected virtual Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
     {
         return Task.CompletedTask;
-    }
-
-    protected virtual void BeforeClose(NpgsqlConnection connection)
-    {
     }
 
     protected virtual Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)
@@ -458,7 +385,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             {
                 foreach (var participant in participants)
                 {
-                    await participant.BeforeCommitAsync(Connection, Transaction!, token).ConfigureAwait(false);
+                    await participant.BeforeCommitAsync(_connection!, Transaction!, token).ConfigureAwait(false);
                 }
             }
 

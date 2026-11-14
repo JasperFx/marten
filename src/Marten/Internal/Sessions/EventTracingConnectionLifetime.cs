@@ -196,14 +196,6 @@ internal class EventTracingConnectionLifetime:
             tags: new ActivityTagsCollection { { "Type", e.EventTypeName } }));
     }
 
-    public IAlwaysConnectedLifetime Start()
-    {
-        if (InnerConnectionLifetime is ITransactionStarter starter) return starter.Start();
-
-        throw new InvalidOperationException(
-            $"The inner connection lifetime {InnerConnectionLifetime} does not implement {nameof(ITransactionStarter)}");
-    }
-
     public Task<IAlwaysConnectedLifetime> StartAsync(CancellationToken token)
     {
         if (InnerConnectionLifetime is ITransactionStarter starter) return starter.StartAsync(token);

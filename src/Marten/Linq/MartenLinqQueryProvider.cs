@@ -67,14 +67,17 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         return new MartenLinqQueryable<TElement>(_session, this, expression);
     }
 
+    // #5861: every synchronous single-result or aggregating LINQ operator (First(), Count(), Any(), Sum()...)
+    // lands here with the operator's own Queryable method on top of the expression, which is what lets the
+    // refusal name the asynchronous operator to use.
     public object Execute(Expression expression)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw SynchronousLinqRefusal.ForExecution(expression);
     }
 
     public TResult Execute<TResult>(Expression expression)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw SynchronousLinqRefusal.ForExecution(expression);
     }
 
     internal async ValueTask EnsureStorageExistsAsync(LinqQueryParser parser,
@@ -214,7 +217,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
 
     public T? ExecuteHandler<T>(IQueryHandler<T> handler)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw new NotSupportedException(SynchronousLinqRefusal.Preamble + ". Use ExecuteHandlerAsync() instead.");
     }
 
 

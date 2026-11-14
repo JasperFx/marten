@@ -24,12 +24,9 @@ public interface IDocumentSession: IDocumentOperations, IDocumentSessionOperatio
     /// Force this session to start a connection and transaction. This will make the session do consistent reads through the transaction. Is
     /// idempotent.
     /// </summary>
-    void BeginTransaction();
-
-    /// <summary>
-    /// Force this session to start a connection and transaction. This will make the session do consistent reads through the transaction. Is
-    /// idempotent.
-    /// </summary>
+    /// <remarks>
+    /// Marten 10 (#5861) removed the synchronous <c>BeginTransaction()</c>; this is its replacement.
+    /// </remarks>
     /// <param name="token"></param>
     /// <returns></returns>
     ValueTask BeginTransactionAsync(CancellationToken token);

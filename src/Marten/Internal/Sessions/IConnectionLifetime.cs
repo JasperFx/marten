@@ -144,15 +144,21 @@ internal static class ConnectionLifetimeExtensions
 
 public interface ITransactionStarter
 {
-    IAlwaysConnectedLifetime Start();
     Task<IAlwaysConnectedLifetime> StartAsync(CancellationToken token);
 }
 
+/// <remarks>
+///     Marten 10 (#5861): the synchronous <c>Connection</c> getter, which opened the connection on first use,
+///     and <c>BeginTransaction()</c> are gone. Use <see cref="OpenConnectionAsync" /> and
+///     <see cref="BeginTransactionAsync" />.
+/// </remarks>
 public interface IAlwaysConnectedLifetime : IConnectionLifetime
 {
-    NpgsqlConnection Connection { get; }
+    /// <summary>
+    ///     The lifetime's connection, opening it first if it is not open yet. The lifetime owns it.
+    /// </summary>
+    ValueTask<NpgsqlConnection> OpenConnectionAsync(CancellationToken token);
 
-    void BeginTransaction();
     ValueTask BeginTransactionAsync(CancellationToken token);
 }
 
