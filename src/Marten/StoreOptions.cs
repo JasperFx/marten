@@ -793,6 +793,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// its lifetime.
     /// </summary>
     internal bool OwnsPrimaryDataSource { get; set; } = true;
+
+    // #5898: the data source handed to Connection(NpgsqlDataSource), kept so that a later
+    // ConfigureNpgsqlDataSourceBuilder can rebuild the factory around it rather than discard it.
+    private NpgsqlDataSource? _suppliedDataSource;
     private readonly List<Type> _compiledQueryTypes = new();
 
     /// <summary>
@@ -909,6 +913,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <param name="connectionString"></param>
     public void DataSourceFactory(INpgsqlDataSourceFactory dataSourceFactory, string? connectionString = null)
     {
+        // A factory chosen here replaces any data source supplied earlier; Connection(NpgsqlDataSource)
+        // records its own afterwards.
+        _suppliedDataSource = null;
         NpgsqlDataSourceFactory = dataSourceFactory;
 
         if (_tenancy == null && connectionString != null)
@@ -979,6 +986,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             ),
             dataSource.ConnectionString
         );
+
+        _suppliedDataSource = dataSource;
     }
 
     /// <summary>
@@ -1015,8 +1024,18 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             return builder;
         };
 
-        // Rebuild the data source factory so it uses the updated builder factory
-        NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(NpgsqlDataSourceBuilderFactory);
+        // Rebuild the data source factory so it uses the updated builder factory.
+        //
+        // #5898: but never by discarding a data source the caller supplied. Replacing it with a
+        // DefaultNpgsqlDataSourceFactory made Marten build a second data source from the supplied one's
+        // ConnectionString, which Npgsql has stripped of its password -- "No password has been provided"
+        // -- and which in any case is not the data source the caller configured (auth callbacks, type
+        // mappings, pool settings). DcbStorageMode = HStore calls this, so Connection(dataSource)
+        // followed by HStore mode failed at the first connection. The updated builder factory still
+        // applies to any other connection string, a tenant database for instance.
+        NpgsqlDataSourceFactory = _suppliedDataSource != null
+            ? new SingleNpgsqlDataSourceFactory(NpgsqlDataSourceBuilderFactory, _suppliedDataSource)
+            : new DefaultNpgsqlDataSourceFactory(NpgsqlDataSourceBuilderFactory);
     }
 
     /// <summary>
