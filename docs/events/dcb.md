@@ -382,7 +382,7 @@ catch (DcbConcurrencyException ex)
 <!-- endSnippet -->
 
 ::: tip
-The consistency check only detects events that match the **same tag query**. Events appended to unrelated tags or streams will not cause a violation.
+The consistency check only detects events appended **after the read that carry a tag value the query reads**. Events appended to unrelated tags or streams never cause a violation, and neither does another boundary's save that appends nothing carrying one of those tag values. By default the check does not look at event types: an event of a type the query does not select still conflicts if it carries a tag value the query reads. To honour `AndEventsOfType` in the check as well, see [scoping conflicts by event type](#scoping-conflicts-by-event-type).
 :::
 
 ### How the boundary check serializes <Badge type="tip" text="9.4" />
@@ -391,15 +391,73 @@ The consistency check only detects events that match the **same tag query**. Eve
 Marten 9.4 added a new schema object — `mt_dcb_tag_version` — to fix [#4591](https://github.com/JasperFx/marten/issues/4591). Deployments with `AutoCreate.None` must run `db-patch` / `db-apply` before deploying 9.4. See [Migration Guide → 9.4 schema migration](/migration-guide#required-schema-migration-dcb-tag-version-side-table).
 :::
 
-Internally, `FetchForWritingByTags` records the captured version of every tag value referenced by the query in a side table (`mt_dcb_tag_version`, one row per `(tag_table, tag_value, tenant_id)`). At `SaveChangesAsync` time Marten emits an `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured RETURNING 1` for each captured row. The row-level lock plus the captured-version predicate is the serialization point: two truly-concurrent appenders observing the same captured version both attempt to bump the row — the first wins, the second's `RETURNING` matches no rows and surfaces `DcbConcurrencyException`. This works at PostgreSQL's default `READ COMMITTED` isolation; no `SERIALIZABLE`, no advisory locks.
+Internally, `FetchForWritingByTags` records the captured version of every tag value referenced by the query in a side table (`mt_dcb_tag_version`, one row per `(tag_table, tag_value, tenant_id)`). A version only moves when an event carrying that tag value is appended: every save that appends a tagged event — boundary or otherwise — bumps the row of each tag value its events carry. That's what keeps a plain `session.Events.Append(streamId, taggedEvent)` from silently committing past an in-flight boundary fetch held by another session.
 
-Every save that appends a tagged event — boundary or otherwise — also queues a producer-side bump against the same row. That's what keeps a plain `session.Events.Append(streamId, taggedEvent)` from silently committing past an in-flight boundary fetch held by another session: the version moves on every commit, not only on boundary saves.
+At `SaveChangesAsync` time a boundary save emits an `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured RETURNING 1` for each captured row. For a row the save's own events do not carry, the update leaves the version as it is: the statement exists to **lock** the row and **compare** it. The row-level lock plus the captured-version predicate is the serialization point. Two concurrent boundary saves over the same tag value take turns; the second waits for the first to commit and then compares against the committed row, so it fails with `DcbConcurrencyException` only if the first appended an event carrying that tag value. This works at PostgreSQL's default `READ COMMITTED` isolation; no `SERIALIZABLE`, no advisory locks.
+
+The rows a save checks and the rows its events bump are locked together, in one sorted order, so two saves that each check a tag value the other one appends to cannot deadlock: one of them commits, and the other fails with `DcbConcurrencyException`.
+
+::: tip Changed in 9.60
+Before 9.60 the check also bumped every row it read. Two boundaries reading the same tag value therefore always conflicted, even when neither appended anything the other reads, and two saves that each read a tag the other appended to could deadlock instead of failing cleanly ([#5887](https://github.com/JasperFx/marten/issues/5887)). If you relied on a boundary save invalidating every concurrent boundary over the same tag value, append an event carrying that tag value.
+:::
 
 A save asserts each row once, however many boundaries named it. Fetching one query twice on a session, or fetching two queries that overlap on a tag value, is not a conflict with itself — the oldest captured version of the row is the one enforced, so every read the session made still has to be valid.
 
 A boundary that decides there is **nothing to append** is not a save at all as far as the side table is concerned. The check guards an append, so a session that fetches a boundary and then calls `SaveChangesAsync()` without appending anything leaves `mt_dcb_tag_version` exactly as it found it, and never throws `DcbConcurrencyException` — even if another session moved the boundary in the meantime. Two sessions can reach the same "nothing to do" conclusion about one boundary and both commit, and a no-op decision never invalidates a concurrent session that does have events to append. The boundary is released by that commit: to act on it afterwards, fetch it again.
 
 The side table grows with **distinct boundary-tag values**, not with event volume, and is never deleted automatically — the same `StudentId` or `CourseId` reuses its row across every save. Avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
+
+### Scoping conflicts by event type
+
+Marten 9.60 adds `opts.Events.DcbConflictScope`. A query condition can name event types with `AndEventsOfType`, and the [DCB specification](https://dcb.events/specification/) only fails an append when a later event matches the query — event type included. By default Marten keeps its versions per tag value, so an event of a type the condition does not name still conflicts when it carries the same tag value. That is never wrong, but it reports conflicts the specification would not, and under load those cost retries:
+
+<!-- snippet: sample_marten_dcb_conflict_scope -->
+<a id='snippet-sample_marten_dcb_conflict_scope'></a>
+```cs
+var store = StoreOptions(opts =>
+{
+    opts.Events.RegisterTagType<LibraryLoanId>("library_loan");
+
+    // Honour AndEventsOfType in the DCB conflict check, as the DCB specification does.
+    // On a running system, deploy TagValueRecordingEventTypes to every node first.
+    opts.Events.DcbConflictScope = DcbConflictScope.TagValueAndEventType;
+});
+
+await using var session = store.LightweightSession();
+
+// The decision only folds returns...
+var query = new EventTagQuery()
+    .Or(new LibraryLoanId(loanId))
+    .AndEventsOfType<LibraryBookReturned>();
+
+var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(query);
+
+// ...so a reminder for the same loan appended in the meantime by another session
+// no longer fails this save with a DcbConcurrencyException
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_conflict_scope_by_event_type.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_conflict_scope' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`DcbConflictScope` has three settings:
+
+| Setting | A condition naming event types conflicts with… | Extra version rows written |
+| --- | --- | --- |
+| `TagValue` (default in 9.x) | any later event carrying the tag value | none |
+| `TagValueRecordingEventTypes` | any later event carrying the tag value | one per (tag value, event type) appended |
+| `TagValueAndEventType` | later events of those types carrying the tag value | one per (tag value, event type) appended |
+
+A condition without event types conflicts with any event carrying its tag value under every setting.
+
+`TagValueAndEventType` checks a version per (tag value, event type), which is only maintained by nodes running `TagValueRecordingEventTypes` or `TagValueAndEventType`. No schema change is involved — the extra versions are rows in the same `mt_dcb_tag_version` table — but **switching a running system takes two deployments**:
+
+1. Deploy `TagValueRecordingEventTypes` to every node. Conflicts are still detected per tag value, and every append now also maintains the per-type versions.
+2. Once no node is left on `TagValue`, deploy `TagValueAndEventType`.
+
+::: warning
+Switching straight from `TagValue` to `TagValueAndEventType` with a rolling deployment can **miss conflicts**. While any node still runs `TagValue`, its appends do not move the per-type versions, so a node already checking them does not see those appends as conflicts. A deployment that stops every node before starting the new version does not need the intermediate step.
+:::
+
+Each appended event carrying a tag writes one extra `mt_dcb_tag_version` row per (tag value, event type), so the side table holds roughly one row per tag value per event type that has been appended with it.
 
 ### Tuning the side table for a large tag set <Badge type="tip" text="9.47" />
 
@@ -621,7 +679,7 @@ If you're starting a new event store on Marten 9.0 and most of your projections 
 
 ### Consistency Check <Badge type="tip" text="9.4" />
 
-At `SaveChangesAsync` time, Marten emits a per-tag `UPDATE … WHERE version = $captured` against the `mt_dcb_tag_version` side table — one statement per distinct `(tag_table, tag_value)` tuple in the boundary query, in deterministic sort order. The row-level write lock plus the version predicate is the serialization point: two concurrent appenders capturing the same version both try to bump it; one wins, the other's `UPDATE` matches zero rows and surfaces `DcbConcurrencyException`. This works at PostgreSQL's default `READ COMMITTED` isolation — no advisory locks, no `SERIALIZABLE` transactions.
+At `SaveChangesAsync` time, Marten emits one `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured` per distinct `(tag_table, tag_value)` row the boundary read against the `mt_dcb_tag_version` side table, together with the bumps of the tag values the save's own events carry, all in one deterministic sort order. The row-level write lock plus the version predicate is the serialization point: concurrent saves over the same row take turns, and a save fails with `DcbConcurrencyException` when an event carrying one of its tag values was committed after its read. This works at PostgreSQL's default `READ COMMITTED` isolation — no advisory locks, no `SERIALIZABLE` transactions. See [how the boundary check serializes](#how-the-boundary-check-serializes-) for the detail.
 
 The check shape no longer depends on `DcbStorageMode`. Both `TagTables` and `HStore` share the same side-table mechanism for the consistency check; the storage mode only affects how tags are physically read at fetch time and written at append time.
 
