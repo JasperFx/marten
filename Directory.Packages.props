@@ -883,15 +883,20 @@
     <!-- JasperFx 2.102.0 (from 2.101.0): jasperfx#1150, IEventDatabase.FetchFirstEventTimestampsAfterAsync, the
          timestamp of the first event after a sequence so CritterWatch can report projection lag in time. The new
          PendingEventAgeCompliance suite is enrolled in EventSourcingTests/Compliance/marten_event_store_compliance_wave16.cs. -->
-    <PackageVersion Include="JasperFx" Version="3.0.0" />
-    <PackageVersion Include="JasperFx.Events" Version="3.0.0" />
+    <!-- JasperFx 3.2.0 (from 3.0.0): jasperfx#1184/#1185, a [BoundaryAggregate] with an Id member gets the
+         string-keyed evolver FetchForWritingByTags looks up (it threw "No source-generated dispatcher found").
+         jasperfx#1183 adds the DcbAppendConditionCompliance suite, enrolled as dcb_append_condition_compliance
+         (marten#5893); it asserts #5887's append condition. 3.1.0 turns runtime-async on for net11.0 only;
+         net10.0 is unchanged. -->
+    <PackageVersion Include="JasperFx" Version="3.2.0" />
+    <PackageVersion Include="JasperFx.Events" Version="3.2.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.0.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.2.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -910,11 +915,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.0.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.2.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.0.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.2.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
