@@ -12,6 +12,7 @@ using Marten.EventStorage.Quick;
 using Marten.EventStorage.Querying;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Internal.OpenTelemetry;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 
@@ -107,7 +108,11 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
 
         // #5772: the variant that reads its seq_id back is not an AppendEventOperationBase, so verbose tracing
         // could not see which event it appends. See TracedQuickAppendEventOperation.
+        // #5730: the wrapper is only ever read by EventTracingConnectionLifetime, which SessionOptions only
+        // builds while something listens to the "Marten" source, so with no listener it is pure allocation.
+        // Asked per call rather than once here because a tracer can attach after the store is built.
         return _traceAppendedEvents && op is not Weasel.Storage.AppendEventOperationBase and not NoDataReturnedCall
+                                    && MartenTracing.ActivitySource.HasListeners()
             ? new TracedQuickAppendEventOperation(op, stream, e)
             : op;
     }
