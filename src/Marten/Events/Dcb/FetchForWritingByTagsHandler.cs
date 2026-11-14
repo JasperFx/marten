@@ -153,8 +153,13 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         var schema = _store.Events.DatabaseSchemaName;
 
         // Distinct by (TagTable, TagValue) — the side table is keyed by table
-        // suffix + canonical string value (see TagValueStringifier), not by the
-        // condition's optional EventType filter.
+        // suffix + canonical string value (see TagValueStringifier). Under the
+        // default DcbConflictScope.TagValue that ignores the condition's optional
+        // EventType filter, so an appended event of any type carrying the tag value
+        // is a conflict. #5887: under TagValueAndEventType a condition naming an
+        // event type captures that type's own version instead, which only appends
+        // of that type move.
+        var scopeByEventType = _store.Events.DcbConflictScope == DcbConflictScope.TagValueAndEventType;
         var targets = new List<(string TagTable, string TagValue)>(conditions.Count);
         var seen = new HashSet<(string, string)>();
         foreach (var condition in conditions)
@@ -164,10 +169,17 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
                                    $"Tag type '{condition.TagType.Name}' is not registered.");
             var raw = registration.ExtractValue(condition.TagValue);
             var tagValue = TagValueStringifier.Stringify(raw);
-            var key = (registration.TableSuffix, tagValue);
+
+            // The same event type name the events SELECT below filters on, so the version checked
+            // and the events read always describe the same set of events.
+            var tagTable = scopeByEventType && condition.EventType != null
+                ? DcbTagVersionKeys.ForEventType(registration.TableSuffix,
+                    _store.Events.EventMappingFor(condition.EventType).EventTypeName)
+                : registration.TableSuffix;
+            var key = (tagTable, tagValue);
             if (seen.Add(key))
             {
-                targets.Add((registration.TableSuffix, tagValue));
+                targets.Add(key);
             }
         }
 

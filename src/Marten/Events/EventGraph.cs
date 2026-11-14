@@ -366,6 +366,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public int? DcbTagVersionFillFactor { get; set; }
 
     /// <summary>
+    /// #5887. What makes a later append conflict with a boundary read by <c>FetchForWritingByTags</c>.
+    /// The default since Marten 10, <see cref="Marten.Events.DcbConflictScope.TagValueAndEventType"/>, honours
+    /// the event types a query condition names; <see cref="Marten.Events.DcbConflictScope.TagValue"/> (the
+    /// Marten 9 default) conflicts on any appended event carrying a tag value the boundary read. Read the remarks on
+    /// <see cref="Marten.Events.DcbConflictScope"/> before changing it on a running system.
+    /// </summary>
+    public DcbConflictScope DcbConflictScope { get; set; } = DcbConflictScope.TagValueAndEventType;
+
+    /// <summary>
     /// When enabled, adds FOR UPDATE to the stream version SELECT inside
     /// mt_quick_append_events for OCC (optimistic concurrency) appends.
     /// This prevents a READ COMMITTED race where two concurrent transactions

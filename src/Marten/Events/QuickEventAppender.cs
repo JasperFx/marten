@@ -159,12 +159,12 @@ internal class QuickEventAppender: IEventAppender
                 }
             }
 
-            // #4591: queue the DCB tag-version producer-bump once per stream,
+            // #4591: collect the DCB tag-version producer-bump once per stream,
             // regardless of which tag-write path above ran. The non-HStore
             // bulk QuickAppend code path writes tags inside the PostgreSQL
             // function — without this hook, those commits would silently
             // bypass any in-flight DCB boundary check.
-            EventTagOperations.QueueDcbVersionBumpIfNeeded(eventGraph, session, stream);
+            EventTagOperations.CollectDcbVersionBumps(eventGraph, session, stream);
         }
     }
 

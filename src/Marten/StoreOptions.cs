@@ -1144,6 +1144,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///     Restored settings:
     ///     <list type="bullet">
     ///       <item><see cref="EventGraph.EnableExtendedProgressionTracking"/> &rarr; <c>false</c></item>
+    ///       <item><see cref="EventGraph.DcbConflictScope"/> &rarr; <c>DcbConflictScope.TagValue</c></item>
     ///       <item>
     ///         <c>GateSideEffectsBehindPriorVersion</c> &rarr; <c>false</c> on every registered
     ///         projection (JasperFx 3.0 turned it on, jasperfx#1075). JasperFx has no store-wide
@@ -1156,6 +1157,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public void RestoreV9Defaults()
     {
         Events.EnableExtendedProgressionTracking = false;
+        Events.DcbConflictScope = DcbConflictScope.TagValue;
         _restoreV9SideEffectGate = true;
     }
 
