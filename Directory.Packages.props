@@ -1188,9 +1188,9 @@
          satisfied by the 2.102.0 pin above.
 
          weasel#786 is documentation only (a schema management guide). -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.1" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.1" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.1" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.2" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.2" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.2" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
