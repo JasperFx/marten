@@ -152,13 +152,21 @@ The schema gains one function, `mt_unarchive_stream`. With `UseArchivedStreamPar
 the foreign key cascade delete them, so un-archiving can restore them. Both changes apply with your normal schema
 migration.
 
-### LINQ join operators and `jsonb` filter parameters
+### LINQ `Join()`, `LeftJoin()` and `RightJoin()` translate <Badge type="tip" text="new" />
 
-- `Queryable.Join()`, .NET 10's `LeftJoin()` and `RightJoin()`, .NET 11's `FullJoin()`, and the .NET 11 overloads of
-  all four that return `(outer, inner)` tuples still throw `BadLinqExpressionException`. The message now gives the
-  rewrite: `GroupJoin()` + `SelectMany()` for an inner join, adding `DefaultIfEmpty()` for a left join, and the sources
-  swapped for a right join. There is no full outer join translation. See
+- `Queryable.Join()`, .NET 10's `LeftJoin()` and `RightJoin()`, and the .NET 11 overloads of the three that return
+  `(Outer, Inner)` tuples now translate to SQL joins. Marten rewrites each into the `GroupJoin()` + `SelectMany()`
+  (+ `DefaultIfEmpty()`) form it already translated, so the SQL is the same as for that form. `FullJoin()` is still
+  refused, as are a few shapes the rewrite cannot answer correctly: an operator other than `Where()` before the join,
+  a source that is not `session.Query<T>()`, a composite key, a comparer, and a join of a join. See
   [Joining Documents with GroupJoin](/documents/querying/linq/group-join#join-leftjoin-rightjoin-and-fulljoin).
+- Two fixes to the `GroupJoin()` + `SelectMany()` form that the new operators share. `Any()` over a join now asks
+  whether the join has a row; it used to answer for the outer side alone, ignoring the join and any filter on the inner
+  side. A `Where()` on the inner side after a left join (`DefaultIfEmpty()`) now throws `BadLinqExpressionException`;
+  it used to be applied before the join, which kept the outer rows the filter should have removed.
+
+### LINQ `jsonb` filter parameters
+
 - The containment (`@>`) and JSONPath filters LINQ builds for child-collection and dictionary queries bind their
   `jsonb` parameter as UTF-8 `byte[]` rather than a string, as document writes already did. A logger that prints
   `NpgsqlParameter.Value` shows `System.Byte[]` for that parameter; `Encoding.UTF8.GetString` recovers the JSON.

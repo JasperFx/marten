@@ -529,6 +529,36 @@ public class group_join_operator: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task GroupJoin_with_Any_asks_about_the_join_rather_than_the_outer_side()
+    {
+        await SetupData();
+
+        // #5910: Any() used to select from the outer CTE alone, dropping the join and the inner-side
+        // filter, so this answered true because there are customers.
+        var none = await _session.Query<JoinCustomer>()
+            .GroupJoin(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, o) => new { x.c.Name, o.Amount })
+            .Where(x => x.Amount > 1000m)
+            .AnyAsync();
+        none.ShouldBeFalse();
+
+        var some = await _session.Query<JoinCustomer>()
+            .GroupJoin(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, o) => new { x.c.Name, o.Amount })
+            .Where(x => x.Amount > 250m)
+            .AnyAsync();
+        some.ShouldBeTrue();
+
+        // Charlie has no orders, so an inner join from him alone has no rows
+        var charlie = await _session.Query<JoinCustomer>()
+            .Where(c => c.Name == "Charlie")
+            .GroupJoin(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, o) => new { x.c.Name, o.Amount })
+            .AnyAsync();
+        charlie.ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task GroupJoin_with_First()
     {
         await SetupData();

@@ -534,11 +534,20 @@ internal sealed class AnonProjectionExpander: ExpressionVisitor
             else
             {
                 var parameters = newExpr.Constructor!.GetParameters();
+                var isValueTuple = newExpr.Type.IsValueType
+                                   && typeof(System.Runtime.CompilerServices.ITuple).IsAssignableFrom(newExpr.Type);
                 for (var i = 0; i < parameters.Length; i++)
                 {
                     if (parameters[i].Name is { } name)
                     {
                         _memberToSource[name] = newExpr.Arguments[i];
+                    }
+
+                    // #5910: a ValueTuple's constructor parameters are item1, item2, ... but its fields,
+                    // which a later Where()/OrderBy()/Select() reads, are Item1, Item2, ...
+                    if (isValueTuple)
+                    {
+                        _memberToSource["Item" + (i + 1)] = newExpr.Arguments[i];
                     }
                 }
             }
