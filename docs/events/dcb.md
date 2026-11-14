@@ -546,7 +546,7 @@ CREATE TABLE IF NOT EXISTS mt_event_tag_student (
 CREATE INDEX idx_mt_event_tag_student_seq_id ON mt_event_tag_student USING btree (seq_id);
 ```
 
-DCB queries `LEFT JOIN` across each referenced tag table. Strengths: native column types preserve `Guid`/`int`/`string`/`long`/`short` semantics, and single-tag `EventsExistAsync` checks hit a small dedicated table via its primary-key index. Trade-offs: every distinct tag type adds a table, two indexes, and a foreign key; queries spanning N tag types pay N JOINs.
+DCB queries probe each referenced tag table through its primary key, one probe per query condition, and combine the matches on `seq_id`. Strengths: native column types preserve `Guid`/`int`/`string`/`long`/`short` semantics, and single-tag `EventsExistAsync` checks hit a small dedicated table via its primary-key index. Trade-offs: every distinct tag type adds a table, two indexes, and a foreign key.
 
 The foreign key does not cascade. Whenever Marten deletes events — stream compaction, `TombstoneStream`, archiving under `UseArchivedStreamPartitioning`, `DeleteSingleEventStreamAsync`, `DeleteAllTenantDataAsync`, and removing a tenant under `UseTenantPartitionedEvents` with `RemoveMartenManagedTenantsAsync` or `RemoveTenantFromShardAsync` — it deletes their tag rows first. The index on `seq_id` keeps the deletes that go by event, and the foreign key's own check on every deleted event, from scanning the whole tag table. The tenant-scoped deletes, `DeleteAllTenantDataAsync` and the two tenant removals, go by `tenant_id` instead. Neither the primary key nor the `seq_id` index leads with `tenant_id`, so each of them scans the tag table.
 
@@ -654,28 +654,28 @@ event table is slow enough to matter. Build it before you rely on DCB queries in
 
 ### Choosing a Storage Mode
 
-The HStore mode trades native column types and small-table primary-key lookups for index-of-one and JOIN elimination. The right choice depends on your DCB query shape.
+Choose on the shape of your data, not on speed: since 10.0 the two modes perform comparably. The differences that matter:
 
-A reproducible side-by-side benchmark lives at `src/DcbLoadTest` and can be re-run with `dotnet run --project src/DcbLoadTest -c Release` against any Marten dev Postgres. Numbers below were measured against PostgreSQL 15 with 10,000 seeded tagged events and 200 iterations per scenario after a warmup pass:
+- **Pick TagTables when one event carries two values of the same tag type**, such as a `HomeworkCopied` naming both students. HStore refuses such an event rather than dropping a tag.
+- **Pick HStore** if you would rather keep one GIN index on `mt_events` than a table per tag type. It is a little faster for tagged appends.
+- **Stay where you are** on an existing store. Neither mode is a reason to migrate.
 
-| Scenario                              | TagTables (ms/op) | HStore (ms/op) | HStore vs TagTables |
-| ------------------------------------- | ----------------: | -------------: | ------------------- |
-| `append`, no tags                     |             0.157 |          0.155 | 1% faster           |
-| `append`, 2 tags/event                |             0.194 |          0.137 | **29% faster**      |
-| `QueryByTagsAsync`, 1 tag             |             0.622 |          0.601 | 3% faster           |
-| `QueryByTagsAsync`, 2 tags OR         |            12.880 |          0.989 | **92% faster**      |
-| `EventsExistAsync`, 1 tag             |             0.404 |          0.910 | 125% slower         |
-| `EventsExistAsync`, 2 tags OR         |             3.164 |          0.962 | **70% faster**      |
-| `FetchForWritingByTags + commit`      |             0.931 |          0.571 | **39% faster**      |
+The harness at `src/DcbLoadTest` measures both, and `src/DcbLoadTest/RESULTS-10.0.md` has the full 10.0 results. The numbers below were measured against PostgreSQL 17 with the default `QuickWithServerTimestamps` append mode; reads use a store of **1,000,000** tagged events.
 
-Guidance:
+| Scenario | TagTables | HStore |
+| -------- | --------: | -----: |
+| append, 10 events × 2 tags per save, sequential (saves/s) | 1,135 | 1,449 |
+| same, 16 concurrent writers (saves/s) | 5,319 | 5,758 |
+| `FetchForWritingByTags`, 1 tag, ~10 events (p50 ms) | 0.30 | 0.24 |
+| `FetchForWritingByTags`, 2 tag types OR'd, ~1,010 events (p50 ms) | 3.93 | 4.98 |
+| decision: fetch + append + save, 1 tag (p50 ms) | 0.89 | 0.80 |
 
-- **Prefer HStore** when your DCB queries match on **two or more tag types** (the common case — most projection boundaries combine an aggregate-id tag with one or more domain tags). The JOIN cost on TagTables grows with each additional tag type; HStore stays flat.
-- **Prefer HStore** when your hot path is `FetchForWritingByTags` (consistency-boundary read-modify-write). The fetch round-trip drops because the events `SELECT` is a single-table lookup instead of an N-way JOIN.
-- **Stay on TagTables** if your DCB workload is dominated by **single-tag `EventsExistAsync` probes**. That case is what the per-type tables are optimized for — a primary-key lookup on a small dedicated table — and HStore's GIN containment is slightly slower per probe.
-- **Either mode is fine** for append throughput. With tags, HStore is about 30% faster than TagTables because it issues one `UPDATE` per tagged event instead of one `INSERT` per `(event, tag)` pair.
+::: warning Before 10.0
+Two bugs made one or the other mode far slower on a large store. Benchmarks on a small store hide both.
 
-If you're starting a new event store on Marten 9.0 and most of your projections key off `(aggregateId, someOtherTag)`, HStore is the recommended choice. If you're upgrading from Marten 8 and already have a populated TagTables-mode store, there is no compelling reason to switch.
+- **HStore** wrote each tagged event's tags with a follow-up `UPDATE` that found the row by `mt_events.id`. That column has no index unless `EnableUniqueIndexOnEventId` is on, so every tagged append scanned the events table: a 42–60 ms decision at 1M events ([#5896](https://github.com/JasperFx/marten/issues/5896)). On an earlier version, turn on `opts.Events.EnableUniqueIndexOnEventId = true`.
+- **TagTables** answered a query spanning two or more tag types with `LEFT JOIN`s under an `OR`, which reads the whole store: 301 ms at 1M events ([#5897](https://github.com/JasperFx/marten/issues/5897)). The same query also returned, and folded, an event twice when two values of one tag type both matched it.
+:::
 
 ### Consistency Check <Badge type="tip" text="9.4" />
 
