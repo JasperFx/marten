@@ -285,17 +285,11 @@ public partial class CollectionUsage
                 }
                 else if (SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Count)
                 {
-                    selection.SelectClause = new NewScalarSelectClause<int>(
-                        $"jsonb_array_length({collectionMember.JSONBLocator})", selection.SelectClause.FromObject);
-
-                    selection.ApplyAggregateOperator("SUM");
+                    return sumCollectionLengths<int>(selection, session, collectionMember);
                 }
                 else if (SingleValueMode == Marten.Linq.Parsing.SingleValueMode.LongCount)
                 {
-                    selection.SelectClause = new NewScalarSelectClause<long>(
-                        $"jsonb_array_length({collectionMember.JSONBLocator})", selection.SelectClause.FromObject);
-
-                    selection.ApplyAggregateOperator("SUM");
+                    return sumCollectionLengths<long>(selection, session, collectionMember);
                 }
                 else
                 {
@@ -1019,7 +1013,11 @@ public partial class CollectionUsage
         if (IsAny || SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
         {
             statement.SelectClause = new AnySelectClause(statement.SelectClause.FromObject);
-            statement.Limit = 1;
+
+            // #5920: Take(0).Any() is false whatever the table holds -- keep its LIMIT 0 rather than
+            // widening it to the LIMIT 1 that every other Any() uses. An OFFSET is left alone: asking
+            // for one row past it is exactly what Skip(k).Any() means.
+            statement.Limit = statement.Limit == 0 ? 0 : 1;
             return;
         }
 
@@ -1056,6 +1054,11 @@ public partial class CollectionUsage
                     break;
 
                 case Marten.Linq.Parsing.SingleValueMode.Count:
+                    if (tryCountPagedStatement<int>(statement, session))
+                    {
+                        return;
+                    }
+
                     // Invalid to be using OrderBy() while also using Count() in
                     // PostgreSQL. Thank you Hot Chocolate.
                     statement.Ordering.Expressions.Clear();
@@ -1094,6 +1097,11 @@ public partial class CollectionUsage
                     break;
 
                 case Marten.Linq.Parsing.SingleValueMode.LongCount:
+                    if (tryCountPagedStatement<long>(statement, session))
+                    {
+                        return;
+                    }
+
                     // Invalid to be using OrderBy() while also using Count() in
                     // PostgreSQL. Thank you Hot Chocolate.
                     statement.Ordering.Expressions.Clear();
@@ -1169,6 +1177,73 @@ public partial class CollectionUsage
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// #5920: a Count()/LongCount() over a paged statement -- one carrying a LIMIT (Take()) or an OFFSET
+    /// (Skip()) -- has to count the page, not attach the paging to the count(*) itself. A bare
+    /// <c>select count(*) ... LIMIT n</c> returns the full count, and <c>OFFSET k</c> skips the single row the
+    /// aggregate returns, so the count came back as 0. Wrap the paged statement in a CTE, keeping its
+    /// ORDER BY because that decides which rows are on the page, and count the CTE instead.
+    /// <para>
+    /// Unpaged statements are left exactly as they were: their count(*) runs directly against the table.
+    /// Distinct() and GroupBy() are left alone too, because those branches already count a CTE that
+    /// carries the paging.
+    /// </para>
+    /// </summary>
+    private bool tryCountPagedStatement<T>(SelectorStatement statement, IStorageSession session)
+    {
+        // A GroupJoin() counts its own joined CTE in CompileGroupJoin(), which already carries the paging.
+        if (!isPaged(statement) || statement.IsDistinct || statement.GroupByColumns.Count > 0 || GroupJoinData != null)
+        {
+            return false;
+        }
+
+        // A SelectMany() with nothing after it is counted by compileNext() as SUM(jsonb_array_length(...))
+        // over this very statement, which it builds on top of whatever is here. Leave the statement (and its
+        // ordering and paging) intact for it; compileNext() wraps the paged rows itself.
+        if (SelectMany != null && Inner == null)
+        {
+            statement.SelectClause = new CountClause<T>(statement.SelectClause.FromObject);
+            return true;
+        }
+
+        statement.ConvertToCommonTableExpression(session);
+        statement.AddToEnd(new SelectorStatement { SelectClause = new CountClause<T>(statement.ExportName) });
+
+        return true;
+    }
+
+    private static bool isPaged(SelectorStatement statement) => statement.Limit.HasValue || statement.Offset.HasValue;
+
+    /// <summary>
+    /// Counts the elements of a SelectMany() target as SUM(jsonb_array_length(collection)) over the parent
+    /// rows. When the parent rows are paged (Take()/Skip() before the SelectMany()), the sum has to run over
+    /// the page rather than carry its LIMIT/OFFSET, which would sum every document and then page the single
+    /// aggregate row (#5920).
+    /// </summary>
+    private static Statement sumCollectionLengths<T>(SelectorStatement selection, IStorageSession session,
+        ICollectionMember collectionMember) where T : struct
+    {
+        var target = selection;
+        if (isPaged(selection))
+        {
+            selection.SelectClause = new NewScalarStringSelectClause("d.data", selection.SelectClause.FromObject);
+            selection.ConvertToCommonTableExpression(session);
+
+            target = new SelectorStatement
+            {
+                SelectClause = new NewScalarStringSelectClause("d.data", selection.ExportName)
+            };
+            selection.AddToEnd(target);
+        }
+
+        target.SelectClause = new NewScalarSelectClause<T>(
+            $"jsonb_array_length({collectionMember.JSONBLocator})", target.SelectClause.FromObject);
+
+        target.ApplyAggregateOperator("SUM");
+
+        return target;
     }
 
     private static void EnsureJoinKeyInCte(SelectorStatement statement, IDocumentStorage storage, string keyLocator)
