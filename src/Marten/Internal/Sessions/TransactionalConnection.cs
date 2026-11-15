@@ -53,21 +53,31 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
 
     public NpgsqlTransaction? Transaction { get; protected set; }
 
+    /// <remarks>
+    ///     #5881: the connection is disposed whatever happens before it. The RLS lifetimes' reset in
+    ///     <see cref="BeforeCloseAsync" /> no longer throws, and a failed one keeps the connection out of the pool
+    ///     instead. Before, it threw past the dispose and the connection was never given back.
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
-        if (Transaction != null)
+        try
         {
-            await Transaction.DisposeAsync().ConfigureAwait(false);
-        }
+            if (Transaction != null)
+            {
+                await Transaction.DisposeAsync().ConfigureAwait(false);
+            }
 
-        if (_connection is { State: ConnectionState.Open })
-        {
-            await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            if (_connection is { State: ConnectionState.Open })
+            {
+                await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            }
         }
-
-        if (_connection != null)
+        finally
         {
-            await _connection.DisposeAsync().ConfigureAwait(false);
+            if (_connection != null)
+            {
+                await _connection.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 

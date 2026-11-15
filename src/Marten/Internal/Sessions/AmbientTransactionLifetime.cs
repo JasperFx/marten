@@ -65,15 +65,25 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
     /// </summary>
     protected internal override bool HasSurvivingTransaction => true;
 
+    /// <remarks>
+    ///     #5881: as <see cref="TransactionalConnection.DisposeAsync" />, the connection is disposed whatever happens
+    ///     before it.
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
-        if (_connection is { State: ConnectionState.Open })
+        try
         {
-            await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            if (_connection is { State: ConnectionState.Open })
+            {
+                await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            }
         }
-        if (_connection != null)
+        finally
         {
-            await _connection.DisposeAsync().ConfigureAwait(false);
+            if (_connection != null)
+            {
+                await _connection.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 
