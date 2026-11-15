@@ -46,6 +46,8 @@ public class AdvanceToNextHi : IEnumerable<object[]>
     }
 }
 
+// #5935: blocks thread-pool threads on purpose, so it must not run beside other tests
+[Collection(HiloThreadPoolCollection.Name)]
 public class hilo_tests : OneOffConfigurationsContext, IAsyncLifetime
 {
     private HiloSequence theSequence;
