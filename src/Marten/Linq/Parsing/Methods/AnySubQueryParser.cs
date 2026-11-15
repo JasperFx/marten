@@ -89,6 +89,13 @@ internal class AnySubQueryParser: IMethodCallParser
             body = l.Body;
         }
 
+        // #5943: a predicate that reads nothing from the element, `x.Tags.Any(t => Lookup.Names.Contains("a"))`,
+        // is one value for every element. Any() is then just whether the collection has an element at all.
+        if (body.IsClosedValue() && body.ReduceToConstant().Value is bool matches)
+        {
+            return matches ? member.NotEmpty : new LiteralFalse();
+        }
+
         return member.ParseWhereForAny(body, options);
     }
 
