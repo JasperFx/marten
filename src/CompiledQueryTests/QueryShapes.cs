@@ -100,3 +100,32 @@ public class TargetLongCountTakeShape: ICompiledQuery<PagedTarget, long>
     public Expression<Func<IMartenQueryable<PagedTarget>, long>> QueryIs()
         => q => q.Take(Take).LongCount();
 }
+
+/// <summary>
+/// A minimal parent document for the #5928 paged-SelectMany shape.
+/// </summary>
+public class PagedHolder
+{
+    public Guid Id { get; set; }
+    public int Number { get; set; }
+    public List<PagedHolderItem> Items { get; set; } = new();
+}
+
+public record PagedHolderItem
+{
+    public int Holder { get; set; }
+    public int Index { get; set; }
+}
+
+/// <summary>
+/// #5928: <c>OrderBy + Skip/Take + SelectMany</c>. The paging selects the parent documents, so the result is
+/// every item of the documents on the page rather than a page of the flattened items.
+/// </summary>
+public class PagedHolderItemsShape: ICompiledListQuery<PagedHolder, PagedHolderItem>
+{
+    public int Skip { get; set; }
+    public int Take { get; set; }
+
+    public Expression<Func<IMartenQueryable<PagedHolder>, IEnumerable<PagedHolderItem>>> QueryIs()
+        => q => q.OrderBy(x => x.Number).Skip(Skip).Take(Take).SelectMany(x => x.Items);
+}
