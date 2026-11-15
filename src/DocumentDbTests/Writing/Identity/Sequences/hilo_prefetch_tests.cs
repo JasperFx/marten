@@ -29,6 +29,8 @@ public class PrefetchedLongDoc
 ///     time with an asynchronous round trip. The synchronous fetch is only the fallback for a block that is
 ///     needed before its prefetch has landed.
 /// </summary>
+// #5935: blocks thread-pool threads on purpose, so it must not run beside other tests
+[Collection(HiloThreadPoolCollection.Name)]
 public class hilo_prefetch_tests: OneOffConfigurationsContext
 {
     private IMartenDatabase database()
