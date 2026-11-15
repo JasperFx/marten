@@ -10,11 +10,13 @@ internal sealed class RlsAmbientTransactionLifetime: AmbientTransactionLifetime
 {
     private readonly string _tenantId;
     private readonly string _settingName;
+    private readonly SessionOptions _sessionOptions;
 
     public RlsAmbientTransactionLifetime(SessionOptions options, string tenantId, string settingName): base(options)
     {
         _tenantId = tenantId;
         _settingName = settingName;
+        _sessionOptions = options;
     }
 
     protected override void AfterOpened(NpgsqlConnection connection)
@@ -29,11 +31,13 @@ internal sealed class RlsAmbientTransactionLifetime: AmbientTransactionLifetime
 
     protected override void BeforeClose(NpgsqlConnection connection)
     {
-        RlsSessionVariableApplier.Reset(connection, _settingName);
+        // #5881: never throws, so a failed reset cannot keep the connection from being disposed
+        RlsSessionVariableApplier.ResetBeforeRelease(connection, _settingName, _sessionOptions.Tenant?.Database, Logger);
     }
 
     protected override Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)
     {
-        return RlsSessionVariableApplier.ResetAsync(connection, _settingName, token);
+        // #5881: never throws, so a failed reset cannot keep the connection from being disposed
+        return RlsSessionVariableApplier.ResetBeforeReleaseAsync(connection, _settingName, _sessionOptions.Tenant?.Database, Logger);
     }
 }

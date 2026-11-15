@@ -352,6 +352,122 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
         }
     }
 
+    // #5881, the disposal half. Dispose / DisposeAsync reset the row level security tenant before disposing the
+    // connection, so a reset that threw skipped the dispose: disposal threw and the connection was never given back.
+    // Now disposal never throws because of the reset, always disposes, and keeps a healthy connection whose reset
+    // failed out of the pool. Npgsql's own reset-on-close is off and the pool holds one connection, so the next
+    // connection is the same physical one unless it was discarded.
+    //
+    // The reset is made to fail on a healthy connection by leaving a reader open on it: Npgsql then refuses the
+    // reset's command because an operation is already in progress. That only works where no transaction is
+    // disposed first, because rolling one back consumes the reader and the reset then succeeds. The transactional
+    // RLS lifetimes all reset through the same RlsSessionVariableApplier.ResetBeforeRelease(Async), so the sticky
+    // case stands for them.
+
+    private static void onePooledConnectionWithoutResetOnClose(NpgsqlConnectionStringBuilder builder)
+    {
+        builder.NoResetOnClose = true;
+        builder.MaxPoolSize = 1;
+        builder.Timeout = 3;
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task dispose_of_a_sticky_session_survives_a_failed_tenant_reset(bool synchronously)
+    {
+        await using var scenario = await Scenario.StartAsync(this, opts =>
+        {
+            opts.UseRowLevelSecurity();
+            opts.UseStickyConnectionLifetimes = true;
+        }, onePooledConnectionWithoutResetOnClose);
+
+        var pid = await disposeWithAFailedReset(scenario.Store.QuerySession(Tenant), synchronously);
+        await theTenantDidNotGoBackToThePool(scenario, pid);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task dispose_of_an_ambient_session_survives_a_failed_tenant_reset(bool synchronously)
+    {
+        await using var scenario = await Scenario.StartAsync(this, opts => opts.UseRowLevelSecurity(),
+            onePooledConnectionWithoutResetOnClose);
+
+        int pid;
+        using (new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+        {
+            var options = SessionOptions.ForCurrentTransaction();
+            options.TenantId = Tenant;
+
+            pid = await disposeWithAFailedReset(scenario.Store.QuerySession(options), synchronously);
+        }
+
+        await theTenantDidNotGoBackToThePool(scenario, pid);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task dispose_of_a_session_on_a_caller_transaction_survives_a_failed_tenant_reset(bool synchronously)
+    {
+        await using var scenario = await Scenario.StartAsync(this, opts => opts.UseRowLevelSecurity());
+
+        // The connection is the caller's, so only the first two promises apply: no throw, and the caller still
+        // has a connection it can dispose
+        await using (var conn = new NpgsqlConnection(new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+                         { Database = _database }.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await using var tx = await conn.BeginTransactionAsync();
+
+            var options = SessionOptions.ForTransaction(tx);
+            options.TenantId = Tenant;
+
+            await disposeWithAFailedReset(scenario.Store.QuerySession(options), synchronously);
+            await _openReader!.DisposeAsync();
+        }
+
+        await scenario.ShouldReleaseEverythingAsync();
+    }
+
+    private System.Data.Common.DbDataReader? _openReader;
+
+    private async Task<int> disposeWithAFailedReset(IQuerySession session, bool synchronously)
+    {
+        (await session.QueryAsync<string>("select current_setting('app.tenant_id', true)")).Single().ShouldBe(Tenant);
+
+        var conn = session.Connection;
+        var pid = conn.ProcessID;
+
+        // Left open on purpose, so the reset fails on a healthy connection. Disposing the connection closes it; a
+        // caller-owned connection is closed by the caller.
+        var cmd = conn.CreateCommand();
+        cmd.CommandText = "select 1";
+        _openReader = await cmd.ExecuteReaderAsync();
+
+        if (synchronously)
+        {
+            Should.NotThrow(() => session.Dispose());
+        }
+        else
+        {
+            await Should.NotThrowAsync(async () => await session.DisposeAsync());
+        }
+
+        return pid;
+    }
+
+    private static async Task theTenantDidNotGoBackToThePool(Scenario scenario, int pid)
+    {
+        // With a pool of one, a connection that was never given back makes this time out
+        var (setting, nextPid) = await scenario.ReadFromThePoolAsync();
+        setting.ShouldNotBe(Tenant);
+        nextPid.ShouldNotBe(pid, "the connection whose reset failed was put back in the pool");
+
+        await scenario.ShouldReleaseEverythingAsync();
+    }
+
     private async Task theConnectionIsReleasedAfterCancellation(Action<StoreOptions> configure,
         Func<IDocumentStore, CancellationToken, Task> act)
     {
@@ -390,14 +506,17 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
         private readonly NpgsqlDataSource _dataSource;
         private bool _released;
 
-        private Scenario(Bug_5881_begin_transaction_cancellation_leak parent, Action<StoreOptions> configure)
+        private Scenario(Bug_5881_begin_transaction_cancellation_leak parent, Action<StoreOptions> configure,
+            Action<NpgsqlConnectionStringBuilder>? connection)
         {
             _parent = parent;
             _loggerFactory = LoggerFactory.Create(x => x.SetMinimumLevel(LogLevel.Debug).AddProvider(_observer));
 
-            var builder = new NpgsqlDataSourceBuilder(
-                new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString) { Database = parent._database }
-                    .ConnectionString);
+            var connectionString =
+                new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString) { Database = parent._database };
+            connection?.Invoke(connectionString);
+
+            var builder = new NpgsqlDataSourceBuilder(connectionString.ConnectionString);
             builder.UseLoggerFactory(_loggerFactory);
             _dataSource = builder.Build();
 
@@ -413,9 +532,9 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
         public bool Fired => _observer.Fired;
 
         public static async Task<Scenario> StartAsync(Bug_5881_begin_transaction_cancellation_leak parent,
-            Action<StoreOptions> configure)
+            Action<StoreOptions> configure, Action<NpgsqlConnectionStringBuilder>? connection = null)
         {
-            var scenario = new Scenario(parent, configure);
+            var scenario = new Scenario(parent, configure, connection);
 
             // Warm the pool and Npgsql's type loading so the armed open is an ordinary one
             await using (var session = scenario.Store.QuerySession(Tenant))
@@ -424,6 +543,21 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
             }
 
             return scenario;
+        }
+
+        /// <summary>
+        ///     The tenant setting and backend of the next connection the pool hands out
+        /// </summary>
+        public async Task<(string? Setting, int Pid)> ReadFromThePoolAsync()
+        {
+            await using var conn = await _dataSource.OpenConnectionAsync();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = "select current_setting('app.tenant_id', true), pg_backend_pid()";
+            await using var reader = await cmd.ExecuteReaderAsync();
+            await reader.ReadAsync();
+
+            var setting = await reader.IsDBNullAsync(0) ? null : reader.GetString(0);
+            return (setting, reader.GetInt32(1));
         }
 
         public CancellationToken Arm()

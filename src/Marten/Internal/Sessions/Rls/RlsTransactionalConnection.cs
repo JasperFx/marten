@@ -29,11 +29,13 @@ internal class RlsTransactionalConnection: TransactionalConnection
 
     protected override void BeforeClose(NpgsqlConnection connection)
     {
-        RlsSessionVariableApplier.Reset(connection, _settingName);
+        // #5881: never throws, so a failed reset cannot keep the connection from being disposed
+        RlsSessionVariableApplier.ResetBeforeRelease(connection, _settingName, _options.Tenant?.Database, Logger);
     }
 
     protected override Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)
     {
-        return RlsSessionVariableApplier.ResetAsync(connection, _settingName, token);
+        // #5881: never throws, so a failed reset cannot keep the connection from being disposed
+        return RlsSessionVariableApplier.ResetBeforeReleaseAsync(connection, _settingName, _options.Tenant?.Database, Logger);
     }
 }
