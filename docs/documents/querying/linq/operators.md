@@ -132,6 +132,14 @@ A second `OrderBy()` or `OrderByDescending()` re-sorts the results, as in LINQ t
 earlier ordering only breaks ties: `OrderBy(x => x.Category).OrderBy(x => x.Name)` orders by `Name`, then
 `Category`. Use `ThenBy()` to add a key after the ones before it.
 
+A key can also be computed from the document's members: `OrderBy(x => -x.Number)`, `OrderBy(x => x.Number % 3)`,
+`ThenBy(x => x.Price * x.Quantity)`, `OrderBy(x => x.FirstName + x.LastName)` or `OrderBy(x => x.Name.ToUpper())`.
+Marten computes it in SQL with the same translation it uses for a computed `Select()`: member access, arithmetic,
+widening casts, string concatenation, `ToUpper()`, `ToLower()`, `Length`, and `ToString()` of an integer or a
+`Guid`. A key PostgreSQL would not compute the way .NET does, such as decimal division, floating point `%`, a
+narrowing cast, a conditional or a `Math` call, throws `BadLinqExpressionException` rather than ordering by
+something else.
+
 ## Ordering with dynamic properties
 
 Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is quite useful for cases where you wouldn't know the properties being used for ordering at build time. This functionality is added in v5.
