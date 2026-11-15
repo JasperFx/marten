@@ -8,6 +8,7 @@ using JasperFx.Events;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Operations;
 using Marten.Events.Schema;
+using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
@@ -23,6 +24,9 @@ internal class BulkEventAppender
 {
     private readonly EventGraph _events;
     private readonly ISerializer _serializer;
+
+    // The jsonb placeholder a binary event writes to data, shared rather than allocated per row.
+    private static readonly byte[] s_emptyJsonObjectUtf8 = "{}"u8.ToArray();
 
     public BulkEventAppender(EventGraph events, ISerializer serializer)
     {
@@ -128,6 +132,8 @@ internal class BulkEventAppender
         long maxSequence = 0;
         var count = 0;
         NpgsqlBinaryImporter? writer = null;
+        // #5731: one pooled staging buffer for every binary event's bdata, reused row by row.
+        using var bdataBuffer = new PooledByteBufferWriter(256);
 
         try
         {
@@ -191,7 +197,7 @@ internal class BulkEventAppender
                 }
 
                 await writer.StartRowAsync(cancellation).ConfigureAwait(false);
-                await writeEventRow(writer, e, e.StreamId, e.StreamKey, tenantId, cancellation)
+                await writeEventRow(writer, e, e.StreamId, e.StreamKey, tenantId, bdataBuffer, cancellation)
                     .ConfigureAwait(false);
                 count++;
             }
@@ -594,6 +600,8 @@ internal class BulkEventAppender
 
         var batch = 0;
         NpgsqlBinaryImporter? writer = null;
+        // #5731: one pooled staging buffer for every binary event's bdata, reused row by row.
+        using var bdataBuffer = new PooledByteBufferWriter(256);
 
         try
         {
@@ -614,7 +622,7 @@ internal class BulkEventAppender
 
                     await writer!.StartRowAsync(cancellation).ConfigureAwait(false);
                     await writeEventRow(writer, e, stream.Id, stream.Key,
-                            e.TenantId ?? stream.TenantId ?? StorageConstants.DefaultTenantId, cancellation)
+                            e.TenantId ?? stream.TenantId ?? StorageConstants.DefaultTenantId, bdataBuffer, cancellation)
                         .ConfigureAwait(false);
                     batch++;
                 }
@@ -689,7 +697,7 @@ internal class BulkEventAppender
     // Shared row writer for both bulk paths: the batch path passes the StreamAction's identity/tenant,
     // the streaming path passes the event's own stream identity and the (force-stamped) import tenant.
     private async Task writeEventRow(NpgsqlBinaryImporter writer, IEvent e, Guid streamId, string? streamKey,
-        string tenantId, CancellationToken cancellation)
+        string tenantId, PooledByteBufferWriter bdataBuffer, CancellationToken cancellation)
     {
         // seq_id
         await writer.WriteAsync(e.Sequence, NpgsqlDbType.Bigint, cancellation).ConfigureAwait(false);
@@ -718,7 +726,7 @@ internal class BulkEventAppender
         var isBinary = mapping?.IsBinary == true;
 
         var dataBytes = isBinary
-            ? "{}"u8.ToArray()
+            ? s_emptyJsonObjectUtf8
             : SerializeToUtf8(_serializer, e.Data);
         await writer.WriteAsync(dataBytes, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
 
@@ -726,8 +734,12 @@ internal class BulkEventAppender
         // NULL for JSON-serialized events.
         if (isBinary)
         {
-            var bdataBytes = mapping!.BinarySerializer!.Serialize(e.EventType, e.Data);
-            await writer.WriteAsync(bdataBytes, NpgsqlDbType.Bytea, cancellation).ConfigureAwait(false);
+            // #5731: serialized into the pooled staging buffer and written from a slice of it, with no
+            // per-event byte[]. Reusing the buffer for the next row is safe because the importer has copied
+            // the value into its own write buffer (flushing as it needs to) by the time WriteAsync returns.
+            bdataBuffer.Reset();
+            mapping!.BinarySerializer!.Serialize(e.EventType, e.Data, bdataBuffer);
+            await writer.WriteAsync(bdataBuffer.WrittenMemory, NpgsqlDbType.Bytea, cancellation).ConfigureAwait(false);
         }
         else
         {

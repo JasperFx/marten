@@ -283,6 +283,16 @@ A type with no parameterless constructor at all (a record with a primary constru
 aggregate type, and an aggregate type nested inside a `private` or `protected` type are still created without
 running a constructor. See [Handler methods must be public](#aggregation-public-handlers).
 
+### Binary events are written and read through pooled buffers
+
+`IEventBinarySerializer` gains `Serialize(Type, object, IBufferWriter<byte>)` and
+`Deserialize(Type, ReadOnlySpan<byte>)` (JasperFx 3.3.0). Both are default members over the `byte[]` pair, so an
+existing serializer keeps compiling and working unchanged. Marten now uses them for `mt_events.bdata`: Quick appends
+and `BulkInsertEventsAsync` serialize into pooled buffers, and reads deserialize from a span over a rented buffer,
+so a serializer that overrides them (`Marten.MemoryPack` does) no longer costs one array per event on those paths
+([#5731](https://github.com/JasperFx/marten/issues/5731)). `Rich` appends still allocate one array per binary
+event. See [Pooled buffers](/events/binary-serialization#pooled-buffers).
+
 ### C# 15 union types on `net11.0` <Badge type="tip" text="new" />
 
 On `net11.0`, a document member or an event may be a C# union. An appended union is recorded as its active case,

@@ -32,7 +32,8 @@ on `mt_events`. The row-level discriminator is `bdata IS NULL`:
 On read, Marten inspects `bdata`:
 
 - `NULL` → existing JSON deserialization path. Pre-feature rows continue to work without conversion.
-- non-null → `IEventBinarySerializer.Deserialize(eventType, bytes)`.
+- non-null → `IEventBinarySerializer.Deserialize(eventType, bytes)`, reading the column through a span over a pooled
+  buffer rather than a new array per row (see [Pooled buffers](#pooled-buffers)).
 
 Because the discriminator is on the row and the serializer is resolved per
 event type, the same stream can carry rows of either format with no special
@@ -180,10 +181,36 @@ public interface IEventBinarySerializer
 {
     byte[] Serialize(Type type, object data);
     object Deserialize(Type type, byte[] data);
+
+    // JasperFx 3.3.0+: default members over the byte[] pair. Override them when
+    // your library can write to an IBufferWriter<byte> or read a span directly.
+    void Serialize(Type type, object data, IBufferWriter<byte> destination)
+        => destination.Write(Serialize(type, data));
+
+    object Deserialize(Type type, ReadOnlySpan<byte> data)
+        => Deserialize(type, data.ToArray());
 }
 ```
 
 The serializer is a singleton — keep its state thread-safe.
+
+### Pooled buffers
+
+Marten 10 (JasperFx 3.3.0) writes and reads `bdata` through the buffer-writer and span members:
+
+- **Quick appends** (`Quick` and `QuickWithServerTimestamps`, the default) serialize every binary event of a
+  stream into one pooled buffer and bind slices of it to the `bdatas bytea[]` parameter. The buffer is
+  returned to the pool only after the whole unit of work has finished, retries included.
+- **`BulkInsertEventsAsync`** serializes each binary event into one pooled buffer reused row by row.
+- **Reads** copy the column into a buffer rented from the shared pool and deserialize from a span over it.
+- **`Rich` appends** still take one exact-length array per binary event from `Serialize(Type, object)`,
+  because the per-event insert binds the array itself.
+
+`Marten.MemoryPack` overrides both members, so none of these paths allocates an array per event. A serializer
+that only implements the `byte[]` pair keeps working unchanged, through the defaults: it allocates what it
+did before. If you override them, the buffer-writer member must write exactly the bytes `Serialize(Type, object)`
+returns, and `Deserialize` must not keep a reference to the span, because the buffer behind it goes back to
+the pool as soon as it returns.
 
 ## On-disk shape
 

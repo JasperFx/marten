@@ -19,6 +19,11 @@ public partial record PassengerPickedUp(Guid TripId, string PassengerName, DateT
 [MemoryPackable]
 public partial record TripEnded(Guid TripId, DateTimeOffset EndedAt, decimal FareAmount);
 
+// #5731: a binary event whose payload can be made larger than the pooled buffer's first rental.
+[BinaryEvent]
+[MemoryPackable]
+public partial record RouteRecorded(Guid TripId, string Route);
+
 // JSON event — coexists in the same store and is appended without
 // MemoryPack on the wire. Used by the mixed-stream test.
 public record TripCommentAdded(Guid TripId, string Comment, DateTimeOffset At);
