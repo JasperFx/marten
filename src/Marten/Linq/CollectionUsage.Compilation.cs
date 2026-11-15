@@ -692,6 +692,28 @@ public partial class CollectionUsage
         return statement;
     }
 
+    /// <summary>
+    /// #5968: an ordering key computed from one side of a join -- r => -r.Amount -- translated over that side's
+    /// CTE, or refused. The member lookup the join used walked past the computation to the member underneath it,
+    /// so the rows were silently ordered by r.Amount.
+    /// </summary>
+    private ISqlFragment computedJoinOrdering(Ordering ordering, Expression key,
+        IQueryableMemberCollection side, string sideAlias)
+    {
+        if (FlattenedRowProjection.TryTranslateOrderingKey(key, ordering.Direction == OrderingDirection.Desc,
+                ordering.CasingRule == CasingRule.CaseInsensitive, side, _options.Serializer(), sideAlias,
+                out var fragment, out var reason))
+        {
+            return fragment;
+        }
+
+        throw new BadLinqExpressionException(
+            $"Marten cannot translate the OrderBy() key '{key}' over the joined rows into SQL that orders the way " +
+            $".NET does: {reason}. Order by a member of one side, or by a key Marten can compute: member access, " +
+            "arithmetic, widening casts, string concatenation, ToUpper(), ToLower(), Length, or ToString() of an " +
+            "integer or a Guid. Or sort in memory after the query.");
+    }
+
     private static Ordering CopyOrdering(Ordering source, LambdaExpression rewritten) =>
         new(rewritten, source.Direction) { CasingRule = source.CasingRule, IsTransformed = source.IsTransformed };
 
@@ -1071,6 +1093,13 @@ public partial class CollectionUsage
                 var rewritten = new ParameterReplacingVisitor(
                     groupJoin.FlattenedResultSelector.Parameters[1], innerParam).Visit(expandedOrdering);
 
+                if (Ordering.ComputedKeyBody(Expression.Lambda(rewritten, innerParam)) is { } computedInner)
+                {
+                    joinStatement.Ordering.Expressions.Add(
+                        computedJoinOrdering(ordering, computedInner, innerCollection, innerCteAlias));
+                    continue;
+                }
+
                 sql = CopyOrdering(ordering, Expression.Lambda(rewritten, innerParam))
                     .BuildExpression(innerCollection)
                     .Replace("d.", innerCteAlias + ".");
@@ -1081,6 +1110,13 @@ public partial class CollectionUsage
                 var rewritten = new GroupJoinOuterNavigationStripper(
                     groupJoin.FlattenedResultSelector.Parameters[0],
                     groupJoin.ResultSelector, outerParam).Visit(expandedOrdering);
+
+                if (Ordering.ComputedKeyBody(Expression.Lambda(rewritten, outerParam)) is { } computedOuter)
+                {
+                    joinStatement.Ordering.Expressions.Add(
+                        computedJoinOrdering(ordering, computedOuter, outerCollection, outerCteAlias));
+                    continue;
+                }
 
                 sql = CopyOrdering(ordering, Expression.Lambda(rewritten, outerParam))
                     .BuildExpression(outerCollection)

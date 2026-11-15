@@ -90,7 +90,9 @@ public class Ordering
 
         // #5957: a key computed from the document's members, OrderBy(x => -x.Number). MemberFinder walked past the
         // computation to the member underneath it and silently ordered by x.Number instead.
-        if (_literal.IsEmpty() && MemberName.IsEmpty() && collection is DocumentQueryableMemberCollection &&
+        // #5968: and the same for a key over the child documents a SelectMany() flattens
+        if (_literal.IsEmpty() && MemberName.IsEmpty() &&
+            collection is DocumentQueryableMemberCollection or ChildCollectionMember &&
             ComputedKeyBody(Expression) is { } computed)
         {
             return buildComputedKey(collection, computed);
