@@ -278,6 +278,17 @@ The schema gains one function, `mt_unarchive_stream`. With `UseArchivedStreamPar
 the foreign key cascade delete them, so un-archiving can restore them. Both changes apply with your normal schema
 migration.
 
+### LINQ join operators and `jsonb` filter parameters
+
+- `Queryable.Join()`, .NET 10's `LeftJoin()` and `RightJoin()`, .NET 11's `FullJoin()`, and the .NET 11 overloads of
+  all four that return `(outer, inner)` tuples still throw `BadLinqExpressionException`. The message now gives the
+  rewrite: `GroupJoin()` + `SelectMany()` for an inner join, adding `DefaultIfEmpty()` for a left join, and the sources
+  swapped for a right join. There is no full outer join translation. See
+  [Joining Documents with GroupJoin](/documents/querying/linq/group-join#join-leftjoin-rightjoin-and-fulljoin).
+- The containment (`@>`) and JSONPath filters LINQ builds for child-collection and dictionary queries bind their
+  `jsonb` parameter as UTF-8 `byte[]` rather than a string, as document writes already did. A logger that prints
+  `NpgsqlParameter.Value` shows `System.Byte[]` for that parameter; `Encoding.UTF8.GetString` recovers the JSON.
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |

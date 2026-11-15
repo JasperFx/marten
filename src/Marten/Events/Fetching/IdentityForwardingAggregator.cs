@@ -12,8 +12,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Events.Fetching;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2087",
     Justification = "Class-level: generic method/type argument flows reflective Type values into a DAM-annotated target. Source preserved at the registration boundary.")]
 internal class IdentityForwardingAggregator<T, TId, TSimple, TSession> : IAggregator<T, TSimple, TSession> where T : class where TId : notnull where TSimple : notnull
@@ -22,6 +20,8 @@ internal class IdentityForwardingAggregator<T, TId, TSimple, TSession> : IAggreg
     private readonly IDocumentStorage<T, TId> _storage;
     private readonly Func<TSimple,TId> _wrapper;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public IdentityForwardingAggregator(IAggregator<T, TId, TSession> inner, ValueTypeIdentifiedDocumentStorage<T, TSimple, TId> storage)
     {
         _inner = inner;

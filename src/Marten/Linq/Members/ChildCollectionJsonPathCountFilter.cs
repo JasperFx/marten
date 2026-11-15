@@ -62,7 +62,7 @@ internal class ChildCollectionJsonPathCount: ISqlFragment, ICompiledQueryAwareFi
         else
         {
             builder.Append(")', ");
-            builder.AppendParameter(JsonbPayload.ToJson(_serializer, _dict), NpgsqlDbType.Jsonb);
+            builder.AppendParameter(JsonbPayload.ToUtf8(_serializer, _dict), NpgsqlDbType.Jsonb);
             ParameterName = builder.LastParameterName!;
 
             builder.Append(")) ");
@@ -97,7 +97,7 @@ internal class ChildCollectionJsonPathCount: ISqlFragment, ICompiledQueryAwareFi
         {
             var payload = CompiledQueryDictionaryBuilder.Build(dictRef(), usagesRef(), query, default);
             parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
-            parameter.Value = payload is null ? DBNull.Value : JsonbPayload.ToJson(serializer, payload);
+            parameter.Value = payload is null ? DBNull.Value : JsonbPayload.ToUtf8(serializer, payload);
         };
     }
 

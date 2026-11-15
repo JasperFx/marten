@@ -11,8 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2046",
     Justification = "Class-level: override RUC mismatch: base method does not yet carry RequiresUnreferencedCode. Suppressed locally; long-term fix is to annotate the base method.")]
 internal class MartenSystemPart : SystemPartBase
@@ -31,6 +29,8 @@ internal class MartenSystemPart : SystemPartBase
 
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public override Task WriteToConsole()
     {
         var description = OptionsDescription.For(_store);

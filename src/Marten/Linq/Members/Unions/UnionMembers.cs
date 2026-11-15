@@ -165,10 +165,6 @@ internal sealed class UnionCaseCast: MemberInfo
 ///     A union-typed document member, <c>x.Payment</c>: located as <c>jsonb</c>, compared only to null, and the
 ///     owner of the type tests and case members reached through its <c>Value</c>.
 /// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode",
-    Justification = "Reads JsonTypeInfo for union case types from the store's own serializer options; document types and their members are preserved at registration per the AOT publishing guide.")]
-[UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode",
-    Justification = "Reads JsonTypeInfo for union case types from the store's own serializer options; document types and their members are preserved at registration per the AOT publishing guide.")]
 internal sealed class UnionMember: QueryableMember, IComparableMember
 {
     private readonly StoreOptions _options;

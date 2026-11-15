@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using Marten.Services;
 
 namespace Marten.Linq;
 
@@ -51,16 +52,34 @@ namespace Marten.Linq;
 /// </remarks>
 internal static class JsonbPayload
 {
+    /// <summary>
+    ///     The payload as the UTF-8 bytes Npgsql binds to a <c>jsonb</c> parameter. #5731: the filters
+    ///     used to bind <see cref="ToJson" />'s string, which cost a UTF-16 copy of the payload here and a
+    ///     UTF-8 re-encode of it inside Npgsql. Writing into a pooled buffer and detaching one sized array
+    ///     is the same shape the document and event append paths already bind.
+    /// </summary>
+    public static byte[] ToUtf8(ISerializer serializer, object? payload)
+    {
+        using var buffer = new PooledByteBufferWriter();
+        writeTo(buffer, serializer, payload);
+        return buffer.ToSizedArray();
+    }
+
+    /// <summary>
+    ///     The payload as a string, for diagnostics and the assertions that compare it with what the
+    ///     serializer itself writes. The SQL path binds <see cref="ToUtf8" />.
+    /// </summary>
     public static string ToJson(ISerializer serializer, object? payload)
     {
-        var buffer = new ArrayBufferWriter<byte>();
-
-        using (var writer = new Utf8JsonWriter(buffer))
-        {
-            write(writer, serializer, payload);
-        }
-
+        using var buffer = new PooledByteBufferWriter();
+        writeTo(buffer, serializer, payload);
         return Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
+
+    private static void writeTo(IBufferWriter<byte> buffer, ISerializer serializer, object? payload)
+    {
+        using var writer = new Utf8JsonWriter(buffer);
+        write(writer, serializer, payload);
     }
 
     private static void write(Utf8JsonWriter writer, ISerializer serializer, object? value)
