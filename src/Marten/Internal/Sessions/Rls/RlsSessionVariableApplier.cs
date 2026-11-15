@@ -64,7 +64,7 @@ internal static class RlsSessionVariableApplier
     ///         It is deliberately narrow. Only the RLS lifetimes call it, only from synchronous <c>Dispose()</c>, and
     ///         only for a connection the session opened. A connection the caller supplied
     ///         (<c>SessionOptions.ForTransaction</c>, <c>ForConnection</c>) is the caller's, and it is left alone, as
-    ///         it always was. <c>DisposeAsync()</c> resets through <see cref="ResetAsync" /> instead.
+    ///         it always was. <c>DisposeAsync()</c> resets through <see cref="ResetBeforeReleaseAsync" /> instead (#5881).
     ///     </para>
     ///     <para>
     ///         If the reset fails, the failure is logged and <c>Dispose()</c> carries on. The connection must still
@@ -89,33 +89,72 @@ internal static class RlsSessionVariableApplier
         }
         catch (Exception e)
         {
-            try
-            {
-                logger.LogFailure(e,
-                    $"Failed to reset the row level security setting '{settingName}' before releasing the connection; it will not be returned to the pool");
-            }
-            catch
-            {
-                // Logging must not make Dispose() throw either
-            }
+            withholdFromThePool(connection, settingName, database, logger, e);
+        }
+    }
 
-            if (connection.FullState.HasFlag(ConnectionState.Broken)) return;
+    /// <summary>
+    ///     #5881. The asynchronous counterpart of <see cref="ResetBeforeSynchronousRelease" />, for the
+    ///     <c>DisposeAsync()</c>, commit and rollback paths that hand a connection the session opened back to the
+    ///     pool. Same contract: never throws, and a failed reset on a healthy connection clears the pool, so the
+    ///     tenant cannot outlive the session on a pooled connection.
+    /// </summary>
+    /// <remarks>
+    ///     Before #5881 these paths called <see cref="ResetAsync" /> directly, so a failed reset threw out of
+    ///     <c>DisposeAsync()</c> before the connection was disposed, and the connection was never given back at all.
+    ///     The reset deliberately takes no token: a cancelled one would skip it.
+    /// </remarks>
+    public static async Task ResetBeforeReleaseAsync(NpgsqlConnection connection, string settingName,
+        IMartenDatabase? database, IMartenSessionLogger logger)
+    {
+        if (connection.State != ConnectionState.Open) return;
 
-            try
+        try
+        {
+            await ResetAsync(connection, settingName, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            withholdFromThePool(connection, settingName, database, logger, e);
+        }
+    }
+
+    /// <summary>
+    ///     What both release paths do when the reset failed: log it, and make sure a healthy connection still carrying
+    ///     the tenant is closed rather than reused. A broken connection never goes back to the pool, because Npgsql
+    ///     discards it. A healthy one cannot be discarded on its own through Npgsql's public API, and
+    ///     <c>NpgsqlConnection.ClearPool</c> does not reach data-source pools, so the database's data source is
+    ///     cleared instead. That closes this connection when it is returned, along with the pool's idle ones.
+    /// </summary>
+    private static void withholdFromThePool(NpgsqlConnection connection, string settingName,
+        IMartenDatabase? database, IMartenSessionLogger logger, Exception e)
+    {
+        try
+        {
+            logger.LogFailure(e,
+                $"Failed to reset the row level security setting '{settingName}' before releasing the connection; it will not be returned to the pool");
+        }
+        catch
+        {
+            // Logging must not make disposal throw either
+        }
+
+        if (connection.FullState.HasFlag(ConnectionState.Broken)) return;
+
+        try
+        {
+            if (database is MartenDatabase martenDatabase)
             {
-                if (database is MartenDatabase martenDatabase)
-                {
-                    martenDatabase.DataSource.Clear();
-                }
-                else
-                {
-                    NpgsqlConnection.ClearPool(connection);
-                }
+                martenDatabase.DataSource.Clear();
             }
-            catch
+            else
             {
-                // Best effort, and Dispose() must not throw
+                NpgsqlConnection.ClearPool(connection);
             }
+        }
+        catch
+        {
+            // Best effort, and disposal must not throw
         }
     }
 }
