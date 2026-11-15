@@ -158,9 +158,10 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
             return new Tenant(tenantId, database);
         }
 
-        // It's actually important to *not* do any synchronous IO in case
-        // someone is using multiplexing
-        database = tryFindTenantDatabase(tenantId).GetAwaiter().GetResult();
+        // #5985: resolve the uncached tenant with synchronous I/O on this thread. Blocking a pool thread on
+        // the asynchronous lookup starved the pool on a burst of first sessions for new tenants: the lookup
+        // needed a free pool thread to finish, and every caller was holding one.
+        database = tryFindTenantDatabaseSynchronously(tenantId);
         if (database == null)
         {
             throw new UnknownTenantIdException(tenantId);
@@ -475,6 +476,41 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         var (connectionString, disabled) = await readTenantRow(tenantId).ConfigureAwait(false);
 
+        return buildTenantDatabase(tenantId, connectionString, disabled);
+    }
+
+    /// <summary>
+    ///     #5985: <see cref="tryFindTenantDatabase" /> for the synchronous <see cref="GetTenant" />, with no
+    ///     <see cref="Task" /> anywhere in the chain. It reads the same row with the same single statement, so
+    ///     it completes on the calling thread.
+    /// </summary>
+    /// <remarks>
+    ///     Npgsql refuses synchronous I/O when multiplexing is on, so a multiplexed control database keeps
+    ///     the asynchronous read. That is the one shape still blocked on asynchronous work here.
+    /// </remarks>
+    private MartenDatabase? tryFindTenantDatabaseSynchronously(string tenantId)
+    {
+        if (isMultiplexing())
+        {
+            return tryFindTenantDatabase(tenantId).GetAwaiter().GetResult();
+        }
+
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+
+        using var conn = _dataSource.Value.OpenConnection();
+        using var cmd = conn.CreateCommand(selectTenantRowSql).With("id", tenantId);
+        using var reader = cmd.ExecuteReader();
+
+        var (connectionString, disabled) = reader.Read() ? readTenantRowValues(reader) : (null, false);
+
+        return buildTenantDatabase(tenantId, connectionString, disabled);
+    }
+
+    private bool isMultiplexing()
+        => new NpgsqlConnectionStringBuilder(_dataSource.Value.ConnectionString).Multiplexing;
+
+    private MartenDatabase? buildTenantDatabase(string tenantId, string? connectionString, bool disabled)
+    {
         if (disabled)
         {
             throw new DisabledTenantException(tenantId);
@@ -506,8 +542,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
     private async Task<(string? ConnectionString, bool Disabled)> readTenantRow(string tenantId)
     {
         await using var reader = await _dataSource.Value
-            .CreateCommand(
-                $"select connection_string, {TenantTable.DisabledColumn} from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
+            .CreateCommand(selectTenantRowSql)
             .With("id", tenantId)
             .ExecuteReaderAsync(CancellationToken.None).ConfigureAwait(false);
 
@@ -516,10 +551,23 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicT
             return (null, false);
         }
 
-        var connectionString = await reader.IsDBNullAsync(0, CancellationToken.None).ConfigureAwait(false)
-            ? null
-            : await reader.GetFieldValueAsync<string>(0, CancellationToken.None).ConfigureAwait(false);
-        var disabled = await reader.GetFieldValueAsync<bool>(1, CancellationToken.None).ConfigureAwait(false);
+        return readTenantRowValues(reader);
+    }
+
+    /// <summary>
+    ///     The one statement both reads of a tenant's row run, synchronous and asynchronous.
+    /// </summary>
+    private string selectTenantRowSql =>
+        $"select connection_string, {TenantTable.DisabledColumn} from {_schemaName}.{TenantTable.TableName} where tenant_id = :id";
+
+    /// <summary>
+    ///     Maps the current row of <see cref="selectTenantRowSql" />. The row is already read into
+    ///     memory by then (the reader is not sequential), so the synchronous accessors do no I/O on either path.
+    /// </summary>
+    private static (string? ConnectionString, bool Disabled) readTenantRowValues(DbDataReader reader)
+    {
+        var connectionString = reader.IsDBNull(0) ? null : reader.GetFieldValue<string>(0);
+        var disabled = reader.GetFieldValue<bool>(1);
 
         return (connectionString, disabled);
     }
