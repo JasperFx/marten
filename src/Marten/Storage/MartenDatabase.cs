@@ -271,8 +271,14 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
         {
             var sequences = new SequenceFactory(Options, this);
 
-            generateOrUpdateFeature(typeof(SequenceFactory), sequences, default, true).AsTask().GetAwaiter()
-                .GetResult();
+            // #5969: genuinely synchronous, because the caller usually is. The first id a session.Store()
+            // assigns lands here, on whatever thread the application stored from, while every other storing
+            // thread waits on RuntimeSequences' lock for it. This used to block on Weasel's asynchronous
+            // migration, which needed a free thread-pool thread to finish, and under a burst of synchronous
+            // writers there was none: the whole process stalled until the pool injected more threads.
+            // Nothing here needs another thread to complete, so the wait is a few round trips long.
+            // With AutoCreate.None it does nothing at all, as the asynchronous version effectively did.
+            SynchronousFeatureMigration.Apply(CreateConnection, Migrator, AutoCreate, MigrationLogger, sequences);
 
             return sequences;
         });
