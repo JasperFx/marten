@@ -211,14 +211,12 @@ public class preview_command_matches_the_executed_command: OneOffConfigurationsC
         await previewShouldMatchExecution(s => s.Query<Target>().OrderByDescending(x => x.Number).Skip(1).Take(2));
     }
 
-    // FirstAsync() over a SelectMany() -- of child documents or of values -- is refused at execution ("Marten
-    // does not know how to use result type ..."), so there is no executed command to compare FetchOne against
     [Fact]
     public async Task select_many_over_a_child_document_collection()
     {
         await SetupData();
 
-        await previewShouldMatchExecution(s => s.Query<Target>().SelectMany(x => x.Children), fetchOne: false);
+        await previewShouldMatchExecution(s => s.Query<Target>().SelectMany(x => x.Children));
     }
 
     [Fact]
@@ -226,7 +224,7 @@ public class preview_command_matches_the_executed_command: OneOffConfigurationsC
     {
         await SetupData();
 
-        await previewShouldMatchExecution(s => s.Query<Target>().SelectMany(x => x.StringArray), fetchOne: false);
+        await previewShouldMatchExecution(s => s.Query<Target>().SelectMany(x => x.StringArray));
     }
 
     [Fact]
@@ -241,7 +239,7 @@ public class preview_command_matches_the_executed_command: OneOffConfigurationsC
 
     #endregion
 
-    private async Task previewShouldMatchExecution<T>(Func<IQuerySession, IQueryable<T>> query, bool fetchOne = true)
+    private async Task previewShouldMatchExecution<T>(Func<IQuerySession, IQueryable<T>> query)
         where T : notnull
     {
         var mismatches = new List<string>();
@@ -250,11 +248,8 @@ public class preview_command_matches_the_executed_command: OneOffConfigurationsC
         await compare(mismatches, query, FetchType.Count, "CountAsync()", q => q.CountAsync());
         await compare(mismatches, query, FetchType.Count, "LongCountAsync()", q => q.LongCountAsync());
         await compare(mismatches, query, FetchType.Any, "AnyAsync()", q => q.AnyAsync());
-        if (fetchOne)
-        {
-            await compare(mismatches, query, FetchType.FetchOne, "FirstAsync()", q => q.FirstAsync());
-            await compare(mismatches, query, FetchType.FetchOne, "FirstOrDefaultAsync()", q => q.FirstOrDefaultAsync());
-        }
+        await compare(mismatches, query, FetchType.FetchOne, "FirstAsync()", q => q.FirstAsync());
+        await compare(mismatches, query, FetchType.FetchOne, "FirstOrDefaultAsync()", q => q.FirstOrDefaultAsync());
 
         if (mismatches.Count != 0)
         {
