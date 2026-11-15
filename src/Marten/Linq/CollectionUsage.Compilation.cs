@@ -300,6 +300,14 @@ public partial class CollectionUsage
                 else
                 {
                     var next = new CollectionUsage(_options, collectionMember.MemberType);
+
+                    // #5921: First()/Single() directly after SelectMany() pick from the flattened rows,
+                    // so the mode travels to the usage that builds the flattened statement
+                    if (SingleValueModeAppliesToFlattenedRows)
+                    {
+                        next.SingleValueMode = SingleValueMode;
+                    }
+
                     return next.CompileSelectMany(session, selection, collectionMember, statistics);
                 }
             }
@@ -1013,9 +1021,31 @@ public partial class CollectionUsage
         }
     }
 
+    /// <summary>
+    /// #5921: a First / FirstOrDefault / Single / SingleOrDefault that lands on a usage ending in a plain
+    /// SelectMany() -- <c>SelectMany(x => x.Children).FirstAsync()</c> -- with nothing downstream of it
+    /// describes the flattened rows, not the documents being flattened. Applied to the parent statement it
+    /// would put the LIMIT on the parents and leave the flattened statement a list, for which there is no
+    /// single-result handler. Count / LongCount / Any keep their own SelectMany handling in compileNext,
+    /// and a GroupJoin -- including the SelectMany() that flattens one -- carries the mode onto its join
+    /// statement itself.
+    /// </summary>
+    internal bool SingleValueModeAppliesToFlattenedRows =>
+        SelectMany != null && Inner == null && GroupJoinData == null && SelectManyCallExpression == null &&
+        SingleValueMode is Marten.Linq.Parsing.SingleValueMode.First
+            or Marten.Linq.Parsing.SingleValueMode.FirstOrDefault
+            or Marten.Linq.Parsing.SingleValueMode.Single
+            or Marten.Linq.Parsing.SingleValueMode.SingleOrDefault;
+
     internal void ProcessSingleValueModeIfAny(SelectorStatement statement, IStorageSession session,
         IQueryableMemberCollection? members, QueryStatistics? statistics)
     {
+        if (SingleValueModeAppliesToFlattenedRows)
+        {
+            // compileNext hands the mode to the flattened statement
+            return;
+        }
+
         if (IsAny || SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
         {
             statement.SelectClause = new AnySelectClause(statement.SelectClause.FromObject);
