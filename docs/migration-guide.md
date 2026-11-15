@@ -419,6 +419,48 @@ migration.
   paging, `First()`/`Single()` and `Select()` after the `SelectMany()` apply as they do to a collection that is not
   duplicated. A `SelectMany()` over a collection that is not duplicated sends exactly the SQL it did before.
 
+### LINQ `SelectMany()` over an enum collection works
+
+- A bug fix ([#5940](https://github.com/JasperFx/marten/issues/5940)). `SelectMany(x => x.Colours)` over an array or
+  list of enums threw `InvalidCastException`, because each flattened element was read as the enum type from the
+  integer or text column it is stored in. The element is now read as the stored value and converted, under both
+  `EnumStorage.AsInteger` and `EnumStorage.AsString`, and `Where()`, `Distinct()`, `First()` and the rest work
+  after it. `OrderBy()` sorts by the stored value, so by name under `EnumStorage.AsString`, as an `OrderBy()` on
+  an enum member of a document already does. The SQL is unchanged.
+
+### LINQ string `Length` and string methods after `SelectMany()` translate
+
+- A bug fix ([#5941](https://github.com/JasperFx/marten/issues/5941)). After `SelectMany()` over a string collection,
+  `Where(n => n.Length == 4)` failed with `42883`, because `Length` was located as a JSON field inside the string.
+  `OrderBy(n => n.Length)` and `OrderBy(n => n.ToUpper())` ordered by the string itself. `Length` now translates
+  to PostgreSQL's `length()`, on a flattened string and on a string member of a document alike, and `ToUpper()`,
+  `ToLower()` and `Trim()` of a flattened string translate in `Where()` and `OrderBy()` as they do for a document's
+  member. PostgreSQL's `length()` counts characters where .NET counts UTF-16 code units, so the two differ for a
+  string holding an emoji or another character outside the Basic Multilingual Plane.
+
+### LINQ computed top-level `Select()` projections translate
+
+- A bug fix ([#5942](https://github.com/JasperFx/marten/issues/5942)). `Select(x => x.Number % 3)` failed with
+  `ArgumentNullException`, `Select(x => x.Id.ToString())` with `ArgumentException`, and a cast such as
+  `Select(x => (long)x.Number)` with `NotSupportedException`. Arithmetic, negation, widening casts, enum to
+  integer, string concatenation, `ToUpper()`, `ToLower()`, `Length`, and `ToString()` of an integer or a `Guid` are
+  now computed in SQL, and `Where()`, `OrderBy()`, `Distinct()`, paging, `Count()`, `First()` and the aggregates
+  after the `Select()` apply to the computed value. Anything else, such as a `Math` call, a conditional, decimal
+  division or a narrowing cast, throws `BadLinqExpressionException` naming the projection. Member, object and
+  `ExplicitSql()` projections send exactly the SQL they did before.
+
+### LINQ `OrderBy()` after a projection orders the projected values <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5955](https://github.com/JasperFx/marten/issues/5955)), so these queries return rows in a
+  different order, or throw where they used to return them in the wrong order. Over a flattened value collection,
+  `SelectMany(x => x.Values).OrderBy(v => -v)` ordered by `v`: any key was taken as the element itself. The key is
+  now computed in SQL. After a top-level `Select()`, `Select(x => x.Number).OrderBy(n => n)` dropped the
+  `OrderBy()`. The projected values are now ordered, and `Skip()`/`Take()` after the ordering page them.
+- An `OrderBy()` after an anonymous type, a DTO or a projection to another document now throws
+  `BadLinqExpressionException`. It used to be dropped, or for a projection to the document's own type, such as
+  `Select(x => x.Inner)`, it was applied to the documents. Order before the `Select()` instead. A key that has no
+  exact SQL translation, such as a `Math` call, is refused the same way.
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |

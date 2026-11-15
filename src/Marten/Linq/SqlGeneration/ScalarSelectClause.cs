@@ -91,7 +91,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
             return null;
         }
 
-        return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
+        return await ScalarFieldReader.ReadAsync<T>(reader, 0, token).ConfigureAwait(false);
     }
 
     T? ISelector<T?>.Resolve(DbDataReader reader)
@@ -103,7 +103,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
                 return null;
             }
 
-            return reader.GetFieldValue<T>(0);
+            return ScalarFieldReader.Read<T>(reader, 0);
         }
         catch (InvalidCastException e)
         {
@@ -120,7 +120,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
                 return default;
             }
 
-            return reader.GetFieldValue<T>(0);
+            return ScalarFieldReader.Read<T>(reader, 0);
         }
         catch (InvalidCastException e)
         {
@@ -135,7 +135,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
             return default;
         }
 
-        return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
+        return await ScalarFieldReader.ReadAsync<T>(reader, 0, token).ConfigureAwait(false);
     }
 
     public override string ToString()
