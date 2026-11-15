@@ -11,12 +11,13 @@ namespace Marten.Linq.Members;
 /// <para>
 /// PostgreSQL counts characters where .NET counts UTF-16 code units, so the two disagree for a string holding a
 /// character outside the Basic Multilingual Plane, such as an emoji. That is the same caveat the existing
-/// <c>Select(x => x.Name.Length)</c> translation after <c>SelectMany()</c> carries.
+/// <c>Select(x => x.Name.Length)</c> translation after <c>SelectMany()</c> carries. The parent is a string
+/// member, either in the JSON body or duplicated into its own column.
 /// </para>
 /// </summary>
 internal class StringLengthMember: QueryableMember, IComparableMember
 {
-    public StringLengthMember(StringMember parent): base(parent, nameof(string.Length), typeof(int))
+    public StringLengthMember(IQueryableMember parent): base(parent, nameof(string.Length), typeof(int))
     {
         RawLocator = TypedLocator = $"length({parent.RawLocator})";
     }
