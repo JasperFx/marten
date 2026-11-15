@@ -130,7 +130,8 @@ public class Ordering
     /// <summary>
     ///     #5957: the body of a key selector that computes a value from the document, such as
     ///     <c>x => -x.Number</c>, <c>x => x.Number % 3</c> or <c>x => x.Code + x.Name</c>, rather than reading a
-    ///     member. Null for a plain member chain, which keeps resolving exactly as it always has.
+    ///     member. Null for a plain member chain, which keeps resolving exactly as it always has -- including
+    ///     <c>x.Name.Length</c>, which resolves to <c>length()</c> as a member since #5941.
     /// </summary>
     internal static Expression? ComputedKeyBody(Expression? expression)
     {
@@ -156,7 +157,7 @@ public class Ordering
     }
 
     /// <summary>
-    ///     Is this a chain the member lookup resolves exactly: members (but not a string's Length), an element by
+    ///     Is this a chain the member lookup resolves exactly: members (a string's Length among them), an element by
     ///     position or a dictionary key, an array length or Count(), a case conversion of a string, and conversions
     ///     that do not change the value?
     /// </summary>
@@ -169,11 +170,6 @@ public class Ordering
                 case null:
                 case ParameterExpression:
                     return true;
-
-                // 9.0 does not resolve a string's Length as a member (#5941), so it is computed here
-                case MemberExpression member when member.Member.Name == nameof(string.Length) &&
-                                                  member.Expression?.Type == typeof(string):
-                    return false;
 
                 case MemberExpression member:
                     node = member.Expression;
