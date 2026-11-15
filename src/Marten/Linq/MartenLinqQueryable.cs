@@ -292,13 +292,14 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
 
     public NpgsqlCommand ToPreviewCommand(FetchType fetchType)
     {
-        var parser = new LinqQueryParser(MartenProvider, Session, Expression);
+        // #5916: parse with the single value mode execution uses, so the preview is that SQL
+        var parser = new LinqQueryParser(MartenProvider, Session, Expression, LinqQueryParser.ValueModeFor(fetchType));
 
         var command = new NpgsqlCommand();
 
         var sql = new CommandBuilder(command) {TenantId = Session.TenantId};
 
-        parser.BuildDiagnosticCommand(fetchType, sql);
+        parser.BuildDiagnosticCommand(sql);
         command.CommandText = sql.ToString();
 
         foreach (var documentType in parser.DocumentTypes()) Session.Database.EnsureStorageExists(documentType);
