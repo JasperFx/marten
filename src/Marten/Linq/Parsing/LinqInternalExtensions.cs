@@ -205,6 +205,84 @@ public static class LinqInternalExtensions
         return member;
     }
 
+    /// <summary>
+    ///     #5949: is <paramref name="call" /> a positional read of a collection element, <c>x.List[1]</c> or
+    ///     <c>x.Values.ElementAt(1)</c>? A dictionary indexer reads by key and is not.
+    /// </summary>
+    internal static bool IsElementIndexer(this MethodCallExpression call)
+    {
+        if (call.Method.Name == "get_Item")
+        {
+            var declaringType = call.Method.DeclaringType;
+            return call.Object != null && call.Arguments.Count == 1 && call.Arguments[0].Type == typeof(int) &&
+                   declaringType != null && !declaringType.Closes(typeof(IDictionary<,>)) &&
+                   !declaringType.Closes(typeof(IReadOnlyDictionary<,>));
+        }
+
+        return call.Method.DeclaringType == typeof(Enumerable) && call.Method.Name == nameof(Enumerable.ElementAt) &&
+               call.Arguments.Count == 2 && call.Arguments[1].Type == typeof(int);
+    }
+
+    /// <summary>
+    ///     #5949: does the member chain <paramref name="expression" /> read a collection element by position,
+    ///     <c>x.Values[1]</c>, <c>x.Grid[1][0]</c> or <c>x.Children[0].Name</c>? MemberFinder cannot follow an
+    ///     index, so such a chain is resolved by <see cref="MemberForIndexedChain" /> instead.
+    /// </summary>
+    internal static bool HasElementIndex(this Expression? expression)
+    {
+        while (expression != null)
+        {
+            switch (expression)
+            {
+                case BinaryExpression { NodeType: ExpressionType.ArrayIndex }:
+                    return true;
+
+                case MethodCallExpression call when call.IsElementIndexer():
+                    return true;
+
+                case MethodCallExpression call:
+                    expression = call.Object ?? call.Arguments.FirstOrDefault();
+                    break;
+
+                case MemberExpression member:
+                    expression = member.Expression;
+                    break;
+
+                case UnaryExpression unary:
+                    expression = unary.Operand;
+                    break;
+
+                case LambdaExpression lambda:
+                    expression = lambda.Body;
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     #5949: resolve a member chain that reads collection elements by position. It goes through the same
+    ///     SimpleExpression walk a Where() comparison has always used for <c>x.Values[1] == 3</c>, so an index
+    ///     resolves to the same member wherever it appears.
+    /// </summary>
+    internal static IQueryableMember MemberForIndexedChain(this IQueryableMemberCollection collection,
+        Expression expression)
+    {
+        if (expression is LambdaExpression lambda)
+        {
+            expression = lambda.Body;
+        }
+
+        var simple = new SimpleExpression(collection, expression);
+        return simple.Member ??
+               throw new BadLinqExpressionException(
+                   $"Marten cannot translate '{expression}' to a member of the document");
+    }
+
     public static ISqlFragment ReduceToValue(this IQueryableMemberCollection collection, Expression expression)
     {
         if (expression is ConstantExpression c)

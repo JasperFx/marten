@@ -205,12 +205,11 @@ internal class SimpleExpression: ExpressionVisitor
                 var index = (int)node.Right.ReduceToConstant().Value;
                 Members.Insert(0, new ArrayIndexMember(index));
 
-                if (node.Left is MemberExpression m)
-                {
-                    return VisitMember(m);
-                }
-
-                return base.VisitBinary(node);
+                // #5949: visit only the array. base.VisitBinary() also rebuilt this node from what its children
+                // returned, and every visit here returns null, so a jagged `x.Grid[1][0]` threw
+                // ArgumentNullException ('array') out of Expression.ArrayIndex(). The index is consumed above.
+                Visit(node.Left);
+                return null;
 
             case ExpressionType.Equal:
                 var left = new SimpleExpression(_queryableMembers, node.Left);

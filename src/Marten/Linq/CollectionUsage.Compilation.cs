@@ -241,6 +241,8 @@ public partial class CollectionUsage
     /// </summary>
     private static bool isComputedProjection(Expression projection) => projection switch
     {
+        // #5949: an array index, x.Values[1] or x.Grid[1][0], reads an element; the select visitor translates it
+        BinaryExpression { NodeType: ExpressionType.ArrayIndex } => false,
         BinaryExpression or ConditionalExpression => true,
         UnaryExpression { NodeType: ExpressionType.Negate or ExpressionType.NegateChecked } => true,
 

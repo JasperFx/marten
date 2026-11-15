@@ -200,6 +200,31 @@ public async Task query_against_number_list_with_count_method()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L661-L682' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Reading an Element by Position
+
+An array or list on the document can be indexed in `Where()`, `OrderBy()`/`ThenBy()` and `Select()`. That works
+with an array index, a `List<T>` indexer or `ElementAt()`. The index can be a literal or any value computed on the
+client, like a captured variable. Indexes can be chained through jagged arrays and nested lists, and can be followed
+by a member of the element:
+
+```cs
+var row = 1;
+
+var hits = await session.Query<Plan>()
+    .Where(x => x.Grid[row][0] > 3 && x.Steps[0].Name == "start")
+    .OrderBy(x => x.Scores[2])
+    .Select(x => new { x.Id, First = x.Tags[0], Cell = x.Grid[1][1] })
+    .ToListAsync();
+```
+
+Each index becomes a `jsonb` array lookup, such as `CAST(d.data -> 'grid' -> 1 ->> 0 as integer)`. Two things
+work differently from LINQ to Objects:
+
+- An index past the end of the stored array reads as `null` rather than throwing. A comparison against it does not
+  match, it sorts last in ascending order, and selecting it returns `null`, or the default value of a value type.
+- A negative index throws `BadLinqExpressionException`. PostgreSQL would read it from the end of the array, which is
+  not what it means in C#.
+
 ## IsOneOf
 
 `IsOneOf()` extension can be used to query for documents having
