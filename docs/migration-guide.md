@@ -80,6 +80,16 @@ integer or text column it is stored in. The element is now read as the stored va
 it. `OrderBy()` sorts by the stored value, so by name under `EnumStorage.AsString`, as an `OrderBy()` on an enum
 member of a document already does. The SQL is unchanged.
 
+### LINQ string `Length` and string methods after `SelectMany()` translate
+
+A bug fix ([#5941](https://github.com/JasperFx/marten/issues/5941)). After `SelectMany()` over a string collection,
+`Where(n => n.Length == 4)` failed with `42883`, because `Length` was located as a JSON field inside the string.
+`OrderBy(n => n.Length)` and `OrderBy(n => n.ToUpper())` ordered by the string itself. `Length` now translates to
+PostgreSQL's `length()`, on a flattened string and on a string member of a document alike, and `ToUpper()`,
+`ToLower()` and `Trim()` of a flattened string translate in `Where()` and `OrderBy()` as they do for a document's
+member. PostgreSQL's `length()` counts characters where .NET counts UTF-16 code units, so the two differ for a
+string holding an emoji or another character outside the Basic Multilingual Plane.
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
