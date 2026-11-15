@@ -131,7 +131,18 @@ public static class LinqInternalExtensions
     {
         if (collection is IValueCollectionMember valueCollection)
         {
-            return valueCollection.Element;
+            // #5941: only the element itself is the element. OrderBy(n => n.Length) over flattened strings used to
+            // order by the string, because every expression over a value collection was taken as its element.
+            var elementMembers = valueCollection.ElementType == typeof(string) && expression is not ParameterExpression
+                ? MemberFinder.Determine(expression, invalidExpression)
+                : [];
+
+            if (elementMembers.Length == 0)
+            {
+                return valueCollection.Element;
+            }
+
+            return collection.MemberFor(elementMembers);
         }
 
         if (expression is ParameterExpression)
