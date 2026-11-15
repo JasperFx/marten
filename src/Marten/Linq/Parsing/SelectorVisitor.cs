@@ -20,6 +20,7 @@ public class SelectorVisitor: ExpressionVisitor
     private readonly IQueryableMemberCollection _collection;
     private readonly ISerializer _serializer;
     private readonly SelectorStatement _statement;
+    private bool _visiting;
 
     public SelectorVisitor(SelectorStatement statement, IQueryableMemberCollection collection, ISerializer serializer)
     {
@@ -30,6 +31,22 @@ public class SelectorVisitor: ExpressionVisitor
 
     public override Expression Visit(Expression node)
     {
+        // #5943: a projection that reads nothing from the document, `Select(x => Lookup.Grid[1][1])` or
+        // `Select(x => captured)`, is a value. Walking it as a member chain looked a static or captured
+        // member up on the document instead, which returned default values, or threw ArgumentNullException
+        // ('array') through an array index. It goes to the client-side projection, which reads the value.
+        // An object built from values alone still goes through ToSelectTransform, which binds each one.
+        // Only the whole projection: a closed part of a larger one, an index say, is not the projection.
+        var isWholeProjection = !_visiting;
+        _visiting = true;
+
+        if (isWholeProjection && node != null && node is not (NewExpression or MemberInitExpression) &&
+            node.IsClosedValue())
+        {
+            projectOnClient(node);
+            return null;
+        }
+
         return base.Visit(node);
     }
 
@@ -126,35 +143,38 @@ public class SelectorVisitor: ExpressionVisitor
         }
         catch (SelectProjectionNotSimpleException)
         {
-            // GH-5011: the Select() projection contains method calls, arithmetic, casts,
-            // or conditional expressions that can't be translated to a server-side
-            // jsonb_build_object() expression. Fall back to compiling the original
-            // Select() lambda and applying it against the fully deserialized source
-            // document on the client -- the same behavior Marten had before that
-            // optimization existed.
-            var parameter = ParameterFinder.FindIn(selectExpression);
-            if (parameter == null)
-            {
-                throw new Marten.Exceptions.BadLinqExpressionException(
-                    "Marten is not (yet) able to process this Select() transform");
-            }
-
-            var lambda = Expression.Lambda(selectExpression, parameter);
-            var compiled = lambda.Compile();
-
-            // #5233: `compiled` closes over whatever ConstantExpressions the projection reads from.
-            // Harmless for an ordinary query -- the expression tree is rebuilt per call -- but a
-            // compiled query caches this delegate, so a captured value would be frozen at plan time.
-            // Record it here; QueryCompiler is the only caller that cares.
-            var closesOverCapturedState = CapturedStateDetector.Detect(selectExpression);
-
-            _statement.SelectClause =
-                typeof(LambdaSelectClause<,>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
-                    compiled,
-                    closesOverCapturedState,
-                    _collection.ElementType,
-                    selectExpression.Type);
+            projectOnClient(selectExpression);
         }
+    }
+
+    private void projectOnClient(Expression selectExpression)
+    {
+        // GH-5011: the Select() projection contains method calls, arithmetic, casts,
+        // or conditional expressions that can't be translated to a server-side
+        // jsonb_build_object() expression. Fall back to compiling the original
+        // Select() lambda and applying it against the fully deserialized source
+        // document on the client -- the same behavior Marten had before that
+        // optimization existed.
+        // #5943: a projection that reads nothing from the document has no parameter of its own, so it
+        // is given one; the value it computes is the same for every row, as in LINQ to Objects.
+        var parameter = ParameterFinder.FindIn(selectExpression) ??
+                        Expression.Parameter(_collection.ElementType, "x");
+
+        var lambda = Expression.Lambda(selectExpression, parameter);
+        var compiled = lambda.Compile();
+
+        // #5233: `compiled` closes over whatever ConstantExpressions the projection reads from.
+        // Harmless for an ordinary query -- the expression tree is rebuilt per call -- but a
+        // compiled query caches this delegate, so a captured value would be frozen at plan time.
+        // Record it here; QueryCompiler is the only caller that cares.
+        var closesOverCapturedState = CapturedStateDetector.Detect(selectExpression);
+
+        _statement.SelectClause =
+            typeof(LambdaSelectClause<,>).CloseAndBuildAs<ISelectClause>(_statement.SelectClause.FromObject,
+                compiled,
+                closesOverCapturedState,
+                _collection.ElementType,
+                selectExpression.Type);
     }
 }
 
