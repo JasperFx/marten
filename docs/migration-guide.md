@@ -77,6 +77,18 @@ documents, and in collection order within each document.
   before, and so does `OrderBy("a", "b")`, which is now built with `ThenBy()`. `ThenByTextRank()` followed by
   another `ThenBy()` now keeps its place in the chain instead of moving to the end.
 
+### LINQ computed `OrderBy()` keys are computed <Badge type="warning" text="behavior change" />
+
+* A correctness fix ([#5957](https://github.com/JasperFx/marten/issues/5957)), so these queries return a different
+  order or throw. A key computed from the document's members, such as `OrderBy(x => -x.Number)`, used to be
+  replaced by the member underneath it: that query sent `order by CAST(d.data ->> 'Number' as integer)` and came
+  back in ascending order. Computed keys over the document now translate with the computed `Select()` translation
+  (negation, arithmetic including `%`, widening casts, string concatenation, `ToUpper()`/`ToLower()`, `Length`,
+  `ToString()` of an integer or a `Guid`). A key with no exact SQL translation, such as decimal division, floating
+  point `%`, a narrowing cast (`(byte)x.Number`), a conditional, a `Math` call or an enum stored as a string cast
+  to an integer, now throws `BadLinqExpressionException`. Order by a member, or sort in memory after the query.
+  A plain member key sends exactly the SQL it did before.
+
 ### LINQ `Select()` after `SelectMany()` projects the flattened rows <Badge type="warning" text="behavior change" />
 
 A correctness fix ([#5933](https://github.com/JasperFx/marten/issues/5933)), so these queries return different

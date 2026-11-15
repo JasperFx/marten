@@ -28,7 +28,14 @@ public class OrderingOperator: LinqOperator
             return;
         }
 
-        var ordering = new Ordering(memberArgument, Direction);
+        var computed = Ordering.ComputedKeyBody(memberArgument) != null;
+        var ordering = new Ordering(memberArgument, Direction)
+        {
+            // #5957: a computed key is translated with the store's serializer, and like any computed ordering it
+            // cannot be combined with a Distinct(Select())
+            Serializer = computed ? usage.Options.Serializer() : null,
+            IsTransformed = computed
+        };
         if (expression.Arguments[1].Type == typeof(string))
         {
             var property = (string)expression.Arguments[1].ReduceToConstant().Value!;
