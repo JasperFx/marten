@@ -127,11 +127,23 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         if (_connection == null)
         {
 #pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
+            var connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
-            _connection.Open();
-            AfterOpened(_connection);
-            _connection.EnlistTransaction(_options.DotNetTransaction);
+
+            // #5881: see BeginTransactionAsync
+            try
+            {
+                connection.Open();
+                AfterOpened(connection);
+                connection.EnlistTransaction(_options.DotNetTransaction);
+            }
+            catch (Exception)
+            {
+                connection.Dispose();
+                throw;
+            }
+
+            _connection = connection;
         }
     }
 
@@ -145,11 +157,26 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         if (_connection == null)
         {
 #pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
+            var connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
-            await _connection.OpenAsync(token).ConfigureAwait(false);
-            await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
-            _connection.EnlistTransaction(_options.DotNetTransaction);
+
+            // #5881: the lifetime takes the connection only once it is fully set up. Assigned any earlier, a
+            // failure part way -- a token cancelled after the open -- left an open connection that the next
+            // call took as ready, and used without the row level security tenant and outside the ambient
+            // transaction.
+            try
+            {
+                await connection.OpenAsync(token).ConfigureAwait(false);
+                await AfterOpenedAsync(connection, token).ConfigureAwait(false);
+                connection.EnlistTransaction(_options.DotNetTransaction);
+            }
+            catch (Exception)
+            {
+                await connection.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
+
+            _connection = connection;
         }
     }
 

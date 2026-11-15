@@ -166,9 +166,11 @@ public partial class QuerySession
         }
         else if (_connection is ITransactionStarter starter)
         {
+            // #5881: the session owns the new lifetime from the moment it has it. Start gives the connection
+            // back itself if it fails.
             var tx = starter.Start();
-            tx.BeginTransaction();
             _connection = tx;
+            tx.BeginTransaction();
         }
         else
         {
@@ -185,9 +187,11 @@ public partial class QuerySession
         }
         else if (_connection is ITransactionStarter starter)
         {
+            // #5881: the session owns the new lifetime from the moment it has it, before anything else is
+            // awaited. StartAsync gives the connection back itself if it fails.
             var tx = await starter.StartAsync(token).ConfigureAwait(false);
-            await tx.BeginTransactionAsync(token).ConfigureAwait(false);
             _connection = tx;
+            await tx.BeginTransactionAsync(token).ConfigureAwait(false);
         }
         else
         {
