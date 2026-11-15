@@ -256,6 +256,33 @@ Sessions opened with `ConcurrencyChecks.Disabled` still overwrite without a chec
 dirty-tracking session, a loaded document that was changed and then passed to `UpdateRevision()`/`TryUpdateRevision()`
 lost its explicit revision to the automatically detected change, so the revision check never ran.
 
+### Private aggregate constructors run again {#private-aggregate-constructors-run-again}
+
+::: warning Behavior change
+This changes what happens when an aggregate is created, compared with Marten 9 and the earlier 10.0 alphas.
+:::
+
+When the source-generated dispatcher has to create an aggregate and the type's only parameterless constructor is
+`private`, `protected` or `internal`, it now calls that constructor through a generated `[UnsafeAccessor]`
+([jasperfx#1188](https://github.com/JasperFx/jasperfx/issues/1188), JasperFx 3.3.0,
+[#5915](https://github.com/JasperFx/marten/issues/5915)). The constructor body and every field and property
+initializer run, which is what Marten 8 did through `Activator.CreateInstance(nonPublic: true)`. The accessor is
+bound by the JIT or by Native AOT's compiler, not by reflection, so it is trim and AOT safe.
+
+Marten 9 and the 10.0 alphas created such an aggregate with `RuntimeHelpers.GetUninitializedObject` instead, so
+nothing in the constructor ran. Code that worked around that keeps working: an `Apply` that initializes a list with
+`??=` finds it already initialized. Check two things when upgrading:
+
+- **A private parameterless constructor with side effects now runs.** If it raises an event, registers the instance
+  somewhere, increments a counter or sets a default that `Apply` overwrites, that happens again for every aggregate
+  the dispatcher creates, including on every live aggregation and every projection rebuild.
+- **Initializers set state before the first `Apply`.** A property initializer such as `Status = Status.Draft` that
+  was skipped in Marten 9 is now in place when the first event is applied.
+
+A type with no parameterless constructor at all (a record with a primary constructor, for example), a generic
+aggregate type, and an aggregate type nested inside a `private` or `protected` type are still created without
+running a constructor. See [Handler methods must be public](#aggregation-public-handlers).
+
 ### C# 15 union types on `net11.0` <Badge type="tip" text="new" />
 
 On `net11.0`, a document member or an event may be a C# union. An appended union is recorded as its active case,
@@ -868,7 +895,7 @@ A non-public handler does not cause an error. It is skipped without warning.
 | `private void Apply(SomeEvent e)` | Called | Skipped |
 | `internal bool ShouldDelete(SomeEvent e)` | Called | Skipped |
 | `private SomeAggregate(SomeEvent e)` | Called as `Create` | Skipped |
-| `private SomeAggregate()` | Called | The object is created without running a constructor, so field initializers do not run |
+| `private SomeAggregate()` | Called | Called, with its field initializers, from JasperFx 3.3.0 on (see below) |
 
 ```csharp
 // Marten 8
@@ -887,6 +914,19 @@ public sealed class Invoice : AggregateBase
     public void Apply(LineItemAdded e)  { /* ... */ }
 }
 ```
+
+A non-public parameterless constructor is the exception to the rule above. The generated dispatcher
+calls a `private`, `protected` or `internal` parameterless constructor through a generated
+`[UnsafeAccessor]`, so the constructor body and every field and property initializer run, as in Marten 8
+([jasperfx#1188](https://github.com/JasperFx/jasperfx/issues/1188), JasperFx 3.3.0). Marten 9 and the
+10.0 alphas created such an aggregate without running any constructor; see
+[Private aggregate constructors run again](#private-aggregate-constructors-run-again) for what that
+changes if you are coming from them. Three shapes are still created without running a constructor, so
+their initializers do not run and `Apply` must not depend on them:
+
+- a type with **no** parameterless constructor at all, such as a record with a primary constructor;
+- a generic aggregate type;
+- an aggregate type nested inside a `private` or `protected` type.
 
 This covers `Apply`, `Create` and `ShouldDelete` on self-aggregating types and on
 `SingleStreamProjection` and `MultiStreamProjection` subclasses, `Project` and `ProjectAsync` on
