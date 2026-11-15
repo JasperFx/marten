@@ -441,6 +441,21 @@ public partial class CollectionUsage
                 var expanded = expander.Expand(where);
                 var sides = PostSelectManyFilterSideAnalyzer.Analyze(
                     expanded, groupJoin.FlattenedResultSelector.Parameters);
+                if (sides == PostSelectManyFilterSideAnalyzer.Side.InnerOnly && groupJoin.IsLeftJoin)
+                {
+                    // #5910: an inner-side filter is applied to the inner CTE, before the join. On an inner
+                    // join that is the same thing; on a left join it is not. Filtering first keeps every
+                    // outer row with no surviving match, as a row with a null inner, which the filter
+                    // applied after the join would have removed -- so x.Amount > 100 kept a customer with
+                    // no orders, and x.Amount == null matched no order and so returned every customer.
+                    throw new BadLinqExpressionException(
+                        "Marten cannot translate a Where() on the inner side of a left join (DefaultIfEmpty(), "
+                        + "LeftJoin() or RightJoin()) applied after the join. Marten would filter the inner rows "
+                        + "before joining, which keeps the outer rows the filter should remove. If that is what you "
+                        + "mean, filter the inner source before the join; for the rows that have a match, use an "
+                        + "inner join.");
+                }
+
                 if (sides == PostSelectManyFilterSideAnalyzer.Side.InnerOnly)
                 {
                     // Replace the SelectMany inner parameter c with a fresh parameter so MemberFor's
@@ -750,6 +765,25 @@ public partial class CollectionUsage
             joinStatement.AddToEnd(scalarStatement);
 
             ProcessSingleValueModeIfAny(scalarStatement, session, null, statistics);
+
+            return joinStatement;
+        }
+
+        // #5910: Any() must ask whether the join has a row, not whether the outer side does. Same trap
+        // as Count() below: AnySelectClause selects from SelectClause.FromObject, which is the *outer*
+        // CTE, so without the wrap Any() dropped the join and every filter on its inner side, and
+        // answered true for any outer row at all.
+        if (IsAny || SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
+        {
+            joinStatement.ConvertToCommonTableExpression(session);
+
+            var anyStatement = new SelectorStatement
+            {
+                SelectClause = new NewScalarStringSelectClause("d.data", joinStatement.ExportName)
+            };
+            joinStatement.AddToEnd(anyStatement);
+
+            ProcessSingleValueModeIfAny(anyStatement, session, null, statistics);
 
             return joinStatement;
         }

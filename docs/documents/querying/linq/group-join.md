@@ -220,33 +220,68 @@ var first = await session.Query<Customer>()
 
 ## Join, LeftJoin, RightJoin and FullJoin
 
-Marten does not translate `Queryable.Join()`, the `LeftJoin()` and `RightJoin()` operators added in .NET 10, or
-the `FullJoin()` operator added in .NET 11. Each one throws `BadLinqExpressionException` with the rewrite that
-answers it:
+Marten translates `Queryable.Join()` and the `LeftJoin()` and `RightJoin()` operators added in .NET 10 by rewriting
+each one into the `GroupJoin()` + `SelectMany()` form above before the query is parsed. The SQL is the same as for
+the hand-written form, and so is everything you can apply after the join: `Where()`, `Select()`, `OrderBy()`,
+`Take()`, `Skip()`, `Count()`, `Any()` and `First()`.
 
-| Operator | Write it as |
+| Operator | Translated as |
 | --- | --- |
-| `Join()` | `GroupJoin()` + `SelectMany()` (inner join, above) |
-| `LeftJoin()` | `GroupJoin()` + `SelectMany()` over `DefaultIfEmpty()` (left join, above) |
-| `RightJoin()` | A left join with the two sources swapped |
-| `FullJoin()` | No translation. Query each side and combine in memory, or use `session.QueryAsync<T>(sql)` |
-
-.NET 11 also adds overloads of all four without a result selector, which return `(outer, inner)` tuples. They are
-refused the same way. With `GroupJoin()`, the `SelectMany()` result selector names the shape of each row instead:
+| `Join()` | `GroupJoin()` + `SelectMany()`, a SQL `INNER JOIN` |
+| `LeftJoin()` | `GroupJoin()` + `SelectMany()` over `DefaultIfEmpty()`, a SQL `LEFT JOIN` |
+| `RightJoin()` | A left join with the two sources and key selectors swapped |
+| `FullJoin()` | Not translated: Marten has no `FULL OUTER JOIN`. Query each side and combine in memory, or use `session.QueryAsync<T>(sql)` |
 
 ```cs
-// Instead of session.Query<Customer>().LeftJoin(session.Query<Order>(), c => c.Id, o => o.CustomerId)
-var rows = await session.Query<Customer>()
-    .GroupJoin(
-        session.Query<Order>(),
-        c => c.Id,
-        o => o.CustomerId,
-        (c, orders) => new { c, orders })
-    .SelectMany(
-        x => x.orders.DefaultIfEmpty(),
-        (x, o) => new { Customer = x.c.Name, Amount = (decimal?)o.Amount })
+// Inner join
+var orders = await session.Query<Customer>()
+    .Where(c => c.City == "Seattle")
+    .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId,
+        (c, o) => new { c.Name, o.Amount })
+    .OrderByDescending(x => x.Amount)
+    .ToListAsync();
+
+// Left join: a customer with no orders appears once, with a null order
+var everyone = await session.Query<Customer>()
+    .LeftJoin(session.Query<Order>(), c => c.Id, o => o.CustomerId,
+        (c, o) => new { c.Name, Amount = (decimal?)o.Amount })
+    .ToListAsync();
+
+// Right join: an order whose customer does not exist appears with a null customer
+var allOrders = await session.Query<Customer>()
+    .RightJoin(session.Query<Order>(), c => c.Id, o => o.CustomerId,
+        (c, o) => new { Customer = c.Name, o.Amount })
     .ToListAsync();
 ```
+
+.NET 11 also adds overloads of `Join()`, `LeftJoin()` and `RightJoin()` without a result selector, which return
+`(Outer, Inner)` tuples. Those translate too, and the tuple's members can be filtered, ordered and projected after
+the join:
+
+```cs
+var names = await session.Query<Customer>()
+    .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId)
+    .Where(x => x.Inner.Amount > 100)
+    .Select(x => x.Outer.Name)
+    .ToListAsync();
+```
+
+Only the shapes that rewrite answers correctly are translated. Marten refuses the rest with
+`BadLinqExpressionException` rather than returning rows that look right and are not:
+
+- **An operator other than `Where()` before the join** on either source, such as `Take()`, `Skip()`, `OrderBy()`,
+  `Select()` or `Distinct()`. A SQL join does not keep the order of its inputs, and a page taken before the join is a
+  different set of rows from one taken after it. Apply these after the join.
+- **An inner source that is not `session.Query<T>()`**, optionally filtered by `Where()`. That rules out joining to an
+  in-memory collection, and joins inside a compiled query, whose only source is its own parameter.
+- **A composite or computed key.** Each key selector must be a single member of the document, such as
+  `o => o.CustomerId`.
+- **An `IEqualityComparer` overload.** SQL compares the keys with `=`.
+- **A join whose source is itself a join.** Marten translates one join per query.
+- **A `Where()` on the nullable side after a left join** (the inner side of `LeftJoin()` or of `DefaultIfEmpty()`,
+  the outer side of `RightJoin()`). Marten would apply that filter to the inner rows before joining, which keeps the
+  rows the filter should remove. Filter the inner source before the join if that is what you mean, or use an inner
+  join for the rows that have a match.
 
 ## Limitations
 
@@ -254,4 +289,5 @@ The following patterns are **not yet supported** and will throw `NotSupportedExc
 
 - **GroupJoin as a final operator** (without `SelectMany`) — materializing the grouped collection is not supported. Use `GroupJoin` + `SelectMany` instead.
 - **Composite keys** — joining on multiple fields simultaneously is not supported.
+- **A `Where()` on the inner side after a left join** (`DefaultIfEmpty()`) throws `BadLinqExpressionException`; see above.
 - **Cross-apply / subquery joins** — only simple key-to-key joins are supported.
