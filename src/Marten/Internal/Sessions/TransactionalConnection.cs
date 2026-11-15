@@ -231,7 +231,31 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         if (_connection.State == ConnectionState.Closed)
         {
             await _connection.OpenAsync(token).ConfigureAwait(false);
-            await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
+
+            try
+            {
+                await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // #5881: an open connection reads as "already set up" to the next call, which would skip
+                // AfterOpenedAsync and run without the row level security tenant. Close it, so the next call
+                // opens it again and sets it up properly, and so it is back in the pool in the meantime.
+                await closeAfterFailedSetupAsync(_connection).ConfigureAwait(false);
+                throw;
+            }
+        }
+    }
+
+    private async Task closeAfterFailedSetupAsync(NpgsqlConnection connection)
+    {
+        try
+        {
+            await connection.CloseAsync().ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Logger.LogFailure(e, "Failure trying to close a connection after setting it up failed");
         }
     }
 

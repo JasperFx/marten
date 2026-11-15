@@ -92,9 +92,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(command);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection(_readerConnectionUsage);
-        await conn.OpenAsync(token).ConfigureAwait(false);
-        await AfterOpenedAsync(conn, token).ConfigureAwait(false);
+        var conn = await openConnectionAsync(_readerConnectionUsage, token).ConfigureAwait(false);
 
         try
         {
@@ -117,9 +115,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(batch);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection(_readerConnectionUsage);
-        await conn.OpenAsync(token).ConfigureAwait(false);
-        await AfterOpenedAsync(conn, token).ConfigureAwait(false);
+        var conn = await openConnectionAsync(_readerConnectionUsage, token).ConfigureAwait(false);
 
         try
         {
@@ -255,11 +251,46 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         }
     }
 
+    /// <remarks>
+    ///     #5881: the new lifetime belongs to nobody until it is returned. The session only takes ownership of it
+    ///     from the return value, so if beginning the transaction fails -- most often a token cancelled after the
+    ///     connection opened -- this method is the only place left that can give the connection back.
+    /// </remarks>
     public async Task<IAlwaysConnectedLifetime> StartAsync(CancellationToken token)
     {
         var transaction = CreateStickyConnection();
-        await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
-        return transaction;
+        try
+        {
+            await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            return transaction;
+        }
+        catch (Exception)
+        {
+            await transaction.DisposeAfterFailureAsync(Logger).ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    /// <summary>
+    ///     #5881. Opens a connection for one operation and runs <see cref="AfterOpenedAsync" /> on it, closing it
+    ///     again if either fails. The callers that hand back a reader cannot use a <c>using</c> block, and the row
+    ///     level security subclass runs a command in <see cref="AfterOpenedAsync" /> -- a command that a cancelled
+    ///     token makes throw after the connection is already open.
+    /// </summary>
+    private async Task<NpgsqlConnection> openConnectionAsync(ConnectionUsage usage, CancellationToken token)
+    {
+        var conn = _database.CreateConnection(usage);
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            await AfterOpenedAsync(conn, token).ConfigureAwait(false);
+            return conn;
+        }
+        catch (Exception)
+        {
+            await conn.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     protected virtual TransactionalConnection CreateStickyConnection()

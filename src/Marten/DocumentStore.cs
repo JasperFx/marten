@@ -592,7 +592,17 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         var connection = await options.InitializeAsync(this, CommandRunnerMode.ReadOnly, cancellation)
             .ConfigureAwait(false);
 
-        return new QuerySession(this, options, connection);
+        // #5881: the connection is open and its transaction begun, but the caller gets nothing to dispose
+        // until the session exists
+        try
+        {
+            return new QuerySession(this, options, connection);
+        }
+        catch (Exception)
+        {
+            await connection.DisposeAfterFailureAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     public Task<IQuerySession> QuerySerializableSessionAsync(CancellationToken cancellation = default)
@@ -659,15 +669,24 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         var connection = await options.InitializeAsync(this, CommandRunnerMode.Transactional, token)
             .ConfigureAwait(false);
 
-        IDocumentSession session = options.Tracking switch
+        // #5881: as above, the caller has nothing to dispose until the session exists
+        try
         {
-            DocumentTracking.None => new LightweightSession(this, options, connection),
-            DocumentTracking.IdentityOnly => new IdentityMapDocumentSession(this, options, connection),
-            DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection),
-            _ => throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking))
-        };
+            IDocumentSession session = options.Tracking switch
+            {
+                DocumentTracking.None => new LightweightSession(this, options, connection),
+                DocumentTracking.IdentityOnly => new IdentityMapDocumentSession(this, options, connection),
+                DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection),
+                _ => throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking))
+            };
 
-        return session;
+            return session;
+        }
+        catch (Exception)
+        {
+            await connection.DisposeAfterFailureAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     private void warnIfAsyncDaemonIsDisabledWithAsyncProjections()
