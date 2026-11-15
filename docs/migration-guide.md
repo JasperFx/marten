@@ -411,6 +411,18 @@ migration.
   division or a narrowing cast, throws `BadLinqExpressionException` naming the projection. Member, object and
   `ExplicitSql()` projections send exactly the SQL they did before.
 
+### LINQ `OrderBy()` after a projection orders the projected values <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5955](https://github.com/JasperFx/marten/issues/5955)), so these queries return rows in a
+  different order, or throw where they used to return them in the wrong order. Over a flattened value collection,
+  `SelectMany(x => x.Values).OrderBy(v => -v)` ordered by `v`: any key was taken as the element itself. The key is
+  now computed in SQL. After a top-level `Select()`, `Select(x => x.Number).OrderBy(n => n)` dropped the
+  `OrderBy()`. The projected values are now ordered, and `Skip()`/`Take()` after the ordering page them.
+- An `OrderBy()` after an anonymous type, a DTO or a projection to another document now throws
+  `BadLinqExpressionException`. It used to be dropped, or for a projection to the document's own type, such as
+  `Select(x => x.Inner)`, it was applied to the documents. Order before the `Select()` instead. A key that has no
+  exact SQL translation, such as a `Math` call, is refused the same way.
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |
