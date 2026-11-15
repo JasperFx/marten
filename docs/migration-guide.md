@@ -335,6 +335,15 @@ migration.
   `jsonb` parameter as UTF-8 `byte[]` rather than a string, as document writes already did. A logger that prints
   `NpgsqlParameter.Value` shows `System.Byte[]` for that parameter; `Encoding.UTF8.GetString` recovers the JSON.
 
+### LINQ `Count()` after `Take()` or `Skip()` counts the page <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5920](https://github.com/JasperFx/marten/issues/5920)), so these counts change value.
+  `Count()` and `LongCount()` after `Take()` and/or `Skip()` now return the number of rows on that page, as LINQ to
+  Objects does. Marten used to put the `LIMIT`/`OFFSET` on the `count(*)` itself, so `Take(n).Count()` returned the
+  full count and `Skip(k).Count()` or `Skip(k).Take(n).Count()` returned `0`. The paged query is now counted from a
+  CTE. Compiled queries, `SelectMany()` before or after the paging, and `Take(0).Any()` (which returned `true`) are
+  fixed too. A count without `Take()` or `Skip()` sends exactly the SQL it did before.
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |

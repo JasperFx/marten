@@ -61,3 +61,42 @@ public class IssueWithAssigneeShape: ICompiledQuery<Issue, Issue>
             .Include<User>(x => x.AssigneeId!, Assignees)
             .FirstOrDefault(x => x.Title == Title);
 }
+
+/// <summary>
+/// A minimal document for the #5920 paged-count shapes.
+/// </summary>
+public class PagedTarget
+{
+    public Guid Id { get; set; }
+    public int Number { get; set; }
+}
+
+/// <summary>
+/// #5920: <c>Where + OrderBy + Skip/Take + Count()</c>. The count has to be the number of rows on the page,
+/// so the paging must stay inside the counted subquery instead of landing on the <c>count(*)</c> itself.
+/// </summary>
+public class TargetCountPageShape: ICompiledQuery<PagedTarget, int>
+{
+    public int MinimumNumber { get; set; }
+    public int Skip { get; set; }
+    public int Take { get; set; }
+
+    public Expression<Func<IMartenQueryable<PagedTarget>, int>> QueryIs()
+        => q => q
+            .Where(x => x.Number > MinimumNumber)
+            .OrderBy(x => x.Number)
+            .Skip(Skip)
+            .Take(Take)
+            .Count();
+}
+
+/// <summary>
+/// #5920: <c>Take + LongCount()</c>, the shape that used to return the full table count.
+/// </summary>
+public class TargetLongCountTakeShape: ICompiledQuery<PagedTarget, long>
+{
+    public int Take { get; set; }
+
+    public Expression<Func<IMartenQueryable<PagedTarget>, long>> QueryIs()
+        => q => q.Take(Take).LongCount();
+}
