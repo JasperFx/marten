@@ -28,6 +28,11 @@ public partial class CollectionUsage
 {
     private bool _hasCompiledMany;
 
+    // #5928: set when ProcessSingleValueModeIfAny leaves a paged SelectMany(...).Any() for compileNext to answer
+    // over the page. compileNext cannot tell from the statement alone: every other Any() has already been given
+    // a LIMIT 1 by then, which looks just like a Take(1).
+    private bool _anyOverPagedParents;
+
     public Statement BuildTopStatement(IStorageSession session, IQueryableMemberCollection collection,
         ILinqDocumentStorage storage, QueryStatistics? statistics)
     {
@@ -283,6 +288,17 @@ public partial class CollectionUsage
             {
                 if (SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
                 {
+                    if (_anyOverPagedParents)
+                    {
+                        _anyOverPagedParents = false;
+
+                        // #5928: ask whether any parent ON THE PAGE has something to flatten, rather than
+                        // paging the parents that pass the filter. ProcessSingleValueModeIfAny left the
+                        // paging alone for this.
+                        selection = pageParentsBeforeExploding(session, selection);
+                        selection.Limit = 1;
+                    }
+
                     var filter = collectionMember.NotEmpty;
                     selection.Wheres.Add(filter);
                     selection.SelectClause = new AnySelectClause(selection.SelectClause.FromObject);
@@ -977,6 +993,10 @@ public partial class CollectionUsage
 
         _hasCompiledMany = true;
 
+        // #5928: a Take()/Skip() before the SelectMany() pages the parents. Explode from a CTE of that page,
+        // or the LIMIT/OFFSET would land on the exploded rows and page the children instead.
+        parentStatement = pageParentsBeforeExploding(session, parentStatement);
+
         parentStatement.Mode = StatementMode.CommonTableExpression;
         parentStatement.ExportName = session.NextTempTableName() + "CTE";
 
@@ -989,6 +1009,42 @@ public partial class CollectionUsage
         var childSelector = childStatement.SelectorStatement();
 
         return compileNext(session, collectionMember as IQueryableMemberCollection, childSelector, statistics);
+    }
+
+    /// <summary>
+    /// #5928: when the statement a SelectMany() flattens is paged -- a Take() and/or Skip() before the
+    /// SelectMany() -- the paging belongs to the parent rows. The collection is exploded by a set-returning
+    /// function in the select list, so a LIMIT/OFFSET left on that statement would page the exploded rows.
+    /// Turn the paged statement into a CTE of the page, keeping its WHERE and its ORDER BY (which decides the
+    /// page), and return a fresh statement over that CTE for the caller to explode. An unpaged statement is
+    /// returned untouched, so its SQL does not change.
+    /// <para>
+    /// The flattened rows come out parent by parent in the page's order, and in collection order within a
+    /// parent: the explosion is a plain scan of the ordered page, the same as an unpaged
+    /// <c>OrderBy().SelectMany()</c> already relies on.
+    /// </para>
+    /// </summary>
+    private static SelectorStatement pageParentsBeforeExploding(IStorageSession session,
+        SelectorStatement parentStatement)
+    {
+        if (!isPaged(parentStatement))
+        {
+            return parentStatement;
+        }
+
+        // d.* rather than d.data: the explosion only reads d.data, but the not-empty filter Any() puts on the page
+        // reads a duplicated array field from its own column (d.numbers), which has to survive into the CTE
+        parentStatement.SelectClause =
+            new NewScalarStringSelectClause("d.*", parentStatement.SelectClause.FromObject);
+        parentStatement.ConvertToCommonTableExpression(session);
+
+        var page = new SelectorStatement
+        {
+            SelectClause = new NewScalarStringSelectClause("d.data", parentStatement.ExportName)
+        };
+        parentStatement.AddToEnd(page);
+
+        return page;
     }
 
     public void CompileAsChild(CollectionUsage parent)
@@ -1018,6 +1074,15 @@ public partial class CollectionUsage
             or Marten.Linq.Parsing.SingleValueMode.Single
             or Marten.Linq.Parsing.SingleValueMode.SingleOrDefault;
 
+    /// <summary>
+    /// #5928: <c>Take(n).SelectMany(x => x.Children).Any()</c> asks whether any of the first n parents has a
+    /// child. compileNext answers that over a CTE of the page, so the paging must still be on the parent
+    /// statement when it gets there instead of being replaced by the LIMIT 1 every other Any() uses.
+    /// </summary>
+    private bool anyAppliesToPagedParentsOfSelectMany(SelectorStatement statement) =>
+        SelectMany != null && Inner == null && GroupJoinData == null && SelectManyCallExpression == null &&
+        SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any && isPaged(statement);
+
     internal void ProcessSingleValueModeIfAny(SelectorStatement statement, IStorageSession session,
         IQueryableMemberCollection? members, QueryStatistics? statistics)
     {
@@ -1029,6 +1094,13 @@ public partial class CollectionUsage
 
         if (IsAny || SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
         {
+            if (anyAppliesToPagedParentsOfSelectMany(statement))
+            {
+                // compileNext pages the parents in a CTE and asks that page
+                _anyOverPagedParents = true;
+                return;
+            }
+
             statement.SelectClause = new AnySelectClause(statement.SelectClause.FromObject);
 
             // #5920: Take(0).Any() is false whatever the table holds -- keep its LIMIT 0 rather than
