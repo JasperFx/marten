@@ -64,20 +64,10 @@ internal class SelectParser: ExpressionVisitor
         switch (node.NodeType)
         {
             case ExpressionType.ArrayIndex:
-                var index = (int)node.Right.ReduceToConstant().Value;
-
-                var inner = _members.MemberFor(node.Left);
-                if (inner is IHasChildrenMembers parent)
-                {
-                    var member = parent.FindMember(new ArrayIndexMember(index));
-                    NewObject.Members[_currentField] = member;
-
-                    _currentField = null;
-                }
-                else
-                {
-                    throw new BadLinqExpressionException("Marten is not (yet) able to process this Select() transform");
-                }
+                // #5949: the whole chain, so a jagged x.Grid[1][0] keeps both of its indexes. Resolving only the
+                // array, x.Grid[1], lost its index and read x.Grid[0] instead.
+                NewObject.Members[_currentField] = _members.MemberForIndexedChain(node);
+                _currentField = null;
 
                 return null;
         }
@@ -344,6 +334,15 @@ internal class SelectParser: ExpressionVisitor
         if (node.TryToParseConstant(out var constant))
         {
             VisitConstant(constant);
+            return null;
+        }
+
+        // #5949: x.Children[0].Name reads an element by position, which MemberFinder cannot follow. The chain is
+        // resolved whole, so its parts are not visited again.
+        if (node.HasElementIndex())
+        {
+            NewObject.Members[_currentField] = _members.MemberForIndexedChain(node);
+            _currentField = null;
             return null;
         }
 

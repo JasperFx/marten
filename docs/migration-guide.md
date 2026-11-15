@@ -47,6 +47,18 @@ paged documents too. Paging after the `SelectMany()` still pages the flattened r
 paging before it sends exactly the SQL it did before. The flattened rows come back in the order of the paged
 documents, and in collection order within each document.
 
+### LINQ indexes into document arrays translate everywhere <Badge type="warning" text="behavior change" />
+
+* [#5949](https://github.com/JasperFx/marten/issues/5949): an index into an array or list on the document,
+  `x.Values[1]`, `x.List[1]` or `x.Values.ElementAt(1)`, now translates in `OrderBy()`/`ThenBy()` and `Select()` as
+  well as in `Where()`, and jagged indexes such as `x.Grid[1][0]` translate in all three. A `bool[]` or `List<bool>`
+  on the document can be queried too. Before, it could not be queried at all. See
+  [Reading an Element by Position](/documents/querying/linq/child-collections#reading-an-element-by-position).
+* The behavior change: a **negative** index now throws `BadLinqExpressionException`. It used to translate to a
+  negative `jsonb` index, which PostgreSQL reads from the end of the array, so `x.Values[-1]` silently compared the
+  last element.
+* An index past the end of the stored array reads as `null`, as it always has in `Where()`.
+
 ### LINQ `Select()` after `SelectMany()` projects the flattened rows <Badge type="warning" text="behavior change" />
 
 A correctness fix ([#5933](https://github.com/JasperFx/marten/issues/5933)), so these queries return different

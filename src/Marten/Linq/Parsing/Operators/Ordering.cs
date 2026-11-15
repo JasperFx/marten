@@ -138,6 +138,13 @@ public class Ordering
             return dictionary.MemberForKey(call.Arguments[0].Value());
         }
 
+        // #5949: an element read by position, x.Values[1], x.Grid[1][0] or x.Children[0].Name. MemberFinder
+        // treats the index as invalid, so it resolves the way the same chain does in a Where() comparison.
+        if (expression.HasElementIndex())
+        {
+            return collection.MemberForIndexedChain(expression);
+        }
+
         // Deliberately the original expression, not the unwrapped one: the unwrapping above
         // exists only to spot an indexer, and BadLinqExpressionException quotes whatever it
         // is handed. Passing the body would drop the "x => " from the message.
