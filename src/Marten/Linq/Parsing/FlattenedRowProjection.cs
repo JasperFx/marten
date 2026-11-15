@@ -70,7 +70,10 @@ internal sealed class FlattenedRowProjection
     /// </summary>
     public static bool IsScalarResult(Type type)
     {
-        return ResultTypes.Contains(Nullable.GetUnderlyingType(type) ?? type);
+        var underlying = Nullable.GetUnderlyingType(type) ?? type;
+
+        // #5955: an enum is read back as itself from the integer or name it is stored as (#5940)
+        return ResultTypes.Contains(underlying) || underlying.IsEnum;
     }
 
     /// <summary>
@@ -98,6 +101,23 @@ internal sealed class FlattenedRowProjection
             reason = e.Message;
             return false;
         }
+    }
+
+    /// <summary>
+    /// #5955: translate the key of an OrderBy()/ThenBy() over a flattened value collection or over projected rows,
+    /// when the key is computed from the element -- v => -v, v => v % 3 -- rather than being the element itself.
+    /// </summary>
+    public static bool TryTranslateOrderingKey(Expression key, bool descending, IQueryableMemberCollection members,
+        ISerializer serializer, out ISqlFragment fragment, out string reason)
+    {
+        fragment = null!;
+        if (!TryTranslateScalar(key, members, serializer, out var translated, out reason))
+        {
+            return false;
+        }
+
+        fragment = descending ? new Composite(translated, " desc") : translated;
+        return true;
     }
 
     /// <summary>
@@ -252,8 +272,7 @@ internal sealed class FlattenedRowProjection
             throw new NotTranslatableException($"'{node}' is not a member Marten can locate");
         }
 
-        var type = Nullable.GetUnderlyingType(node.Type) ?? node.Type;
-        if (!ResultTypes.Contains(type))
+        if (!IsScalarResult(node.Type))
         {
             throw new NotTranslatableException($"'{node}' is a {node.Type.FullNameInCode()}, not a scalar");
         }
