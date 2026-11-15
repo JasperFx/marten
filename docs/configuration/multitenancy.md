@@ -477,6 +477,46 @@ Sharded multi-tenancy also composes with
 across the database pool, while `Events.UseTenantPartitionedEvents` physically isolates each tenant's events (and
 projection progress) *within* whichever database hosts that tenant, running one daemon agent per (database, tenant).
 
+## Synchronous sessions and tenants that are not cached yet
+
+The synchronous session factories (`LightweightSession(tenantId)`, `QuerySession(tenantId)`, `OpenSession(...)`
+and the rest) and synchronous `ForTenant(tenantId)` have to resolve the tenant's database before they can return.
+Apart from the static mapping, which knows its databases up front, that takes a trip to the database the first time
+a process sees a tenant. The answer is cached, so it happens **once per tenant per process**.
+
+How that first resolution runs depends on the tenancy:
+
+| Tenancy | First synchronous resolution of a tenant |
+| --- | --- |
+| Master table | Blocks the calling thread on asynchronous work: the control-table read, and on the first resolution in the process the control table's schema check ([weasel#838](https://github.com/JasperFx/weasel/issues/838)) |
+| Single instance | Blocks the calling thread on asynchronous work, which may include `CREATE DATABASE` ([weasel#839](https://github.com/JasperFx/weasel/issues/839)) |
+| Sharded | Blocks the calling thread on asynchronous work: the shard lookup, the assignment of a new tenant, and creating or repairing the tenant's partitions ([#5986](https://github.com/JasperFx/marten/issues/5986)) |
+
+A thread-pool thread blocked on asynchronous work waits for that work to be finished by another pool thread. Take a
+burst of synchronous session opens for tenants that this process has not seen yet, such as the first requests after a
+deploy or a batch of newly onboarded tenants. That burst can hold every pool thread, so the work they are all waiting
+on cannot run, and the whole process stalls until the thread pool has added enough threads. For a single instance
+tenancy that has to create the database, each blocked thread waits for the longest.
+
+To keep that off the synchronous path:
+
+* **Warm the tenants you already know at startup.** `ApplyAllDatabaseChangesOnStartup()` builds every database the
+  tenancy knows about, and that caches every tenant in a master table, every assigned tenant of a sharded tenancy and
+  every tenant declared with `WithTenants()` for a single instance tenancy.
+* **Resolve a new tenant asynchronously before its first synchronous session.** Do it where the tenant is
+  onboarded, or in asynchronous middleware ahead of the code that opens the session:
+
+```cs
+// Caches the tenant, so the synchronous session below finds it without a database round trip
+await store.Tenancy.GetTenantAsync(tenantId);
+
+using var session = store.LightweightSession(tenantId);
+```
+
+* **Use an asynchronous session factory** where the session's semantics fit, for example
+  `LightweightSerializableSessionAsync(tenantId)` or `QuerySerializableSessionAsync(tenantId)`. These resolve the
+  tenant asynchronously, but they open a serializable transaction.
+
 ## Dynamically applying changes to tenants databases
 
 If you didn't call the `ApplyAllDatabaseChangesOnStartup` method, Marten would still try to create a database [upon the session creation](/documents/sessions). This action is invasive and can cause issues like timeouts, cold starts, or deadlocks. It also won't apply all defined changes upfront (so, e.g. [indexes](/documents/indexing/), [custom schema extensions](/schema/extensions)).
