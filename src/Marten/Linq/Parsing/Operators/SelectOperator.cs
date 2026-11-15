@@ -48,7 +48,13 @@ public class SelectOperator: LinqOperator
         // before it, so a Where() or OrderBy() after the projection could not be told apart from one before it.
         // Operators are applied outermost first, so everything already on the current usage comes after this
         // Select(); start a new usage for the Select() and whatever precedes it.
-        if (followsSelectMany && previousUsage != null && previousUsage == usage)
+        // #5955: the same holds for a top-level Select() that maps a document to its own type -- x => x.Inner,
+        // where Inner is another Target -- whose OrderBy() was otherwise applied to the documents themselves.
+        var splitsTheUsage = followsSelectMany ||
+                             (selectLambda != null && select != selectLambda.Parameters[0] &&
+                              ProjectsTheQueriedDocuments(expression));
+
+        if (splitsTheUsage && previousUsage != null && previousUsage == usage)
         {
             usage = query.StartNewCollectionUsageFor(expression);
         }
@@ -102,6 +108,30 @@ public class SelectOperator: LinqOperator
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// #5955: does this Select() project the queried documents themselves, with only row-preserving operators
+    /// (Where, OrderBy, paging, Distinct) between it and the query's root?
+    /// </summary>
+    internal static bool ProjectsTheQueriedDocuments(MethodCallExpression select)
+    {
+        var source = select.Arguments[0];
+        while (source is MethodCallExpression call)
+        {
+            switch (call.Method.Name)
+            {
+                case "Where" or "OrderBy" or "OrderByDescending" or "ThenBy" or "ThenByDescending" or "Take"
+                    or "Skip" or "Distinct":
+                    source = call.Arguments[0];
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        return source is ConstantExpression;
     }
 
     internal static void HoistWhereExpressions(
