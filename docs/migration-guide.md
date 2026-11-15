@@ -90,6 +90,17 @@ PostgreSQL's `length()`, on a flattened string and on a string member of a docum
 member. PostgreSQL's `length()` counts characters where .NET counts UTF-16 code units, so the two differ for a
 string holding an emoji or another character outside the Basic Multilingual Plane.
 
+### LINQ computed top-level `Select()` projections translate
+
+A bug fix ([#5942](https://github.com/JasperFx/marten/issues/5942)). `Select(x => x.Number % 3)` failed with
+`ArgumentNullException`, `Select(x => x.Id.ToString())` with `ArgumentException`, and a cast such as
+`Select(x => (long)x.Number)` with `NotSupportedException`. Arithmetic, negation, widening casts, enum to integer,
+string concatenation, `ToUpper()`, `ToLower()`, `Length`, and `ToString()` of an integer or a `Guid` are now
+computed in SQL, and `Where()`, `OrderBy()`, `Distinct()`, paging, `Count()`, `First()` and the aggregates after the
+`Select()` apply to the computed value. Anything else, such as a `Math` call, a conditional, decimal division or a
+narrowing cast, throws `BadLinqExpressionException` naming the projection. Member, object and `ExplicitSql()`
+projections send exactly the SQL they did before.
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
