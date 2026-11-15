@@ -29,11 +29,10 @@ namespace Marten.Schema.Identity.Sequences;
 ///     <b>Block prefetching (#5862).</b> Every time a block (a "hi") is installed, this sequence
 ///     immediately starts reserving the following one in the background with an asynchronous
 ///     <c>mt_get_next_hi</c> call. When <c>Store()</c> exhausts the current block, the prefetched
-///     block is swapped in with no database round trip. If the prefetch is still in flight, the
-///     synchronous path waits for it rather than racing it for the same <c>mt_hilo</c> row (#5938).
-///     Only if there is no prefetch, it failed, or it outlasts <see cref="SynchronousPrefetchWait" />
-///     does the sequence fall back to the old synchronous fetch, so ids are still assigned the moment
-///     a document is stored.
+///     block is swapped in with no database round trip. If there is no prefetch, it failed, or it has
+///     not landed yet, the sequence falls back to the old synchronous fetch straight away, so ids are
+///     still assigned the moment a document is stored. The synchronous path never waits on the
+///     prefetch (#5969).
 ///     </para>
 ///     <para>
 ///     At most one prefetch is in flight per sequence. A prefetch never faults: a failure is
@@ -43,8 +42,8 @@ namespace Marten.Schema.Identity.Sequences;
 ///     Consequences: a process reserves up to one block more than it uses, so ids are lost (gaps)
 ///     when it shuts down holding an unused prefetched block. Ids issued by one sequence instance are
 ///     unique and increasing, but are not guaranteed to be contiguous across a block boundary: when
-///     a synchronous fallback that gave up waiting overtakes a prefetch still in flight, the block the
-///     prefetch reserved is discarded rather than handed out out of order.
+///     a synchronous fallback overtakes a prefetch still in flight, the block the prefetch reserved is
+///     discarded rather than handed out out of order.
 ///     </para>
 /// </remarks>
 public class HiloSequence: HiloSequenceBase
@@ -167,61 +166,33 @@ public class HiloSequence: HiloSequenceBase
     }
 
     /// <summary>
-    ///     How long the synchronous id path waits for a prefetch that is already in flight before it
-    ///     gives up on it and fetches a block of its own. The prefetch normally lands within one round
-    ///     trip; the limit only exists so a thread blocked in <c>Store()</c> can never wait
-    ///     indefinitely on asynchronous work (#5938).
-    /// </summary>
-    internal TimeSpan SynchronousPrefetchWait { get; set; } = TimeSpan.FromSeconds(5);
-
-    /// <summary>
-    ///     Install the next block on the synchronous id path (<c>Store()</c>). Uses the prefetched
-    ///     block when it has already arrived, and waits for it when it is still in flight. Only when
-    ///     there is no prefetch, it failed, or it outlasts <see cref="SynchronousPrefetchWait" /> does
-    ///     this fall back to a blocking fetch of its own.
+    ///     Install the next block on the synchronous id path (<c>Store()</c>). Uses the prefetched block
+    ///     when it has already arrived. Otherwise, whether the prefetch is still in flight, failed, or was
+    ///     never started, fetches a block of its own with a blocking round trip, straight away.
     /// </summary>
     /// <remarks>
-    ///     #5938: the fallback used to start its own fetch alongside the prefetch still in flight, which
-    ///     doubled the number of callers each process put on the <c>mt_hilo</c> row and threw away one
-    ///     of the two blocks. Against the old compare-and-set <c>mt_get_next_hi</c>, which returned -1 to
-    ///     every caller but one whenever two overlapped, that also doubled how often the fallback ran out
-    ///     of <c>MaxAdvanceToNextHiAttempts</c>. With this wait a sequence has at most one fetch in
-    ///     flight, as before #5862.
+    ///     <para>
+    ///     #5969: this never waits on the prefetch. A thread blocked in <c>Store()</c> is usually a
+    ///     thread-pool thread, and the prefetch is asynchronous work that needs a thread-pool thread to
+    ///     finish, so waiting for it (as #5938 briefly did, for up to five seconds) is exactly how a burst of
+    ///     synchronous writers starves the pool. The blocking fetch needs no other thread.
+    ///     </para>
+    ///     <para>
+    ///     Racing the prefetch for the <c>mt_hilo</c> row is safe since #5938 made <c>mt_get_next_hi</c> a
+    ///     single atomic increment: both callers get a block, neither gets -1. If the prefetch turns out to
+    ///     have reserved the lower block, it is discarded when it is next looked at rather than issued behind
+    ///     a later one, which costs a gap in the ids and never a duplicate.
+    ///     </para>
     /// </remarks>
     protected override void AdvanceToNextHiSync()
     {
-        if (!tryInstallPrefetchedBlock() && !(waitForPrefetchInFlight() && tryInstallPrefetchedBlock()))
+        if (!tryInstallPrefetchedBlock())
         {
             Interlocked.Increment(ref _synchronousFetches);
             installHi(FetchNextHiSync());
         }
 
         startPrefetch();
-    }
-
-    /// <summary>
-    ///     Block until the prefetch in flight (if any) completes, for at most
-    ///     <see cref="SynchronousPrefetchWait" />. True when there was one and it completed.
-    /// </summary>
-    private bool waitForPrefetchInFlight()
-    {
-        Task<long>? pending;
-        lock (_prefetchLock)
-        {
-            pending = _prefetch;
-        }
-
-        if (pending == null)
-        {
-            return false;
-        }
-
-        // The prefetch never faults and runs on the thread pool with no synchronization context
-        // (Task.Run, ConfigureAwait(false) throughout), so a blocking wait cannot deadlock on it.
-        // This is called under the sequence's gate, which the prefetch never takes.
-#pragma warning disable VSTHRD002
-        return pending.Wait(SynchronousPrefetchWait, CancellationToken.None);
-#pragma warning restore VSTHRD002
     }
 
     /// <summary>

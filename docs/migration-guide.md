@@ -164,9 +164,12 @@ These only matter if you implement or call Marten's connection plumbing directly
 
 HiLo ids are still assigned synchronously in `session.Store()`, but each sequence now reserves its **next** block in the
 background with an asynchronous database call as soon as it starts using the current one (#5862). Exhausting a block normally
-no longer blocks the storing thread on the database. When the next block has not arrived yet, `Store()` waits for the background
-fetch instead of starting a second one; the synchronous fetch is kept as a fallback for when there is no background fetch, it
-failed, or it has not landed within five seconds.
+no longer blocks the storing thread on the database. When the next block has not arrived yet, `Store()` fetches one synchronously
+straight away, as it always did, rather than waiting on the background fetch; waiting on asynchronous work from a synchronous
+`Store()` is what let a burst of storing threads starve the thread pool
+([#5969](https://github.com/JasperFx/marten/issues/5969)). The first id a database issues builds or updates `mt_hilo` and
+`mt_get_next_hi` with synchronous database calls instead of blocking on Weasel's asynchronous migration, and with
+`AutoCreate.None` it no longer reads the catalog at all.
 
 Each process can therefore hold one unused block, so expect gaps of up to `MaxLo` ids when a process stops, and ids are no
 longer guaranteed to be contiguous across a block boundary. They are still unique and, within one process, increasing.
