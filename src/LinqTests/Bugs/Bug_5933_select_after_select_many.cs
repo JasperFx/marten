@@ -56,7 +56,9 @@ public class FlatDtoWithSetters
 // also counted, tested with Any() and, where the order is defined, asked for First().
 public class Bug_5933_select_after_select_many: IntegrationContext
 {
-    private static readonly string[] NamePool = ["alpha", "Bravo", "charlie", "Delta", "echo", "Foxtrot", "golf"];
+    // Lower case only: PostgreSQL orders text by the database's collation, which is a plain byte order on some
+    // servers and a culture-aware one on others, and the two only agree on strings of one case
+    private static readonly string[] NamePool = ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot", "golf"];
 
     // Stored in this order, so the first document in the table has nothing to flatten and the documents are
     // not in Number order. Several documents have empty collections.
@@ -260,7 +262,7 @@ public class Bug_5933_select_after_select_many: IntegrationContext
     [Theory]
     [MemberData(nameof(ScalarCombinations))]
     public Task string_concatenation(string combination) =>
-        scalar(combination, q => q.SelectMany(x => x.Names), s => "<" + s + ">", s => s != "Delta1",
+        scalar(combination, q => q.SelectMany(x => x.Names), s => "<" + s + ">", s => s != "delta1",
             s => s.Contains("a"));
 
     [Theory]
@@ -288,7 +290,7 @@ public class Bug_5933_select_after_select_many: IntegrationContext
     [MemberData(nameof(ObjectCombinations))]
     public Task value_dto(string combination) =>
         projected(combination, q => q.SelectMany(x => x.Names), s => new FlatDto(s.Length, s.ToUpper()),
-            s => s.StartsWith("e") || s.StartsWith("D"));
+            s => s.StartsWith("e") || s.StartsWith("d"));
 
     [Theory]
     [MemberData(nameof(ObjectCombinations))]
