@@ -222,6 +222,88 @@ public class UnitOfWork_PendingChanges_Functionality_Tests : IntegrationContext
 
 
 
+    // #5730: UnitOfWork.Add only walks the queued operations for a document it has seen before. These pin
+    // that a later operation on the same document still replaces the earlier one, whatever happened between.
+    [Fact]
+    public void a_later_operation_on_the_same_document_replaces_the_earlier_one()
+    {
+        using var session = theStore.LightweightSession();
+        var user = new User();
+        var other = new User();
+
+        session.Store(user);
+        session.Store(other);
+        session.Update(user);
+
+        session.PendingChanges.Operations().Count().ShouldBe(2);
+        session.ShouldHaveUpdateFor(user);
+        session.ShouldHaveUpsertFor(other);
+    }
+
+    [Fact]
+    public void storing_a_document_again_after_ejecting_it_queues_one_operation()
+    {
+        using var session = theStore.LightweightSession();
+        var user = new User();
+
+        session.Store(user);
+        session.Eject(user);
+        session.PendingChanges.Operations().Count().ShouldBe(0);
+
+        session.Store(user);
+        session.Insert(user);
+
+        session.PendingChanges.Operations().Count().ShouldBe(1);
+        session.ShouldHaveInsertFor(user);
+    }
+
+    [Fact]
+    public void storing_a_document_again_after_ejecting_everything_queues_one_operation()
+    {
+        using var session = theStore.LightweightSession();
+        var user = new User();
+
+        session.Store(user);
+        session.EjectAllPendingChanges();
+
+        session.Store(user);
+        session.Update(user);
+
+        session.PendingChanges.Operations().Count().ShouldBe(1);
+        session.ShouldHaveUpdateFor(user);
+    }
+
+    [Fact]
+    public async Task storing_a_document_again_after_saving_queues_one_operation()
+    {
+        await using var session = theStore.LightweightSession();
+        var user = new User();
+
+        session.Store(user);
+        await session.SaveChangesAsync();
+        session.PendingChanges.Operations().Count().ShouldBe(0);
+
+        session.Store(user);
+        session.Update(user);
+
+        session.PendingChanges.Operations().Count().ShouldBe(1);
+        session.ShouldHaveUpdateFor(user);
+    }
+
+    [Fact]
+    public void many_distinct_documents_each_keep_their_own_operation()
+    {
+        using var session = theStore.LightweightSession();
+        var users = Enumerable.Range(0, 500).Select(_ => new User()).ToArray();
+
+        foreach (var user in users) session.Store(user);
+        session.Update(users[250]);
+
+        session.PendingChanges.Operations().Count().ShouldBe(500);
+        session.ShouldHaveUpdateFor(users[250]);
+        session.ShouldHaveUpsertFor(users[499]);
+    }
+
     public UnitOfWork_PendingChanges_Functionality_Tests(DefaultStoreFixture fixture) : base(fixture)
     {
     }

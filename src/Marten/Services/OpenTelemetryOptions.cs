@@ -84,6 +84,9 @@ public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOp
     {
         ExportCounterOnChangeSets<long>("marten.event.append", "events", (counter, commit) =>
         {
+            // #5730: nothing is listening to the meter, so do not walk every committed event to build tags
+            if (!counter.Enabled) return;
+
             foreach (var e in commit.GetEvents())
             {
                 counter.Add(1, new TagList

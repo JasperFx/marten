@@ -373,6 +373,28 @@ plan time for a statement, which for a simple single-table query is tens of micr
 cost dominated by JSONB extraction, sorting, moving documents over the wire, and deserializing them
 on the client.
 
+### The async daemon's event page
+
+The async daemon's hottest statement is the one that loads each page of events: the same SQL text on
+every page, with only the sequence floor and ceiling bound as parameters, so `Max Auto Prepare` does
+pick it up. We measured it against an explicit `Prepare()` of the same statement, on a warm pool,
+loading events from a 20,000 event store:
+
+| events in the page | raw statement | `Prepare()` | `Max Auto Prepare=20` | daemon page load, default | daemon page load, `Max Auto Prepare=20` |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 201 μs | 200 μs | 202 μs | 199 μs | 186 μs |
+| 100 | 452 μs | 404 μs | 408 μs | 553 μs | 439 μs |
+| 500 | 786 μs | 803 μs | 817 μs | 1,054 μs | 1,081 μs |
+
+Preparing saves the server's parse and plan of the statement, a few tens of microseconds, and about
+1 KB of allocation per page. That shows up only where the round trip is a large share of the page:
+a mid-sized page here, never a single event and never a full 500 event page, where moving and
+deserializing the events dominates. An explicit `Prepare()` bought nothing that `Max Auto Prepare`
+did not, which is why Marten adds no daemon-specific switch for it. The cautions below apply to the
+daemon with one addition: a projection that filters on event types binds the type names as a
+parameter, which is exactly where a generic plan can go wrong on a store whose event types are
+heavily skewed.
+
 ### Why it is not on by default
 
 The reasons to be careful are more specific than the reasons to be hopeful:
@@ -385,6 +407,9 @@ The reasons to be careful are more specific than the reasons to be hopeful:
   server-side cost scales with pool size multiplied by `Max Auto Prepare`.
 * **Runtime schema changes.** Marten applies schema changes at runtime under its automatic schema
   creation modes, and DDL can invalidate plans cached on connections already in the pool.
+* **PgBouncer.** Prepared statements are bound to a server connection. In transaction pooling mode
+  PgBouncer hands that connection to another client between transactions, so only turn this on
+  behind PgBouncer 1.21 or later with `max_prepared_statements` set, or with session pooling.
 
 If you do turn it on, treat it as a per-deployment tuning decision, measure it against your own
 workload, and watch for plan regressions on your most skewed columns rather than assuming a win.

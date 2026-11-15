@@ -148,10 +148,17 @@ internal class EventTracingConnectionLifetime:
 
     private void writeVerboseEvents(IReadOnlyList<OperationPage> pages)
     {
-        if (_telemetryOptions.TrackConnections == TrackLevel.Verbose)
+        // #5730: a listener on the "Marten" source does not mean this span was sampled. When the sampler
+        // dropped it there is no activity, or one that records nothing, and every event and tag built
+        // below would be thrown away -- so do not walk the operations at all.
+        if (_telemetryOptions.TrackConnections != TrackLevel.Verbose || _databaseActivity is not { IsAllDataRequested: true })
         {
-            var ops = pages.SelectMany(x => x.Operations);
-            foreach (var op in ops)
+            return;
+        }
+
+        foreach (var page in pages)
+        {
+            foreach (var op in page.Operations)
             {
                 // One marten.append.event per appended event, whichever route appended it (#5772).
                 // #4821 event E3: the closed-shape per-event ops derive from the neutral
