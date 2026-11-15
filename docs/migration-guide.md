@@ -164,12 +164,20 @@ These only matter if you implement or call Marten's connection plumbing directly
 
 HiLo ids are still assigned synchronously in `session.Store()`, but each sequence now reserves its **next** block in the
 background with an asynchronous database call as soon as it starts using the current one (#5862). Exhausting a block normally
-no longer blocks the storing thread on the database; the synchronous fetch is kept only as a fallback for when the next block
-has not arrived yet, or the background fetch failed.
+no longer blocks the storing thread on the database. When the next block has not arrived yet, `Store()` waits for the background
+fetch instead of starting a second one; the synchronous fetch is kept as a fallback for when there is no background fetch, it
+failed, or it has not landed within five seconds.
 
 Each process can therefore hold one unused block, so expect gaps of up to `MaxLo` ids when a process stops, and ids are no
 longer guaranteed to be contiguous across a block boundary. They are still unique and, within one process, increasing.
 Nothing needs to change in your code. See [How HiLo blocks are fetched](/documents/identity#how-hilo-blocks-are-fetched).
+
+The `mt_get_next_hi` function behind HiLo is now a single atomic increment ([#5938](https://github.com/JasperFx/marten/issues/5938)).
+The old version read the current value and then updated it only if it was unchanged, returning `-1` to every caller that another
+caller overtook. Marten retried those calls with no backoff, and under heavy concurrent load a sequence could exhaust
+`MaxAdvanceToNextHiAttempts` and throw `HiloSequenceAdvanceToNextHiAttemptsExceededException`. The new version makes overlapping
+callers wait on the row lock instead, and each gets a block. It is an ordinary schema change, applied with the rest of your
+schema migration; until it is applied, the old function keeps working as it did.
 
 ### Abstractions lifted into JasperFx and Weasel <Badge type="warning" text="recompile" />
 
@@ -384,6 +392,32 @@ migration.
   If you relied on that, write the chain with `ThenBy()`. A chain with one `OrderBy()` sends exactly the SQL it did
   before, and so does `OrderBy("a", "b")`, which is now built with `ThenBy()`. `ThenByTextRank()` followed by
   another `ThenBy()` now keeps its place in the chain instead of moving to the end.
+
+### LINQ `Select()` after `SelectMany()` projects the flattened rows <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5933](https://github.com/JasperFx/marten/issues/5933)), so these queries return different
+  rows or throw where they used to return wrong data. `SelectMany(x => x.Values).Select(v => v % 3)` returned the raw
+  values: the projection was dropped whenever it was arithmetic or a method call over the flattened element. A
+  `Where()`, `OrderBy()` or `Take()` applied after a projection of child documents was dropped as well.
+- The projection is now computed in SQL over the flattened rows, and every operator after it (`Where()`,
+  `OrderBy()`, `Distinct()`, `Skip()`/`Take()`, `Count()`, `Any()`, `First()`, `Sum()` and the rest) applies to
+  the projected value. Member access, arithmetic, string concatenation, `ToUpper()`, `ToLower()`, `Length`,
+  `ToString()` of an integer or a `Guid`, widening casts, enum to integer, and anonymous types or DTOs built from
+  those translate.
+- A projection with no exact SQL translation, such as a `Math` call, a conditional, decimal division or a narrowing
+  cast, now throws `BadLinqExpressionException` instead of returning the raw rows. So does a `Where()`, `OrderBy()`
+  or `Distinct()` applied after an object projection of a flattened row. Apply those before the `Select()`, or
+  project in memory after `ToListAsync()`. A `SelectMany()` without a `Select()` after it sends exactly the SQL it
+  did before.
+
+### LINQ `SelectMany()` over a duplicated array field works
+
+- A bug fix ([#5934](https://github.com/JasperFx/marten/issues/5934)). `SelectMany()` over an array field duplicated
+  into its own column (`Duplicate(x => x.Numbers)` or `[DuplicateField]`) failed: fetching failed with `42P01`
+  (a CTE that was never declared) and counting with `42883` (`jsonb_array_length()` with no argument). The
+  duplicated column is now flattened with `unnest()` and counted with `array_length()`, and `Where()`, `OrderBy()`,
+  paging, `First()`/`Single()` and `Select()` after the `SelectMany()` apply as they do to a collection that is not
+  duplicated. A `SelectMany()` over a collection that is not duplicated sends exactly the SQL it did before.
 
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
