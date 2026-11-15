@@ -404,6 +404,10 @@ migration.
   point `%`, a narrowing cast (`(byte)x.Number`), a conditional, a `Math` call or an enum stored as a string cast
   to an integer, now throws `BadLinqExpressionException`. Order by a member, or sort in memory after the query.
   A plain member key sends exactly the SQL it did before.
+- The same applies, as of [#5968](https://github.com/JasperFx/marten/issues/5968), to a key over the child
+  documents a `SelectMany()` flattens, `SelectMany(x => x.Children).OrderBy(c => -c.Index)`, and to a key over
+  either side of a `Join()` or `GroupJoin()`, `Join(...).OrderBy(r => -r.Amount)`. Both used to order by the member
+  under the negation, and both refused arithmetic such as `% 3`.
 
 ### LINQ `Select()` after `SelectMany()` projects the flattened rows <Badge type="warning" text="behavior change" />
 
