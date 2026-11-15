@@ -62,15 +62,25 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
     /// </summary>
     protected internal override bool HasSurvivingTransaction => true;
 
+    /// <remarks>
+    ///     #5881: as <see cref="TransactionalConnection.DisposeAsync" />, the connection is disposed whatever happens
+    ///     before it.
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
-        if (_connection is { State: ConnectionState.Open })
+        try
         {
-            await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            if (_connection is { State: ConnectionState.Open })
+            {
+                await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            }
         }
-        if (_connection != null)
+        finally
         {
-            await _connection.DisposeAsync().ConfigureAwait(false);
+            if (_connection != null)
+            {
+                await _connection.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 
@@ -78,12 +88,19 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
     {
         if (OwnsConnection)
         {
-            if (_connection is { State: ConnectionState.Open })
+            // #5881: the connection is disposed whatever happens before it
+            try
             {
-                BeforeClose(_connection);
+                if (_connection is { State: ConnectionState.Open })
+                {
+                    BeforeClose(_connection);
+                }
             }
-            _connection?.Close();
-            _connection?.Dispose();
+            finally
+            {
+                _connection?.Close();
+                _connection?.Dispose();
+            }
         }
     }
 
@@ -127,11 +144,23 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         if (_connection == null)
         {
 #pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
+            var connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
-            _connection.Open();
-            AfterOpened(_connection);
-            _connection.EnlistTransaction(_options.DotNetTransaction);
+
+            // #5881: see BeginTransactionAsync
+            try
+            {
+                connection.Open();
+                AfterOpened(connection);
+                connection.EnlistTransaction(_options.DotNetTransaction);
+            }
+            catch (Exception)
+            {
+                connection.Dispose();
+                throw;
+            }
+
+            _connection = connection;
         }
     }
 
@@ -145,11 +174,26 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         if (_connection == null)
         {
 #pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
+            var connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
-            await _connection.OpenAsync(token).ConfigureAwait(false);
-            await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
-            _connection.EnlistTransaction(_options.DotNetTransaction);
+
+            // #5881: the lifetime takes the connection only once it is fully set up. Assigned any earlier, a
+            // failure part way -- a token cancelled after the open -- left an open connection that the next
+            // call took as ready, and used without the row level security tenant and outside the ambient
+            // transaction.
+            try
+            {
+                await connection.OpenAsync(token).ConfigureAwait(false);
+                await AfterOpenedAsync(connection, token).ConfigureAwait(false);
+                connection.EnlistTransaction(_options.DotNetTransaction);
+            }
+            catch (Exception)
+            {
+                await connection.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
+
+            _connection = connection;
         }
     }
 

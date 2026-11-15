@@ -45,20 +45,36 @@ internal sealed class RlsExternalTransaction: ExternalTransaction
 
     public override void Dispose()
     {
-        if (_applied)
+        try
         {
-            RlsSessionVariableApplier.Reset(Connection, _settingName);
+            if (_applied)
+            {
+                // #5881: never throws. The connection is the caller's, so there is no data source of ours to clear;
+                // a failed reset falls back to NpgsqlConnection.ClearPool on it, best effort.
+                RlsSessionVariableApplier.ResetBeforeRelease(Connection, _settingName, null, Logger);
+            }
         }
-        base.Dispose();
+        finally
+        {
+            base.Dispose();
+        }
     }
 
     public override async ValueTask DisposeAsync()
     {
-        if (_applied)
+        try
         {
-            await RlsSessionVariableApplier.ResetAsync(Connection, _settingName).ConfigureAwait(false);
+            if (_applied)
+            {
+                // #5881: see Dispose()
+                await RlsSessionVariableApplier.ResetBeforeReleaseAsync(Connection, _settingName, null, Logger)
+                    .ConfigureAwait(false);
+            }
         }
-        await base.DisposeAsync().ConfigureAwait(false);
+        finally
+        {
+            await base.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     private void EnsureApplied()

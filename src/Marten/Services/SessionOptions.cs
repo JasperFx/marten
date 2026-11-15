@@ -167,7 +167,17 @@ public sealed class SessionOptions
                 var transaction = mode == CommandRunnerMode.ReadOnly
                     ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = timeout }
                     : new TransactionalConnection(this) { CommandTimeout = timeout };
-                transaction.BeginTransaction();
+                // #5881: nothing else has this lifetime yet, so a failure here has to give its connection back
+                try
+                {
+                    transaction.BeginTransaction();
+                }
+                catch (Exception)
+                {
+                    transaction.DisposeAfterFailure();
+                    throw;
+                }
+
                 return transaction;
             }
 
@@ -209,7 +219,17 @@ public sealed class SessionOptions
                 TransactionalConnection transaction = mode == CommandRunnerMode.ReadOnly
                     ? new RlsReadOnlyTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout }
                     : new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
-                transaction.BeginTransaction();
+                // #5881: nothing else has this lifetime yet, so a failure here has to give its connection back
+                try
+                {
+                    transaction.BeginTransaction();
+                }
+                catch (Exception)
+                {
+                    transaction.DisposeAfterFailure();
+                    throw;
+                }
+
                 return transaction;
             }
 
@@ -286,7 +306,16 @@ public sealed class SessionOptions
             // point its transaction opens. Leaving it to the first command meant the sticky connection
             // below carried no transaction at all, so the session was neither serializable nor
             // auto-closing: it just held one connection open for its lifetime with nothing protecting it.
-            await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            // #5881: nothing else has this lifetime yet, so a failure here has to give its connection back
+            try
+            {
+                await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                await transaction.DisposeAfterFailureAsync().ConfigureAwait(false);
+                throw;
+            }
 
             return transaction;
         }
@@ -326,7 +355,16 @@ public sealed class SessionOptions
             // point its transaction opens. Leaving it to the first command meant the sticky connection
             // below carried no transaction at all, so the session was neither serializable nor
             // auto-closing: it just held one connection open for its lifetime with nothing protecting it.
-            await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            // #5881: nothing else has this lifetime yet, so a failure here has to give its connection back
+            try
+            {
+                await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                await transaction.DisposeAfterFailureAsync().ConfigureAwait(false);
+                throw;
+            }
 
             return transaction;
         }

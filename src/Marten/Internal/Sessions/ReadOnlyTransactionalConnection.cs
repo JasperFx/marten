@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
@@ -38,8 +39,28 @@ internal class ReadOnlyTransactionalConnection: TransactionalConnection
         {
             base.BeginTransaction();
 
-            Transaction.CreateCommand(SetTransactionReadOnly)
-                .ExecuteNonQuery();
+            try
+            {
+                using var command = Transaction!.CreateCommand(SetTransactionReadOnly);
+                command.ExecuteNonQuery();
+            }
+            catch (Exception)
+            {
+                // #5881: see BeginTransactionAsync
+                var transaction = Transaction;
+                Transaction = null;
+
+                try
+                {
+                    transaction!.Dispose();
+                }
+                catch (Exception e)
+                {
+                    Logger.LogFailure(e, "Failure trying to dispose a transaction that could not be made read only");
+                }
+
+                throw;
+            }
         }
     }
 
@@ -49,8 +70,30 @@ internal class ReadOnlyTransactionalConnection: TransactionalConnection
         {
             await base.BeginTransactionAsync(token).ConfigureAwait(false);
 
-            await Transaction.CreateCommand(SetTransactionReadOnly)
-                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            try
+            {
+                await using var command = Transaction!.CreateCommand(SetTransactionReadOnly);
+                await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // #5881: the transaction exists but was never made read only. Left in place, the next call
+                // would find a transaction and skip this method's work, and the session would carry on in a
+                // writable one.
+                var transaction = Transaction;
+                Transaction = null;
+
+                try
+                {
+                    await transaction!.DisposeAsync().ConfigureAwait(false);
+                }
+                catch (Exception e)
+                {
+                    Logger.LogFailure(e, "Failure trying to dispose a transaction that could not be made read only");
+                }
+
+                throw;
+            }
         }
     }
 }
