@@ -71,6 +71,16 @@ is now flattened with `unnest()` and counted with `array_length()`, and `Where()
 `First()`/`Single()` and `Select()` after the `SelectMany()` apply as they do to a collection that is not duplicated.
 A `SelectMany()` over a collection that is not duplicated sends exactly the SQL it did before.
 
+### `mt_get_next_hi` is now an atomic increment <Badge type="warning" text="schema change" />
+
+A fix for HiLo under concurrent load ([#5938](https://github.com/JasperFx/marten/issues/5938)). The function behind HiLo
+ids used to read the current value and then update it only if it was unchanged, returning `-1` to every caller that
+another caller overtook. Marten retried those calls with no backoff, so under heavy concurrent load a sequence could
+exhaust `MaxAdvanceToNextHiAttempts` and throw `HiloSequenceAdvanceToNextHiAttemptsExceededException`. It is now a
+single atomic increment: overlapping callers wait on the row lock instead, and each gets a block. The function body
+changes, so it is a schema difference that your next schema migration applies, like any other. Until it is applied,
+the old function keeps working as it did.
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
