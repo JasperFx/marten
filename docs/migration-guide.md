@@ -113,6 +113,16 @@ dropped, or for a projection to the document's own type, such as `Select(x => x.
 documents. Order before the `Select()` instead. A key that has no exact SQL translation, such as a `Math` call, is
 refused the same way.
 
+### `mt_get_next_hi` is now an atomic increment <Badge type="warning" text="schema change" />
+
+A fix for HiLo under concurrent load ([#5938](https://github.com/JasperFx/marten/issues/5938)). The function behind HiLo
+ids used to read the current value and then update it only if it was unchanged, returning `-1` to every caller that
+another caller overtook. Marten retried those calls with no backoff, so under heavy concurrent load a sequence could
+exhaust `MaxAdvanceToNextHiAttempts` and throw `HiloSequenceAdvanceToNextHiAttemptsExceededException`. It is now a
+single atomic increment: overlapping callers wait on the row lock instead, and each gets a block. The function body
+changes, so it is a schema difference that your next schema migration applies, like any other. Until it is applied,
+the old function keeps working as it did.
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
