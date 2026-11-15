@@ -47,6 +47,21 @@ paged documents too. Paging after the `SelectMany()` still pages the flattened r
 paging before it sends exactly the SQL it did before. The flattened rows come back in the order of the paged
 documents, and in collection order within each document.
 
+### LINQ `Select()` after `SelectMany()` projects the flattened rows <Badge type="warning" text="behavior change" />
+
+A correctness fix ([#5933](https://github.com/JasperFx/marten/issues/5933)), so these queries return different
+rows or throw where they used to return wrong data. `SelectMany(x => x.Values).Select(v => v % 3)` returned the raw
+values: the projection was dropped whenever it was arithmetic or a method call over the flattened element. A
+`Where()`, `OrderBy()` or `Take()` applied after a projection of child documents was dropped as well. The projection
+is now computed in SQL over the flattened rows, and every operator after it (`Where()`, `OrderBy()`, `Distinct()`,
+`Skip()`/`Take()`, `Count()`, `Any()`, `First()`, `Sum()` and the rest) applies to the projected value. Member
+access, arithmetic, string concatenation, `ToUpper()`, `ToLower()`, `Length`, `ToString()` of an integer or a
+`Guid`, widening casts, enum to integer, and anonymous types or DTOs built from those translate. A projection with
+no exact SQL translation, such as a `Math` call, a conditional, decimal division or a narrowing cast, now throws
+`BadLinqExpressionException` instead of returning the raw rows. So does a `Where()`, `OrderBy()` or `Distinct()`
+applied after an object projection of a flattened row; apply those before the `Select()`, or project in memory
+after `ToListAsync()`. A `SelectMany()` without a `Select()` after it sends exactly the SQL it did before.
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`

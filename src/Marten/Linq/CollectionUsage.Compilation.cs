@@ -10,6 +10,7 @@ using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.Members;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration;
@@ -186,8 +187,11 @@ public partial class CollectionUsage
 
         // Count()/LongCount() over a Distinct() is already wrapped in a CTE and counted by
         // ProcessSingleValueModeIfAny; re-applying DISTINCT here would hit the count clause
-        // and throw "DISTINCT cannot be used with non-simple types".
-        if (IsDistinct && SingleValueMode is not (Marten.Linq.Parsing.SingleValueMode.Count
+        // and throw "DISTINCT cannot be used with non-simple types". #5933: with a Select() after the
+        // SelectMany(), this usage's Distinct() came before the projection and projectFlattenedRows()
+        // has already applied it to the flattened rows.
+        if (IsDistinct && SelectExpression == null &&
+            SingleValueMode is not (Marten.Linq.Parsing.SingleValueMode.Count
                 or Marten.Linq.Parsing.SingleValueMode.LongCount))
         {
             statement.ApplySqlOperator("DISTINCT");
@@ -236,23 +240,13 @@ public partial class CollectionUsage
 
         if (SelectExpression != null)
         {
-            var visitor = new SelectorVisitor(statement, collection, _options.Serializer());
-            visitor.Visit(SelectExpression);
-
-            if (Inner != null)
-            {
-                IsAny = IsAny || Inner.IsAny;
-                SingleValueMode ??= Inner.SingleValueMode;
-                IsDistinct = Inner.IsDistinct;
-                statement.Limit ??= Inner._limit;
-                statement.Offset ??= Inner._offset;
-            }
+            // #5933: a Select() after the SelectMany() projects each flattened row
+            return projectFlattenedRows(session, collection, statement, statistics);
         }
 
-        // A SelectMany(...).Distinct().Count() carries IsDistinct on the Inner usage merged
-        // in just above; re-sync it onto the statement so the Count branch of
-        // ProcessSingleValueModeIfAny wraps the DISTINCT projection in a CTE and counts that.
-        // Only for the count modes -- the non-aggregate Distinct() is applied via the
+        // A SelectMany(...).Distinct().Count() carries IsDistinct on the usage itself; re-sync it onto the
+        // statement so the Count branch of ProcessSingleValueModeIfAny wraps the DISTINCT projection in a CTE
+        // and counts that. Only for the count modes -- the non-aggregate Distinct() is applied via the
         // ApplySqlOperator("DISTINCT") below, so leaving its flag set would double the DISTINCT.
         if (SingleValueMode is Marten.Linq.Parsing.SingleValueMode.Count
             or Marten.Linq.Parsing.SingleValueMode.LongCount)
@@ -265,6 +259,197 @@ public partial class CollectionUsage
         compileNext(session, collection, statement, statistics);
 
         return top;
+    }
+
+    /// <summary>
+    /// #5933: compile a <c>Select()</c> that follows a <c>SelectMany()</c>. <paramref name="flattened" /> already
+    /// holds the flattened rows with every operator that came BEFORE the <c>Select()</c> -- its Where(),
+    /// OrderBy(), Skip()/Take() and Distinct(). Every operator AFTER the <c>Select()</c> lives on
+    /// <see cref="Inner" /> (or, for a terminal one such as Count() or First(), on this usage) and applies to
+    /// the projected rows.
+    /// <para>
+    /// A scalar projection is computed in SQL from a CTE of the flattened rows, and the projected rows are then
+    /// read back and filtered, ordered, paged and aggregated exactly like the elements of a flattened value
+    /// collection. Marten used to run the projection through the top-level select visitor instead, which has
+    /// no translation for arithmetic or method calls over a flattened element, and silently returned the
+    /// raw rows; it also dropped an OrderBy() or Where() applied after the projection.
+    /// </para>
+    /// <para>
+    /// An object projection over child documents keeps its existing translation (jsonb_build_object, or the
+    /// client-side transform), and over a value collection it is built from translated scalars. Neither can
+    /// be filtered, ordered or made distinct afterwards, so those are refused rather than ignored.
+    /// </para>
+    /// </summary>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses CloseAndBuildAs for the scalar reader of an unregistered value type, the same fallback SelectClauseResolvers documents (#5635).")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, CloseAndBuildAs / GenericFactoryCache fallbacks). Projected types flow in from MartenLinqQueryable<T> and are preserved per the AOT publishing guide.")]
+    private Statement projectFlattenedRows(IStorageSession session, IQueryableMemberCollection collection,
+        SelectorStatement flattened, QueryStatistics? statistics)
+    {
+        var serializer = _options.Serializer();
+        var projection = SelectExpression!;
+        var isValueCollection = collection is IValueCollectionMember;
+
+        // The operators that follow the projection. A terminal Count()/First()/Any() with nothing in between
+        // was recorded on this usage.
+        var after = Inner ?? new CollectionUsage(_options, projection.Type)
+        {
+            SingleValueMode = SingleValueMode, IsAny = IsAny
+        };
+
+        // Distinct() before the projection belongs to the flattened rows. It is applied there now, and
+        // BuildSelectManyStatement() leaves the projected rows alone. Nothing on this usage is changed, because a
+        // compiled query builds its statements twice.
+        var distinct = IsDistinct;
+        if (distinct)
+        {
+            try
+            {
+                flattened.ApplySqlOperator("DISTINCT");
+            }
+            catch (NotSupportedException)
+            {
+                throw new BadLinqExpressionException(
+                    "Marten cannot translate a Distinct() between SelectMany() and Select() for these rows. " +
+                    "Apply Distinct() after the Select() instead.");
+            }
+        }
+
+        if (FlattenedRowProjection.TryTranslateScalar(projection, collection, serializer, out var scalar,
+                out var scalarRefusal))
+        {
+            var projectedType = Nullable.GetUnderlyingType(projection.Type) ?? projection.Type;
+            var projected = projectionStatement(session, flattened, distinct);
+
+            projected.SelectClause =
+                SelectClauseResolvers.SelectData(projectedType, projected.SelectClause.FromObject, scalar);
+            projected.ConvertToCommonTableExpression(session);
+
+            // Read the projected rows back the way a flattened value collection's elements are read, so every
+            // operator that follows applies to the projected value
+            var reader = new SelectorStatement
+            {
+                SelectClause = projectedType == typeof(string)
+                    ? new NewScalarStringSelectClause("d.data", projected.ExportName)
+                    : SelectClauseResolvers.NewScalar(projectedType, "d.data", projected.ExportName)
+            };
+            projected.AddToEnd(reader);
+
+            if (after.GroupByData != null || after.GroupJoinData != null || after.SelectMany != null ||
+                after.DistinctByExpression != null)
+            {
+                throw new BadLinqExpressionException(
+                    $"Marten cannot translate GroupBy(), GroupJoin(), SelectMany() or DistinctBy() applied after the " +
+                    $"projection '{projection}' of a SelectMany(). Materialize the projected rows with ToListAsync() " +
+                    "and apply them in memory instead.");
+            }
+
+            var rows = new SelectManyValueCollection(projectedType, new RootMember(projectedType), _options);
+            return after.ConfigureSelectManyStatement(session, rows, reader, statistics);
+        }
+
+        if (isValueCollection)
+        {
+            if (!FlattenedRowProjection.TryTranslateObject(projection, collection, serializer, out var newObject,
+                    out var objectRefusal))
+            {
+                throw cannotTranslate(projection,
+                    projection is NewExpression or MemberInitExpression ? objectRefusal : scalarRefusal);
+            }
+
+            var objectStatement = projectionStatement(session, flattened, distinct);
+            objectStatement.SelectClause = SelectClauseResolvers.SelectData(projection.Type,
+                objectStatement.SelectClause.FromObject, newObject);
+
+            return applyAfterObjectProjection(session, after, objectStatement);
+        }
+
+        if (projection is not (MemberExpression or NewExpression or MemberInitExpression))
+        {
+            throw cannotTranslate(projection, scalarRefusal);
+        }
+
+        // An object, or a member that is not a scalar, of a child document: the existing projection, either
+        // jsonb_build_object() or the client-side transform
+        var statement = projectionStatement(session, flattened, distinct);
+        var visitor = new SelectorVisitor(statement, collection, serializer);
+        visitor.Visit(projection);
+
+        return applyAfterObjectProjection(session, after, statement);
+    }
+
+    private static BadLinqExpressionException cannotTranslate(Expression projection, string reason)
+    {
+        return new BadLinqExpressionException(
+            $"Marten cannot translate the Select() projection '{projection}' after SelectMany(): {reason}. " +
+            "A flattened row can be projected with member access, arithmetic, string concatenation, ToUpper(), " +
+            "ToLower(), Length, ToString() of an integer or a Guid, and anonymous types or DTOs built from those. " +
+            "Materialize the flattened rows with ToListAsync() and project them in memory instead.");
+    }
+
+    /// <summary>
+    /// The statement that projects the flattened rows. A projection over rows that are ordered, paged or made
+    /// distinct before it has to read them from a CTE, or the paging and DISTINCT would apply to the projected
+    /// rows.
+    /// Otherwise the flattened statement projects its rows itself.
+    /// </summary>
+    private static SelectorStatement projectionStatement(IStorageSession session, SelectorStatement flattened,
+        bool distinct)
+    {
+        // An ORDER BY on the flattened rows has to stay below the projection too: PostgreSQL resolves a bare
+        // `data` in ORDER BY to the projected output column before the input column of the same name, so
+        // SelectMany(x => x.Values).OrderBy(v => v).Select(v => v % 3) would sort by the projected value.
+        if (!isPaged(flattened) && !distinct && !flattened.Ordering.Expressions.Any())
+        {
+            return flattened;
+        }
+
+        flattened.ConvertToCommonTableExpression(session);
+
+        var statement = new SelectorStatement
+        {
+            SelectClause = new NewScalarStringSelectClause("d.data", flattened.ExportName)
+        };
+        flattened.AddToEnd(statement);
+
+        return statement;
+    }
+
+    /// <summary>
+    /// #5933: an object projection of a flattened row is read back whole, so the operators after it can only
+    /// page it, count it, test it with Any() or pick one row. Anything that has to look inside the projected
+    /// object is refused rather than dropped, which is what used to happen.
+    /// </summary>
+    private Statement applyAfterObjectProjection(IStorageSession session, CollectionUsage after,
+        SelectorStatement statement)
+    {
+        if (after.WhereExpressions.Any() || after.OrderingExpressions.Any() || after.IsDistinct ||
+            after.DistinctByExpression != null || after.SelectExpression != null || after.SelectMany != null ||
+            after.GroupByData != null || after.GroupJoinData != null || after.Inner != null ||
+            after.Includes.Any() ||
+            after.SingleValueMode is Marten.Linq.Parsing.SingleValueMode.Sum
+                or Marten.Linq.Parsing.SingleValueMode.Min or Marten.Linq.Parsing.SingleValueMode.Max
+                or Marten.Linq.Parsing.SingleValueMode.Average)
+        {
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate operators applied after the object projection '{SelectExpression}' that " +
+                "follows SelectMany(). Only Take(), Skip(), Count(), LongCount(), Any(), First(), FirstOrDefault(), " +
+                "Single() and SingleOrDefault() can follow it. Apply Where(), OrderBy() and Distinct() before the " +
+                "Select(), or project a scalar.");
+        }
+
+        if (after._limit.HasValue || after._offset.HasValue)
+        {
+            // Rows paged before the projection were moved into a CTE by projectionStatement(), so this
+            // statement carries no paging of its own yet
+            statement.Limit = after._limit;
+            statement.Offset = after._offset;
+        }
+
+        after.ProcessSingleValueModeIfAny(statement, session, null, null);
+
+        return statement.Top();
     }
 
 
@@ -1008,7 +1193,23 @@ public partial class CollectionUsage
         var childStatement = collectionMember.AttachSelectManyStatement(this, session, parentStatement, statistics);
         var childSelector = childStatement.SelectorStatement();
 
+        // #5933: the operators after a Select() were compiled onto the projected rows by projectFlattenedRows()
+        if (SelectExpression != null && SelectMany == null)
+        {
+            return childSelector;
+        }
+
         return compileNext(session, collectionMember as IQueryableMemberCollection, childSelector, statistics);
+    }
+
+    /// <summary>
+    /// #5933: a compiled query builds its statements twice from the same usages -- once for the command and
+    /// once for the handler. Forget that a SelectMany() was compiled by the first build, or the second build
+    /// stops at the parent documents and a Select() after the SelectMany() reads the parent document type.
+    /// </summary>
+    internal void ResetCompilation()
+    {
+        _hasCompiledMany = false;
     }
 
     /// <summary>
