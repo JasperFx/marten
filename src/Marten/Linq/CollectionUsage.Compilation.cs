@@ -86,6 +86,22 @@ public partial class CollectionUsage
             statement = top.SelectorStatement();
         }
 
+        // #5955: an OrderBy() after a top-level Select() orders the projected values. It was dropped, because
+        // only the paging, Distinct() and single-value operators after a projection were carried over.
+        if (SelectExpression != null && SelectExpression is not ParameterExpression && Inner != null &&
+            Inner.OrderingExpressions.Any() && !Includes.Any())
+        {
+            if (FlattenedRowProjection.TryTranslateScalar(SelectExpression, collection, _options.Serializer(),
+                    out var projected, out var orderingRefusal))
+            {
+                return projectComputedSelect(session, statement, projected, statistics);
+            }
+
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate an OrderBy() applied after the projection '{SelectExpression}': " +
+                $"{orderingRefusal}. Order the documents before the Select(), or project a scalar.");
+        }
+
         var computedRefusal = string.Empty;
         if (SelectExpression != null && isComputedProjection(SelectExpression) && !Includes.Any())
         {
@@ -167,6 +183,56 @@ public partial class CollectionUsage
                       "documents with ToListAsync() and project them in memory instead.";
 
         return new BadLinqExpressionException(message, inner);
+    }
+
+    /// <summary>
+    /// #5955: the ORDER BY for one ordering over flattened rows. Over a value collection a key computed from the
+    /// element -- v => -v, v => v % 3 -- used to be taken as the element itself, so the rows came back ordered by
+    /// the element. Such a key is now translated, or refused. The element itself, and a member of a flattened
+    /// string (#5941), keep their existing translation.
+    /// </summary>
+    private ISqlFragment flattenedOrdering(Ordering ordering, IQueryableMemberCollection collection)
+    {
+        if (collection is not IValueCollectionMember || ordering.Literal != null || ordering.MemberName != null ||
+            ordering.CasingRule != CasingRule.CaseSensitive)
+        {
+            return ordering.BuildFragment(collection);
+        }
+
+        var key = ordering.Expression;
+        while (key is UnaryExpression { NodeType: ExpressionType.Quote } quote)
+        {
+            key = quote.Operand;
+        }
+
+        if (key is LambdaExpression lambda)
+        {
+            key = lambda.Body;
+        }
+
+        if (key is UnaryExpression { NodeType: ExpressionType.Convert } box && key.Type == typeof(object))
+        {
+            key = box.Operand;
+        }
+
+        var isStringMember = collection.ElementType == typeof(string) &&
+                             key is MemberExpression or MethodCallExpression { Arguments.Count: 0 };
+
+        if (key is ParameterExpression || isStringMember)
+        {
+            return ordering.BuildFragment(collection);
+        }
+
+        if (FlattenedRowProjection.TryTranslateOrderingKey(key, ordering.Direction == OrderingDirection.Desc,
+                collection, _options.Serializer(), out var fragment, out var reason))
+        {
+            return fragment;
+        }
+
+        throw new BadLinqExpressionException(
+            $"Marten cannot translate the OrderBy() key '{key}' over these rows: {reason}. Order by the element " +
+            "itself, or by a key Marten can compute: member access, arithmetic, string concatenation, ToUpper(), " +
+            "ToLower(), Length, or ToString() of an integer or a Guid.");
     }
 
     /// <summary>
@@ -290,7 +356,7 @@ public partial class CollectionUsage
         statement.IsDistinct = IsDistinct;
 
         foreach (var ordering in OrderingExpressions)
-            statement.Ordering.Expressions.Add(ordering.BuildFragment(collection));
+            statement.Ordering.Expressions.Add(flattenedOrdering(ordering, collection));
 
         statement.ParseWhereClause(WhereExpressions, session, collection);
 
