@@ -143,3 +143,16 @@ public class PagedHolderItemScoresShape: ICompiledListQuery<PagedHolder, int>
         => q => q.OrderBy(x => x.Number).SelectMany(x => x.Items).Select(i => i.Index * Multiplier + i.Holder)
             .Take(Take);
 }
+
+/// <summary>
+/// #5942: a computed top-level <c>Select()</c> reading a value off the compiled query, followed by paging of the
+/// projected rows.
+/// </summary>
+public class PagedHolderNumberScoresShape: ICompiledListQuery<PagedHolder, int>
+{
+    public int Multiplier { get; set; }
+    public int Take { get; set; }
+
+    public Expression<Func<IMartenQueryable<PagedHolder>, IEnumerable<int>>> QueryIs()
+        => q => q.OrderBy(x => x.Number).Select(x => x.Number * Multiplier % 7).Take(Take);
+}
