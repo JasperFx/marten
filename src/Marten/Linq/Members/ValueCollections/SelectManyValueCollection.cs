@@ -56,6 +56,13 @@ public class SelectManyValueCollection: IValueCollectionMember
             return Element;
         }
 
+        // #5941: a member of the flattened element itself -- n.Length, n.ToUpper() -- belongs to the element.
+        // It used to be located as a JSON field of the element, CAST(d.data ->> 'Length' as integer).
+        if (Element is StringMember element)
+        {
+            return element.FindMember(member);
+        }
+
         return _options.CreateQueryableMember(member, _root);
     }
 
