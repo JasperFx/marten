@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Linq.Members;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -74,20 +75,37 @@ public class WhereClauseParser: ExpressionVisitor
                 return null;
             }
 
-            var field = _members.MemberFor(node);
-            if (field is IBooleanMember b)
-            {
-                _holder.Register(b.BuildIsTrueFragment());
-            }
-            else
-            {
-                _holder.Register(new BooleanFieldIsTrue(field));
-            }
-
+            // #5949: x.Children[0].IsActive reads an element by position, which MemberFinder cannot follow
+            registerIsTrue(node.HasElementIndex() ? _members.MemberForIndexedChain(node) : _members.MemberFor(node));
             return null;
         }
 
         return base.VisitMember(node);
+    }
+
+    protected override Expression VisitParameter(ParameterExpression node)
+    {
+        // #5949: Any(f => f) over a bool[] or List<bool>, where the element itself is the predicate. Nothing was
+        // registered for it, and the empty filter threw NullReferenceException when the SQL was written.
+        if (node.Type == typeof(bool) && _members is IValueCollectionMember { Element: IComparableMember element })
+        {
+            _holder.Register(element.CreateComparison("=", Expression.Constant(true)));
+            return null;
+        }
+
+        return base.VisitParameter(node);
+    }
+
+    private void registerIsTrue(IQueryableMember field)
+    {
+        if (field is IBooleanMember b)
+        {
+            _holder.Register(b.BuildIsTrueFragment());
+        }
+        else
+        {
+            _holder.Register(new BooleanFieldIsTrue(field));
+        }
     }
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
@@ -98,6 +116,13 @@ public class WhereClauseParser: ExpressionVisitor
         if (node.Type == typeof(bool) && node.IsClosedValue())
         {
             _holder.Register(true.Equals(node.ReduceToConstant().Value) ? new LiteralTrue() : new LiteralFalse());
+            return null;
+        }
+
+        // #5949: a bool element read by position, Where(x => x.Flags[1]) over a List<bool>
+        if (node.Type == typeof(bool) && node.IsElementIndexer())
+        {
+            registerIsTrue(_members.MemberForIndexedChain(node));
             return null;
         }
 
@@ -140,6 +165,11 @@ public class WhereClauseParser: ExpressionVisitor
 
         switch (node.NodeType)
         {
+            // #5949: a bool element read by position, Where(x => x.Flags[1]) or Where(x => x.Grid[0][1] ...)
+            case ExpressionType.ArrayIndex when node.Type == typeof(bool):
+                registerIsTrue(_members.MemberForIndexedChain(node));
+                break;
+
             case ExpressionType.AndAlso:
                 buildCompoundWhereFragment(node, "and");
                 break;

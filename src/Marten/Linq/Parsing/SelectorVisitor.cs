@@ -76,6 +76,13 @@ public class SelectorVisitor: ExpressionVisitor
             return null;
         }
 
+        // #5949: Select(x => x.List[1]) or Select(x => x.Values.ElementAt(1))
+        if (node.IsElementIndexer())
+        {
+            ToScalar(node);
+            return null;
+        }
+
         return base.VisitMethodCall(node);
     }
 
@@ -103,9 +110,26 @@ public class SelectorVisitor: ExpressionVisitor
         return null;
     }
 
+    protected override Expression VisitBinary(BinaryExpression node)
+    {
+        // #5949: Select(x => x.Values[1]) or Select(x => x.Grid[1][0]). Visiting the children of the index
+        // instead rebuilt the node from what they returned, null, and threw ArgumentNullException ('array').
+        if (node.NodeType == ExpressionType.ArrayIndex)
+        {
+            ToScalar(node);
+            return null;
+        }
+
+        return base.VisitBinary(node);
+    }
+
     public void ToScalar(Expression selectClauseSelector)
     {
-        var member = _collection.MemberFor(selectClauseSelector);
+        // #5949: MemberFinder cannot follow an index, so x.Values[1] or x.Children[0].Name resolves the way the
+        // same chain does in a Where() comparison. Every other chain resolves exactly as before.
+        var member = selectClauseSelector.HasElementIndex()
+            ? _collection.MemberForIndexedChain(selectClauseSelector)
+            : _collection.MemberFor(selectClauseSelector);
 
         if (member.MemberType == typeof(string))
         {
