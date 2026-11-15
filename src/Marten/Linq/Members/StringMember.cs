@@ -63,6 +63,8 @@ public class StringMember: QueryableMember, IComparableMember
             {
                 RawLocator = $"trim({RawLocator})", TypedLocator = $"trim({RawLocator})"
             },
+            // #5941
+            nameof(string.Length) when member is PropertyInfo => new StringLengthMember(this),
             _ => base.FindMember(member)
         };
     }
