@@ -7,7 +7,9 @@ namespace Marten.Linq;
 public enum FetchType
 {
     /// <summary>
-    ///     First/FirstOrDefault/Single/SingleOrDefault
+    ///     First/FirstOrDefault/Single/SingleOrDefault. A preview with <c>ToCommand()</c> or <c>ExplainAsync()</c>
+    ///     shows what First() and FirstOrDefault() send; Single() and SingleOrDefault() read up to two rows instead
+    ///     of one, so that they can tell a second match apart.
     /// </summary>
     FetchOne,
 

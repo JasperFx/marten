@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
-using Marten.Services;
 using Marten.Testing.Harness;
-using Npgsql;
 using Shouldly;
 
 namespace LinqTests.Operators;
@@ -66,8 +64,8 @@ public class join_operators: OneOffConfigurationsContext
     }
 
     // Runs each query on a fresh session -- so the CTE names, numbered per session, line up -- and
-    // compares the SQL and the parameters Marten actually sent, not ToCommand(): the single-value
-    // operators (Count, Any) are only applied on the execution path.
+    // compares the SQL and the parameters Marten actually sent. That ToCommand() previews the same SQL
+    // is pinned separately, by preview_command_matches_the_executed_command (#5916).
     private async Task executedSqlShouldMatch(Func<IQuerySession, Task> rewritten, Func<IQuerySession, Task> handWritten)
     {
         var actual = await executedSql(rewritten);
@@ -80,7 +78,7 @@ public class join_operators: OneOffConfigurationsContext
     private async Task<(string Sql, object[] Parameters)> executedSql(Func<IQuerySession, Task> query)
     {
         await using var session = _store.QuerySession();
-        var logger = new CommandRecorder();
+        var logger = new ExecutedCommandRecorder();
         session.Logger = logger;
 
         await query(session);
@@ -88,34 +86,6 @@ public class join_operators: OneOffConfigurationsContext
         logger.Commands.ShouldNotBeEmpty();
         return (string.Join(Environment.NewLine, logger.Commands.Select(x => x.Sql)),
             logger.Commands.SelectMany(x => x.Parameters).ToArray());
-    }
-
-    private static object parameterValue(NpgsqlParameter parameter)
-    {
-        return parameter.Value is byte[] bytes ? Convert.ToBase64String(bytes) : parameter.Value;
-    }
-
-    private sealed class CommandRecorder: IMartenSessionLogger
-    {
-        public List<(string Sql, object[] Parameters)> Commands { get; } = new();
-
-        public void LogSuccess(NpgsqlCommand command) =>
-            Commands.Add((command.CommandText, command.Parameters.Cast<NpgsqlParameter>().Select(parameterValue).ToArray()));
-
-        public void LogSuccess(NpgsqlBatch batch)
-        {
-            foreach (var command in batch.BatchCommands.Cast<NpgsqlBatchCommand>())
-            {
-                Commands.Add((command.CommandText, command.Parameters.Cast<NpgsqlParameter>().Select(parameterValue).ToArray()));
-            }
-        }
-
-        public void LogFailure(NpgsqlCommand command, Exception ex) { }
-        public void LogFailure(NpgsqlBatch batch, Exception ex) { }
-        public void LogFailure(Exception ex, string message) { }
-        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit) { }
-        public void OnBeforeExecute(NpgsqlCommand command) { }
-        public void OnBeforeExecute(NpgsqlBatch batch) { }
     }
 
     #region Join
