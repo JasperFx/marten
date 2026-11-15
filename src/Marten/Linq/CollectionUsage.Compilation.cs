@@ -24,6 +24,11 @@ public partial class CollectionUsage
 {
     private bool _hasCompiledMany;
 
+    // #5928: set when ProcessSingleValueModeIfAny leaves a paged SelectMany(...).Any() for compileNext to answer
+    // over the page. compileNext cannot tell from the statement alone: every other Any() has already been given
+    // a LIMIT 1 by then, which looks just like a Take(1).
+    private bool _anyOverPagedParents;
+
     public Statement BuildTopStatement(IStorageSession session, IQueryableMemberCollection collection,
         ILinqDocumentStorage storage, QueryStatistics? statistics)
     {
@@ -279,8 +284,10 @@ public partial class CollectionUsage
             {
                 if (SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
                 {
-                    if (isPaged(selection))
+                    if (_anyOverPagedParents)
                     {
+                        _anyOverPagedParents = false;
+
                         // #5928: ask whether any parent ON THE PAGE has something to flatten, rather than
                         // paging the parents that pass the filter. ProcessSingleValueModeIfAny left the
                         // paging alone for this.
@@ -1038,8 +1045,10 @@ public partial class CollectionUsage
             return parentStatement;
         }
 
+        // d.* rather than d.data: the explosion only reads d.data, but the not-empty filter Any() puts on the page
+        // reads a duplicated array field from its own column (d.numbers), which has to survive into the CTE
         parentStatement.SelectClause =
-            new NewScalarStringSelectClause("d.data", parentStatement.SelectClause.FromObject);
+            new NewScalarStringSelectClause("d.*", parentStatement.SelectClause.FromObject);
         parentStatement.ConvertToCommonTableExpression(session);
 
         var page = new SelectorStatement
@@ -1101,6 +1110,7 @@ public partial class CollectionUsage
             if (anyAppliesToPagedParentsOfSelectMany(statement))
             {
                 // compileNext pages the parents in a CTE and asks that page
+                _anyOverPagedParents = true;
                 return;
             }
 

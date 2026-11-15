@@ -260,6 +260,26 @@ public class Bug_5928_paging_before_select_many: IntegrationContext
             .ShouldBe(expectedValues);
     }
 
+    // Without paging, Any() over a SelectMany() asks every parent. The parent that comes first in each ordering
+    // has nothing to flatten, so asking only the first one would answer false.
+    [Theory]
+    [MemberData(nameof(Orderings))]
+    public async Task any_without_paging_asks_every_parent(string ordering)
+    {
+        await using var session = theStore.QuerySession();
+
+        // Parents 4 and 8 have no children, 7 has three. Parents 3, 6 and 9 have no values, 7 has two.
+        var childQuery = ordered(session.Query<PagedParent>().Where(x => x.Number == 4 || x.Number == 8 || x.Number == 7), ordering);
+        (await childQuery.SelectMany(x => x.Children).AnyAsync()).ShouldBeTrue();
+
+        var valueQuery = ordered(session.Query<PagedParent>().Where(x => x.Number == 3 || x.Number == 6 || x.Number == 9 || x.Number == 7), ordering);
+        (await valueQuery.SelectMany(x => x.Values).AnyAsync()).ShouldBeTrue();
+
+        (await session.Query<PagedParent>().SelectMany(x => x.Children).AnyAsync()).ShouldBeTrue();
+        (await session.Query<PagedParent>().Where(x => x.Number == 4 || x.Number == 8).SelectMany(x => x.Children)
+            .AnyAsync()).ShouldBeFalse();
+    }
+
     #endregion
 
     #region First / Single
@@ -328,7 +348,7 @@ public class Bug_5928_paging_before_select_many: IntegrationContext
     public async Task paged_parents_are_their_own_cte()
     {
         (await executedSql(q => q.OrderBy(x => x.Number).Skip(1).Take(3).SelectMany(x => x.Children)))
-            .ShouldBe("WITH mt_temp_id_list1CTE as (select d.data from public.mt_doc_pagedparent as d " +
+            .ShouldBe("WITH mt_temp_id_list1CTE as (select d.* from public.mt_doc_pagedparent as d " +
                       "order by CAST(d.data ->> 'Number' as integer) OFFSET $1 LIMIT $2)  , " +
                       "mt_temp_id_list2CTE as (select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data " +
                       "from mt_temp_id_list1CTE as d) " +
@@ -341,7 +361,7 @@ public class Bug_5928_paging_before_select_many: IntegrationContext
     {
         (await executedSql(session => session.Query<PagedParent>().OrderBy(x => x.Number).Skip(1).Take(3)
                 .SelectMany(x => x.Children).AnyAsync()))
-            .ShouldBe("WITH mt_temp_id_list1CTE as (select d.data from public.mt_doc_pagedparent as d " +
+            .ShouldBe("WITH mt_temp_id_list1CTE as (select d.* from public.mt_doc_pagedparent as d " +
                       "order by CAST(d.data ->> 'Number' as integer) OFFSET $1 LIMIT $2) " +
                       "select TRUE as result from mt_temp_id_list1CTE as d " +
                       "where d.data @? '$ ? (@.Children[*] != null && @.Children[*].size() > 0)' LIMIT $3;");
@@ -353,7 +373,7 @@ public class Bug_5928_paging_before_select_many: IntegrationContext
     {
         (await executedSql(session => session.Query<PagedParent>().OrderBy(x => x.Number).Skip(1).Take(3)
                 .SelectMany(x => x.Children).FirstOrDefaultAsync()))
-            .ShouldBe("WITH mt_temp_id_list1CTE as (select d.data from public.mt_doc_pagedparent as d " +
+            .ShouldBe("WITH mt_temp_id_list1CTE as (select d.* from public.mt_doc_pagedparent as d " +
                       "order by CAST(d.data ->> 'Number' as integer) OFFSET $1 LIMIT $2)  , " +
                       "mt_temp_id_list2CTE as (select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data " +
                       "from mt_temp_id_list1CTE as d) " +
@@ -370,6 +390,8 @@ public class Bug_5928_paging_before_select_many: IntegrationContext
         ["children_then_take", "WITH mt_temp_id_list1CTE as (select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from public.mt_doc_pagedparent as d order by CAST(d.data ->> 'Number' as integer)) select d.data as data from mt_temp_id_list1CTE as d OFFSET $1 LIMIT $2;"],
         ["children_where_order_by", "WITH mt_temp_id_list1CTE as (select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from public.mt_doc_pagedparent as d) select d.data as data from mt_temp_id_list1CTE as d where CAST(d.data ->> 'Index' as integer) > $1 order by CAST(d.data ->> 'Parent' as integer);"],
         ["first_child", "WITH mt_temp_id_list1CTE as (select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from public.mt_doc_pagedparent as d order by CAST(d.data ->> 'Number' as integer)) select d.data as data from mt_temp_id_list1CTE as d LIMIT $1;"],
+        ["any_children", "select TRUE as result from public.mt_doc_pagedparent as d where d.data @? '$ ? (@.Children[*] != null && @.Children[*].size() > 0)' LIMIT $1;"],
+        ["ordered_any_values", "select TRUE as result from public.mt_doc_pagedparent as d where d.data @? '$ ? (@.Values != null && @.Values.size() > 0)' order by CAST(d.data ->> 'Number' as integer) LIMIT $1;"],
         ["where_then_values", "WITH mt_temp_id_list1CTE as (select jsonb_array_elements_text(CAST(d.data ->> 'Values' as jsonb)) as data from public.mt_doc_pagedparent as d where CAST(d.data ->> 'Number' as integer) > $1) select CAST(data as integer) as data from mt_temp_id_list1CTE as d;"]
     ];
 
@@ -387,6 +409,9 @@ public class Bug_5928_paging_before_select_many: IntegrationContext
                 q.SelectMany(x => x.Children).Where(c => c.Index > 0).OrderBy(c => c.Parent)),
             "first_child" => await executedFirstSql(),
             "where_then_values" => await executedSql(q => q.Where(x => x.Number > 2).SelectMany(x => x.Values)),
+            "any_children" => await executedSql(session => session.Query<PagedParent>().SelectMany(x => x.Children).AnyAsync()),
+            "ordered_any_values" => await executedSql(session =>
+                session.Query<PagedParent>().OrderBy(x => x.Number).SelectMany(x => x.Values).AnyAsync()),
             _ => throw new ArgumentOutOfRangeException(nameof(shape))
         };
 
@@ -445,4 +470,60 @@ public class Bug_5928_paging_before_select_many: IntegrationContext
     }
 
     #endregion
+}
+
+public class PagedDuplicatedParent
+{
+    public Guid Id { get; set; }
+    public int Number { get; set; }
+    public int[] Values { get; set; } = [];
+}
+
+// #5928: Any() over a SelectMany() of a DUPLICATED array field filters on the field's own column (d.values), so the
+// CTE of a paged parent statement has to carry that column, not just d.data.
+public class Bug_5928_paging_before_select_many_duplicated_array: OneOffConfigurationsContext
+{
+    // Values per parent cycle 2,4,0 by Number, stored out of Number order
+    private static readonly PagedDuplicatedParent[] Docs = new[] { 4, 9, 1, 7, 10, 3, 8, 2, 6, 5 }.Select(i =>
+        new PagedDuplicatedParent
+        {
+            Id = Guid.NewGuid(), Number = i, Values = Enumerable.Range(0, i % 3 * 2).Select(v => i * 10 + v).ToArray()
+        }).ToArray();
+
+    private async Task seed()
+    {
+        StoreOptions(opts => opts.Schema.For<PagedDuplicatedParent>().Duplicate(x => x.Values));
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(PagedDuplicatedParent));
+
+        theSession.Store(Docs);
+        await theSession.SaveChangesAsync();
+    }
+
+    [Theory]
+    [InlineData(0, 3)]
+    [InlineData(2, 1)] // parent 3: no values
+    [InlineData(5, 1)] // parent 6: no values
+    [InlineData(4, 3)]
+    [InlineData(8, 5)]
+    [InlineData(10, 3)]
+    [InlineData(3, 0)]
+    public async Task paged_any(int k, int n)
+    {
+        await seed();
+
+        var expected = Docs.OrderBy(x => x.Number).Skip(k).Take(n).SelectMany(x => x.Values).Any();
+
+        (await theSession.Query<PagedDuplicatedParent>().OrderBy(x => x.Number).Skip(k).Take(n)
+            .SelectMany(x => x.Values).AnyAsync()).ShouldBe(expected);
+    }
+
+    [Fact]
+    public async Task unpaged_any()
+    {
+        await seed();
+
+        (await theSession.Query<PagedDuplicatedParent>().SelectMany(x => x.Values).AnyAsync()).ShouldBeTrue();
+        (await theSession.Query<PagedDuplicatedParent>().Where(x => x.Number == 3 || x.Number == 6)
+            .SelectMany(x => x.Values).AnyAsync()).ShouldBeFalse();
+    }
 }
