@@ -297,7 +297,8 @@ Newtonsoft serializer, and a patch path through a case. On `net10.0` no type is 
 `session.Events.UnArchiveStream(Guid)` and `UnArchiveStream(string)` reverse `ArchiveStream()`. The stream and its
 events become live again and accept appends, including under `UseArchivedStreamPartitioning`, where the rows (and
 their DCB tag and natural key rows) move back out of the archived partitions. This is the operation the
-`ArchivedStreamException` message points to. See
+`ArchivedStreamException` message points to. Both overloads are declared on the shared
+`JasperFx.Events.IEventStoreOperations` (JasperFx 3.3.0), which Marten's `IEventStoreOperations` inherits. See
 [Un-archiving a Stream](/events/archiving.html#un-archiving-a-stream).
 
 The schema gains one function, `mt_unarchive_stream`. With `UseArchivedStreamPartitioning` and natural keys,
