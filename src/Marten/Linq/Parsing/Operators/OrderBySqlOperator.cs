@@ -16,7 +16,7 @@ internal class OrderBySqlOperator : LinqOperator
         var usage = query.CollectionUsageFor(expression);
         var ordering = new Ordering((string)sql.Value!);
 
-        usage.OrderingExpressions.Insert(0, ordering);
+        usage.AddOrdering(ordering, startsTheOrdering: true);
     }
 }
 
@@ -32,6 +32,6 @@ internal class ThenBySqlOperator : LinqOperator
         var usage = query.CollectionUsageFor(expression);
         var ordering = new Ordering((string)sql.Value!);
 
-        usage.OrderingExpressions.Insert(0, ordering);
+        usage.AddOrdering(ordering, startsTheOrdering: false);
     }
 }

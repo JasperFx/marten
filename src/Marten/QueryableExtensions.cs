@@ -553,8 +553,9 @@ public static class QueryableExtensions
         // handle the first order by property
         var orderedQueryable = queryable.OrderBy(properties.First());
 
-        // handle the rest of the properties
-        return properties.Skip(1).Aggregate(orderedQueryable, (current, prop) => current.OrderBy(prop));
+        // handle the rest of the properties. #5959: as ThenBy()s, because a second OrderBy() re-sorts and makes
+        // the earlier properties tie-breakers, the opposite of "prop1", then "prop2"
+        return properties.Skip(1).Aggregate(orderedQueryable, (current, prop) => thenBy(current, prop));
     }
 
     /// <summary>
@@ -578,8 +579,9 @@ public static class QueryableExtensions
         // handle the first order by property
         var orderedQueryable = queryable.OrderBy(properties.First());
 
-        // handle the rest of the properties
-        return properties.Skip(1).Aggregate(orderedQueryable, (current, prop) => current.OrderBy(prop));
+        // handle the rest of the properties. #5959: as ThenBy()s, because a second OrderBy() re-sorts and makes
+        // the earlier properties tie-breakers, the opposite of "prop1", then "prop2"
+        return properties.Skip(1).Aggregate(orderedQueryable, (current, prop) => thenBy(current, prop));
     }
 
     /// <summary>
@@ -595,6 +597,18 @@ public static class QueryableExtensions
         return sortOrder == "desc"
             ? ApplyOrder(queryable, property, "OrderByDescending")
             : ApplyOrder(queryable, property, "OrderBy");
+    }
+
+    private static IOrderedQueryable<T> thenBy<T>(IOrderedQueryable<T> queryable, string property)
+    {
+        GetSortProperty(ref property, out var sortOrder);
+        return ApplyOrder(queryable, property, sortOrder == "desc" ? "ThenByDescending" : "ThenBy");
+    }
+
+    private static IBatchedOrderedQueryable<T> thenBy<T>(IBatchedOrderedQueryable<T> queryable, string property)
+    {
+        GetSortProperty(ref property, out var sortOrder);
+        return ApplyOrder(queryable, property, sortOrder == "desc" ? "ThenByDescending" : "ThenBy");
     }
 
     internal static void GetSortProperty(ref string property, out string sortOrder)

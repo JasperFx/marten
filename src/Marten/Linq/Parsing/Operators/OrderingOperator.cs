@@ -23,6 +23,8 @@ public class OrderingOperator: LinqOperator
         // a ThenBy() after it becomes the primary ordering. It is dropped from the ORDER BY rather than refused.
         if (isClosedKey(memberArgument))
         {
+            // #5959: a dropped OrderBy() key still starts its chain, so the orderings before it stay behind it
+            usage.AddOrdering(null, StartsTheOrdering);
             return;
         }
 
@@ -50,8 +52,13 @@ public class OrderingOperator: LinqOperator
             ordering.IsTransformed = true;
         }
 
-        usage.OrderingExpressions.Insert(0, ordering);
+        usage.AddOrdering(ordering, StartsTheOrdering);
     }
+
+    /// <summary>
+    ///     OrderBy() and OrderByDescending() start an ordering; ThenBy() and ThenByDescending() extend one
+    /// </summary>
+    public bool StartsTheOrdering => MethodName.StartsWith("OrderBy", StringComparison.Ordinal);
 
     private static bool isClosedKey(Expression argument)
     {
