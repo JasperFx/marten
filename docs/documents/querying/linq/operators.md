@@ -116,6 +116,15 @@ public void order_by(IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L99-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+A key can also read an element of an array or list on the document by position, such as
+`OrderBy(x => x.Scores[1])` or `ThenBy(x => x.Grid[1][0])`. See
+[Reading an Element by Position](/documents/querying/linq/child-collections#reading-an-element-by-position).
+
+A key that reads nothing from the document, such as a static member, a captured variable or a literal
+(`OrderBy(x => Settings.SortKey)`), is the same value for every document. As in LINQ to Objects, it leaves the order
+to the other keys, so Marten leaves it out of the `ORDER BY`. `OrderBy(x => Settings.SortKey).ThenBy(x => x.Number)`
+orders by `Number`, and a query whose keys are all like that has no `ORDER BY` at all.
+
 ## Ordering with dynamic properties
 
 Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is quite useful for cases where you wouldn't know the properties being used for ordering at build time. This functionality is added in v5.

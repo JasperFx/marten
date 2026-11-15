@@ -59,6 +59,14 @@ documents, and in collection order within each document.
   last element.
 * An index past the end of the stored array reads as `null`, as it always has in `Where()`.
 
+### LINQ ordering by a value that reads nothing from the document <Badge type="tip" text="new" />
+
+* [#5950](https://github.com/JasperFx/marten/issues/5950): `OrderBy()`, `OrderByDescending()`, `ThenBy()` and
+  `ThenByDescending()` over a static member, a captured variable or a literal used to throw
+  `Invalid OrderBy() expression`. Such a key is the same for every document, so it is now dropped from the
+  `ORDER BY`, and the remaining keys keep their order, as in LINQ to Objects. The SQL for every other ordering is
+  unchanged.
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
