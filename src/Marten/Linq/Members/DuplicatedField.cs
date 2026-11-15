@@ -248,6 +248,8 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
                 {
                     RawLocator = $"upper({RawLocator})", TypedLocator = $"upper({RawLocator})"
                 },
+                // #5941
+                nameof(string.Length) when member is PropertyInfo => new StringLengthMember(this),
                 _ => throw new BadLinqExpressionException($"Marten does not (yet) support the method {member.Name} in duplicated field querying")
             };
         }
