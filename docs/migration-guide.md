@@ -372,6 +372,15 @@ migration.
   project in memory after `ToListAsync()`. A `SelectMany()` without a `Select()` after it sends exactly the SQL it
   did before.
 
+### LINQ `SelectMany()` over a duplicated array field works
+
+- A bug fix ([#5934](https://github.com/JasperFx/marten/issues/5934)). `SelectMany()` over an array field duplicated
+  into its own column (`Duplicate(x => x.Numbers)` or `[DuplicateField]`) failed: fetching failed with `42P01`
+  (a CTE that was never declared) and counting with `42883` (`jsonb_array_length()` with no argument). The
+  duplicated column is now flattened with `unnest()` and counted with `array_length()`, and `Where()`, `OrderBy()`,
+  paging, `First()`/`Single()` and `Select()` after the `SelectMany()` apply as they do to a collection that is not
+  duplicated. A `SelectMany()` over a collection that is not duplicated sends exactly the SQL it did before.
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |

@@ -1528,10 +1528,15 @@ public partial class CollectionUsage
     private static Statement sumCollectionLengths<T>(SelectorStatement selection, IStorageSession session,
         ICollectionMember collectionMember) where T : struct
     {
+        // #5934: a duplicated array field is counted from its own column. Its JSONB locator is empty.
+        var duplicated = collectionMember as DuplicatedArrayField;
+
         var target = selection;
         if (isPaged(selection))
         {
-            selection.SelectClause = new NewScalarStringSelectClause("d.data", selection.SelectClause.FromObject);
+            // A duplicated array column has to survive into the page's CTE to be counted
+            selection.SelectClause = new NewScalarStringSelectClause(duplicated == null ? "d.data" : "d.*",
+                selection.SelectClause.FromObject);
             selection.ConvertToCommonTableExpression(session);
 
             target = new SelectorStatement
@@ -1542,7 +1547,8 @@ public partial class CollectionUsage
         }
 
         target.SelectClause = new NewScalarSelectClause<T>(
-            $"jsonb_array_length({collectionMember.JSONBLocator})", target.SelectClause.FromObject);
+            duplicated?.LengthLocator ?? $"jsonb_array_length({collectionMember.JSONBLocator})",
+            target.SelectClause.FromObject);
 
         target.ApplyAggregateOperator("SUM");
 
