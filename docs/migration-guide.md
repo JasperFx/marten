@@ -67,6 +67,16 @@ documents, and in collection order within each document.
   `ORDER BY`, and the remaining keys keep their order, as in LINQ to Objects. The SQL for every other ordering is
   unchanged.
 
+### LINQ: a second `OrderBy()` re-sorts <Badge type="warning" text="behavior change" />
+
+* A correctness fix ([#5959](https://github.com/JasperFx/marten/issues/5959)), so these queries return a different
+  order. `OrderBy(x => x.Category).OrderBy(x => x.Name)` now orders by `Name`, then `Category`, as LINQ to Objects
+  does: a later `OrderBy()`/`OrderByDescending()` (or `OrderBySql()`, `OrderByTextRank()`, `OrderByNgramRank()`)
+  re-sorts, and the earlier keys only break its ties. Marten used to put the later key behind the earlier ones.
+  If you relied on that, write the chain with `ThenBy()`. A chain with one `OrderBy()` sends exactly the SQL it did
+  before, and so does `OrderBy("a", "b")`, which is now built with `ThenBy()`. `ThenByTextRank()` followed by
+  another `ThenBy()` now keeps its place in the chain instead of moving to the end.
+
 ### LINQ `Select()` after `SelectMany()` projects the flattened rows <Badge type="warning" text="behavior change" />
 
 A correctness fix ([#5933](https://github.com/JasperFx/marten/issues/5933)), so these queries return different
