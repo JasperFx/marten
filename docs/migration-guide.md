@@ -344,6 +344,17 @@ migration.
   CTE. Compiled queries, `SelectMany()` before or after the paging, and `Take(0).Any()` (which returned `true`) are
   fixed too. A count without `Take()` or `Skip()` sends exactly the SQL it did before.
 
+### LINQ `Take()` or `Skip()` before `SelectMany()` pages the parent documents <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5928](https://github.com/JasperFx/marten/issues/5928)), so these queries return different
+  rows. `OrderBy(x => x.Number).Take(3).SelectMany(x => x.Children)` now returns every child of the first three
+  documents, as LINQ to Objects and EF Core do. Marten used to put the `LIMIT`/`OFFSET` on the statement that
+  flattens the collection, so it returned the first three children overall. `Skip()`, `Skip().Take()`, value
+  collections (`SelectMany(x => x.Numbers)`), and `First()`, `Single()` and `Any()` after such a query follow the
+  paged documents too. Paging after the `SelectMany()` still pages the flattened rows, and a `SelectMany()` without
+  paging before it sends exactly the SQL it did before. The flattened rows come back in the order of the paged
+  documents, and in collection order within each document.
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |
