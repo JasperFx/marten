@@ -18,6 +18,14 @@ public class OrderingOperator: LinqOperator
         var usage = query.CollectionUsageFor(expression);
         var memberArgument = expression.Arguments[1];
 
+        // #5950: a key that reads nothing from the element, OrderBy(x => Settings.SortKey), is the same value for
+        // every row. LINQ to Objects' sort is stable, so such a key leaves the order to the keys around it, and
+        // a ThenBy() after it becomes the primary ordering. It is dropped from the ORDER BY rather than refused.
+        if (isClosedKey(memberArgument))
+        {
+            return;
+        }
+
         var ordering = new Ordering(memberArgument, Direction);
         if (expression.Arguments[1].Type == typeof(string))
         {
@@ -43,5 +51,16 @@ public class OrderingOperator: LinqOperator
         }
 
         usage.OrderingExpressions.Insert(0, ordering);
+    }
+
+    private static bool isClosedKey(Expression argument)
+    {
+        while (argument is UnaryExpression { NodeType: ExpressionType.Quote } quote)
+        {
+            argument = quote.Operand;
+        }
+
+        // OrderBy("Name") names the member as a string; only a key selector can be a closed value
+        return argument is LambdaExpression lambda && lambda.Body.IsClosedValue();
     }
 }
