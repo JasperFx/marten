@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
+using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.SqlGeneration;
@@ -490,7 +491,9 @@ internal sealed class FlattenedRowProjection
         }
     }
 
-    private sealed class NotTranslatableException: Exception
+    // Internal to the translation and always caught by it. It derives from MartenException like every other
+    // exception Marten defines.
+    private sealed class NotTranslatableException: MartenException
     {
         public NotTranslatableException(string message): base(message)
         {
