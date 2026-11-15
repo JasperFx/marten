@@ -63,12 +63,32 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
                 Stream.Key ?? (object)Stream.Id,
                 Stream.AggregateType,
                 expected: Stream.ExpectedVersionOnServer ?? -1,
-                actual: -1);
+                actual: ReadActualVersion(pg));
             return true;
         }
 
         transformed = original;
         return false;
+    }
+
+    /// <summary>
+    ///     #5914: the stream's version as <c>mt_quick_append_events</c> found it, out of MT003's own message
+    ///     (<c>... expected %, actual %</c>). Unlike the rich path's <c>Detail</c>, Npgsql never redacts
+    ///     <see cref="PostgresException.MessageText" />, so this needs no <c>Include Error Detail</c>. -1 when the
+    ///     message does not carry it: a lost start race (23505) has no version to report.
+    /// </summary>
+    internal static long ReadActualVersion(PostgresException? pg)
+    {
+        if (pg is not { SqlState: OptimisticVersionMismatchSqlState, MessageText: { } message })
+        {
+            return -1;
+        }
+
+        const string marker = "actual ";
+        var index = message.LastIndexOf(marker, StringComparison.Ordinal);
+        return index >= 0 && long.TryParse(message.AsSpan(index + marker.Length).Trim(), out var actual)
+            ? actual
+            : -1;
     }
 
     private bool IsLostStartRace(PostgresException? pg)

@@ -222,14 +222,15 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             foreach (var page in pages)
             {
                 var batch = page.Compile();
-                await using var reader = await ExecuteReaderAsync(batch, token).ConfigureAwait(false);
+                await ApplyAsync(batch, token).ConfigureAwait(false);
+                await using var reader = await executePageReaderAsync(page, batch, token).ConfigureAwait(false);
                 await page.ApplyCallbacksAsync(reader, exceptions, token).ConfigureAwait(false);
             }
         }
         catch (Exception e)
         {
             Logger.LogFailure(new NpgsqlCommand(), e);
-            transformAndThrow(pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>(), e);
+            transformAndThrow(pages, e);
         }
 
         if (exceptions.Count == 1)

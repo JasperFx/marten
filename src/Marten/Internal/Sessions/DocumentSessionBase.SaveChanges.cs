@@ -292,8 +292,9 @@ public abstract partial class DocumentSessionBase
             }
             catch (Exception e)
             {
+                // #5914: the failing statement's own operation, not the first one that recognises the error
                 MartenExceptionTransformer.InOrder(Options.Advanced.ExceptionTransforms,
-                    pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>()).TransformAndThrow(e);
+                    OperationPage.TransformsFor(pages, e)).TransformAndThrow(e);
             }
 
             if (execution.Exceptions.Count == 1)
