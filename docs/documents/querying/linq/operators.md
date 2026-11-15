@@ -128,6 +128,10 @@ A key that reads nothing from the document, such as a static member, a captured 
 to the other keys, so Marten leaves it out of the `ORDER BY`. `OrderBy(x => Settings.SortKey).ThenBy(x => x.Number)`
 orders by `Number`, and a query whose keys are all like that has no `ORDER BY` at all.
 
+A second `OrderBy()` or `OrderByDescending()` re-sorts the results, as in LINQ to Objects. The sort is stable, so the
+earlier ordering only breaks ties: `OrderBy(x => x.Category).OrderBy(x => x.Name)` orders by `Name`, then
+`Category`. Use `ThenBy()` to add a key after the ones before it.
+
 ## Ordering with dynamic properties
 
 Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is quite useful for cases where you wouldn't know the properties being used for ordering at build time. This functionality is added in v5.
