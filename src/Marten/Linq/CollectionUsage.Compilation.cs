@@ -756,6 +756,25 @@ public partial class CollectionUsage
             return joinStatement;
         }
 
+        // Any() must ask whether the join has a row, not whether the outer side does (backport of the
+        // #5910 / #5911 fix). Same trap as Count() below: AnySelectClause selects from SelectClause.FromObject,
+        // which is the *outer* CTE, so without the wrap Any() dropped the join and every filter on its inner
+        // side, and answered true for any outer row at all.
+        if (IsAny || SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
+        {
+            joinStatement.ConvertToCommonTableExpression(session);
+
+            var anyStatement = new SelectorStatement
+            {
+                SelectClause = new NewScalarStringSelectClause("d.data", joinStatement.ExportName)
+            };
+            joinStatement.AddToEnd(anyStatement);
+
+            ProcessSingleValueModeIfAny(anyStatement, session, null, statistics);
+
+            return joinStatement;
+        }
+
         // Count()/LongCount() must count the join, not the outer side. ProcessSingleValueModeIfAny
         // builds its count(*) over SelectClause.FromObject, and JoinSelectClause reports the *outer*
         // CTE there -- so counting without wrapping silently drops the join itself, along with every
