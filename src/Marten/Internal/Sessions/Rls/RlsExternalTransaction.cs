@@ -31,15 +31,6 @@ internal sealed class RlsExternalTransaction: ExternalTransaction
         await base.ApplyAsync(batch, token).ConfigureAwait(false);
     }
 
-    public override void Dispose()
-    {
-        if (_applied)
-        {
-            RlsSessionVariableApplier.Reset(Connection, _settingName);
-        }
-        base.Dispose();
-    }
-
     public override async ValueTask DisposeAsync()
     {
         if (_applied)

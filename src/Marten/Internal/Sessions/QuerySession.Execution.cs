@@ -151,26 +151,6 @@ public partial class QuerySession
         }
     }
 
-    public void BeginTransaction()
-    {
-        if (_connection is IAlwaysConnectedLifetime lifetime)
-        {
-            lifetime.BeginTransaction();
-
-        }
-        else if (_connection is ITransactionStarter starter)
-        {
-            var tx = starter.Start();
-            tx.BeginTransaction();
-            _connection = tx;
-        }
-        else
-        {
-            throw new InvalidOperationException(
-                $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
-        }
-    }
-
     public async ValueTask BeginTransactionAsync(CancellationToken token)
     {
         if (_connection is IAlwaysConnectedLifetime lifetime)

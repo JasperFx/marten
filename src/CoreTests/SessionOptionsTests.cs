@@ -195,7 +195,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         using var query = documentStore.LightweightSession();
         var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(1, cmd.Command.CommandTimeout);
-        Assert.Equal(1, query.Connection?.CommandTimeout);
+        Assert.Equal(1, (await query.GetConnectionAsync()).CommandTimeout);
     }
 
     [Fact]
@@ -217,7 +217,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         using var query = documentStore.QuerySession(options);
         var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(60, cmd.Command.CommandTimeout);
-        Assert.Equal(1, query.Connection?.CommandTimeout);
+        Assert.Equal(1, (await query.GetConnectionAsync()).CommandTimeout);
     }
 
     [Fact]

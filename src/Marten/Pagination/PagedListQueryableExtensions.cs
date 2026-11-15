@@ -26,7 +26,7 @@ public static class PagedListQueryableExtensions
         int pageNumber,
         int pageSize)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw new NotSupportedException(QuerySession.ToPagedListNotSupportedMessage);
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ public static class PagedListQueryableExtensions
         int pageNumber,
         int pageSize, bool useQueryCount)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw new NotSupportedException(QuerySession.ToPagedListNotSupportedMessage);
     }
 
     /// <summary>

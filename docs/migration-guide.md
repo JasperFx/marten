@@ -19,20 +19,146 @@
 You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
 On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605.
 
-### Synchronous connection access is gone <Badge type="warning" text="breaking" />
+### Synchronous data access is gone {#synchronous-data-access-is-gone-in-10-0-0}
 
-Npgsql 10 removed its synchronous APIs, and Marten 9 already made the synchronous data-access methods throw
-`NotSupportedException` ([Synchronous data access removed](#synchronous-data-access-removed)). Marten 10 deletes
-what was left of that half:
+::: warning Breaking change
+This is the change most applications hit first when they move to Marten 10. It compiles cleanly where LINQ is
+concerned, so a missed call only shows up at runtime.
+:::
+
+Marten 9 made the synchronous data-access methods throw ([Synchronous data access removed](#synchronous-data-access-removed)).
+Marten 10 finishes the job ([#5861](https://github.com/JasperFx/marten/issues/5861)): the synchronous session members
+that were left are deleted, and every synchronous LINQ operator on a Marten query throws a
+`NotSupportedException` that names the asynchronous operator to use.
+
+#### Synchronous LINQ operators throw
+
+Calling a synchronous LINQ operator on a Marten query (`ToList()`, `ToArray()`, `ToDictionary()`, `First()`,
+`Single()`, `Count()`, `Any()`, `Sum()`, `foreach` and the rest) still compiles, because the operators come from
+.NET's `System.Linq`, but it throws when it runs. Before:
+
+```cs
+var users = session.Query<User>().Where(x => x.Active).ToList();
+var first = session.Query<User>().First(x => x.UserName == "jdm");
+var count = session.Query<User>().Count();
+
+foreach (var user in session.Query<User>())
+{
+    Console.WriteLine(user.UserName);
+}
+```
+
+After:
+
+```cs
+var users = await session.Query<User>().Where(x => x.Active).ToListAsync();
+var first = await session.Query<User>().FirstAsync(x => x.UserName == "jdm");
+var count = await session.Query<User>().CountAsync();
+
+await foreach (var user in session.Query<User>().ToAsyncEnumerable())
+{
+    Console.WriteLine(user.UserName);
+}
+```
+
+The exception names the operator you called and the one to use instead. For a single-result or aggregating operator:
+
+```text
+System.NotSupportedException: Synchronous data access is not supported in Marten 10: First() would query the database synchronously. Use await FirstAsync() instead.
+```
+
+For anything that enumerates the query (`ToList()`, `ToArray()`, `ToDictionary()`, `ToHashSet()`, `foreach`):
+
+```text
+System.NotSupportedException: Synchronous data access is not supported in Marten 10: enumerating a Marten query (foreach, ToList(), ToArray(), ToDictionary(), ToHashSet() and the like) would query the database synchronously. Use await ToListAsync() instead, or await foreach over ToAsyncEnumerable().
+```
+
+`ToPagedList()` names `ToPagedListAsync()` the same way, and an operator with no direct asynchronous counterpart
+(`Aggregate()`, say) lists the ones that exist. The replacements:
+
+| Synchronous | Marten 10 |
+| --- | --- |
+| `ToList()`, `ToArray()`, `ToDictionary()`, `ToHashSet()` | `await ToListAsync()`, then convert the list |
+| `foreach (var x in query)` | `await foreach (var x in query.ToAsyncEnumerable())` |
+| `First()`, `FirstOrDefault()`, `Single()`, `SingleOrDefault()` | `await FirstAsync()`, `FirstOrDefaultAsync()`, `SingleAsync()`, `SingleOrDefaultAsync()` |
+| `Count()`, `LongCount()`, `Any()` | `await CountAsync()`, `LongCountAsync()`, `AnyAsync()` |
+| `Sum()`, `Min()`, `Max()`, `Average()` | `await SumAsync()`, `MinAsync()`, `MaxAsync()`, `AverageAsync()` |
+| `All(predicate)` | `!await AnyAsync(...)` with the predicate negated |
+| `Last()`, `LastOrDefault()` | reverse the ordering, then `await FirstAsync()` / `FirstOrDefaultAsync()` |
+| `ToPagedList(page, size)` | `await ToPagedListAsync(page, size)` |
+
+Composing a query is untouched. `Where()`, `OrderBy()`, `Select()`, sub-queries inside a predicate
+(`x.Children.Any(...)`), `Include()`, compiled queries and `ToCommand()` build an expression and never execute it;
+only the operator at the end decides whether the database is queried.
+
+#### Removed session members
+
+| Removed | Use instead |
+| --- | --- |
+| `IQuerySession.Connection` | `await session.GetConnectionAsync(token)` |
+| `IDocumentSession.BeginTransaction()` | `await session.BeginTransactionAsync(token)` |
+| `IDocumentStore.LightweightSession(IsolationLevel.Serializable)`, and the same for `IdentitySession`, `DirtyTrackedSession`, `OpenSession(SessionOptions)` and `QuerySession(SessionOptions)` with `IsolationLevel.Serializable` | `await store.LightweightSerializableSessionAsync()`, `IdentitySerializableSessionAsync()`, `DirtyTrackedSerializableSessionAsync()`, `OpenSerializableSessionAsync(options)` or `QuerySerializableSessionAsync()` |
+
+`GetConnectionAsync()` behaves as reading `Connection` did. It opens the session's connection if need be and, on a
+session that otherwise opens and closes a connection per command, pins the session to one connection and begins its
+transaction, so your own commands run in the session's transaction. The session still owns the connection: do not
+dispose it. Before:
+
+```cs
+var count = await session.Connection
+    .CreateCommand("select count(*) from tasks where status = 'open'")
+    .ExecuteScalarAsync();
+
+session.BeginTransaction();
+```
+
+After:
+
+```cs
+var connection = await session.GetConnectionAsync();
+var count = await connection
+    .CreateCommand("select count(*) from tasks where status = 'open'")
+    .ExecuteScalarAsync();
+
+await session.BeginTransactionAsync(CancellationToken.None);
+```
+
+The synchronous session factories keep their `IsolationLevel` parameter, and `ReadCommitted` (the default),
+`RepeatableRead` and the other levels still work. Only `Serializable` is refused, because a Serializable session has
+to open its connection and begin its transaction as it is created:
+
+```text
+System.NotSupportedException: Synchronous data access is not supported in Marten 10, and a Serializable session has to open its connection and begin its transaction when it is created. Open it with LightweightSerializableSessionAsync(), IdentitySerializableSessionAsync(), DirtyTrackedSerializableSessionAsync(), QuerySerializableSessionAsync() or OpenSerializableSessionAsync() instead.
+```
+
+A custom `ISessionFactory` that returned `LightweightSession(IsolationLevel.Serializable)` has to change too, since
+`ISessionFactory.OpenSession()` is synchronous.
+
+#### Sessions are still `IDisposable`, but prefer `await using`
+
+Sessions keep `Dispose()`, so `using var session = store.LightweightSession();` still compiles and works. With
+[row level security](/documents/multi-tenancy#row-level-security-) on, a synchronous `Dispose()` makes one synchronous
+database call: it resets the tenant setting on a connection the session opened, before releasing that connection to
+the pool. This is the only synchronous database call left in Marten 10. It is there so a stale tenant cannot outlive
+the session on a pooled connection when the connection string sets `No Reset On Close=true`. If the reset fails,
+`Dispose()` does not throw. Marten logs the failure and makes sure the connection is not returned to the pool as
+healthy.
+
+A connection you supplied (`SessionOptions.ForTransaction()`) is yours, so a synchronous `Dispose()` leaves its tenant
+setting alone. `DisposeAsync()` resets it. Either way, `await using` is still the recommended way to dispose a
+session.
+
+#### Lower-level changes
+
+These only matter if you implement or call Marten's connection plumbing directly:
 
 - `IConnectionLifetime` no longer has `Execute`, `ExecuteReader(NpgsqlCommand)` or `ExecuteReader(NpgsqlBatch)`.
-  Only implementers of that interface are affected.
+- `IAlwaysConnectedLifetime` loses `Connection` and `BeginTransaction()` and gains `OpenConnectionAsync(CancellationToken)`.
+  `ITransactionStarter` loses `Start()`; use `StartAsync(CancellationToken)`.
 - `QuerySession.ExecuteReader(NpgsqlBatch)` is deleted; use `ExecuteReaderAsync`.
 - `IDiagnostics.GetPostgresVersion()` is replaced by `GetPostgresVersionAsync(CancellationToken)`.
-
-The public entry points that still open or close a connection without awaiting (`IQuerySession.Connection`,
-`IDocumentSession.BeginTransaction()`, the synchronous `Serializable` session factories and synchronous
-`Dispose()`) remain. Hi-Lo sequences now reserve their next block asynchronously; see below.
+- `QuerySession.SynchronousNotSupportedMessage` now reads
+  `Synchronous data access is not supported in Marten 10. Use the asynchronous equivalent.`
 
 ### HiLo blocks are reserved one block ahead
 
@@ -1104,7 +1230,7 @@ services.CritterStackDefaults(x =>
     x.Production.ResourceAutoCreate = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L55-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L56-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note the usage of `CritterStackDefaults()` above. This will allow you to specify separate behavior for `Development` time vs

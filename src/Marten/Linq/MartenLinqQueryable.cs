@@ -148,14 +148,15 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
             Expression.Lambda<Func<T, bool>>(predicate.Body, Expression.Parameter(typeof(T), "x"))
         );
 
+    // #5861: ToList(), ToArray(), ToDictionary(), foreach and every other materializing operator end up here.
     public IEnumerator<T> GetEnumerator()
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw SynchronousLinqRefusal.ForEnumeration();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw SynchronousLinqRefusal.ForEnumeration();
     }
 
     public Type ElementType => typeof(T);

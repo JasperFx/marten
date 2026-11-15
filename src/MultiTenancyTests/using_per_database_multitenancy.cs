@@ -195,7 +195,7 @@ public class using_per_database_multitenancy: IAsyncLifetime
         await using var session =
             await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" }, TestContext.Current.CancellationToken);
 
-        session.Connection.Database.ShouldBe("database1");
+        (await session.GetConnectionAsync()).Database.ShouldBe("database1");
     }
 
     [Fact]

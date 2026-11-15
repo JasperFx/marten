@@ -255,13 +255,6 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         }
     }
 
-    public IAlwaysConnectedLifetime Start()
-    {
-        var transaction = CreateStickyConnection();
-        transaction.BeginTransaction();
-        return transaction;
-    }
-
     public async Task<IAlwaysConnectedLifetime> StartAsync(CancellationToken token)
     {
         var transaction = CreateStickyConnection();

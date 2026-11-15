@@ -81,9 +81,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
             (await session.LoadAsync<Target>(data1[i].Id)).Number.ShouldBe(-1);
         }
 
-        var count = session.Connection.CreateCommand()
+        var count = await (await session.GetConnectionAsync()).CreateCommand()
             .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
-            .ExecuteScalar();
+            .ExecuteScalarAsync();
 
         count.ShouldBe(0);
     }
@@ -152,9 +152,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         (await theSession.LoadAsync<Target>(data[0].Id)).ShouldNotBeNull();
 
-        var count = theSession.Connection.CreateCommand()
+        var count = await (await theSession.GetConnectionAsync()).CreateCommand()
             .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
-            .ExecuteScalar();
+            .ExecuteScalarAsync();
 
         count.ShouldBe(0);
     }
@@ -239,9 +239,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
             (await session.LoadAsync<Target>(data1[i].Id)).Number.ShouldBe(-1);
         }
 
-        var count = session.Connection.CreateCommand()
+        var count = await (await session.GetConnectionAsync()).CreateCommand()
             .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
-            .ExecuteScalar();
+            .ExecuteScalarAsync();
 
         count.ShouldBe(0);
     }
@@ -391,9 +391,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
         (await theSession.LoadAsync<Target>(data[0].Id)).ShouldNotBeNull();
 
-        var count = theSession.Connection.CreateCommand()
+        var count = await (await theSession.GetConnectionAsync()).CreateCommand()
             .Sql($"select count(*) from {SchemaName}.mt_doc_target where mt_last_modified is null")
-            .ExecuteScalar();
+            .ExecuteScalarAsync();
 
         count.ShouldBe(0);
     }

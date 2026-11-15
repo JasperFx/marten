@@ -72,28 +72,12 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         return Task.CompletedTask;
     }
 
-    public void Commit()
-    {
-        if (_options.OwnsTransactionLifecycle)
-        {
-            Transaction.Commit();
-        }
-    }
-
     public async Task CommitAsync(CancellationToken token)
     {
         if (_options.OwnsTransactionLifecycle)
         {
             await Transaction.CommitAsync(token).ConfigureAwait(false);
             await Transaction.DisposeAsync().ConfigureAwait(false);
-        }
-    }
-
-    public void Rollback()
-    {
-        if (_options.OwnsTransactionLifecycle)
-        {
-            Transaction.Rollback();
         }
     }
 
@@ -110,19 +94,14 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
 
     public NpgsqlConnection Connection { get; }
 
-    public void BeginTransaction()
+    public ValueTask<NpgsqlConnection> OpenConnectionAsync(CancellationToken token)
     {
-        // Nothing
+        return new ValueTask<NpgsqlConnection>(Connection);
     }
 
     public ValueTask BeginTransactionAsync(CancellationToken token)
     {
         return new ValueTask();
-    }
-
-    public void EnsureConnected()
-    {
-        // Nothing
     }
 
     public async Task<int> ExecuteAsync(NpgsqlCommand command,

@@ -418,7 +418,7 @@ public abstract class VectorProjection<TId>: IProjection, IValidatedProjection<S
     ///     <para>
     ///         ⚠️ <b>Read through the SESSION, not a connection of its own</b> (marten#5421). The
     ///         obvious reading of Marten's daemon session is that a projection cannot read through it
-    ///         at all: <c>ProjectionDocumentSession</c> overrides <c>IQuerySession.Connection</c> to
+    ///         at all: <c>ProjectionDocumentSession</c> overrides <c>IQuerySession.GetConnectionAsync</c> to
     ///         throw outright, because "sticky" connections inside a projection are not supported.
     ///         That refusal is only of the CONNECTION — <see cref="IQuerySession.ExecuteReaderAsync" />
     ///         is not overridden and works, so a read has somewhere to go after all and the last

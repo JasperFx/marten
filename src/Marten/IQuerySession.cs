@@ -36,9 +36,21 @@ public interface IQuerySession: IDisposable, IAsyncDisposable, IDocumentReadOper
     IMartenDatabase Database { get; }
 
     /// <summary>
-    ///     The currently open Npgsql connection for this session. Use with caution.
+    ///     The Npgsql connection this session uses, opening it first if need be. Use with caution.
     /// </summary>
-    NpgsqlConnection Connection { get; }
+    /// <remarks>
+    ///     <para>
+    ///         Replaces the synchronous <c>Connection</c> property, removed in Marten 10 (#5861) because reading it
+    ///         could open a connection without awaiting.
+    ///     </para>
+    ///     <para>
+    ///         The connection belongs to the session: do not dispose it. On a session that would otherwise open
+    ///         and close a connection per command, calling this pins the session to one connection and starts its
+    ///         transaction, exactly as reading the old property did, so that work you run on the connection shares
+    ///         the session's transaction. Not supported inside projections and subscriptions.
+    ///     </para>
+    /// </remarks>
+    ValueTask<NpgsqlConnection> GetConnectionAsync(CancellationToken token = default);
 
     /// <summary>
     ///     The session specific logger for this session. Can be set for better integration

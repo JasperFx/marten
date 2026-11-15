@@ -29,7 +29,7 @@ public class Bug_4981_projection_progress_last_updated_advances: DaemonContext
     private async Task<DateTime> lastUpdatedForAsync(string shardName)
     {
         await using var session = theStore.QuerySession();
-        var value = await session.Connection
+        var value = await (await session.GetConnectionAsync())
             .CreateCommand(
                 $"select last_updated from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = :name")
             .With("name", shardName)

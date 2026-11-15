@@ -12,11 +12,12 @@ public class ExplicitTransactions
 
     public static async Task using_session_connection(IQuerySession session)
     {
-        // Accessing the session.Connection object will quietly open
-        // a "sticky" connection for the session
-        var openCount = await session.Connection
+        // GetConnectionAsync() opens a "sticky" connection for the session
+        // if it does not already have one. The session owns it, so don't dispose it
+        var connection = await session.GetConnectionAsync();
 
-            // This is using a helper extension method from Weasel
+        // This is using a helper extension method from Weasel
+        var openCount = await connection
             .CreateCommand("select count(*) from tasks where status = 'open'")
             .ExecuteScalarAsync();
     }
@@ -28,10 +29,8 @@ public class ExplicitTransactions
 
     public static async Task explicit_transactions(IDocumentSession session)
     {
-        // If in synchronous code, but don't mix this in real async code!!!!
-        session.BeginTransaction();
-
-        // Favor this within async code
+        // Opens the session's connection and begins its transaction. There is no
+        // synchronous BeginTransaction() as of Marten 10
         await session.BeginTransactionAsync(CancellationToken.None);
     }
 

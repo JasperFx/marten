@@ -140,10 +140,10 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
     }
 
     [Fact]
-    public void add_application_name_to_connections()
+    public async Task add_application_name_to_connections()
     {
-        using var query3 = theStore.QuerySession("tenant3");
-        var builder = new NpgsqlConnectionStringBuilder(query3.Connection.ConnectionString);
+        await using var query3 = theStore.QuerySession("tenant3");
+        var builder = new NpgsqlConnectionStringBuilder((await query3.GetConnectionAsync()).ConnectionString);
         builder.ApplicationName.ShouldBe("Sample");
     }
 
@@ -251,7 +251,7 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         await using var session =
             await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" }, TestContext.Current.CancellationToken);
 
-        session.Connection.Database.ShouldBe("tenant1");
+        (await session.GetConnectionAsync()).Database.ShouldBe("tenant1");
     }
 
     [Fact]

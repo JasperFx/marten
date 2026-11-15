@@ -23,17 +23,6 @@ internal class ReadOnlyTransactionalConnection: TransactionalConnection
         command.CommandTimeout = CommandTimeout;
     }
 
-    public override void BeginTransaction()
-    {
-        if (Transaction == null)
-        {
-            base.BeginTransaction();
-
-            Transaction.CreateCommand(SetTransactionReadOnly)
-                .ExecuteNonQuery();
-        }
-    }
-
     public override async ValueTask BeginTransactionAsync(CancellationToken token)
     {
         if (Transaction == null)

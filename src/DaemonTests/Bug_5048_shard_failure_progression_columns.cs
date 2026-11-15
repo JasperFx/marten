@@ -79,7 +79,7 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
     private async Task<(object? category, object? sequence, object? eventType, object? tenantId)> readFailureAsync()
     {
         await using var session = theStore.QuerySession();
-        await using var reader = await session.Connection
+        await using var reader = await (await session.GetConnectionAsync())
             .CreateCommand(
                 $"select failure_category, failure_event_sequence, failure_event_type, failure_event_tenant_id from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = :name")
             .With("name", TheShard)
@@ -298,12 +298,12 @@ public class Bug_5048_shard_failure_progression_columns: DaemonContext
         ], TestContext.Current.CancellationToken);
 
         await using var session = theStore.QuerySession();
-        var rows = Convert.ToInt64(await session.Connection
+        var rows = Convert.ToInt64(await (await session.GetConnectionAsync())
             .CreateCommand($"select count(*) from {theStore.Events.DatabaseSchemaName}.mt_event_progression")
             .ExecuteScalarAsync(TestContext.Current.CancellationToken));
         rows.ShouldBe(1);
 
-        var sequence = Convert.ToInt64(await session.Connection
+        var sequence = Convert.ToInt64(await (await session.GetConnectionAsync())
             .CreateCommand(
                 $"select last_seq_id from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = :name")
             .With("name", TheShard)
