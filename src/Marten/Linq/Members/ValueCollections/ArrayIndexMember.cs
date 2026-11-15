@@ -10,6 +10,14 @@ internal class ArrayIndexMember : MemberInfo
 
     public ArrayIndexMember(int index)
     {
+        // #5949: PostgreSQL reads a negative jsonb array index from the end, so `x.Values[-1]` would quietly
+        // become the last element. In C# it is out of range, so it is refused here rather than translated.
+        if (index < 0)
+        {
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate the negative collection index {index}: PostgreSQL counts a negative index from the end of the array, C# does not");
+        }
+
         Index = index;
     }
 
