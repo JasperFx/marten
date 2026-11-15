@@ -93,6 +93,15 @@ public class WhereClauseParser: ExpressionVisitor
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
+        // #5943: a call that reads no lambda parameter, `Lookup.Names.Contains("a")`, is a value like any
+        // other. Handed to a method parser, the static or captured collection was taken for a member of the
+        // document.
+        if (node.Type == typeof(bool) && node.IsClosedValue())
+        {
+            _holder.Register(true.Equals(node.ReduceToConstant().Value) ? new LiteralTrue() : new LiteralFalse());
+            return null;
+        }
+
         var parser = _options.Linq.FindMethodParser(node);
         if (parser == null)
         {
