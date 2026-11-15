@@ -408,6 +408,22 @@ on all three stores:
 - Source that names the old types needs `using JasperFx.Events;` (or `using JasperFx;` for `BadLinqExpressionException`),
   and assemblies compiled against Marten 9 must be recompiled.
 
+### A failed save reports the failing operation's exception <Badge type="warning" text="behavior change" />
+
+When one statement of a `SaveChangesAsync()` batch fails, the exception is now translated by the operation that
+queued that statement ([#5914](https://github.com/JasperFx/marten/issues/5914)). Before, a neighboring operation
+could claim it. Most visibly, under the default `QuickWithServerTimestamps` append mode, a `FetchForWriting()`
+append that lost its version check in the same save as a `StartStream()` threw `ExistingStreamIdCollisionException`
+for the new stream. It now throws `EventStreamUnexpectedMaxEventIdException` (a `ConcurrencyException`) for the
+fetched stream, so retry policies on `ConcurrencyException` see it. A genuine duplicate `StartStream()` is still an
+`ExistingStreamIdCollisionException`, now naming the duplicate stream rather than another stream started in the
+same save. Under the `Quick` append modes, the version conflict's message now reports the stream's actual version
+instead of `-1`.
+
+Sessions with a sticky connection, an external transaction or an ambient `TransactionScope` now also offer a
+failure to the failing operation before the transforms in `AdvancedOptions.ExceptionTransforms`, which is the order
+the other sessions already used.
+
 ### `EnableExtendedProgressionTracking` is on by default
 
 `opts.Events.EnableExtendedProgressionTracking` now defaults to `true`: the async daemon writes

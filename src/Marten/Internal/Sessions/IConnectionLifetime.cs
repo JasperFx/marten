@@ -30,6 +30,56 @@ internal class ConnectionLifetimeBase
         => MartenExceptionTransformer.InOrder(ExceptionTransforms, operationTransforms).TransformAndThrow(e);
 
     /// <summary>
+    ///     #5914: translate a failure of a unit of work with the transform of the operation whose statement
+    ///     raised it -- see <see cref="OperationPage.TransformsFor" /> -- then the application's, then Marten's.
+    /// </summary>
+    protected void transformAndThrow(IReadOnlyList<OperationPage> pages, Exception e)
+        => transformAndThrow(OperationPage.TransformsFor(pages, e), e);
+
+    /// <summary>
+    ///     #5914: open the reader over one page's batch. A failure is translated by the operations whose
+    ///     statements the reader executed (<see cref="OperationPage.TryTransformExecuteFailure" />) and by nothing
+    ///     else here; the caller's <see cref="transformAndThrow(IReadOnlyList{OperationPage}, Exception)" />
+    ///     then applies the application's and Marten's transforms.
+    /// </summary>
+    /// <remarks>
+    ///     The lifetimes that keep a connection open used to go through their own
+    ///     <c>ExecuteReaderAsync(NpgsqlBatch)</c>, whose <c>handleCommandException</c> runs the application's
+    ///     and Marten's built-in transforms -- so a statement that failed before the first result set was
+    ///     translated before ANY operation was offered it, the reverse of the order
+    ///     <see cref="MartenExceptionTransformer.InOrder" /> documents (#5682), and Marten's last built-in had
+    ///     already wrapped it in a <see cref="MartenCommandException" />. <see cref="AutoClosingLifetime" />
+    ///     never did that. The caller must have applied the connection and transaction.
+    /// </remarks>
+    protected async Task<DbDataReader> executePageReaderAsync(OperationPage page, NpgsqlBatch batch,
+        CancellationToken token)
+    {
+        Logger.OnBeforeExecute(batch);
+
+        try
+        {
+            var reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false);
+            Logger.LogSuccess(batch);
+            return reader;
+        }
+        catch (Exception e)
+        {
+            noteTransactionFailure(e);
+            Logger.LogFailure(batch, e);
+
+            // The SQL has to survive to the MartenCommandException the outer translation may build
+            e.RecordNpgsqlBatch(batch);
+
+            if (page.TryTransformExecuteFailure(e, out var transformed))
+            {
+                throw transformed;
+            }
+
+            throw;
+        }
+    }
+
+    /// <summary>
     ///     The first failure that made this lifetime unusable, or null while it is still healthy.
     /// </summary>
     private Exception? _unusableBecause;
