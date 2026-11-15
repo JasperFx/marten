@@ -27,6 +27,15 @@ deployments**, through `DcbConflictScope.TagValueRecordingEventTypes` — a roll
 to `TagValueAndEventType` can miss conflicts. See
 [scoping conflicts by event type](/events/dcb#scoping-conflicts-by-event-type).
 
+### LINQ `Count()` after `Take()` or `Skip()` counts the page <Badge type="warning" text="behavior change" />
+
+A correctness fix ([#5920](https://github.com/JasperFx/marten/issues/5920)), so these counts change value.
+`Count()` and `LongCount()` after `Take()` and/or `Skip()` now return the number of rows on that page, as LINQ to
+Objects does. Marten used to put the `LIMIT`/`OFFSET` on the `count(*)` itself, so `Take(n).Count()` returned the
+full count and `Skip(k).Count()` or `Skip(k).Take(n).Count()` returned `0`. The paged query is now counted from a
+CTE. Compiled queries, `SelectMany()` before or after the paging, and `Take(0).Any()` (which returned `true`) are
+fixed too. A count without `Take()` or `Skip()` sends exactly the SQL it did before.
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
