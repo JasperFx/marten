@@ -92,8 +92,9 @@ public class HiloSequence: HiloSequenceBase
 
     private NpgsqlCommand GetNexFunctionCommand(NpgsqlConnection conn)
     {
-        // Sproc is expected to return -1 if it's unable to
-        // atomically secure the next hi
+        // The function returns -1 when it could not secure the next hi. Since #5938 it is a single
+        // atomic increment that never does, but a database that has not had that version applied yet
+        // still carries the old compare-and-set, so the retry loops above stay
         return conn.CallFunction(GetNextFunction, "entity")
             .With("entity", EntityName)
             .Returns("next", NpgsqlDbType.Bigint);
