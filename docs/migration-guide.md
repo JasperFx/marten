@@ -164,12 +164,20 @@ These only matter if you implement or call Marten's connection plumbing directly
 
 HiLo ids are still assigned synchronously in `session.Store()`, but each sequence now reserves its **next** block in the
 background with an asynchronous database call as soon as it starts using the current one (#5862). Exhausting a block normally
-no longer blocks the storing thread on the database; the synchronous fetch is kept only as a fallback for when the next block
-has not arrived yet, or the background fetch failed.
+no longer blocks the storing thread on the database. When the next block has not arrived yet, `Store()` waits for the background
+fetch instead of starting a second one; the synchronous fetch is kept as a fallback for when there is no background fetch, it
+failed, or it has not landed within five seconds.
 
 Each process can therefore hold one unused block, so expect gaps of up to `MaxLo` ids when a process stops, and ids are no
 longer guaranteed to be contiguous across a block boundary. They are still unique and, within one process, increasing.
 Nothing needs to change in your code. See [How HiLo blocks are fetched](/documents/identity#how-hilo-blocks-are-fetched).
+
+The `mt_get_next_hi` function behind HiLo is now a single atomic increment ([#5938](https://github.com/JasperFx/marten/issues/5938)).
+The old version read the current value and then updated it only if it was unchanged, returning `-1` to every caller that another
+caller overtook. Marten retried those calls with no backoff, and under heavy concurrent load a sequence could exhaust
+`MaxAdvanceToNextHiAttempts` and throw `HiloSequenceAdvanceToNextHiAttemptsExceededException`. The new version makes overlapping
+callers wait on the row lock instead, and each gets a block. It is an ordinary schema change, applied with the rest of your
+schema migration; until it is applied, the old function keeps working as it did.
 
 ### Abstractions lifted into JasperFx and Weasel <Badge type="warning" text="recompile" />
 
