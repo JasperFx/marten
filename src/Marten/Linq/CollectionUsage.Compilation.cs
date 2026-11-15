@@ -86,10 +86,39 @@ public partial class CollectionUsage
             statement = top.SelectorStatement();
         }
 
+        var computedRefusal = string.Empty;
+        if (SelectExpression != null && isComputedProjection(SelectExpression) && !Includes.Any())
+        {
+            // #5942: arithmetic, a cast, a conditional or a method call computed from the document. The select
+            // visitor has no translation for these, and failed with an exception from inside the expression tree
+            // API or with a reader for the wrong type.
+            if (FlattenedRowProjection.TryTranslateScalar(SelectExpression, collection, _options.Serializer(),
+                    out var computed, out computedRefusal))
+            {
+                return projectComputedSelect(session, statement, computed, statistics);
+            }
+
+            // A method call keeps its old translation, in case it had one
+            if (SelectExpression is not MethodCallExpression)
+            {
+                throw cannotTranslateComputed(SelectExpression, computedRefusal, null);
+            }
+        }
+
         if (SelectExpression != null)
         {
             var visitor = new SelectorVisitor(statement, collection, _options.Serializer());
-            visitor.Visit(SelectExpression);
+            try
+            {
+                visitor.Visit(SelectExpression);
+            }
+            catch (ArgumentException e) when (isComputedProjection(SelectExpression))
+            {
+                // #5942: the select visitor visits the members inside a method call and returns nothing for them,
+                // so rebuilding the call around them failed with ArgumentNullException or "Static method requires
+                // null instance". Say what could not be translated instead.
+                throw cannotTranslateComputed(SelectExpression, computedRefusal, e);
+            }
 
             if (Inner != null)
             {
@@ -127,6 +156,61 @@ public partial class CollectionUsage
         }
 
         return statement.Top();
+    }
+
+    private static BadLinqExpressionException cannotTranslateComputed(Expression projection, string reason,
+        Exception? inner)
+    {
+        var message = $"Marten cannot translate the Select() projection '{projection}': {reason}. A computed " +
+                      "projection can use member access, arithmetic, widening casts, string concatenation, " +
+                      "ToUpper(), ToLower(), Length, and ToString() of an integer or a Guid. Materialize the " +
+                      "documents with ToListAsync() and project them in memory instead.";
+
+        return new BadLinqExpressionException(message, inner);
+    }
+
+    /// <summary>
+    /// #5942: a top-level projection that is computed rather than read -- arithmetic, a conditional or a method
+    /// call. Member access, object construction and ExplicitSql() keep the select visitor's translation.
+    /// </summary>
+    private static bool isComputedProjection(Expression projection) => projection switch
+    {
+        BinaryExpression or ConditionalExpression => true,
+        UnaryExpression { NodeType: ExpressionType.Negate or ExpressionType.NegateChecked } => true,
+
+        // A cast that changes the value's type -- (long)x.Number, (int)x.Colour. The select visitor read the
+        // member underneath and could not hand back the cast type. Wrapping into Nullable<T> and boxing are not
+        // computations, and keep their existing translation.
+        UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked } convert
+            => convert.Type != typeof(object) &&
+               (Nullable.GetUnderlyingType(convert.Type) ?? convert.Type) !=
+               (Nullable.GetUnderlyingType(convert.Operand.Type) ?? convert.Operand.Type),
+        MethodCallExpression call => call.Method.Name != nameof(QueryableExtensions.ExplicitSql),
+        _ => false
+    };
+
+    /// <summary>
+    /// #5942: compute a translated top-level projection over the documents the query selects, then apply every
+    /// operator after the <c>Select()</c> to the projected value -- the same shape a projection after
+    /// <c>SelectMany()</c> compiles to (#5933).
+    /// </summary>
+    private Statement projectComputedSelect(IStorageSession session, SelectorStatement documents,
+        ISqlFragment computed, QueryStatistics? statistics)
+    {
+        if (IsDistinct)
+        {
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate a Distinct() of whole documents before the projection '{SelectExpression}'. " +
+                "Apply Distinct() after the Select() instead.");
+        }
+
+        var after = Inner ?? new CollectionUsage(_options, SelectExpression!.Type)
+        {
+            SingleValueMode = SingleValueMode, IsAny = IsAny
+        };
+
+        return projectScalarRows(session, documents, false, computed, after, statistics, "of the documents")
+            .Top();
     }
 
     /// <summary>
@@ -315,34 +399,7 @@ public partial class CollectionUsage
         if (FlattenedRowProjection.TryTranslateScalar(projection, collection, serializer, out var scalar,
                 out var scalarRefusal))
         {
-            var projectedType = Nullable.GetUnderlyingType(projection.Type) ?? projection.Type;
-            var projected = projectionStatement(session, flattened, distinct);
-
-            projected.SelectClause =
-                SelectClauseResolvers.SelectData(projectedType, projected.SelectClause.FromObject, scalar);
-            projected.ConvertToCommonTableExpression(session);
-
-            // Read the projected rows back the way a flattened value collection's elements are read, so every
-            // operator that follows applies to the projected value
-            var reader = new SelectorStatement
-            {
-                SelectClause = projectedType == typeof(string)
-                    ? new NewScalarStringSelectClause("d.data", projected.ExportName)
-                    : SelectClauseResolvers.NewScalar(projectedType, "d.data", projected.ExportName)
-            };
-            projected.AddToEnd(reader);
-
-            if (after.GroupByData != null || after.GroupJoinData != null || after.SelectMany != null ||
-                after.DistinctByExpression != null)
-            {
-                throw new BadLinqExpressionException(
-                    $"Marten cannot translate GroupBy(), GroupJoin(), SelectMany() or DistinctBy() applied after the " +
-                    $"projection '{projection}' of a SelectMany(). Materialize the projected rows with ToListAsync() " +
-                    "and apply them in memory instead.");
-            }
-
-            var rows = new SelectManyValueCollection(projectedType, new RootMember(projectedType), _options);
-            return after.ConfigureSelectManyStatement(session, rows, reader, statistics);
+            return projectScalarRows(session, flattened, distinct, scalar, after, statistics, "of a SelectMany()");
         }
 
         if (isValueCollection)
@@ -385,6 +442,43 @@ public partial class CollectionUsage
     }
 
     /// <summary>
+    /// Compute a translated scalar projection into a CTE of the rows, and read the projected rows back the way a
+    /// flattened value collection's elements are read, so every operator in <paramref name="after" /> applies to
+    /// the projected value. Used after <c>SelectMany()</c> (#5933) and for a top-level <c>Select()</c> (#5942).
+    /// </summary>
+    private Statement projectScalarRows(IStorageSession session, SelectorStatement rows, bool distinct,
+        ISqlFragment scalar, CollectionUsage after, QueryStatistics? statistics, string source)
+    {
+        var projection = SelectExpression!;
+        var projectedType = Nullable.GetUnderlyingType(projection.Type) ?? projection.Type;
+        var projected = projectionStatement(session, rows, distinct);
+
+        projected.SelectClause =
+            SelectClauseResolvers.SelectData(projectedType, projected.SelectClause.FromObject, scalar);
+        projected.ConvertToCommonTableExpression(session);
+
+        var reader = new SelectorStatement
+        {
+            SelectClause = projectedType == typeof(string)
+                ? new NewScalarStringSelectClause("d.data", projected.ExportName)
+                : SelectClauseResolvers.NewScalar(projectedType, "d.data", projected.ExportName)
+        };
+        projected.AddToEnd(reader);
+
+        if (after.GroupByData != null || after.GroupJoinData != null || after.SelectMany != null ||
+            after.DistinctByExpression != null)
+        {
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate GroupBy(), GroupJoin(), SelectMany() or DistinctBy() applied after the " +
+                $"projection '{projection}' {source}. Materialize the projected rows with ToListAsync() " +
+                "and apply them in memory instead.");
+        }
+
+        var projectedRows = new SelectManyValueCollection(projectedType, new RootMember(projectedType), _options);
+        return after.ConfigureSelectManyStatement(session, projectedRows, reader, statistics);
+    }
+
+    /// <summary>
     /// The statement that projects the flattened rows. A projection over rows that are ordered, paged or made
     /// distinct before it has to read them from a CTE, or the paging and DISTINCT would apply to the projected
     /// rows.
@@ -399,6 +493,13 @@ public partial class CollectionUsage
         if (!isPaged(flattened) && !distinct && !flattened.Ordering.Expressions.Any())
         {
             return flattened;
+        }
+
+        // #5942: whole documents keep every column in the CTE, because a projection can read one that is not in
+        // the JSON body, such as d.id or a duplicated field
+        if (flattened.SelectClause is IDocumentStorage)
+        {
+            flattened.SelectClause = new NewScalarStringSelectClause("d.*", flattened.SelectClause.FromObject);
         }
 
         flattened.ConvertToCommonTableExpression(session);
