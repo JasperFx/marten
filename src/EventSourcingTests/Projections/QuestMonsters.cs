@@ -87,9 +87,9 @@ public class QuestMonstersWithPrivateConstructor: IMonstersView
 {
     public Guid Id { get; protected set; }
 
-    // Marten 9+: with no PUBLIC parameterless constructor, the generated evolver creates this aggregate without
-    // running any constructor, so initializers don't run (jasperfx#1188). Apply must not depend on them.
-    private IList<string> _monsters = new List<string>();
+    // The generated evolver calls the private parameterless constructor through [UnsafeAccessor] (jasperfx#1188,
+    // JasperFx 3.3.0), so this initializer runs before the first Apply(), as it did in Marten 8.
+    private readonly IList<string> _monsters = new List<string>();
 
     private QuestMonstersWithPrivateConstructor()
     {
@@ -100,16 +100,16 @@ public class QuestMonstersWithPrivateConstructor: IMonstersView
 
     public void Apply(MonsterSlayed slayed)
     {
-        _monsters ??= new List<string>();
         _monsters.Fill(slayed.Name);
     }
 
     public string[] Monsters
     {
-        get { return _monsters?.ToArray() ?? []; }
+        get { return _monsters.ToArray(); }
         set
         {
-            _monsters = new List<string>(value);
+            _monsters.Clear();
+            _monsters.AddRange(value);
         }
     }
 }
@@ -182,9 +182,9 @@ public class QuestMonstersWithNonDefaultPublicConstructor: IMonstersView
 {
     public Guid Id { get; private set; }
 
-    // Marten 9+: with no PUBLIC parameterless constructor, the generated evolver creates this aggregate without
-    // running any constructor, so initializers don't run (jasperfx#1188). Apply must not depend on them.
-    public IList<string> Monsters { get; private set; }
+    // The generated evolver calls the private parameterless constructor through [UnsafeAccessor] (jasperfx#1188,
+    // JasperFx 3.3.0), so this initializer runs before the first Apply(), as it did in Marten 8.
+    public IList<string> Monsters { get; private set; } = new List<string>();
 
     string[] IMonstersView.Monsters => Monsters.ToArray();
 
@@ -204,8 +204,6 @@ public class QuestMonstersWithNonDefaultPublicConstructor: IMonstersView
 
     public void Apply(MonsterSlayed slayed)
     {
-        Monsters ??= new List<string>();
-
         Monsters.Fill(slayed.Name);
     }
 }
@@ -241,8 +239,8 @@ public class WithMultiplePublicNonDefaultConstructors: IMonstersView
 {
     public Guid Id { get; private set; }
 
-    // Marten 9+: with no PUBLIC parameterless constructor, the generated evolver creates this aggregate without
-    // running any constructor, so initializers don't run (jasperfx#1188). Apply must not depend on them.
+    // The generated evolver calls the private parameterless constructor through [UnsafeAccessor] (jasperfx#1188,
+    // JasperFx 3.3.0), so this initializer runs before the first Apply(), as it did in Marten 8.
     public IList<string> Monsters { get; private set; } = new List<string>();
 
     string[] IMonstersView.Monsters => Monsters.ToArray();
@@ -269,7 +267,6 @@ public class WithMultiplePublicNonDefaultConstructors: IMonstersView
 
     public void Apply(MonsterSlayed slayed)
     {
-        Monsters ??= new List<string>();
         Monsters.Fill(slayed.Name);
     }
 }
@@ -312,8 +309,8 @@ public class WithMultiplePrivateNonDefaultConstructorsAndAttribute: IMonstersVie
 {
     public Guid Id { get; private set; }
 
-    // Marten 9+: with no PUBLIC parameterless constructor, the generated evolver creates this aggregate without
-    // running any constructor, so initializers don't run (jasperfx#1188). Apply must not depend on them.
+    // The generated evolver calls the private parameterless constructor through [UnsafeAccessor] (jasperfx#1188,
+    // JasperFx 3.3.0), so this initializer runs before the first Apply(), as it did in Marten 8.
     public IList<string> Monsters { get; private set; } = new List<string>();
 
     string[] IMonstersView.Monsters => Monsters.ToArray();
@@ -345,7 +342,6 @@ public class WithMultiplePrivateNonDefaultConstructorsAndAttribute: IMonstersVie
 
     public void Apply(MonsterSlayed slayed)
     {
-        Monsters ??= new List<string>();
         Monsters.Fill(slayed.Name);
     }
 }
@@ -354,8 +350,8 @@ public class WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount: IMo
 {
     public Guid Id { get; private set; }
 
-    // Marten 9+: with no PUBLIC parameterless constructor, the generated evolver creates this aggregate without
-    // running any constructor, so initializers don't run (jasperfx#1188). Apply must not depend on them.
+    // The generated evolver calls the private parameterless constructor through [UnsafeAccessor] (jasperfx#1188,
+    // JasperFx 3.3.0), so this initializer runs before the first Apply(), as it did in Marten 8.
     public IList<string> Monsters { get; private set; } = new List<string>();
 
     string[] IMonstersView.Monsters => Monsters.ToArray();
@@ -384,7 +380,6 @@ public class WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount: IMo
 
     public void Apply(MonsterSlayed slayed)
     {
-        Monsters ??= new List<string>();
         Monsters.Fill(slayed.Name);
     }
 }

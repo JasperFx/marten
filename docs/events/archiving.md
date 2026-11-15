@@ -126,6 +126,8 @@ await session.SaveChangesAsync();
 
 `UnArchiveStream()` has a `Guid` overload and a `string` overload, matching your `StreamIdentity`. Calling the
 overload that does not match the store's configured identity throws an `InvalidOperationException` right away.
+Both are declared on the shared `JasperFx.Events.IEventStoreOperations`, so code written against that interface
+(for Marten, Polecat or Fisher) can un-archive a stream too.
 
 Some details worth knowing:
 

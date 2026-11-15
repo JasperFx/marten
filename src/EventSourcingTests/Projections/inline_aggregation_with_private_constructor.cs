@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten;
+using JasperFx.Events.Projections;
+using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -13,7 +15,7 @@ using Marten.Newtonsoft;
 
 namespace EventSourcingTests.Projections;
 
-public class inline_aggregation_with_private_constructor: OneOffConfigurationsContext
+public partial class inline_aggregation_with_private_constructor: OneOffConfigurationsContext
 {
     public inline_aggregation_with_private_constructor()
     {
@@ -29,14 +31,20 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
             _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructorsAndAttribute>(SnapshotLifecycle.Inline);
             _.Projections.Snapshot<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>(
                 SnapshotLifecycle.Inline);
+
+            // A generic document and one nested in a private type cannot carry their own Apply() methods: the
+            // generator's self-aggregating evolver is a file-scoped type that can name neither. They are built by a
+            // projection instead, which is where JasperFx 3.3.0 still uses GetUninitializedObject for them.
+            _.Projections.Add(new GenericDocWithPrivateConstructorProjection(), ProjectionLifecycle.Live);
+            _.Projections.Add(new PrivateHolder.NestedDocProjection(), ProjectionLifecycle.Live);
         });
     }
 
     // Until #5861 this test called the async Verify<T>() without awaiting it, so every failure inside it landed in a
-    // discarded Task and the test always passed. Awaited, it showed that several of these aggregates had gone stale in
-    // Marten 9: with no PUBLIC parameterless constructor they are created without running a constructor, so their
-    // initializers never ran and Apply() hit a null list. They now initialize in Apply() instead (see QuestMonsters.cs),
-    // and the documented behaviour itself is pinned below.
+    // discarded Task and the test always passed. Awaited, it showed that in Marten 9 and the 10.0 alphas these
+    // aggregates were created without running a constructor, so their initializers never ran and Apply() hit a null
+    // list. From JasperFx 3.3.0 (jasperfx#1188) the generated evolver calls a non-public parameterless constructor
+    // through [UnsafeAccessor], so the aggregates in QuestMonsters.cs rely on their field initializers again.
     [Fact]
     public async Task run_inline_aggregation_with_private_constructor()
     {
@@ -71,30 +79,184 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
         queriedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
     }
 
-    // Pins the documented Marten 9/10 behaviour (migration guide, "Handler methods must be public"): an aggregate
-    // with no public parameterless constructor is created without running any constructor, so a field initializer
-    // has not run by the first Apply(). JasperFx/jasperfx#1188 proposes having the generated evolver call the private
-    // constructor through [UnsafeAccessor] instead. When jasperfx#1188 lands, this assertion flips.
+    // JasperFx 3.3.0 (jasperfx#1188, jasperfx#1191): an aggregate whose only parameterless constructor is private is
+    // built by calling that constructor through a generated [UnsafeAccessor], so the constructor body and every
+    // initializer have run by the first Apply(), as in Marten 8. Marten 9 and the 10.0 alphas built it with
+    // RuntimeHelpers.GetUninitializedObject, and this test pinned that the initializer had NOT run.
     [Fact]
-    public async Task an_aggregate_without_a_public_parameterless_constructor_is_built_without_its_initializers()
+    public async Task an_aggregate_with_a_private_parameterless_constructor_runs_it_and_its_initializers()
+    {
+        var aggregate = await aggregateOneEvent<AggregateWithPrivateConstructor>();
+
+        aggregate.Applied.ShouldBe(1);
+        aggregate.ConstructorHadRunByFirstApply.ShouldBeTrue();
+        aggregate.InitializerHadRunByFirstApply.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task an_aggregate_with_a_protected_parameterless_constructor_runs_it_and_its_initializers()
+    {
+        var aggregate = await aggregateOneEvent<AggregateWithProtectedConstructor>();
+
+        aggregate.Applied.ShouldBe(1);
+        aggregate.ConstructorHadRunByFirstApply.ShouldBeTrue();
+        aggregate.InitializerHadRunByFirstApply.ShouldBeTrue();
+    }
+
+    // The three shapes JasperFx 3.3.0 still builds with RuntimeHelpers.GetUninitializedObject, so no constructor and no
+    // initializer runs. Pinned so a later JasperFx that changes any of them shows up here (and in the migration guide).
+
+    // No parameterless constructor at all: there is nothing to call.
+    [Fact]
+    public async Task an_aggregate_with_no_parameterless_constructor_is_built_without_its_initializers()
+    {
+        var aggregate = await aggregateOneEvent<AggregateWithNoParameterlessConstructor>();
+
+        aggregate.Applied.ShouldBe(1);
+        aggregate.InitializerHadRunByFirstApply.ShouldBeFalse();
+    }
+
+    // A record with a primary constructor, the common case of the above.
+    [Fact]
+    public async Task a_record_with_a_primary_constructor_is_built_without_its_initializers()
+    {
+        var aggregate = await aggregateOneEvent<RecordAggregateWithPrimaryConstructor>();
+
+        aggregate.Applied.ShouldBe(1);
+        aggregate.InitializerHadRunByFirstApply.ShouldBeFalse();
+    }
+
+    // A generic aggregate: the file-scoped accessor cannot name it.
+    [Fact]
+    public async Task a_generic_aggregate_with_a_private_constructor_is_built_without_its_initializers()
+    {
+        var aggregate = await aggregateOneEvent<GenericDocWithPrivateConstructor<int>>();
+
+        aggregate.Applied.ShouldBe(1);
+        aggregate.InitializerHadRunByFirstApply.ShouldBeFalse();
+    }
+
+    // Nested inside a private type: the file-scoped accessor cannot reach it.
+    [Fact]
+    public async Task an_aggregate_nested_in_a_private_type_is_built_without_its_initializers()
+    {
+        var aggregate = await aggregateOneEvent<PrivateHolder.NestedDocWithPrivateConstructor>();
+
+        aggregate.Applied.ShouldBe(1);
+        aggregate.InitializerHadRunByFirstApply.ShouldBeFalse();
+    }
+
+    private async Task<T> aggregateOneEvent<T>() where T : class
     {
         var streamId = theSession.Events.StartStream(new MonsterSlayed { Name = "Troll" }).Id;
         await theSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<AggregateBuiltWithoutItsConstructor>(streamId);
-
+        var aggregate = await theSession.Events.AggregateStreamAsync<T>(streamId);
         aggregate.ShouldNotBeNull();
-        aggregate.Applied.ShouldBe(1);
+        return aggregate;
+    }
 
-        // When jasperfx#1188 lands, this assertion flips: ShouldBeTrue()
-        aggregate.InitializerHadRunByFirstApply.ShouldBeFalse();
+    private partial class PrivateHolder
+    {
+        public class NestedDocWithPrivateConstructor
+        {
+            private NestedDocWithPrivateConstructor()
+            {
+            }
+
+            public Guid Id { get; set; }
+
+            private readonly List<string> _initializedByFieldInitializer = new();
+
+            public bool InitializerHasRun => _initializedByFieldInitializer != null;
+
+            public bool InitializerHadRunByFirstApply { get; set; }
+
+            public int Applied { get; set; }
+        }
+
+        public partial class NestedDocProjection: SingleStreamProjection<NestedDocWithPrivateConstructor, Guid>
+        {
+            public void Apply(MonsterSlayed slayed, NestedDocWithPrivateConstructor doc)
+            {
+                if (doc.Applied == 0)
+                {
+                    doc.InitializerHadRunByFirstApply = doc.InitializerHasRun;
+                }
+
+                doc.Applied++;
+            }
+        }
     }
 }
 
-public class AggregateBuiltWithoutItsConstructor
+public class AggregateWithPrivateConstructor
 {
-    private AggregateBuiltWithoutItsConstructor()
+    private AggregateWithPrivateConstructor()
     {
+        _constructorRan = true;
+    }
+
+    public Guid Id { get; set; }
+
+    private readonly bool _constructorRan;
+
+    private readonly List<string> _initializedByFieldInitializer = new();
+
+    public bool ConstructorHadRunByFirstApply { get; set; }
+
+    public bool InitializerHadRunByFirstApply { get; set; }
+
+    public int Applied { get; set; }
+
+    public void Apply(MonsterSlayed slayed)
+    {
+        if (Applied == 0)
+        {
+            ConstructorHadRunByFirstApply = _constructorRan;
+            InitializerHadRunByFirstApply = _initializedByFieldInitializer != null;
+        }
+
+        Applied++;
+    }
+}
+
+public class AggregateWithProtectedConstructor
+{
+    protected AggregateWithProtectedConstructor()
+    {
+        _constructorRan = true;
+    }
+
+    public Guid Id { get; set; }
+
+    private readonly bool _constructorRan;
+
+    private readonly List<string> _initializedByFieldInitializer = new();
+
+    public bool ConstructorHadRunByFirstApply { get; set; }
+
+    public bool InitializerHadRunByFirstApply { get; set; }
+
+    public int Applied { get; set; }
+
+    public void Apply(MonsterSlayed slayed)
+    {
+        if (Applied == 0)
+        {
+            ConstructorHadRunByFirstApply = _constructorRan;
+            InitializerHadRunByFirstApply = _initializedByFieldInitializer != null;
+        }
+
+        Applied++;
+    }
+}
+
+public class AggregateWithNoParameterlessConstructor
+{
+    public AggregateWithNoParameterlessConstructor(Guid id)
+    {
+        Id = id;
     }
 
     public Guid Id { get; set; }
@@ -113,5 +275,56 @@ public class AggregateBuiltWithoutItsConstructor
         }
 
         Applied++;
+    }
+}
+
+public record RecordAggregateWithPrimaryConstructor(Guid Id)
+{
+    private readonly List<string> _initializedByFieldInitializer = new();
+
+    public bool InitializerHadRunByFirstApply { get; set; }
+
+    public int Applied { get; set; }
+
+    public void Apply(MonsterSlayed slayed)
+    {
+        if (Applied == 0)
+        {
+            InitializerHadRunByFirstApply = _initializedByFieldInitializer != null;
+        }
+
+        Applied++;
+    }
+}
+
+public class GenericDocWithPrivateConstructor<T>
+{
+    private GenericDocWithPrivateConstructor()
+    {
+    }
+
+    public Guid Id { get; set; }
+
+    public T? Payload { get; set; }
+
+    private readonly List<string> _initializedByFieldInitializer = new();
+
+    public bool InitializerHasRun => _initializedByFieldInitializer != null;
+
+    public bool InitializerHadRunByFirstApply { get; set; }
+
+    public int Applied { get; set; }
+}
+
+public partial class GenericDocWithPrivateConstructorProjection: SingleStreamProjection<GenericDocWithPrivateConstructor<int>, Guid>
+{
+    public void Apply(MonsterSlayed slayed, GenericDocWithPrivateConstructor<int> doc)
+    {
+        if (doc.Applied == 0)
+        {
+            doc.InitializerHadRunByFirstApply = doc.InitializerHasRun;
+        }
+
+        doc.Applied++;
     }
 }

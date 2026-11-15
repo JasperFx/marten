@@ -824,26 +824,10 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     /// <summary>
     ///     marten#5476: <c>IEventStoreOperations.UnArchiveStream</c> calls <c>mt_unarchive_stream</c>, the
     ///     reverse of <c>mt_archive_stream</c>, so the unarchive facts of <c>StreamArchivingCompliance</c> run.
-    ///     The method lives on Marten's own <c>IEventStoreOperations</c> until it is lifted onto the shared
-    ///     interface, which is why the fixture still reaches it through the hook below.
+    ///     Since JasperFx 3.3.0 (jasperfx#1186) the members are on the shared <c>IEventStoreOperations</c> and the
+    ///     suite calls them through <c>EventsFor(session)</c>, so the old fixture hook is no longer overridden.
     /// </summary>
     public override bool SupportsUnarchiveStream => true;
-
-    public override void UnArchiveStream(IDocumentOperations session, object streamIdentity)
-    {
-        switch (streamIdentity)
-        {
-            case Guid streamId:
-                session.Events.UnArchiveStream(streamId);
-                break;
-            case string streamKey:
-                session.Events.UnArchiveStream(streamKey);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(streamIdentity),
-                    $"Marten streams are identified by Guid or string, not {streamIdentity.GetType().FullName}");
-        }
-    }
 
     /// <summary>
     ///     marten#5673: IEventStoreOperations.TombstoneStream is implemented by DeleteStreamOperation,
