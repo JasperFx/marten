@@ -47,6 +47,52 @@ paged documents too. Paging after the `SelectMany()` still pages the flattened r
 paging before it sends exactly the SQL it did before. The flattened rows come back in the order of the paged
 documents, and in collection order within each document.
 
+### LINQ indexes into document arrays translate everywhere <Badge type="warning" text="behavior change" />
+
+* [#5949](https://github.com/JasperFx/marten/issues/5949): an index into an array or list on the document,
+  `x.Values[1]`, `x.List[1]` or `x.Values.ElementAt(1)`, now translates in `OrderBy()`/`ThenBy()` and `Select()` as
+  well as in `Where()`, and jagged indexes such as `x.Grid[1][0]` translate in all three. A `bool[]` or `List<bool>`
+  on the document can be queried too. Before, it could not be queried at all. See
+  [Reading an Element by Position](/documents/querying/linq/child-collections#reading-an-element-by-position).
+* The behavior change: a **negative** index now throws `BadLinqExpressionException`. It used to translate to a
+  negative `jsonb` index, which PostgreSQL reads from the end of the array, so `x.Values[-1]` silently compared the
+  last element.
+* An index past the end of the stored array reads as `null`, as it always has in `Where()`.
+
+### LINQ ordering by a value that reads nothing from the document <Badge type="tip" text="new" />
+
+* [#5950](https://github.com/JasperFx/marten/issues/5950): `OrderBy()`, `OrderByDescending()`, `ThenBy()` and
+  `ThenByDescending()` over a static member, a captured variable or a literal used to throw
+  `Invalid OrderBy() expression`. Such a key is the same for every document, so it is now dropped from the
+  `ORDER BY`, and the remaining keys keep their order, as in LINQ to Objects. The SQL for every other ordering is
+  unchanged.
+
+### LINQ: a second `OrderBy()` re-sorts <Badge type="warning" text="behavior change" />
+
+* A correctness fix ([#5959](https://github.com/JasperFx/marten/issues/5959)), so these queries return a different
+  order. `OrderBy(x => x.Category).OrderBy(x => x.Name)` now orders by `Name`, then `Category`, as LINQ to Objects
+  does: a later `OrderBy()`/`OrderByDescending()` (or `OrderBySql()`, `OrderByTextRank()`, `OrderByNgramRank()`)
+  re-sorts, and the earlier keys only break its ties. Marten used to put the later key behind the earlier ones.
+  If you relied on that, write the chain with `ThenBy()`. A chain with one `OrderBy()` sends exactly the SQL it did
+  before, and so does `OrderBy("a", "b")`, which is now built with `ThenBy()`. `ThenByTextRank()` followed by
+  another `ThenBy()` now keeps its place in the chain instead of moving to the end.
+
+### LINQ computed `OrderBy()` keys are computed <Badge type="warning" text="behavior change" />
+
+* A correctness fix ([#5957](https://github.com/JasperFx/marten/issues/5957)), so these queries return a different
+  order or throw. A key computed from the document's members, such as `OrderBy(x => -x.Number)`, used to be
+  replaced by the member underneath it: that query sent `order by CAST(d.data ->> 'Number' as integer)` and came
+  back in ascending order. Computed keys over the document now translate with the computed `Select()` translation
+  (negation, arithmetic including `%`, widening casts, string concatenation, `ToUpper()`/`ToLower()`, `Length`,
+  `ToString()` of an integer or a `Guid`). A key with no exact SQL translation, such as decimal division, floating
+  point `%`, a narrowing cast (`(byte)x.Number`), a conditional, a `Math` call or an enum stored as a string cast
+  to an integer, now throws `BadLinqExpressionException`. Order by a member, or sort in memory after the query.
+  A plain member key sends exactly the SQL it did before.
+* The same applies, as of [#5968](https://github.com/JasperFx/marten/issues/5968), to a key over the child
+  documents a `SelectMany()` flattens, `SelectMany(x => x.Children).OrderBy(c => -c.Index)`, and to a key over
+  either side of a `Join()` or `GroupJoin()`, `Join(...).OrderBy(r => -r.Amount)`. Both used to order by the member
+  under the negation, and both refused arithmetic such as `% 3`.
+
 ### LINQ `Select()` after `SelectMany()` projects the flattened rows <Badge type="warning" text="behavior change" />
 
 A correctness fix ([#5933](https://github.com/JasperFx/marten/issues/5933)), so these queries return different
@@ -122,6 +168,22 @@ exhaust `MaxAdvanceToNextHiAttempts` and throw `HiloSequenceAdvanceToNextHiAttem
 single atomic increment: overlapping callers wait on the row lock instead, and each gets a block. The function body
 changes, so it is a schema difference that your next schema migration applies, like any other. Until it is applied,
 the old function keeps working as it did.
+
+### A failed save reports the failing operation's exception <Badge type="warning" text="behavior change" />
+
+When one statement of a `SaveChangesAsync()` batch fails, the exception is now translated by the operation that
+queued that statement ([#5914](https://github.com/JasperFx/marten/issues/5914)). Before, a neighboring operation
+could claim it. Most visibly, under the default `QuickWithServerTimestamps` append mode, a `FetchForWriting()`
+append that lost its version check in the same save as a `StartStream()` threw `ExistingStreamIdCollisionException`
+for the new stream. It now throws `EventStreamUnexpectedMaxEventIdException` (a `ConcurrencyException`) for the
+fetched stream, so retry policies on `ConcurrencyException` see it. A genuine duplicate `StartStream()` is still an
+`ExistingStreamIdCollisionException`, now naming the duplicate stream rather than another stream started in the
+same save. Under the `Quick` append modes, the version conflict's message now reports the stream's actual version
+instead of `-1`.
+
+Sessions with a sticky connection, an external transaction or an ambient `TransactionScope` now also offer a
+failure to the failing operation before the transforms in `AdvancedOptions.ExceptionTransforms`, which is the order
+the other sessions already used.
 
 ## Key Changes in 9.41.0
 
