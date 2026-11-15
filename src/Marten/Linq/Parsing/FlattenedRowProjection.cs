@@ -59,11 +59,20 @@ internal sealed class FlattenedRowProjection
     private readonly IQueryableMemberCollection _members;
     private readonly ISerializer _serializer;
 
-    private FlattenedRowProjection(IQueryableMemberCollection members, ISerializer serializer)
+    private readonly string? _tableAlias;
+
+    private FlattenedRowProjection(IQueryableMemberCollection members, ISerializer serializer, string? tableAlias)
     {
         _members = members;
         _serializer = serializer;
+        _tableAlias = tableAlias;
     }
+
+    /// <summary>
+    /// #5968: a locator is written against the table alias <c>d</c>. Inside a join, each side is read from its
+    /// own CTE alias instead, the way the join's other member locators are.
+    /// </summary>
+    private string locate(string locator) => _tableAlias == null ? locator : locator.Replace("d.", _tableAlias + ".");
 
     /// <summary>
     /// Is <paramref name="type" /> a scalar that a flattened, projected row can be read back as?
@@ -82,6 +91,16 @@ internal sealed class FlattenedRowProjection
     public static bool TryTranslateScalar(Expression body, IQueryableMemberCollection members, ISerializer serializer,
         out ISqlFragment fragment, out string reason)
     {
+        return TryTranslateScalar(body, members, serializer, null, out fragment, out reason);
+    }
+
+    /// <summary>
+    /// #5968: translate a scalar over members read from the table alias <paramref name="tableAlias" /> rather than
+    /// <c>d</c>, such as one side of a join.
+    /// </summary>
+    public static bool TryTranslateScalar(Expression body, IQueryableMemberCollection members, ISerializer serializer,
+        string? tableAlias, out ISqlFragment fragment, out string reason)
+    {
         fragment = null!;
         reason = string.Empty;
 
@@ -93,7 +112,7 @@ internal sealed class FlattenedRowProjection
 
         try
         {
-            fragment = new FlattenedRowProjection(members, serializer).translate(body);
+            fragment = new FlattenedRowProjection(members, serializer, tableAlias).translate(body);
             return true;
         }
         catch (NotTranslatableException e)
@@ -110,10 +129,26 @@ internal sealed class FlattenedRowProjection
     public static bool TryTranslateOrderingKey(Expression key, bool descending, IQueryableMemberCollection members,
         ISerializer serializer, out ISqlFragment fragment, out string reason)
     {
+        return TryTranslateOrderingKey(key, descending, false, members, serializer, null, out fragment, out reason);
+    }
+
+    /// <summary>
+    /// #5968: an ordering key over members read from <paramref name="tableAlias" />, lowered when the ordering
+    /// ignores case.
+    /// </summary>
+    public static bool TryTranslateOrderingKey(Expression key, bool descending, bool ignoreCase,
+        IQueryableMemberCollection members, ISerializer serializer, string? tableAlias, out ISqlFragment fragment,
+        out string reason)
+    {
         fragment = null!;
-        if (!TryTranslateScalar(key, members, serializer, out var translated, out reason))
+        if (!TryTranslateScalar(key, members, serializer, tableAlias, out var translated, out reason))
         {
             return false;
+        }
+
+        if (ignoreCase && key.Type == typeof(string))
+        {
+            translated = new Composite("lower(", translated, ")");
         }
 
         fragment = descending ? new Composite(translated, " desc") : translated;
@@ -132,7 +167,7 @@ internal sealed class FlattenedRowProjection
 
         try
         {
-            var projection = new FlattenedRowProjection(members, serializer);
+            var projection = new FlattenedRowProjection(members, serializer, null);
             switch (body)
             {
                 case NewExpression { Members: not null } n:
@@ -256,8 +291,8 @@ internal sealed class FlattenedRowProjection
         var elementType = Nullable.GetUnderlyingType(_members.ElementType) ?? _members.ElementType;
 
         return elementType == typeof(string)
-            ? new LiteralSql("d.data")
-            : new LiteralSql($"CAST(d.data as {pgType(elementType)})");
+            ? new LiteralSql(locate("d.data"))
+            : new LiteralSql(locate($"CAST(d.data as {pgType(elementType)})"));
     }
 
     private ISqlFragment translateMember(MemberExpression node)
@@ -278,7 +313,7 @@ internal sealed class FlattenedRowProjection
         }
 
         var queryable = _members.MemberFor(node);
-        return new LiteralSql(queryable.TypedLocator);
+        return new LiteralSql(locate(queryable.TypedLocator));
     }
 
     private static bool isMemberChainOfTheRow(MemberExpression node)
@@ -350,7 +385,7 @@ internal sealed class FlattenedRowProjection
             isMemberChainOfTheRow(member))
         {
             var queryable = _members.MemberFor(member);
-            return new LiteralSql($"CAST({queryable.RawLocator} as integer)");
+            return new LiteralSql(locate($"CAST({queryable.RawLocator} as integer)"));
         }
 
         throw new NotTranslatableException($"'{operand}' is not an enum Marten can locate");
