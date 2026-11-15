@@ -241,9 +241,27 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                     Logger.OnBeforeExecute(batch);
                     try
                     {
-                        await using var reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false);
-                        await page.ApplyCallbacksAsync(reader, exceptions, token).ConfigureAwait(false);
-                        await reader.CloseAsync().ConfigureAwait(false);
+                        DbDataReader reader;
+                        try
+                        {
+                            reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false);
+                        }
+                        catch (Exception e)
+                        {
+                            // #5914: only the operations whose statements the reader executed translate this
+                            if (page.TryTransformExecuteFailure(e, out var transformed))
+                            {
+                                throw transformed;
+                            }
+
+                            throw;
+                        }
+
+                        await using (reader.ConfigureAwait(false))
+                        {
+                            await page.ApplyCallbacksAsync(reader, exceptions, token).ConfigureAwait(false);
+                            await reader.CloseAsync().ConfigureAwait(false);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -274,7 +292,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 }
 
                 Logger.LogFailure(new NpgsqlCommand(), e);
-                transformAndThrow(pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>(), e);
+                transformAndThrow(pages, e);
             }
 
             if (exceptions.Count == 1)
