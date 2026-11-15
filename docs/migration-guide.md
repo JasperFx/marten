@@ -71,6 +71,15 @@ is now flattened with `unnest()` and counted with `array_length()`, and `Where()
 `First()`/`Single()` and `Select()` after the `SelectMany()` apply as they do to a collection that is not duplicated.
 A `SelectMany()` over a collection that is not duplicated sends exactly the SQL it did before.
 
+### LINQ `SelectMany()` over an enum collection works
+
+A bug fix ([#5940](https://github.com/JasperFx/marten/issues/5940)). `SelectMany(x => x.Colours)` over an array or
+list of enums threw `InvalidCastException`, because each flattened element was read as the enum type from the
+integer or text column it is stored in. The element is now read as the stored value and converted, under both
+`EnumStorage.AsInteger` and `EnumStorage.AsString`, and `Where()`, `Distinct()`, `First()` and the rest work after
+it. `OrderBy()` sorts by the stored value, so by name under `EnumStorage.AsString`, as an `OrderBy()` on an enum
+member of a document already does. The SQL is unchanged.
+
 ## Key Changes in 9.41.0
 
 ### `UseAdvisoryLockTransaction` now defaults to `false`
