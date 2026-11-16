@@ -225,6 +225,25 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task enable_all_also_enables_the_user_name()
+    {
+        StoreOptions(_ => _.Events.MetadataConfig.EnableAll());
+
+        theSession.LastModifiedBy = "Last Person";
+
+        var streamId = theSession.Events
+            .StartStream<QuestParty>(started, joined, slayed).Id;
+        await theSession.SaveChangesAsync();
+
+        var events = await theSession.Events.FetchStreamAsync(streamId);
+        events.ShouldNotBeEmpty();
+        foreach (var @event in events)
+        {
+            @event.UserName.ShouldBe("Last Person");
+        }
+    }
+
+    [Fact]
     public async Task query_all_raw_events_with_headers_enabled()
     {
         StoreOptions(opts =>
