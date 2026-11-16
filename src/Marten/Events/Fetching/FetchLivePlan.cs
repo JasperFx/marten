@@ -132,7 +132,6 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
                 read.ColdVersion, read.WarmEvents, default, token).ConfigureAwait(false);
         }
 
-        _telemetry.RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.LivePlan);
         return events;
     }
 
@@ -140,6 +139,9 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
         CancellationToken cancellation)
     {
         var events = await eventsToFoldAsync(session, id, read, cancellation).ConfigureAwait(false);
+
+        // Only the writing fetches count replayed events, as before cold storage; FetchLatest never did
+        _telemetry.RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.LivePlan);
 
         var document = await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
         if (document != null)
