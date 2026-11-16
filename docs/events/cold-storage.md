@@ -66,6 +66,25 @@ and records the version in `mt_streams.cold_version`. It fails the unit of work 
 or has not reached that version. `mt_streams.version` is left alone, so optimistic concurrency keeps working
 as before.
 
+### Moving many streams at once
+
+A move job usually handles hundreds of streams per transaction. `MarkStreamsCold` takes them all, each with
+its own version, for the session's tenant:
+
+```cs
+session.Events.MarkStreamsCold([(firstKey, 5), (secondKey, 12), (thirdKey, 3)]);
+await session.SaveChangesAsync();
+```
+
+The batch is one statement, and the async shards are checked once, against the highest sequence the batch
+deletes. Per stream it behaves exactly like `MarkStreamCold`. The batch succeeds or fails as a whole: when one
+stream does not exist or has not reached its version, nothing is deleted and the error lists those streams;
+when an async shard is behind on any stream of the batch, nothing is deleted either. A stream listed twice
+moves through the higher version.
+
+Calls to `MarkStreamCold` one after the other in the same unit of work are combined into one such statement
+as well, so a loop over streams costs the same as one `MarkStreamsCold`.
+
 ### In which order to copy and mark
 
 How the copy and the mark go together depends on where the cold storage lives:
