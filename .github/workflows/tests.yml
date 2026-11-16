@@ -28,9 +28,13 @@ name: tests
 # is exactly the state this workflow exists to make impossible to reach by accident.
 
 on:
+  # 9.0 is the long-lived release branch that 9.x is cut from (#5977). Quoted, because a bare 9.0
+  # is a YAML number. For a pull_request, GitHub reads this file from the PR's merge ref, so the
+  # 9.0 branch's own copy has to carry the 9.0 filter for 9.0 PRs to get checks.
   push:
     branches:
       - master
+      - '9.0'
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
@@ -38,6 +42,7 @@ on:
   pull_request:
     branches:
       - master
+      - '9.0'
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
@@ -65,10 +70,10 @@ permissions:
 
 concurrency:
   group: tests-${{ github.workflow }}-${{ github.ref }}
-  # Superseded PR pushes are worth cancelling — 30 jobs per push adds up. A master run is not:
-  # it is the record for that commit, and cancelling it leaves a gap in exactly the history the
+  # Superseded PR pushes are worth cancelling — 30 jobs per push adds up. A master or 9.0 run is
+  # not: it is the record for that commit, and cancelling it leaves a gap in exactly the history the
   # flakiness roll-up is read against.
-  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/9.0' }}
 
 jobs:
   test:
