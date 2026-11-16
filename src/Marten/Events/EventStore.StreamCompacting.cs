@@ -11,6 +11,7 @@ using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Protected;
 using Marten.Events.Operations;
+using Marten.Exceptions;
 using Marten.Events.Protected;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -51,10 +52,25 @@ internal partial class EventStore
             throw new ArgumentOutOfRangeException(nameof(streamKey), "The stream key cannot be null or empty");
         }
 
+        await assertNotColdAsync(streamKey).ConfigureAwait(false);
+
         var request = new StreamCompactingRequest<T>(streamKey);
         configure?.Invoke(request);
 
         await MartenStreamCompacting.Instance.CompactAsync(request, _session).ConfigureAwait(false);
+    }
+
+    // The snapshot is folded from mt_events alone and every later fold jumps to it, so the cold part would be lost
+    // for good. A move that commits after this check is harmless: the snapshot was folded from those events.
+    private async Task assertNotColdAsync(string streamKey)
+    {
+        if (_store.Events.ColdEventStore == null) return;
+
+        if (await _session.ColdVersionOfAsync((_session.TenantId, streamKey), CancellationToken.None).ConfigureAwait(false) is { } coldVersion)
+        {
+            throw new InvalidStreamOperationException(
+                $"Stream '{streamKey}' cannot be compacted: its events through version {coldVersion} are in cold storage, and the compacted snapshot would leave them out.");
+        }
     }
 
     public async Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null)

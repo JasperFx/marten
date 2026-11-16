@@ -38,7 +38,11 @@ public abstract partial class DocumentSessionBase
     {
         if (stream.ActionType == StreamActionType.Start) return null;
 
-        var key = coldKeyOf(stream);
+        return await ColdVersionOfAsync(coldKeyOf(stream), token).ConfigureAwait(false);
+    }
+
+    internal async ValueTask<long?> ColdVersionOfAsync((string TenantId, string StreamKey) key, CancellationToken token)
+    {
         var observed = ObservedColdVersions;
         if (!observed.TryGetValue(key, out var coldVersion))
         {
