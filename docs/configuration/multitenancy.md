@@ -490,7 +490,7 @@ How that first resolution runs depends on the tenancy:
 | --- | --- |
 | Master table | Blocks the calling thread on asynchronous work: the control-table read, and on the first resolution in the process the control table's schema check ([weasel#838](https://github.com/JasperFx/weasel/issues/838)) |
 | Single instance | Blocks the calling thread on asynchronous work, which may include `CREATE DATABASE` ([weasel#839](https://github.com/JasperFx/weasel/issues/839)) |
-| Sharded | Blocks the calling thread on asynchronous work: the shard lookup, the assignment of a new tenant, and creating or repairing the tenant's partitions ([#5986](https://github.com/JasperFx/marten/issues/5986)) |
+| Sharded | For a tenant that already has a shard and all of its partitions, reads the assignment and checks the partitions with synchronous I/O on the calling thread ([#5986](https://github.com/JasperFx/marten/issues/5986)). Still blocks the calling thread on asynchronous work for the first tenant resolution in the process, which checks the pool's tables and seeds the configured databases; for a new tenant, which goes through your assignment strategy's `AssignTenantToDatabaseAsync()`; for a tenant whose partitions or event sequence are missing and get repaired; and when the control or shard database's connection string turns on `Multiplexing`, which Npgsql only supports asynchronously |
 
 A thread-pool thread blocked on asynchronous work waits for that work to be finished by another pool thread. Take a
 burst of synchronous session opens for tenants that this process has not seen yet, such as the first requests after a
