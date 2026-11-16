@@ -39,13 +39,26 @@ internal partial class FetchLivePlan<TDoc, TId>
         await using (var reader =
                      await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false))
         {
-            read = await readAsync(reader, session, handler, true, cancellation).ConfigureAwait(false);
+            read = await readExpectedAsync(reader, session, id, handler, cancellation).ConfigureAwait(false);
         }
 
         return await buildStreamAsync(session, id, expectedStartingVersion, read, cancellation).ConfigureAwait(false);
     }
 
-    private Task<IEventStream<TDoc>> buildStreamAsync(DocumentSessionBase session, TId id, long expectedStartingVersion,
+    private async Task<LiveRead> readExpectedAsync(DbDataReader reader, IStorageSession session, TId id,
+        IQueryHandler<IReadOnlyList<IEvent>> handler, CancellationToken cancellation)
+    {
+        try
+        {
+            return await readAsync(reader, session, handler, true, cancellation).ConfigureAwait(false);
+        }
+        catch (Exception e) when (asStreamLocked(e, id) is { } locked)
+        {
+            throw locked;
+        }
+    }
+
+    private async Task<IEventStream<TDoc>> buildStreamAsync(DocumentSessionBase session, TId id, long expectedStartingVersion,
         LiveRead read, CancellationToken cancellation)
     {
         if (expectedStartingVersion != read.Version)
@@ -55,7 +68,14 @@ internal partial class FetchLivePlan<TDoc, TId>
                 typeof(TDoc), id);
         }
 
-        return buildStreamAsync(session, id, read, cancellation);
+        try
+        {
+            return await buildStreamAsync(session, id, read, cancellation).ConfigureAwait(false);
+        }
+        catch (Exception e) when (asStreamLocked(e, id) is { } locked)
+        {
+            throw locked;
+        }
     }
 
     public IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id, long expectedStartingVersion)
@@ -92,7 +112,7 @@ internal partial class FetchLivePlan<TDoc, TId>
 
         public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
-            _read = await _parent.readAsync(reader, session, _handler, true, token).ConfigureAwait(false);
+            _read = await _parent.readExpectedAsync(reader, session, _id, _handler, token).ConfigureAwait(false);
         }
 
         public Task<IEventStream<TDoc>> FinishAsync(IStorageSession session, CancellationToken token)
