@@ -86,6 +86,43 @@ public class sync_tenant_resolution_thread_pool_tests
         }
     }
 
+    // #5986. Red before the fix: every cold sharded tenant blocked a pool thread on the asynchronous shard lookup and
+    // the #4942 partition repair. Now a tenant that already has a shard and its partitions resolves synchronously
+    [Fact]
+    public async Task a_burst_of_sync_session_opens_for_uncached_sharded_tenants_does_not_starve_the_thread_pool()
+    {
+        var callers = Math.Max(ThreadPool.ThreadCount, Environment.ProcessorCount) * 4 + 16;
+        var tenantIds = Enumerable.Range(0, callers).Select(i => $"starve{i}").ToArray();
+
+        await using var shards = await ScratchShards.CreateAsync(2);
+
+        try
+        {
+            // Every tenant has a shard and its partitions, from an earlier store: a warm database
+            await shards.ProvisionAsync(tenantIds);
+
+            // A fresh store is a cold process, which has cached none of them
+            await using var store = shards.BuildStore();
+
+            // The store's one-off work first, as above, so the burst measures the per-tenant resolution only
+            await shards.RunOneOffWorkAsync(store);
+
+            var worst = await measureBurstAsync(tenantIds,
+                tenantId =>
+                {
+                    using var session = store.LightweightSession(tenantId);
+                    session.TenantId.ShouldBe(tenantId);
+                });
+
+            worst.ShouldBeLessThan(TimeSpan.FromMilliseconds(500),
+                $"the thread pool was starved for {worst.TotalMilliseconds:N0} ms while {callers} callers opened sessions for uncached sharded tenants");
+        }
+        finally
+        {
+            await shards.DropMasterSchemaAsync();
+        }
+    }
+
     private async Task<TimeSpan> measureBurstAsync(string[] tenantIds, Action<string> open)
     {
         using var stop = new CancellationTokenSource();
