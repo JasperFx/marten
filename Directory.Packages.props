@@ -1205,9 +1205,11 @@
              AdvanceToNextHi and AdvanceToNextHiSync can now overlap (never themselves). Marten's
              HiloSequence takes its prefetch slot under its own lock, so a prefetched block is installed
              once; but its hi-less-than-current check and the install are no longer atomic against a
-             synchronous advance on the other path, so in a narrow window ids could run non-increasing
-             across a block boundary (still unique). Not reachable today: Marten does not call
-             NextLongAsync in production.
+             synchronous advance on the other path, so ids could run non-increasing (still unique).
+             This note originally called that "a narrow window across a block boundary, not reachable
+             today". Both claims were wrong: hilo_prefetch_tests reaches it through NextLongAsync, the
+             drop was not bounded to one block (770 then 2 was observed), and master CI failed every
+             run on alpha.3. Fixed upstream by weasel#840 in alpha.4, below.
            * weasel#831: optional WriteEventBdata on the Rich/Quick/QWST descriptors pools the per-event
              bdata of the Rich append, side-effect replay and tombstones. NOT ADOPTED yet. To adopt: set
              it from IEventBinarySerializer.Serialize(Type, object, IBufferWriter), and override
@@ -1216,9 +1218,19 @@
              after the unit of work, which is what returns the buffers.
            * INERT: weasel#832 (OperationBatchExecutor error attribution); Marten's writes do not go
              through it, and marten#5927 is the same fix in OperationPage. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.3" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.3" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.3" />
+    <!-- Weasel 10.0.0-alpha.4 (from alpha.3). JasperFx floor still 3.0.0. All additive.
+           * weasel#840: HiloSequenceBase installs a block only if no overlapping advance has already
+             installed one at or above it (a late lower block becomes a gap), so ids from one sequence
+             only increase again. Fixes the alpha.3 regression that turned master CI red on
+             hilo_prefetch_tests.concurrent_sync_and_async_callers_never_get_the_same_id. SetFloor still
+             installs as given.
+           * weasel#841 (weasel#838): MasterTableTenancyBase.TryResolveTenant, a synchronous tenant
+             resolve. NOT ADOPTED yet; it is the rest of marten#5985 on master.
+           * weasel#842 (weasel#839): SingleServerDatabaseCollection.FindOrCreateDatabaseSynchronously.
+             NOT ADOPTED yet; also marten#5985. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.4" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.4" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.4" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
