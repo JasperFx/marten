@@ -19,7 +19,8 @@ namespace MultiHostTests
         protected readonly string _schemaName;
         private DocumentStore _store;
         private IDocumentSession _session;
-        protected readonly IList<IDisposable> _disposables = new List<IDisposable>();
+        // Thread-safe and null-tolerant, the same as OneOffConfigurationsContext. See #5976
+        protected readonly DisposableTracker _disposables = new();
         private readonly string ConnectionString = "Host=localhost:5440,localhost:5441;Database=marten_testing;Username=user;password=password;Command Timeout=5";
 
         public string SchemaName => _schemaName;
@@ -113,10 +114,7 @@ namespace MultiHostTests
 
         public void Dispose()
         {
-            foreach (var disposable in _disposables)
-            {
-                disposable.Dispose();
-            }
+            _disposables.DisposeAll();
         }
 
         protected Task AppendEvent(Guid streamId, params object[] events)

@@ -9,6 +9,7 @@ using JasperFx;
 using JasperFx.Core;
 using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
+using Marten.Exceptions;
 using Marten.Schema;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -900,6 +901,51 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         return result is true;
     }
 
+    /// <summary>
+    /// #5995: the shard a tenant is already assigned to, loaded from the pool the same way
+    /// <see cref="BuildDatabases"/> loads it when this store has not cached it yet. Throws
+    /// <see cref="AssignedShardNotFoundException"/> when the pool no longer has that shard: the tenant's data is on
+    /// it, so the tenant must never be handed to the assignment strategy instead.
+    /// </summary>
+    /// <param name="conn">An open connection to the control database to read the pool on, or null to use a new one</param>
+    private async Task<MartenDatabase> findOrLoadAssignedShardAsync(NpgsqlConnection? conn, string tenantId,
+        string databaseId)
+    {
+        if (_databasesById.TryFind(databaseId, out var database)) return database;
+
+        var sql =
+            $"select connection_string from {_schemaName}.{DatabasePoolTable.TableName} where database_id = :id";
+        await using var cmd = conn != null ? conn.CreateCommand(sql) : _dataSource.Value.CreateCommand(sql);
+        var connectionString = await cmd.With("id", databaseId)
+            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false) as string;
+
+        if (connectionString.IsEmpty())
+        {
+            throw new AssignedShardNotFoundException(tenantId, databaseId);
+        }
+
+        connectionString = _configuration.CorrectedConnectionString(connectionString);
+        var loaded = new MartenDatabase(_options, _options.NpgsqlDataSourceFactory.Create(connectionString),
+            databaseId);
+
+        // Publish it unless a concurrent resolution got there first, so every caller shares one instance
+        while (true)
+        {
+            var current = _databasesById;
+            if (current.TryFind(databaseId, out database))
+            {
+                await loaded.DisposeAsync().ConfigureAwait(false);
+                return database;
+            }
+
+            if (ReferenceEquals(Interlocked.CompareExchange(ref _databasesById,
+                    current.AddOrUpdate(databaseId, loaded), current), current))
+            {
+                return loaded;
+            }
+        }
+    }
+
     private async Task<MartenDatabase> findOrAssignTenantDatabaseAsync(string tenantId)
     {
         // The single choke point for auto-provisioning: GetTenant, GetTenantAsync and FindOrCreateDatabase
@@ -922,8 +968,14 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         var databaseId = await FindDatabaseForTenantAsync(tenantId, CancellationToken.None)
             .ConfigureAwait(false);
 
-        if (databaseId != null && _databasesById.TryFind(databaseId, out var database))
+        MartenDatabase database;
+        if (databaseId != null)
         {
+            // #5995: an existing assignment is final here. A store that was given no AddDatabase() and has not run
+            // BuildDatabases() has not cached the tenant's shard yet, so load that one shard from the pool rather
+            // than falling through to Step 2, which used to re-run the assignment strategy and move the tenant.
+            database = await findOrLoadAssignedShardAsync(null, tenantId, databaseId).ConfigureAwait(false);
+
             database.TenantIds.Fill(tenantId);
             _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
 
@@ -994,8 +1046,13 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
                 throw new DisabledTenantException(tenantId);
             }
 
-            if (existingDbId != null && _databasesById.TryFind(existingDbId, out database))
+            if (existingDbId != null)
             {
+                // #5995: an assignment made by another process since Step 1 is just as final. The assignment
+                // strategy only ever runs for a tenant that has no row at all, so two processes resolving the same
+                // new tenant cannot leave it on two shards.
+                database = await findOrLoadAssignedShardAsync(conn, tenantId, existingDbId).ConfigureAwait(false);
+
                 database.TenantIds.Fill(tenantId);
                 _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
                 foundExistingAssignment = true;
