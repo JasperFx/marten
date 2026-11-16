@@ -81,25 +81,31 @@ internal static class ColdStreamReader
         var store = events.ColdEventStore ?? throw new InvalidOperationException(
             $"Stream '{streamKey}' has a cold part through version {coldVersion}, but no cold event store is configured. Use StoreOptions.Events.UseColdEventStore().");
 
-        var source = store.ReadAsync(session, streamKey, coldVersion, token);
+        // Only as far as the read wants, and not at all when it starts above the cold part
+        var through = window.ThroughVersion > 0 ? Math.Min(window.ThroughVersion, coldVersion) : coldVersion;
 
-        var all = new List<IEvent>(warm.Count + (int)Math.Min(coldVersion, 1024));
-        long previous = 0;
-        await foreach (var cold in source.WithCancellation(token).ConfigureAwait(false))
+        var all = new List<IEvent>(warm.Count + (int)Math.Min(through, 1024));
+        if (window.FromVersion <= through)
         {
-            if (cold.Version <= previous || cold.Version > coldVersion)
+            var source = store.ReadAsync(session, streamKey, through, token);
+
+            long previous = 0;
+            await foreach (var cold in source.WithCancellation(token).ConfigureAwait(false))
             {
-                throw new InvalidOperationException(
-                    $"{store.GetType().Name} returned version {cold.Version} of stream '{streamKey}' after version {previous}. A cold event store must return at most one event per version, oldest first, none above the cold version {coldVersion}.");
+                if (cold.Version <= previous || cold.Version > through)
+                {
+                    throw new InvalidOperationException(
+                        $"{store.GetType().Name} returned version {cold.Version} of stream '{streamKey}' after version {previous}. A cold event store must return at most one event per version, oldest first, none above the version it was asked for ({through}).");
+                }
+
+                previous = cold.Version;
+                if (!window.Includes(cold.Version, cold.Timestamp)) continue;
+
+                var @event = await events.DeserializeAsync(cold, token).ConfigureAwait(false);
+                @event.StreamKey = streamKey;
+                @event.TenantId = tenantId;
+                all.Add(@event);
             }
-
-            previous = cold.Version;
-            if (!window.Includes(cold.Version, cold.Timestamp)) continue;
-
-            var @event = await events.DeserializeAsync(cold, token).ConfigureAwait(false);
-            @event.StreamKey = streamKey;
-            @event.TenantId = tenantId;
-            all.Add(@event);
         }
 
         // A warm event at or below the boundary would be folded twice; the boundary wins.

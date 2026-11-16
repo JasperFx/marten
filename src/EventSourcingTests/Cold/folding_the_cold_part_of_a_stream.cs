@@ -105,6 +105,23 @@ public class folding_the_cold_part_of_a_stream: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task aggregating_part_of_a_stream_reads_only_the_cold_events_it_needs()
+    {
+        useStringStreams();
+        var key = await startCart(new ItemAdded("apple"), new ItemAdded("pear"), new ItemAdded("plum"));
+        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 3);
+
+        await using var session = theStore.LightweightSession();
+        (await session.Events.AggregateStreamAsync<Cart>(key, version: 2))!.Items.ShouldBe(["apple"]);
+        _cold.ReadThrough.ShouldBe([2L]);
+
+        var state = new Cart { Customer = "anne", Items = ["apple", "pear"] };
+        (await session.Events.AggregateStreamAsync(key, state: state, fromVersion: 4))!.Items
+            .ShouldBe(["apple", "pear", "plum"]);
+        _cold.Reads.ShouldBe(1);
+    }
+
+    [Fact]
     public async Task a_stream_without_a_cold_part_never_asks_the_cold_store()
     {
         useStringStreams();
