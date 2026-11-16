@@ -697,3 +697,22 @@ await database.ApplyAllConfiguredChangesToDatabaseAsync();
 <!-- endSnippet -->
 
 All remaining methods on `IDocumentStore.Advanced` apply to all databases.
+
+### Querying Across All Databases
+
+With a multi-database tenancy there is no default tenant and no session that spans databases, so a query that has to
+answer for the whole fleet has to visit every database. `QueryAcrossAllDatabasesAsync()` opens a lightweight query
+session per database, runs your query with bounded parallelism, and flattens the results in database order:
+
+```cs
+var users = await store.Advanced.QueryAcrossAllDatabasesAsync(
+    async (session, ct) => await session.Query<User>().Where(x => x.Age > 30).ToListAsync(ct),
+    maxParallelism: 16);
+
+// Or, when the query also needs the database itself (daemon progression, statistics, ...)
+var names = await store.Advanced.QueryAcrossAllDatabasesAsync<string>(
+    (session, database, ct) => Task.FromResult<IReadOnlyList<string>>([database.Identifier]));
+```
+
+Each parallel slot holds one connection to a different database, so pick `maxParallelism` with the size of your
+connection pools in mind. The first failing database fails the whole call.
