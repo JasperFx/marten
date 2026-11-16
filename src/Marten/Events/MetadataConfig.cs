@@ -71,8 +71,15 @@ public class MetadataConfig: IReadonlyMetadataConfig
     }
 
     /// <summary>
-    ///     Method to enable all optional metadata fields
+    ///     Enables the causation id, correlation id and headers metadata fields. In Marten 9.x this does
+    ///     <b>not</b> enable the user name: set <see cref="UserNameEnabled" /> to <c>true</c> as well to store the
+    ///     session's <c>LastModifiedBy</c> on events.
     /// </summary>
+    /// <remarks>
+    ///     Marten 10.0 also enables the user name here (marten#6012). That change is not backported to 9.x,
+    ///     because in 9.x the <c>mt_events.user_name</c> column only exists while <see cref="UserNameEnabled" /> is
+    ///     on, so enabling it would be a schema change.
+    /// </remarks>
     public void EnableAll()
     {
         _parent.CausationId.Enabled = true;
