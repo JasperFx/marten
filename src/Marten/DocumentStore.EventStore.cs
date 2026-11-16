@@ -512,7 +512,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         // continuous batch masquerading as Rebuild would wrongly opt into it.
         var batch = new ProjectionUpdateBatch(Options.Projections, session, mode, token)
         {
-            ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any()
+            ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any(),
+            SequenceFloor = range.SequenceFloor
         };
 
         if (mode == ShardExecutionMode.Continuous)

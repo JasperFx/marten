@@ -36,6 +36,20 @@ public class InMemoryColdEventStore: IColdEventStore
         _streams.GetOrAdd((tenantId, streamKey), _ => new List<ColdEvent>()).AddRange(events);
     }
 
+    /// <summary>Frozen projection documents, by tenant and stream, the way an application keeps read-model rows.</summary>
+    public readonly ConcurrentDictionary<(string Tenant, string Stream), object> Snapshots = new();
+
+    public int SnapshotLoads;
+
+    public ValueTask<TDoc?> TryLoadSnapshotAsync<TDoc>(IQuerySession session, string streamKey, long coldVersion,
+        CancellationToken token) where TDoc : notnull
+    {
+        Interlocked.Increment(ref SnapshotLoads);
+        return new ValueTask<TDoc?>(Snapshots.TryGetValue((session.TenantId, streamKey), out var doc) && doc is TDoc typed
+            ? typed
+            : default);
+    }
+
     public IAsyncEnumerable<ColdEvent> ReadAsync(IQuerySession session, string streamKey, long throughVersion,
         CancellationToken token) => read(session, streamKey, throughVersion, token);
 

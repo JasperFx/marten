@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Marten.Events.Cold;
 
@@ -26,4 +27,17 @@ public interface IColdEventStore
     /// </summary>
     IAsyncEnumerable<ColdEvent> ReadAsync(IQuerySession session, string streamKey, long throughVersion,
         CancellationToken token);
+
+    /// <summary>
+    ///     The document an inline or async single-stream projection had for this stream when its events went cold
+    ///     through <paramref name="coldVersion" />, for an application that moved the projection's stored document
+    ///     out together with the events and kept it. Null (the default) folds the cold events through
+    ///     <see cref="ReadAsync" /> instead.
+    /// </summary>
+    /// <remarks>
+    ///     Only asked when the projection's stored document is missing, the stream has a cold part, and nothing
+    ///     warm lies between that cold part and the events being projected.
+    /// </remarks>
+    ValueTask<TDoc?> TryLoadSnapshotAsync<TDoc>(IQuerySession session, string streamKey, long coldVersion,
+        CancellationToken token) where TDoc : notnull => new(default(TDoc));
 }

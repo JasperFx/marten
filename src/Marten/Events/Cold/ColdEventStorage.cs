@@ -26,8 +26,9 @@ public static class ColdEventStorage
     ///     Let streams have a cold part: their events up to <c>mt_streams.cold_version</c>, moved out of
     ///     <c>mt_events</c> by the application and read back through <paramref name="coldEventStore" />.
     ///     Live aggregations (<c>FetchForWriting</c>, <c>FetchLatest</c>, <c>AggregateStreamAsync</c>) fold the
-    ///     cold events first. Requires string stream identity. Adds the nullable <c>cold_version</c> column to
-    ///     <c>mt_streams</c>.
+    ///     cold events first, and an inline or async single-stream projection whose stored document is missing starts
+    ///     from the cold part (<see cref="IColdEventStore.TryLoadSnapshotAsync{TDoc}" />). Requires string stream
+    ///     identity. Adds the nullable <c>cold_version</c> column to <c>mt_streams</c>.
     /// </summary>
     public static IEventStoreOptions UseColdEventStore(this IEventStoreOptions options, IColdEventStore coldEventStore)
     {

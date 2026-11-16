@@ -270,3 +270,72 @@ public class marking_cold_per_tenant_waits_for_async_shards: PartitionedStoreCon
         (await query.Events.FetchStreamAsync(key)).ShouldBeEmpty();
     }
 }
+
+/// <summary>
+/// An inline aggregation whose document went to cold storage with the events starts from the cold part of its own
+/// tenant's stream, when the same stream key is cold in another tenant too.
+/// </summary>
+public class starting_an_aggregation_from_the_cold_part_per_tenant: PartitionedStoreContext
+{
+    private readonly cold_stream_part_per_tenant.TenantColdStore _cold = new();
+
+    protected override string SchemaPrefix => "tp_coldstart";
+
+    protected override void ConfigureStore(StoreOptions opts)
+    {
+        opts.Events.StreamIdentity = StreamIdentity.AsString;
+        opts.Events.UseColdEventStore(_cold);
+        opts.Projections.Add(new cold_stream_part_per_tenant.NotesProjection(), ProjectionLifecycle.Inline);
+    }
+
+    private async Task moveToCold(string tenant, string key)
+    {
+        await using var session = Store.LightweightSession(tenant);
+        var events = await session.Events.FetchStreamAsync(key);
+        _cold.Streams[(tenant, key)] = events.Select(x => new ColdEvent
+        {
+            Id = x.Id,
+            Version = x.Version,
+            Sequence = x.Sequence,
+            EventTypeName = x.EventTypeName,
+            DotNetTypeName = x.DotNetTypeName,
+            Timestamp = x.Timestamp,
+            Data = Store.Options.Serializer().ToJson(x.Data)
+        }).ToList();
+
+        session.Events.MarkStreamCold(key, events.Count);
+        session.HardDelete<cold_stream_part_per_tenant.Notes>(key);
+        await session.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task each_tenant_starts_from_its_own_cold_part()
+    {
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        var key = Guid.NewGuid().ToString();
+
+        foreach (var tenant in new[] { "alpha", "beta" })
+        {
+            await using var session = Store.LightweightSession(tenant);
+            session.Events.StartStream<cold_stream_part_per_tenant.Notes>(key,
+                new cold_stream_part_per_tenant.Opened(tenant), new cold_stream_part_per_tenant.Noted($"{tenant} 1"));
+            await session.SaveChangesAsync();
+            await moveToCold(tenant, key);
+        }
+
+        await using (var session = Store.LightweightSession("alpha"))
+        {
+            session.Events.Append(key, new cold_stream_part_per_tenant.Noted("alpha 2"));
+            await session.SaveChangesAsync();
+        }
+
+        await using (var alpha = Store.QuerySession("alpha"))
+        {
+            (await alpha.LoadAsync<cold_stream_part_per_tenant.Notes>(key))!.Lines
+                .ShouldBe(["opened by alpha", "alpha 1", "alpha 2"]);
+        }
+
+        await using var beta = Store.QuerySession("beta");
+        (await beta.LoadAsync<cold_stream_part_per_tenant.Notes>(key)).ShouldBeNull();
+    }
+}

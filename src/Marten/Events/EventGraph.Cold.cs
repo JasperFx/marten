@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using ImTools;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events;
@@ -18,6 +19,11 @@ public partial class EventGraph
     ///     Where the cold part of event streams is read from, or null when no stream can be cold.
     /// </summary>
     internal IColdEventStore? ColdEventStore { get; set; }
+
+    /// <summary>
+    ///     <see cref="ColdAggregationStart{TDoc,TId}" /> by document type, or null for a type that has none.
+    /// </summary>
+    internal ImHashMap<Type, object?> ColdAggregationStarts { get; set; } = ImHashMap<Type, object?>.Empty;
 
     /// <summary>
     ///     Turn an event stored outside <c>mt_events</c> into an <see cref="IEvent" />, resolving its type and
