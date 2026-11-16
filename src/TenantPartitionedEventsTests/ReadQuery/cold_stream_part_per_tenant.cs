@@ -155,6 +155,49 @@ public class cold_stream_part_per_tenant: PartitionedStoreContext
             (await session.Events.FetchStreamAsync(key)).Single().Version.ShouldBe(4);
         }
     }
+
+    [Fact]
+    public async Task a_batch_moves_the_streams_of_its_own_tenant_only()
+    {
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        var first = Guid.NewGuid().ToString();
+        var second = Guid.NewGuid().ToString();
+
+        foreach (var tenant in new[] { "alpha", "beta" })
+        {
+            await using var session = Store.LightweightSession(tenant);
+            session.Events.StartStream<Notes>(first, new Opened(tenant), new Noted("one"), new Noted("two"));
+            session.Events.StartStream<Notes>(second, new Opened(tenant), new Noted("one"));
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = Store.LightweightSession("alpha"))
+        {
+            session.Events.MarkStreamsCold([(first, 2), (second, 2)]);
+            await session.SaveChangesAsync();
+        }
+
+        await using (var alpha = Store.LightweightSession("alpha"))
+        {
+            (await alpha.Events.FetchStreamAsync(first)).Select(x => x.Version).ShouldBe([3L]);
+            (await alpha.Events.FetchStreamAsync(second)).ShouldBeEmpty();
+        }
+
+        await using (var beta = Store.LightweightSession("beta"))
+        {
+            (await beta.Events.FetchStreamAsync(first)).Select(x => x.Version).ShouldBe([1L, 2L, 3L]);
+            (await beta.Events.FetchStreamAsync(second)).Select(x => x.Version).ShouldBe([1L, 2L]);
+
+            // A batch only knows the streams of its session's tenant
+            beta.Events.MarkStreamsCold([(first, 3), (Guid.NewGuid().ToString(), 1)]);
+            await Should.ThrowAsync<Exception>(() => beta.SaveChangesAsync());
+        }
+
+        await using (var beta = Store.LightweightSession("beta"))
+        {
+            (await beta.Events.FetchStreamAsync(first)).Count.ShouldBe(3);
+        }
+    }
 }
 
 /// <summary>

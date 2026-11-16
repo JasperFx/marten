@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,10 +64,33 @@ public static class ColdEventStorage
     ///     deleted, or it has no progression yet). The async daemon never reads cold events, so moving them
     ///     earlier would silently lose them for that shard. Retry once the daemon caught up.
     ///     </para>
+    ///     <para>
+    ///     Marks queued one after the other in a unit of work, by this method or by
+    ///     <see cref="MarkStreamsCold" />, are executed as one statement with one lag check.
+    ///     </para>
     /// </remarks>
     public static void MarkStreamCold(this IEventStoreOperations events, string streamKey, long throughVersion)
     {
-        eventStoreOf(events).MarkStreamCold(streamKey, throughVersion);
+        ArgumentNullException.ThrowIfNull(streamKey);
+        eventStoreOf(events).MarkStreamsCold([(streamKey, throughVersion)]);
+    }
+
+    /// <summary>
+    ///     <see cref="MarkStreamCold" /> for many streams of the session's tenant at once: on
+    ///     <c>SaveChangesAsync</c>, one statement deletes each stream's events through its own version, with the
+    ///     async shards checked once against the highest sequence of the whole batch.
+    /// </summary>
+    /// <remarks>
+    ///     Per stream the semantics are those of <see cref="MarkStreamCold" />: the boundary only moves up, and a
+    ///     version at or below it changes nothing. A stream listed twice moves through the higher version. The
+    ///     batch fails as a whole, deleting nothing for any stream, when one stream does not exist or has not
+    ///     reached its version (the error lists them), or when an async shard has not processed every event
+    ///     the batch would delete. An empty list does nothing.
+    /// </remarks>
+    public static void MarkStreamsCold(this IEventStoreOperations events,
+        IReadOnlyList<(string Key, long Version)> streams)
+    {
+        eventStoreOf(events).MarkStreamsCold(streams);
     }
 
     /// <summary>
