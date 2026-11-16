@@ -1199,9 +1199,26 @@
          satisfied by the 2.102.0 pin above.
 
          weasel#786 is documentation only (a schema management guide). -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.2" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.2" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.2" />
+    <!-- Weasel 10.0.0-alpha.3 (from alpha.2). Builds with no Marten change. JasperFx floor 3.0.0
+         (Weasel.Core / Weasel.Storage / Weasel.Postgresql nuspecs), satisfied by the 3.3.0 pins above.
+           * weasel#833: HiloSequenceBase no longer holds a gate across NextLongAsync's await, so
+             AdvanceToNextHi and AdvanceToNextHiSync can now overlap (never themselves). Marten's
+             HiloSequence takes its prefetch slot under its own lock, so a prefetched block is installed
+             once; but its hi-less-than-current check and the install are no longer atomic against a
+             synchronous advance on the other path, so in a narrow window ids could run non-increasing
+             across a block boundary (still unique). Not reachable today: Marten does not call
+             NextLongAsync in production.
+           * weasel#831: optional WriteEventBdata on the Rich/Quick/QWST descriptors pools the per-event
+             bdata of the Rich append, side-effect replay and tombstones. NOT ADOPTED yet. To adopt: set
+             it from IEventBinarySerializer.Serialize(Type, object, IBufferWriter), and override
+             IStorageDialect.SetBinaryParameterValue in PostgresStorageDialect to bind the
+             ReadOnlyMemory as it is (the default copies). SaveChangesAsync already disposes operations
+             after the unit of work, which is what returns the buffers.
+           * INERT: weasel#832 (OperationBatchExecutor error attribution); Marten's writes do not go
+             through it, and marten#5927 is the same fix in OperationPage. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.3" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.3" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.3" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
