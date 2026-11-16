@@ -131,14 +131,50 @@ the ones that were refused. A projection or subscription that is registered but 
   (aliases, the stored .NET type as fallback) and the same upcasters. `store.Events.DeserializeAsync(ColdEvent)`
   exposes this for reading cold events yourself.
 
+## Single-stream projections of a cold stream
+
+An inline or async single-stream projection keeps working on a cold stream as long as its stored document is
+there: it reads the document and projects the new events onto it, and never calls the cold store.
+
+You may also move the stream's projected documents out together with its events. When such a stream gets a
+new event, the projection finds no stored document, and Marten starts it from the cold part instead of from
+empty:
+
+1. It asks the cold store for the document it kept, through `TryLoadSnapshotAsync<TDoc>`. Implement it when you
+   keep the documents; it gets the cold version the document has to be as of.
+2. When that returns null (the default), it folds the cold events through the projection, the same way a live
+   fetch does.
+
+```cs
+public class MyColdEventStore: IColdEventStore
+{
+    // ReadAsync as above
+
+    public async ValueTask<TDoc?> TryLoadSnapshotAsync<TDoc>(IQuerySession session, string streamKey,
+        long coldVersion, CancellationToken token) where TDoc : notnull
+    {
+        // The document you moved out of the projection's table, or null to fold the cold events instead
+        return default;
+    }
+}
+```
+
+This happens for every single-stream projection, with no opt-in, once a cold event store is configured: a
+projection that folded only the new events would store a wrong document without any error. It only happens
+when the stored document is missing, the stream has a cold version, and no warm event lies between the cold
+part and the new events (one query per batch of missing documents; nothing at all without a cold store). A
+warm event in between was projected already, so a document missing after it is the projection's own outcome,
+for example a deletion, and is left alone. Multi-stream projections and rebuilds never start from the cold
+part.
+
 ## What does not read the cold part
 
-Only the live folds above read the cold event store. Everything else sees `mt_events` alone, and on a cold
-stream that is **silently wrong**, without an error:
+Only the live folds above, and a single-stream projection starting a missing document, read the cold event
+store. Everything else sees `mt_events` alone, and on a cold stream that is **silently wrong**, without an error:
 
 | Operation | On a cold stream |
 |---|---|
-| Inline and async aggregations (snapshots) | Correct only while the stored snapshot was built before the events went cold. A stream whose snapshot is missing starts again from its warm events. |
+| Inline and async aggregations (snapshots) | Correct, also when you moved the stored document out together with the events: see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream). |
 | Rebuilding a projection | Replays `mt_events` only, so every snapshot and read model of a cold stream loses its cold part. |
 | A projection registered after streams went cold | Same as a rebuild: it never sees the cold events. |
 | `CompactStreamAsync` | Builds its `Compacted<T>` snapshot from the warm events only. Later folds jump to that snapshot and drop the cold part for good. **Do not compact a cold stream.** |
