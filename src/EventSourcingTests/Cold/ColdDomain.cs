@@ -1,3 +1,4 @@
+#pragma warning disable MARTEN001 // cold event storage is experimental
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -8,6 +9,7 @@ using JasperFx.Events.Projections;
 using JasperFx.Events.Daemon;
 using Marten;
 using Marten.Events.Aggregation;
+using Marten.Events.Cold;
 
 namespace EventSourcingTests.Cold;
 

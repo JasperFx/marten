@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
@@ -16,18 +17,7 @@ public partial class EventGraph
     /// <summary>
     ///     Where the cold part of event streams is read from, or null when no stream can be cold.
     /// </summary>
-    public IColdEventStore? ColdEventStore { get; private set; }
-
-    public IEventStoreOptions UseColdEventStore(IColdEventStore coldEventStore)
-    {
-        ColdEventStore = coldEventStore ?? throw new ArgumentNullException(nameof(coldEventStore));
-        return this;
-    }
-
-    public IEventStoreOptions UseColdEventStore<T>() where T : IColdEventStore, new()
-    {
-        return UseColdEventStore(new T());
-    }
+    internal IColdEventStore? ColdEventStore { get; set; }
 
     /// <summary>
     ///     Turn an event stored outside <c>mt_events</c> into an <see cref="IEvent" />, resolving its type and
@@ -35,6 +25,7 @@ public partial class EventGraph
     /// </summary>
     /// <exception cref="UnknownEventTypeException">Neither the event type name nor the .NET type name is known.</exception>
     /// <exception cref="EventDeserializationFailureException">The payload could not be deserialized.</exception>
+    [Experimental(ColdEventStorage.DiagnosticId, UrlFormat = ColdEventStorage.DocumentationUrl)]
     public async ValueTask<IEvent> DeserializeAsync(ColdEvent stored, CancellationToken token = default)
     {
         ArgumentNullException.ThrowIfNull(stored);

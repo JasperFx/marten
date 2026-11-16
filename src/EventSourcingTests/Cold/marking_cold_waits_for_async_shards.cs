@@ -1,3 +1,4 @@
+#pragma warning disable MARTEN001 // cold event storage is experimental
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,6 +11,7 @@ using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten.Events.Cold;
 
 namespace EventSourcingTests.Cold;
 

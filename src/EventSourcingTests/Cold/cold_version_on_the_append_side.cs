@@ -1,3 +1,4 @@
+#pragma warning disable MARTEN001 // cold event storage is experimental
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
+using Marten.Events.Cold;
 
 namespace EventSourcingTests.Cold;
 

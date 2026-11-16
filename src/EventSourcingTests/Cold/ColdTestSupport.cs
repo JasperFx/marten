@@ -1,3 +1,4 @@
+#pragma warning disable MARTEN001 // cold event storage is experimental
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

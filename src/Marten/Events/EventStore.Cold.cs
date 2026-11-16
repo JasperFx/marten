@@ -9,12 +9,12 @@ namespace Marten.Events;
 
 internal partial class EventStore
 {
-    public void MarkStreamCold(string streamKey, long throughVersion)
+    internal void MarkStreamCold(string streamKey, long throughVersion)
     {
         queueColdBoundary(streamKey, new MarkStreamColdOperation(assertColdStore(), streamKey, throughVersion, _session.TenantId));
     }
 
-    public ValueTask<long?> ColdVersionOfAsync(StreamAction stream, CancellationToken token = default)
+    internal ValueTask<long?> ColdVersionOfAsync(StreamAction stream, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(stream);
         assertColdStore();
@@ -34,7 +34,7 @@ internal partial class EventStore
         if (events.ColdEventStore == null)
         {
             throw new InvalidOperationException(
-                "No cold event store is configured. Use StoreOptions.Events.UseColdEventStore() first.");
+                "No cold event store is configured. Use StoreOptions.Events.UseColdEventStore() from Marten.Events.Cold first.");
         }
 
         return events;

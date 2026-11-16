@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using JasperFx.Events;
 
 namespace Marten.Events.Cold;
@@ -10,6 +11,7 @@ namespace Marten.Events.Cold;
 ///     Turned into an <see cref="IEvent" /> by <see cref="EventGraph.DeserializeAsync" />, with the same type
 ///     resolution and upcasters as an event read from <c>mt_events</c>.
 /// </summary>
+[Experimental(ColdEventStorage.DiagnosticId, UrlFormat = ColdEventStorage.DocumentationUrl)]
 public sealed class ColdEvent
 {
     public Guid Id { get; init; }

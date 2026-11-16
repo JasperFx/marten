@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Exceptions;
 
@@ -8,6 +9,7 @@ namespace Marten.Exceptions;
 ///     this session observed it, through <c>FetchForWriting</c>, <c>FetchLatest</c> or
 ///     <c>ColdVersionOfAsync</c>. Nothing was written; retry the unit of work from the fetch.
 /// </summary>
+[Experimental(Marten.Events.Cold.ColdEventStorage.DiagnosticId, UrlFormat = Marten.Events.Cold.ColdEventStorage.DocumentationUrl)]
 public class ColdStreamChangedException: MartenException
 {
     internal ColdStreamChangedException(string tenantId, IReadOnlyList<string> streams): base(
