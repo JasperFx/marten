@@ -131,7 +131,9 @@ the ones that were refused. A projection or subscription that is registered but 
 
 - `FetchForWriting`, `FetchForExclusiveWriting`, `FetchLatest` (also in a batch) and `AggregateStreamAsync`
   fold the cold events first and then the events in `mt_events`, for live aggregations. A stream with only
-  cold events comes back whole, at its current version, so appending to it is ordinary code.
+  cold events comes back whole, at its current version, so appending to it is ordinary code. For inline and
+  async aggregations the fetches read the stored document, and start from the cold part when you moved it out
+  with the events: see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream).
 - Cold events are deserialized exactly like events from `mt_events`: the same event type resolution
   (aliases, the stored .NET type as fallback) and the same upcasters. `store.Events.DeserializeAsync(ColdEvent)`
   exposes this for reading cold events yourself.
@@ -189,15 +191,22 @@ batch of missing documents; nothing at all without a cold store). A warm event i
 already, so a document missing after it is the projection's own outcome, for example a deletion, and is left
 alone. Multi-stream projections and rebuilds never start from the cold part.
 
+`FetchForWriting`, `FetchForExclusiveWriting`, `FetchLatest` (also in a batch) and `StreamLatestJson` do the
+same when they find no stored document for such a projection, so they hand back what the projection would
+store. For an inline projection the same condition applies. For an async projection they start from the cold
+part and fold every warm event after it, the way they catch up on a stored document the daemon has not
+brought up to date. When the stored document is there, they never call the cold store; without a cold store
+nothing changes at all.
+
 ## What does not read the cold part
 
-Only the live folds, the opt-in raw reads, and a single-stream projection starting a missing document, all
+Only the live folds, the opt-in raw reads, and a single-stream projection or a fetch starting a missing document, all
 above, read the cold event store. Everything else sees `mt_events` alone. Where that would silently build
 something wrong, Marten refuses instead:
 
 | Operation | On a cold stream |
 |---|---|
-| Inline and async aggregations (snapshots) | Correct, also when you moved the stored document out together with the events: see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream). A projection that [ignores cold streams](#projections-that-ignore-cold-streams) never starts from the cold part: a missing document starts again from the warm events. |
+| Inline and async aggregations (snapshots), and `FetchForWriting`, `FetchForExclusiveWriting` and `FetchLatest` on them | Correct, also when you moved the stored document out together with the events: the projection and the fetches start from the cold part, see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream). A projection that [ignores cold streams](#projections-that-ignore-cold-streams) never starts from the cold part: a missing document starts again from the warm events, and a fetch sees no document. |
 | Rebuilding a projection | Refused with `ColdStreamReplayException` while any stream in that database (or, for a per-tenant rebuild, that tenant) is cold, before anything is torn down. Allowed for a projection that [ignores cold streams](#projections-that-ignore-cold-streams); it then replays `mt_events` only. |
 | A projection registered after streams went cold | Its first start from the beginning is refused the same way: the shard is paused with `ColdStreamReplayException`. A projection that starts from the present or from a later sequence is not affected. |
 | `CompactStreamAsync` | Refused with `InvalidStreamOperationException`: its `Compacted<T>` snapshot would leave the cold part out, and every later fold jumps to it. |
@@ -210,7 +219,8 @@ when a projection replays from the beginning; stores without a cold event store 
 
 Some projections do not need the cold part at all, for example a read model the application derives for
 cold streams itself. Mark them, and they rebuild and start from `mt_events` alone, and a single-stream
-projection whose document is missing starts it from the warm events instead of from the cold part:
+projection whose document is missing starts it from the warm events instead of from the cold part, in the
+projection and in a fetch alike:
 
 ```cs
 using Marten.Events.Cold;
