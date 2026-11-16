@@ -198,6 +198,54 @@ public class cold_stream_part_per_tenant: PartitionedStoreContext
             (await beta.Events.FetchStreamAsync(first)).Count.ShouldBe(3);
         }
     }
+
+    [Fact]
+    public async Task each_tenant_reads_its_own_raw_events_cold_part_included()
+    {
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        var key = Guid.NewGuid().ToString();
+        var other = Guid.NewGuid().ToString();
+
+        foreach (var tenant in new[] { "alpha", "beta" })
+        {
+            await using var session = Store.LightweightSession(tenant);
+            session.Events.StartStream<Notes>(key, new Opened(tenant), new Noted($"{tenant} 1"), new Noted($"{tenant} 2"));
+            session.Events.StartStream<Notes>(other, new Opened(tenant), new Noted($"{tenant} other"));
+            await session.SaveChangesAsync();
+        }
+
+        await moveToCold("alpha", key, 3);
+        await moveToCold("beta", key, 1);
+        await moveToCold("beta", other, 2);
+
+        static string[] texts(IEnumerable<IEvent> events) => events.Select(x => x.Data switch
+        {
+            Opened o => $"{x.Version} opened by {o.By}",
+            Noted n => $"{x.Version} {n.Text}",
+            _ => x.Data.ToString()!
+        }).ToArray();
+
+        await using (var alpha = Store.LightweightSession("alpha"))
+        {
+            texts(await alpha.Events.FetchStreamWithColdAsync(key)).ShouldBe(["1 opened by alpha", "2 alpha 1", "3 alpha 2"]);
+            texts(await alpha.Events.FetchStreamWithColdAsync(key, version: 2, fromVersion: 2)).ShouldBe(["2 alpha 1"]);
+
+            var streams = await alpha.Events.FetchStreamsWithColdAsync([key, other]);
+            texts(streams[key]).ShouldBe(["1 opened by alpha", "2 alpha 1", "3 alpha 2"]);
+            texts(streams[other]).ShouldBe(["1 opened by alpha", "2 alpha other"]);
+            streams.Values.SelectMany(x => x).ShouldAllBe(x => x.TenantId == "alpha");
+        }
+
+        await using (var beta = Store.LightweightSession("beta"))
+        {
+            texts(await beta.Events.FetchStreamWithColdAsync(key, fromVersion: 2)).ShouldBe(["2 beta 1", "3 beta 2"]);
+
+            var streams = await beta.Events.FetchStreamsWithColdAsync([key, other]);
+            texts(streams[key]).ShouldBe(["1 opened by beta", "2 beta 1", "3 beta 2"]);
+            texts(streams[other]).ShouldBe(["1 opened by beta", "2 beta other"]);
+            streams.Values.SelectMany(x => x).ShouldAllBe(x => x.TenantId == "beta");
+        }
+    }
 }
 
 /// <summary>

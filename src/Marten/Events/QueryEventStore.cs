@@ -17,6 +17,7 @@ using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 using Marten.Storage;
 
 namespace Marten.Events;
@@ -41,6 +42,58 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
     public Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0,
         DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
         => fetchStreamAsync(streamKey, version, timestamp, fromVersion, false, token);
+
+    internal Task<IReadOnlyList<IEvent>> FetchStreamWithColdAsync(string streamKey, long version,
+        DateTimeOffset? timestamp, long fromVersion, CancellationToken token)
+        => fetchStreamAsync(streamKey, version, timestamp, fromVersion, true, token);
+
+    internal async Task<IReadOnlyDictionary<string, IReadOnlyList<IEvent>>> FetchStreamsWithColdAsync(
+        IEnumerable<string> streamKeys, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(streamKeys);
+        var keys = streamKeys.Distinct(StringComparer.Ordinal).ToArray();
+        if (keys.Length == 0) return new Dictionary<string, IReadOnlyList<IEvent>>();
+
+        var selector = _store.Events.EnsureAsStringStorage(_session);
+        await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        var statement = new EventStatement(selector, _store.Events)
+        {
+            TenantId = _tenant.TenantId,
+            Filters = [new WhereFragment("d.stream_id = ANY(?)", (object)keys)]
+        };
+        IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
+
+        var readsCold = _store.Events.ColdEventStore != null;
+        var builder = new BatchBuilder { TenantId = _tenant.TenantId };
+        if (readsCold)
+        {
+            ColdStreamReader.WriteBoundariesQuery(_store.Events, builder, keys, _tenant.TenantId);
+            builder.StartNewCommand();
+        }
+
+        handler.ConfigureCommand(builder, _session);
+
+        IReadOnlyDictionary<string, long> coldVersions = new Dictionary<string, long>();
+        IReadOnlyList<IEvent> events;
+        await using (var reader = await _session.ExecuteReaderAsync(builder.Compile(), token).ConfigureAwait(false))
+        {
+            if (readsCold)
+            {
+                coldVersions = await ColdStreamReader.ReadBoundariesAsync(reader, token).ConfigureAwait(false);
+                await reader.NextResultAsync(token).ConfigureAwait(false);
+            }
+
+            events = await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
+        }
+
+        var warm = events
+            .GroupBy(x => x.StreamKey!, StringComparer.Ordinal)
+            .ToDictionary(x => x.Key, x => x.OrderBy(e => e.Version).ToList(), StringComparer.Ordinal);
+
+        return await ColdStreamReader.PrependColdAsync(_session, _tenant.TenantId, coldVersions, warm, token)
+            .ConfigureAwait(false);
+    }
 
     private async Task<IReadOnlyList<IEvent>> fetchStreamAsync(object streamId, long version,
         DateTimeOffset? timestamp, long fromVersion, bool includeCold, CancellationToken token)
@@ -70,7 +123,7 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 
         IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
 
-        // Only the aggregations read the cold part; a cold store implies string stream identity
+        // Only the aggregations and FetchStreamWithColdAsync read the cold part; a cold store implies string stream identity
         if (!includeCold || _store.Events.ColdEventStore == null || streamId is not string streamKey)
         {
             return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);

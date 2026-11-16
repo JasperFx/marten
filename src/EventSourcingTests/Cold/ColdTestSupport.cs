@@ -31,6 +31,9 @@ public class InMemoryColdEventStore: IColdEventStore
             ? events.Select(x => x.Version).OrderBy(x => x).ToArray()
             : [];
 
+    public ColdEvent Event(string tenantId, string streamKey, long version) =>
+        _streams[(tenantId, streamKey)].Single(x => x.Version == version);
+
     public void Store(string tenantId, string streamKey, IEnumerable<ColdEvent> events)
     {
         _streams.GetOrAdd((tenantId, streamKey), _ => new List<ColdEvent>()).AddRange(events);

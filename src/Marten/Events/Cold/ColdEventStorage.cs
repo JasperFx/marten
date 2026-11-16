@@ -112,6 +112,36 @@ public static class ColdEventStorage
         return eventStoreOf(events).ColdVersionOfAsync(stream, token);
     }
 
+    /// <summary>
+    ///     <c>FetchStreamAsync</c> including the stream's cold part: the cold events first, then the events in
+    ///     <c>mt_events</c>, in version order. The version and timestamp filters apply to both, and the cold event
+    ///     store is only asked for the part the filters can include. Without a cold part this is one query, the same
+    ///     as <c>FetchStreamAsync</c>.
+    /// </summary>
+    /// <param name="version">Read through this version (0 for all).</param>
+    /// <param name="timestamp">Read only events at or before this timestamp.</param>
+    /// <param name="fromVersion">Read from this version on (0 for all).</param>
+    public static Task<IReadOnlyList<IEvent>> FetchStreamWithColdAsync(this IQueryEventStore events, string streamKey,
+        long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
+    {
+        return queryEventStoreOf(events).FetchStreamWithColdAsync(streamKey, version, timestamp, fromVersion, token);
+    }
+
+    /// <summary>
+    ///     The whole history of several streams of the session's tenant, cold part included, each in version order.
+    ///     The events in <c>mt_events</c> and the cold boundaries are read in one query, and the cold parts with one
+    ///     <see cref="IColdEventStore.ReadManyAsync" />. A stream that does not exist is left out of the result.
+    /// </summary>
+    public static Task<IReadOnlyDictionary<string, IReadOnlyList<IEvent>>> FetchStreamsWithColdAsync(
+        this IQueryEventStore events, IEnumerable<string> streamKeys, CancellationToken token = default)
+    {
+        return queryEventStoreOf(events).FetchStreamsWithColdAsync(streamKeys, token);
+    }
+
+    private static QueryEventStore queryEventStoreOf(IQueryEventStore events) =>
+        events as QueryEventStore ?? throw new NotSupportedException(
+            $"Cold event storage works on a Marten session's own event store, not on {events.GetType().FullName}.");
+
     private static EventGraph eventGraphOf(IEventStoreOptions options) =>
         options as EventGraph ?? throw new NotSupportedException(
             $"Cold event storage is configured on Marten's own event store options, not on {options.GetType().FullName}.");

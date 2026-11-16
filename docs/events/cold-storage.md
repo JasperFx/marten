@@ -47,6 +47,11 @@ user name and tags.
 Marten asks for exactly the part it does not read from `mt_events`, and may ask for less than the whole cold
 part.
 
+`IColdEventStore` also has `ReadManyAsync`, used when several streams are read at once (see
+[Reading](#reading)). Its default calls `ReadAsync` once per stream; override it to read them all in one
+query. It returns each event with its stream key; streams may interleave, but each stream's events come
+oldest first, the same as from `ReadAsync`.
+
 With a cold event store configured, `mt_streams` gets a nullable `cold_version` column through the normal
 schema migration. Stores without one see no schema change.
 
@@ -130,6 +135,23 @@ the ones that were refused. A projection or subscription that is registered but 
 - Cold events are deserialized exactly like events from `mt_events`: the same event type resolution
   (aliases, the stored .NET type as fallback) and the same upcasters. `store.Events.DeserializeAsync(ColdEvent)`
   exposes this for reading cold events yourself.
+- The raw events of a stream, cold part included, are an explicit opt-in, because the cold store may be
+  slower or costlier to read than `mt_events`:
+
+```cs
+using Marten.Events.Cold;
+
+// One stream, with the same version and timestamp filters as FetchStreamAsync
+var events = await session.Events.FetchStreamWithColdAsync(streamKey, version: 10);
+
+// Many streams: one query on mt_events, one ReadManyAsync on the cold store
+IReadOnlyDictionary<string, IReadOnlyList<IEvent>> streams =
+    await session.Events.FetchStreamsWithColdAsync(streamKeys);
+```
+
+  `FetchStreamWithColdAsync` asks the cold store only for the part the filters can include, and not at all
+  when `fromVersion` is above the cold part. `FetchStreamsWithColdAsync` returns each stream's whole history
+  in version order, for the session's tenant, and leaves out keys that are not a stream.
 
 ## Single-stream projections of a cold stream
 
@@ -169,8 +191,9 @@ part.
 
 ## What does not read the cold part
 
-Only the live folds above, and a single-stream projection starting a missing document, read the cold event
-store. Everything else sees `mt_events` alone, and on a cold stream that is **silently wrong**, without an error:
+Only the live folds, the opt-in raw reads, and a single-stream projection starting a missing document, all
+above, read the cold event store. Everything else sees `mt_events` alone, and on a cold stream that is
+**silently wrong**, without an error:
 
 | Operation | On a cold stream |
 |---|---|
@@ -178,7 +201,7 @@ store. Everything else sees `mt_events` alone, and on a cold stream that is **si
 | Rebuilding a projection | Replays `mt_events` only, so every snapshot and read model of a cold stream loses its cold part. |
 | A projection registered after streams went cold | Same as a rebuild: it never sees the cold events. |
 | `CompactStreamAsync` | Builds its `Compacted<T>` snapshot from the warm events only. Later folds jump to that snapshot and drop the cold part for good. **Do not compact a cold stream.** |
-| `FetchStreamAsync`, `QueryAllRawEvents()` | Return the events in `mt_events` only. |
+| `FetchStreamAsync`, `QueryAllRawEvents()` | Return the events in `mt_events` only. Use `FetchStreamWithColdAsync` or `FetchStreamsWithColdAsync` for the whole stream. |
 
 Before you move a stream, make sure nothing in this table will run on it, or that you can live with the
 result.

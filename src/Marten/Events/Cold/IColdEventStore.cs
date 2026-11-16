@@ -1,6 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,4 +41,33 @@ public interface IColdEventStore
     /// </remarks>
     ValueTask<TDoc?> TryLoadSnapshotAsync<TDoc>(IQuerySession session, string streamKey, long coldVersion,
         CancellationToken token) where TDoc : notnull => new(default(TDoc));
+
+    /// <summary>
+    ///     The cold events of several streams of the session's tenant at once, for
+    ///     <see cref="ColdEventStorage.FetchStreamsWithColdAsync" />. Each event comes with the key of its stream.
+    ///     The streams may come in any order and interleave, but each stream's events come oldest first, at most
+    ///     one per version and none above its <see cref="ColdStreamRead.ThroughVersion" />.
+    /// </summary>
+    /// <remarks>
+    ///     The default calls <see cref="ReadAsync" /> once per stream. Override it to read all of them in one go.
+    /// </remarks>
+    async IAsyncEnumerable<(string StreamKey, ColdEvent Event)> ReadManyAsync(IQuerySession session,
+        IReadOnlyList<ColdStreamRead> streams, [EnumeratorCancellation] CancellationToken token)
+    {
+        foreach (var stream in streams)
+        {
+            await foreach (var @event in ReadAsync(session, stream.StreamKey, stream.ThroughVersion, token)
+                               .WithCancellation(token).ConfigureAwait(false))
+            {
+                yield return (stream.StreamKey, @event);
+            }
+        }
+    }
 }
+
+/// <summary>
+///     One stream in <see cref="IColdEventStore.ReadManyAsync" />: its key, and the version through which its
+///     cold events are wanted.
+/// </summary>
+[Experimental(ColdEventStorage.DiagnosticId, UrlFormat = ColdEventStorage.DocumentationUrl)]
+public sealed record ColdStreamRead(string StreamKey, long ThroughVersion);
