@@ -2,9 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 
 namespace Marten.Events.Cold;
 
@@ -13,8 +15,9 @@ namespace Marten.Events.Cold;
 ///     application moved out of <c>mt_events</c> and keeps itself.
 /// </summary>
 /// <remarks>
-///     Experimental: the shape may still change. Rebuilds, projections registered after streams went cold and
-///     stream compaction do not read the cold part; see the documentation.
+///     Experimental: the shape may still change. Rebuilds and projections registered after streams went cold do
+///     not read the cold part, and are refused unless the projection ignores cold streams; compacting a cold
+///     stream is refused. See the documentation.
 /// </remarks>
 [Experimental(ColdEventStorage.DiagnosticId, UrlFormat = ColdEventStorage.DocumentationUrl)]
 public static class ColdEventStorage
@@ -141,6 +144,25 @@ public static class ColdEventStorage
     private static QueryEventStore queryEventStoreOf(IQueryEventStore events) =>
         events as QueryEventStore ?? throw new NotSupportedException(
             $"Cold event storage works on a Marten session's own event store, not on {events.GetType().FullName}.");
+
+    // AsyncOptions belongs to JasperFx.Events, so the opt-in is kept beside it rather than on it.
+    private static readonly ConditionalWeakTable<AsyncOptions, object> _ignoringColdStreams = new();
+
+    /// <summary>
+    ///     This projection does not need the cold part of streams: let it be rebuilt, or start from the beginning,
+    ///     from <c>mt_events</c> alone while streams are cold. Without it, both are refused with
+    ///     <see cref="Marten.Exceptions.ColdStreamReplayException" />, because the async daemon does not read
+    ///     cold events. On a composite projection, set it on the composite's own options; a member's options are
+    ///     not consulted.
+    /// </summary>
+    public static AsyncOptions IgnoreColdStreams(this AsyncOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        _ignoringColdStreams.AddOrUpdate(options, options);
+        return options;
+    }
+
+    internal static bool IgnoresColdStreams(this AsyncOptions options) => _ignoringColdStreams.TryGetValue(options, out _);
 
     private static EventGraph eventGraphOf(IEventStoreOptions options) =>
         options as EventGraph ?? throw new NotSupportedException(

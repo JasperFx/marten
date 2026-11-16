@@ -12,6 +12,7 @@ using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Cold;
+using Marten.Exceptions;
 using Shouldly;
 using TenantPartitionedEventsTests.Fixtures;
 using Xunit;
@@ -316,6 +317,38 @@ public class marking_cold_per_tenant_waits_for_async_shards: PartitionedStoreCon
 
         await using var query = Store.LightweightSession("beta");
         (await query.Events.FetchStreamAsync(key)).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task a_rebuild_for_one_tenant_is_only_refused_by_that_tenants_cold_streams()
+    {
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
+        var key = Guid.NewGuid().ToString();
+
+        foreach (var tenant in new[] { "alpha", "beta" })
+        {
+            await using var session = Store.LightweightSession(tenant);
+            session.Events.StartStream<NoteCount>(key, new cold_stream_part_per_tenant.Opened(tenant),
+                new cold_stream_part_per_tenant.Noted("one"));
+            await session.SaveChangesAsync();
+        }
+
+        using var daemon = await Store.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(60));
+        await daemon.StopAllAsync();
+
+        await markCold("alpha", key);
+
+        var name = Store.Options.Projections.All.Single().Name;
+        await daemon.RebuildProjectionAsync(name, "beta", CancellationToken.None);
+
+        var e = await Should.ThrowAsync<ColdStreamReplayException>(
+            () => daemon.RebuildProjectionAsync(name, "alpha", CancellationToken.None));
+        e.TenantId.ShouldBe("alpha");
+
+        await using var query = Store.QuerySession("alpha");
+        (await query.LoadAsync<NoteCount>(key))!.Count.ShouldBe(2);
     }
 }
 

@@ -7,6 +7,7 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Archiving;
+using Marten.Events.Cold;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Linq.Selectors;
@@ -103,6 +104,8 @@ internal sealed class EventLoader: IEventLoader
         _store = store;
         Database = database;
         _filters = filters;
+        _shardName = shardName;
+        _options = options;
 
         _storage = (IEventStorage)store.Options.Providers.StorageFor<IEvent>().QueryOnly;
         _batchSize = options.BatchSize;
@@ -175,6 +178,14 @@ internal sealed class EventLoader: IEventLoader
 
     public IMartenDatabase Database { get; }
 
+    /// <summary>
+    ///     The projection this loader reads for, when it may not replay history while streams are cold.
+    /// </summary>
+    public string? ReplayingProjection { get; init; }
+
+    private readonly ShardName? _shardName;
+    private readonly AsyncOptions _options;
+
     // Exposed for regression tests that assert the generated fetch SQL (e.g. the
     // #4745 archived-stream-partition pruning predicate). Not used at runtime.
     internal string CommandText => _command.CommandText;
@@ -194,6 +205,13 @@ internal sealed class EventLoader: IEventLoader
 
     public async Task<EventPage> LoadAsync(EventRequest request, CancellationToken token)
     {
+        // A first page from the very beginning: a rebuild, or a projection that never ran here
+        if (request.Floor == 0 && ReplayingProjection != null)
+        {
+            await ColdStreamReplayGuard.AssertMayReplayAsync(_store.Options.EventGraph, (MartenDatabase)Database,
+                ReplayingProjection, _options, _shardName?.TenantId, token).ConfigureAwait(false);
+        }
+
         try
         {
             return _currentStrategy switch

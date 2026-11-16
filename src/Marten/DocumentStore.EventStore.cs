@@ -18,6 +18,7 @@ using JasperFx.Events.Projections;
 using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Archiving;
+using Marten.Events.Cold;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
@@ -319,6 +320,10 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             throw new ArgumentOutOfRangeException(nameof(subscriptionName));
         }
 
+        // The last hook before a rebuild tears anything down
+        await ColdStreamReplayGuard.AssertMayReplayAsync(Events, (MartenDatabase)database, source.Name, source.Options,
+            null, token).ConfigureAwait(false);
+
         if (source is CompositeProjection composite)
         {
             foreach (var leafSource in composite.AllProjections())
@@ -403,6 +408,9 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         {
             throw new ArgumentOutOfRangeException(nameof(subscriptionName));
         }
+
+        await ColdStreamReplayGuard.AssertMayReplayAsync(Events, (MartenDatabase)database, source.Name, source.Options,
+            tenantId, token).ConfigureAwait(false);
 
         // Tenant-scoped doc teardown — same set of leaves the store-global
         // TeardownExistingProjectionStateAsync visits, but DELETE WHERE tenant_id
@@ -588,7 +596,10 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
         var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters,
-            filtering.IncludeArchivedEvents);
+            filtering.IncludeArchivedEvents)
+        {
+            ReplayingProjection = replayingProjection(filtering, shardOptions)
+        };
         return new ResilientEventLoader(DaemonLoaderPipeline, inner, database);
     }
 
@@ -610,9 +621,19 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
         var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters,
-            filtering.IncludeArchivedEvents, shardName);
+            filtering.IncludeArchivedEvents, shardName)
+        {
+            ReplayingProjection = replayingProjection(filtering, shardOptions)
+        };
         return new ResilientEventLoader(DaemonLoaderPipeline, inner, database);
     }
+
+    // Subscriptions do not fold streams, so they are not held back by cold ones
+    private string? replayingProjection(EventFilterable filtering, AsyncOptions shardOptions) =>
+        filtering is IProjectionSource<IDocumentOperations, IQuerySession> projection &&
+        ColdStreamReplayGuard.Applies(Events, shardOptions)
+            ? projection.Name
+            : null;
 
     [UnconditionalSuppressMessage("AOT", "IL3050",
         Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
