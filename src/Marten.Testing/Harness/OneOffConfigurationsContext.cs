@@ -21,7 +21,8 @@ namespace Marten.Testing.Harness
         protected string _schemaName;
         private DocumentStore _store;
         private IDocumentSession _session;
-        protected readonly IList<IDisposable> _disposables = new List<IDisposable>();
+        // Thread-safe, because tests such as Bug_1404 build stores from several threads at once. See #5976
+        protected readonly DisposableTracker _disposables = new();
 
         public string SchemaName => _schemaName;
 
@@ -130,12 +131,15 @@ namespace Marten.Testing.Harness
             }
         }
 
+        /// <summary>
+        /// Disposes every store, session and disposable this context tracked. It tolerates a
+        /// context that never built anything or failed partway through building, and calling it
+        /// twice, or from two threads, disposes each item once. See <see cref="DisposableTracker"/>
+        /// for how disposal failures are reported.
+        /// </summary>
         public void Dispose()
         {
-            foreach (var disposable in _disposables)
-            {
-                disposable.Dispose();
-            }
+            _disposables.DisposeAll();
         }
 
         /// <remarks>
