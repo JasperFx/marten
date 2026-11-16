@@ -517,6 +517,22 @@ when skipping is enabled, and metadata is only written and selected when its fla
 Deliberately still conditional, because they are expensive or change the table's shape: tenant partitioning of
 `mt_events`, table fillfactor, and the DCB `hstore` tags column and its GIN index.
 
+### `MetadataConfig.EnableAll()` also enables the user name <Badge type="warning" text="behavior change" />
+
+`opts.Events.MetadataConfig.EnableAll()` now turns on `UserNameEnabled` along with the causation id, correlation id
+and headers ([#6012](https://github.com/JasperFx/marten/pull/6012)). In 9.x it left the user name off, despite
+documenting itself as enabling all optional metadata. A store that calls `EnableAll()` now writes the session's
+`LastModifiedBy` to `mt_events.user_name` on every appended event, and reads it back as `IEvent.UserName`.
+
+There's no schema change: the `user_name` column is always created in 10.0 (see above). Events are never
+rewritten, so if your `LastModifiedBy` holds a person's name or login and you have data-retention rules, decide
+before upgrading whether you want it stored. To keep the 9.x behavior, turn it off after `EnableAll()`:
+
+```cs
+opts.Events.MetadataConfig.EnableAll();
+opts.Events.MetadataConfig.UserNameEnabled = false;
+```
+
 ### `StreamLockedException` now lives in `JasperFx.Events` and derives from `ConcurrencyException`
 
 `Marten.Exceptions.StreamLockedException` is gone; Marten now throws `JasperFx.Events.StreamLockedException`, the
