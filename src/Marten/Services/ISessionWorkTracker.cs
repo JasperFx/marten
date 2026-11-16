@@ -22,6 +22,11 @@ internal interface ISessionWorkTracker: IUnitOfWork, IChangeSet
     void EjectAll();
 
     /// <summary>
+    /// Remove every queued operation of this type
+    /// </summary>
+    void RemoveOperationsOfType<TOperation>() where TOperation : Weasel.Storage.IStorageOperation;
+
+    /// <summary>
     /// Remove all outstanding operations for the designated document
     /// </summary>
     /// <param name="id"></param>

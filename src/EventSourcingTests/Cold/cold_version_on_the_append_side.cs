@@ -6,8 +6,11 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
 using Marten;
+using Marten.Events.Operations;
 using Marten.Events.Schema;
 using Marten.Exceptions;
+using Marten.Internal.Sessions;
+using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
@@ -57,14 +60,101 @@ public class cold_version_on_the_append_side: OneOffConfigurationsContext
         return key;
     }
 
-    private void configure()
+    private void configure(bool conjoined = false)
     {
         StoreOptions(opts =>
         {
             opts.Events.StreamIdentity = StreamIdentity.AsString;
+            if (conjoined) opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Events.UseColdEventStore(_cold);
             opts.Listeners.Add(_listener);
         });
+    }
+
+    private async Task<string> cartForTenants(params string[] tenants)
+    {
+        var key = Guid.NewGuid().ToString();
+        foreach (var tenant in tenants)
+        {
+            await using var session = theStore.LightweightSession(tenant);
+            session.Events.StartStream<Cart>(key, new CartOpened(tenant), new ItemAdded("apple"));
+            await session.SaveChangesAsync();
+        }
+
+        return key;
+    }
+
+    [Fact]
+    public async Task a_listener_sees_the_cold_version_of_the_tenant_an_append_was_made_for()
+    {
+        configure(conjoined: true);
+        var key = await cartForTenants("alpha", "beta");
+        await theStore.MoveToColdAsync(_cold, "beta", key, 2);
+
+        await using var session = theStore.LightweightSession("alpha");
+        session.ForTenant("beta").Events.Append(key, new ItemAdded("pear"));
+        await session.SaveChangesAsync();
+
+        _listener.Seen[key].ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task a_fetch_for_another_tenant_is_verified_when_the_session_commits()
+    {
+        configure(conjoined: true);
+        var key = await cartForTenants("alpha", "beta");
+
+        _listener.Asks = false;
+        await using var writer = theStore.LightweightSession("alpha");
+        var stream = await writer.ForTenant("beta").Events.FetchForWriting<Cart>(key);
+        stream.AppendOne(new ItemAdded("pear"));
+
+        await theStore.MoveToColdAsync(_cold, "beta", key, 2);
+
+        await Should.ThrowAsync<ColdStreamChangedException>(() => writer.SaveChangesAsync());
+
+        await using var query = theStore.LightweightSession("beta");
+        (await query.Events.FetchStreamStateAsync(key))!.Version.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task the_cold_version_of_a_stream_this_session_does_not_append_to()
+    {
+        configure();
+        var key = await coldCart();
+
+        _listener.Asks = false;
+        await using var other = theStore.LightweightSession();
+        other.Events.Append(key, new ItemAdded("pear"));
+
+        await using var session = theStore.LightweightSession();
+        (await session.Events.ColdVersionOfAsync(other.PendingChanges.Streams().Single())).ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task a_retried_commit_verifies_the_cold_versions_once()
+    {
+        configure();
+        var key = Guid.NewGuid().ToString();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<Cart>(key, new CartOpened("anne"), new ItemAdded("apple"));
+            await session.SaveChangesAsync();
+        }
+
+        _listener.Asks = false;
+        await using var writer = theStore.LightweightSession();
+        var stream = await writer.Events.FetchForWriting<Cart>(key);
+        stream.AppendOne(new ItemAdded("pear"));
+        await theStore.MoveToColdAsync(_cold, StorageConstants.DefaultTenantId, key, 2);
+
+        await Should.ThrowAsync<ColdStreamChangedException>(() => writer.SaveChangesAsync());
+
+        // The retry fails on its own re-queued append; what matters is what it queued
+        await Should.ThrowAsync<Exception>(() => writer.SaveChangesAsync());
+
+        ((DocumentSessionBase)writer).WorkTracker.AllOperations.OfType<AssertColdVersionsOperation>()
+            .ShouldHaveSingleItem();
     }
 
     [Fact]

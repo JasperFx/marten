@@ -267,6 +267,12 @@ internal class UnitOfWork: ISessionWorkTracker
         Streams.Clear();
     }
 
+    public void RemoveOperationsOfType<TOperation>() where TOperation : Weasel.Storage.IStorageOperation
+    {
+        _operations.RemoveAll(x => x is TOperation);
+        _eventOperations.RemoveAll(x => x is TOperation);
+    }
+
     public void PurgeOperations<T, TId>(TId id) where T : notnull where TId : notnull
     {
         // Match both the codegen-style StorageOperation<T, TId> base (still

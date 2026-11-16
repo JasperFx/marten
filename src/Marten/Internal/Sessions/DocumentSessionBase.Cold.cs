@@ -14,19 +14,24 @@ namespace Marten.Internal.Sessions;
 
 public abstract partial class DocumentSessionBase
 {
-    // The cold versions this session has observed, by tenant and stream id; 0 means "no cold part".
-    // Every appended stream in here is verified when the unit of work commits.
-    private Dictionary<(string TenantId, string StreamKey), long>? _coldVersions;
+    private Dictionary<(string TenantId, string StreamKey), long>? _observedColdVersions;
+    private bool _queuedColdVersionVerification;
+
+    /// <summary>
+    ///     The cold versions this unit of work has observed, by tenant and stream id; 0 means "no cold part".
+    ///     Every appended stream in here is verified when the unit of work commits.
+    /// </summary>
+    internal virtual Dictionary<(string TenantId, string StreamKey), long> ObservedColdVersions =>
+        _observedColdVersions ??= new Dictionary<(string, string), long>();
 
     internal void RememberColdVersion(string tenantId, string streamKey, long coldVersion)
     {
-        _coldVersions ??= new Dictionary<(string, string), long>();
-        _coldVersions[(tenantId, streamKey)] = coldVersion;
+        ObservedColdVersions[(tenantId, streamKey)] = coldVersion;
     }
 
     internal void ForgetColdVersion(string tenantId, string streamKey)
     {
-        _coldVersions?.Remove((tenantId, streamKey));
+        ObservedColdVersions.Remove((tenantId, streamKey));
     }
 
     internal async ValueTask<long?> ColdVersionOfAsync(StreamAction stream, CancellationToken token)
@@ -34,12 +39,14 @@ public abstract partial class DocumentSessionBase
         if (stream.ActionType == StreamActionType.Start) return null;
 
         var key = coldKeyOf(stream);
-        if (_coldVersions == null || !_coldVersions.ContainsKey(key))
+        var observed = ObservedColdVersions;
+        if (!observed.TryGetValue(key, out var coldVersion))
         {
-            await resolveColdVersionsAsync(token).ConfigureAwait(false);
+            // The stream does not have to be one this unit of work appends to
+            await resolveColdVersionsAsync(key, token).ConfigureAwait(false);
+            coldVersion = observed[key];
         }
 
-        var coldVersion = _coldVersions![key];
         return coldVersion > 0 ? coldVersion : null;
     }
 
@@ -49,21 +56,21 @@ public abstract partial class DocumentSessionBase
         _workTracker.Streams.Where(x => x.ActionType == StreamActionType.Append);
 
     /// <summary>
-    ///     One query for every appended stream whose cold version this session has not observed yet.
+    ///     One query for <paramref name="asked" /> and every appended stream whose cold version this unit of work
+    ///     has not observed yet.
     /// </summary>
-    private async Task resolveColdVersionsAsync(CancellationToken token)
+    private async Task resolveColdVersionsAsync((string TenantId, string StreamKey) asked, CancellationToken token)
     {
         var events = Options.EventGraph;
+        var observed = ObservedColdVersions;
 
         var unknown = appendedStreams()
             .Select(coldKeyOf)
-            .Where(x => _coldVersions == null || !_coldVersions.ContainsKey(x))
+            .Append(asked)
+            .Where(x => !observed.ContainsKey(x))
             .Distinct()
             .GroupBy(x => x.TenantId)
             .ToArray();
-
-        _coldVersions ??= new Dictionary<(string, string), long>();
-        if (unknown.Length == 0) return;
 
         var builder = new BatchBuilder { TenantId = TenantId };
         for (var i = 0; i < unknown.Length; i++)
@@ -86,7 +93,7 @@ public abstract partial class DocumentSessionBase
         // A stream without a row yet is created by this append, so it has no cold part.
         foreach (var tenant in unknown)
         {
-            foreach (var stream in tenant) _coldVersions[stream] = 0;
+            foreach (var stream in tenant) observed[stream] = 0;
         }
 
         await using var reader = await ExecuteReaderAsync(builder.Compile(), token).ConfigureAwait(false);
@@ -95,7 +102,7 @@ public abstract partial class DocumentSessionBase
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 var streamKey = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
-                _coldVersions[(tenant.Key, streamKey)] = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
+                observed[(tenant.Key, streamKey)] = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
             }
 
             await reader.NextResultAsync(token).ConfigureAwait(false);
@@ -108,24 +115,33 @@ public abstract partial class DocumentSessionBase
     /// </summary>
     private void queueColdVersionVerification()
     {
-        if (_coldVersions == null || _coldVersions.Count == 0) return;
+        // A commit retried after a failure verifies once, with what is observed now
+        if (_queuedColdVersionVerification)
+        {
+            _workTracker.RemoveOperationsOfType<AssertColdVersionsOperation>();
+            _queuedColdVersionVerification = false;
+        }
 
-        var observed = appendedStreams()
+        if (_observedColdVersions is not { Count: > 0 } observed) return;
+
+        var verified = appendedStreams()
             .Where(x => x.Events.Count > 0)
             .Select(coldKeyOf)
             .Distinct()
-            .Where(_coldVersions.ContainsKey)
+            .Where(observed.ContainsKey)
             .GroupBy(x => x.TenantId);
 
-        foreach (var tenant in observed)
+        foreach (var tenant in verified)
         {
             QueueOperation(new AssertColdVersionsOperation(Options.EventGraph, tenant.Key,
-                tenant.Select(x => (x.StreamKey, _coldVersions[x])).ToArray()));
+                tenant.Select(x => (x.StreamKey, observed[x])).ToArray()));
+            _queuedColdVersionVerification = true;
         }
     }
 
     private void forgetObservedColdVersions()
     {
-        _coldVersions?.Clear();
+        _observedColdVersions?.Clear();
+        _queuedColdVersionVerification = false;
     }
 }

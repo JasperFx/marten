@@ -259,6 +259,11 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
+    void ISessionWorkTracker.RemoveOperationsOfType<TOperation>()
+    {
+        throw new NotSupportedException();
+    }
+
     bool ISessionWorkTracker.TryFindStream(string streamKey, out StreamAction stream)
     {
         stream = _streams
