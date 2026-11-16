@@ -29,12 +29,19 @@ internal static class ColdAggregationStart
     ///     The start for documents of <typeparamref name="TDoc" />, or null when no cold store is configured or no
     ///     single-stream projection stores them, or that projection ignores cold streams.
     /// </summary>
-    public static ColdAggregationStart<TDoc, TId>? For<TDoc, TId>(EventGraph events)
+    /// <param name="identityForwarding">
+    ///     The aggregator to fold with when the projection's identity type is not <typeparamref name="TId" />: a
+    ///     fetch plan addresses a strong-typed id by the raw stream key.
+    /// </param>
+    public static ColdAggregationStart<TDoc, TId>? For<TDoc, TId>(EventGraph events,
+        Func<IAggregator<TDoc, TId, IQuerySession>>? identityForwarding = null)
         where TDoc : notnull where TId : notnull
     {
         if (events.ColdEventStore == null) return null;
 
-        if (events.ColdAggregationStarts.TryFind(typeof(TDoc), out var found))
+        // By the closed type: a projection and a fetch plan of the same document can differ in TId
+        var key = typeof(ColdAggregationStart<TDoc, TId>);
+        if (events.ColdAggregationStarts.TryFind(key, out var found))
         {
             return found as ColdAggregationStart<TDoc, TId>;
         }
@@ -42,13 +49,13 @@ internal static class ColdAggregationStart
         ColdAggregationStart<TDoc, TId>? start = null;
         if (events.Options.Projections.TryFindAggregate(typeof(TDoc), out var projection)
             && projection.Scope == AggregationScope.SingleStream
-            && projection is IAggregator<TDoc, TId, IQuerySession> aggregator
-            && !ignoresColdStreams(events, projection))
+            && !ignoresColdStreams(events, projection)
+            && (projection as IAggregator<TDoc, TId, IQuerySession> ?? identityForwarding?.Invoke()) is { } aggregator)
         {
             start = new ColdAggregationStart<TDoc, TId>(events, aggregator);
         }
 
-        events.ColdAggregationStarts = events.ColdAggregationStarts.AddOrUpdate(typeof(TDoc), start);
+        events.ColdAggregationStarts = events.ColdAggregationStarts.AddOrUpdate(key, start);
         return start;
     }
 
@@ -69,6 +76,9 @@ internal static class ColdAggregationStart
         return false;
     }
 }
+
+/// <summary>Where a fetch starts on a cold stream: the start, null when the cold part folds to nothing, as of its cold version.</summary>
+internal readonly record struct ColdFetchStart<TDoc>(TDoc? Start, long ColdVersion) where TDoc : notnull;
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",
     Justification = "Folds through a registered projection and the event graph, which are preserved at the registration boundary.")]
@@ -115,27 +125,68 @@ internal sealed class ColdAggregationStart<TDoc, TId> where TDoc : notnull where
         foreach (var (streamKey, coldVersion) in coldVersions)
         {
             var id = missing[streamKey];
-            var start = await _store.TryLoadSnapshotAsync<TDoc>(session, streamKey, coldVersion, token)
+            var start = await startAsync(session, streamKey, tenantId, coldVersion, id, identitySetter, token)
                 .ConfigureAwait(false);
 
-            if (start == null)
-            {
-                var events = await ColdStreamReader.PrependColdAsync(session, streamKey, tenantId, coldVersion, [],
-                    default, token).ConfigureAwait(false);
+            if (start != null) loaded[id] = start;
+        }
+    }
 
-                if (events.Count > 0)
-                {
-                    start = await _aggregator.BuildAsync(events, session, default, id, identitySetter, token)
-                        .ConfigureAwait(false);
-                }
-            }
+    /// <summary>
+    ///     For a fetch that found no stored document: where the aggregate starts from the cold part, or null when
+    ///     the stream has no cold part to start from. One query; the cold store is only called when there is one.
+    /// </summary>
+    /// <param name="foldsEveryWarmEvent">
+    ///     True for an async plan, which folds every warm event onto the start itself, so any cold part qualifies.
+    ///     False for an inline plan: there a warm event after the cold part was projected already, and a missing
+    ///     document is the projection's own outcome, as in <see cref="AddMissingAsync" />.
+    /// </param>
+    public async Task<ColdFetchStart<TDoc>?> StartFetchAsync(QuerySession session, string streamKey, TId id,
+        IIdentitySetter<TDoc, TId> identitySetter, bool foldsEveryWarmEvent, CancellationToken token)
+    {
+        var tenantId = ColdStreamReader.TenantFor(session, _isGlobal);
 
-            if (start != null)
+        // Floor 0: every warm event is folded onto the start, none of them was projected into it
+        var starts = await coldStartsAsync(session, [streamKey], tenantId, foldsEveryWarmEvent ? 0 : null, token)
+            .ConfigureAwait(false);
+
+        if (starts.Count == 0) return null;
+
+        var coldVersion = starts[0].ColdVersion;
+
+        // As a live fetch does, so the commit verifies that the cold part did not move after it was read
+        if (session is DocumentSessionBase documentSession)
+        {
+            documentSession.RememberColdVersion(tenantId, streamKey, coldVersion);
+        }
+
+        var start = await startAsync(session, streamKey, tenantId, coldVersion, id, identitySetter, token)
+            .ConfigureAwait(false);
+
+        return new ColdFetchStart<TDoc>(start, coldVersion);
+    }
+
+    private async Task<TDoc?> startAsync(QuerySession session, string streamKey, string tenantId, long coldVersion,
+        TId id, IIdentitySetter<TDoc, TId> identitySetter, CancellationToken token)
+    {
+        var start = await _store.TryLoadSnapshotAsync<TDoc>(session, streamKey, coldVersion, token)
+            .ConfigureAwait(false);
+
+        if (start == null)
+        {
+            var events = await ColdStreamReader.PrependColdAsync(session, streamKey, tenantId, coldVersion, [],
+                default, token).ConfigureAwait(false);
+
+            if (events.Count > 0)
             {
-                identitySetter.SetIdentity(start, id);
-                loaded[id] = start;
+                start = await _aggregator.BuildAsync(events, session, default, id, identitySetter, token)
+                    .ConfigureAwait(false);
             }
         }
+
+        if (start != null) identitySetter.SetIdentity(start, id);
+
+        return start;
     }
 
     /// <summary>

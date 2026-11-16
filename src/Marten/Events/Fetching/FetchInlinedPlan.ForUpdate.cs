@@ -86,10 +86,15 @@ internal partial class FetchInlinedPlan<TDoc, TId>
 
         try
         {
-            await using var reader =
-                await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+            InlineRead read;
+            await using (var reader =
+                         await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false))
+            {
+                read = await readStoredAsync(session, id, cancellation, reader, handler, baseline)
+                    .ConfigureAwait(false);
+            }
 
-            return await ReadIntoStream(session, id, cancellation, reader, handler, storage, baseline)
+            return await buildStreamAsync(session, id, read, storage, storage, baseline, cancellation)
                 .ConfigureAwait(false);
         }
         catch (CachedSnapshotUnusableException)
@@ -124,9 +129,11 @@ internal partial class FetchInlinedPlan<TDoc, TId>
     /// </remarks>
     private sealed class CachedSnapshotUnusableException: MartenException;
 
-    private async Task<IEventStream<TDoc>> ReadIntoStream(DocumentSessionBase session, TId id, CancellationToken cancellation,
-        DbDataReader reader, LoadByIdHandler<TDoc, TId> handler, IDocumentStorage<TDoc, TId>? storage = null,
-        AggregateWriteBaseline<TDoc> cacheAttempt = default)
+    /// <summary>What one read brought back: the stream version and the stored document, if any.</summary>
+    private readonly record struct InlineRead(long Version, TDoc? Document);
+
+    private async Task<InlineRead> readStoredAsync(DocumentSessionBase session, TId id, CancellationToken cancellation,
+        DbDataReader reader, LoadByIdHandler<TDoc, TId> handler, AggregateWriteBaseline<TDoc> cacheAttempt = default)
     {
         long version = 0;
         try
@@ -160,35 +167,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
                 document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
             }
 
-            // #5227: always zero -- an Inline snapshot is up to date by construction, so nothing is
-            // replayed on either path. A cache hit does not change that; what it removes is the
-            // snapshot LOAD, which this histogram does not measure. Recorded anyway so the histogram
-            // can be compared across lifecycles.
-            _events.Options.OpenTelemetry
-                .RecordEventsReplayed(0, _aggregateTypeName, OpenTelemetryOptions.InlinePlan);
-
-            // As an optimization, put the document in the identity map for later. On a cache hit this is
-            // what lets the inline projection reuse the very instance we just handed out when it applies
-            // the caller's events during commit, instead of loading the snapshot a second time.
-            if (document != null && ((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
-            {
-                session.StoreDocumentInItemMap(id, document);
-            }
-
-            // jasperfx#1050: owed to the cache at the version it was fetched at, which is what this
-            // instance reflects. Under Inline the commit's own projection moves the aggregate on, so the
-            // write-back is advanced to whatever instance that projection stored. Relabelling the fetched
-            // instance with the committed version, as Marten used to, was false whenever Apply returns a
-            // new instance or UseIdentityMapForAggregates is off.
-            if (_cache != null && document != null && version > 0 && storage != null)
-            {
-                session.AggregateWriteCache.Register(cacheAttempt, document, version);
-                advanceAfterCommit(session, storage, cacheKeyFor(session, id), id);
-            }
-
-            return version == 0
-                ? _identityStrategy.StartStream(document, session, id, cancellation)
-                : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+            return new InlineRead(version, document);
         }
         catch (CachedSnapshotUnusableException)
         {
@@ -208,6 +187,53 @@ internal partial class FetchInlinedPlan<TDoc, TId>
 
             throw;
         }
+    }
+
+    /// <summary>
+    ///     Runs after the reader is closed, because a document the application moved out with the stream's events
+    ///     starts from the cold part, and the cold store may read through the same session.
+    /// </summary>
+    /// <param name="cacheStorage">Set on the paths that write the aggregate back to the write cache.</param>
+    private async Task<IEventStream<TDoc>> buildStreamAsync(DocumentSessionBase session, TId id, InlineRead read,
+        IDocumentStorage<TDoc, TId> storage, IDocumentStorage<TDoc, TId>? cacheStorage,
+        AggregateWriteBaseline<TDoc> cacheAttempt, CancellationToken cancellation)
+    {
+        var version = read.Version;
+        var document = read.Document;
+        if (document == null && version > 0)
+        {
+            document = await startFromColdAsync(session, storage, id, cancellation).ConfigureAwait(false);
+        }
+
+        // #5227: always zero -- an Inline snapshot is up to date by construction, so nothing is
+        // replayed on either path. A cache hit does not change that; what it removes is the
+        // snapshot LOAD, which this histogram does not measure. Recorded anyway so the histogram
+        // can be compared across lifecycles.
+        _events.Options.OpenTelemetry
+            .RecordEventsReplayed(0, _aggregateTypeName, OpenTelemetryOptions.InlinePlan);
+
+        // As an optimization, put the document in the identity map for later. On a cache hit this is
+        // what lets the inline projection reuse the very instance we just handed out when it applies
+        // the caller's events during commit, instead of loading the snapshot a second time.
+        if (document != null && ((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
+        {
+            session.StoreDocumentInItemMap(id, document);
+        }
+
+        // jasperfx#1050: owed to the cache at the version it was fetched at, which is what this
+        // instance reflects. Under Inline the commit's own projection moves the aggregate on, so the
+        // write-back is advanced to whatever instance that projection stored. Relabelling the fetched
+        // instance with the committed version, as Marten used to, was false whenever Apply returns a
+        // new instance or UseIdentityMapForAggregates is off.
+        if (_cache != null && document != null && version > 0 && cacheStorage != null)
+        {
+            session.AggregateWriteCache.Register(cacheAttempt, document, version);
+            advanceAfterCommit(session, cacheStorage, cacheKeyFor(session, id), id);
+        }
+
+        return version == 0
+            ? _identityStrategy.StartStream(document, session, id, cancellation)
+            : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
     }
 
 
@@ -267,21 +293,24 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         var storage = findDocumentStorage(session);
 
         var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
-        return new QueryHandler(this, id, handler, forUpdate);
+        return new QueryHandler(this, id, storage, handler, forUpdate);
     }
 
-    internal class QueryHandler: IQueryHandler<IEventStream<TDoc>>, IExclusiveFetchHandler
+    internal class QueryHandler: IFinishesAfterTheReader<IEventStream<TDoc>>, IExclusiveFetchHandler
     {
         private readonly FetchInlinedPlan<TDoc, TId> _parent;
         private readonly TId _id;
+        private readonly IDocumentStorage<TDoc, TId> _storage;
         private readonly LoadByIdHandler<TDoc, TId> _handler;
         private readonly bool _forUpdate;
+        private InlineRead _read;
 
-        public QueryHandler(FetchInlinedPlan<TDoc, TId> parent, TId id, LoadByIdHandler<TDoc, TId> handler,
-            bool forUpdate)
+        public QueryHandler(FetchInlinedPlan<TDoc, TId> parent, TId id, IDocumentStorage<TDoc, TId> storage,
+            LoadByIdHandler<TDoc, TId> handler, bool forUpdate)
         {
             _parent = parent;
             _id = id;
+            _storage = storage;
             _handler = handler;
             _forUpdate = forUpdate;
         }
@@ -297,9 +326,21 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             _handler.ConfigureCommand(builder, session);
         }
 
-        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
-            return _parent.ReadIntoStream((DocumentSessionBase)session, _id, token, reader, _handler);
+            _read = await _parent.readStoredAsync((DocumentSessionBase)session, _id, token, reader, _handler)
+                .ConfigureAwait(false);
+        }
+
+        public Task<IEventStream<TDoc>> FinishAsync(IStorageSession session, CancellationToken token)
+        {
+            return _parent.buildStreamAsync((DocumentSessionBase)session, _id, _read, _storage, null, default, token);
+        }
+
+        public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
+            await ReadAsync(reader, session, token).ConfigureAwait(false);
+            return await FinishAsync(session, token).ConfigureAwait(false);
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

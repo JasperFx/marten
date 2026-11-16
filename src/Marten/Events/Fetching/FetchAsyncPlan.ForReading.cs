@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
@@ -61,10 +62,14 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         endSharedSnapshot(builder, sharedSnapshot);
 
         var batch = builder.Compile();
-        await using var reader =
-            await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
+        AsyncRead read;
+        await using (var reader =
+                     await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false))
+        {
+            read = await readLatest(session, cancellation, loadHandler, reader, selector).ConfigureAwait(false);
+        }
 
-        return await readLatest(session, id, cancellation, loadHandler, reader, selector).ConfigureAwait(false);
+        return await foldLatestAsync(session, id, read, cancellation).ConfigureAwait(false);
     }
 
     public async ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation)
@@ -121,27 +126,35 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         endSharedSnapshot(builder, sharedSnapshot);
 
         var batch = builder.Compile();
-        await using var reader = await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
-
-        // First result set: buffer raw JSONB (don't deserialize yet)
-        bool hasDocument = await reader.ReadAsync(cancellation).ConfigureAwait(false);
         MemoryStream? rawJsonBuffer = null;
-
-        if (hasDocument)
+        IReadOnlyList<IEvent> events;
+        await using (var reader = await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false))
         {
-            var ordinal = reader.GetOrdinal("data");
-            if (!await reader.IsDBNullAsync(ordinal, cancellation).ConfigureAwait(false))
+            // First result set: buffer raw JSONB (don't deserialize yet)
+            bool hasDocument = await reader.ReadAsync(cancellation).ConfigureAwait(false);
+
+            if (hasDocument)
             {
-                rawJsonBuffer = SharedMemoryStreamManager.GetStream();
-                var source = await ((NpgsqlDataReader)reader).GetStreamAsync(ordinal, cancellation).ConfigureAwait(false);
-                await source.CopyStreamSkippingSOHAsync(rawJsonBuffer, cancellation).ConfigureAwait(false);
+                var ordinal = reader.GetOrdinal("data");
+                if (!await reader.IsDBNullAsync(ordinal, cancellation).ConfigureAwait(false))
+                {
+                    rawJsonBuffer = SharedMemoryStreamManager.GetStream();
+                    var source = await ((NpgsqlDataReader)reader).GetStreamAsync(ordinal, cancellation).ConfigureAwait(false);
+                    await source.CopyStreamSkippingSOHAsync(rawJsonBuffer, cancellation).ConfigureAwait(false);
+                }
             }
+
+            // Second result set: check for newer events
+            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+            events = await new ListQueryHandler<IEvent>(null, selector)
+                .HandleAsync(reader, session, cancellation).ConfigureAwait(false);
         }
 
-        // Second result set: check for newer events
-        await reader.NextResultAsync(cancellation).ConfigureAwait(false);
-        var events = await new ListQueryHandler<IEvent>(null, selector)
-            .HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        TDoc? document = null;
+        if (rawJsonBuffer == null)
+        {
+            (document, events, _) = await startAsync(session, id, null, events, cancellation).ConfigureAwait(false);
+        }
 
         if (!events.Any() && rawJsonBuffer != null)
         {
@@ -151,18 +164,21 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             return true;
         }
 
-        if (rawJsonBuffer == null && !events.Any())
+        if (rawJsonBuffer == null && document == null && !events.Any())
             return false;
 
         // Not caught up — deserialize stored doc, rebuild with new events, serialize
-        TDoc? document = null;
         if (rawJsonBuffer != null)
         {
             rawJsonBuffer.Position = 0;
             document = session.Serializer.FromJson<TDoc>(rawJsonBuffer);
         }
 
-        document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
+        if (events.Any())
+        {
+            document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
+        }
+
         if (document == null) return false;
 
         _storage.SetIdentity(document, id);
@@ -174,7 +190,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         return true;
     }
 
-    private async Task<TDoc?> readLatest(DocumentSessionBase session, TId id, CancellationToken cancellation,
+    private async Task<AsyncRead> readLatest(DocumentSessionBase session, CancellationToken cancellation,
         LoadByIdHandler<TDoc, TId> loadHandler, DbDataReader reader, IEventStorage selector)
     {
         // Fetch the existing aggregate -- if any!
@@ -183,6 +199,15 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         // Read in any events from after the current state of the aggregate
         await reader.NextResultAsync(cancellation).ConfigureAwait(false);
         var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        return new AsyncRead(0, document, events);
+    }
+
+    private async Task<TDoc?> foldLatestAsync(DocumentSessionBase session, TId id, AsyncRead read,
+        CancellationToken cancellation)
+    {
+        var (document, events, _) = await startAsync(session, id, read.Document, read.Events, cancellation)
+            .ConfigureAwait(false);
+
         if (events.Any())
         {
             document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
@@ -207,12 +232,13 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         return new QueryHandler(this, id, canShareOneSnapshot(session));
     }
 
-    public class QueryHandler: IQueryHandler<TDoc?>, IOpensItsOwnTransaction
+    public class QueryHandler: IFinishesAfterTheReader<TDoc?>, IOpensItsOwnTransaction
     {
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
         private readonly bool _sharedSnapshot;
         private readonly LoadByIdHandler<TDoc,TId> _loadHandler;
+        private AsyncRead _read;
 
         /// <summary>
         ///     #5604: a batched <c>FetchLatest</c> brackets its two reads for the same reason the direct
@@ -248,11 +274,23 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             endSharedSnapshot(builder, sharedSnapshot);
         }
 
-        public Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
             var documentSessionBase = (DocumentSessionBase)session;
             var eventStorage = documentSessionBase.EventStorage();
-            return _parent.readLatest(documentSessionBase, _id, token, _loadHandler, reader, eventStorage);
+            _read = await _parent.readLatest(documentSessionBase, token, _loadHandler, reader, eventStorage)
+                .ConfigureAwait(false);
+        }
+
+        public Task<TDoc?> FinishAsync(IStorageSession session, CancellationToken token)
+        {
+            return _parent.foldLatestAsync((DocumentSessionBase)session, _id, _read, token);
+        }
+
+        public async Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
+            await ReadAsync(reader, session, token).ConfigureAwait(false);
+            return await FinishAsync(session, token).ConfigureAwait(false);
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

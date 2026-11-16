@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten.Exceptions;
@@ -142,11 +143,16 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         var batch = builder.Compile();
         try
         {
-            await using var reader =
-                await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
+            AsyncRead read;
+            await using (var reader =
+                         await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false))
+            {
+                read = await readForWritingAsync(session, id, cancellation, reader, loadHandler, selector, null,
+                    baseline).ConfigureAwait(false);
+            }
 
-            return await ReadIntoStream(session, id, cancellation, reader, loadHandler, selector,
-                baseline, detectSnapshotRace).ConfigureAwait(false);
+            return await buildStreamAsync(session, id, read, baseline, detectSnapshotRace, true, cancellation)
+                .ConfigureAwait(false);
         }
         catch (CacheAheadOfDatabaseException)
         {
@@ -250,9 +256,10 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             $"select {selector.SelectFields().Select(x => "d." + x).Join(", ")} from {_events.DatabaseSchemaName}.mt_events as d";
     }
 
-    private async Task<IEventStream<TDoc>> ReadIntoStream(DocumentSessionBase session, TId id, CancellationToken cancellation,
+    /// <param name="expectedStartingVersion">Set by FetchForWriting with an expected version, which takes no cache baseline.</param>
+    private async Task<AsyncRead> readForWritingAsync(DocumentSessionBase session, TId id, CancellationToken cancellation,
         DbDataReader reader, LoadByIdHandler<TDoc, TId> loadHandler, IEventStorage selector,
-        AggregateWriteBaseline<TDoc> cacheAttempt = default, bool detectSnapshotRace = false)
+        long? expectedStartingVersion, AggregateWriteBaseline<TDoc> cacheAttempt = default)
     {
         long version = 0;
         try
@@ -261,6 +268,13 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
             {
                 version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
+            }
+
+            if (expectedStartingVersion.HasValue && expectedStartingVersion.Value != version)
+            {
+                throw new ConcurrencyException(
+                    $"Expected the existing version to be {expectedStartingVersion.Value}, but was {version}",
+                    typeof(TDoc), id);
             }
 
             TDoc? document;
@@ -304,40 +318,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 throw new CacheAheadOfDatabaseException();
             }
 
-            if (detectSnapshotRace && !cacheAttempt.HasAggregate
-                                   && snapshotAndDeltaDisagree(session, id, version, document, events))
-            {
-                throw new SnapshotRaceException(typeof(TDoc), id);
-            }
-
-            if (events.Any())
-            {
-                document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
-            }
-
-            if (document != null)
-            {
-                _storage.SetIdentity(document, id);
-            }
-
-            // The aggregate is now at the stream version. Under the Async lifecycle the events the caller
-            // appends are not applied to this instance in session, so that label stays true through the
-            // commit. jasperfx#1050: owed to the cache, not stored in it. Storing at fetch time put an
-            // instance the caller was still reading where a second session could claim it and fold onto
-            // it, and left it there when the caller's commit failed.
-            session.AggregateWriteCache.Register(cacheAttempt, document, version);
-
-            var stream = version == 0
-                ? _identityStrategy.StartStream(document, session, id, cancellation)
-                : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
-
-            // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
-            if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
-            {
-                session.StoreDocumentInItemMap(id, stream);
-            }
-
-            return stream;
+            return new AsyncRead(version, document, events);
         }
         catch (CacheAheadOfDatabaseException)
         {
@@ -359,6 +340,61 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         }
     }
 
+    /// <summary>
+    ///     Runs after the reader is closed: a document the application moved out with the stream's events starts
+    ///     from the cold part, and the cold store may read through the same session.
+    /// </summary>
+    private async Task<IEventStream<TDoc>> buildStreamAsync(DocumentSessionBase session, TId id, AsyncRead read,
+        AggregateWriteBaseline<TDoc> cacheAttempt, bool detectSnapshotRace, bool registersWithCache,
+        CancellationToken cancellation)
+    {
+        var version = read.Version;
+        var (document, events, coldVersion) = await startAsync(session, id, read.Document, read.Events, cancellation)
+            .ConfigureAwait(false);
+
+        // From the cold part, the warm events after it are the whole delta: none of them while the stream has
+        // moved past the cold part means the read straddled a snapshot write, as for a missing document below.
+        if (detectSnapshotRace && !cacheAttempt.HasAggregate
+                               && (coldVersion.HasValue
+                                   ? read.Events.Count == 0 && version > coldVersion.Value
+                                   : snapshotAndDeltaDisagree(session, id, version, read.Document, read.Events)))
+        {
+            throw new SnapshotRaceException(typeof(TDoc), id);
+        }
+
+        if (events.Any())
+        {
+            document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
+        }
+
+        if (document != null)
+        {
+            _storage.SetIdentity(document, id);
+        }
+
+        // The aggregate is now at the stream version. Under the Async lifecycle the events the caller
+        // appends are not applied to this instance in session, so that label stays true through the
+        // commit. jasperfx#1050: owed to the cache, not stored in it. Storing at fetch time put an
+        // instance the caller was still reading where a second session could claim it and fold onto
+        // it, and left it there when the caller's commit failed.
+        if (registersWithCache)
+        {
+            session.AggregateWriteCache.Register(cacheAttempt, document, version);
+        }
+
+        var stream = version == 0
+            ? _identityStrategy.StartStream(document, session, id, cancellation)
+            : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+
+        // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
+        if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
+        {
+            session.StoreDocumentInItemMap(id, stream);
+        }
+
+        return stream;
+    }
+
     public IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id, bool forUpdate)
     {
         var dsb = session.AssertIsDocumentSession();
@@ -373,13 +409,14 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         return new ForUpdateQueryHandler(this, id, forUpdate, !forUpdate && canShareOneSnapshot(dsb));
     }
 
-    public class ForUpdateQueryHandler: IQueryHandler<IEventStream<TDoc>>, IOpensItsOwnTransaction, IExclusiveFetchHandler
+    public class ForUpdateQueryHandler: IFinishesAfterTheReader<IEventStream<TDoc>>, IOpensItsOwnTransaction, IExclusiveFetchHandler
     {
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
         private readonly bool _forUpdate;
         private readonly bool _sharedSnapshot;
         private readonly LoadByIdHandler<TDoc,TId> _loadHandler;
+        private AsyncRead _read;
 
         /// <summary>
         ///     True exactly when <see cref="ConfigureCommand" /> below brackets its reads in
@@ -425,15 +462,27 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             endSharedSnapshot(builder, sharedSnapshot);
         }
 
-        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
             var documentSessionBase = (DocumentSessionBase)session;
+            _read = await _parent.readForWritingAsync(documentSessionBase, _id, token, reader, _loadHandler,
+                documentSessionBase.EventStorage(), null).ConfigureAwait(false);
+        }
+
+        public Task<IEventStream<TDoc>> FinishAsync(IStorageSession session, CancellationToken token)
+        {
             // #5613: detection ON, and it surfaces as SnapshotRaceException rather than being retried. A
             // batch handler is handed one reader and cannot issue another statement, so there is no redo
             // available here -- the choice is a wrong aggregate or an exception, and for a fetch whose whole
             // purpose is to decide what to write, the exception is the better answer. Retry the batch.
-            return _parent.ReadIntoStream(documentSessionBase, _id, token, reader, _loadHandler,
-                documentSessionBase.EventStorage(), detectSnapshotRace: true);
+            return _parent.buildStreamAsync((DocumentSessionBase)session, _id, _read, default,
+                detectSnapshotRace: true, registersWithCache: true, token);
+        }
+
+        public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
+            await ReadAsync(reader, session, token).ConfigureAwait(false);
+            return await FinishAsync(session, token).ConfigureAwait(false);
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

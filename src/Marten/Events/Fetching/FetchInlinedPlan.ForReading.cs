@@ -1,8 +1,8 @@
 using System;
+using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core.Reflection;
 using JasperFx.Events.Aggregation;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
@@ -34,17 +34,16 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         var handler = new LoadByIdHandler<TDoc, TId>((IDocumentStorage<TDoc, TId>)storage, id);
         handler.ConfigureCommand(builder, session);
 
-        await using var reader =
-            await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
-        var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        TDoc? document;
+        await using (var reader =
+                     await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false))
+        {
+            document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        }
 
-        return document;
+        return document ?? await startFromColdAsync(session, storage, id, cancellation).ConfigureAwait(false);
     }
 
-    [UnconditionalSuppressMessage("AOT", "IL3050",
-        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
-    [UnconditionalSuppressMessage("Trimming", "IL2026",
-        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public async ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
         var snapshot = await FetchForReading(session, id, cancellation).ConfigureAwait(false);
@@ -52,14 +51,8 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         var pendingEvents = FetchPlanHelper.FindPendingEvents<TId>(session, id);
         if (pendingEvents is not { Count: > 0 }) return snapshot;
 
-        // Build the aggregator on demand
-        var raw = ((IMartenSession)session).Options.Projections.AggregatorFor<TDoc>();
         var storage = findDocumentStorage(session);
-        var aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
-                         ?? typeof(IdentityForwardingAggregator<,,,>)
-                             .CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, storage, typeof(TDoc),
-                                 storage is IDocumentStorage<TDoc, TId> s ? s.IdType : typeof(TId),
-                                 typeof(TId), typeof(IQuerySession));
+        var aggregator = aggregatorFor(storage);
 
         snapshot = await aggregator.BuildAsync(pendingEvents, session, snapshot, id, storage, cancellation)
             .ConfigureAwait(false);
@@ -80,7 +73,15 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         var storage = findDocumentStorage(session);
         await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
         var command = ((IDocumentStorage<TDoc, TId>)storage).BuildLoadCommand(id, session.TenantId);
-        return await session.StreamOne(command, destination, cancellation).ConfigureAwait(false);
+        if (await session.StreamOne(command, destination, cancellation).ConfigureAwait(false)) return true;
+
+        var start = await startFromColdAsync(session, storage, id, cancellation).ConfigureAwait(false);
+        if (start == null) return false;
+
+        using var buffer = new Services.PooledByteBufferWriter();
+        session.Serializer.WriteTo(buffer, start);
+        await destination.WriteAsync(buffer.WrittenMemory, cancellation).ConfigureAwait(false);
+        return true;
     }
 
     public IQueryHandler<TDoc?> BuildQueryHandler(QuerySession session, TId id)
@@ -93,6 +94,53 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             return new PreCannedQueryHandler<TDoc?>(doc);
         }
 
-        return new LoadByIdHandler<TDoc, TId>(storage, id);
+        var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
+        return coldStartFor(storage) == null ? handler : new LatestQueryHandler(this, id, storage, handler);
+    }
+
+    /// <summary>A batched FetchLatest that may start from the cold part once the batch's reader is closed.</summary>
+    internal class LatestQueryHandler: IFinishesAfterTheReader<TDoc?>
+    {
+        private readonly FetchInlinedPlan<TDoc, TId> _parent;
+        private readonly TId _id;
+        private readonly IDocumentStorage<TDoc, TId> _storage;
+        private readonly LoadByIdHandler<TDoc, TId> _handler;
+        private TDoc? _document;
+
+        public LatestQueryHandler(FetchInlinedPlan<TDoc, TId> parent, TId id, IDocumentStorage<TDoc, TId> storage,
+            LoadByIdHandler<TDoc, TId> handler)
+        {
+            _parent = parent;
+            _id = id;
+            _storage = storage;
+            _handler = handler;
+        }
+
+        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
+        {
+            _handler.ConfigureCommand(builder, session);
+        }
+
+        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
+            _document = await _handler.HandleAsync(reader, session, token).ConfigureAwait(false);
+        }
+
+        public async Task<TDoc?> FinishAsync(IStorageSession session, CancellationToken token)
+        {
+            return _document ?? await _parent.startFromColdAsync((QuerySession)session, _storage, _id, token)
+                .ConfigureAwait(false);
+        }
+
+        public async Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
+            await ReadAsync(reader, session, token).ConfigureAwait(false);
+            return await FinishAsync(session, token).ConfigureAwait(false);
+        }
+
+        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
+        {
+            return _handler.StreamJson(stream, reader, token);
+        }
     }
 }

@@ -1,4 +1,10 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using Marten.Events.Cold;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
 using Marten.Internal.Sessions;
@@ -183,6 +189,31 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
         }
 
         builder.Append(" order by d.seq_id");
+    }
+
+    /// <summary>What one read brought back: the stream version (when asked for), the stored document and the warm events after it.</summary>
+    private readonly record struct AsyncRead(long Version, TDoc? Document, IReadOnlyList<IEvent> Events);
+
+    /// <summary>
+    ///     The document to fold the warm events onto. When the application moved the stored document out with the
+    ///     stream's events, that is the start from the cold part, as the async projection itself starts, with the
+    ///     warm events after the cold part. Runs after the reader is closed, because the cold store may read through
+    ///     the same session.
+    /// </summary>
+    private async Task<(TDoc? Document, IReadOnlyList<IEvent> Events, long? ColdVersion)> startAsync(
+        QuerySession session, TId id, TDoc? document, IReadOnlyList<IEvent> events, CancellationToken token)
+    {
+        if (document != null || id is not string streamKey
+                             || ColdAggregationStart.For<TDoc, TId>(_events, () => _aggregator) is not { } cold)
+        {
+            return (document, events, null);
+        }
+
+        var start = await cold.StartFetchAsync(session, streamKey, id, _storage, true, token).ConfigureAwait(false);
+        if (start is not { } found) return (document, events, null);
+
+        // The cold part may have grown since the warm events were read: the version keeps each event folded once
+        return (found.Start, events.Where(x => x.Version > found.ColdVersion).ToList(), found.ColdVersion);
     }
 
     /// <summary>

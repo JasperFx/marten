@@ -21,7 +21,7 @@ public partial class EventGraph
     internal IColdEventStore? ColdEventStore { get; set; }
 
     /// <summary>
-    ///     <see cref="ColdAggregationStart{TDoc,TId}" /> by document type, or null for a type that has none.
+    ///     <see cref="ColdAggregationStart{TDoc,TId}" /> by its closed type, or null for a document that has none.
     /// </summary>
     internal ImHashMap<Type, object?> ColdAggregationStarts { get; set; } = ImHashMap<Type, object?>.Empty;
 
