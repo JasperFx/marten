@@ -109,6 +109,19 @@ public class HiloSequence: HiloSequenceBase
         }
     }
 
+    /// <summary>
+    ///     Move the database's hilo row so that ids above <paramref name="floor" /> are issued from now on,
+    ///     and install a block reserved above it.
+    /// </summary>
+    /// <remarks>
+    ///     Once this returns, no id at or below the floor is issued, even by a <c>NextLong()</c> or
+    ///     <c>NextLongAsync()</c> that was part way through an advance when the floor moved and comes back
+    ///     with a block reserved under the old floor. This does not take the base class's advance locks, so it
+    ///     relies on two rules. A prefetch reserved before the row was updated is discarded rather than
+    ///     installed. And an advance's block that lands after another install, here the block installed by
+    ///     this method, and is not above it is dropped as a gap (weasel#840). This method's own blocks are
+    ///     installed as given.
+    /// </remarks>
     public override async Task SetFloor(long floor)
     {
         var numberOfPages = (long)Math.Ceiling((double)floor / MaxLo);
