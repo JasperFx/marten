@@ -181,13 +181,13 @@ public class MyColdEventStore: IColdEventStore
 }
 ```
 
-This happens for every single-stream projection, with no opt-in, once a cold event store is configured: a
-projection that folded only the new events would store a wrong document without any error. It only happens
-when the stored document is missing, the stream has a cold version, and no warm event lies between the cold
-part and the new events (one query per batch of missing documents; nothing at all without a cold store). A
-warm event in between was projected already, so a document missing after it is the projection's own outcome,
-for example a deletion, and is left alone. Multi-stream projections and rebuilds never start from the cold
-part.
+This happens for every single-stream projection once a cold event store is configured, unless the projection
+[ignores cold streams](#projections-that-ignore-cold-streams): a projection that folded only the new events
+would store a wrong document without any error. It only happens when the stored document is missing, the
+stream has a cold version, and no warm event lies between the cold part and the new events (one query per
+batch of missing documents; nothing at all without a cold store). A warm event in between was projected
+already, so a document missing after it is the projection's own outcome, for example a deletion, and is left
+alone. Multi-stream projections and rebuilds never start from the cold part.
 
 ## What does not read the cold part
 
@@ -197,7 +197,7 @@ something wrong, Marten refuses instead:
 
 | Operation | On a cold stream |
 |---|---|
-| Inline and async aggregations (snapshots) | Correct, also when you moved the stored document out together with the events: see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream). |
+| Inline and async aggregations (snapshots) | Correct, also when you moved the stored document out together with the events: see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream). A projection that [ignores cold streams](#projections-that-ignore-cold-streams) never starts from the cold part: a missing document starts again from the warm events. |
 | Rebuilding a projection | Refused with `ColdStreamReplayException` while any stream in that database (or, for a per-tenant rebuild, that tenant) is cold, before anything is torn down. Allowed for a projection that [ignores cold streams](#projections-that-ignore-cold-streams); it then replays `mt_events` only. |
 | A projection registered after streams went cold | Its first start from the beginning is refused the same way: the shard is paused with `ColdStreamReplayException`. A projection that starts from the present or from a later sequence is not affected. |
 | `CompactStreamAsync` | Refused with `InvalidStreamOperationException`: its `Compacted<T>` snapshot would leave the cold part out, and every later fold jumps to it. |
@@ -209,7 +209,8 @@ when a projection replays from the beginning; stores without a cold event store 
 ### Projections that ignore cold streams
 
 Some projections do not need the cold part at all, for example a read model the application derives for
-cold streams itself. Mark them, and they rebuild and start from `mt_events` alone:
+cold streams itself. Mark them, and they rebuild and start from `mt_events` alone, and a single-stream
+projection whose document is missing starts it from the warm events instead of from the cold part:
 
 ```cs
 using Marten.Events.Cold;
@@ -226,7 +227,8 @@ opts.Projections.CompositeProjectionFor("Carts", composite =>
 });
 ```
 
-On a composite, only the composite's own options count; marking one of its members does nothing.
+On a composite, only the composite's own options count, for rebuilds and for its members' missing documents
+alike; marking one of its members does nothing.
 
 ## Knowing that an append continues a cold stream
 

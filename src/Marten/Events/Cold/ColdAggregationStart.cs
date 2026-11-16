@@ -9,6 +9,7 @@ using ImTools;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections.Composite;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Schema;
 using Marten.Internal.Sessions;
@@ -26,7 +27,7 @@ internal static class ColdAggregationStart
 {
     /// <summary>
     ///     The start for documents of <typeparamref name="TDoc" />, or null when no cold store is configured or no
-    ///     single-stream projection stores them.
+    ///     single-stream projection stores them, or that projection ignores cold streams.
     /// </summary>
     public static ColdAggregationStart<TDoc, TId>? For<TDoc, TId>(EventGraph events)
         where TDoc : notnull where TId : notnull
@@ -41,13 +42,31 @@ internal static class ColdAggregationStart
         ColdAggregationStart<TDoc, TId>? start = null;
         if (events.Options.Projections.TryFindAggregate(typeof(TDoc), out var projection)
             && projection.Scope == AggregationScope.SingleStream
-            && projection is IAggregator<TDoc, TId, IQuerySession> aggregator)
+            && projection is IAggregator<TDoc, TId, IQuerySession> aggregator
+            && !ignoresColdStreams(events, projection))
         {
             start = new ColdAggregationStart<TDoc, TId>(events, aggregator);
         }
 
         events.ColdAggregationStarts = events.ColdAggregationStarts.AddOrUpdate(typeof(TDoc), start);
         return start;
+    }
+
+    // A composite replays as a whole, so for a member only the composite's own opt-in counts, as for rebuilds
+    private static bool ignoresColdStreams(EventGraph events, object projection)
+    {
+        foreach (var source in events.Options.Projections.All)
+        {
+            if (ReferenceEquals(source, projection)) return source.Options.IgnoresColdStreams();
+
+            if (source is CompositeProjection<IDocumentOperations, IQuerySession> composite
+                && composite.AllProjections().Any(x => ReferenceEquals(x, projection)))
+            {
+                return composite.Options.IgnoresColdStreams();
+            }
+        }
+
+        return false;
     }
 }
 

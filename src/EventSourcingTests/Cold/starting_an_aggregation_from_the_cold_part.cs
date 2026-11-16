@@ -193,6 +193,83 @@ public class starting_an_aggregation_from_the_cold_part: OneOffConfigurationsCon
         _cold.SnapshotLoads.ShouldBe(0);
     }
 
+    [Fact]
+    public async Task an_aggregation_that_ignores_cold_streams_folds_the_warm_events_only()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Events.UseColdEventStore(_cold);
+            var projection = new EvolvedCartProjection();
+            projection.Options.IgnoreColdStreams();
+            opts.Projections.Add(projection, ProjectionLifecycle.Inline);
+        });
+        var key = await startCart();
+        await moveToCold(key);
+
+        await append(key, new ItemAdded("pear"));
+
+        var cart = await load(key);
+        cart.Customer.ShouldBeNull();
+        cart.Items.ShouldBe(["pear"]);
+        _cold.Reads.ShouldBe(0);
+        _cold.SnapshotLoads.ShouldBe(0);
+    }
+
+    private void configureComposite(bool compositeIgnores, bool memberIgnores)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Events.UseColdEventStore(_cold);
+            opts.Projections.CompositeProjectionFor("Carts", composite =>
+            {
+                var member = new EvolvedCartProjection();
+                if (memberIgnores) member.Options.IgnoreColdStreams();
+                composite.Add(member);
+                if (compositeIgnores) composite.Options.IgnoreColdStreams();
+            });
+        });
+    }
+
+    private async Task<EvolvedCart> appendToColdCartThroughTheDaemon()
+    {
+        using var daemon = await startDaemon();
+        var key = await startCart();
+        await daemon.WaitForNonStaleData(30.Seconds());
+        await moveToCold(key);
+
+        await append(key, new ItemAdded("pear"));
+        await daemon.WaitForNonStaleData(30.Seconds());
+
+        return await load(key);
+    }
+
+    [Fact]
+    public async Task a_member_of_a_composite_that_ignores_cold_streams_folds_the_warm_events_only()
+    {
+        configureComposite(compositeIgnores: true, memberIgnores: false);
+
+        var cart = await appendToColdCartThroughTheDaemon();
+
+        cart.Customer.ShouldBeNull();
+        cart.Items.ShouldBe(["pear"]);
+        _cold.Reads.ShouldBe(0);
+        _cold.SnapshotLoads.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task a_composite_member_that_alone_ignores_cold_streams_still_starts_from_the_cold_part()
+    {
+        configureComposite(compositeIgnores: false, memberIgnores: true);
+
+        var cart = await appendToColdCartThroughTheDaemon();
+
+        cart.Customer.ShouldBe("anne");
+        cart.Items.ShouldBe(["apple", "pear"]);
+        _cold.SnapshotLoads.ShouldBe(1);
+    }
+
     private async Task<IProjectionDaemon> startDaemon()
     {
         var daemon = await theStore.BuildProjectionDaemonAsync();

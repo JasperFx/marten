@@ -152,7 +152,8 @@ public static class ColdEventStorage
     ///     This projection does not need the cold part of streams: let it be rebuilt, or start from the beginning,
     ///     from <c>mt_events</c> alone while streams are cold. Without it, both are refused with
     ///     <see cref="Marten.Exceptions.ColdStreamReplayException" />, because the async daemon does not read
-    ///     cold events. On a composite projection, set it on the composite's own options; a member's options are
+    ///     cold events. A single-stream projection marked this way also never starts a missing document from the
+    ///     cold part. On a composite projection, set it on the composite's own options; a member's options are
     ///     not consulted.
     /// </summary>
     public static AsyncOptions IgnoreColdStreams(this AsyncOptions options)
