@@ -1,5 +1,24 @@
 # Migration Guide
 
+## Key Changes in 9.61.0
+
+### Sharded tenancy never reassigns a tenant that already has a shard <Badge type="warning" text="behavior change" />
+
+With `MultiTenantedWithShardedDatabases`, a store that had not loaded the database pool (no `AddDatabase()`, no
+`BuildDatabases()`) could resolve a tenant that was already assigned to a shard by running the assignment strategy
+again and overwriting the assignment. The tenant moved to another shard while its data stayed on the old one, and
+nothing reported it ([#5995](https://github.com/JasperFx/marten/issues/5995)). Two processes racing to assign the
+same new tenant could end up on different shards the same way.
+
+An existing assignment is now final. When the assigned shard isn't cached, Marten loads that one shard from the pool
+table, and your assignment strategy only runs for a tenant with no assignment at all. If the pool no longer contains
+the assigned shard, Marten throws the new `Marten.Exceptions.AssignedShardNotFoundException`. It names the tenant and
+the shard (`TenantId`, `DatabaseId`), and the tenant is not reassigned. To fix it, register the shard in the pool
+again or assign the tenant explicitly. The assignment table's foreign key to the pool normally prevents this, so
+you'll only see it if a pool row was removed some other way.
+
+No schema change is involved.
+
 ## Key Changes in 9.60.0
 
 ### A DCB boundary save no longer conflicts with boundaries it did not change <Badge type="warning" text="behavior change" />
