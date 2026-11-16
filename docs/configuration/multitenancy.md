@@ -484,14 +484,19 @@ How that first resolution runs depends on the tenancy:
 | Tenancy | First synchronous resolution of a tenant |
 | --- | --- |
 | Master table | Reads the tenant's row with synchronous I/O on the calling thread ([#5985](https://github.com/JasperFx/marten/issues/5985)), unless the control database's connection string turns on `Multiplexing`, which Npgsql only supports asynchronously |
-| Single instance | Blocks the calling thread on asynchronous work, which may include `CREATE DATABASE` ([weasel#839](https://github.com/JasperFx/weasel/issues/839)) |
+| Single instance | Checks that the tenant's database exists, and runs `CREATE DATABASE` when it does not, with synchronous I/O on the calling thread ([#5985](https://github.com/JasperFx/marten/issues/5985), [weasel#839](https://github.com/JasperFx/weasel/issues/839)). The new database's schema is not applied here: as before, that happens on its first write. Still blocks the calling thread on asynchronous work when the master connection string turns on `Multiplexing` |
 | Sharded | For a tenant that already has a shard and all of its partitions, reads the assignment and checks the partitions with synchronous I/O on the calling thread ([#5986](https://github.com/JasperFx/marten/issues/5986)). Still blocks the calling thread on asynchronous work for the first tenant resolution in the process, which checks the pool's tables and seeds the configured databases; for a new tenant, which goes through your assignment strategy's `AssignTenantToDatabaseAsync()`; for a tenant whose partitions or event sequence are missing and get repaired; and when the control or shard database's connection string turns on `Multiplexing`, which Npgsql only supports asynchronously |
 
 A thread-pool thread blocked on asynchronous work waits for that work to be finished by another pool thread. Take a
 burst of synchronous session opens for tenants that this process has not seen yet, such as the first requests after a
-deploy or a batch of newly onboarded tenants. That burst can hold every pool thread, so the work they are all waiting
-on cannot run, and the whole process stalls until the thread pool has added enough threads. For a single instance
-tenancy that has to create the database, each blocked thread waits for the longest.
+deploy or a batch of newly onboarded tenants. In the cases above that still block, that burst can hold every pool
+thread, so the work they are all waiting on cannot run, and the whole process stalls until the thread pool has added
+enough threads. Synchronous I/O holds the calling thread too, but only for its own round trip, and it does not need
+another pool thread to finish.
+
+A single instance tenancy resolves uncached tenants one at a time, synchronous callers on one lock and asynchronous
+callers on another, and a caller gives up with a `TimeoutException` after waiting five seconds for the others. That
+only matters when a burst of brand-new tenants all need `CREATE DATABASE` at once.
 
 To keep that off the synchronous path:
 
