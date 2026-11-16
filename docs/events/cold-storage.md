@@ -192,19 +192,41 @@ part.
 ## What does not read the cold part
 
 Only the live folds, the opt-in raw reads, and a single-stream projection starting a missing document, all
-above, read the cold event store. Everything else sees `mt_events` alone, and on a cold stream that is
-**silently wrong**, without an error:
+above, read the cold event store. Everything else sees `mt_events` alone. Where that would silently build
+something wrong, Marten refuses instead:
 
 | Operation | On a cold stream |
 |---|---|
 | Inline and async aggregations (snapshots) | Correct, also when you moved the stored document out together with the events: see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream). |
-| Rebuilding a projection | Replays `mt_events` only, so every snapshot and read model of a cold stream loses its cold part. |
-| A projection registered after streams went cold | Same as a rebuild: it never sees the cold events. |
-| `CompactStreamAsync` | Builds its `Compacted<T>` snapshot from the warm events only. Later folds jump to that snapshot and drop the cold part for good. **Do not compact a cold stream.** |
+| Rebuilding a projection | Refused with `ColdStreamReplayException` while any stream in that database (or, for a per-tenant rebuild, that tenant) is cold, before anything is torn down. Allowed for a projection that [ignores cold streams](#projections-that-ignore-cold-streams); it then replays `mt_events` only. |
+| A projection registered after streams went cold | Its first start from the beginning is refused the same way: the shard is paused with `ColdStreamReplayException`. A projection that starts from the present or from a later sequence is not affected. |
+| `CompactStreamAsync` | Refused with `InvalidStreamOperationException`: its `Compacted<T>` snapshot would leave the cold part out, and every later fold jumps to it. |
 | `FetchStreamAsync`, `QueryAllRawEvents()` | Return the events in `mt_events` only. Use `FetchStreamWithColdAsync` or `FetchStreamsWithColdAsync` for the whole stream. |
 
-Before you move a stream, make sure nothing in this table will run on it, or that you can live with the
-result.
+The check for rebuilds and new projections is one `exists` query on `mt_streams` per database (or tenant)
+when a projection replays from the beginning; stores without a cold event store skip it.
+
+### Projections that ignore cold streams
+
+Some projections do not need the cold part at all, for example a read model the application derives for
+cold streams itself. Mark them, and they rebuild and start from `mt_events` alone:
+
+```cs
+using Marten.Events.Cold;
+
+var projection = new OpenCartsProjection();
+projection.Options.IgnoreColdStreams();
+opts.Projections.Add(projection, ProjectionLifecycle.Async);
+
+// A composite projection replays as a whole, so the opt-in goes on the composite itself
+opts.Projections.CompositeProjectionFor("Carts", composite =>
+{
+    composite.Add<OpenCartsProjection>();
+    composite.Options.IgnoreColdStreams();
+});
+```
+
+On a composite, only the composite's own options count; marking one of its members does nothing.
 
 ## Knowing that an append continues a cold stream
 
