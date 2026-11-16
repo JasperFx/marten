@@ -103,6 +103,9 @@
         <Compile Include="..\Marten.Testing\Harness\OneOffConfigurationsContext.cs">
             <Link>Harness\OneOffConfigurationsContext.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\Harness\DisposableTracker.cs">
+            <Link>Harness\DisposableTracker.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Harness\SerializerTypeTargetedFact.cs">
             <Link>SerializerTypeTargetedFact.cs</Link>
         </Compile>

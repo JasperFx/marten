@@ -16,10 +16,8 @@ namespace Marten.Testing.Harness
 
         public virtual void Dispose()
         {
-            foreach (var disposable in Disposables)
-            {
-                disposable.Dispose();
-            }
+            // Skips nulls, disposes each item once, and reports failures after the rest. See #5976
+            Disposables.DisposeAll();
         }
 
         /// <remarks>
@@ -58,7 +56,7 @@ namespace Marten.Testing.Harness
         protected T Fixture { get; }
 
         protected IDocumentSession _session;
-        protected readonly IList<IDisposable> Disposables = new List<IDisposable>();
+        protected readonly DisposableTracker Disposables = new();
 
         protected IDocumentSession theSession
         {
