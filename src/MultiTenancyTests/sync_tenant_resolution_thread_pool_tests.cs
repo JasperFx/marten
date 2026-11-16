@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Testing.Harness;
 using Npgsql;
@@ -36,10 +37,9 @@ public class sync_tenant_resolution_thread_pool_tests
         _output = output;
     }
 
-    // Red on master: 86 synchronous session opens for uncached tenants stalled a 10 ms heartbeat for 2.1-2.7 s on
-    // 18 processors. The 9.0 branch fixes this in Marten's own MasterTableTenancy; on master the tenant cache
-    // belongs to Weasel's MasterTableTenancyBase, which has no synchronous way to resolve and cache a tenant yet
-    [Fact(Skip = "#5985: needs a synchronous resolve on Weasel's MasterTableTenancyBase, JasperFx/weasel#838")]
+    // Red before Weasel's MasterTableTenancyBase.TryResolveTenant (weasel#838) was adopted: 86 synchronous session
+    // opens for uncached tenants stalled a 10 ms heartbeat for 2.1-2.7 s on 18 processors
+    [Fact]
     public async Task a_burst_of_sync_session_opens_for_uncached_master_table_tenants_does_not_starve_the_thread_pool()
     {
         var schema = "mt_starve_" + Guid.NewGuid().ToString("N")[..10];
@@ -125,6 +125,47 @@ public class sync_tenant_resolution_thread_pool_tests
         }
     }
 
+    // #5985, weasel#839. Red before the fix: every cold tenant blocked a pool thread on the asynchronous existence
+    // check of its database. Every tenant's database already exists, the steady state after a deploy: a warm server
+    // and a cold process
+    [Fact]
+    public async Task a_burst_of_sync_session_opens_for_uncached_single_server_tenants_does_not_starve_the_thread_pool()
+    {
+        var callers = Math.Max(ThreadPool.ThreadCount, Environment.ProcessorCount) * 4 + 16;
+        var prefix = "ss_starve_" + Guid.NewGuid().ToString("N")[..8] + "_";
+        var databaseNames = Enumerable.Range(0, callers).Select(i => prefix + i).ToArray();
+
+        await SingleServerDatabases.CreateAsync(databaseNames);
+
+        try
+        {
+            await using (var store = DocumentStore.For(opts =>
+                         {
+                             opts.DisableNpgsqlLogging = true;
+                             opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
+                         }))
+            {
+                // One asynchronous resolution first, as above, so the burst measures the per-tenant lookup only
+                await store.Options.Tenancy.GetTenantAsync(databaseNames[0]);
+
+                var worst = await measureBurstAsync(databaseNames.Skip(1).ToArray(),
+                    tenantId =>
+                    {
+                        using var session = store.LightweightSession(tenantId);
+                        session.TenantId.ShouldBe(tenantId);
+                        session.Database.Identifier.ShouldBe(tenantId);
+                    });
+
+                worst.ShouldBeLessThan(TimeSpan.FromMilliseconds(500),
+                    $"the thread pool was starved for {worst.TotalMilliseconds:N0} ms while {callers} callers opened sessions for uncached single server tenants");
+            }
+        }
+        finally
+        {
+            await SingleServerDatabases.DropAsync(databaseNames);
+        }
+    }
+
     private async Task<TimeSpan> measureBurstAsync(string[] tenantIds, Action<string> open)
     {
         using var stop = new CancellationTokenSource();
@@ -184,6 +225,110 @@ public class sync_tenant_resolution_thread_pool_tests
     }
 }
 
+/// <summary>
+///     #5985: the synchronous master-table lookup (Weasel's <c>TryResolveTenant</c>, weasel#838) refuses and caches
+///     exactly as the asynchronous one does, and a multiplexed control database, which Npgsql refuses synchronous
+///     I/O on, keeps the asynchronous lookup instead of failing with <see cref="NotSupportedException" />.
+/// </summary>
+[Collection(TenantResolutionThreadPoolCollection.Name)]
+public class sync_master_table_tenant_resolution
+{
+    [Fact]
+    public async Task sync_lookup_refuses_and_caches_like_the_async_lookup()
+    {
+        var schema = "mt_sync_" + Guid.NewGuid().ToString("N")[..10];
+
+        await using var store = DocumentStore.For(opts =>
+        {
+            opts.DisableNpgsqlLogging = true;
+            opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = schema;
+            });
+        });
+
+        var tenancy = (Marten.Storage.MasterTableTenancy)store.Options.Tenancy;
+
+        try
+        {
+            await tenancy.TenantDatabase.ApplyAllConfiguredChangesToDatabaseAsync();
+            await MasterTableRows.InsertAsync(schema, ["warm", "sync1", "off1"]);
+            await MasterTableRows.DisableAsync(schema, "off1");
+
+            // Before anything asynchronous has run, Weasel declines and the lookup falls back
+            tenancy.TryResolveTenant("sync1", out _).ShouldBeFalse();
+            store.Options.Tenancy.GetTenant("warm").TenantId.ShouldBe("warm");
+
+            // The fallback provisioned the control table, so from here every lookup is synchronous
+            tenancy.TryResolveTenant("missing", out var unknown).ShouldBeTrue();
+            unknown.Database.ShouldBeNull();
+
+            var sync1 = store.Options.Tenancy.GetTenant("sync1");
+            sync1.TenantId.ShouldBe("sync1");
+
+            // One cache for both paths
+            (await store.Options.Tenancy.GetTenantAsync("sync1")).Database.ShouldBeSameAs(sync1.Database);
+            tenancy.AllDatabases().ShouldContain(sync1.Database);
+
+            // Unknown and disabled tenants are refused as before, and nothing is cached for them
+            Should.Throw<UnknownTenantIdException>(() => store.Options.Tenancy.GetTenant("missing"))
+                .ShouldNotBeOfType<DisabledTenantException>();
+            Should.Throw<DisabledTenantException>(() => store.Options.Tenancy.GetTenant("off1"));
+            tenancy.FindCachedDatabase("missing").ShouldBeNull();
+            tenancy.FindCachedDatabase("off1").ShouldBeNull();
+        }
+        finally
+        {
+            await MasterTableRows.DropSchemaAsync(schema);
+        }
+    }
+
+    [Fact]
+    public async Task sync_session_for_an_uncached_tenant_works_when_the_control_database_is_multiplexed()
+    {
+        var schema = "mt_mux_" + Guid.NewGuid().ToString("N")[..10];
+        var multiplexed = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+        {
+            Multiplexing = true
+        }.ConnectionString;
+
+        await using var store = DocumentStore.For(opts =>
+        {
+            opts.DisableNpgsqlLogging = true;
+            opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+            {
+                x.ConnectionString = multiplexed;
+                x.SchemaName = schema;
+            });
+        });
+
+        try
+        {
+            await ((Marten.Storage.MasterTableTenancy)store.Options.Tenancy).TenantDatabase
+                .ApplyAllConfiguredChangesToDatabaseAsync();
+            await MasterTableRows.InsertAsync(schema, ["mux1", "mux2", "mux3"]);
+
+            // Synchronous, on a tenant nothing has resolved yet, before anything asynchronous has run
+            using (var session = store.LightweightSession("mux1"))
+            {
+                session.TenantId.ShouldBe("mux1");
+            }
+
+            // And after the control table is provisioned, when the synchronous lookup would otherwise be taken
+            await store.Options.Tenancy.GetTenantAsync("mux2");
+            store.Options.Tenancy.GetTenant("mux3").TenantId.ShouldBe("mux3");
+
+            // An unknown tenant is still refused the same way
+            Should.Throw<UnknownTenantIdException>(() => store.Options.Tenancy.GetTenant("mux_missing"));
+        }
+        finally
+        {
+            await MasterTableRows.DropSchemaAsync(schema);
+        }
+    }
+}
+
 internal static class MasterTableRows
 {
     /// <summary>
@@ -205,6 +350,16 @@ internal static class MasterTableRows
         }
     }
 
+    public static async Task DisableAsync(string schema, string tenantId)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $"update {schema}.mt_tenant_databases set disabled = true where tenant_id = @id";
+        cmd.Parameters.AddWithValue("id", tenantId);
+        await cmd.ExecuteNonQueryAsync();
+    }
+
     public static async Task DropSchemaAsync(string schema)
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -212,5 +367,34 @@ internal static class MasterTableRows
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = $"drop schema if exists {schema} cascade";
         await cmd.ExecuteNonQueryAsync();
+    }
+}
+
+internal static class SingleServerDatabases
+{
+    public static async Task CreateAsync(string[] databaseNames)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        foreach (var databaseName in databaseNames)
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"create database {databaseName}";
+            await cmd.ExecuteNonQueryAsync();
+        }
+    }
+
+    public static async Task DropAsync(string[] databaseNames)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        foreach (var databaseName in databaseNames)
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"drop database if exists {databaseName} with (force)";
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }
