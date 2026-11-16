@@ -126,9 +126,36 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
             databaseName = tenantId;
         }
 
-        var database = FindOrCreateDatabase(databaseName).AsTask()
-            .GetAwaiter().GetResult();
+        // #5985: the synchronous twin of FindOrCreateDatabase(databaseName), so an uncached tenant no longer blocks
+        // a pool thread on the asynchronous existence check and CREATE DATABASE (weasel#839)
+        var database = getTenantSynchronously(_options.TenantIdStyle.MaybeCorrectTenantId(databaseName)).Database;
 
+        tenant = new Tenant(tenantId, database);
+        _tenants = _tenants.AddOrUpdate(tenantId, tenant);
+
+        return tenant;
+    }
+
+    /// <summary>
+    ///     #5985: <see cref="GetTenantAsync" /> step for step, with Weasel's
+    ///     <see cref="SingleServerDatabaseCollection{T}.FindOrCreateDatabaseSynchronously" /> in place of the
+    ///     asynchronous <c>FindOrCreateDatabase</c>. It looks the database up and creates it when it is missing over
+    ///     a synchronously opened connection, into the same cache, and falls back to blocking on the asynchronous
+    ///     path by itself only when the master connection string turns on <c>Multiplexing</c>.
+    /// </summary>
+    private Tenant getTenantSynchronously(string tenantId)
+    {
+        if (_tenants.TryFind(tenantId, out var tenant))
+        {
+            return tenant;
+        }
+
+        if (!_tenantToDatabase.TryGetValue(tenantId, out var databaseName))
+        {
+            databaseName = tenantId;
+        }
+
+        var database = FindOrCreateDatabaseSynchronously(databaseName);
         tenant = new Tenant(tenantId, database);
         _tenants = _tenants.AddOrUpdate(tenantId, tenant);
 

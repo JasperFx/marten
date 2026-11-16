@@ -1186,9 +1186,27 @@
          satisfied by the 2.102.0 pin above.
 
          weasel#786 is documentation only (a schema management guide). -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.50.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.50.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.50.0" />
+    <!-- Weasel 9.51.0 (from 9.50.0, spanning 9.50.1 and 9.50.2). Two additive changes, no DDL and no
+         migration-output change.
+
+         weasel#853 (weasel#849) is the fix for marten#5998 on the 9.x line, with no Marten code change:
+         HiloSequenceBase.TrySetCurrentHi now takes the same lock as NextLong. HiloSequence.SetFloor
+         installs through it, so it waits for an advance in flight and installs after it. Before, an
+         advance that had reserved its block under the old floor installed that block on top of the
+         floor's once SetFloor had returned, and ids below the floor followed; an install could also
+         interleave with AdvanceValue and repeat an id. Bug_5998_set_floor_race is the regression test.
+
+         weasel#843 (weasel#839) adds SingleServerDatabaseCollection.FindOrCreateDatabaseSynchronously,
+         which SingleServerMultiTenancy.GetTenant now uses for an uncached tenant (marten#5985), instead
+         of blocking a pool thread on FindOrCreateDatabase. It falls back to the asynchronous path only
+         for a master connection string with Multiplexing on.
+
+         Also in the range: 9.50.1 reuses one compiled plan for SQL Server table introspection (inert
+         here), and 9.50.2 (weasel#813/#817) makes db-patch and db-dump create a missing output
+         directory instead of failing. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.51.0" />
+    <PackageVersion Include="Weasel.Postgresql" Version="9.51.0" />
+    <PackageVersion Include="Weasel.Storage" Version="9.51.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

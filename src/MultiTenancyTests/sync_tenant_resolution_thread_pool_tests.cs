@@ -123,6 +123,47 @@ public class sync_tenant_resolution_thread_pool_tests
         }
     }
 
+    // #5985, weasel#839. Red before the fix: every cold tenant blocked a pool thread on the asynchronous existence
+    // check of its database. Every tenant's database already exists, the steady state after a deploy: a warm server
+    // and a cold process
+    [Fact]
+    public async Task a_burst_of_sync_session_opens_for_uncached_single_server_tenants_does_not_starve_the_thread_pool()
+    {
+        var callers = Math.Max(ThreadPool.ThreadCount, Environment.ProcessorCount) * 4 + 16;
+        var prefix = "ss_starve_" + Guid.NewGuid().ToString("N")[..8] + "_";
+        var databaseNames = Enumerable.Range(0, callers).Select(i => prefix + i).ToArray();
+
+        await SingleServerDatabases.CreateAsync(databaseNames);
+
+        try
+        {
+            await using (var store = DocumentStore.For(opts =>
+                         {
+                             opts.DisableNpgsqlLogging = true;
+                             opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
+                         }))
+            {
+                // One asynchronous resolution first, as above, so the burst measures the per-tenant lookup only
+                await store.Options.Tenancy.GetTenantAsync(databaseNames[0]);
+
+                var worst = await measureBurstAsync(databaseNames.Skip(1).ToArray(),
+                    tenantId =>
+                    {
+                        using var session = store.LightweightSession(tenantId);
+                        session.TenantId.ShouldBe(tenantId);
+                        session.Database.Identifier.ShouldBe(tenantId);
+                    });
+
+                worst.ShouldBeLessThan(TimeSpan.FromMilliseconds(500),
+                    $"the thread pool was starved for {worst.TotalMilliseconds:N0} ms while {callers} callers opened sessions for uncached single server tenants");
+            }
+        }
+        finally
+        {
+            await SingleServerDatabases.DropAsync(databaseNames);
+        }
+    }
+
     private async Task<TimeSpan> measureBurstAsync(string[] tenantIds, Action<string> open)
     {
         using var stop = new CancellationTokenSource();
@@ -261,5 +302,34 @@ internal static class MasterTableRows
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = $"drop schema if exists {schema} cascade";
         await cmd.ExecuteNonQueryAsync();
+    }
+}
+
+internal static class SingleServerDatabases
+{
+    public static async Task CreateAsync(string[] databaseNames)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        foreach (var databaseName in databaseNames)
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"create database {databaseName}";
+            await cmd.ExecuteNonQueryAsync();
+        }
+    }
+
+    public static async Task DropAsync(string[] databaseNames)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        foreach (var databaseName in databaseNames)
+        {
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"drop database if exists {databaseName} with (force)";
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }
