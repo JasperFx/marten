@@ -176,6 +176,16 @@ executed nothing since before the gap's sequence numbers were handed out, and it
 connections regardless. The evidence supporting that reasoning is durable, so it survives daemon
 restarts, deploys and shard rebalancing.
 
+If something else holds an advisory lock on a connection that only holds the lock and never appends
+events, like Wolverine's transaction-scoped durability pass lock, you can tell the daemon to rule those
+sessions out too <Badge type="tip" text="10.0" />:
+
+```cs
+// The full 64-bit key, exactly as passed to pg_advisory_xact_lock(). A session holding
+// it is still counted if it has written anything at all.
+opts.Projections.IgnoreAdvisoryLockHoldersForGapDetection(lockKey);
+```
+
 If you want a bounded escape hatch anyway — against, say, a leaked application session that holds an
 open transaction forever — set a cap:
 
