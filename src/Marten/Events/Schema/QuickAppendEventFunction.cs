@@ -209,21 +209,33 @@ namespace Marten.Events.Schema;
             var expectedVersionParamType = _events.EnableBigIntEvents ? "bigint" : "integer";
             var expectedVersionParameter =
                 $", expected_version {expectedVersionParamType} DEFAULT NULL::{expectedVersionParamType}";
-            var occVersionSelect = _events.UseExclusiveLockOnConcurrentAppends
-                ? $"select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere} for update;"
-                : $"select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere};";
+            // #6066: the stream row is locked when its version is read, before any event is inserted, on
+            // every append. Without it, each appender's event INSERT took a FOR KEY SHARE lock on the row
+            // through the mt_events foreign key and only then asked for the row lock in the trailing UPDATE.
+            // Two appenders to one stream could each hold the shared lock and wait for the other to release
+            // it, and a FetchForExclusiveWriting queued on the row for FOR UPDATE became part of the same
+            // cycle, so PostgreSQL broke the deadlock by failing one of them (40P01). Taking the lock first
+            // makes appenders and exclusive fetches wait their turn on one lock, and an appender that waited
+            // reads the version its predecessor committed.
+            //
+            // FOR NO KEY UPDATE is the lock the trailing UPDATE takes anyway, and it does not block the
+            // FOR KEY SHARE that inserting events into this stream needs. UseExclusiveLockOnConcurrentAppends
+            // keeps its stronger FOR UPDATE.
+            var streamLock = _events.UseExclusiveLockOnConcurrentAppends ? "for update" : "for no key update";
+            var versionSelect =
+                $"select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere} {streamLock};";
             var expectedVersionCheck = $@"
     if expected_version IS NOT NULL then
         -- COALESCE turns the NULL we get for a brand-new stream into 0, so a
         -- FetchForWriting against a non-existent stream (which sets
         -- ExpectedVersionOnServer = 0) and a StartStream(id, version: 0) both
         -- land on the new-stream branch instead of mis-firing the guard.
-        {occVersionSelect}
+        {versionSelect}
         if COALESCE(event_version, 0) != expected_version then
             RAISE EXCEPTION 'Stream version mismatch on ''%'': expected %, actual %', stream, expected_version, COALESCE(event_version, 0) USING ERRCODE = 'MT003';
         end if;
     else
-        select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere};
+        {versionSelect}
     end if;
 ";
 

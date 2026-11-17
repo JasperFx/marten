@@ -391,16 +391,10 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public DcbConflictScope DcbConflictScope { get; set; } = DcbConflictScope.TagValueAndEventType;
 
     /// <summary>
-    /// When enabled, adds FOR UPDATE to the stream version SELECT inside
-    /// mt_quick_append_events for OCC (optimistic concurrency) appends.
-    /// This prevents a READ COMMITTED race where two concurrent transactions
-    /// both pass the version check before either commits, both call nextval(),
-    /// and the loser fails with a 23505 duplicate key violation — leaving a
-    /// permanent gap in mt_events_sequence that stalls QueryForNonStaleData.
-    /// With this option the losing transaction blocks at the SELECT until the
-    /// winner commits, reads the updated version, and raises MT003 before any
-    /// nextval() call. Non-OCC appends are unaffected.
-    /// Defaults to false to preserve existing throughput characteristics.
+    /// Takes FOR UPDATE instead of FOR NO KEY UPDATE on the stream's mt_streams row when
+    /// mt_quick_append_events reads the stream version. Since #6066 the function locks that row
+    /// before inserting any events either way, so concurrent appends to one stream already wait
+    /// their turn and an optimistic loser raises MT003 before any nextval() call. Defaults to false.
     /// </summary>
     public bool UseExclusiveLockOnConcurrentAppends { get; set; }
 
