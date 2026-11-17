@@ -83,6 +83,32 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// </summary>
     public TimeSpan? SkipStaleGapsDespiteLiveTransactionsAfter { get; set; }
 
+    private readonly List<long> _ignoredGapDetectionLockKeys = new();
+
+    /// <summary>
+    ///     #5791: tell the async daemon's gap detection that a session holding this advisory lock key only holds
+    ///     the lock and never appends events, so it is not a possible reserver of a sequence gap. Use this for a
+    ///     connection that sits "idle in transaction" holding a transaction-scoped advisory lock, like Wolverine's
+    ///     transaction-scoped durability pass lock. Without it, gap detection holds behind that session until it
+    ///     ends. A session that has written anything is never ruled out, whatever lock it holds.
+    /// </summary>
+    /// <param name="lockKey">
+    ///     The full 64-bit advisory lock key, exactly as passed to <c>pg_advisory_xact_lock(bigint)</c>. A negative
+    ///     <c>int</c> key is the same negative <c>long</c>.
+    /// </param>
+    public void IgnoreAdvisoryLockHoldersForGapDetection(long lockKey)
+    {
+        if (!_ignoredGapDetectionLockKeys.Contains(lockKey))
+        {
+            _ignoredGapDetectionLockKeys.Add(lockKey);
+        }
+    }
+
+    /// <summary>
+    ///     #5791: the advisory lock keys registered through <see cref="IgnoreAdvisoryLockHoldersForGapDetection" />
+    /// </summary>
+    public IReadOnlyList<long> IgnoredAdvisoryLockKeysForGapDetection => _ignoredGapDetectionLockKeys;
+
     /// <summary>
     ///     Opt into a performance optimization that directs Marten to always use the identity map for an
     ///     Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.

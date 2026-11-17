@@ -26,7 +26,7 @@ internal record GapLiveness(long OldLockHolders, long OlderTransactions, long Ol
     public override string ToString()
     {
         return
-            $"mt_events write locks held by transactions from before the gap: {OldLockHolders}, open transactions from before the gap: {OlderTransactions}, in-progress write transaction ids from before the gap: {OlderWriteXids}, idle-in-transaction sessions ruled out as reservers: {QuiescentSessionsIgnored}, daemon advisory-lock sessions ruled out as reservers: {DaemonLockSessionsIgnored}";
+            $"mt_events write locks held by transactions from before the gap: {OldLockHolders}, open transactions from before the gap: {OlderTransactions}, in-progress write transaction ids from before the gap: {OlderWriteXids}, idle-in-transaction sessions ruled out as reservers: {QuiescentSessionsIgnored}, daemon or registered advisory-lock sessions ruled out as reservers: {DaemonLockSessionsIgnored}";
     }
 }
 
@@ -105,8 +105,14 @@ with quiescent as (
 -- ran, where no allocation fence can ever be established and the quiescent CTE above is therefore
 -- always empty. That connection is dedicated to holding the lock and never appends, so it can never
 -- be a gap's reserver. Matched on Marten's own deterministic lock ids (ProjectionLockIds.Compute
--- over this store's schema, shards and DaemonLockId), and further restricted to sessions that have
--- written nothing at all -- a backend that has actually appended has an xid and is never excluded.
+-- over this store's schema, shards and DaemonLockId) plus any key registered through
+-- IgnoreAdvisoryLockHoldersForGapDetection() (#5791, e.g. Wolverine's transaction-scoped durability
+-- pass lock), and further restricted to sessions that have written nothing at all -- a backend that
+-- has actually appended has an xid and is never excluded.
+--
+-- A bigint advisory key is stored as classid = high 32 bits, objid = low 32 bits, objsubid = 1, so the
+-- full key is rebuilt to match. A negative key (an int hash sign-extended to bigint) has a non-zero
+-- classid and only matches this way.
 own_daemon_locks as (
   select a.pid, a.backend_xid
     from pg_locks l
@@ -114,9 +120,8 @@ own_daemon_locks as (
    where l.locktype = 'advisory'
      and l.granted
      and l.pid <> pg_backend_pid()
-     and l.classid = 0
      and l.objsubid = 1
-     and l.objid = any(:lock_ids)
+     and ((l.classid::bigint << 32) | l.objid::bigint) = any(:lock_ids)
      and l.database = (select d.oid from pg_database d where d.datname = current_database())
      and a.backend_xid is null
 ),
