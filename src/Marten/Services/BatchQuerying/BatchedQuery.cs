@@ -180,6 +180,25 @@ internal partial class BatchedQuery: IBatchedQuery
             return;
         }
 
+        try
+        {
+            await executeAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            // #6034: every item Execute() did not get to read has to finish too, or awaiting it after a
+            // caught failure hangs forever. Items already read keep their results.
+            foreach (var item in _items)
+            {
+                item.Fail(e, token);
+            }
+
+            throw;
+        }
+    }
+
+    private async Task executeAsync(CancellationToken token)
+    {
         // Refuse the batch here as well as at enlist time. The enlist-time check throws SYNCHRONOUSLY only
         // when the non-exclusive fetch is added second, because FetchForExclusiveWriting is async and an
         // exception in an async method's body arrives as a faulted task instead. In that ordering the
