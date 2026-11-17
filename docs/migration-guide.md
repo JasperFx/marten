@@ -532,6 +532,14 @@ opts.Schema.For<Order>().Index(x => x.CustomerEmail, x =>
 });
 ```
 
+### Stream compaction waits for async projections and subscriptions <Badge type="warning" text="behavior change" />
+
+`CompactStreamAsync()` now throws an `InvalidOperationException` while an asynchronous projection or subscription has
+not processed the events it would delete, including one that has never run. Nothing is compacted; compact again once
+they caught up. A single stream projection of the compacted type is not checked, since it reads the `Compacted<T>`
+snapshot. In 9.x those events were deleted anyway, and a multi-stream projection or a subscription that was behind
+never saw them ([#6050](https://github.com/JasperFx/marten/issues/6050), [compacting](/events/compacting)).
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |
@@ -732,9 +740,9 @@ Both settings are off under [per-tenant event partitioning](/events/multitenancy
 (`UseTenantPartitionedEvents`), which partitions the same tables by tenant. Marten 9 refused that combination at
 startup; Marten 10 only refuses it when you set `UseArchivedStreamPartitioning = true` yourself.
 
-Strict stream identity adds one small insert per new stream. It does not yet cover streams that existed before the
-upgrade, or streams created by appending to a new id in the Quick append modes; neither is recorded in
-`mt_streams_identity` ([#6051](https://github.com/JasperFx/marten/issues/6051)). To keep the 9.x behavior:
+Strict stream identity adds one small insert per new stream. The migration that creates `mt_streams_identity` fills it
+from `mt_streams`, archived streams included, so streams that existed before the upgrade are covered too
+([#6051](https://github.com/JasperFx/marten/issues/6051)). To keep the 9.x behavior:
 
 ```cs
 opts.Events.UseArchivedStreamPartitioning = false;
