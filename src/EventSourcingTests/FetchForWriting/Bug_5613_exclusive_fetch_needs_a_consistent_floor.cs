@@ -196,12 +196,12 @@ public class Bug_5613_exclusive_fetch_needs_a_consistent_floor: OneOffConfigurat
         ex.Id.ShouldBe(id);
         ex.Message.ShouldContain("Retry the batch");
 
-        // Deliberately NOT awaiting `query`. When Execute() faults it never completes the individual
-        // BatchQueryItem tasks, and BatchedQuery.FetchForExclusiveWriting ends in `return await
-        // resultTask`, so that task is orphaned and awaiting it blocks forever. Doing so here hung a test
-        // run for eight hours. That dangling-task behaviour is pre-existing for any batched handler that
-        // throws, not something this fix introduced, but it is the reason this assertion stops at Execute.
-        query.IsCompleted.ShouldBeFalse();
+        // #6034: the fetch itself finishes with the same failure instead of being orphaned. Before that
+        // fix, awaiting it here blocked forever (it hung a test run for eight hours), so the wait is
+        // bounded: a regression fails with a TimeoutException rather than hanging the run.
+        var fetchFailure = await Should.ThrowAsync<SnapshotRaceException>(async () =>
+            await query.WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken));
+        fetchFailure.Id.ShouldBe(id);
     }
 
     [Fact]
