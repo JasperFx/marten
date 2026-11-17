@@ -536,6 +536,38 @@ Options.Schema.For<DocThatShouldBeExempted2>().DoNotPartition();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L38-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exempt_from_partitioning_through_fluent_interface' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### Partitioning your own tables by tenant <Badge type="tip" text="10.0" />
+
+If you add your own tables to the store through `opts.Storage.ExtendedSchemaObjects` and want them partitioned per
+tenant the same way as the document tables, use `opts.Storage.PartitionPerTenant(table)`:
+
+<!-- snippet: sample_partition_extended_table_per_tenant -->
+<a id='snippet-sample_partition_extended_table_per_tenant'></a>
+```cs
+var table = new Table(new DbObjectName(_schema, "ledger_entries"));
+table.AddColumn<Guid>("id").AsPrimaryKey();
+table.AddColumn<string>("tenant_id").NotNull();
+table.AddColumn<int>("amount");
+
+// One LIST partition per tenant, created as tenants are added,
+// and left alone by later schema migrations
+opts.Storage.PartitionPerTenant(table);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/partition_extended_table_per_tenant.cs#L62-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_partition_extended_table_per_tenant' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The table needs a `tenant_id` column. Marten adds it to the table's primary key, because PostgreSQL requires the
+partition key there, and adds the table to `ExtendedSchemaObjects` if you haven't already. `AddMartenManagedTenantsAsync()`
+then creates each tenant's partition in your table along with the document tables.
+
+You can wire this up by hand, but don't skip `IgnorePartitionsInMigration`. Without it, a schema migration compares
+the partitions it expects with the ones that exist, and on a database that already has tenants it can decide to
+rebuild the whole table through a `_temp` copy. `PartitionPerTenant()` sets it for you, just like Marten does for its
+own tables.
+
+The store has to use Marten-managed tenant partitioning (`Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()`,
+`Events.UseTenantPartitionedEvents` or sharded tenancy). If it doesn't, building the store throws.
+
 ## Deleting Data For a Single Tenant
 
 ::: warning
