@@ -12,23 +12,11 @@ namespace DaemonTests.Bugs;
 
 public class Bug_catching_up_apply_errors: OneOffConfigurationsContext
 {
-    // Retry is opt-in under the supervisor (JasperFx/bobcat#565), and this test earned it with
-    // evidence: in 33 green master runs (2026-09 to 2026-10-15) its first attempt failed in 13 --
-    // "Task should throw System.AggregateException but did not" -- and passed on a fresh-process
-    // retry every time. It is reported as FLAKY in the retry ledger; the trait does not hide it.
-    //
-    // Root cause (marten#5696), found by reading JasperFx, not state left by an earlier test: the
-    // schema is per class and dropped in StoreOptions(), so nothing carries over. CatchUpAsync
-    // (JasperFxAsyncDaemon) collects failures through a Recorder subscribed to Database.Tracker,
-    // and ShardStateTracker.PublishAsync records the state synchronously but delivers it to
-    // listeners through an asynchronous Block<ShardState>. The apply failure is published by
-    // SubscriptionAgent.ReportCriticalFailureAsync, then throwIfRecordedExceptions reads the
-    // Recorder straight away. When the block's consumer has not yet delivered that state, the
-    // Recorder is empty and CatchUpAsync returns cleanly. The fix belongs in JasperFx (drain the
-    // tracker, or read the failure from the agent, before checking); the trait comes off once a
-    // JasperFx release carrying it is adopted. Same cause as Bug_catching_up_command_errors below.
+    // marten#5696: this failed its first attempt in 13 of 33 green master runs ("Task should throw
+    // System.AggregateException but did not"). CatchUpAsync checked its Recorder before the shard state
+    // tracker's asynchronous block had delivered the failure. JasperFx fixed that in jasperfx#1134 (2.100.1
+    // and 3.x) by reading the faulted shard's failure from the agent, so the Retry trait is gone.
     [Fact]
-    [Trait("Retry", "3")]
     public async Task should_catch_apply_event_exceptions()
     {
         StoreOptions(opts =>
@@ -58,12 +46,8 @@ public class Bug_catching_up_apply_errors: OneOffConfigurationsContext
 
 public class Bug_catching_up_command_errors: OneOffConfigurationsContext
 {
-    // The same intermittent, with the same root cause, as should_catch_apply_event_exceptions
-    // above (marten#5696): CatchUpAsync checks its Recorder before the tracker's asynchronous
-    // block has delivered the failure. It cost a whole job on PR 5780 (2026-10-28) without the
-    // trait; a pass on a retry is still reported as FLAKY.
+    // Same race and same fix as should_catch_apply_event_exceptions above (marten#5696, jasperfx#1134)
     [Fact]
-    [Trait("Retry", "3")]
     public async Task should_catch_marten_command_exceptions()
     {
         StoreOptions(opts =>
