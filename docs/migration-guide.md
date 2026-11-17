@@ -553,6 +553,30 @@ The function changes, so schema migration replaces it: `AutoCreate.CreateOrUpdat
 a `db-patch` contains one `CREATE OR REPLACE FUNCTION` for it. `UseExclusiveLockOnConcurrentAppends` still works and
 takes `for update` instead, but there is little reason left to turn it on ([appending](/events/appending)).
 
+### A snapshot without its stream throws `SnapshotWithoutStreamException` <Badge type="warning" text="behavior change" />
+
+For an aggregate projected with `ProjectionLifecycle.Async`, `FetchForWriting()`, `FetchForExclusiveWriting()`,
+`FetchLatest()` and `StreamLatestJson()` now throw `SnapshotWithoutStreamException` when the aggregate's snapshot
+document exists but its stream does not. That happens after `DeleteAllEventDataAsync()`, which leaves documents in
+place. In 9.x `FetchForWriting()` returned the old snapshot at version 0, as if the stream were new. Delete the
+snapshot documents along with the events, for example with `DeleteDocumentsByTypeAsync()`
+([cleaning](/schema/cleaning), [#5799](https://github.com/JasperFx/marten/pull/5799)).
+
+### Batched fetches of `Async` aggregates have no ordering rules <Badge type="tip" text="new" />
+
+An `Async` aggregate fetch now reads the events after the snapshot before it reads the snapshot itself, so it no
+longer wraps its reads in `begin transaction isolation level repeatable read read only` … `end`. That lifts the rules
+the bracket forced on batches in 9.x:
+
+- a batched `FetchForWriting()` or `FetchLatest()` no longer has to be the first item in its batch,
+- it can share a batch with `FetchForExclusiveWriting()`, and with other `Async` fetches,
+- `FetchManyForWriting()` reads every stream in one round trip instead of one fetch per stream.
+
+The `InvalidOperationException`s that refused those batches are gone. A batched fetch whose snapshot went backwards
+between its two reads, as it does while a projection is rebuilt, still throws `SnapshotRaceException`; retry the
+batch. Outside a batch Marten redoes the fetch itself, and `FetchManyForWriting()` falls back to one fetch per stream
+([#5799](https://github.com/JasperFx/marten/pull/5799)).
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |

@@ -39,6 +39,10 @@ public async Task clean_out_documents(IDocumentStore store)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentCleanerExamples.cs#L13-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_clean_out_documents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+`DeleteAllEventDataAsync()` leaves documents in place, including the snapshots of aggregates projected with
+`ProjectionLifecycle.Async`. Fetching one of those aggregates afterwards throws `SnapshotWithoutStreamException`,
+so delete its documents too, for example with `DeleteDocumentsByTypeAsync()`.
+
 You can also tear down all Data from the `IHost` instance using the `IHost.CleanAllMartenDataAsync()` method.
 
 <!-- snippet: sample_clean_out_documents_ihost -->

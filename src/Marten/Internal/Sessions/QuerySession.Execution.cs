@@ -19,12 +19,10 @@ public partial class QuerySession
     internal IConnectionLifetime _connection;
 
     /// <summary>
-    ///     #5611. Whether this session is already inside a transaction that outlives the current call --
-    ///     one the caller opened with <see cref="SessionOptions.ForTransaction" />, an ambient
-    ///     <c>TransactionScope</c>, or an explicit <c>BeginTransaction</c>. A read that wants its own
-    ///     isolation level has to check this first: PostgreSQL will not let it change the isolation of a
-    ///     transaction already in progress, and the <c>end</c> that closes its bracket would commit that
-    ///     transaction out from under whoever owns it.
+    ///     Whether this session is inside a transaction that outlives the current call -- one the caller
+    ///     opened with <see cref="SessionOptions.ForTransaction" />, an ambient <c>TransactionScope</c>, or an
+    ///     explicit <c>BeginTransaction</c>. A flush on such a session is not a commit: the owner of the
+    ///     transaction can still roll it back.
     /// </summary>
     internal bool HasSurvivingTransaction => _connection.HasSurvivingTransaction();
 

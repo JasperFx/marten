@@ -34,11 +34,7 @@ namespace EventSourcingTests.FetchForWriting;
 /// </list>
 ///
 /// <para>
-/// The fix skips the bracket when the session holds a transaction that outlives the call. Those
-/// callers keep their transaction and give up the shared snapshot, which is the right way round — a
-/// read race is recoverable, a wrongly committed transaction is not. <see
-/// cref="a_caller_at_repeatable_read_gets_one_snapshot_without_marten_emitting_anything"/> is the
-/// escape hatch for a caller who wants both.
+/// A fetch opens no transaction of its own, so a transaction the caller owns is left to the caller.
 /// </para>
 /// </summary>
 public class Bug_5611_fetch_must_not_commit_a_caller_owned_transaction: OneOffConfigurationsContext
@@ -204,9 +200,6 @@ public class Bug_5611_fetch_must_not_commit_a_caller_owned_transaction: OneOffCo
     [Fact]
     public async Task a_batched_fetch_inside_a_caller_owned_transaction_need_not_be_first()
     {
-        // The must-be-first rule (#5535) exists only to protect the bracket. Inside a caller-owned
-        // transaction no bracket is emitted, so the rule has nothing to protect and does not apply --
-        // otherwise the guard would have traded a data bug for a gratuitous refusal.
         var ct = TestContext.Current.CancellationToken;
         var streamId = await withAnAsyncAggregateAndAStreamAsync();
 
@@ -231,9 +224,7 @@ public class Bug_5611_fetch_must_not_commit_a_caller_owned_transaction: OneOffCo
     [Fact]
     public async Task a_caller_at_repeatable_read_gets_one_snapshot_without_marten_emitting_anything()
     {
-        // The escape hatch named in the class comment: a caller who wants both atomicity and one
-        // snapshot opens their own transaction at RepeatableRead. The reads then share a snapshot
-        // because the transaction already has one, and Marten emits no bracket to commit.
+        // A caller's own transaction at RepeatableRead: the reads share its snapshot, and it survives.
         var ct = TestContext.Current.CancellationToken;
         var streamId = await withAnAsyncAggregateAndAStreamAsync();
         var marker = Guid.NewGuid();
@@ -259,70 +250,5 @@ public class Bug_5611_fetch_must_not_commit_a_caller_owned_transaction: OneOffCo
 
         await using var query = theStore.QuerySession();
         (await query.LoadAsync<User>(marker, ct)).ShouldBeNull();
-    }
-
-    [Fact]
-    public async Task the_ordinary_session_still_brackets_its_reads()
-    {
-        // The control. A session with no transaction of its own must be completely unaffected: it still
-        // emits the bracket, which is what #5604 is about. Bug_5604_* covers the race itself; this only
-        // asserts the guard did not switch the bracket off for everybody.
-        var ct = TestContext.Current.CancellationToken;
-        var streamId = await withAnAsyncAggregateAndAStreamAsync();
-
-        await using var session = theStore.LightweightSession();
-        var seen = new BracketWatcher();
-        session.Logger = seen;
-
-        await session.Events.FetchForWriting<SimpleAggregate>(streamId, ct);
-
-        seen.SawTheBracket.ShouldBeTrue();
-    }
-
-    [Fact]
-    public async Task no_bracket_is_emitted_inside_a_caller_owned_transaction()
-    {
-        // The direct observation of the fix, rather than its consequence: the SQL simply isn't there.
-        var ct = TestContext.Current.CancellationToken;
-        var streamId = await withAnAsyncAggregateAndAStreamAsync();
-
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await conn.OpenAsync(ct);
-        await using var tx = await conn.BeginTransactionAsync(ct);
-
-        await using var session = theStore.LightweightSession(SessionOptions.ForTransaction(tx));
-        var seen = new BracketWatcher();
-        session.Logger = seen;
-
-        await session.Events.FetchForWriting<SimpleAggregate>(streamId, ct);
-
-        seen.SawTheBracket.ShouldBeFalse();
-
-        await tx.RollbackAsync(ct);
-    }
-
-    /// <summary>Records whether any batch carried the shared-snapshot bracket.</summary>
-    private sealed class BracketWatcher: IMartenSessionLogger
-    {
-        public bool SawTheBracket { get; private set; }
-
-        public void OnBeforeExecute(NpgsqlBatch batch)
-        {
-            foreach (NpgsqlBatchCommand command in batch.BatchCommands)
-            {
-                if (command.CommandText.Contains("begin transaction isolation level repeatable read read only"))
-                {
-                    SawTheBracket = true;
-                }
-            }
-        }
-
-        public void OnBeforeExecute(NpgsqlCommand command) { }
-        public void LogSuccess(NpgsqlCommand command) { }
-        public void LogFailure(NpgsqlCommand command, Exception ex) { }
-        public void LogSuccess(NpgsqlBatch batch) { }
-        public void LogFailure(NpgsqlBatch batch, Exception ex) { }
-        public void LogFailure(Exception ex, string message) { }
-        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit) { }
     }
 }
