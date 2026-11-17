@@ -251,13 +251,10 @@ namespace Marten.Events
         public DcbConflictScope DcbConflictScope { get; set; }
 
         /// <summary>
-        /// When enabled, adds FOR UPDATE to the stream version SELECT inside
-        /// mt_quick_append_events for OCC (optimistic concurrency) appends.
-        /// This prevents a READ COMMITTED race where two concurrent transactions
-        /// both pass the version check before either commits, both call nextval(),
-        /// and the loser fails with a 23505 — leaving a permanent gap in
-        /// mt_events_sequence that stalls QueryForNonStaleData.
-        /// Defaults to false to preserve existing throughput characteristics.
+        /// Takes FOR UPDATE instead of FOR NO KEY UPDATE on the stream's mt_streams row when
+        /// mt_quick_append_events reads the stream version. Since #6066 the function locks that row
+        /// before inserting any events either way, so concurrent appends to one stream already wait
+        /// their turn and an optimistic loser raises MT003 before any nextval() call. Defaults to false.
         /// </summary>
         public bool UseExclusiveLockOnConcurrentAppends { get; set; }
 

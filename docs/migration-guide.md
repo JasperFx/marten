@@ -540,6 +540,19 @@ they caught up. A single stream projection of the compacted type is not checked,
 snapshot. In 9.x those events were deleted anyway, and a multi-stream projection or a subscription that was behind
 never saw them ([#6050](https://github.com/JasperFx/marten/issues/6050), [compacting](/events/compacting)).
 
+### Quick appends lock the stream row before writing events <Badge type="warning" text="schema change" />
+
+The `mt_quick_append_events` function now locks the stream's `mt_streams` row (`for no key update`) when it reads the
+stream version, before it inserts any events. Before, it took that lock last, and concurrent appends to one stream
+could deadlock each other, or a `FetchForExclusiveWriting()` of that stream, with PostgreSQL error `40P01`
+([#6066](https://github.com/JasperFx/marten/issues/6066)). Now appends to one stream wait their turn. An append with an
+expected version that waited throws the usual concurrency exception without drawing a sequence number, and a plain
+`Append()` goes in after the append it waited for instead of failing.
+
+The function changes, so schema migration replaces it: `AutoCreate.CreateOrUpdate` and `All` do that on their own, and
+a `db-patch` contains one `CREATE OR REPLACE FUNCTION` for it. `UseExclusiveLockOnConcurrentAppends` still works and
+takes `for update` instead, but there is little reason left to turn it on ([appending](/events/appending)).
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |
@@ -558,8 +571,7 @@ never saw them ([#6050](https://github.com/JasperFx/marten/issues/6050), [compac
 | [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created-) | none; schema change, see below |
 
 `opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0
-([details](#restoring-v9-defaults)). `UseExclusiveLockOnConcurrentAppends` was measured under contention and stays off;
-see [Appending](/events/appending).
+([details](#restoring-v9-defaults)).
 
 Defaults that already turned on during 9.x minors, for readers coming from an older 9.x: the daemon's connection
 governors (`MaxConcurrentEventLoadsPerDatabase` and `MaxConcurrentBatchWritesPerDatabase`, both 4, since 9.13;
