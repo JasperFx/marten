@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -108,21 +109,25 @@ public class Bug_4441_force_catch_up_with_outbox: HostedStoreContext
         // catch-up even when the projection raises no side effects. If any
         // listener step is silently skipped, downstream outboxes like
         // Wolverine's MartenToWolverineMessageBatch lose their flush hook.
+        //
+        // Any batch, not the last one: the Solo daemon keeps running beside the forced catch-up, so another batch can
+        // be created after the one that committed and still be in flight here. Asserting on the last one alone
+        // failed whenever that happened.
         outbox.CreateBatchCount.ShouldBeGreaterThan(0);
-        outbox.LastBatch.ShouldNotBeNull();
-        outbox.LastBatch!.AfterCommitCount.ShouldBeGreaterThan(0);
+        outbox.Batches.ShouldContain(x => x.AfterCommitCount > 0);
     }
 
     private sealed class RecordingOutbox: IMessageOutbox
     {
         public int CreateBatchCount;
-        public RecordingBatch? LastBatch;
+        public readonly ConcurrentQueue<RecordingBatch> Batches = new();
 
         public ValueTask<IMessageBatch> CreateBatch(DocumentSessionBase session)
         {
             Interlocked.Increment(ref CreateBatchCount);
-            LastBatch = new RecordingBatch();
-            return new ValueTask<IMessageBatch>(LastBatch);
+            var batch = new RecordingBatch();
+            Batches.Enqueue(batch);
+            return new ValueTask<IMessageBatch>(batch);
         }
     }
 
