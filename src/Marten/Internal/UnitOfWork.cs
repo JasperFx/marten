@@ -277,18 +277,18 @@ internal class UnitOfWork: ISessionWorkTracker
             || (op is IIdentifiedOperation<T, TId> typed && typed.Id.Equals(id)));
     }
 
-    public bool TryFindStream(string streamKey, [NotNullWhen(true)]out StreamAction? stream)
+    public bool TryFindStream(string streamKey, string? tenantId, [NotNullWhen(true)]out StreamAction? stream)
     {
         stream = Streams
-            .FirstOrDefault(x => x.Key == streamKey);
+            .FirstOrDefault(x => x.Key == streamKey && (tenantId == null || x.TenantId == tenantId));
 
         return stream != null;
     }
 
-    public bool TryFindStream(Guid streamId, [NotNullWhen(true)]out StreamAction? stream)
+    public bool TryFindStream(Guid streamId, string? tenantId, [NotNullWhen(true)]out StreamAction? stream)
     {
         stream = Streams
-            .FirstOrDefault(x => x.Id == streamId);
+            .FirstOrDefault(x => x.Id == streamId && (tenantId == null || x.TenantId == tenantId));
 
         return stream != null;
     }
