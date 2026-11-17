@@ -16,8 +16,14 @@ internal interface ISessionWorkTracker: IUnitOfWork, IChangeSet
     void Sort(StoreOptions options);
     void Eject<T>(T document) where T : notnull;
     void EjectAllOfType(Type type);
-    bool TryFindStream(string streamKey, [NotNullWhen(true)]out StreamAction? stream);
-    bool TryFindStream(Guid streamId, [NotNullWhen(true)]out StreamAction? stream);
+    /// <summary>
+    ///     Find the pending stream action for this stream. #6031: under conjoined tenancy a stream id is only
+    ///     unique within a tenant, so pass the tenant to match on; null matches any tenant.
+    /// </summary>
+    bool TryFindStream(string streamKey, string? tenantId, [NotNullWhen(true)]out StreamAction? stream);
+
+    /// <inheritdoc cref="TryFindStream(string, string?, out StreamAction?)"/>
+    bool TryFindStream(Guid streamId, string? tenantId, [NotNullWhen(true)]out StreamAction? stream);
     bool HasOutstandingWork();
     void EjectAll();
 
