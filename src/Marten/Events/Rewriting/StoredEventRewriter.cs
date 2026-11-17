@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.MultiTenancy;
 using Marten.Linq.Selectors;
 using Marten.Services;
 using Marten.Storage;
@@ -14,6 +15,10 @@ using NpgsqlTypes;
 
 namespace Marten.Events.Rewriting;
 
+/// <summary>
+///     Runs one <see cref="StoredEventRewrite" />. Everything it needs is the store and the rewrite: there is no
+///     static state and no host, so it can be driven from a console, a test or an agent that keeps the cursor.
+/// </summary>
 internal sealed class StoredEventRewriter
 {
     private static readonly byte[] EmptyJsonObject = "{}"u8.ToArray();
@@ -36,6 +41,7 @@ internal sealed class StoredEventRewriter
 
         if (rewrite.BatchSize <= 0) throw new ArgumentOutOfRangeException(nameof(rewrite.BatchSize));
         if (rewrite.MaxParallelDatabases <= 0) throw new ArgumentOutOfRangeException(nameof(rewrite.MaxParallelDatabases));
+        if (rewrite.PauseBetweenBatches < TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(rewrite.PauseBetweenBatches));
 
         _store = store;
         _rewrite = rewrite;
@@ -56,45 +62,89 @@ internal sealed class StoredEventRewriter
 
     public async Task<StoredEventRewriteResult> ExecuteAsync(CancellationToken token)
     {
-        var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);
+        var (databases, tenantId) = await selectDatabasesAsync().ConfigureAwait(false);
         var results = new ConcurrentBag<StoredEventRewriteProgress>();
 
         await Parallel.ForEachAsync(databases,
             new ParallelOptions { MaxDegreeOfParallelism = _rewrite.MaxParallelDatabases, CancellationToken = token },
-            async (database, ct) => results.Add(await rewriteAsync(database, ct).ConfigureAwait(false))).ConfigureAwait(false);
+            async (database, ct) => results.Add(await rewriteAsync(database, tenantId, ct).ConfigureAwait(false)))
+            .ConfigureAwait(false);
 
         return new StoredEventRewriteResult(results.OrderBy(x => x.Cursor.Database).ToList());
     }
 
-    private async Task<StoredEventRewriteProgress> rewriteAsync(IMartenDatabase database, CancellationToken token)
+    private async Task<(IReadOnlyList<IMartenDatabase> Databases, string? TenantId)> selectDatabasesAsync()
+    {
+        IMartenDatabase? tenantDatabase = null;
+        string? tenantId = null;
+        if (_rewrite.TenantId != null)
+        {
+            var tenant = await _store.Tenancy
+                .GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(_rewrite.TenantId))
+                .ConfigureAwait(false);
+            tenantDatabase = tenant.Database;
+
+            // With one tenant per database and no conjoined events, the database is the whole selection
+            if (_events.TenancyStyle == TenancyStyle.Conjoined) tenantId = tenant.TenantId;
+        }
+
+        if (_rewrite.DatabaseIdentifier == null)
+        {
+            return tenantDatabase == null
+                ? (await _store.Storage.AllDatabases().ConfigureAwait(false), tenantId)
+                : ([tenantDatabase], tenantId);
+        }
+
+        var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);
+        var database = databases.FirstOrDefault(x => x.Identifier == _rewrite.DatabaseIdentifier)
+                       ?? throw new ArgumentOutOfRangeException(nameof(StoredEventRewrite.ForDatabase),
+                           $"Unknown database '{_rewrite.DatabaseIdentifier}'. Known: {databases.Select(x => x.Identifier).Join(", ")}");
+
+        if (tenantDatabase != null && tenantDatabase.Identifier != database.Identifier)
+        {
+            throw new InvalidOperationException(
+                $"Tenant '{_rewrite.TenantId}' is stored in database '{tenantDatabase.Identifier}', not '{database.Identifier}'");
+        }
+
+        return ([database], tenantId);
+    }
+
+    private async Task<StoredEventRewriteProgress> rewriteAsync(IMartenDatabase database, string? tenantId,
+        CancellationToken token)
     {
         var cursor = _rewrite.ResumeCursors.TryGetValue(database.Identifier, out var resume)
             ? resume
             : new StoredEventRewriteCursor(database.Identifier, 0, "");
 
-        long visited = 0, rewritten = 0, skipped = 0, before = 0, after = 0;
+        long visited = 0, rewritten = 0, skipped = 0, before = 0, after = 0, unknown = 0;
 
         await using var conn = database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
 
         while (true)
         {
-            var page = await readPageAsync(conn, cursor, token).ConfigureAwait(false);
-            if (page.Count > 0)
-            {
-                var written = await writePageAsync(conn, page, token).ConfigureAwait(false);
-                visited += page.Count;
-                rewritten += written.Rewritten;
-                skipped += written.Skipped;
-                before += written.BytesBefore;
-                after += written.BytesAfter;
+            token.ThrowIfCancellationRequested();
 
-                var last = page[^1].Event;
-                cursor = cursor with { Sequence = last.Sequence, TenantId = last.TenantId };
+            var page = await readPageAsync(conn, cursor, tenantId, token).ConfigureAwait(false);
+            if (page.Rows > 0)
+            {
+                if (page.Events.Count > 0)
+                {
+                    var written = await writePageAsync(conn, page.Events, token).ConfigureAwait(false);
+                    rewritten += written.Rewritten;
+                    skipped += written.Skipped;
+                    before += written.BytesBefore;
+                    after += written.BytesAfter;
+                }
+
+                visited += page.Rows;
+                unknown += page.Rows - page.Events.Count;
+                cursor = cursor with { Sequence = page.LastSequence, TenantId = page.LastTenantId };
             }
 
-            var completed = page.Count < _rewrite.BatchSize;
-            var progress = new StoredEventRewriteProgress(cursor, visited, rewritten, skipped, before, after, completed);
+            var completed = page.Rows < _rewrite.BatchSize;
+            var progress = new StoredEventRewriteProgress(cursor, visited, rewritten, skipped, before, after,
+                completed, unknown);
             if (_rewrite.OnProgress != null)
             {
                 await _rewrite.OnProgress(progress, token).ConfigureAwait(false);
@@ -109,31 +159,61 @@ internal sealed class StoredEventRewriter
         }
     }
 
-    private async Task<List<(IEvent Event, string Xmin)>> readPageAsync(NpgsqlConnection conn,
-        StoredEventRewriteCursor cursor, CancellationToken token)
+    private sealed record Page(List<(IEvent Event, string Xmin)> Events, int Rows, long LastSequence, string LastTenantId);
+
+    private async Task<Page> readPageAsync(NpgsqlConnection conn, StoredEventRewriteCursor cursor, string? tenantId,
+        CancellationToken token)
     {
         var fields = _storage.SelectFields();
-        var typeFilter = _typeNames == null ? "" : "d.type = any(@types) and ";
 
+        var filters = new List<string>();
+        if (_typeNames != null) filters.Add("d.type = any(@types)");
+        if (tenantId != null) filters.Add("d.tenant_id = @tenant_id");
+        if (_rewrite.JsonOnly) filters.Add("d.bdata is null");
+        filters.Add("(d.seq_id, d.tenant_id) > (@seq, @tenant)");
+
+        // seq_id and tenant_id are read again after the event's own fields, so the cursor moves past a row
+        // even when the event in it cannot be read
         await using var cmd = new NpgsqlCommand(
-            $"select {fields.Select(x => "d." + x).Join(", ")}, d.xmin::text from {_schema}.mt_events as d " +
-            $"where {typeFilter}(d.seq_id, d.tenant_id) > (@seq, @tenant) order by d.seq_id, d.tenant_id limit @limit",
+            $"select {fields.Select(x => "d." + x).Join(", ")}, d.xmin::text, d.seq_id, d.tenant_id " +
+            $"from {_schema}.mt_events as d where {filters.Join(" and ")} order by d.seq_id, d.tenant_id limit @limit",
             conn);
 
         if (_typeNames != null) cmd.Parameters.AddWithValue("types", NpgsqlDbType.Array | NpgsqlDbType.Varchar, _typeNames);
+        if (tenantId != null) cmd.Parameters.AddWithValue("tenant_id", NpgsqlDbType.Varchar, tenantId);
         cmd.Parameters.AddWithValue("seq", NpgsqlDbType.Bigint, cursor.Sequence);
         cmd.Parameters.AddWithValue("tenant", NpgsqlDbType.Varchar, cursor.TenantId);
         cmd.Parameters.AddWithValue("limit", NpgsqlDbType.Integer, _rewrite.BatchSize);
 
-        var page = new List<(IEvent, string)>(_rewrite.BatchSize);
+        var events = new List<(IEvent, string)>(_rewrite.BatchSize);
+        var rows = 0;
+        long lastSequence = cursor.Sequence;
+        var lastTenantId = cursor.TenantId;
+
         await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            var @event = await ((ISelector<IEvent>)_storage).ResolveAsync(reader, token).ConfigureAwait(false);
-            page.Add((@event, await reader.GetFieldValueAsync<string>(fields.Length, token).ConfigureAwait(false)));
+            rows++;
+            var xmin = await reader.GetFieldValueAsync<string>(fields.Length, token).ConfigureAwait(false);
+            lastSequence = await reader.GetFieldValueAsync<long>(fields.Length + 1, token).ConfigureAwait(false);
+            lastTenantId = await reader.GetFieldValueAsync<string>(fields.Length + 2, token).ConfigureAwait(false);
+
+            IEvent @event;
+            try
+            {
+                @event = await ((ISelector<IEvent>)_storage).ResolveAsync(reader, token).ConfigureAwait(false);
+            }
+            catch (UnknownEventTypeException)
+            {
+                // Only reachable with IncludeAllTypes. An event the application cannot read cannot be
+                // written back the way it would be stored today, so it stays as it is.
+                continue;
+            }
+
+            events.Add((@event, xmin));
         }
 
-        return page;
+        return new Page(events, rows, lastSequence, lastTenantId);
     }
 
     private async Task<(long Rewritten, long Skipped, long BytesBefore, long BytesAfter)> writePageAsync(
@@ -160,6 +240,7 @@ internal sealed class StoredEventRewriter
             types[i] = mapping.EventTypeName;
             dotNetTypes[i] = mapping.DotNetTypeName;
 
+            // The same split an append makes: a binary event keeps {} in data and its bytes in bdata
             if (mapping.IsBinary)
             {
                 data[i] = EmptyJsonObject;
@@ -175,7 +256,8 @@ internal sealed class StoredEventRewriter
 
         // Rows that would come out the same are not written, so they leave no dead tuple behind. The xmin
         // check is repeated on the update itself, so a row another transaction changed after the read is
-        // skipped rather than overwritten.
+        // skipped rather than overwritten. Under READ COMMITTED an update that waits on a concurrent writer
+        // re-checks its WHERE against the new row version, whose xmin no longer matches.
         var write = _rewrite.DryRun
             ? "select 0 where false"
             : $"""
@@ -225,7 +307,10 @@ internal sealed class StoredEventRewriter
     {
         foreach (var (type, transform) in _rewrite.Transforms)
         {
-            if (type.IsInstanceOfType(data)) data = transform(data);
+            if (!type.IsInstanceOfType(data)) continue;
+
+            data = transform(data) ?? throw new InvalidOperationException(
+                $"The transform for {type.FullName} returned null. Return the event to keep it as it is.");
         }
 
         return data;

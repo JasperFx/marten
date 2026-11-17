@@ -23,7 +23,16 @@ var result = await store.Advanced.RewriteStoredEventsAsync(x =>
 
 Once a type has been rewritten in every database, an upcaster that only existed for its old rows can be removed.
 
+`IncludeAllTypes()` selects every event in the store instead. Archived events are history too, so they are rewritten
+like any other. Events of a type the application no longer knows are left as they are and counted as `UnknownTypes`.
+
 ## Correcting events
+
+::: warning
+A transform rewrites history. The old version of each event is gone once the rewrite has written it, and nothing
+that was built from the old version changes with it: projections that already processed the event, natural keys
+and tags keep what they had until you rebuild them. Take a backup first, and try it with `DryRun` on a copy.
+:::
 
 A transform changes the events of one type before they are written back:
 
@@ -33,8 +42,21 @@ await store.Advanced.RewriteStoredEventsAsync(x =>
 ```
 
 Use this for corrections the event's readers can live with in either form: until the rewrite completes, old and new
-rows exist side by side, and projections that already processed an event do not see the new version unless they are
-rebuilt. A change of shape belongs in an upcaster, which the rewrite then makes permanent.
+rows exist side by side. A change of shape belongs in an upcaster, which the rewrite then makes permanent.
+
+## Only events still stored as JSON
+
+Some serializers never write the same bytes twice for the same event, for example one that encrypts with a random
+IV. Every row then looks changed, and every run writes everything again. When the point of the rewrite is to move
+events from JSON to such a serializer, read only the rows that are still JSON:
+
+```cs
+await store.Advanced.RewriteStoredEventsAsync(x =>
+{
+    x.IncludeType<PersonRegistered>();
+    x.OnlyEventsStoredAsJson();
+});
+```
 
 ## What it does to the database
 
@@ -83,6 +105,25 @@ foreach (var database in result.Databases)
 }
 ```
 
+## One database or one tenant
+
+By default a rewrite covers every database of the store. To do one at a time, name the database by its identifier,
+or name a tenant. A tenant means its database, and with conjoined event tenancy only that tenant's rows:
+
+```cs
+await store.Advanced.RewriteStoredEventsAsync(x =>
+{
+    x.IncludeType<ClaimImported>();
+    x.ForTenant("tenant-b");
+});
+
+await store.Advanced.RewriteStoredEventsAsync(x =>
+{
+    x.IncludeType<ClaimImported>();
+    x.ForDatabase(database.Identifier);
+});
+```
+
 ## Progress and resuming
 
 Events are visited in order of sequence, then tenant, because a sequence alone is not unique with
@@ -95,7 +136,11 @@ await store.Advanced.RewriteStoredEventsAsync(x =>
     x.IncludeType<ClaimImported>();
     x.ResumeFrom(lastCursor);
     x.OnProgress = (progress, ct) => saveCursorAsync(progress.Cursor, ct);
-});
+}, cancellationToken);
 ```
+
+Cancelling the token stops the rewrite. Each page is written in one statement, so a page is written whole or not at
+all, and the last cursor `OnProgress` reported is where to pick it up again. The rewrite keeps no state of its own and needs no running host or async daemon: where the cursor is kept,
+and when the rewrite runs, is up to you.
 
 Because unchanged events are never written, starting over from the beginning is always safe, only slower.

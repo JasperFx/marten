@@ -11,11 +11,19 @@ namespace Marten.Events.Rewriting;
 ///     the way an append would store it today, optionally through a transform. Rows that would come out the
 ///     same are left alone.
 /// </summary>
+/// <remarks>
+///     A rewrite keeps no state of its own: progress goes out through <see cref="OnProgress" /> and comes back in
+///     through <see cref="ResumeFrom" />. Use <see cref="ForDatabase" /> or <see cref="ForTenant" /> to run one
+///     database or one tenant at a time.
+/// </remarks>
 public sealed class StoredEventRewrite
 {
     internal List<Type> Types { get; } = new();
     internal List<(Type Type, Func<object, object> Transform)> Transforms { get; } = new();
     internal bool AllTypes { get; private set; }
+    internal bool JsonOnly { get; private set; }
+    internal string? TenantId { get; private set; }
+    internal string? DatabaseIdentifier { get; private set; }
     internal Dictionary<string, StoredEventRewriteCursor> ResumeCursors { get; } = new();
 
     /// <summary>
@@ -55,7 +63,8 @@ public sealed class StoredEventRewrite
     }
 
     /// <summary>
-    ///     Rewrite every event in the store.
+    ///     Rewrite every event in the store. Events of a type this application no longer knows are left as they
+    ///     are, and counted as <see cref="StoredEventRewriteProgress.UnknownTypes" />.
     /// </summary>
     public StoredEventRewrite IncludeAllTypes()
     {
@@ -65,12 +74,46 @@ public sealed class StoredEventRewrite
 
     /// <summary>
     ///     Change the events read as <typeparamref name="T" /> before they are written back. Includes the type.
-    ///     The readers of these events see old and new rows side by side until the rewrite completes.
+    ///     This rewrites history: readers see old and new rows side by side until the rewrite completes, and
+    ///     nothing that was derived from the old events (projections, natural keys, tags) is updated.
     /// </summary>
     public StoredEventRewrite Transform<T>(Func<T, T> transform) where T : class
     {
+        ArgumentNullException.ThrowIfNull(transform);
         Types.Add(typeof(T));
         Transforms.Add((typeof(T), x => transform((T)x)));
+        return this;
+    }
+
+    /// <summary>
+    ///     Only read the selected events still stored as JSON, and leave the ones already in <c>bdata</c> alone.
+    ///     Use this when moving events to binary serialization with a serializer that does not write the same
+    ///     bytes twice, such as one that encrypts with a random IV: without it, every run rewrites every row
+    ///     again.
+    /// </summary>
+    public StoredEventRewrite OnlyEventsStoredAsJson()
+    {
+        JsonOnly = true;
+        return this;
+    }
+
+    /// <summary>
+    ///     Only rewrite the events of this tenant: its database, and with conjoined event tenancy only its rows.
+    /// </summary>
+    public StoredEventRewrite ForTenant(string tenantId)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(tenantId);
+        TenantId = tenantId;
+        return this;
+    }
+
+    /// <summary>
+    ///     Only rewrite this database, by its <c>Identifier</c>, for a store with more than one.
+    /// </summary>
+    public StoredEventRewrite ForDatabase(string databaseIdentifier)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(databaseIdentifier);
+        DatabaseIdentifier = databaseIdentifier;
         return this;
     }
 
@@ -79,6 +122,7 @@ public sealed class StoredEventRewrite
     /// </summary>
     public StoredEventRewrite ResumeFrom(StoredEventRewriteCursor cursor)
     {
+        ArgumentNullException.ThrowIfNull(cursor);
         ResumeCursors[cursor.Database] = cursor;
         return this;
     }
@@ -90,11 +134,14 @@ public sealed class StoredEventRewrite
 /// </summary>
 public sealed record StoredEventRewriteCursor(string Database, long Sequence, string TenantId);
 
+/// <param name="Cursor">Where to resume this database from.</param>
 /// <param name="Visited">Events read so far.</param>
 /// <param name="Rewritten">Events written back, or that would be in a dry run.</param>
 /// <param name="Skipped">Events another transaction changed between the read and the write. Run again to include them.</param>
 /// <param name="BytesBefore">Stored payload size of the rewritten events before.</param>
 /// <param name="BytesAfter">Payload size of the rewritten events after, uncompressed.</param>
+/// <param name="Completed">Whether every selected event of this database has been visited.</param>
+/// <param name="UnknownTypes">Events of a type this application no longer knows, left as they are.</param>
 public sealed record StoredEventRewriteProgress(
     StoredEventRewriteCursor Cursor,
     long Visited,
@@ -102,6 +149,7 @@ public sealed record StoredEventRewriteProgress(
     long Skipped,
     long BytesBefore,
     long BytesAfter,
-    bool Completed);
+    bool Completed,
+    long UnknownTypes = 0);
 
 public sealed record StoredEventRewriteResult(IReadOnlyList<StoredEventRewriteProgress> Databases);

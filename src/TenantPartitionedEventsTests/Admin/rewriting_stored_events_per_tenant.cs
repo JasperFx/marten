@@ -48,4 +48,37 @@ public class rewriting_stored_events_per_tenant: PartitionedStoreContext
                 .ShouldBe([$"{tenant.ToUpperInvariant()} 1", $"{tenant.ToUpperInvariant()} 2"]);
         }
     }
+
+    [Fact]
+    public async Task one_tenant_is_rewritten_alone_and_the_others_keep_their_rows()
+    {
+        string[] tenants = ["alpha", "beta"];
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenants);
+
+        foreach (var tenant in tenants)
+        {
+            await using var session = Store.LightweightSession(tenant);
+            session.Events.StartStream(Guid.NewGuid(), new ParcelSent($"{tenant} 1"), new ParcelSent($"{tenant} 2"));
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var result = await Store.Advanced.RewriteStoredEventsAsync(x =>
+        {
+            x.Transform<ParcelSent>(e => e with { To = e.To.ToUpperInvariant() });
+            x.ForTenant("beta");
+            x.BatchSize = 1;
+        }, TestContext.Current.CancellationToken);
+
+        result.Databases.Single().Visited.ShouldBe(2);
+        result.Databases.Single().Rewritten.ShouldBe(2);
+        result.Databases.Single().Cursor.TenantId.ShouldBe("beta");
+
+        await using var alpha = Store.QuerySession("alpha");
+        (await alpha.Events.QueryAllRawEvents().ToListAsync(TestContext.Current.CancellationToken))
+            .Select(e => ((ParcelSent)e.Data).To).OrderBy(x => x).ShouldBe(["alpha 1", "alpha 2"]);
+
+        await using var beta = Store.QuerySession("beta");
+        (await beta.Events.QueryAllRawEvents().ToListAsync(TestContext.Current.CancellationToken))
+            .Select(e => ((ParcelSent)e.Data).To).OrderBy(x => x).ShouldBe(["BETA 1", "BETA 2"]);
+    }
 }
