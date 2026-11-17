@@ -59,7 +59,7 @@ public class multi_tenancy_by_database: IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");

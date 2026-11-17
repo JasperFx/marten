@@ -339,7 +339,7 @@ public class document_store_diagnostics_tests: HostedStoreContext
         // A read-only console question about a tenant that does not exist must not bring that tenant into
         // being, so diagnostics goes through TryFindDatabase and answers with an empty page.
         var schema = $"{SchemaName}_unknown_tenant";
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        await using (var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString))
         {
             await conn.OpenAsync();
             await conn.DropSchemaAsync(schema);
