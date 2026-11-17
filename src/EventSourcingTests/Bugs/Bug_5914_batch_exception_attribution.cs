@@ -43,8 +43,8 @@ public class Bug_5914_batch_exception_attribution: OneOffConfigurationsContext
         /// <summary>The default session: AutoClosingLifetime</summary>
         AutoClosing,
 
-        /// <summary>UseStickyConnectionLifetimes: TransactionalConnection</summary>
-        Sticky,
+        /// <summary>An ordinary session pinned by BeginTransactionAsync(): TransactionalConnection</summary>
+        Pinned,
 
         /// <summary>SessionOptions.ForTransaction: ExternalTransaction</summary>
         External,
@@ -60,7 +60,6 @@ public class Bug_5914_batch_exception_attribution: OneOffConfigurationsContext
             // Rich reads `actual` out of the violation's Detail, which Npgsql redacts without this
             opts.Connection(ConnectionSource.ConnectionString + ";Include Error Detail=true");
             opts.Events.AppendMode = mode;
-            opts.UseStickyConnectionLifetimes = lifetime == Lifetime.Sticky;
         });
     }
 
@@ -187,9 +186,9 @@ public class Bug_5914_batch_exception_attribution: OneOffConfigurationsContext
     }
 
     [Theory]
-    [InlineData(Lifetime.Sticky, EventAppendMode.Quick)]
-    [InlineData(Lifetime.Sticky, EventAppendMode.QuickWithServerTimestamps)]
-    [InlineData(Lifetime.Sticky, EventAppendMode.Rich)]
+    [InlineData(Lifetime.Pinned, EventAppendMode.Quick)]
+    [InlineData(Lifetime.Pinned, EventAppendMode.QuickWithServerTimestamps)]
+    [InlineData(Lifetime.Pinned, EventAppendMode.Rich)]
     [InlineData(Lifetime.External, EventAppendMode.Quick)]
     [InlineData(Lifetime.External, EventAppendMode.QuickWithServerTimestamps)]
     [InlineData(Lifetime.External, EventAppendMode.Rich)]
@@ -234,6 +233,7 @@ public class Bug_5914_batch_exception_attribution: OneOffConfigurationsContext
             try
             {
                 await using var session = store.LightweightSession(options);
+                if (lifetime == Lifetime.Pinned) await session.BeginTransactionAsync(System.Threading.CancellationToken.None);
 
                 var newId = Guid.NewGuid();
                 if (!conflictFirst) session.Events.StartStream<Counter>(newId, new Started("new"));

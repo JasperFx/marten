@@ -289,10 +289,9 @@ public partial class DocumentStore : IDocumentStoreUsageSource
         usage.AddValue(nameof(Options.NameDataLength), Options.NameDataLength);
         usage.AddValue(nameof(Options.ApplyChangesLockId), Options.ApplyChangesLockId);
 
-        // Cluster C: CommandTimeout, UpdateBatchSize, UseStickyConnectionLifetimes
+        // Cluster C: CommandTimeout, UpdateBatchSize (UseStickyConnectionLifetimes was removed in 10.0)
         usage.AddValue(nameof(Options.CommandTimeout), Options.CommandTimeout);
         usage.AddValue(nameof(Options.UpdateBatchSize), Options.UpdateBatchSize);
-        usage.AddValue(nameof(Options.UseStickyConnectionLifetimes), Options.UseStickyConnectionLifetimes);
 
         // Cluster D: DuplicatedFieldEnumStorage (lifted from Advanced)
         usage.AddValue("DuplicatedFieldEnumStorage", Options.Advanced.DuplicatedFieldEnumStorage.ToString());

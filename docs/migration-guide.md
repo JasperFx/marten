@@ -491,6 +491,27 @@ migration.
   `Select(x => x.Inner)`, it was applied to the documents. Order before the `Select()` instead. A key that has no
   exact SQL translation, such as a `Math` call, is refused the same way.
 
+### `UseStickyConnectionLifetimes` is gone <Badge type="warning" text="breaking" />
+
+`StoreOptions.UseStickyConnectionLifetimes`, which brought back the Marten 6 behavior of holding one connection open for
+the whole life of every session, has been removed. Sessions use and release connections as they go.
+
+When one session needs to keep one connection, ask for it on that session: `await session.BeginTransactionAsync()` or
+`await session.GetConnectionAsync()` pins the session to a connection until it is disposed, and the serializable
+sessions (`OpenSerializableSessionAsync()`, `QuerySerializableSessionAsync()`) and a caller-supplied connection or
+transaction (`SessionOptions.ForConnection()`, `SessionOptions.ForTransaction()`) do the same.
+
+### `AllDocumentsAreMultiTenantedWithPartitioning(configure)` uses `(tenant_id, id)` primary keys <Badge type="warning" text="schema change" />
+
+The overload of `Policies.AllDocumentsAreMultiTenantedWithPartitioning()` that takes only the partitioning lambda now
+uses `PrimaryKeyTenancyOrdering.TenantId_Then_Id`, the same primary key as the per-document
+`MultiTenantedWithPartitioning()`. In 9.x it used `Id_Then_TenantId`, so the next migration rewrites the primary key of
+every table this policy partitions. To keep the old primary key, pass it:
+
+```cs
+opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(
+    x => x.ByExternallyManagedListPartitions(),
+    PrimaryKeyTenancyOrdering.Id_Then_TenantId);
 ### Declaring the same computed index twice throws <Badge type="warning" text="behavior change" />
 
 Two `Index()` calls on one document type that resolve to the same index name, for example the same member twice,

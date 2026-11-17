@@ -333,30 +333,11 @@ public static async Task explicit_transactions(IDocumentSession session)
 
 ### "Sticky" Connections
 
-To revert Marten back to its V6 and earlier "sticky" connection handling, use this option:
-
-<!-- snippet: sample_use_sticky_connection_lifetimes -->
-<a id='snippet-sample_use_sticky_connection_lifetimes'></a>
-```cs
-using var store = DocumentStore.For(opts =>
-{
-    opts.Connection("some connection string");
-
-    // Opt into V6 and earlier "sticky" connection
-    // handling
-    opts.UseStickyConnectionLifetimes = true;
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/sticky_connection_mode.cs#L30-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_sticky_connection_lifetimes' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-With this setting, Marten uses a single connection to the Postgresql database in each `IQuerySession` or `IDocumentSession`.
-The connection is only opened on the first call to the database, but after that remains open until the `IQuerySession`/`IDocumentSession` is disposed. A couple things to note:
-
-- It's imperative that any `IQuerySession`/`IDocumentSession` opened is disposed in order to recover and reuse
-  connections to the underlying database
-- Because the connection is "sticky" to the session, you can utilize serializable transactions. In the future, Marten will
-  also enable you to opt into [locking documents read from the session](https://github.com/JasperFx/marten/issues/356).
+Marten 10 removed the `UseStickyConnectionLifetimes` option that brought back the V6 and earlier "sticky" connection
+handling for every session. When one session needs to hold a single connection until it is disposed, for example
+for a serializable transaction, call `BeginTransactionAsync()` or `GetConnectionAsync()` on that session, or open it
+with `OpenSerializableSessionAsync()`. Either way, it's imperative that the session is disposed so the connection goes
+back to the pool.
 
 There is no place within Marten where it keeps a stateful connection open across sessions.
 
