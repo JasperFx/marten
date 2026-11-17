@@ -226,6 +226,8 @@ runs even when another fails. The target fails when any unit failed or could not
 - **Durations.** `.bobcat/gate-durations.json` (ignored) records each unit's wall clock on this machine
   and orders the next run. `.bobcat/test-ledger/` keeps the folded test ledgers that balance lanes.
 - **`BOBCAT_RUN_TAG`** is the prefix: each unit publishes to the monitor as `<tag>/<project>.<tfm>`.
+- **The AOT runtime smoke under the JIT** runs after the suites (#6064), on its own database
+  (`--gate-only AotRuntimeJit` runs it alone). The native run is still `./build.sh test-aot-runtime`.
 
 Options that need more than the ordinary database are opt-in:
 

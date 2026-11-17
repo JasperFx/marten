@@ -44,6 +44,14 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
             return true;
         }
 
+        // #6051: an append that creates its stream claims the id in mt_streams_identity, and an id claimed
+        // already is refused there whatever the action was. That is a reused stream identity, as it is for Start.
+        if (pg is { SqlState: PostgresErrorCodes.UniqueViolation, TableName: StreamIdentityEnforcementTable.TableName })
+        {
+            transformed = new ExistingStreamIdCollisionException((object)Stream.Key ?? Stream.Id, Stream.AggregateType);
+            return true;
+        }
+
         // Two Starts can both pass the function's MT003 check before either commits; the loser's
         // mt_streams insert then raises 23505 instead, and must surface exactly as MT003 would.
         if (pg is { SqlState: OptimisticVersionMismatchSqlState } || IsLostStartRace(pg))

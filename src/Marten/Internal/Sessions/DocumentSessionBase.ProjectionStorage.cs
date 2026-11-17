@@ -197,7 +197,21 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
             // revision is the global sequence, which passes int.MaxValue on a large store -- the case #4526 puts
             // on ILongVersioned and a bigint column. Narrowing an IRevisioned (int) member happens where the
             // value is written back to the document, not here.
-            r.Revision = scope == AggregationScope.SingleStream ? lastEvent.Version : lastEvent.Sequence;
+            //
+            // #6036: lastEvent is null when the slice held nothing after a Compacted<T>: the runner fast-forwards
+            // over the snapshot and keeps only the events behind it. The snapshot's own mapped revision, when it
+            // has one, is the version the compaction folded through. Otherwise the revision is left at 0, and the
+            // single stream document is written at its stream's version, as Bug_6036 checks for both a new and an
+            // existing document.
+            if (lastEvent != null)
+            {
+                r.Revision = scope == AggregationScope.SingleStream ? lastEvent.Version : lastEvent.Sequence;
+            }
+            else if (_storage.MappedRevisionFor(aggregate) is { } mapped && mapped > 0)
+            {
+                r.Revision = mapped;
+            }
+
             r.IgnoreConcurrencyViolation = true;
         }
 

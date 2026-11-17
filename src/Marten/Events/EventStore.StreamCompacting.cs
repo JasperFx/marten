@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using JasperFx.Events.Protected;
 using Marten.Events.Operations;
 using Marten.Events.Protected;
@@ -17,6 +19,7 @@ using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 using Weasel.Postgresql;
 
 using Marten.Services;
@@ -118,7 +121,86 @@ internal sealed class MartenStreamCompacting: StreamCompactingExecution<Document
     protected override async ValueTask<T?> BuildAggregateAsync<T>(DocumentSessionBase session,
         IReadOnlyList<IEvent> events, CancellationToken token) where T : class
     {
-        return await FindAggregator<T>(session).BuildAsync(events, session, default, token).ConfigureAwait(false);
+        var aggregate = await FindAggregator<T>(session).BuildAsync(events, session, default, token).ConfigureAwait(false);
+
+        // Called ahead of anything being queued, and only with the events about to be folded: the last one becomes
+        // the Compacted<T>, and the rest are deleted. A stream that folds to nothing is left alone anyway.
+        if (aggregate != null && events.Count > 0)
+        {
+            await ensureNoAsyncShardIsBehindAsync<T>(session, events[^1], token).ConfigureAwait(false);
+        }
+
+        return aggregate;
+    }
+
+    /// <summary>
+    ///     #6050: refuses to compact while an async projection or subscription has not processed the events being
+    ///     compacted. Compaction deletes them and rewrites the last one into a <see cref="Compacted{T}" />, so a
+    ///     multi-stream projection, a composite, another view of the stream or a subscription (Wolverine's event
+    ///     forwarding included) that had not reached them yet would never see them. A single-stream projection
+    ///     of <typeparamref name="T" /> itself is exempt: it fast-forwards over the snapshot.
+    /// </summary>
+    /// <remarks>
+    ///     The same rule as <c>MarkStreamCold</c>'s lag guard: a shard is behind unless its
+    ///     <c>mt_event_progression</c> row has reached the last event's sequence, and a shard with no row (one
+    ///     that never ran) is behind. A shard's row is the one for this session's tenant (<c>{shard}:{tenant}</c>)
+    ///     when the daemon keeps per-tenant progress, else the store-global one. Read before anything is queued: a
+    ///     shard only moves forward, so one that has caught up here is still caught up at commit.
+    /// </remarks>
+    private static async Task ensureNoAsyncShardIsBehindAsync<T>(DocumentSessionBase session, IEvent last,
+        CancellationToken token) where T : class
+    {
+        var options = ((IMartenSession)session).Options;
+
+        var exempt = options.Projections.All
+            .Where(x => x is IAggregateProjection { Scope: AggregationScope.SingleStream } aggregate &&
+                        aggregate.AggregateType == typeof(T))
+            .Select(x => x.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var tenantId = session.TenantId;
+        var shards = options.Projections.AllShards()
+            .Where(x => !exempt.Contains(x.Name.Name))
+            .Select(x => (Global: x.Name.Identity,
+                Tenant: ShardName.Compose(x.Name.Name, x.Name.ShardKey, tenantId, x.Name.Version).Identity))
+            .Distinct()
+            .ToArray();
+
+        if (shards.Length == 0)
+        {
+            return;
+        }
+
+        var names = shards.SelectMany(x => new[] { x.Global, x.Tenant }).Distinct().ToArray();
+        var cmd = new NpgsqlCommand(
+            $"select name, last_seq_id from {options.EventGraph.ProgressionTable} where name = any(@names)");
+        cmd.Parameters.AddWithValue("names", names);
+
+        var progress = new Dictionary<string, long>(StringComparer.Ordinal);
+        await using (var reader = await ((IMartenSession)session).ExecuteReaderAsync(cmd, token).ConfigureAwait(false))
+        {
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                progress[await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false)] =
+                    await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
+            }
+        }
+
+        var behind = shards
+            .Select(x => (Name: progress.ContainsKey(x.Tenant) ? x.Tenant : x.Global,
+                Seq: progress.TryGetValue(x.Tenant, out var t) ? t : progress.GetValueOrDefault(x.Global)))
+            .Where(x => x.Seq < last.Sequence)
+            .Select(x => $"{x.Name} (at {x.Seq})")
+            .ToArray();
+
+        if (behind.Length > 0)
+        {
+            throw new InvalidOperationException(
+                $"Cannot compact stream '{(object?)last.StreamKey ?? last.StreamId}' through version {last.Version} " +
+                $"(sequence {last.Sequence}) yet: these async projections or subscriptions have not processed its " +
+                $"events: {string.Join(", ", behind)}. Compacting deletes them, so those would never see them. " +
+                "Nothing was compacted; try again once they caught up.");
+        }
     }
 
     // Both closures are accepted, as Polecat does (polecat#423). IEventsArchiver<T> is invariant, so an

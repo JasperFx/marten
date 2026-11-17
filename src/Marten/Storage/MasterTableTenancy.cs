@@ -122,6 +122,59 @@ public class MasterTableTenancy: MasterTableTenancyBase<MartenDatabase, NpgsqlDa
         }
     }
 
+    /// <summary>
+    ///     #6058 (weasel#850), the cold-process half of #5985: lets a synchronous <c>GetTenant()</c> in a process where
+    ///     nothing asynchronous has run yet resolve the tenant synchronously, instead of blocking a thread on the
+    ///     asynchronous lookup. Makes the control table readable with blocking I/O and the same idempotent DDL the
+    ///     dialect creates it with, plus the <c>disabled</c> column an older Marten's table lacks (#4607). Declines
+    ///     while an asynchronous provisioning holds the lock, rather than waiting on it.
+    /// </summary>
+    /// <remarks>
+    ///     It does not stand in for <see cref="ProvisionControlTableAsync" />: the first asynchronous entry point
+    ///     still runs the Weasel migration of <see cref="TenantLookupDatabase" />.
+    /// </remarks>
+    protected override bool TryProvisionControlTableSynchronously()
+    {
+        // The operator owns the schema, as the asynchronous path assumes too
+        var autoCreate = EffectiveAutoCreate;
+        if (_hasAppliedChanges || autoCreate == AutoCreate.None)
+        {
+            return true;
+        }
+
+        // Never block on the semaphore: the asynchronous provisioning holds it across an await
+        if (!_applyingChanges.Wait(0))
+        {
+            return false;
+        }
+
+        try
+        {
+            if (_hasAppliedChanges)
+            {
+                return true;
+            }
+
+            var sql = Dialect.CreateControlTable(Options.SchemaName, TableName, QualifiedTableName);
+            if (autoCreate != AutoCreate.CreateOnly)
+            {
+                sql += $"{Environment.NewLine}alter table {QualifiedTableName} add column if not exists " +
+                       $"{TenantTable.DisabledColumn} boolean default false not null;";
+            }
+
+            using var conn = MasterDataSource.OpenConnection();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = sql;
+            cmd.ExecuteNonQuery();
+
+            return true;
+        }
+        finally
+        {
+            _applyingChanges.Release();
+        }
+    }
+
     public async ValueTask<IReadOnlyList<IDatabase>> BuildDatabases()
     {
         var databases = await BuildDatabasesAsync(CancellationToken.None).ConfigureAwait(false);

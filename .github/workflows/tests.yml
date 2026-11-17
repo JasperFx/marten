@@ -482,6 +482,11 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
         shell: bash
 
+      # #6064: the same smoke under the JIT, where some checks answer instead of refusing
+      - name: run under the JIT
+        run: ./build.sh test-aot-runtime-jit
+        shell: bash
+
       - name: publish natively and run
         run: ./build.sh test-aot-runtime
         shell: bash

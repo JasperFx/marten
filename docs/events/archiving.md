@@ -245,11 +245,14 @@ Under the hood Marten creates a sibling, **non-partitioned**
 `mt_streams_identity` table whose primary key is just the stream identity
 (`(id)`, or `(tenant_id, id)` under conjoined tenancy). Each `StartStream` is
 rewritten to also INSERT into that table in the same prepared statement (via
-a modifying CTE), so a duplicate identity raises a unique violation that
+a modifying CTE), and so is an append that creates a new stream in the Quick
+append modes, so a duplicate identity raises a unique violation that
 Marten translates into the same `ExistingStreamIdCollisionException` you'd
 expect in non-partitioned mode. Archive does **not** touch
 `mt_streams_identity`, so the identity row stays put and the protection
-spans the active / archived divide.
+spans the active / archived divide. When the table is first created, Marten
+fills it from `mt_streams`, so streams from before the flag was turned on are
+covered too.
 
 The flag is cheap — it adds a second tiny INSERT per stream creation — and the
 practical reason for it is exactly the combination above. If you turn
