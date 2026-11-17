@@ -98,6 +98,12 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
     internal SessionOptions SessionOptions { get; }
 
     /// <summary>
+    ///     Which tenants this session reads for conjoined documents and events when a query does not say.
+    ///     Null (the normal case) is the session's own tenant.
+    /// </summary>
+    internal SessionTenantScope? TenantScope { get; }
+
+    /// <summary>
     ///     Used for code generation
     /// </summary>
 #nullable disable
@@ -125,6 +131,9 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
             throw new ArgumentNullException(nameof(SessionOptions.Tenant));
 
         SessionOptions = sessionOptions;
+
+        // A nested ForTenant() session shares the parent's options, but reads its own tenant
+        TenantScope = tenant == null ? sessionOptions.TenantScope : null;
 
         Listeners.AddRange(store.Options.Listeners);
 

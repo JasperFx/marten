@@ -114,6 +114,12 @@ public sealed class SessionOptions
     internal bool ReadFromPrimary { get; set; }
 
     /// <summary>
+    ///     QueryAcrossAllDatabasesAsync: read every tenant, or the listed tenants, of conjoined documents and
+    ///     events instead of the session's own tenant. Not public.
+    /// </summary>
+    internal SessionTenantScope? TenantScope { get; set; }
+
+    /// <summary>
     ///     If set to true, this allows a session to be opened for "any"
     ///     tenant even if the StoreOptions.Advanced.DefaultTenantUsageEnabled is disabled normally
     ///     in this DocumentStore

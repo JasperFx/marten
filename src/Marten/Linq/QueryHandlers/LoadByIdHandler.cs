@@ -63,7 +63,7 @@ internal class LoadByIdHandler<T, TId>: IQueryHandler<T> where T : notnull where
         }
 
 
-        storage.AddTenancyFilter(sql, session.TenantId);
+        storage.AddTenancyFilter(sql, session);
     }
 
 
