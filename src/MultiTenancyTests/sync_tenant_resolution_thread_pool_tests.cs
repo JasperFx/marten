@@ -166,12 +166,28 @@ public class sync_tenant_resolution_thread_pool_tests
         }
     }
 
+    /// <summary>
+    ///     Runs the burst and answers how long the thread pool went without running a 10 ms heartbeat, counted on a
+    ///     dedicated (non-pool) thread's clock.
+    /// </summary>
+    /// <remarks>
+    ///     Measured against wall-clock time alone, the stall also counted time the whole process was not scheduled,
+    ///     and a busy machine (the local gate runs other suites beside this one) took a clean run past 500 ms while
+    ///     the pool was never starved. A dedicated thread is delayed by the machine as much as the pool heartbeat is,
+    ///     and not at all by pool starvation, so the stall is the number of its ticks that land between two pool ticks.
+    /// </remarks>
     private async Task<TimeSpan> measureBurstAsync(string[] tenantIds, Action<string> open)
     {
         using var stop = new CancellationTokenSource();
-        var heartbeat = Task.Run(() => measureWorstHeartbeatDelayAsync(stop.Token));
+        var clock = Stopwatch.StartNew();
 
-        // Let the heartbeat settle into its loop before the callers arrive
+        var poolTicks = new ConcurrentQueue<TimeSpan>();
+        var dedicatedTicks = new ConcurrentQueue<TimeSpan>();
+        var heartbeat = Task.Run(() => poolHeartbeatAsync(clock, poolTicks, stop.Token));
+        var dedicated = new Thread(() => dedicatedHeartbeat(clock, dedicatedTicks, stop.Token)) { IsBackground = true };
+        dedicated.Start();
+
+        // Let the heartbeats settle into their loops before the callers arrive
         await Task.Delay(100);
 
         var failures = new ConcurrentBag<Exception>();
@@ -193,35 +209,56 @@ public class sync_tenant_resolution_thread_pool_tests
         var burst = stopwatch.Elapsed;
 
         stop.Cancel();
-        var worst = await heartbeat;
+        await heartbeat;
+        dedicated.Join();
+
+        var pool = poolTicks.ToArray();
+        var reference = dedicatedTicks.ToArray();
+        var worstWallClock = TimeSpan.Zero;
+        var worstTicks = 0;
+        for (var i = 1; i < pool.Length; i++)
+        {
+            var gap = pool[i] - pool[i - 1];
+            if (gap > worstWallClock) worstWallClock = gap;
+
+            var from = pool[i - 1];
+            var to = pool[i];
+            var ticks = reference.Count(x => x > from && x < to);
+            if (ticks > worstTicks) worstTicks = ticks;
+        }
+
+        var stall = HeartbeatInterval * worstTicks;
 
         _output.WriteLine(
             $"{tenantIds.Length} callers on {Environment.ProcessorCount} processors: burst took {burst.TotalMilliseconds:N0} ms, " +
-            $"worst heartbeat delay {worst.TotalMilliseconds:N0} ms");
+            $"worst pool heartbeat gap {worstWallClock.TotalMilliseconds:N0} ms wall clock, {stall.TotalMilliseconds:N0} ms on a dedicated thread's clock");
 
         failures.ShouldBeEmpty(string.Join(Environment.NewLine, failures.Select(x => x.ToString())));
 
-        return worst;
+        return stall;
     }
 
-    private static async Task<TimeSpan> measureWorstHeartbeatDelayAsync(CancellationToken token)
-    {
-        var worst = TimeSpan.Zero;
-        var interval = TimeSpan.FromMilliseconds(10);
-        var clock = Stopwatch.StartNew();
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromMilliseconds(10);
 
+    private static async Task poolHeartbeatAsync(Stopwatch clock, ConcurrentQueue<TimeSpan> ticks,
+        CancellationToken token)
+    {
         while (!token.IsCancellationRequested)
         {
-            var before = clock.Elapsed;
-            await Task.Delay(interval, CancellationToken.None);
-            var late = clock.Elapsed - before - interval;
-            if (late > worst)
-            {
-                worst = late;
-            }
+            ticks.Enqueue(clock.Elapsed);
+            await Task.Delay(HeartbeatInterval, CancellationToken.None);
         }
 
-        return worst;
+        ticks.Enqueue(clock.Elapsed);
+    }
+
+    private static void dedicatedHeartbeat(Stopwatch clock, ConcurrentQueue<TimeSpan> ticks, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            ticks.Enqueue(clock.Elapsed);
+            Thread.Sleep(HeartbeatInterval);
+        }
     }
 }
 
