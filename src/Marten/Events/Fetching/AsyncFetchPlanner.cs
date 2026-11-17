@@ -39,7 +39,9 @@ internal class AsyncFetchPlanner: IFetchPlanner
                     $"The aggregate type {typeof(TDoc).FullNameInCode()} is the subject of a multi-stream projection and cannot be used with FetchForWriting");
             }
 
-            if (projection.Lifecycle == ProjectionLifecycle.Async)
+            // #6033: see InlineFetchPlanner. The async plan reads the stored document first as well.
+            if (projection.Lifecycle == ProjectionLifecycle.Async
+                && !options.CustomProjectionStorageProviders.ContainsKey(typeof(TDoc)))
             {
                 if (options.Storage.FindMapping(typeof(TDoc)) is DocumentMapping { Metadata.Revision.Enabled: true })
                 {
