@@ -40,7 +40,6 @@ public class row_level_security_reset_on_dispose: OneOffConfigurationsContext
             opts.Connection(builder.ConnectionString);
             opts.Schema.For<Target>().MultiTenanted();
             opts.UseRowLevelSecurity();
-            opts.UseStickyConnectionLifetimes = true;
         });
 
         await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();

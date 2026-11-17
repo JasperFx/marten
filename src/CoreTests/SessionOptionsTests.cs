@@ -283,22 +283,6 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void build_connection_with_sticky_connections_enabled()
-    {
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.UseStickyConnectionLifetimes = true;
-        });
-
-        var options = new SessionOptions{Timeout = 2};
-        options.Initialize(store, CommandRunnerMode.Transactional, new OpenTelemetryOptions(){ TrackConnections = TrackLevel.None })
-            .ShouldBeOfType<TransactionalConnection>()
-            .CommandTimeout.ShouldBe(2)
-            ;
-    }
-
-    [Fact]
     public void Session_Should_Not_Track_Open_Telemetry_Events_By_Default()
     {
         var commandRunnerMode = CommandRunnerMode.ReadOnly;

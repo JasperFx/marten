@@ -341,6 +341,11 @@ storeOptions.Policies.AllDocumentsAreMultiTenantedWithPartitioning(x =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L115-L146' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+The primary key of a partitioned, conjoined table is `(tenant_id, id)` (`PrimaryKeyTenancyOrdering.TenantId_Then_Id`),
+both here and with the per-document `MultiTenantedWithPartitioning()`. Before Marten 10 the overload without a
+`PrimaryKeyTenancyOrdering` argument used `(id, tenant_id)` instead; pass `PrimaryKeyTenancyOrdering.Id_Then_TenantId` to
+keep that primary key.
+
 To enable partitioning for a specific document type, use this option:
 
 <!-- snippet: sample_configure_partitioning_on_single_table -->
