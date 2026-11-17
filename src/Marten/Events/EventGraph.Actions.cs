@@ -1,11 +1,23 @@
 ﻿using System;
 using JasperFx.Events;
+using JasperFx.MultiTenancy;
 using Marten.Internal.Sessions;
 
 namespace Marten.Events;
 
 public partial class EventGraph
 {
+    /// <summary>
+    ///     #6031: the tenant a pending stream has to belong to before an append in this session joins it.
+    ///     Under conjoined tenancy two tenants can each own a stream with the same id, and
+    ///     <c>ForTenant()</c> shares the parent session's work tracker, so matching on the id alone put one
+    ///     tenant's events in the other's stream. Null, matching any tenant, otherwise.
+    /// </summary>
+    internal string? TenantToMatch(DocumentSessionBase session)
+    {
+        return TenancyStyle == TenancyStyle.Conjoined ? session.TenantId : null;
+    }
+
     internal StreamAction Append(DocumentSessionBase session, Guid stream, params object[] events)
     {
         EnsureAsGuidStorage(session);
@@ -25,7 +37,7 @@ public partial class EventGraph
             wrapped[i] = e;
         }
 
-        if (session.WorkTracker.TryFindStream(stream, out var eventStream))
+        if (session.WorkTracker.TryFindStream(stream, TenantToMatch(session), out var eventStream))
         {
             eventStream.AddEvents(wrapped);
         }
@@ -58,7 +70,7 @@ public partial class EventGraph
             wrapped[i] = e;
         }
 
-        if (session.WorkTracker.TryFindStream(stream, out var eventStream))
+        if (session.WorkTracker.TryFindStream(stream, TenantToMatch(session), out var eventStream))
         {
             eventStream.AddEvents(wrapped);
         }
