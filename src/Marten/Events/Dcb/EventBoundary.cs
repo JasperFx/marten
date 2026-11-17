@@ -93,9 +93,11 @@ internal class EventBoundary<T>: IEventBoundary<T> where T : class
             var streamId = registration.ExtractValue(tag.Value);
             if (streamId is Guid guidId)
             {
-                if (!_session.WorkTracker.TryFindStream(guidId, out stream))
+                // #6031: match, and stamp, this session's tenant, as EventGraph.Append does
+                if (!_session.WorkTracker.TryFindStream(guidId, _events.TenantToMatch(_session), out stream))
                 {
                     stream = StreamAction.Append(guidId, new[] { wrapped });
+                    stream.TenantId = _session.TenantId;
                     stream.AggregateType = registration.AggregateType;
                     _session.WorkTracker.Streams.Add(stream);
                 }
@@ -106,9 +108,10 @@ internal class EventBoundary<T>: IEventBoundary<T> where T : class
             }
             else if (streamId is string stringId)
             {
-                if (!_session.WorkTracker.TryFindStream(stringId, out stream))
+                if (!_session.WorkTracker.TryFindStream(stringId, _events.TenantToMatch(_session), out stream))
                 {
                     stream = StreamAction.Append(stringId, new[] { wrapped });
+                    stream.TenantId = _session.TenantId;
                     stream.AggregateType = registration.AggregateType;
                     _session.WorkTracker.Streams.Add(stream);
                 }
