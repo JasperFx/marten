@@ -205,7 +205,7 @@ above, read the cold event store. Everything else sees `mt_events` alone. Where 
 something wrong, Marten refuses instead:
 
 | Operation | On a cold stream |
-|---|---|
+| --- | --- |
 | Inline and async aggregations (snapshots), and `FetchForWriting`, `FetchForExclusiveWriting` and `FetchLatest` on them | Correct, also when you moved the stored document out together with the events: the projection and the fetches start from the cold part, see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream). A projection that [ignores cold streams](#projections-that-ignore-cold-streams) never starts from the cold part: a missing document starts again from the warm events, and a fetch sees no document. |
 | Rebuilding a projection | Refused with `ColdStreamReplayException` while any stream in that database (or, for a per-tenant rebuild, that tenant) is cold, before anything is torn down. Allowed for a projection that [ignores cold streams](#projections-that-ignore-cold-streams); it then replays `mt_events` only. |
 | A projection registered after streams went cold | Its first start from the beginning is refused the same way: the shard is paused with `ColdStreamReplayException`. A projection that starts from the present or from a later sequence is not affected. |
