@@ -192,6 +192,20 @@ namespace Marten.Events.Schema;
             // fixes the same latent non-idempotency the #4614 partitioned function
             // carried (it emitted `{intType} DEFAULT NULL`); existing partitioned
             // DBs converge cleanly because pg had already stored the canonical form.
+            // #6051: a stream created here, by an append to a new id, has to claim its identity in
+            // mt_streams_identity the way StartStream's dedicated insert does, or its id can be reused once it is
+            // archived. A plain insert, so an id that was claimed already is refused (23505 on mt_streams_identity,
+            // which QuickAppendEventsOperationBase reports as ExistingStreamIdCollisionException).
+            var identityClaim = "";
+            if (_events.EnableStrictStreamIdentityEnforcement)
+            {
+                identityClaim = tenancyStyle == TenancyStyle.Conjoined
+                    ? $@"
+		insert into {databaseSchema}.{StreamIdentityEnforcementTable.TableName} (tenant_id, id) values (tenantid, stream);"
+                    : $@"
+		insert into {databaseSchema}.{StreamIdentityEnforcementTable.TableName} (id) values (stream);";
+            }
+
             var expectedVersionParamType = _events.EnableBigIntEvents ? "bigint" : "integer";
             var expectedVersionParameter =
                 $", expected_version {expectedVersionParamType} DEFAULT NULL::{expectedVersionParamType}";
@@ -235,7 +249,7 @@ BEGIN{sequenceResolveUpFront}{expectedVersionCheck}
 		-- is a second heap tuple + WAL record per stream creation for no observable gain
 		-- -- nothing outside this transaction can see the intermediate 0. The trailing
 		-- UPDATE below is skipped for this branch via is_new_stream.
-		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, COALESCE(array_length(event_ids, 1), 0), now(), tenantid);
+		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, COALESCE(array_length(event_ids, 1), 0), now(), tenantid);{identityClaim}
     else
         if stream_is_archived then
             RAISE EXCEPTION 'Attempted to append event to archived stream with Id ''%''.', stream USING ERRCODE = 'MT001';
