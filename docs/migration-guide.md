@@ -480,6 +480,26 @@ migration.
   `Select(x => x.Inner)`, it was applied to the documents. Order before the `Select()` instead. A key that has no
   exact SQL translation, such as a `Math` call, is refused the same way.
 
+### Declaring the same computed index twice throws <Badge type="warning" text="behavior change" />
+
+Two `Index()` calls on one document type that resolve to the same index name, for example the same member twice,
+or the same member again with `Casing = Lower`, now throw an `InvalidOperationException` while the document is
+configured. The message names the document type, the member and the index. In 9.x both were accepted and the
+failure came much later, when a migration was computed against an existing table, as an
+`ArgumentException: An item with the same key has already been added` that named only the index
+([#6019](https://github.com/JasperFx/marten/issues/6019)).
+
+Declare the index once. If you really want a second index over the same member, give it its own name:
+
+```cs
+opts.Schema.For<Order>().Index(x => x.CustomerEmail);
+opts.Schema.For<Order>().Index(x => x.CustomerEmail, x =>
+{
+    x.Casing = ComputedIndex.Casings.Lower;
+    x.Name = "idx_order_customer_email_lower";
+});
+```
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |
