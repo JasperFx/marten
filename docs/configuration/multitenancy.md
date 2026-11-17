@@ -700,19 +700,29 @@ All remaining methods on `IDocumentStore.Advanced` apply to all databases.
 
 ### Querying Across All Databases
 
-With a multi-database tenancy there is no default tenant and no session that spans databases, so a query that has to
-answer for the whole fleet has to visit every database. `QueryAcrossAllDatabasesAsync()` opens a lightweight query
-session per database, runs your query with bounded parallelism, and flattens the results in database order:
+With a multi-database tenancy there is no session that spans databases, so a query that has to answer for the whole
+fleet has to visit every database. `QueryAcrossAllDatabasesAsync()` opens a query session per database, runs your
+query with bounded parallelism, and flattens the results:
 
 ```cs
 var users = await store.Advanced.QueryAcrossAllDatabasesAsync(
-    async (session, ct) => await session.Query<User>().Where(x => x.Age > 30).ToListAsync(ct),
+    async (session, ct) => await session.Query<User>()
+        .Where(x => x.AnyTenant() && x.Age > 30)
+        .ToListAsync(ct),
     maxParallelism: 16);
 
 // Or, when the query also needs the database itself (daemon progression, statistics, ...)
 var names = await store.Advanced.QueryAcrossAllDatabasesAsync<string>(
     (session, database, ct) => Task.FromResult<IReadOnlyList<string>>([database.Identifier]));
 ```
+
+Each session is opened as the **default tenant** of its database. For conjoined documents, which is every document
+under `MultiTenantedWithShardedDatabases()`, a plain `session.Query<User>()` only matches the default tenant's rows and
+so usually returns nothing, without an error. Use `AnyTenant()` to read every tenant in each database, or
+`TenantIsOneOf(...)` to read a known set.
+
+The results are grouped per database: each database's items stay together. The order of the databases is whatever the
+store lists for that call, and for sharded and master table tenancies that order can differ from one call to the next.
 
 Each parallel slot holds one connection to a different database, so pick `maxParallelism` with the size of your
 connection pools in mind. The first failing database fails the whole call.

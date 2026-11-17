@@ -294,10 +294,23 @@ public class AdvancedOperations
 
     /// <summary>
     ///     Run one query against every database the store knows about and flatten the results. Multi-database
-    ///     tenancies (sharded, database per tenant, master table) have no default tenant and no session that
-    ///     spans databases, so this opens a lightweight query session per database with bounded parallelism.
-    ///     Results are returned in database order, and each database's items stay together.
+    ///     tenancies (sharded, database per tenant, master table) have no session that spans databases, so this
+    ///     opens a query session per database with bounded parallelism.
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Each session is opened as that database's default tenant (<see cref="SessionOptions.ForDatabase" />).
+    ///         For conjoined (multi-tenanted) documents, a plain <c>Query&lt;T&gt;()</c> therefore only sees the
+    ///         default tenant's rows, which is usually nothing. Under <c>MultiTenantedWithShardedDatabases()</c>
+    ///         every document is conjoined. Use <c>AnyTenant()</c> or <c>TenantIsOneOf(...)</c> in the query to
+    ///         read across the tenants in each database.
+    ///     </para>
+    ///     <para>
+    ///         Results are grouped per database: each database's items stay together, in the order
+    ///         <see cref="IDocumentStore.Storage" /> listed the databases for this call. That order is not
+    ///         guaranteed to be the same from one call to the next.
+    ///     </para>
+    /// </remarks>
     /// <param name="query">The query to run in each database</param>
     /// <param name="maxParallelism">
     ///     How many databases are queried concurrently. Each slot holds one connection to a different database.
@@ -314,7 +327,8 @@ public class AdvancedOperations
     /// <summary>
     ///     Like <see cref="QueryAcrossAllDatabasesAsync{T}(Func{IQuerySession,CancellationToken,Task{IReadOnlyList{T}}},int,CancellationToken)" />,
     ///     but also hands the <see cref="IMartenDatabase" /> to the query, for work that lives beside the
-    ///     documents rather than in them, such as the async daemon progression.
+    ///     documents rather than in them, such as the async daemon progression. The same remarks about the
+    ///     default tenant and the order of the results apply.
     /// </summary>
     public async Task<IReadOnlyList<T>> QueryAcrossAllDatabasesAsync<T>(
         Func<IQuerySession, IMartenDatabase, CancellationToken, Task<IReadOnlyList<T>>> query,
