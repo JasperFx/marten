@@ -707,7 +707,7 @@ query with bounded parallelism, and flattens the results:
 ```cs
 var users = await store.Advanced.QueryAcrossAllDatabasesAsync(
     async (session, ct) => await session.Query<User>()
-        .Where(x => x.AnyTenant() && x.Age > 30)
+        .Where(x => x.Age > 30)
         .ToListAsync(ct),
     maxParallelism: 16);
 
@@ -716,10 +716,23 @@ var names = await store.Advanced.QueryAcrossAllDatabasesAsync<string>(
     (session, database, ct) => Task.FromResult<IReadOnlyList<string>>([database.Identifier]));
 ```
 
-Each session is opened as the **default tenant** of its database. For conjoined documents, which is every document
-under `MultiTenantedWithShardedDatabases()`, a plain `session.Query<User>()` only matches the default tenant's rows and
-so usually returns nothing, without an error. Use `AnyTenant()` to read every tenant in each database, or
-`TenantIsOneOf(...)` to read a known set.
+The query reads every tenant. For conjoined documents and events, which is everything under
+`MultiTenantedWithShardedDatabases()`, each session reads all the tenants in its database: LINQ queries, compiled
+queries, `LoadAsync()` / `LoadManyAsync()` and `FetchStreamAsync()` alike. An `AnyTenant()` or `TenantIsOneOf()` in
+your query still applies as written. If two tenants in one database share a document id, `LoadAsync()` returns one of them; use
+`LoadManyAsync()` or a query when that matters.
+
+To read only some tenants, pass their ids at the end. Marten only visits the databases that hold those tenants, and
+each session only reads those tenants' rows, as if your query said `TenantIsOneOf(...)`:
+
+```cs
+var users = await store.Advanced.QueryAcrossAllDatabasesAsync(
+    async (session, ct) => await session.Query<User>().ToListAsync(ct),
+    8, cancellationToken, "tenant1", "tenant7");
+```
+
+A tenant id the store does not know throws an `UnknownTenantIdException` before any database is queried. No tenant
+ids at all is an empty result.
 
 The results are grouped per database: each database's items stay together. The order of the databases is whatever the
 store lists for that call, and for sharded and master table tenancies that order can differ from one call to the next.

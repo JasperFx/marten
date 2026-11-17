@@ -35,6 +35,14 @@ internal class CompiledQueryCollection
     internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
         QuerySession session) where TDoc : notnull
     {
+        // QueryAcrossAllDatabasesAsync: the plan bakes the session's tenant filter into its SQL, so a session
+        // reading every tenant (or a list of them) gets a plan of its own that is never cached for, or
+        // shared with, ordinary sessions
+        if (session.TenantScope != null)
+        {
+            return buildTenantScopedSource(query, session);
+        }
+
         if (_querySources.TryFind(query.GetType(), out var source))
         {
             return source;
@@ -79,6 +87,31 @@ internal class CompiledQueryCollection
             _querySources = _querySources.AddOrUpdate(query.GetType(), source);
             return source;
         }
+    }
+
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Same runtime descriptor fallback as GetCompiledQuerySourceFor.")]
+    private ICompiledQuerySource buildTenantScopedSource<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
+        QuerySession session) where TDoc : notnull
+    {
+        if (typeof(TOut).CanBeCastTo<Task>())
+        {
+            throw InvalidCompiledQueryException.ForCannotBeAsync(query.GetType());
+        }
+
+        var plan = QueryCompiler.BuildQueryPlan(session, query);
+
+        // The descriptor binds the query type's members and does not depend on the SQL, so a registered one
+        // is safe to use here. One built here is not registered.
+        if (!CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor))
+        {
+            descriptor = RuntimeCompiledQueryDescriptorFactory.Build(plan);
+        }
+
+        var enumAsString = _store.Options.Serializer().EnumStorage == EnumStorage.AsString;
+        return new SourceGeneratedCompiledQuerySource<TOut>(plan, descriptor, enumAsString);
     }
 }
 

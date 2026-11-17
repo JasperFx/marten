@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
+using JasperFx.MultiTenancy;
 using Marten;
+using Marten.Linq;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -97,6 +101,23 @@ public class query_across_all_databases: IAsyncLifetime
     }
 
     [Fact]
+    public async Task tenant_ids_visit_only_the_databases_of_those_tenants()
+    {
+        var seen = await theStore.Advanced.QueryAcrossAllDatabasesAsync<string>(
+            (session, database, ct) => Task.FromResult<IReadOnlyList<string>>([database.Identifier]),
+            8, CancellationToken.None, "query_all_2");
+
+        seen.ShouldBe(["query_all_2"]);
+
+        var users = await theStore.Advanced.QueryAcrossAllDatabasesAsync(
+            async (session, ct) => await session.Query<User>().ToListAsync(ct),
+            8, CancellationToken.None, "query_all_2", "query_all_3");
+
+        users.Select(x => x.UserName).OrderBy(x => x)
+            .ShouldBe(["query_all_2-0", "query_all_2-1", "query_all_3-0", "query_all_3-1", "query_all_3-2"]);
+    }
+
+    [Fact]
     public async Task never_runs_more_queries_at_once_than_the_limit()
     {
         var running = 0;
@@ -141,16 +162,106 @@ public class query_across_all_databases: IAsyncLifetime
 }
 
 /// <summary>
-///     Under sharded tenancy every document is conjoined, and each session that
-///     <see cref="AdvancedOperations.QueryAcrossAllDatabasesAsync{T}(System.Func{IQuerySession,CancellationToken,Task{IReadOnlyList{T}}},int,CancellationToken)" />
-///     opens is its database's default tenant. Pins down that a plain query finds nothing and <c>AnyTenant()</c>
-///     finds every tenant's rows on every shard.
+///     Several tenants per database, every document conjoined. A query across all databases reads every
+///     tenant; the tenant id overload visits only the databases that hold those tenants.
+/// </summary>
+[Collection("multi-tenancy")]
+public class query_across_all_conjoined_databases: IAsyncLifetime
+{
+    private IDocumentStore theStore;
+
+    public async ValueTask InitializeAsync()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        var cs1 = await TenantDatabases.CreateIfNotExistsAsync(conn, "query_conj_1");
+        var cs2 = await TenantDatabases.CreateIfNotExistsAsync(conn, "query_conj_2");
+
+        theStore = DocumentStore.For(opts =>
+        {
+            opts.MultiTenantedDatabases(x =>
+            {
+                x.AddMultipleTenantDatabase(cs1, "query_conj_1").ForTenants("red", "blue");
+                x.AddMultipleTenantDatabase(cs2, "query_conj_2").ForTenants("green");
+            });
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.RegisterDocumentType<User>();
+            opts.AutoCreateSchemaObjects = JasperFx.AutoCreate.All;
+        });
+
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+
+        foreach (var tenant in new[] { "red", "blue", "green" })
+        {
+            await using var session = theStore.LightweightSession(tenant);
+            session.Store(new User { UserName = tenant });
+            await session.SaveChangesAsync();
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        theStore?.Dispose();
+        return default;
+    }
+
+    [Fact]
+    public async Task a_plain_query_reads_every_tenant_in_every_database()
+    {
+        var users = await theStore.Advanced.QueryAcrossAllDatabasesAsync(
+            async (session, ct) => await session.Query<User>().ToListAsync(ct));
+
+        users.Select(x => x.UserName).OrderBy(x => x).ShouldBe(["blue", "green", "red"]);
+    }
+
+    [Fact]
+    public async Task tenant_ids_read_only_those_tenants_in_only_their_databases()
+    {
+        var visited = new List<string>();
+        var users = await theStore.Advanced.QueryAcrossAllDatabasesAsync(
+            async (session, database, ct) =>
+            {
+                lock (visited) visited.Add(database.Identifier);
+                return await session.Query<User>().ToListAsync(ct);
+            },
+            8, CancellationToken.None, "blue");
+
+        visited.ShouldBe(["query_conj_1"]);
+        users.Select(x => x.UserName).ShouldBe(["blue"]);
+
+        users = await theStore.Advanced.QueryAcrossAllDatabasesAsync(
+            async (session, ct) => await session.Query<User>().ToListAsync(ct),
+            8, CancellationToken.None, "red", "green");
+
+        users.Select(x => x.UserName).OrderBy(x => x).ShouldBe(["green", "red"]);
+    }
+}
+
+public record TenantGreeted(string TenantId);
+
+public class UsersNamed: ICompiledListQuery<User>
+{
+    public string Name { get; set; } = null!;
+
+    public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
+    {
+        return q => q.Where(x => x.UserName == Name);
+    }
+}
+
+/// <summary>
+///     Under sharded tenancy every document is conjoined. A query across all databases reads every tenant on
+///     every shard, through LINQ, Load, compiled queries and event queries alike; the tenant id overload limits
+///     both the shards it visits and the tenants it reads.
 /// </summary>
 [Collection("sharded-tenancy")]
 public class query_across_all_sharded_databases: IAsyncLifetime
 {
     private readonly ShardedTenancyFixture _fixture;
     private IDocumentStore _store = null!;
+    private readonly Dictionary<string, Guid> _userIds = new();
+    private readonly Dictionary<string, Guid> _streamIds = new();
 
     public query_across_all_sharded_databases(ShardedTenancyFixture fixture)
     {
@@ -189,6 +300,7 @@ public class query_across_all_sharded_databases: IAsyncLifetime
 
             opts.AutoCreateSchemaObjects = JasperFx.AutoCreate.All;
             opts.RegisterDocumentType<User>();
+            opts.Events.AddEventType<TenantGreeted>();
         });
 
         foreach (var db in (await _store.Storage.AllDatabases()))
@@ -210,7 +322,10 @@ public class query_across_all_sharded_databases: IAsyncLifetime
             await _store.Advanced.AddTenantToShardAsync(tenantId, databaseId, CancellationToken.None);
 
             await using var session = _store.LightweightSession(tenantId);
-            session.Store(new User { UserName = tenantId });
+            var user = new User { UserName = tenantId };
+            session.Store(user);
+            _userIds[tenantId] = user.Id;
+            _streamIds[tenantId] = session.Events.StartStream(new TenantGreeted(tenantId)).Id;
             await session.SaveChangesAsync();
         }
     }
@@ -221,22 +336,164 @@ public class query_across_all_sharded_databases: IAsyncLifetime
         return default;
     }
 
-    [Fact]
-    public async Task a_plain_query_only_sees_the_default_tenant_and_finds_nothing()
-    {
-        var users = await _store.Advanced.QueryAcrossAllDatabasesAsync(
-            async (session, ct) => await session.Query<User>().ToListAsync(ct));
+    private Task<IReadOnlyList<T>> queryAll<T>(Func<IQuerySession, CancellationToken, Task<IReadOnlyList<T>>> query)
+        => _store.Advanced.QueryAcrossAllDatabasesAsync(query);
 
-        users.ShouldBeEmpty();
+    private Task<IReadOnlyList<T>> queryTenants<T>(Func<IQuerySession, CancellationToken, Task<IReadOnlyList<T>>> query,
+        params string[] tenantIds)
+        => _store.Advanced.QueryAcrossAllDatabasesAsync(query, 8, CancellationToken.None, tenantIds);
+
+    [Fact]
+    public async Task a_plain_query_reads_every_tenant_on_every_shard()
+    {
+        var users = await queryAll(async (session, ct) => await session.Query<User>().ToListAsync(ct));
+
+        users.Select(x => x.UserName).OrderBy(x => x)
+            .ShouldBe(["q_alpha", "q_beta", "q_delta", "q_gamma"]);
     }
 
     [Fact]
     public async Task any_tenant_finds_every_tenants_rows_on_every_shard()
     {
-        var users = await _store.Advanced.QueryAcrossAllDatabasesAsync(
-            async (session, ct) => await session.Query<User>().Where(x => x.AnyTenant()).ToListAsync(ct));
+        var users = await queryAll(async (session, ct) =>
+            await session.Query<User>().Where(x => x.AnyTenant()).ToListAsync(ct));
 
         users.Select(x => x.UserName).OrderBy(x => x)
             .ShouldBe(["q_alpha", "q_beta", "q_delta", "q_gamma"]);
+    }
+
+    [Fact]
+    public async Task tenant_is_one_of_in_the_query_still_applies()
+    {
+        var users = await queryAll(async (session, ct) =>
+            await session.Query<User>().Where(x => x.TenantIsOneOf("q_beta", "q_delta")).ToListAsync(ct));
+
+        users.Select(x => x.UserName).OrderBy(x => x).ShouldBe(["q_beta", "q_delta"]);
+    }
+
+    [Fact]
+    public async Task load_by_id_reads_every_tenant()
+    {
+        var one = await queryAll<User>(async (session, ct) =>
+            await session.LoadAsync<User>(_userIds["q_gamma"], ct) is { } user ? [user] : []);
+
+        one.Single().UserName.ShouldBe("q_gamma");
+
+        var many = await queryAll(async (session, ct) =>
+            await session.LoadManyAsync<User>(ct, _userIds.Values));
+
+        many.Select(x => x.UserName).OrderBy(x => x)
+            .ShouldBe(["q_alpha", "q_beta", "q_delta", "q_gamma"]);
+    }
+
+    [Fact]
+    public async Task compiled_queries_read_every_tenant_without_changing_ordinary_sessions()
+    {
+        await using (var alpha = _store.QuerySession("q_alpha"))
+        {
+            (await alpha.QueryAsync(new UsersNamed { Name = "q_delta" })).ShouldBeEmpty();
+        }
+
+        var users = await queryAll<User>(async (session, ct) =>
+            (await session.QueryAsync(new UsersNamed { Name = "q_delta" }, ct)).ToList());
+
+        users.Single().UserName.ShouldBe("q_delta");
+
+        // The plan the query across databases used is not the one ordinary sessions get
+        await using (var alpha = _store.QuerySession("q_alpha"))
+        {
+            (await alpha.QueryAsync(new UsersNamed { Name = "q_delta" })).ShouldBeEmpty();
+        }
+
+        await using (var delta = _store.QuerySession("q_delta"))
+        {
+            (await delta.QueryAsync(new UsersNamed { Name = "q_delta" })).Single().UserName.ShouldBe("q_delta");
+        }
+    }
+
+    [Fact]
+    public async Task event_queries_read_every_tenant()
+    {
+        var greeted = await queryAll(async (session, ct) =>
+            await session.Events.QueryRawEventDataOnly<TenantGreeted>().ToListAsync(ct));
+
+        greeted.Select(x => x.TenantId).OrderBy(x => x)
+            .ShouldBe(["q_alpha", "q_beta", "q_delta", "q_gamma"]);
+
+        var events = await queryAll(async (session, ct) =>
+            await session.Events.QueryAllRawEvents().ToListAsync(ct));
+
+        events.Select(x => x.TenantId).OrderBy(x => x)
+            .ShouldBe(["q_alpha", "q_beta", "q_delta", "q_gamma"]);
+
+        var stream = await queryAll(async (session, ct) =>
+            await session.Events.FetchStreamAsync(_streamIds["q_delta"], token: ct));
+
+        stream.Single().Data.ShouldBe(new TenantGreeted("q_delta"));
+    }
+
+    [Fact]
+    public async Task tenant_ids_visit_only_the_shards_that_hold_them()
+    {
+        var shards = await _store.Advanced.QueryAcrossAllDatabasesAsync<string>(
+            (_, database, _) => Task.FromResult<IReadOnlyList<string>>([database.Identifier]),
+            8, CancellationToken.None, "q_alpha", "q_beta");
+
+        shards.ShouldBe([_fixture.DbNames[0]]);
+
+        shards = await _store.Advanced.QueryAcrossAllDatabasesAsync<string>(
+            (_, database, _) => Task.FromResult<IReadOnlyList<string>>([database.Identifier]),
+            8, CancellationToken.None, "q_alpha", "q_delta");
+
+        shards.ShouldBe([_fixture.DbNames[0], _fixture.DbNames[2]], ignoreOrder: true);
+    }
+
+    [Fact]
+    public async Task tenant_ids_read_only_those_tenants()
+    {
+        // q_beta shares a shard with q_alpha and is left out
+        var users = await queryTenants(async (session, ct) => await session.Query<User>().ToListAsync(ct),
+            "q_alpha", "q_gamma");
+
+        users.Select(x => x.UserName).OrderBy(x => x).ShouldBe(["q_alpha", "q_gamma"]);
+
+        var loaded = await queryTenants(async (session, ct) =>
+            await session.LoadManyAsync<User>(ct, _userIds.Values), "q_alpha", "q_gamma");
+
+        loaded.Select(x => x.UserName).OrderBy(x => x).ShouldBe(["q_alpha", "q_gamma"]);
+
+        var greeted = await queryTenants(async (session, ct) =>
+            await session.Events.QueryRawEventDataOnly<TenantGreeted>().ToListAsync(ct), "q_alpha", "q_gamma");
+
+        greeted.Select(x => x.TenantId).OrderBy(x => x).ShouldBe(["q_alpha", "q_gamma"]);
+
+        var betaStream = await queryTenants(async (session, ct) =>
+            await session.Events.FetchStreamAsync(_streamIds["q_beta"], token: ct), "q_alpha", "q_gamma");
+
+        betaStream.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task an_unknown_tenant_id_is_refused_before_any_database_is_queried()
+    {
+        var queried = 0;
+
+        var ex = await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+            await queryTenants<User>((_, _) =>
+            {
+                Interlocked.Increment(ref queried);
+                return Task.FromResult<IReadOnlyList<User>>([]);
+            }, "q_alpha", "q_nobody"));
+
+        ex.Message.ShouldContain("q_nobody");
+        queried.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task no_tenant_ids_is_an_empty_result()
+    {
+        var users = await queryTenants<User>((_, _) => throw new InvalidOperationException("never runs"));
+
+        users.ShouldBeEmpty();
     }
 }

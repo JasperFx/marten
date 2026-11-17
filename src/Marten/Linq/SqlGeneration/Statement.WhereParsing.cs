@@ -4,10 +4,12 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration.Filters;
+using Marten.Storage;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
@@ -50,9 +52,16 @@ public abstract partial class Statement: IWhereFragmentHolder
         IQueryableMemberCollection collection,
         IDocumentStorage? storage = null)
     {
+        // QueryAcrossAllDatabasesAsync: every tenant, or the listed tenants, instead of the session's own.
+        // The scope's filter is an ITenantFilter, so the storage adds no tenant filter of its own.
+        var tenantScope = storage is { TenancyStyle: TenancyStyle.Conjoined } ? SessionTenantScope.For(session) : null;
+
         if (!wheres.Any())
         {
-            var filter = storage?.DefaultWhereFragment();
+            var filter = tenantScope == null
+                ? storage?.DefaultWhereFragment()
+                : storage!.FilterDocuments(tenantScope.BuildFilter(), session);
+
             if (filter != null)
             {
                 Wheres.Add((ISqlFragment)filter);
@@ -63,6 +72,12 @@ public abstract partial class Statement: IWhereFragmentHolder
 
         var parser = new WhereClauseParser(((IMartenSession)session).Options, collection, this);
         foreach (var expression in wheres) parser.Visit(expression);
+
+        // An AnyTenant() or TenantIsOneOf() in the query itself wins
+        if (tenantScope != null && !Wheres.Any(x => x.SpecifiesTenant()))
+        {
+            Wheres.Add(tenantScope.BuildFilter());
+        }
 
         if (storage != null)
         {

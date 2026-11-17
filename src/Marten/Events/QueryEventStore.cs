@@ -44,6 +44,7 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             Version = version,
             Timestamp = timestamp,
             TenantId = _tenant.TenantId,
+            TenantScope = SessionTenantScope.For(_session),
             FromVersion = fromVersion
         };
 
@@ -65,6 +66,7 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             Version = version,
             Timestamp = timestamp,
             TenantId = _tenant.TenantId,
+            TenantScope = SessionTenantScope.For(_session),
             FromVersion = fromVersion
         };
 

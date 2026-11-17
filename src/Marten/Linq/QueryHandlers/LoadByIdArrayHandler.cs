@@ -46,7 +46,7 @@ internal class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IReadOnlyList<T>> wh
 
         sql.Append(")");
 
-        storage.AddTenancyFilter(sql, session.TenantId);
+        storage.AddTenancyFilter(sql, session);
     }
 
     public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IStorageSession session,
