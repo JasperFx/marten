@@ -36,7 +36,7 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");

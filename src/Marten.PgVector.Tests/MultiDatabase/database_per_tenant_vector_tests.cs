@@ -30,7 +30,7 @@ public class database_per_tenant_vector_tests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         // Create the per-tenant databases if they don't exist and drop any stale schema
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        await using (var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString))
         {
             await conn.OpenAsync();
 

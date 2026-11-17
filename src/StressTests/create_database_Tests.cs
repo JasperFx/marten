@@ -243,7 +243,7 @@ public class create_database_Tests : IDisposable
     {
         try
         {
-            using (var connection = new NpgsqlConnection(ConnectionSource.ConnectionString))
+            using (var connection = new NpgsqlConnection(ConnectionSource.AdminConnectionString))
             using (var cmd = connection.CreateCommand())
             {
                 try
