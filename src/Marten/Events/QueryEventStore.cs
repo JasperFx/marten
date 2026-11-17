@@ -18,7 +18,7 @@ using Marten.Storage;
 
 namespace Marten.Events;
 
-internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
+internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 {
     private readonly QuerySession _session;
     private readonly DocumentStore _store;
@@ -619,5 +619,68 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
         }
 
         return new StreamStateQueryProvider(_session, _store, _tenant, tenantId).CreateRoot();
+    }
+
+    /// <summary>
+    /// jasperfx#1073: the bodies of every event stored as exactly <typeparamref name="T"/>, across all
+    /// streams. This is <see cref="QueryRawEventDataOnly{T}"/> under the store-agnostic name, so the
+    /// queryable is Marten's own LINQ over <c>mt_events</c>: its provider is
+    /// <see cref="Marten.Linq.MartenLinqQueryProvider"/>, which already implements
+    /// <see cref="JasperFx.Events.Documents.IDocumentQueryExecutor"/>, so the shared terminators in
+    /// <see cref="JasperFx.Events.Documents.DocumentQueryableExtensions"/> dispatch to it, and a member
+    /// Marten cannot translate throws <see cref="JasperFx.BadLinqExpressionException" /> naming it rather
+    /// than matching everything.
+    /// </summary>
+    /// <remarks>
+    /// The tenant rule is <see cref="QueryStreamStates"/>'s: null reads in this reader's own scope, a tenant
+    /// id is refused where the events have no tenant dimension, and otherwise the query runs on a session
+    /// opened for that tenant, so Marten applies the tenant filter exactly as it does for any other
+    /// tenant-scoped event query. Like <c>OpenReadOnlyEventStore(tenantId)</c>, that session lives behind
+    /// the returned queryable, since an <see cref="IQueryable{T}"/> exposes no disposal.
+    /// </remarks>
+    public IQueryable<T> QueryEventData<T>(string? tenantId = null) where T : class
+    {
+        if (tenantId != null && _store.Events.TenancyStyle != TenancyStyle.Conjoined)
+        {
+            throw new NotSupportedException(
+                $"This event store does not have a tenant dimension (TenancyStyle.{_store.Events.TenancyStyle}), so QueryEventData cannot scope to tenant '{tenantId}'. Omit the tenantId argument, or configure conjoined multi-tenancy.");
+        }
+
+        if (tenantId == null || string.Equals(tenantId, _tenant.TenantId, StringComparison.Ordinal))
+        {
+            return QueryRawEventDataOnly<T>();
+        }
+
+        return _store.QuerySession(tenantId).Events.QueryRawEventDataOnly<T>();
+    }
+
+    /// <summary>
+    /// jasperfx#1094: every event as an <see cref="IQueryable{T}"/> of <see cref="IEvent"/>, so a caller
+    /// working against the JasperFx abstractions can filter and order by event metadata. This wraps
+    /// <see cref="QueryAllRawEvents"/>, so the provider is Marten's own LINQ over <c>mt_events</c>: the shared
+    /// terminators in <see cref="JasperFx.Events.Documents.DocumentQueryableExtensions"/> dispatch to it,
+    /// and a member Marten cannot translate throws <see cref="JasperFx.BadLinqExpressionException" />
+    /// naming it rather than matching every event.
+    /// </summary>
+    /// <remarks>
+    /// The tenant rule is <see cref="QueryStreamStates"/>'s: null reads in this reader's own scope, a tenant
+    /// id is refused where the events have no tenant dimension, and otherwise the query runs on a session
+    /// opened for that tenant. That session lives behind the returned queryable, since an
+    /// <see cref="IQueryable{T}"/> exposes no disposal.
+    /// </remarks>
+    public IQueryable<IEvent> QueryRawEvents(string? tenantId = null)
+    {
+        if (tenantId != null && _store.Events.TenancyStyle != TenancyStyle.Conjoined)
+        {
+            throw new NotSupportedException(
+                $"This event store does not have a tenant dimension (TenancyStyle.{_store.Events.TenancyStyle}), so QueryRawEvents cannot scope to tenant '{tenantId}'. Omit the tenantId argument, or configure conjoined multi-tenancy.");
+        }
+
+        if (tenantId == null || string.Equals(tenantId, _tenant.TenantId, StringComparison.Ordinal))
+        {
+            return QueryAllRawEvents();
+        }
+
+        return _store.QuerySession(tenantId).Events.QueryAllRawEvents();
     }
 }

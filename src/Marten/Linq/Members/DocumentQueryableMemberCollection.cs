@@ -102,7 +102,8 @@ internal class DocumentQueryableMemberCollection: IQueryableMemberCollection, IQ
         // #4916: a subclass query resolves its members against this (initially empty) collection, so a
         // duplicated field or the base id — registered only on the parent mapping — would otherwise fall
         // through to a JSONB member. Reuse the parent's column-backed member instead; it locates a real
-        // column on the table both share.
+        // column on the table both share. #5777: the same goes for a child document that holds a nested
+        // duplicated field.
         if (_inheritedMembers != null && _inheritedMembers.TryFindColumnBackedMember(member.Name, out var inherited))
         {
             _members = _members.AddOrUpdate(member.Name, inherited);
@@ -118,19 +119,32 @@ internal class DocumentQueryableMemberCollection: IQueryableMemberCollection, IQ
     /// <summary>
     /// Whether this collection already holds a member for <paramref name="name"/> that is backed by a real
     /// column on the document table (a duplicated field, the id, or the soft-delete flag) rather than a JSONB
-    /// locator. A subclass collection reuses exactly these from its parent; see the inheriting constructor.
-    /// Only members registered up front (never lazily-created JSONB members) are considered, so the parent's
-    /// own query history cannot leak a <c>d.data -&gt;&gt; ...</c> member into a subclass query.
+    /// locator, or a child document holding such a member somewhere beneath it (a duplicated
+    /// <c>x.Inner.Value</c>, #5777). A subclass collection reuses exactly these from its parent; see the
+    /// inheriting constructor. Members the parent only created lazily for its own queries are not considered.
     /// </summary>
     internal bool TryFindColumnBackedMember(string name, out IQueryableMember member)
     {
-        if (_members.TryFind(name, out member!) && member is DuplicatedField or IdMember or IsSoftDeletedMember)
+        if (_members.TryFind(name, out member!) && isOrHoldsColumnBackedMember(member))
         {
             return true;
         }
 
         member = null!;
         return false;
+    }
+
+    private static bool isOrHoldsColumnBackedMember(IQueryableMember member)
+    {
+        return member switch
+        {
+            DuplicatedField or IdMember or IsSoftDeletedMember => true,
+
+            // The parent's child document is shared as is: its JSONB children locate the same path on the
+            // table both mappings share, so they are as valid in a subclass query as in the parent's.
+            ChildDocument child => child.Any(isOrHoldsColumnBackedMember),
+            _ => false
+        };
     }
 
     public void ReplaceMember(MemberInfo member, IQueryableMember queryableMember)

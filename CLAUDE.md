@@ -8,7 +8,7 @@
 
 ## Tech Stack
 
-- **Language:** C# 13.0, targets net9.0 / net10.0 (`Directory.Build.props:5,12`)
+- **Language:** C# 13.0, targets net10.0 / net11.0 (`Directory.Build.props:5,12`)
 - **Database:** PostgreSQL 13+ (via Npgsql)
 - **Key deps:** JasperFx, JasperFx.Events, JasperFx.RuntimeCompiler, Weasel.Postgresql, Newtonsoft.Json (`src/Marten/Marten.csproj:39-46`)
 - **Build system:** Nuke (`build/build.cs`)
@@ -103,6 +103,9 @@ docker-compose up -d
 # Run all tests
 ./build.sh test
 
+# The tests.yml suites at once, through Bobcat's local gate (see "Local gate" below)
+./build.sh LocalGate
+
 # Run individual test suites — one target per test project
 ./build.sh test-base-lib                     # Marten.Testing
 ./build.sh test-core                         # CoreTests
@@ -131,21 +134,129 @@ npm install && npm run docs
 ```
 
 Test targets run through [Bobcat](https://github.com/JasperFx/bobcat)'s supervisor rather than
-`dotnet test` (`build/SupervisedTests.cs`, #5096). A failing test is retried in a **fresh process**,
-and a test that only passes on a retry is reported as flaky — in the log, in the GitHub job summary
-and in a JSON ledger under `artifacts/test-ledger/` — never folded into a clean pass. Two knobs:
+`dotnet test` (`build/SupervisedTests.cs`, #5096, extended for JasperFx/bobcat#565). What it does:
 
-- `--disable-test-retry` turns retries off. Measure a suite's real stability with this on; a retry
-  budget hides exactly the instability you are trying to quantify.
-- `[Trait("Retry", "3")]` raises one test's attempt ceiling, `[Trait("Isolated", "true")]` runs it
-  in its own process. Reach for these on a genuinely racy test instead of dropping the project from
-  CI, which is how ten suites went dark before #5096.
+- **Retries are opt-in, and always in a fresh process.** A failing test is retried only when it
+  carries `[Trait("Retry", "N")]` (or `[Trait("Isolated", "true")]`); anything else that fails is red.
+  This is Bobcat's own default policy since 1.0 (bobcat#661); never add `[Trait("RetryWarm", "true")]`,
+  which would retry in the same process, over a half-built store.
+  A test that only passes on a retry is reported as flaky — in the log, in the GitHub job summary
+  and in the JSON ledger under `artifacts/test-ledger/` — never folded into a clean pass. A test
+  earns a Retry trait with evidence from the `flakiness` roll-up, and the trait carries a comment
+  saying what that evidence was. Never add one to hide a deterministic failure.
+- `N` in `Retry=N` can only **lower** the run-wide ceiling of 3 attempts (`MaxAttemptsPerTest`),
+  never raise it: the operator, not the test, owns how long a run may take.
+- `--disable-test-retry` turns every retry off. Measure a suite's real stability with this on.
+- **Worker processes, a database each.** A target may pass `workers: N`: the suite is split across N
+  test hosts, partitioned by test CLASS, and each lane gets its own database
+  (`marten_testing_w0..N-1`, created on demand, handed over through `marten_testing_database`).
+  The count is clamped to `ProcessorCount / 2` on the machine running; `--test-workers N`
+  overrides both the target's count and the clamp (`--test-workers 1` is the sequential baseline).
+  Before raising a suite's count, read the bug shapes in Bobcat's `docs/parallel-ready-suites.md`:
+  a test that hard-codes `marten_testing` or a port ignores its lane.
+- **Stalls and a heartbeat** (report-only): a test in flight for five minutes is named as
+  `[STALLED]`, and a progress line every 30s says how far the run got.
+- **Lane balancing from the previous master run's ledger** (a CI artifact, nothing committed). Each
+  test job downloads the `folded-test-ledgers` artifact of the newest successful master run into
+  `artifacts/previous-test-ledger/`; its per-test durations (Bobcat's `TestLedger`, keyed by display
+  name since Bobcat 1.0) balance the lanes, and the run writes the folded ledger to
+  `artifacts/test-ledger/durations/`, which the `flakiness` job gathers for the next run. Locally,
+  `--previous-test-ledger <dir>` points at a downloaded copy; with none, lanes balance by test count.
+  The run report's first line says how many durations matched.
 
 This requires each test project to build as a Microsoft.Testing.Platform host, which
 `<UseMicrosoftTestingPlatformRunner>` in `src/Tests.props` turns on for every project importing it.
 A new test project must import `src/Tests.props`.
 
+**DaemonTests is on a different xUnit line from every other suite** (JasperFx/bobcat#562). It renders
+its tests as Bobcat specifications through `Bobcat.Xunit` 1.0, which requires xunit.v3 4.x on
+Microsoft.Testing.Platform 2.x, while the rest of the repo stays on xunit.v3 3.x. The two lines cannot
+share a test project, so DaemonTests and DaemonTests.ManualOnly take 4.x through `VersionOverride`
+(`BobcatXunitV3Version` in `Directory.Packages.props`). Consequences:
+
+- **Never add a `ProjectReference` to DaemonTests from another test project**: it drags xunit 4 into that
+  project. CoreTests had one, used only for a transitive Lamar, and lost it for this reason.
+- On 4.x, `[assembly: CollectionBehavior(DisableTestParallelization = true)]` is a compile error; DaemonTests
+  uses `[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]`.
+- Run DaemonTests through `./build.sh test-daemon` or its built executable
+  (`src/DaemonTests/bin/Release/net10.0/DaemonTests --filter-class …`). `dotnet test` on an MTP 2.x host
+  needs `global.json`'s `"test": { "runner": "Microsoft.Testing.Platform" }`, a repo-wide switch not made here.
+- The rendered specifications print at exit. In CI, set `BOBCAT_SPEC_CONSOLE_FILE=<path>` to get them as a
+  file; since Bobcat 1.0.0-rc.1 (bobcat#717) a redirected stdout gets them too, instead of nothing.
+
 Default test connection: `Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres` (`build/build.cs:28`). Override with `marten_testing_database` env var.
+
+### Local gate: the whole matrix before a push
+
+`./build.sh LocalGate` (`build/LocalGate.cs`, #5725) runs the logical suites of `tests.yml` on this
+machine through Bobcat's local gate (`GateDeclaration` in `Bobcat.Supervisor`, see Bobcat's
+[local gates](https://github.com/JasperFx/bobcat/blob/main/docs/local-gates.md)). It needs only
+`docker compose up -d`.
+
+```bash
+./build.sh LocalGate                                  # every default suite, newest TFM (net10.0)
+./build.sh LocalGate --framework all                  # net9.0 and net10.0 units
+./build.sh LocalGate --gate-only Linq EventSourcing   # a subset, by matrix name or project name
+./build.sh LocalGate --gate-skip-build                # reuse the Release build already on disk
+```
+
+What it does, in order: `Init` once (clean, `connection.txt`, `AssemblyInfo.cs`); a preflight of the
+Postgres server; one `dotnet build src/Marten.slnx -c Release`; then one supervised run per
+`(project, framework)` unit, longest first, never more worker processes at once than the budget; then
+a report with one line per unit and the full run report of every unit that was not clean. Every unit
+runs even when another fails. The target fails when any unit failed or could not run.
+
+- **Same supervisor as CI.** Each unit gets the configuration its `Test*` target uses
+  (`configureSupervisor` in `build/SupervisedTests.cs`): retries only for `[Trait("Retry", "N")]`, in a
+  fresh process, the stall report, the heartbeat, and the same worker counts (EventSourcing and Linq
+  at 4). `--disable-test-retry` and `--test-workers` apply as they do there.
+- **A database per lane.** Each unit runs on its own databases, `marten_testing_<project>_<tfm>_<tag>_w{n}` (the tag is four hex digits of the checkout path, so gates in different worktrees on one server never share a lane database; `--gate-lane-tag` overrides),
+  handed over through `marten_testing_database`, so two suites never share a schema.
+- **Tracks for fixed names.** Some suites create whole databases with fixed names on the server, or
+  reach for the default database directly. Those suites hold an exclusive track while they run, so the
+  gate never runs two of them that share a name at once: `tenant-databases` (tenant1..tenant6 and
+  database1: Core, Daemon, MultiTenancy, Stress), `shard-databases` (marten_shard_*: MultiTenancy,
+  TenantPartitionedEvents) and `default-database` (EventSourcingTests' `testing_projections`
+  hard-codes `localhost:5432/marten_testing`; Stress).
+- **The worker budget** is half the cores, lowered to what the server's free connections hold at about
+  40 per worker. A stock Postgres allows 100 connections, which gives a budget of 2.
+  `docker-compose.yml` sets `max_connections=500`, so recreate an older container once
+  (`docker compose up -d --force-recreate`) to run at the full budget. `--gate-worker-budget N` sets
+  the budget directly.
+- **Durations.** `.bobcat/gate-durations.json` (ignored) records each unit's wall clock on this machine
+  and orders the next run. `.bobcat/test-ledger/` keeps the folded test ledgers that balance lanes.
+- **`BOBCAT_RUN_TAG`** is the prefix: each unit publishes to the monitor as `<tag>/<project>.<tfm>`.
+- **The AOT runtime smoke under the JIT** runs after the suites (#6064), on its own database
+  (`--gate-only AotRuntimeJit` runs it alone). The native run is still `./build.sh test-aot-runtime`.
+
+Options that need more than the ordinary database are opt-in:
+
+| Option | What it adds |
+| --- | --- |
+| `--gate-include postgis` | Marten.PostGIS.Tests. The `docker-compose.yml` image includes PostGIS. |
+| `--gate-include timescaledb` | Marten.TimescaleDB.Tests on `docker-compose.timescaledb.yml` (port 5433, which Wolverine's Postgres also uses; the preflight checks the extension). `--gate-timescale-database` points it elsewhere. |
+| `--gate-include multihost` | MultiHostTests on the replication pair in `src/MultiHostTests/docker-compose.yaml` (5440/5441). The preflight logs in with the suite's credentials, so another container on those ports fails it. |
+| `--gate-include stress` | StressTests, which has no CI job. It holds every fixed-name track. |
+| `--gate-serializer split` | CI's pairing: net9.0 units on Newtonsoft, net10.0 units on System.Text.Json. `Newtonsoft` or `SystemTextJson` sets one serializer for every unit. With no option, the suites use their default, Newtonsoft. |
+| `--gate-database <conn>` | Another Postgres server for the lanes. For the PG15 leg, start a Postgres 15 container and run `--gate-database "Host=localhost;Port=<port>;Database=marten_testing;Username=postgres;password=postgres" --framework net9.0 --gate-serializer Newtonsoft`. |
+
+Measured on this 18-core machine at net10.0. With a 500-connection server (budget 9), the default
+gate takes about 8 minutes end to end. The units themselves take 7m40s, against 13m20s of unit time
+one after the other. DaemonTests is the longest unit at about 6m45s and sets the wall clock.
+CoreTests and MultiTenancyTests share its `tenant-databases` track, so they run after it. On a stock
+100-connection server (budget 2) the units take 11m30s.
+
+### Local packs for the .NET 11 release train (#5727)
+
+```bash
+./build.sh Pack --version 10.0.0-local.1 --feed ~/code/_local_nuget_feed   # the nine shipped packages
+scripts/take-local-upstream.sh 3.0.0-local.1 10.0.0-local.1 ~/code/_local_nuget_feed   # JasperFx, Weasel, feed
+```
+
+`take-local-upstream.sh` rewrites the `JasperFx*` and `Weasel*` pins in `Directory.Packages.props` and registers
+the feed in a gitignored `nuget.config`; pass `""` to leave a family alone, and run it with the released versions
+(or `git checkout Directory.Packages.props`) to put the pins back. Supervised runs also announce themselves to a
+Bobcat monitor (`PublishToMonitor`); `BOBCAT_MONITOR=0` turns that off.
 
 ## Test Harness
 
@@ -213,7 +324,11 @@ own target framework, serializer and Postgres image, and gets its own runner and
 so suites never contend and adding coverage costs no wall clock. The core suites keep both
 combinations they always had — net9.0/PG15/Newtonsoft and net10.0/PGlatest/System.Text.Json — and
 the extension suites each name the image they need (postgis, pgvector, timescaledb). Tests run in
-Release with parallelization disabled.
+Release with in-process parallelization disabled; EventSourcingTests and LinqTests are split across
+worker processes instead (`workers: 4` in `build/build.cs`, clamped to 2 on a 4-vCPU hosted runner),
+each worker on its own database. DaemonTests is still at one worker: under JasperFx/bobcat#562 it ran green
+at two lanes locally (374/374 twice, 5m10s against 7m09s at one, retries off), but that was not judged
+enough evidence to change the gate on the most timing-sensitive suite.
 
 **Adding a test project means two edits: a target in `build/build.cs` AND an entry in
 `tests.yml`.** The previous shape was a hand-maintained list of steps inside a handful of monolithic

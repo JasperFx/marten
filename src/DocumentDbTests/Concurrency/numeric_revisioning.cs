@@ -83,6 +83,9 @@ public class numeric_revisioning: OneOffConfigurationsContext
 
         doc.Name = "New Name";
 
+        // #5788: the mapped member is the revision the document asks to become, exactly as
+        // IRevisioned.Version is. Re-storing it still at 1 is refused; name the next revision.
+        doc.UnconventionalVersion++;
         session.Store(doc);
         await session.SaveChangesAsync();
 
@@ -166,6 +169,8 @@ public class numeric_revisioning: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         doc1.Name = "Bill";
+        // #5788: Store() honours the revision the document carries, so moving it forward names the next one
+        doc1.Version++;
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 
@@ -195,10 +200,13 @@ public class numeric_revisioning: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         doc1.Name = "Bill";
+        // #5788: Store() honours the revision the document carries, so moving it forward names the next one
+        doc1.Version++;
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 
         doc1.Name = "Dru";
+        doc1.Version++;
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 
@@ -259,10 +267,13 @@ public class numeric_revisioning: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         doc1.Name = "Bill";
+        // #5788: Store() honours the revision the document carries, so moving it forward names the next one
+        doc1.Version++;
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 
         doc1.Name = "Dru";
+        doc1.Version++;
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 
@@ -390,6 +401,8 @@ public class numeric_revisioning: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         doc1.Name = "Bill";
+        // #5788: Store() honours the revision the document carries, so moving it forward names the next one
+        doc1.Version++;
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 
@@ -419,6 +432,8 @@ public class numeric_revisioning: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         doc1.Name = "Bill";
+        // #5788: Store() honours the revision the document carries, so moving it forward names the next one
+        doc1.Version++;
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 

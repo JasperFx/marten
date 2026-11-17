@@ -74,6 +74,14 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         var pendingEvents = FetchPlanHelper.FindPendingEvents<TId>(session, id);
         if (pendingEvents is not { Count: > 0 }) return snapshot;
 
+        // jasperfx#1050: the fold below can land on the very instance a FetchForWriting registered for
+        // write-back, which would then hold events its registered version says it does not, and the next
+        // fetch would fold them a second time. Nothing under Async moves the registration on at commit.
+        if (_cache != null)
+        {
+            session.AggregateWriteCache.Discard(cacheKeyFor(session, id));
+        }
+
         snapshot = await _aggregator.BuildAsync(pendingEvents, session, snapshot, id, _storage, cancellation)
             .ConfigureAwait(false);
 

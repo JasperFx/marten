@@ -10,6 +10,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -30,18 +31,55 @@ public partial class MartenDatabase : IEventDatabase
 {
     private string _storageIdentifier;
 
-    public async Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default)
+    public Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default)
+    {
+        // #5234: under UseTenantPartitionedEvents every tenant draws seq_id from its own
+        // mt_events_sequence_{suffix}, so a sequence names the same-numbered event in EVERY
+        // tenant's partition, and this overload has no tenant to narrow it with. Refuse instead of
+        // skipping every other tenant's event too.
+        if (Options.Events.UseTenantPartitionedEvents)
+        {
+            throw new InvalidOperationException(
+                $"Event sequences are numbered per tenant under {nameof(IEventStoreOptions.UseTenantPartitionedEvents)}, so a sequence alone does not identify one event. " +
+                $"Call {nameof(MarkEventsAsSkipped)}(string tenantId, long[] sequences, CancellationToken) with the tenant the sequences belong to.");
+        }
+
+        return markEventsAsSkippedAsync(null, sequences, token);
+    }
+
+    public Task MarkEventsAsSkipped(string tenantId, long[] sequences, CancellationToken token = default)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(tenantId);
+
+        return markEventsAsSkippedAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId), sequences, token);
+    }
+
+    private async Task markEventsAsSkippedAsync(string? tenantId, long[] sequences, CancellationToken token)
     {
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        // #5234: the same gate as ConjoinedEventFilter. Only a conjoined event store can hold two
+        // tenants' events with one seq_id; under any other tenancy style the database is the scope.
+        var filterByTenant = tenantId != null && Options.Events.TenancyStyle == TenancyStyle.Conjoined;
+
+        var sql =
+            $"update {Options.EventGraph.DatabaseSchemaName}.mt_events set is_skipped = TRUE where seq_id = ANY(:sequences)";
+        if (filterByTenant)
+        {
+            sql += " and tenant_id = :tenant_id";
+        }
 
         await using var conn = CreateConnection();
         try
         {
             await conn.OpenAsync(token).ConfigureAwait(false);
-            await conn.CreateCommand(
-                    $"update {Options.EventGraph.DatabaseSchemaName}.mt_events set is_skipped = TRUE where seq_id = ANY(:sequences)")
-                .With("sequences", sequences)
-                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            var command = conn.CreateCommand(sql).With("sequences", sequences);
+            if (filterByTenant)
+            {
+                command.With("tenant_id", tenantId!, NpgsqlDbType.Varchar);
+            }
+
+            await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
         }
         finally
         {
@@ -70,7 +108,7 @@ public partial class MartenDatabase : IEventDatabase
     ///     Deliberately plain UPDATE statements instead of a database function, so no schema object is
     ///     added and deployments running <c>AutoCreate.None</c> pick it up without a migration. Semantics
     ///     match the <c>mt_mark_event_progression_extended</c> function this replaced (the function is
-    ///     still installed for anything calling it directly): update-only telemetry decoration of
+    ///     no longer created; a copy left by an older version is harmless): update-only telemetry decoration of
     ///     existing progression rows — never INSERT, never touch <c>last_seq_id</c> / <c>last_updated</c>,
     ///     shards without a progression row yet are skipped silently.
     ///     <para>
@@ -253,6 +291,95 @@ public partial class MartenDatabase : IEventDatabase
         }
     }
 
+    /// <summary>
+    ///     jasperfx#1150: for each position, the timestamp of the first non-archived event past it, which is
+    ///     the age of the oldest event a shard at that position has not processed yet. Null when nothing lies
+    ///     past the position. Answers come back one per position, in the order asked, duplicates included.
+    ///     <para>
+    ///     One round trip: every distinct position becomes its own <c>order by seq_id limit 1</c> seek in a
+    ///     single <see cref="NpgsqlBatch" />, so each lookup reads at most one row off the seq_id index
+    ///     instead of counting or scanning. Separate statements rather than one <c>LATERAL</c> join over the
+    ///     positions so that a tenant-filtered seek gets a plan with the tenant fixed, which is what lets
+    ///     Postgres prune <c>mt_events</c> to one partition under <c>UseTenantPartitionedEvents</c>.
+    ///     </para>
+    ///     <para>
+    ///     A tenant narrows the seek only when events are conjoined (which includes per-tenant partitioning,
+    ///     where each tenant draws its own sequence); otherwise the database is the scope and the tenant is
+    ///     ignored, as in <see cref="markEventsAsSkippedAsync" />. Archived events are skipped, as the daemon's
+    ///     <c>EventLoader</c> skips them.
+    ///     </para>
+    /// </summary>
+    public async Task<IReadOnlyList<PendingEventAge>> FetchFirstEventTimestampsAfterAsync(
+        IReadOnlyList<(string? TenantId, long Sequence)> positions, CancellationToken token = default)
+    {
+        if (positions.Count == 0)
+        {
+            return [];
+        }
+
+        var filterByTenant = Options.Events.TenancyStyle == TenancyStyle.Conjoined ||
+                             Options.Events.UseTenantPartitionedEvents;
+
+        // The tenant that actually narrows each seek, so two positions that differ only by an ignored
+        // tenant share one statement
+        (string? TenantId, long Sequence) lookupFor((string? TenantId, long Sequence) position) =>
+            (filterByTenant ? position.TenantId : null, position.Sequence);
+
+        var lookups = positions.Select(lookupFor).Distinct().ToArray();
+        var timestamps = new Dictionary<(string? TenantId, long Sequence), DateTimeOffset?>(lookups.Length);
+
+        var table = $"{Options.Events.DatabaseSchemaName}.mt_events";
+
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+
+            await using var batch = new NpgsqlBatch(conn);
+            foreach (var (tenantId, sequence) in lookups)
+            {
+                var command = new NpgsqlBatchCommand(tenantId == null
+                    ? $"select timestamp from {table} where seq_id > $1 and is_archived = false order by seq_id limit 1"
+                    : $"select timestamp from {table} where seq_id > $1 and is_archived = false and tenant_id = $2 order by seq_id limit 1");
+
+                command.Parameters.Add(new NpgsqlParameter { Value = sequence, NpgsqlDbType = NpgsqlDbType.Bigint });
+                if (tenantId != null)
+                {
+                    command.Parameters.Add(new NpgsqlParameter { Value = tenantId, NpgsqlDbType = NpgsqlDbType.Varchar });
+                }
+
+                batch.BatchCommands.Add(command);
+            }
+
+            await using var reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false);
+            foreach (var lookup in lookups)
+            {
+                timestamps[lookup] = await reader.ReadAsync(token).ConfigureAwait(false)
+                    ? await reader.GetFieldValueAsync<DateTimeOffset>(0, token).ConfigureAwait(false)
+                    : null;
+
+                await reader.NextResultAsync(token).ConfigureAwait(false);
+            }
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            // No event storage means no events, so every position is caught up
+            logMissingEventStorage(e, nameof(FetchFirstEventTimestampsAfterAsync));
+            timestamps.Clear();
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+
+        return positions
+            .Select(p => new PendingEventAge(p.TenantId, p.Sequence,
+                timestamps.TryGetValue(lookupFor(p), out var timestamp) ? timestamp : null))
+            .ToList();
+    }
+
     string IEventDatabase.StorageIdentifier => _storageIdentifier;
 
     /// <summary>
@@ -307,6 +434,28 @@ public partial class MartenDatabase : IEventDatabase
         await conn.OpenAsync(token).ConfigureAwait(false);
         try
         {
+            // #5652: ask the catalog whether the table is there before asking it for rows. The catch
+            // below already keeps a missing table from reaching the caller, but the failed statement
+            // still gets as far as Postgres, which logs an ERROR for it. A store with no event type
+            // and no projection never has its event tables migrated, and under Wolverine-managed
+            // subscription distribution the leader builds a usage descriptor for every store on a
+            // ten second heartbeat -- so that steady state is tens of thousands of server-side ERROR
+            // lines a day for a store that can never hold an event, burying real ones.
+            //
+            // This stays within #5511's rule that only Postgres can answer whether the storage is
+            // there -- to_regclass is that same question asked without raising, and it answers for a
+            // missing schema as well as a missing table. The catch is still needed for the race
+            // where the table goes away between the two statements.
+            var exists = await conn
+                .CreateCommand("select to_regclass(:name) is not null;")
+                .With("name", $"{Options.Events.DatabaseSchemaName}.mt_events", NpgsqlDbType.Text)
+                .ExecuteScalarAsync(token).ConfigureAwait(false);
+
+            if (exists is not true)
+            {
+                return null;
+            }
+
             var raw = await conn
                 .CreateCommand($"select max(seq_id) from {Options.Events.DatabaseSchemaName}.mt_events;")
                 .ExecuteScalarAsync(token).ConfigureAwait(false);

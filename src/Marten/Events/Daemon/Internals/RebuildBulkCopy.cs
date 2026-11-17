@@ -82,10 +82,6 @@ internal sealed class BulkCopyableInsert: Weasel.Storage.IStorageOperation
 ///     <see cref="BeforeCommitAsync"/> runs after <c>WaitForCompletion</c> has drained that
 ///     queue.
 /// </remarks>
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "CloseAndBuildAs over document types that are preserved at the StoreOptions / projection-registration boundary per the AOT publishing guide.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Type.MakeGenericType over registered document types — AOT consumers pre-generate codegen artifacts per the AOT publishing guide.")]
 internal sealed class RebuildBulkCopyBuffer: ITransactionParticipant
 {
     private readonly IMartenDatabase _database;
@@ -168,6 +164,10 @@ internal sealed class RebuildBulkCopyBuffer: ITransactionParticipant
         }
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Type.MakeGenericType over registered document types — AOT consumers pre-generate codegen artifacts per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "CloseAndBuildAs over document types that are preserved at the StoreOptions / projection-registration boundary per the AOT publishing guide.")]
     private IRebuildBulkCopier? copierFor(Type documentType)
     {
         if (_copiers.TryFind(documentType, out var copier))
@@ -198,8 +198,6 @@ internal interface IRebuildBulkCopier
 ///     columns, duplicated fields) and streams the buffered documents through
 ///     <c>BeginBinaryImport</c> on the batch's open connection, joining its transaction.
 /// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Document types are preserved at the StoreOptions / projection-registration boundary per the AOT publishing guide.")]
 internal sealed class RebuildBulkCopier<T>: IRebuildBulkCopier where T : notnull
 {
     public bool HasBulkLoader(IMartenDatabase database)

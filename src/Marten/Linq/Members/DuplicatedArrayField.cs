@@ -19,10 +19,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Members;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQueryableMemberCollection,
     IExistsElementSource, IValueCollectionMember
 {
@@ -63,6 +59,10 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
     public string ArrayLocator => TypedLocator;
     public IQueryableMember Element { get; }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IStorageSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
@@ -71,18 +71,45 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
             : typeof(ScalarSelectManyStatement<>).CloseAndBuildAs<SelectorStatement>(parentStatement,
                 session.Serializer, ElementType);
 
-        collectionUsage.ProcessSingleValueModeIfAny(statement, session, null, statistics);
+        // #5934: the flattened rows read the exploded CTE, so it has to be declared ahead of them. This used to
+        // return the statement unattached, which referenced a CTE the command never declared (42P01), and it
+        // skipped every Where(), OrderBy(), paging and Select() after the SelectMany(). The elements are
+        // flattened and filtered exactly like the JSONB value collection this field duplicates.
+        parentStatement.AddToEnd(statement);
 
-        return statement;
+        var elements = ((ValueCollectionMember)InnerMember).SelectManyUsage;
+
+        if (collectionUsage.OrderingExpressions.Any() || collectionUsage.WhereExpressions.Any())
+        {
+            statement.ConvertToCommonTableExpression(session);
+
+            var selectorStatement = new SelectorStatement
+            {
+                SelectClause = statement.SelectClause.As<IScalarSelectClause>().CloneToOtherTable(statement.ExportName)
+            };
+            statement.AddToEnd(selectorStatement);
+
+            return collectionUsage.ConfigureSelectManyStatement(session, elements, selectorStatement, statistics)
+                .SelectorStatement();
+        }
+
+        return collectionUsage.ConfigureSelectManyStatement(session, elements, statement, statistics)
+            .SelectorStatement();
     }
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)
     {
-        var selection = $"jsonb_array_elements_text({JSONBLocator})";
+        // #5934: explode the duplicated array column itself. The JSONB locator of a duplicated field is empty,
+        // so jsonb_array_elements_text() was handed nothing.
+        var selection = $"unnest({RawLocator})";
 
-        return typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(fromObject, selection,
-            ElementType);
+        return SelectClauseResolvers.Data(ElementType, fromObject, selection);
     }
+
+    /// <summary>
+    /// #5934: the number of elements in the duplicated array column, 0 for an empty or null array.
+    /// </summary>
+    internal string LengthLocator => $"coalesce(array_length({RawLocator}, 1), 0)";
 
     public ISqlFragment ParseWhereForAny(Expression body, IReadOnlyStoreOptions options)
     {

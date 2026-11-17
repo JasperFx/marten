@@ -55,8 +55,19 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
 
         foreach (var mapping in Options.Storage.DocumentMappingsWithSchema.OrderBy(x => x.Alias))
         {
+            // jasperfx#1070: whether a delete is permanent, known before it is called. A sub-class below
+            // reports the same answer, since the root's table -- and so the root's delete style -- holds
+            // its rows.
+            var isSoftDeleted = mapping.DeleteStyle == DeleteStyle.SoftDelete;
+
             refs.Add(new DocumentTypeRef(mapping.DocumentType.FullNameInCode(), mapping.Alias,
-                mapping.DatabaseSchemaName));
+                mapping.DatabaseSchemaName)
+            {
+                IsSoftDeleted = isSoftDeleted,
+
+                // jasperfx#1082: names the projection AggregateDocumentJsonAsync rebuilds this type through.
+                SingleStreamProjection = SingleStreamProjectionFor(mapping.DocumentType)?.Name
+            });
 
             // jasperfx#932: a sub-class is listed too, because resolveDiagnosticsTarget already accepts
             // its name and narrows to its rows -- a picker that could not offer it would be hiding a
@@ -67,7 +78,9 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
                 refs.Add(new DocumentTypeRef(subClass.DocumentType.FullNameInCode(), subClass.Alias,
                     mapping.DatabaseSchemaName)
                 {
-                    RootTypeName = mapping.DocumentType.FullNameInCode()
+                    RootTypeName = mapping.DocumentType.FullNameInCode(),
+                    IsSoftDeleted = isSoftDeleted,
+                    SingleStreamProjection = SingleStreamProjectionFor(subClass.DocumentType)?.Name
                 });
             }
         }
@@ -77,6 +90,19 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
 
     async Task<DocumentQueryResult> IDocumentStoreDiagnostics.QueryDocumentsAsync(
         string documentTypeName, DocumentQueryOptions options, CancellationToken token)
+        => (await runDocumentQueryAsync(documentTypeName, options, explain: false, token).ConfigureAwait(false))
+            .Result!;
+
+    /// <summary>
+    /// The one body behind <c>QueryDocumentsAsync</c> and <c>ExplainDocumentQueryAsync</c> (jasperfx#1078), so
+    /// an explain is of exactly the page query the read would run and refuses exactly what the read refuses.
+    /// </summary>
+    /// <param name="explain">
+    /// True to explain the page query instead of reading it: no count is run, and the page statement is
+    /// executed under <c>EXPLAIN (ANALYZE, FORMAT JSON)</c> in a read-only transaction that is rolled back.
+    /// </param>
+    private async Task<DocumentQueryOutcome> runDocumentQueryAsync(
+        string documentTypeName, DocumentQueryOptions options, bool explain, CancellationToken token)
     {
         // #5544 / jasperfx#928: the request's own shape first, before anything about this store. One read
         // cannot be scoped to one tenant AND to all of them, and a store must not pick -- so this is an
@@ -90,8 +116,20 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         var target = resolveDiagnosticsTarget(documentTypeName);
         if (target == null)
         {
-            return emptyPage(pageNumber, pageSize);
+            // An unknown type name is an empty page to a read, and "no query to explain" to an explain.
+            return new DocumentQueryOutcome(emptyPage(pageNumber, pageSize), null);
         }
+
+        // jasperfx#1077: a metadata filter on a column this type's table does not have is refused, never
+        // skipped. Skipping it returned the unfiltered page and total, which reads as a filter that matched
+        // everything. The ROOT's flags, because a sub-class's rows live in its root's table.
+        var metadata = target.Mapping.Metadata;
+        options.AssertMetadataFiltersAreCaptured(target.RequestedType.FullNameInCode(),
+            metadata.CorrelationId.Enabled, metadata.CausationId.Enabled, metadata.LastModifiedBy.Enabled);
+
+        // jasperfx#1058 (#5740): refused here, once the mapping is known and before anything is read, so an
+        // ordering the type cannot answer is never quietly replaced by the default one.
+        var metadataOrdering = MetadataOrdering(target, options);
 
         var database = options.AllTenants
             ? allTenantsDatabase()
@@ -99,14 +137,15 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
 
         if (database == null)
         {
-            return emptyPage(pageNumber, pageSize);
+            return DocumentQueryOutcome.Empty(pageNumber, pageSize,
+                "the tenant is not one this store knows, so no database was read");
         }
 
         // jasperfx#869: Where / OrderBy go through Marten's own LINQ provider. Without them, nothing below
         // this line changed.
         if (options.HasCriteria())
         {
-            return await queryWithCriteriaAsync(target, database, options, pageNumber, pageSize, token)
+            return await queryWithCriteriaAsync(target, database, options, pageNumber, pageSize, explain, token)
                 .ConfigureAwait(false);
         }
 
@@ -115,7 +154,8 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         {
             // An id that cannot be converted to the stored identity type matches nothing, which is the
             // same answer the contract gives for an unknown type name -- never an exception.
-            return emptyPage(pageNumber, pageSize);
+            return DocumentQueryOutcome.Empty(pageNumber, pageSize,
+                "the id is not a value of the document's identity type, so it matches nothing without a read");
         }
 
         predicate.ExcludeSoftDeleted = !options.IncludeSoftDeleted;
@@ -123,6 +163,18 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
 
         var reader = new StoredDocumentReader(target);
         var offset = (pageNumber - 1) * pageSize;
+        var pageSql =
+            $"select {reader.SelectList} from {target.Table}{predicate.Sql} order by {predicate.OrderByWith(metadataOrdering)} limit {pageSize} offset {offset}";
+
+        if (explain)
+        {
+            var pageCommand = new NpgsqlCommand(pageSql);
+            predicate.Bind(pageCommand);
+
+            // The raw read runs on a bare connection, so its explain does too.
+            return new DocumentQueryOutcome(null,
+                await explainPageAsync(database, pageCommand, target, null, token).ConfigureAwait(false));
+        }
 
         await using var conn = database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
@@ -139,8 +191,7 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         var rows = new List<StoredDocument>();
         await using (var cmd = conn.CreateCommand())
         {
-            cmd.CommandText =
-                $"select {reader.SelectList} from {target.Table}{predicate.Sql} order by {predicate.OrderBy} limit {pageSize} offset {offset}";
+            cmd.CommandText = pageSql;
             predicate.Bind(cmd);
 
             await using var dbReader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
@@ -150,7 +201,7 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             }
         }
 
-        return new DocumentQueryResult(rows, total, pageNumber, pageSize);
+        return new DocumentQueryOutcome(new DocumentQueryResult(rows, total, pageNumber, pageSize), null);
     }
 
     async Task<StoredDocument?> IDocumentStoreDiagnostics.LoadDocumentAsync(
@@ -194,6 +245,64 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         }
 
         return await reader.ReadAsync(dbReader, predicate.TenantId, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// jasperfx#1058 (#5740): the <c>order by</c> key for <see cref="DocumentQueryOptions.OrderByMetadata" />, or
+    /// null when none was asked for.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Every column is checked against the mapping first, because Marten only creates the metadata columns a
+    /// mapping asked for (see <see cref="StoredDocumentReader" />): ordering by one that is absent is a 42703.
+    /// An ordering the mapping cannot answer is refused with <see cref="DocumentCriteriaNotSupportedException" />
+    /// naming <c>OrderByMetadata</c>, never ignored — a console that asked for newest first and silently got
+    /// identity order would show the wrong rows on page one with nothing to say so.
+    /// </para>
+    /// <para>
+    /// <see cref="DocumentMetadataField.Version" /> is honoured only for a numeric revision. A Guid version
+    /// shares the <c>mt_version</c> column but has no meaningful order, so ordering by it would be a
+    /// well-formed answer that means nothing.
+    /// </para>
+    /// <para>
+    /// Descending puts nulls last, and ascending first, as the caller's own orderings do in the criteria path:
+    /// null is the smallest value in C#. None of these columns is normally null, so it only matters for a row
+    /// written before its column was added.
+    /// </para>
+    /// </remarks>
+    /// <param name="alias">The table alias to qualify the column with, or null for the unaliased raw read.</param>
+    internal static string? MetadataOrdering(DiagnosticsTarget target, DocumentQueryOptions options,
+        string? alias = null)
+    {
+        if (options.OrderByMetadata is not { } order)
+        {
+            return null;
+        }
+
+        var metadata = target.Mapping.Metadata;
+        var column = order.Field switch
+        {
+            DocumentMetadataField.LastModified when metadata.LastModified.Enabled => SchemaConstants.LastModifiedColumn,
+            DocumentMetadataField.LastModified => throw refuse("it does not track a last-modified time"),
+
+            DocumentMetadataField.Created when metadata.CreatedAt.Enabled => SchemaConstants.CreatedAtColumn,
+            DocumentMetadataField.Created => throw refuse(
+                "it does not track a created time. Enable it with Metadata(m => m.CreatedAt.Enabled = true)"),
+
+            DocumentMetadataField.Version when metadata.Revision.Enabled => SchemaConstants.VersionColumn,
+            DocumentMetadataField.Version when metadata.Version.Enabled => throw refuse(
+                "its version is a Guid, which has no meaningful order. Only a numeric revision (UseNumericRevisions) can be ordered by"),
+            DocumentMetadataField.Version => throw refuse("it does not track a version"),
+
+            _ => throw refuse($"'{order.Field}' is not a metadata column Marten knows")
+        };
+
+        var p = alias == null ? "" : alias + ".";
+        return order.Descending ? $"{p}{column} desc nulls last" : $"{p}{column} nulls first";
+
+        DocumentCriteriaNotSupportedException refuse(string reason)
+            => new(nameof(DocumentQueryOptions.OrderByMetadata),
+                $"documents of type {target.RequestedType.FullNameInCode()} cannot be ordered by {order.Field}: {reason}.");
     }
 
     private static DocumentQueryResult emptyPage(int pageNumber, int pageSize)
@@ -425,13 +534,14 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         }
 
         /// <summary>
-        /// #4791 / CritterWatch #629: exact-match filters on the document's metadata columns. A filter is
-        /// honored only when both the option is set AND the mapping has that metadata column enabled —
-        /// emitting a WHERE on a column the table does not have would throw 42703 (undefined_column). When
-        /// the option is set but the column is disabled the filter is silently skipped, per the
-        /// DocumentQueryOptions contract ("Only honored when the store advertises and captures the metadata
-        /// column; otherwise ignored").
+        /// #4791 / CritterWatch #629: exact-match filters on the document's metadata columns.
         /// </summary>
+        /// <remarks>
+        /// A filter on a column the mapping does not capture never reaches here: since jasperfx#1077 it is
+        /// refused up front by <c>DocumentQueryOptions.AssertMetadataFiltersAreCaptured</c>, where it used to be
+        /// skipped and answered with the unfiltered page. The <c>Enabled</c> checks in
+        /// <see cref="MetadataFilters" /> stay as the guard against emitting a WHERE on an absent column (42703).
+        /// </remarks>
         public void AddMetadataFilters(DocumentQueryOptions options)
         {
             var index = 0;
@@ -492,8 +602,27 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         /// on two pages and another's on none. <c>(tenant_id, id)</c> is the conjoined table's primary key, so
         /// it is both total and index-ordered.
         /// </remarks>
-        public string OrderBy
-            => _allTenants && _target.IsConjoined ? $"{TenantIdColumn.Name}, id" : "id";
+        /// <param name="metadataOrdering">
+        /// jasperfx#1058: an <see cref="DocumentQueryOptions.OrderByMetadata" /> key from
+        /// <see cref="MetadataOrdering" />, or null. It goes after the tenant and before the identity: the tenant
+        /// still leads an all-tenants read, and the identity still breaks every tie, so paging stays total.
+        /// </param>
+        public string OrderByWith(string? metadataOrdering)
+        {
+            var keys = new List<string>(3);
+            if (_allTenants && _target.IsConjoined)
+            {
+                keys.Add(TenantIdColumn.Name);
+            }
+
+            if (metadataOrdering != null)
+            {
+                keys.Add(metadataOrdering);
+            }
+
+            keys.Add("id");
+            return string.Join(", ", keys);
+        }
 
         public void Bind(NpgsqlCommand command)
         {
@@ -549,7 +678,7 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             if (metadata.Version.Enabled || metadata.Revision.Enabled)
             {
                 _versionIndex = columns.Count;
-                columns.Add($"{p}{SchemaConstants.VersionColumn}::text");
+                columns.Add(VersionTokenSql(target.Mapping, p));
             }
 
             if (metadata.LastModified.Enabled)
@@ -586,6 +715,39 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
 
             SelectFields = columns.ToArray();
             SelectList = string.Join(", ", columns);
+        }
+
+        /// <summary>
+        /// The opaque token <see cref="StoredDocument.Version" /> carries, which a console echoes back as
+        /// <see cref="DocumentWriteRequest.ExpectedVersion" />.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Ordinarily just <c>mt_version</c>. Not for a projection document (#5773), whose numeric revision is
+        /// the version of the stream the snapshot reflects: a write that is not the projection's leaves it where
+        /// it was, so a token made of it alone never moved and a second save at the same token was accepted.
+        /// Moving the revision instead is the wrong fix, because the async fetch's delta query reads only the
+        /// events above it and would skip the next one. So the token also captures something every write
+        /// changes: <c>mt_last_modified</c>, or a hash of the data when the mapping does not track it.
+        /// </para>
+        /// <para>
+        /// The last-modified stamp goes in as epoch microseconds rather than as text, so the token does not
+        /// depend on the connection's <c>TimeZone</c> or <c>DateStyle</c>.
+        /// </para>
+        /// </remarks>
+        internal static string VersionTokenSql(DocumentMapping mapping, string prefix)
+        {
+            var version = $"{prefix}{SchemaConstants.VersionColumn}::text";
+            if (!mapping.UseVersionFromMatchingStream || !mapping.Metadata.Revision.Enabled)
+            {
+                return version;
+            }
+
+            var stamp = mapping.Metadata.LastModified.Enabled
+                ? $"coalesce((extract(epoch from {prefix}{SchemaConstants.LastModifiedColumn}) * 1000000)::bigint::text, '')"
+                : $"md5({prefix}data::text)";
+
+            return $"{version} || ':' || {stamp}";
         }
 
         public string[] SelectFields { get; }

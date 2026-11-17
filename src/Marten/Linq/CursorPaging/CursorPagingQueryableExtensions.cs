@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
@@ -47,6 +48,29 @@ public static class CursorPagingQueryableExtensions
         int pageSize,
         CancellationToken token = default) where T : notnull
     {
+        var (provider, expression, keyColumns, keyTypes) = PreparePage(queryable, cursor, pageSize);
+        return await provider.StreamCursorPage(expression, keyColumns, keyTypes, pageSize, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// <see cref="ToJsonPageByCursorAsync{T}"/> with the items left as the UTF-8 bytes read off the database,
+    /// for <c>StreamPagedByCursor</c>, which writes them to the response as they are. The caller disposes the page.
+    /// </summary>
+    internal static async Task<CursorPageUtf8> ToUtf8JsonPageByCursorAsync<T>(
+        this IQueryable<T> queryable,
+        string? cursor,
+        int pageSize,
+        CancellationToken token) where T : notnull
+    {
+        var (provider, expression, keyColumns, keyTypes) = PreparePage(queryable, cursor, pageSize);
+        return await provider.StreamCursorPageUtf8(expression, keyColumns, keyTypes, pageSize, token).ConfigureAwait(false);
+    }
+
+    private static (MartenLinqQueryProvider Provider, Expression Expression, string[] KeyColumns, Type[] KeyTypes) PreparePage<T>(
+        IQueryable<T> queryable,
+        string? cursor,
+        int pageSize) where T : notnull
+    {
         if (queryable == null) throw new ArgumentNullException(nameof(queryable));
         if (pageSize <= 0)
         {
@@ -64,14 +88,17 @@ public static class CursorPagingQueryableExtensions
                 "OrderBy/OrderByDescending clause so that keyset pagination is deterministic.");
         }
 
-        CursorPagination.ValidateTerminalKeyIsUnique<T>(orderings[^1]);
+        // Ask the store's mapping rather than the type: only the mapping knows an identity
+        // configured through Schema.For<T>().Identity(...).
+        var idMember = session.Options.Storage.FindMapping(martenQueryable.MartenProvider.SourceType).IdMember;
+        CursorPagination.ValidateTerminalKeyIsUnique<T>(orderings[^1], idMember);
 
         var working = queryable;
 
         if (!string.IsNullOrEmpty(cursor))
         {
-            var values = CursorPagination.DecodeCursor(cursor!, orderings);
-            var predicate = CursorPagination.BuildSeekPredicate<T>(orderings, values);
+            var values = CursorPagination.DecodeCursor(cursor!, orderings, session.Serializer, session.Options);
+            var predicate = CursorPagination.BuildSeekPredicate<T>(orderings, values, session.Options);
             working = working.Where(predicate);
         }
 
@@ -89,11 +116,11 @@ public static class CursorPagingQueryableExtensions
         {
             var member = queryMembers.MemberFor(orderings[i].Selector.Body);
             keyColumns[i] = $"{member.TypedLocator} as cursor_key_{i}";
-            keyTypes[i] = orderings[i].KeyType;
+
+            // Npgsql reads the column as the value type's inner type, not as the wrapper around it.
+            keyTypes[i] = orderings[i].FindValueType(session.Options)?.SimpleType ?? orderings[i].KeyType;
         }
 
-        return await martenQueryable.MartenProvider
-            .StreamCursorPage(working.As<MartenLinqQueryable<T>>().Expression, keyColumns, keyTypes, pageSize, token)
-            .ConfigureAwait(false);
+        return (martenQueryable.MartenProvider, working.As<MartenLinqQueryable<T>>().Expression, keyColumns, keyTypes);
     }
 }

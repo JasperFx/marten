@@ -49,6 +49,9 @@ internal class EventsExistByTagsHandler: IQueryHandler<bool>
                 builder.AppendParameter(session.TenantId);
             }
 
+            // #5677: archived events are excluded, as in every other event query
+            builder.Append(" and e.is_archived = false");
+
             builder.Append(" limit 1)");
             return;
         }
@@ -89,13 +92,15 @@ internal class EventsExistByTagsHandler: IQueryHandler<bool>
             }
         }
 
-        // Join to mt_events only if we need event type filtering
-        var hasEventTypeFilter = conditions.Any(c => c.EventType != null);
-        if (hasEventTypeFilter)
+        // #5677: always join mt_events -- the tag tables only carry is_archived under archived-stream
+        // partitioning, and the archived restriction has to hold either way. Under conjoined tenancy
+        // seq_id is not unique across tenants, so the join matches tenant_id too.
+        builder.Append(" inner join ");
+        builder.Append(schema);
+        builder.Append(".mt_events e on t0.seq_id = e.seq_id");
+        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
         {
-            builder.Append(" inner join ");
-            builder.Append(schema);
-            builder.Append(".mt_events e on t0.seq_id = e.seq_id");
+            builder.Append(" and t0.tenant_id = e.tenant_id");
         }
 
         builder.Append(" where (");
@@ -136,6 +141,8 @@ internal class EventsExistByTagsHandler: IQueryHandler<bool>
             builder.Append(" and t0.tenant_id = ");
             builder.AppendParameter(session.TenantId);
         }
+
+        builder.Append(" and e.is_archived = false");
 
         builder.Append(" limit 1)");
     }

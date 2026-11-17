@@ -1222,10 +1222,10 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
         await theSession.SaveChangesAsync();
 
-        await using var command = theSession.Connection.CreateCommand();
+        await using var command = (await theSession.GetConnectionAsync()).CreateCommand();
         command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                               $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
-        var count = (long)(command.ExecuteScalar() ?? 0);
+        var count = (long)(await command.ExecuteScalarAsync() ?? 0);
         count.ShouldBe(1);
     }
 
@@ -1244,10 +1244,10 @@ public class patching_api: OneOffConfigurationsContext
         theSession.Patch<Target>(entity.Id).Set(t => t.String, newval);
         await theSession.SaveChangesAsync();
 
-        await using var command = theSession.Connection.CreateCommand();
+        await using var command = (await theSession.GetConnectionAsync()).CreateCommand();
         command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                               $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
-        var count = (long)(command.ExecuteScalar() ?? 0);
+        var count = (long)(await command.ExecuteScalarAsync() ?? 0);
         count.ShouldBe(1);
     }
 
@@ -1272,11 +1272,11 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         // Verify both fields are updated
-        await using (var command = theSession.Connection.CreateCommand())
+        await using (var command = (await theSession.GetConnectionAsync()).CreateCommand())
         {
             command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                                   $"where data->>'String' = '{newValue}' and {duplicateField.ToColumn().Name} = '{newValue}'";
-            var count = (long)(command.ExecuteScalar() ?? 0);
+            var count = (long)(await command.ExecuteScalarAsync() ?? 0);
             count.ShouldBe(1);
         }
 
@@ -1317,11 +1317,11 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         // Verify both fields are updated
-        await using (var command = theSession.Connection.CreateCommand())
+        await using (var command = (await theSession.GetConnectionAsync()).CreateCommand())
         {
             command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
                                 $"where data->'Inner'->>'String' = '{newValue}' and {duplicateField.ToColumn().Name} = '{newValue}'";
-            var count = (long)(command.ExecuteScalar() ?? 0);
+            var count = (long)(await command.ExecuteScalarAsync() ?? 0);
             count.ShouldBe(1);
         }
 

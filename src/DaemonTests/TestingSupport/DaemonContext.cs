@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Bobcat;
+using Bobcat.CritterStack;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -58,7 +60,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
 
     public ILogger<IProjection> Logger { get; }
 
-    [Bobcat.BobcatStep("the projection daemon is running", Keyword = "When")]
+    [When("the projection daemon is running")]
     internal async Task<IProjectionDaemon> StartDaemon()
     {
         var daemon = theStore.Tenancy.Default.Database.As<MartenDatabase>()
@@ -131,7 +133,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         return host;
     }
 
-    [Bobcat.BobcatStep("the {shardName} shard reports {action}", Keyword = "When")]
+    [When("the {shardName} shard reports {action}")]
     internal Task WaitForAction(string shardName, ShardAction action, TimeSpan timeout = default)
     {
         if (timeout == default)
@@ -140,6 +142,63 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
 
         return new ShardActionWatcher(_daemon.Tracker, shardName, action, timeout).Task;
+    }
+
+    /// <summary>
+    /// Wait for every async projection in <c>theStore</c> to catch up before reading
+    /// <paramref name="readModel"/>. On a timeout this throws Bobcat's
+    /// <see cref="ProjectionCatchUpTimeoutException"/>, which names each shard that was behind and
+    /// where it stood (<c>'Trip:All' at 412 of 1000</c>), rather than the bare TimeoutException
+    /// Marten's own wait throws. A stalled daemon test then says which shard stalled.
+    /// </summary>
+    [Given("the {readModel} read model has caught up")]
+    internal async Task WaitForCatchUp(Type readModel, TimeSpan timeout = default)
+    {
+        if (timeout == default) timeout = 30.Seconds();
+
+        try
+        {
+            await EventStores.WaitForNonStaleProjectionsAsync(theStore, timeout,
+                token: TestContext.Current.CancellationToken);
+        }
+        catch (TimeoutException e) when (e is not ProjectionCatchUpTimeoutException)
+        {
+            throw await catchUpTimedOut($"the {readModel.Name} read model has caught up", readModel, timeout, e);
+        }
+    }
+
+    /// <summary>
+    /// <see cref="ShardStateTracker.WaitForShardState(string, long, TimeSpan?)"/> through the same
+    /// diagnosis as <see cref="WaitForCatchUp"/>: a shard that never gets there is reported with the
+    /// progress of every shard, not just "did not reach the expected state".
+    /// </summary>
+    [Then("the {shardName} shard has reached sequence {sequence}")]
+    internal async Task<ShardState> WaitForShard(IProjectionDaemon daemon, string shardName, long sequence,
+        Type readModel, TimeSpan timeout = default)
+    {
+        if (timeout == default) timeout = 60.Seconds();
+
+        try
+        {
+            return await daemon.Tracker.WaitForShardState(new ShardState(shardName, sequence), timeout);
+        }
+        catch (TimeoutException e) when (e is not ProjectionCatchUpTimeoutException)
+        {
+            throw await catchUpTimedOut($"the {shardName} shard has reached sequence {sequence}", readModel, timeout, e);
+        }
+    }
+
+    [When("the {projectionName} projection is rebuilt")]
+    internal Task RebuildProjection(IProjectionDaemon daemon, string projectionName)
+    {
+        return daemon.RebuildProjectionAsync(projectionName, CancellationToken.None);
+    }
+
+    private async Task<ProjectionCatchUpTimeoutException> catchUpTimedOut(string wait, Type readModel,
+        TimeSpan timeout, TimeoutException inner)
+    {
+        var behind = await EventStores.ProjectionsBehindAsync(theStore, TestContext.Current.CancellationToken);
+        return new ProjectionCatchUpTimeoutException(wait, behind, timeout, readModel, null, inner);
     }
 
     public int NumberOfStreams
@@ -191,7 +250,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
     }
 
     // START HERE, NEEDS TO BE GENERALIZED
-    [Bobcat.BobcatStep("every expected aggregate matches the actual", Keyword = "Then")]
+    [Then("every expected aggregate matches the actual")]
     internal async Task CheckAllExpectedAggregatesAgainstActuals()
     {
         var actuals = await LoadAllAggregatesFromDatabase();
@@ -318,7 +377,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
-    [Bobcat.BobcatStep("the events are published", Keyword = "Given")]
+    [Given("the events are published")]
     internal async Task PublishSingleThreaded()
     {
         await PublishSingleThreaded<Trip>();
@@ -360,7 +419,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
-    [Bobcat.BobcatStep("the events are published on {threads} threads", Keyword = "Given")]
+    [Given("the events are published on {threads} threads")]
     internal Task PublishMultiThreaded(int threads)
     {
         foreach (var stream in _streams)

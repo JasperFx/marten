@@ -64,6 +64,15 @@ public class ComputedIndex: IndexDefinition
 
     public override string[] Columns => buildColumns().ToArray();
 
+    /// <summary>
+    ///     marten#5768 / CritterWatch#1469: the document member paths this index is declared over, dotted and in
+    ///     declaration casing (<c>"ShipTo.City"</c>), one per indexed member in declaration order. What the
+    ///     store-usage descriptor reports as <c>DocumentIndexDescriptor.Members</c>, so a console can match a
+    ///     predicate's members against the index without parsing its jsonb locator.
+    /// </summary>
+    internal IReadOnlyList<string> MemberPaths
+        => _members.Select(path => string.Join(".", path.Select(m => m.Name))).ToArray();
+
     protected override string deriveIndexName()
     {
         var name = _mapping.TableName.Name;
@@ -77,7 +86,11 @@ public class ComputedIndex: IndexDefinition
 
     private IEnumerable<string> buildColumns()
     {
-        if (_mapping.StartIndexesByTenantId)
+        // #5812: a unique index scoped globally stays global. Leading it with tenant_id would make it unique per
+        // tenant, which matters now that StartIndexesByTenantId is the default for conjoined documents.
+        var leadWithTenantId = _mapping.StartIndexesByTenantId && !(IsUnique && TenancyScope == TenancyScope.Global);
+
+        if (leadWithTenantId)
         {
             yield return TenantIdColumn.Name;
         }
@@ -114,7 +127,9 @@ public class ComputedIndex: IndexDefinition
             }
         }
 
-        if (TenancyScope == TenancyScope.PerTenant)
+        // Already the leading column when the index starts with tenant_id (the 10.0 default for a conjoined
+        // document), and a second copy adds nothing to the uniqueness
+        if (TenancyScope == TenancyScope.PerTenant && !leadWithTenantId)
         {
             yield return TenantIdColumn.Name;
         }

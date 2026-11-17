@@ -46,16 +46,12 @@ public enum PrimaryKeyTenancyOrdering
     Id_Then_TenantId
 }
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2070",
     Justification = "Class-level: reflects PublicMethods/PublicProperties on a Type whose runtime instance is preserved at the StoreOptions / projection-registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2075",
     Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2090",
     Justification = "Class-level: generic class type-argument flow on the aggregator / storage instantiation. Types preserved at the projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public interface IDocumentType
 {
     IDocumentType Root { get; }
@@ -87,14 +83,10 @@ public interface IDocumentType
     Type TypeFor(string alias);
 }
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2070",
     Justification = "Class-level: reflects PublicMethods/PublicProperties on a Type whose runtime instance is preserved at the StoreOptions / projection-registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2075",
     Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class DocumentMapping: IDocumentMapping, IDocumentType
 {
     internal static bool IsValidIdentityType([NotNullWhen(true)]Type? identityType)
@@ -192,7 +184,20 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
     public PrimaryKeyTenancyOrdering PrimaryKeyTenancyOrdering { get; set; } =
         PrimaryKeyTenancyOrdering.TenantId_Then_Id;
 
-    public bool StartIndexesByTenantId { get; set; }
+    private bool? _startIndexesByTenantId;
+
+    /// <summary>
+    ///     Lead every computed index on this document with <c>tenant_id</c>. Defaults to <c>true</c> for a
+    ///     conjoined document since 10.0 (#5812) and stays <c>false</c> for a single-tenanted one;
+    ///     <c>StoreOptions.RestoreV9Defaults()</c> puts back the 9.x default of <c>false</c>. Setting it
+    ///     yourself overrides both.
+    /// </summary>
+    public bool StartIndexesByTenantId
+    {
+        get => _startIndexesByTenantId
+               ?? (TenancyStyle == TenancyStyle.Conjoined && !StoreOptions.V9DefaultsRestored);
+        set => _startIndexesByTenantId = value;
+    }
 
     public bool DisablePartitioningIfAny { get; set; } = false;
 
@@ -361,7 +366,7 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
                 throw new ArgumentNullException(nameof(value));
             }
 
-            _alias = value.ToLower();
+            _alias = value.ToLowerInvariant();
         }
     }
 
@@ -523,12 +528,29 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
     public DocumentIndex AddGinIndexToData()
     {
-        var index = AddIndex("data");
+        // #6017: only the whole-document index on data can be reused here. A GinIndexJsonDataMember()
+        // index is also a DocumentIndex on "data", but its Mask names one member, so AddIndex("data")
+        // would hand it back and the mask below would overwrite it.
+        var index = Indexes.OfType<DocumentIndex>()
+            .FirstOrDefault(x => x.Columns!.SequenceEqual(["data"]) && isWholeDocumentDataMask(x.Mask));
+
+        if (index == null)
+        {
+            index = new DocumentIndex(this, "data");
+            Indexes.Add(index);
+        }
+
         index.ToGinWithJsonbPathOps();
 
         PropertySearching = PropertySearching.ContainmentOperator;
 
         return index;
+    }
+
+    private static bool isWholeDocumentDataMask(string? mask)
+    {
+        // "? jsonb_path_ops" is the mask IndexDefinition.ToGinWithJsonbPathOps() sets
+        return mask.IsEmpty() || mask == "? jsonb_path_ops";
     }
 
     /// <summary>
@@ -870,10 +892,10 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
             nameToAlias = AliasSanitizer().Replace(documentType.GetPrettyName(), string.Empty).Replace(",", "_");
         }
 
-        var parts = new List<string> { nameToAlias.ToLower() };
+        var parts = new List<string> { nameToAlias.ToLowerInvariant() };
         if (documentType.IsNested)
         {
-            parts.Insert(0, documentType.DeclaringType!.Name.ToLower());
+            parts.Insert(0, documentType.DeclaringType!.Name.ToLowerInvariant());
         }
 
         return string.Join("_", parts);
@@ -988,6 +1010,10 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
         return duplicatedField;
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     internal void CompileAndValidate()
     {
         if (IdMember == null)
@@ -1186,7 +1212,7 @@ public class DocumentMapping<T>: DocumentMapping
 
             var index = new ComputedIndex(this, members);
             configure?.Invoke(index);
-            Indexes.Add(index);
+            addComputedIndex(index);
             return;
         }
 
@@ -1207,6 +1233,23 @@ public class DocumentMapping<T>: DocumentMapping
 
         var index = new ComputedIndex(this, members);
         configure?.Invoke(index);
+        addComputedIndex(index);
+    }
+
+    // #6019: two Index() calls that resolve to the same index name used to be accepted here and fail much
+    // later, inside a migration, with an ArgumentException that named only the index
+    private void addComputedIndex(ComputedIndex index)
+    {
+        var name = index.Name;
+        var existing = Indexes.FirstOrDefault(x => x.Name.EqualsIgnoreCase(name));
+        if (existing != null)
+        {
+            var members = index.MemberPaths.Join(", ");
+            throw new InvalidOperationException(
+                $"Document type {typeof(T).FullNameInCode()} already has an index named '{name}', so Index() over {members} cannot add another one with the same name. " +
+                $"Declare the index once, or give a genuinely second index its own name with x => x.Name = \"...\"");
+        }
+
         Indexes.Add(index);
     }
 
@@ -1321,6 +1364,17 @@ internal static class ForeignKeyExtensions
         foreignKey.LinkedNames = new string[] { TenantIdColumn.Name }
             .Concat(foreignKey.LinkedNames.Where(x => x != TenantIdColumn.Name)).ToArray();
 
-        foreignKey.Name = $"{mapping.TableName.Name}_{foreignKey.ColumnNames.Join("_")}_fkey";
+        // #5672: regenerate the name only when it is still the generated one. A name set through the
+        // foreignKeyConfiguration callback is the caller's answer to the identifier-length error this
+        // reordering provokes -- the exception even tells them to override the name -- and overwriting it
+        // here made that escape hatch unusable: there was no way to name a conjoined document's foreign key.
+        //
+        // A plain ForeignKey (the schemaName/tableName overload, or one added by hand) is left alone too.
+        // Its name was never Marten's to generate, so nothing here can tell a default from a choice.
+        if (foreignKey is DocumentForeignKey { HasGeneratedName: true })
+        {
+            foreignKey.Name = PostgresqlIdentifier.Shorten(
+                $"{mapping.TableName.Name}_{foreignKey.ColumnNames.Join("_")}_fkey");
+        }
     }
 }

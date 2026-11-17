@@ -39,6 +39,8 @@ public sealed class StreamPagedByCursor<T>: IResult, IEndpointMetadataProvider w
     /// </summary>
     public const string ContinuationHeaderName = "Marten-Continuation";
 
+    private static readonly byte[] ItemsPrefix = Encoding.UTF8.GetBytes("{\"items\":");
+
     private readonly IQueryable<T> _queryable;
     private readonly string? _cursor;
     private readonly int _pageSize;
@@ -79,7 +81,10 @@ public sealed class StreamPagedByCursor<T>: IResult, IEndpointMetadataProvider w
     {
         if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
 
-        var page = await _queryable.ToJsonPageByCursorAsync(_cursor, _pageSize, httpContext.RequestAborted)
+        // The items stay the UTF-8 bytes Marten read off the database: copied into the response around the
+        // envelope, rather than decoded to a string, concatenated and encoded back — three copies of the
+        // page, mostly on the large object heap for big pages.
+        await using var page = await _queryable.ToUtf8JsonPageByCursorAsync(_cursor, _pageSize, httpContext.RequestAborted)
             .ConfigureAwait(false);
 
         if (page.NextCursor != null)
@@ -87,18 +92,18 @@ public sealed class StreamPagedByCursor<T>: IResult, IEndpointMetadataProvider w
             httpContext.Response.Headers[ContinuationHeaderName] = page.NextCursor;
         }
 
-        var nextCursorJson = page.NextCursor == null
-            ? "null"
-            : "\"" + page.NextCursor + "\"";
-
-        var envelope = "{\"items\":" + page.ItemsJson + ",\"nextCursor\":" + nextCursorJson + "}";
-        var bytes = Encoding.UTF8.GetBytes(envelope);
+        var suffix = Encoding.UTF8.GetBytes(page.NextCursor == null
+            ? ",\"nextCursor\":null}"
+            : ",\"nextCursor\":\"" + page.NextCursor + "\"}");
 
         httpContext.Response.StatusCode = OnFoundStatus;
         httpContext.Response.ContentType = ContentType;
-        httpContext.Response.ContentLength = bytes.Length;
+        httpContext.Response.ContentLength = ItemsPrefix.Length + page.ItemsUtf8.Length + suffix.Length;
 
-        await httpContext.Response.Body.WriteAsync(bytes, httpContext.RequestAborted).ConfigureAwait(false);
+        var body = httpContext.Response.Body;
+        await body.WriteAsync(ItemsPrefix, httpContext.RequestAborted).ConfigureAwait(false);
+        await page.ItemsUtf8.CopyToAsync(body, httpContext.RequestAborted).ConfigureAwait(false);
+        await body.WriteAsync(suffix, httpContext.RequestAborted).ConfigureAwait(false);
     }
 
     /// <summary>

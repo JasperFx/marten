@@ -4,6 +4,7 @@ using EventSourcingTests.Aggregation;
 using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
+using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
@@ -15,6 +16,27 @@ namespace DaemonTests;
 
 public class wait_for_non_stale_data_error_cases : OneOffConfigurationsContext
 {
+    // WaitForNonStaleProjectionDataAsync documents a TimeoutException. A timeout that lands inside its first
+    // round trip, here a cold store's first storage check, used to escape as a TaskCanceledException, an
+    // OperationCanceledException or an NpgsqlException wrapping one, depending on where it caught the call.
+    // Bobcat's catch-up diagnosis only recognises a TimeoutException, so on a slow CI runner the forced timeout in
+    // catch_up_timeout_diagnostics surfaced as an undiagnosed TaskCanceledException (bobcat#562).
+    [Theory]
+    [InlineData(1)]
+    [InlineData(20)]
+    [InlineData(100)]
+    public async Task a_timeout_during_the_first_round_trip_is_still_a_timeout_exception(int milliseconds)
+    {
+        StoreOptions(opts =>
+        {
+            opts.DatabaseSchemaName = $"wait_cold_{milliseconds}";
+            opts.Projections.Add<SometimesFailingLetterCountsProjection>(ProjectionLifecycle.Async);
+        });
+
+        await Should.ThrowAsync<TimeoutException>(() =>
+            theStore.Storage.Database.WaitForNonStaleProjectionDataAsync(TimeSpan.FromMilliseconds(milliseconds)));
+    }
+
     [Fact]
     public async Task get_a_good_timeout_exception()
     {

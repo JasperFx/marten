@@ -21,6 +21,15 @@ internal class StreamsTable: Table
     public const string TableName = "mt_streams";
 
     /// <summary>
+    ///     #5812: whether a unique violation on <paramref name="tableName"/> is a stream id collision. PostgreSQL
+    ///     names the partition the row went to, not the parent, so under <c>UseArchivedStreamPartitioning</c> (the
+    ///     10.0 default) a duplicate start reports <c>mt_streams_default</c>; <c>mt_streams_identity</c> is the strict
+    ///     identity table.
+    /// </summary>
+    internal static bool IsStreamCollisionTable(string? tableName)
+        => tableName is not null && (tableName == TableName || tableName.StartsWith(TableName + "_", StringComparison.Ordinal));
+
+    /// <summary>
     ///     jasperfx#740 (marten#5333): the stream-compaction watermark — the stream version through
     ///     which events have been folded into a <c>Compacted&lt;T&gt;</c> snapshot. 0 means never
     ///     compacted. Written by <c>CompactStreamAsync</c> (see

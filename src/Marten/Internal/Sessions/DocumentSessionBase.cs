@@ -20,8 +20,6 @@ namespace Marten.Internal.Sessions;
 
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession, ITransactionParticipantRegistrar
 {
     internal readonly ISessionWorkTracker _workTracker;
@@ -108,6 +106,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     {
         _workTracker.EjectAll();
         ChangeTrackers.Clear();
+        discardAggregateWrites();
     }
 
     public void Store<T>(IEnumerable<T> entities) where T : notnull
@@ -275,6 +274,8 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public void InsertObjects(IEnumerable<object> documents)
     {
         assertNotDisposed();
@@ -310,6 +311,8 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     public IUnitOfWork PendingChanges => _workTracker;
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public void StoreObjects(IEnumerable<object> documents)
     {
         assertNotDisposed();
@@ -501,9 +504,20 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
             {
                 foreach (var entity in entities)
                 {
-                    storeEntity(entity, storage);
+                    var revision = storeEntity(entity, storage);
 
                     var upsert = storage.Upsert(entity, this, TenantId);
+
+                    // #5788 (jasperfx#785): a non-zero numeric revision on the document is the revision
+                    // the caller asks it to BECOME -- accepted only when strictly greater than the stored
+                    // one, landing at exactly that value -- so Store() is UpdateRevision(entity, Version).
+                    // storeEntity used to hand the revision to the identity map only, and the upsert went
+                    // out with its Revision at the 0 "auto" sentinel: the guard never ran and a stale
+                    // writer silently won. 0 stays the auto sentinel, so this is only ever an explicit ask.
+                    if (revision != 0 && storage.UseNumericRevisions && upsert is IRevisionedOperation revisioned)
+                    {
+                        revisioned.Revision = revision;
+                    }
 
                     _workTracker.Add(upsert);
                 }
@@ -511,19 +525,24 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    private void storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
+    /// <summary>
+    ///     Registers the entity with the session's identity map / version tracking. Returns the explicit
+    ///     numeric revision the document carries (IRevisioned, ILongVersioned or a mapped revision
+    ///     member), or 0 when it carries none -- 0 being the "auto" sentinel.
+    /// </summary>
+    private long storeEntity<T>(T entity, IDocumentStorage<T> storage) where T : notnull
     {
         switch (entity)
         {
             case IVersioned versioned when versioned.Version != Guid.Empty:
                 storage.Store(this, entity, versioned.Version);
-                return;
+                return 0;
             case IRevisioned revisioned when revisioned.Version != 0:
                 storage.Store(this, entity, revisioned.Version);
-                return;
+                return revisioned.Version;
             case ILongVersioned longVersioned when longVersioned.Version != 0:
                 storage.Store(this, entity, longVersioned.Version);
-                return;
+                return longVersioned.Version;
         }
 
         // #5372: a member mapped with Metadata.Version.MapTo(...) / Metadata.Revision.MapTo(...)
@@ -539,23 +558,35 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         if (storage.MappedVersionFor(entity) is { } mappedVersion && mappedVersion != Guid.Empty)
         {
             storage.Store(this, entity, mappedVersion);
-            return;
+            return 0;
         }
 
         if (storage.MappedRevisionFor(entity) is { } mappedRevision && mappedRevision != 0)
         {
             storage.Store(this, entity, mappedRevision);
-            return;
+            return mappedRevision;
         }
 
         // Put it in the identity map -- if necessary
         storage.Store(this, entity);
+        return 0;
     }
 
     public void EjectPatchedTypes(IUnitOfWork changes)
     {
-        var patchedTypes = changes.Operations().Where(x => x.Role() == OperationRole.Patch).Select(x => x.DocumentType)
-            .Distinct().ToArray();
+        // #5730: runs after every SaveChangesAsync, and almost no unit of work holds a patch, so walk the
+        // operations without allocating and only build the set of patched types once a patch turns up
+        HashSet<Type>? patchedTypes = null;
+        foreach (var operation in changes.Operations())
+        {
+            if (operation.Role() == OperationRole.Patch)
+            {
+                (patchedTypes ??= new HashSet<Type>()).Add(operation.DocumentType);
+            }
+        }
+
+        if (patchedTypes == null) return;
+
         foreach (var type in patchedTypes) EjectAllOfType(type);
     }
 

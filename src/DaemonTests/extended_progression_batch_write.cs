@@ -53,7 +53,7 @@ public class extended_progression_batch_write: DaemonContext
         string shard)
     {
         await using var session = theStore.QuerySession();
-        await using var reader = await session.Connection
+        await using var reader = await (await session.GetConnectionAsync())
             .CreateCommand(
                 $"select heartbeat, agent_status, pause_reason, running_on_node, last_seq_id from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = :name")
             .With("name", shard)
@@ -70,7 +70,7 @@ public class extended_progression_batch_write: DaemonContext
     private async Task<long> countRowsAsync()
     {
         await using var session = theStore.QuerySession();
-        var raw = await session.Connection
+        var raw = await (await session.GetConnectionAsync())
             .CreateCommand($"select count(*) from {theStore.Events.DatabaseSchemaName}.mt_event_progression")
             .ExecuteScalarAsync();
         return Convert.ToInt64(raw);
@@ -263,7 +263,7 @@ public class extended_progression_batch_write: DaemonContext
     private async Task<string> readTupleVersionAsync(string shard)
     {
         await using var session = theStore.QuerySession();
-        var raw = await session.Connection
+        var raw = await (await session.GetConnectionAsync())
             .CreateCommand(
                 $"select xmin::text from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = :name")
             .With("name", shard)

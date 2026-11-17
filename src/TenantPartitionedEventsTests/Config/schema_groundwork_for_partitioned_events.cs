@@ -144,7 +144,7 @@ public class schema_groundwork_for_partitioned_events
     }
 
     [Fact]
-    public void events_table_has_no_partitioning_when_flag_is_off()
+    public void events_table_is_not_partitioned_by_tenant_when_flag_is_off()
     {
         using var store = DocumentStore.For(o =>
         {
@@ -161,7 +161,9 @@ public class schema_groundwork_for_partitioned_events
         var schemaObjects = ((Weasel.Core.Migrations.IFeatureSchema)events).Objects;
         var eventsTable = schemaObjects.OfType<Table>()
             .Single(t => t.Identifier.Name == "mt_events");
-        eventsTable.Partitioning.ShouldBeNull();
+
+        // Only the archived-stream partitioning, the 10.0 default (#5812), not tenant_id
+        eventsTable.Partitioning.ShouldBeOfType<ListPartitioning>().Columns.ShouldBe(["is_archived"]);
     }
 
     [Fact]

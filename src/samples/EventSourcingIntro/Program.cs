@@ -16,7 +16,7 @@ var documentStore = DocumentStore.For(options =>
 var id = Guid.NewGuid();
 
 var warehouseRepository = new WarehouseRepository(documentStore);
-var warehouseProductReadModel = warehouseRepository.Get(id);
+var warehouseProductReadModel = await warehouseRepository.GetAsync(id);
 
 DemoConsole.WriteWithColour($"{warehouseProductReadModel?.QuantityOnHand ?? 0} items of stock in the warehouse for {id}");
 
@@ -33,7 +33,7 @@ await handler.AdjustInventory(5,"Ordered too many");
 
 DemoConsole.WriteWithColour($"Found 5 items of stock hiding in the warehouse for {id} and have adjusted the stock count");
 
-warehouseProductReadModel = warehouseRepository.Get(id);
+warehouseProductReadModel = await warehouseRepository.GetAsync(id);
 
 DemoConsole.WriteWithColour($"{warehouseProductReadModel.QuantityOnHand} items of stock in the warehouse for {warehouseProductReadModel.Id}");
 
@@ -54,12 +54,12 @@ public class WarehouseRepository
         this.documentStore = documentStore;
     }
 
-    public WarehouseProductReadModel Get(Guid id)
+    public async Task<WarehouseProductReadModel> GetAsync(Guid id)
     {
-        using var session = documentStore.QuerySession();
+        await using var session = documentStore.QuerySession();
 
-        var doc = session.Query<WarehouseProductReadModel>()
-            .SingleOrDefault(x => x.Id == id);
+        var doc = await session.Query<WarehouseProductReadModel>()
+            .SingleOrDefaultAsync(x => x.Id == id);
 
         return doc;
     }

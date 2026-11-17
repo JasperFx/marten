@@ -62,7 +62,8 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     [Fact]
     public async Task check_metadata_correlation_id_disabled()
     {
-        // note: by default CorrelationId meta data is not enabled
+        // On by default since 10.0 (#5812), so turn it off
+        StoreOptions(_ => _.Events.MetadataConfig.CorrelationIdEnabled = false);
         const string correlationId = "test-correlation-id";
         theSession.CorrelationId = correlationId;
 
@@ -118,7 +119,8 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     [Fact]
     public async Task check_metadata_causation_id_disabled()
     {
-        // note: by default CausationId meta data is not enabled
+        // On by default since 10.0 (#5812), so turn it off
+        StoreOptions(_ => _.Events.MetadataConfig.CausationIdEnabled = false);
         const string causationId = "test-causation-id";
         theSession.CausationId = causationId;
 
@@ -156,7 +158,8 @@ public class flexible_event_metadata: OneOffConfigurationsContext
     [Fact]
     public async Task check_user_defined_metadata_disabled()
     {
-        // note: by default user defined meta data is not enabled
+        // On by default since 10.0 (#5812), so turn it off
+        StoreOptions(_ => _.Events.MetadataConfig.HeadersEnabled = false);
         const string userDefinedMetadataName = "my-custom-metadata";
         const string userDefinedMetadataValue = "my-custom-metadata-value";
         theSession.SetHeader(userDefinedMetadataName, userDefinedMetadataValue);
@@ -221,6 +224,25 @@ public class flexible_event_metadata: OneOffConfigurationsContext
 
             var retrievedVal = @event.GetHeader(userDefinedMetadataName).ToString();
             retrievedVal.ShouldBe(userDefinedMetadataValue);
+        }
+    }
+
+    [Fact]
+    public async Task enable_all_also_enables_the_user_name()
+    {
+        StoreOptions(_ => _.Events.MetadataConfig.EnableAll());
+
+        theSession.LastModifiedBy = "Last Person";
+
+        var streamId = theSession.Events
+            .StartStream<QuestParty>(started, joined, slayed).Id;
+        await theSession.SaveChangesAsync();
+
+        var events = await theSession.Events.FetchStreamAsync(streamId);
+        events.ShouldNotBeEmpty();
+        foreach (var @event in events)
+        {
+            @event.UserName.ShouldBe("Last Person");
         }
     }
 

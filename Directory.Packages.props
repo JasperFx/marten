@@ -1,10 +1,29 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+
+    <!-- One Bobcat line for the specs (DaemonTests) and the build's supervisor (JasperFx/bobcat#562).
+         1.0.0-rc.1 is the release bobcat#562 planned to wait for; 1.0.0-rc.3 brings the local
+         commit-and-push Gate the LocalGate target is built on (#5725, bobcat#729). Since rc.2
+         Bobcat references no JasperFx, and the Critter Stack vocabulary DaemonTests uses
+         (CritterStackSpec, CritterStackScenario, EventStores) ships in WolverineFx.Bobcat below. -->
+    <BobcatVersion>1.0.0</BobcatVersion>
+
+    <!-- Bobcat.Xunit 1.0 is built on xunit.v3 4.x over Microsoft.Testing.Platform 2.5.1, and the two
+         xunit lines cannot share a test project. The rest of the repo stays on the xunit.v3 3.x pinned
+         below; only the projects that take Bobcat.Xunit (DaemonTests and DaemonTests.ManualOnly, which
+         references it) move, through VersionOverride on these two properties. Moving every suite to
+         4.x is its own change: 14 AssemblyInfo.cs files carry
+         [assembly: CollectionBehavior(DisableTestParallelization = true)], a compile error on 4.x. -->
+    <BobcatXunitV3Version>4.0.2</BobcatXunitV3Version>
+    <BobcatXunitRunnerVersion>4.0.1</BobcatXunitRunnerVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Alba" Version="8.2.0" />
-    <PackageVersion Include="Aspire.Hosting.AppHost" Version="8.2.0" />
+    <PackageVersion Include="Alba" Version="9.0.0" />
+    <!-- #5724: the AspireHost sample is on Aspire.AppHost.Sdk/13.6.3, which references Aspire.Hosting.AppHost
+         implicitly at its own version, so that package must NOT have an entry here (NU1009). Keep this in step
+         with the Sdk version in src/samples/AspireHost/AspireHost.csproj. -->
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.3" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.13.10" />
     <!-- Bobcat's out-of-process test supervisor, used only by the Nuke build (#5096).
          It drives each test project's Microsoft.Testing.Platform host as a worker,
@@ -12,9 +31,9 @@
          reported as flaky rather than laundered into a clean pass. See
          build/SupervisedTests.cs. Bobcat.Supervisor pulls in Bobcat (the
          Bobcat.Resilience types) transitively. -->
-    <PackageVersion Include="Bobcat.Supervisor" Version="0.27.3" />
+    <PackageVersion Include="Bobcat.Supervisor" Version="$(BobcatVersion)" />
     <PackageVersion Include="Bogus" Version="35.6.5" />
-    <PackageVersion Include="Confluent.Kafka" Version="2.3.0" />
+    <PackageVersion Include="Confluent.Kafka" Version="2.16.0" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />
     <PackageVersion Include="DotNet.ReproducibleBuilds" Version="1.2.39" />
     <PackageVersion Include="FSharp.Core" Version="9.0.100" />
@@ -552,9 +571,15 @@
     <!-- Marker-step specifications (JasperFx/bobcat#110). Bobcat.Xunit is the shipped runner
          adapter, new in 0.17.0; before it, this repo hand-rolled one and it reported every
          scenario as a CleanPass whatever the test actually did. -->
-    <PackageVersion Include="Bobcat" Version="0.27.3" />
-    <PackageVersion Include="Bobcat.Generators" Version="0.27.3" />
-    <PackageVersion Include="Bobcat.Xunit" Version="0.27.3" />
+    <PackageVersion Include="Bobcat" Version="$(BobcatVersion)" />
+    <PackageVersion Include="Bobcat.Generators" Version="$(BobcatVersion)" />
+    <PackageVersion Include="Bobcat.Xunit" Version="$(BobcatVersion)" />
+    <!-- The Bobcat.CritterStack namespace (CritterStackSpec, CritterStackScenario, EventStores) left
+         Bobcat core in 1.0.0-rc.2 (bobcat#744) for this package, which carries the JasperFx.Events
+         coupling. Test-only, DaemonTests only. Its JasperFx.Events floor must not be newer than the
+         one Marten builds against (bobcat docs/compatibility.md): 6.55.0, the first stable WolverineFx.Bobcat,
+         requires JasperFx/JasperFx.Events 2.96.0 and Bobcat 1.0.0, the same as Marten. -->
+    <PackageVersion Include="WolverineFx.Bobcat" Version="6.55.0" />
     <!--
       2.69.1 (jasperfx#828 and jasperfx#830): two fixes on top of 2.69.0, and the first lands
       directly on what marten#5394 registered a release earlier. ProjectionEventModelSource no
@@ -803,15 +828,81 @@
          compliance package's criteria facts run here now (SupportsDocumentDiagnosticCriteria = true).
          JasperFx gains a dependency on System.Linq.Dynamic.Core, so every Marten consumer picks it up
          transitively. -->
-    <PackageVersion Include="JasperFx" Version="2.84.0" />
-    <PackageVersion Include="JasperFx.Events" Version="2.84.0" />
+    <!-- JasperFx 2.86.0 (from 2.84.0): carries jasperfx#1005, IEventStore.FindDatabaseForTenantAsync.
+         DocumentStore overrides it through ITenancy.TryFindDatabase (marten#5658) so a per-tenant wait
+         or query reaches only that tenant's database. -->
+    <!-- 2.87.0 (from 2.86.0): jasperfx#1011 reads a spec assembly's manifest from JasperFx for the
+         model command's spec generation, and jasperfx#1010 stops the daemon starting a shard while its
+         projection is being rebuilt. Neither reaches a Marten runtime path; the bump keeps the five
+         packages moving together, which they have since marten#5305. -->
+    <!-- JasperFx 2.90.1 (from 2.90.0): jasperfx#1019, the daemon's retry decision for exceptions thrown by projection code also consults TransientFailures, as well as the registered NpgsqlException / MartenCommandException types, which Marten keeps (narrowing them would dead-letter every event on a systemic error such as a missing column, see the comment on jasperfx#1019). -->
+    <!-- 2.90.0 (from 2.88.0, spanning 2.89.0): jasperfx#1014/#1017 adds IEventStoreOperations.TombstoneStream,
+         a hard stream delete, plus the StreamTombstoningCompliance suite. Marten implements it as
+         DeleteStreamOperation (marten#5673). jasperfx#1012/#1018 marks TagTypeRegistration.Create
+         as RequiresUnreferencedCode/RequiresDynamicCode; EventGraph.RegisterTagType carries those up,
+         and TagTypeRegistration.FromUnwrapper is the trim-safe route. No Weasel bump is needed:
+         9.45.1 only patches the SQL Server and Oracle providers. -->
+    <!-- JasperFx 2.91.0 (from 2.90.1, spanning 2.90.2). No Marten code change; every item is a daemon
+         or Dynamic LINQ fix Marten picks up through the package.
+         jasperfx#1022/#1023 (2.90.2): a drained subscription agent never released its heartbeat timer,
+         which rooted the agent and through it the store and host; the daemon now disposes every agent
+         it drops on each stop path.
+         jasperfx#1027/#1028: the HighWaterAgent survives a failed watchdog restart, and the watchdog now
+         restarts the agent when the mark has stood still for DaemonSettings.HighWaterProgressStallThreshold
+         (default 2 minutes) below the committed ceiling, read through
+         IHighWaterDetector.FetchCommittedHighWaterCeilingAsync, which Marten's HighWaterDetector already
+         implements. A restart re-reads the mark and never advances it, so a gap held on purpose stays held.
+         jasperfx#1025: RewindSubscriptionAsync is per tenant under UseTenantPartitionedEvents; the
+         tenant-less rewind now refuses a non-zero sequenceFloor there.
+         jasperfx#1026: a tenant removed and re-added (RemoveTenantFromShardAsync/AddTenantToShardAsync) is
+         no longer held at its old incarnation's high-water mark.
+         jasperfx#1024: Dynamic LINQ document criteria read offset-less date text as UTC for DateTime members
+         too. jasperfx#1021/#1030: the EmittedEvents manifest gets one entry per overload. -->
+    <!-- JasperFx 2.92.0 (from 2.91.0): jasperfx#1031, IEventStore.PreviewHighWaterAdvanceAsync and
+         AdvanceHighWaterMarkToLatestAsync, the store-agnostic "advance the high water mark to latest" that
+         CritterWatch calls. DocumentStore overrides both (marten#5738, DocumentStore.HighWaterAdvance.cs). -->
+    <!-- JasperFx 2.93.1 (from 2.92.0): jasperfx#1059 UndeleteDocumentAsync, jasperfx#1058 OrderByMetadata,
+         jasperfx#785 SoftDeleteCompliance + DocumentMetadataCompliance, jasperfx#809 persisted projection
+         start floors (marten#5740), and jasperfx#1064, a systemic database failure pauses the shard instead
+         of being dead-lettered (marten#5741). 2.93.1 adds jasperfx#1072, the LoadExcludesSoftDeletedDocuments
+         fixture flag Marten sets false: its load by id returns a soft-deleted document flagged deleted. -->
+    <!-- JasperFx 2.94.0 (from 2.93.1): jasperfx#1070 DocumentTypeRef.IsSoftDeleted, jasperfx#1071
+         IDocumentStoreDiagnosticsWriter.PreviewDocumentJsonAsync (a dry run of SaveDocumentJsonAsync), and
+         jasperfx#1073 IReadOnlyEventStore.QueryEventData&lt;T&gt;, all for CritterWatch. -->
+    <!-- JasperFx 2.96.1 (from 2.96.0): jasperfx#1087, the aggregate source generator Marten bundles into
+         Marten.nupkg builds a missing aggregate through its constructor, so a required member's
+         initializer such as `= []` survives an Apply-only event rather than being overwritten with
+         default!, as Marten 8's runtime codegen behaved. A Create taking object, a supertype or an
+         interface now owns the null-snapshot case instead of failing to compile with CS8120.
+         jasperfx#1086 is in JasperFx.RuntimeCompiler, which this bump does not move. -->
+    <!-- JasperFx 2.98.0 (from 2.97.0): jasperfx#1101 and #1105, slice.PublishMessage carries the correlation id
+         the slice's events agree on, on the async path and both inline paths. jasperfx#1107, cloned events keep
+         their correlation and causation ids. jasperfx#1102, #1106 and #1108, SubscriptionDescriptor.PublishedTypes
+         and descriptors that report a projection as it was registered. jasperfx#1098, a raised event is written
+         only to the stream it was raised to. 2.97.1 reached no feed, so its fixes arrive here. -->
+    <!-- JasperFx 2.102.0 (from 2.101.0): jasperfx#1150, IEventDatabase.FetchFirstEventTimestampsAfterAsync, the
+         timestamp of the first event after a sequence so CritterWatch can report projection lag in time. The new
+         PendingEventAgeCompliance suite is enrolled in EventSourcingTests/Compliance/marten_event_store_compliance_wave16.cs. -->
+    <!-- JasperFx 3.2.0 (from 3.0.0): jasperfx#1184/#1185, a [BoundaryAggregate] with an Id member gets the
+         string-keyed evolver FetchForWritingByTags looks up (it threw "No source-generated dispatcher found").
+         jasperfx#1183 adds the DcbAppendConditionCompliance suite, enrolled as dcb_append_condition_compliance
+         (marten#5893); it asserts #5887's append condition. 3.1.0 turns runtime-async on for net11.0 only;
+         net10.0 is unchanged. -->
+    <!-- JasperFx 3.3.0 (from 3.2.0, marten#5915): jasperfx#1188/#1191, the evolver generator calls a non-public
+         parameterless constructor through [UnsafeAccessor], so a private-constructor aggregate runs its constructor
+         and initializers again as in Marten 8. jasperfx#1187/#1190, IEventBinarySerializer gains IBufferWriter /
+         span members, which the bdata write and read paths now use (marten#5731). jasperfx#1186, UnArchiveStream on
+         the shared IEventStoreOperations, which Marten's own interface no longer redeclares. jasperfx#1192 is a
+         JasperFx codegen fix for non-string [FromKeyedServices] keys with no Marten change. -->
+    <PackageVersion Include="JasperFx" Version="3.5.0" />
+    <PackageVersion Include="JasperFx.Events" Version="3.5.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="2.84.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.5.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -830,24 +921,23 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.84.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.5.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.84.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.5.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
     <PackageVersion Include="Marten" Version="8.2.1" />
     <PackageVersion Include="MemoryPack" Version="1.21.4" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0-1.26328.17" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageVersion Include="Meziantou.Analyzer" Version="2.0.257" />
     <PackageVersion Include="Microsoft.AspNetCore.OData" Version="8.2.5" />
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.3.0" />
@@ -857,25 +947,37 @@
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" />
     <!-- Neovolve ships xunit v3 support under a distinct package id, not a major bump. -->
     <PackageVersion Include="Neovolve.Logging.Xunit.v3" Version="7.2.0" />
-    <PackageVersion Include="NetTopologySuite" Version="2.5.0" />
+    <PackageVersion Include="NetTopologySuite" Version="2.6.0" />
     <PackageVersion Include="NetTopologySuite.IO.GeoJSON" Version="4.0.0" />
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="NodaTime.Serialization.JsonNet" Version="3.1.0" />
     <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.1.2" />
-    <PackageVersion Include="Npgsql" Version="9.0.4" />
-    <PackageVersion Include="Npgsql.DependencyInjection" Version="9.0.2" />
-    <PackageVersion Include="Npgsql.Json.NET" Version="9.0.4" />
-    <PackageVersion Include="Npgsql.NetTopologySuite" Version="9.0.4" />
-    <PackageVersion Include="Npgsql.NodaTime" Version="9.0.2" />
+    <PackageVersion Include="Npgsql" Version="10.0.3" />
+    <PackageVersion Include="Npgsql.DependencyInjection" Version="10.0.3" />
+    <PackageVersion Include="Npgsql.Json.NET" Version="10.0.3" />
+    <PackageVersion Include="Npgsql.NetTopologySuite" Version="10.0.3" />
+    <PackageVersion Include="Npgsql.NodaTime" Version="10.0.3" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="Nuke.Common" Version="10.1.0" />
-    <PackageVersion Include="OpenTelemetry" Version="1.8.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.1" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.8.0-rc.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.8.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.8.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.8.0" />
+    <!-- Patched floors for vulnerable packages Nuke.Common 10.1.0 brings into build/build.csproj
+         transitively (via Microsoft.Build.Tasks.Core and NuGet.Packaging). Build-only: nothing
+         Marten ships depends on them. Drop once a Nuke release depends on patched versions.
+           System.Security.Cryptography.Pkcs  GHSA-846f-f764-76mx (high)
+           System.Security.Cryptography.Xml   GHSA-37gx-xxp4-5rgx (high)
+           NuGet.Packaging                    GHSA-g4vj-cjjj-v7hg (low) -->
+    <PackageVersion Include="NuGet.Packaging" Version="6.12.5" />
+    <!-- Nuke's telemetry check parses a project through the SDK's MSBuild, which under the .NET 11 SDKs
+         asks for NuGet.Frameworks 7.9.0.0 (marten#5870). Build-only. -->
+    <PackageVersion Include="NuGet.Frameworks" Version="7.9.0" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.13" />
+    <PackageVersion Include="OpenTelemetry" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.20.1-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.0" />
     <PackageVersion Include="Pgvector" Version="0.3.2" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Spectre.Console" Version="0.53.0" />
@@ -956,34 +1058,217 @@
          not consume Identifications yet (see the 9.41.0 note), so this is latent here rather than a fix to
          anything Marten currently hits — marten#5589/#5600 are the Marten-side chain.
          weasel#695 is a SQL Server AdvisoryLock fix and is Polecat's, not Marten's: Marten's advisory
-         locks are PostgreSQL. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.42.0" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.42.0" />
-    <PackageVersion Include="Weasel.Storage" Version="9.42.0" />
+         locks are PostgreSQL.
+         9.43.0 (weasel#700/#701, configurable SQL Server advisory lock monitor) and 9.44.0
+         (weasel#703/#704, re-runnable SQL Server function scripts) are SQL Server only: inert here.
+         9.45.0 carries two fixes, and the first one was reported against Marten.
+         weasel#706: db-patch wrote CREATE SCHEMA, and in the drop file `drop schema if exists ...
+         CASCADE`, for every schema the application knows about. A Marten app's drop file for a one-table
+         patch began with cascading drops of every Marten schema, the event store's included. The patch
+         now creates only the changed schemas (SchemaMigration.ChangedSchemas) and the drop file drops no
+         schema at all; it rolls back the objects the patch touched.
+         weasel#707: TableBase.PrimaryKeyName is empty for a table without primary key columns (it was
+         the default name built from no columns), and a primary key added to an existing table is now a
+         PrimaryKeyDifference.Create that the PostgreSQL delta actually applies, instead of a table-level
+         Create that only wrote CREATE TABLE IF NOT EXISTS. Removing a primary key no longer writes
+         `add CONSTRAINT ... PRIMARY KEY ()`. Every Marten table declares its primary key, so the risk
+         is the same as 9.42.0's: the schema-delta suites have to stay quiet on existing tables.
+         9.46.0 (from 9.45.0, spanning 9.45.1) needs JasperFx 2.90.2, which is why it follows the
+         JasperFx 2.91.0 bump (marten#5713). Three things reach Marten.
+         weasel#718: a concurrent index on a partitioned table that stopped partway (a uniqueness
+         violation, a cancelled build, a process that died between a partition's build and its ATTACH)
+         could never be finished: the rebuild asked for the leftover child index's name again and failed
+         with 42P07 on every later run. Each partition's step now starts with DROP INDEX CONCURRENTLY IF
+         EXISTS on the child's name.
+         weasel#719: AdvisoryLock.FindHolderAsync (jasperfx#913's IAdvisoryLock member, which Marten does
+         not call itself but a monitoring tool asks through) read pg_locks server-wide, so under
+         database-per-tenant, or parallel test lanes on one server, it named another database's backend as
+         this database's holder. It is now scoped to the current database.
+         weasel#724: MultiCommandDataReader.GetFieldType keeps DbDataReader's trim annotation, so a trimmed
+         or native publish stops reporting IL2093 against Weasel.Core.
+         Inert here: weasel#710 (9.45.1) pins the patched System.Security.Cryptography.Pkcs for
+         Weasel.SqlServer and Weasel.Oracle, and weasel#723 is a Firebird-only catalog re-read.
+         9.47.0 (from 9.46.0, spanning 9.46.1). Three things, and two of them were found against Marten.
+         weasel#730 (9.46.1) is the one to read first, because the shape it breaks is Marten's own:
+         Table.PostProcess widens a foreign key through ForeignKey.TryToCorrectForLink on EVERY
+         migration, and ApplyAllConfiguredChangesToDatabaseAsync applies a sharded store's databases with
+         Parallel.ForEachAsync over ONE cached set of event-store schema objects. Two migrations that both
+         saw the key one column short both appended to the live ColumnNames array, the second onto the
+         first one's result, and the apply failed with `42830: number of referencing and referenced
+         columns for foreign key disagree` — reported against a DCB tag table under per-tenant event
+         partitioning on a sharded store. The widened key then lives on the shared Table instance, so it
+         is rendered again by every later migration in that process and does NOT clear on a retry. The
+         correction now builds in locals and publishes in one assignment. Sequential behaviour is
+         unchanged, so this is a fix with no migration-output change for a single-database apply.
+         weasel#732 (9.46.1) changes migration OUTPUT, which is the A/B part of this bump:
+         IndexDefinition.ChildIndexName past 63 bytes was truncated by PostgreSQL INTO THE SUFFIX, which
+         is the only part distinguishing one partition's child from another's, so two partitions asked for
+         the same child name and the concurrent build failed on the second every rerun (42P07 before
+         9.46.0, 2BP01 after it). The index part now gives way through PostgresqlIdentifier.Shorten and the
+         suffix stays whole. The reported name was a Marten one — mt_doc_<doc>_idx_ngram_<member>_<hash>
+         on a partitioned table — so any Marten index whose name plus partition suffix passed 63 bytes
+         has different child names after this bump. Names that fit are byte-for-byte identical, and the
+         delta reads indexes off the parent only, so a second run still reports None. Not handled: an
+         UNATTACHED child left by a pre-9.46.1 run that died between build and ATTACH stays as a stray
+         index on that partition; it no longer collides, but Weasel will not drop it by its old name.
+         weasel#747 (9.47.0) is the seam marten#5755 consumes, and it is additive and inert until a
+         dialect opts in. The Quick modes' per-event QuickAppendEventWithVersion INSERT takes seq_id from
+         an inlined nextval() that nothing reads back, so the event keeps Sequence 0 and the tombstone
+         batch a failed unit of work writes SKIPS it — the numbers it burned are never filled (marten#5454).
+         The two Quick descriptors gain AppendEventSqlReturnsSequence; setting it asserts the suffix ends
+         in `returning seq_id`, and the storage then wraps the operation so PostprocessAsync writes the
+         value onto IEvent.Sequence. The flag defaults to false, so this bump alone changes nothing —
+         PostgresEventStoreDialect has to set it, which is marten#5755. Both additions are init properties
+         on the descriptor CLASSES, not interface members, so there is no weasel#682-shaped
+         TypeLoadException against a published Marten.
+
+         weasel#751 (9.47.1) is a PostgreSQL index introspection fix, and whether it touches Marten
+         depends entirely on DatabaseSchemaName. The index query identified each row's table by
+         regclassout's rendering of it and matched that against four spellings, none of which quoted
+         the SCHEMA. regclassout quotes whatever has to be quoted, so a schema named for a reserved
+         word (order, user) or one carrying uppercase rendered as "order".docs and matched nothing:
+         no index was read back, every declared index was Missing rather than Different, the patch
+         was a bare create index, and the second apply answered 42P07 and aborted the rest of the
+         migration. Inert for the default public schema and for any lower-case unquoted name, where
+         relname and the rendering name the same table. The primary key constraint's name rides
+         those same rows and was also unread, but PrimaryKeyName falls back to Weasel's derived
+         pkey_ default, which is what Marten declares, so that half was masked here; it bites a
+         configuration that names the constraint itself. Nothing public added, removed or changed. -->
+    <!-- Weasel 9.48.0 (from 9.47.1). ADOPTED as-is, no Marten code changes. Three of the six issues
+
+         The JasperFx floor: Weasel.Core 9.48.0 declares JasperFx >= 2.98.0 and Weasel.Storage
+         declares JasperFx.Events >= 2.98.0, both read from the published nuspec. Already satisfied
+         here, because the JasperFx 2.98.0 bump landed on its own ahead of this one; at 2.97.0 the
+         restore fails outright with NU1605, a package downgrade promoted to an error, rather than
+         resolving quietly upward.
+         are SQL Server only and inert here; what reaches Marten is the PostgreSQL parameter-type work
+         and one PostgreSQL partitioning fix.
+
+         weasel#758/#759: the parameter-type catch-all. A private helper in five providers ended in
+         `?? <catch-all>`, which can never return null, so determineParameterType always reported
+         success and every fall-through branch after the first was dead code. PostgreSQL was one of
+         the two providers that already fell through correctly, which is exactly why the divergence
+         read as a Postgres quirk rather than a bug in the other five, so the resolution behaviour
+         Marten sees is unchanged. What does change for Marten is the shared base: ToParameterType now
+         THROWS for a type Npgsql has no mapping for, where some providers used to answer with a
+         character type. RuntimeCompiledQueryDescriptorFactory and PostgresStorageDialect call it, and
+         both pass types Npgsql maps. StoreOptions.Identity and ExecuteSqlStorageOperation use
+         TryGetDbType, which still returns null for an unmapped type. Also fixed in the same PR, and
+         the one piece that was a hard failure rather than a slow query: both AddParameters overloads
+         resolved through ToParameterType on the TYPE, going around the value-aware seam weasel#403
+         added for Npgsql, so a UTC DateTime in a parameter bag was bound as `timestamp without time
+         zone` and Npgsql threw outright, while the same value through AddNamedParameter worked. They
+         now resolve from the value and keep the declared type for a null.
+
+         weasel#764: PostgreSQL's numeric arm in PartitionExtensions.FormatSqlValue rendered with the
+         CURRENT CULTURE, so a decimal partition bound carried a comma separator under de-DE and a
+         negative one a U+2212 minus sign under sv-SE, fi-FI, lt-LT or nb-NO. The date arms were
+         already invariant with a comment saying why, which is what made the numeric one read as
+         deliberate. Marten's tenant and list partitions are string bounds, which take the quoted
+         path, so this bites a numeric partition bound only. The SQL Server half of the issue is where
+         it was found (Polecat, under a th-TH culture).
+
+         weasel#761: an enum parameter resolves by EnumStorage now, with
+         ToParameterType/TryGetDbType/TryGetDbTypeForValue overloads taking one, and PostgreSQL keeps
+         Integer for an int-backed enum exactly as before. The one difference here: an enum now
+         resolves through its UNDERLYING type, so a long-backed enum gives Bigint rather than silently
+         narrowing to Integer, and a byte-backed one Smallint. Arrays are untouched on PostgreSQL,
+         which maps them properly as an Array composite; the four providers that bound an int[] as
+         text now defer instead.
+
+         INERT: weasel#762 (SQL Server string Unicode precedence, documentation only), weasel#763
+         (DateOnly/TimeOnly on MySQL and Oracle), weasel#765 and weasel#766 (SQL Server partition DDL
+         and sp_getapplock).
+
+         Riding along: MySqlConnector 2.6.1 for GHSA-473q-m89c-ghf8, which is not a Weasel.Postgresql
+         surface, and JasperFx / JasperFx.Events 2.98.0, which the pin above satisfies. -->
+    <!-- Weasel 9.50.0 (from 9.49.0). ADOPTED as-is, no Marten code changes. No runtime code changed
+         in Weasel between the two tags: the diff is two csproj files, the package pins and docs.
+
+         weasel#787: Weasel.Core and Weasel.EntityFrameworkCore are now built with
+         JasperFx.SourceGenerator, so the db-* commands (db-apply, db-assert, db-patch, db-dump,
+         db-list, db-ef-migration), their inputs and their parsers are registered by a generated
+         [ModuleInitializer] instead of being found through reflection (jasperfx#1141). What that
+         changes for Marten: those commands now appear in, and run from, a Native AOT Marten app,
+         where before they were missing from `help`. Nothing changes for a JIT app. The generator is
+         a PrivateAssets reference inside Weasel, so it does not flow here; Marten already carries its
+         own JasperFx.SourceGenerator reference above.
+
+         The JasperFx floor: Weasel.Core 9.50.0 declares JasperFx >= 2.101.0 and Weasel.Postgresql and
+         Weasel.Storage declare JasperFx.Events >= 2.101.0, read from the published nuspec. Already
+         satisfied by the 2.102.0 pin above.
+
+         weasel#786 is documentation only (a schema management guide). -->
+    <!-- Weasel 10.0.0-alpha.3 (from alpha.2). Builds with no Marten change. JasperFx floor 3.0.0
+         (Weasel.Core / Weasel.Storage / Weasel.Postgresql nuspecs), satisfied by the 3.3.0 pins above.
+           * weasel#833: HiloSequenceBase no longer holds a gate across NextLongAsync's await, so
+             AdvanceToNextHi and AdvanceToNextHiSync can now overlap (never themselves). Marten's
+             HiloSequence takes its prefetch slot under its own lock, so a prefetched block is installed
+             once; but its hi-less-than-current check and the install are no longer atomic against a
+             synchronous advance on the other path, so ids could run non-increasing (still unique).
+             This note originally called that "a narrow window across a block boundary, not reachable
+             today". Both claims were wrong: hilo_prefetch_tests reaches it through NextLongAsync, the
+             drop was not bounded to one block (770 then 2 was observed), and master CI failed every
+             run on alpha.3. Fixed upstream by weasel#840 in alpha.4, below.
+           * weasel#831: optional WriteEventBdata on the Rich/Quick/QWST descriptors pools the per-event
+             bdata of the Rich append, side-effect replay and tombstones. NOT ADOPTED yet. To adopt: set
+             it from IEventBinarySerializer.Serialize(Type, object, IBufferWriter), and override
+             IStorageDialect.SetBinaryParameterValue in PostgresStorageDialect to bind the
+             ReadOnlyMemory as it is (the default copies). SaveChangesAsync already disposes operations
+             after the unit of work, which is what returns the buffers.
+           * INERT: weasel#832 (OperationBatchExecutor error attribution); Marten's writes do not go
+             through it, and marten#5927 is the same fix in OperationPage. -->
+    <!-- Weasel 10.0.0-alpha.4 (from alpha.3). JasperFx floor still 3.0.0. All additive.
+           * weasel#840: HiloSequenceBase installs a block only if no overlapping advance has already
+             installed one at or above it (a late lower block becomes a gap), so ids from one sequence
+             only increase again. Fixes the alpha.3 regression that turned master CI red on
+             hilo_prefetch_tests.concurrent_sync_and_async_callers_never_get_the_same_id. SetFloor still
+             installs as given.
+           * weasel#841 (weasel#838): MasterTableTenancyBase.TryResolveTenant, a synchronous tenant
+             resolve. NOT ADOPTED yet; it is the rest of marten#5985 on master.
+           * weasel#842 (weasel#839): SingleServerDatabaseCollection.FindOrCreateDatabaseSynchronously.
+             NOT ADOPTED yet; also marten#5985. -->
+    <!-- Weasel 10.0.0-alpha.6 (from alpha.4, through alpha.5). JasperFx floor still 3.0.0. All additive.
+           * weasel#849 (#855): protected HiloSequenceBase.InstallCount and TrySetCurrentHi(raw, installCountBefore),
+             so an install from outside an advance can take the overlap rule weasel#840 gives an advance. NOT ADOPTED
+             yet; HiLoSequence.SetFloor still installs through TrySetCurrentHi(raw), as given.
+           * weasel#850 (#856): protected virtual MasterTableTenancyBase.TryProvisionControlTableSynchronously, which
+             declines by default. NOT ADOPTED yet; overriding it in MasterTableTenancy lets TryResolveTenant answer in
+             a cold process before any asynchronous call has provisioned the control table (marten#5985 follow-up).
+           * weasel#851 (#854): EventTypeAllowList.UpcastSourceAliases keeps a source alias that is also a declared
+             alias. Marten's daemon does not page through EventTypeAllowList, so nothing changes here.
+           * Weasel.Sqlite only: weasel#857 (Microsoft.Data.Sqlite 10.0.15), #861 (collations), #863 (JSON column
+             reads). Marten does not reference Weasel.Sqlite. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.6" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.6" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.6" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
-    <PackageVersion Include="xunit.v3" Version="3.2.2" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
   </ItemGroup>
   <!-- EF Core packages - requires net9.0+ due to Npgsql 9.x compatibility -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.2" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.2" />
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.3" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
   </ItemGroup>
   <!-- Framework-specific package versions -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.2" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+  <!-- net11.0: JasperFx 3.0.0's net11.0 build depends on Microsoft.Extensions.Hosting
+       11.0.0-rc.3.26522.148, so every Microsoft.Extensions.* package this repository pins is raised to
+       the same train on net11.0, or the restore fails with NU1605 (shape from weasel#790). -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <PackageVersion Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0-rc.3.26522.148" />
+    <PackageVersion Update="Microsoft.Extensions.Logging" Version="11.0.0-rc.3.26522.148" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0-rc.3.26522.148" />
+    <PackageVersion Update="Microsoft.Extensions.Logging.Console" Version="11.0.0-rc.3.26522.148" />
+    <PackageVersion Update="Microsoft.Extensions.Hosting" Version="11.0.0-rc.3.26522.148" />
+    <PackageVersion Update="Microsoft.Extensions.Diagnostics.HealthChecks" Version="11.0.0-rc.3.26522.148" />
+    <PackageVersion Update="Microsoft.Extensions.Hosting.Abstractions" Version="11.0.0-rc.3.26522.148" />
   </ItemGroup>
 </Project>

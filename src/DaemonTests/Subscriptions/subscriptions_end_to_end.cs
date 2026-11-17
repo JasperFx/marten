@@ -378,7 +378,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
 
         var provider = services.BuildServiceProvider();
 
-        var wrapper = new ScopedSubscriptionServiceWrapper<FilteredSubscription>(provider);
+        var wrapper = new JasperFx.Events.Subscriptions.ScopedSubscriptionServiceWrapper<FilteredSubscription, IDocumentOperations, IQuerySession, ISubscription>(provider);
 
         wrapper.IncludeArchivedEvents.ShouldBeTrue();
         wrapper.IncludedEventTypes.Count.ShouldBe(2);
@@ -398,7 +398,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
 
         var provider = services.BuildServiceProvider();
 
-        var wrapper = new ScopedSubscriptionServiceWrapper<ConstructorConfiguredSubscription>(provider);
+        var wrapper = new JasperFx.Events.Subscriptions.ScopedSubscriptionServiceWrapper<ConstructorConfiguredSubscription, IDocumentOperations, IQuerySession, ISubscription>(provider);
 
         wrapper.Options.BatchSize.ShouldBe(123);
         wrapper.Options.MaximumHopperSize.ShouldBe(7777);

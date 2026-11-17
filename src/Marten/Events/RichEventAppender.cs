@@ -67,11 +67,11 @@ internal class RichEventAppender: IEventAppender
 
             EventTagOperations.QueueTagOperations(eventGraph, session, stream);
 
-            // #4591: always queue the DCB tag-version producer-bump separately
+            // #4591: always collect the DCB tag-version producer-bump separately
             // from the per-storage-mode tag writes. Boundary-fetch sessions in
             // flight rely on this row-level bump to invalidate their captured
             // versions.
-            EventTagOperations.QueueDcbVersionBumpIfNeeded(eventGraph, session, stream);
+            EventTagOperations.CollectDcbVersionBumps(eventGraph, session, stream);
         }
 
         // Queue AssertStreamVersion operations for streams with AlwaysEnforceConsistency but no events
@@ -141,8 +141,8 @@ internal class RichStreamAppendingStep: IEventAppendingStep
         {
             if (state.IsArchived)
             {
-                throw new InvalidStreamOperationException(
-                    $"Attempted to append event to archived stream with Id '{state.Id}'.");
+                // marten#5476 / marten#5847: the shared JasperFx.Events type, as Polecat and Fisher throw.
+                throw new ArchivedStreamException(_stream.Key ?? (object)_stream.Id);
             }
 
             _stream.PrepareEvents(state.Version, eventGraph, sequences, metadataContext);

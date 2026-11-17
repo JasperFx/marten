@@ -80,44 +80,6 @@ public class row_level_security_unit_tests
     }
 
     [Fact]
-    public void session_options_builds_rls_sticky_transactional_connection_when_sticky_enabled()
-    {
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.UseRowLevelSecurity();
-            opts.UseStickyConnectionLifetimes = true;
-        });
-
-        var database = Substitute.For<IMartenDatabase>();
-        var sessionOptions = SessionOptions.ForDatabase("tenant_blue", database);
-
-        var lifetime = sessionOptions.Initialize(store, CommandRunnerMode.Transactional,
-            new OpenTelemetryOptions { TrackConnections = TrackLevel.None });
-
-        lifetime.ShouldBeOfType<RlsTransactionalConnection>();
-    }
-
-    [Fact]
-    public void session_options_uses_plain_sticky_transactional_connection_when_rls_disabled()
-    {
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.UseStickyConnectionLifetimes = true;
-        });
-
-        var database = Substitute.For<IMartenDatabase>();
-        var sessionOptions = SessionOptions.ForDatabase("tenant_blue", database);
-
-        var lifetime = sessionOptions.Initialize(store, CommandRunnerMode.Transactional,
-            new OpenTelemetryOptions { TrackConnections = TrackLevel.None });
-
-        lifetime.ShouldBeOfType<TransactionalConnection>();
-        lifetime.ShouldNotBeOfType<RlsTransactionalConnection>();
-    }
-
-    [Fact]
     public void use_row_level_security_rejects_invalid_setting_name()
     {
         var options = new StoreOptions();

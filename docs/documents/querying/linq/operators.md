@@ -2,35 +2,38 @@
 
 ## Element Operations
 
-Marten has been successfully tested with these [element operations](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/element-operations):
+Marten supports these [element operations](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/element-operations),
+asynchronously only:
 
-1. `First()`
-1. `FirstAsync()` -- Marten specific
-1. `Single()`
-1. `SingleAsync()` -- Marten specific
-1. `FirstOrDefault()`
-1. `FirstOrDefaultAsync()` -- Marten specific
-1. `SingleOrDefault()`
-1. `SingleOrDefaultAsync()` -- Marten specific
+1. `FirstAsync()`
+1. `SingleAsync()`
+1. `FirstOrDefaultAsync()`
+1. `SingleOrDefaultAsync()`
+
+::: warning
+Synchronous data access is not supported in Marten 10. The synchronous `First()`, `Single()`, `Count()`, `ToList()` and
+the rest still compile, because they come from `System.Linq`, but they throw a `NotSupportedException` naming the
+asynchronous operator to use. See the [migration guide](/migration-guide#synchronous-data-access-is-gone-in-10-0-0).
+:::
 
 <!-- snippet: sample_select_a_single_value -->
 <a id='snippet-sample_select_a_single_value'></a>
 ```cs
-public void select_a_single_value(IDocumentSession session)
+public async Task select_a_single_value(IDocumentSession session)
 {
-    // Single()/SingleOrDefault() will throw exceptions if more than
+    // SingleAsync()/SingleOrDefaultAsync() will throw exceptions if more than
     // one result is returned from the database
-    session.Query<Target>().Where(x => x.Number == 5).Single();
-    session.Query<Target>().Where(x => x.Number == 5).SingleOrDefault();
+    await session.Query<Target>().Where(x => x.Number == 5).SingleAsync();
+    await session.Query<Target>().Where(x => x.Number == 5).SingleOrDefaultAsync();
 
-    session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).First();
-    session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).FirstOrDefault();
+    await session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).FirstAsync();
+    await session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).FirstOrDefaultAsync();
 
     // Marten does not support Last()/LastOrDefault(). Reverse the ordering
-    // and use First()/FirstOrDefault() instead.
+    // and use FirstAsync()/FirstOrDefaultAsync() instead.
 
-    // Using the query predicate inside of Single/First is supported as well
-    session.Query<Target>().Single(x => x.Number == 5);
+    // Using the query predicate inside of SingleAsync/FirstAsync is supported as well
+    await session.Query<Target>().SingleAsync(x => x.Number == 5);
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L152-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_select_a_single_value' title='Start of snippet'>anchor</a></sup>
@@ -116,6 +119,27 @@ public void order_by(IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L99-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+A key can also read an element of an array or list on the document by position, such as
+`OrderBy(x => x.Scores[1])` or `ThenBy(x => x.Grid[1][0])`. See
+[Reading an Element by Position](/documents/querying/linq/child-collections#reading-an-element-by-position).
+
+A key that reads nothing from the document, such as a static member, a captured variable or a literal
+(`OrderBy(x => Settings.SortKey)`), is the same value for every document. As in LINQ to Objects, it leaves the order
+to the other keys, so Marten leaves it out of the `ORDER BY`. `OrderBy(x => Settings.SortKey).ThenBy(x => x.Number)`
+orders by `Number`, and a query whose keys are all like that has no `ORDER BY` at all.
+
+A second `OrderBy()` or `OrderByDescending()` re-sorts the results, as in LINQ to Objects. The sort is stable, so the
+earlier ordering only breaks ties: `OrderBy(x => x.Category).OrderBy(x => x.Name)` orders by `Name`, then
+`Category`. Use `ThenBy()` to add a key after the ones before it.
+
+A key can also be computed from the document's members: `OrderBy(x => -x.Number)`, `OrderBy(x => x.Number % 3)`,
+`ThenBy(x => x.Price * x.Quantity)`, `OrderBy(x => x.FirstName + x.LastName)` or `OrderBy(x => x.Name.ToUpper())`.
+Marten computes it in SQL with the same translation it uses for a computed `Select()`: member access, arithmetic,
+widening casts, string concatenation, `ToUpper()`, `ToLower()`, `Length`, and `ToString()` of an integer or a
+`Guid`. A key PostgreSQL would not compute the way .NET does, such as decimal division, floating point `%`, a
+narrowing cast, a conditional or a `Math` call, throws `BadLinqExpressionException` rather than ordering by
+something else.
+
 ## Ordering with dynamic properties
 
 Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is quite useful for cases where you wouldn't know the properties being used for ordering at build time. This functionality is added in v5.
@@ -168,24 +192,24 @@ In many cases the asynchronous versions of these operators are extension methods
 in core `IQueryable` at the time Marten's Linq support was developed.
 :::
 
-Marten has been successfully tested with these [aggregation operators](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/aggregation-operations):
+Marten supports these [aggregation operators](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/aggregation-operations):
 
-1. `Count()` / `CountAsync()`
-1. `LongCount()` / `LongCountAsync()`
-1. `Min()` / `MinAsync()`
-1. `Max()` / `MaxAsync()`
-1. `Sum()` / `SumAsync()`
-1. `Average()` / `AverageAsync()`
+1. `CountAsync()`
+1. `LongCountAsync()`
+1. `MinAsync()`
+1. `MaxAsync()`
+1. `SumAsync()`
+1. `AverageAsync()`
 
 <!-- snippet: sample_aggregation_operations -->
 <a id='snippet-sample_aggregation_operations'></a>
 ```cs
 public async Task sample_aggregation_operations(IQuerySession session)
 {
-    var count = session.Query<Target>().Count();
-    var count2 = await session.Query<Target>().CountAsync();
-    var count3 = session.Query<Target>().LongCount();
-    var count4 = await session.Query<Target>().LongCountAsync();
+    var count = await session.Query<Target>().CountAsync();
+    var count2 = await session.Query<Target>().CountAsync(x => x.Number > 5);
+    var count3 = await session.Query<Target>().LongCountAsync();
+    var count4 = await session.Query<Target>().LongCountAsync(x => x.Number > 5);
 
     var min = await session.Query<Target>().MinAsync(x => x.Number);
     var max = await session.Query<Target>().MaxAsync(x => x.Number);

@@ -11,8 +11,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten;
 
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class JsonLoader: IJsonLoader
 {
     private readonly QuerySession _session;
@@ -68,6 +66,8 @@ internal class JsonLoader: IJsonLoader
     // small set of (doc type, identity type) pairs an app actually queries by.
     private static readonly ConcurrentDictionary<(Type Doc, Type Id), Func<JsonLoader, object>> _streamerFactories = new();
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     private IStreamer<T> BuildStreamer<T>(Type idType) where T : class
     {
         var factory = _streamerFactories.GetOrAdd(

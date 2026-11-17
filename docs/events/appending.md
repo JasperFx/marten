@@ -258,6 +258,29 @@ public async Task append_optimistic(IDocumentSession session, Guid streamId, obj
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L76-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append_optimistic_event' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Concurrent Optimistic Appends and Sequence Gaps
+
+Under Quick append, an append that carries an expected stream version (`FetchForWriting()`,
+`AppendOptimistic()`, `StartStream()` with a version) is checked inside the `mt_quick_append_events`
+function. By default that check is a plain `select` of the stream's version. Two concurrent
+transactions on the same stream can therefore both pass it under READ COMMITTED; both then
+draw event sequence numbers, and the loser fails on the unique index. Sequence values are not
+transactional, so the loser leaves a permanent gap in `mt_events.seq_id`. An async daemon
+projection waits out gaps (the stale sequence threshold) before moving past them, which shows up
+as projection lag.
+
+`UseExclusiveLockOnConcurrentAppends` closes that window:
+
+```cs
+opts.Events.UseExclusiveLockOnConcurrentAppends = true;
+```
+
+It adds `FOR UPDATE` to the version `select`, so the losing transaction waits on the stream's
+`mt_streams` row, then sees the winner's version and raises the concurrency exception _before_
+any sequence number is drawn. It takes a row lock on one stream only: no table lock, and appends
+without an expected version are not affected. The setting is off by default.
+Measurements under contention are in `src/EventAppenderPerfTester/Results.md`.
+
 ## Serialized Access to the Stream
 
 The `AppendExclusive()` method will actually reserve a database lock on the stream itself until the
@@ -294,6 +317,12 @@ in the event store sequence due to failed transactions. Marten V4 introduced sup
 event sequence numbers that failed in a Marten transaction. This is done strictly to improve the functioning of the [async daemon](/events/projections/async-daemon) that looks for gaps in the event sequence to "know" how
 far it's safe to process asynchronous projections. If you see event rows in your database of type "tombstone", it's representative of failed transactions (maybe from optimistic concurrency violations,
 transient network issues, timeouts, etc.).
+
+Tombstones are written in the background, after the failed `SaveChangesAsync()` has already thrown, so they can
+appear in the events table a moment later rather than by the time your code sees the exception. They fill sequence
+numbers the failed transaction drew, so they cannot land until that transaction has ended. That matters if you pass
+Marten your own transaction through `SessionOptions.ForTransaction()`: Marten does not roll that transaction back for
+you, and the tombstones are retried until you have.
 
 Where this is not _yet_ formal support in Marten's API surface for deleting "tombstone" events, it is 
 perfectly safe to delete tombstone events from your database:

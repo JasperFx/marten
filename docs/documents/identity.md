@@ -202,6 +202,42 @@ This functionality was added specifically to aid in importing data from an exist
 that all new IDs assigned for the document type will be higher than the new floor. It is perfectly possible, and even likely, that there will be some
 gaps in the id sequence.
 
+## How HiLo Blocks Are Fetched
+
+::: tip
+Fetching the next block ahead of time is new in Marten 10.
+:::
+
+A HiLo sequence hands out ids from a block of `MaxLo` numbers that it reserves from the database (the "hi") with one round trip.
+The id is still assigned synchronously inside `session.Store()`, so a document's id is set the moment it is stored.
+
+As of Marten 10, the sequence reserves the **next** block in the background, with an asynchronous database call, as soon as it
+starts using the current one. When `Store()` exhausts the current block, the block that was fetched ahead of time is swapped in
+without a database round trip, so as long as a block lasts longer than one database round trip, storing a document never
+blocks a thread on the database. If the background fetch has not completed yet, because the block was used up faster than
+that (a small `MaxLo`, or a tight loop storing thousands of documents), `Store()` does not wait for it: it fetches a block
+synchronously itself, as every block was fetched before Marten 10. Waiting would block the storing thread, usually a thread-pool
+thread, on asynchronous work that itself needs a thread-pool thread to finish, and a burst of storing threads could then stall the
+whole process ([#5969](https://github.com/JasperFx/marten/issues/5969)). Since `mt_get_next_hi` became a single atomic increment, the
+two fetches cannot collide; each gets a block of its own. A background fetch that fails is logged as a warning and the next block is
+simply fetched synchronously; it never surfaces as an exception of its own.
+
+The first id a database issues also makes sure the `mt_hilo` table and the `mt_get_next_hi` function exist and are up to date, as
+`AutoCreateSchemaObjects` allows. That check uses synchronous database calls, one statement at a time, so it never waits on the
+thread pool either. With `AutoCreate.None` it does not touch the database at all.
+
+What this means for the ids you see:
+
+- Ids are still unique, and the ids one application process issues for a document type are still increasing.
+- Each process reserves up to one block more than it has used. Ids in a block that was fetched ahead of time but never used,
+  because the process shut down or the floor was reset, are never issued, which leaves a gap of up to `MaxLo` ids.
+- Ids are not guaranteed to be contiguous across a block boundary. If the synchronous fallback reserves a block while the
+  background fetch is still in flight, and the background fetch turns out to have reserved the lower block, that lower block is
+  discarded rather than issued out of order.
+
+HiLo ids were never guaranteed to be gap-free, since several processes share one sequence and a process that stops loses the rest
+of its block. Use a database sequence of your own if you need contiguous numbers.
+
 ## String Identity
 
 If you use a document type with a `string` identity member, you will be responsible for supplying the
@@ -394,12 +430,12 @@ Marten 7.31.0 "fixed" it so that you don't have to use `Nullable<T>` for the ide
 
 As you might infer -- or not -- there's a couple rules and internal behavior:
 
-* The identity selection is done just the same as the primitive types, Marten is either looking for an `id`/`Id` member, or a member decorated with
+- The identity selection is done just the same as the primitive types, Marten is either looking for an `id`/`Id` member, or a member decorated with
   `[Identity]`
-* There is a new `IQuerySession.LoadAsync<T>(object id)` overload that was specifically built for strong typed identifiers
-* For `Guid`-wrapped values, Marten is assigning missing identity values based on its sequential `Guid` support
-* For `int` or `long`-wrapped values, Marten is using its HiLo support to define the wrapped values
-* For `string`-wrapped values, Marten is going to require you to assign the identity to documents yourself
+- There is a new `IQuerySession.LoadAsync<T>(object id)` overload that was specifically built for strong typed identifiers
+- For `Guid`-wrapped values, Marten is assigning missing identity values based on its sequential `Guid` support
+- For `int` or `long`-wrapped values, Marten is using its HiLo support to define the wrapped values
+- For `string`-wrapped values, Marten is going to require you to assign the identity to documents yourself
 
 For another example, here's a usage of an `int` wrapped identifier:
 
@@ -424,8 +460,8 @@ Sorry folks, only the asynchronous APIs for loading documents are supported for 
 
 As of now, Marten supports:
 
-* Loading a single document by its identifier
-* Loading multiple documents using `IsOneOf()` as shown below:
+- Loading a single document by its identifier
+- Loading multiple documents using `IsOneOf()` as shown below:
 
 <!-- snippet: sample_strong_typed_identifier_and_is_one_of -->
 <a id='snippet-sample_strong_typed_identifier_and_is_one_of'></a>
@@ -474,9 +510,9 @@ public async Task load_many()
 LoadManyAsync()_ is not supported for strong typed identifiers
 :::
 
-* Deleting a document by identity
-* Deleting a document by the document itself
-* Within `Include()` queries:
+- Deleting a document by identity
+- Deleting a document by the document itself
+- Within `Include()` queries:
 
 <!-- snippet: sample_include_a_single_reference_with_strong_identifier -->
 <a id='snippet-sample_include_a_single_reference_with_strong_identifier'></a>
@@ -509,11 +545,11 @@ public async Task include_a_single_reference()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/include_usage.cs#L15-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_a_single_reference_with_strong_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-* Within LINQ `Where()` clauses
-* Within LINQ `Select()` clauses
-* Within LINQ `OrderBy()` clauses
-* Identity map resolution
-* Automatic dirty checks
+- Within LINQ `Where()` clauses
+- Within LINQ `Select()` clauses
+- Within LINQ `OrderBy()` clauses
+- Identity map resolution
+- Automatic dirty checks
 
 ### LINQ Support
 

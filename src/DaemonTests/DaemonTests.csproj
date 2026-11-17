@@ -8,6 +8,12 @@
              daemon test is cancelled and reported instead of hanging until CI's own timeout.
              Keeping the rule ON guards the sweep. Must be set before Tests.props is imported. -->
         <ThreadTestCancellationToken>true</ThreadTestCancellationToken>
+
+        <!-- A statement-level Shouldly assertion inside a [BobcatFeature] class renders as its own
+             Then step, and a run of consecutive assertions is all evaluated before the test fails,
+             so a red daemon spec shows every disagreement rather than the first. Classes without
+             [BobcatFeature] are untouched. -->
+        <BobcatProjectAssertions>true</BobcatProjectAssertions>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Bobcat" />
@@ -15,17 +21,22 @@
         <!-- The xUnit v3 runner adapter. Replaces the copy this repo used to keep in
              TestingSupport, which never read the runner's verdict. -->
         <PackageReference Include="Bobcat.Xunit" />
+        <!-- CritterStackSpec, CritterStackScenario and EventStores (namespace Bobcat.CritterStack),
+             which moved out of Bobcat core in 1.0.0-rc.2. -->
+        <PackageReference Include="WolverineFx.Bobcat" />
         <PackageReference Include="Bogus" />
         <PackageReference Include="Confluent.Kafka" />
         <PackageReference Include="Lamar.Microsoft.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="Neovolve.Logging.Xunit.v3" />
-        <PackageReference Include="xunit.runner.visualstudio">
+        <!-- xunit.v3 4.x, which Bobcat.Xunit 1.0 requires; see BobcatXunitV3Version in
+             Directory.Packages.props for why only this graph moves. -->
+        <PackageReference Include="xunit.runner.visualstudio" VersionOverride="$(BobcatXunitRunnerVersion)">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit.v3" />
+        <PackageReference Include="xunit.v3" VersionOverride="$(BobcatXunitV3Version)" />
 
     </ItemGroup>
     <ItemGroup>
@@ -35,5 +46,16 @@
         <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
     <Import Project="../Tests.props" />
+
+    <!-- #5735: C# 15 unions only exist on .NET 11, and the `union` keyword needs LangVersion preview (as
+         JasperFx's EventTests and Polecat.Tests). The union tests compile on net11.0 only; Marten itself
+         needs no #if, because UnionTypes.IsUnion is false for every type before .NET 11. -->
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net11.0'">
+        <LangVersion>preview</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' != 'net11.0'">
+        <Compile Remove="Unions/**/*.cs" />
+    </ItemGroup>
 
 </Project>

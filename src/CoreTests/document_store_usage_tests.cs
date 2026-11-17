@@ -6,6 +6,7 @@ using JasperFx;
 using JasperFx.Descriptors;
 using JasperFx.Events;
 using Marten;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -141,6 +142,33 @@ public class document_store_usage_tests: HostedStoreContext
         usage.PropertyFor("WriteSessionPreference").ShouldNotBeNull();
     }
 
+    // #5800: the third case is the one a console could not tell apart from the second by any other
+    // signal. Conjoined documents do not mean the events need a tenant filter.
+    [Theory]
+    [InlineData(TenancyStyle.Single, TenancyStyle.Single)]
+    [InlineData(TenancyStyle.Conjoined, TenancyStyle.Conjoined)]
+    [InlineData(TenancyStyle.Single, TenancyStyle.Conjoined)]
+    public async Task event_store_usage_reports_the_tenancy_style_of_the_events(
+        TenancyStyle events, TenancyStyle documents)
+    {
+        var host = await BuildHost(opts =>
+        {
+            opts.DatabaseSchemaName = $"{SchemaName}_{events}_{documents}".ToLowerInvariant();
+            opts.Events.TenancyStyle = events;
+            if (documents == TenancyStyle.Conjoined)
+            {
+                opts.Policies.AllDocumentsAreMultiTenanted();
+            }
+        });
+
+        var usage = await host.Services.GetRequiredService<IEventStore>()
+            .TryCreateUsage(CancellationToken.None);
+
+        usage.ShouldNotBeNull();
+        // Value is what reaches a console. RawValue is not serialized, and is null for an enum.
+        usage.PropertyFor("TenancyStyle")!.Value.ShouldBe(events.ToString());
+    }
+
     [Fact]
     public async Task event_store_usage_includes_global_aggregates_when_present()
     {
@@ -158,6 +186,28 @@ public class document_store_usage_tests: HostedStoreContext
 
         usage.ShouldNotBeNull();
         usage.GlobalAggregates.ShouldContain(g => g.FullName == typeof(User).FullName);
+    }
+
+    // JasperFx/wolverine#5002: the database half of TryCreateUsage on its own, for Wolverine's heartbeat
+    [Fact]
+    public async Task describing_the_databases_alone_matches_the_usage()
+    {
+        var host = await BuildHost(opts =>
+        {
+            opts.DatabaseSchemaName = $"{SchemaName}_describe_databases";
+        });
+
+        var store = host.Services.GetRequiredService<IEventStore>();
+
+        var databases = await store.TryDescribeDatabasesAsync(CancellationToken.None);
+        var usage = await store.TryCreateUsage(CancellationToken.None);
+
+        databases.ShouldNotBeNull();
+        databases.Cardinality.ShouldBe(usage!.Database.Cardinality);
+        databases.MainDatabase!.DatabaseName.ShouldBe(usage.Database.MainDatabase!.DatabaseName);
+        databases.MainDatabase.ServerName.ShouldBe(usage.Database.MainDatabase.ServerName);
+        databases.Databases.Select(x => x.DatabaseName)
+            .ShouldBe(usage.Database.Databases.Select(x => x.DatabaseName));
     }
 
     private Task<IHost> BuildHost(Action<StoreOptions> configure)

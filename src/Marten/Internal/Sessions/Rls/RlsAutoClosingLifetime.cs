@@ -20,11 +20,6 @@ internal sealed class RlsAutoClosingLifetime: AutoClosingLifetime
         _settingName = settingName;
     }
 
-    protected override void AfterOpened(NpgsqlConnection connection)
-    {
-        RlsSessionVariableApplier.Apply(connection, _settingName, _tenantId);
-    }
-
     protected override Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
     {
         return RlsSessionVariableApplier.ApplyAsync(connection, _settingName, _tenantId, token);

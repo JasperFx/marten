@@ -12,7 +12,10 @@ namespace Marten.Linq.SqlGeneration;
 
 internal interface IStatsSelectClause
 {
-    ISelectClause Inner { get; }
+    // #5653: settable so an include's temp table can put the id column back into the wrapped
+    // clause. The statistics column is read back at Inner.SelectFields().Length, so swapping
+    // Inner for one that selects more columns moves that index along with it.
+    ISelectClause Inner { get; set; }
 }
 
 internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStatsSelectClause, ISelectFieldsFragment
@@ -27,7 +30,7 @@ internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStat
         FromObject = Inner.FromObject;
     }
 
-    public ISelectClause Inner { get; }
+    public ISelectClause Inner { get; set; }
 
     public Type SelectedType => Inner.SelectedType;
 

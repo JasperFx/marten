@@ -2,8 +2,19 @@
 
 ::: tip
 The command line tooling described on this page is provided by the shared JasperFx infrastructure
-libraries. For the full reference of available commands, extensibility points, and `JasperFxOptions`,
-see the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
+libraries, and the [JasperFx command line documentation](https://shared-libs.jasperfx.net/cli/) is the
+reference for it: [writing your own commands](https://shared-libs.jasperfx.net/cli/writing-commands),
+[arguments and flags](https://shared-libs.jasperfx.net/cli/arguments-flags),
+[environment checks](https://shared-libs.jasperfx.net/cli/environment-checks),
+[`describe`](https://shared-libs.jasperfx.net/cli/describe) and
+[stateful resources](https://shared-libs.jasperfx.net/cli/resources). This page covers what Marten adds.
+:::
+
+::: info Native AOT
+Since JasperFx 2.101.0 the command line also runs from a Native AOT binary, not just under `dotnet run`,
+provided every assembly that contributes commands is built with `JasperFx.SourceGenerator`. Marten is.
+See [Native AOT](https://shared-libs.jasperfx.net/cli/#native-aot) in the JasperFx documentation for what
+your application needs, and [Publishing Marten with Native AOT](/configuration/aot-publishing#the-command-line-in-the-native-binary).
 :::
 
 ::: tip
@@ -104,6 +115,19 @@ dotnet run -- help [command]
 
 To see more information about the use of that command.
 
+::: info Where the commands come from
+The `db-apply`, `db-assert`, `db-dump`, `db-list` and `db-patch` commands are [Weasel](https://weasel.jasperfx.net/cli/)'s, and Marten registers
+its databases, every tenant database included, with Weasel so that they see them. Each has its own reference page:
+[db-apply](https://weasel.jasperfx.net/cli/db-apply.html), [db-assert](https://weasel.jasperfx.net/cli/db-assert.html),
+[db-patch](https://weasel.jasperfx.net/cli/db-patch.html), [db-dump](https://weasel.jasperfx.net/cli/db-dump.html) and
+[db-list](https://weasel.jasperfx.net/cli/db-list.html).
+
+The `resources` command is JasperFx's [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html) model. Marten's database is one
+such resource, so `resources setup` applies the same migration `db-apply` does, and `resources check` runs the same comparison as `db-assert`,
+but across *every* resource in the application: Wolverine's message storage and message broker objects too. See
+[Schema Migrations and Patches](/schema/migrations#choosing-an-approach) for when to reach for which.
+:::
+
 ## Example Commands
 
 Run these commands in your project's directory.
@@ -116,7 +140,7 @@ dotnet run -- projections list
 
 ### Rebuild Your Projections
 
-To rebuild _all_ of your projections:
+To rebuild *all* of your projections:
 
 ```bash
 dotnet run -- projections rebuild

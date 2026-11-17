@@ -22,13 +22,17 @@ public class Foo
 public class AdvanceToNextHi : IEnumerable<object[]>
 {
     private static readonly Func<HiloSequence, Task> AsyncNext = sequence => sequence.AdvanceToNextHi();
-    private static readonly Func<HiloSequence, Task> SyncNext = sequence =>  {
+    private static readonly Func<HiloSequence, Task> SyncNext = async sequence =>  {
+        // #5862: every advance starts prefetching the following block in the background. Let it land
+        // first, so the synchronous advance deterministically installs the next hi rather than racing a
+        // fallback fetch against the prefetch (the fallback is covered by hilo_prefetch_tests).
+        await sequence.WaitForPrefetchAsync();
+
         // AdvanceToNextHiSync is protected on the lifted Weasel.Core HiloSequenceBase (#4527),
-        // so invoke it reflectively to keep exercising the synchronous hi-advance I/O path.
+        // so invoke it reflectively to keep exercising the synchronous hi-advance path.
         typeof(HiloSequence)
             .GetMethod("AdvanceToNextHiSync", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(sequence, null);
-        return Task.CompletedTask;
     };
     public IEnumerator<object[]> GetEnumerator()
     {
@@ -42,6 +46,8 @@ public class AdvanceToNextHi : IEnumerable<object[]>
     }
 }
 
+// #5935: blocks thread-pool threads on purpose, so it must not run beside other tests
+[Collection(HiloThreadPoolCollection.Name)]
 public class hilo_tests : OneOffConfigurationsContext, IAsyncLifetime
 {
     private HiloSequence theSequence;
@@ -55,10 +61,14 @@ public class hilo_tests : OneOffConfigurationsContext, IAsyncLifetime
         theSequence = theTenant.Database.Sequences.SequenceFor(typeof(Foo)).As<HiloSequence>();
     }
 
-    public override ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
+        // #5862: a prefetch still in flight would reserve a hi in this schema after the next test has
+        // reset it, and that test asserts exact hi values
+        if (theSequence != null) await theSequence.WaitForPrefetchAsync();
+
         Dispose();
-        return base.DisposeAsync();
+        await base.DisposeAsync();
     }
 
     [Fact]
@@ -117,9 +127,16 @@ public class hilo_tests : OneOffConfigurationsContext, IAsyncLifetime
     [Fact]
     public void read_from_a_single_thread_from_0_to_5000()
     {
+        // #5862: ids are unique and increasing, but no longer guaranteed contiguous across a block
+        // boundary. A tight loop exhausts a block faster than its prefetch lands, and when the
+        // synchronous fallback overtakes the prefetch, the prefetched block is skipped (a gap).
+        var previous = 0L;
         for (var i = 0; i < 5000; i++)
         {
-            theSequence.NextLong().ShouldBe(i + 1);
+            var next = theSequence.NextLong();
+            if (i == 0) next.ShouldBe(1);
+            next.ShouldBeGreaterThan(previous);
+            previous = next;
         }
     }
 

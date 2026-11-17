@@ -19,18 +19,27 @@ namespace Marten.Events.Operations;
 /// Mirrors <see cref="InsertEventTagByEventIdOperation"/> but writes the tags as a
 /// single hstore concatenation against the existing row.
 /// </summary>
+/// <remarks>
+/// #5896: the bulk <c>mt_quick_append_events</c> function now writes HStore tags in its own insert, so this
+/// only runs for the per-event insert routes. <c>mt_events</c> has no index on <c>id</c> (unless
+/// <c>EnableUniqueIndexOnEventId</c>), so the row is found through the stream: <c>stream_id</c> leads
+/// <c>pk_mt_events_stream_and_version</c> (after <c>tenant_id</c> under conjoined tenancy), which bounds the
+/// lookup by the length of one stream instead of scanning the whole table.
+/// </remarks>
 internal class SetEventTagsHstoreByEventIdOperation: IStorageOperation, NoDataReturnedCall
 {
     private readonly string _schemaName;
     private readonly Guid _eventId;
+    private readonly object _streamIdentity;
     private readonly Dictionary<string, string> _tags;
     private readonly bool _isConjoined;
 
-    public SetEventTagsHstoreByEventIdOperation(string schemaName, Guid eventId, Dictionary<string, string> tags,
-        bool isConjoined)
+    public SetEventTagsHstoreByEventIdOperation(string schemaName, Guid eventId, object streamIdentity,
+        Dictionary<string, string> tags, bool isConjoined)
     {
         _schemaName = schemaName;
         _eventId = eventId;
+        _streamIdentity = streamIdentity;
         _tags = tags;
         _isConjoined = isConjoined;
     }
@@ -42,13 +51,16 @@ internal class SetEventTagsHstoreByEventIdOperation: IStorageOperation, NoDataRe
         builder.Append(".mt_events set tags = coalesce(tags, ''::hstore) || ");
         var p = builder.AppendParameter(_tags);
         p.NpgsqlDbType = NpgsqlDbType.Hstore;
-        builder.Append(" where id = ");
-        builder.AppendParameter(_eventId);
+        builder.Append(" where stream_id = ");
+        builder.AppendParameter(_streamIdentity);
         if (_isConjoined)
         {
             builder.Append(" and tenant_id = ");
             builder.AppendParameter(session.TenantId);
         }
+
+        builder.Append(" and id = ");
+        builder.AppendParameter(_eventId);
     }
 
     public Type DocumentType => typeof(IEvent);

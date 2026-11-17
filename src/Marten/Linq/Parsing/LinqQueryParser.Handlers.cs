@@ -17,10 +17,10 @@ namespace Marten.Linq.Parsing;
 
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal partial class LinqQueryParser
 {
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static IQueryHandler<TResult> BuildHandler<TDocument, TResult>(
         ISelector<TDocument> selector,
@@ -37,6 +37,17 @@ internal partial class LinqQueryParser
         {
             throw new NotSupportedException("Marten does not know how to use result type " +
                                          typeof(TResult).FullNameInCode());
+        }
+
+        // #5635: a list of nullable scalars -- Select(x => x.OptionalAmount) -- needs
+        // NullableSelector<TDocument> and ListQueryHandler<TDocument?>, both closed over a struct.
+        // Neither can be closed from here (TDocument is only `notnull`), and the reflective path
+        // below has no native code for them, so the registry carries both for every scalar type
+        // Marten knows plus whatever StoreOptions.RegisterScalarType<T>() named.
+        var registered = SelectClauseResolvers.TryBuildNullableListHandler(typeof(TDocument), statement, selector);
+        if (registered != null)
+        {
+            return (IQueryHandler<TResult>)registered;
         }
 
         // 9.0 (#4308): replace per-call MakeGenericType + Activator.CreateInstance

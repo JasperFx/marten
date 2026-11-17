@@ -29,6 +29,18 @@ partial class Build : NukeBuild
     [Parameter] readonly string ConnectionString ="Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
     [Parameter] readonly string Project;
 
+    [Parameter("Package version for Pack, overriding <Version> in Directory.Build.props (e.g. 10.0.0-local.1)")]
+    readonly string Version;
+
+    [Parameter("Folder Pack copies the .nupkg files into, and TakeLocalUpstream adds as a NuGet source")]
+    readonly string Feed;
+
+    [Parameter("TakeLocalUpstream: version of the local JasperFx packages to pin (e.g. 3.0.0-local.1)")]
+    readonly string UpstreamVersion;
+
+    [Parameter("TakeLocalUpstream: version of the local Weasel packages to pin (e.g. 10.0.0-local.1)")]
+    readonly string WeaselVersion;
+
     // Everything that runs against the ordinary marten_testing database. CI does not use this
     // target — .github/workflows/tests.yml gives each project its own job — but a local
     // `./build.sh test` should still mean "run the suite", so anything added below belongs here.
@@ -50,6 +62,7 @@ partial class Build : NukeBuild
         .DependsOn(TestStress)
         .DependsOn(TestCompiledQueries)
         .DependsOn(TestSourceGenerator)
+        .DependsOn(TestAotRuntimeJit)
         .DependsOn(TestAotRuntime);
 
     Target TestExtensions => _ => _
@@ -168,9 +181,13 @@ partial class Build : NukeBuild
         .ProceedAfterFailure()
         .Executes(() => RunTestProject("src/DocumentDbTests/DocumentDbTests.csproj"));
 
+    // The workflow's pole (8.8 min of test step on net9/PG15, median of 7 green master runs), so it
+    // is split across worker processes, each with its own database (build/SupervisedTests.cs).
+    // Measured locally on net10.0 (warm databases), retries off, 2525/2525 green at every count:
+    // 1 worker 4m36s, 2 workers 2m29s, 4 workers 1m27s. A 4-vCPU hosted runner clamps this to 2.
     Target TestEventSourcing => _ => _
         .ProceedAfterFailure()
-        .Executes(() => RunTestProject("src/EventSourcingTests/EventSourcingTests.csproj"));
+        .Executes(() => RunTestProject("src/EventSourcingTests/EventSourcingTests.csproj", workers: 4));
 
     // The async daemon suite. Ran outside the Nuke build until #5096 — daemon.yml shelled out to
     // `dotnet test` directly — which meant the single most timing-sensitive suite in the repo was
@@ -183,9 +200,12 @@ partial class Build : NukeBuild
         .ProceedAfterFailure()
         .Executes(() => RunTestProject("src/ModularConfigTests/ModularConfigTests.csproj"));
 
+    // Off the workflow's critical path, but the third-largest job (2.6 min of test step on
+    // net9/PG15) and cheap to split. Measured locally on net10.0, retries off, 1550/1550 green at
+    // every count: 1 worker 53s, 2 workers 32s, 4 workers 22s. Clamped to 2 on a hosted runner.
     Target TestLinq => _ => _
         .ProceedAfterFailure()
-        .Executes(() => RunTestProject("src/LinqTests/LinqTests.csproj"));
+        .Executes(() => RunTestProject("src/LinqTests/LinqTests.csproj", workers: 4));
 
     Target TestValueTypes => _ => _
         .ProceedAfterFailure()
@@ -302,6 +322,28 @@ partial class Build : NukeBuild
                     "The Marten AOT runtime smoke failed. A document read path needs runtime code generation again — see the output above for which one.");
             }
         });
+
+    /// <summary>
+    /// The same runtime smoke as <see cref="TestAotRuntime" />, run under the JIT (#6064). The native
+    /// binary takes the refusal path on some checks (an unregistered enum scalar projection, an
+    /// anonymous projection) that a JIT process answers instead, so a wrong answer on that path was
+    /// only ever seen by somebody running the project by hand. LocalGate runs this too.
+    /// </summary>
+    Target TestAotRuntimeJit => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => runAotRuntimeSmokeUnderJit(Configuration, Environment.GetEnvironmentVariable("marten_testing_database")));
+
+    const string AotRuntimeSmokeProject = "src/Marten.AotRuntimeSmoke/Marten.AotRuntimeSmoke.csproj";
+
+    void runAotRuntimeSmokeUnderJit(string configuration, string connectionString, bool noBuild = false)
+    {
+        var arguments = $"run --project {AotRuntimeSmokeProject} -c {configuration} -f net10.0" + (noBuild ? " --no-build" : "");
+        DotNet($"{arguments:nq}",
+            workingDirectory: RootDirectory,
+            environmentVariables: connectionString is null
+                ? null
+                : new Dictionary<string, string>(EnvironmentInfo.Variables) { ["marten_testing_database"] = connectionString });
+    }
 
     /// <summary>
     /// Primary/standby read routing (~2 tests). Needs the streaming-replication pair from
@@ -433,9 +475,24 @@ partial class Build : NukeBuild
             foreach (var project in projects)
             {
                 DotNetPack(s => s
-                    .SetProject(project) 
+                    .SetProject(project)
                     .SetOutputDirectory("./artifacts")
-                    .SetConfiguration(Configuration.Release));
+                    .SetConfiguration(Configuration.Release)
+                    .When(_ => !string.IsNullOrEmpty(Version), x => x.SetProperty("Version", Version)));
+            }
+
+            // --feed copies the packs into a local NuGet folder (marten#5727), for the .NET 11 train
+            // to consume before the nuget.org replay.
+            if (!string.IsNullOrEmpty(Feed))
+            {
+                Directory.CreateDirectory(Feed);
+                var pattern = string.IsNullOrEmpty(Version) ? "*.nupkg" : $"*.{Version}.nupkg";
+                foreach (var package in Directory.GetFiles("./artifacts", pattern))
+                {
+                    File.Copy(package, Path.Combine(Feed, Path.GetFileName(package)), true);
+                }
+
+                Log.Information("Copied packed packages into the local feed {Feed}", Feed);
             }
         });
 
@@ -584,7 +641,8 @@ partial class Build : NukeBuild
         foreach (var item in testProjects)
         {
             var assemblyInfoFile = Path.Combine(item, "AssemblyInfo.cs");
-            File.WriteAllText(assemblyInfoFile, $"using Xunit;{Environment.NewLine}[assembly: CollectionBehavior(DisableTestParallelization = {DisableTestParallelization.ToString().ToLower()})]");
+            // xunit.v3 4.x: CollectionBehavior(DisableTestParallelization = true) is a compile error there.
+            File.WriteAllText(assemblyInfoFile, $"[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]");
         }
     }
 }

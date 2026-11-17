@@ -38,6 +38,19 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     ISequence ISequenceSource.SequenceFor(Type documentType) => Sequences.SequenceFor(documentType);
 
     /// <summary>
+    ///     The Hi-Lo sequence support of this database as a schema feature to be <em>described</em>:
+    ///     <c>mt_hilo</c> and <c>mt_get_next_hi</c> with no side effects.
+    /// </summary>
+    /// <remarks>
+    ///     #5665. <see cref="Sequences" /> provisions its own storage on first access, because the
+    ///     runtime path that hands out a Hi-Lo id has no other chance to. The schema-management paths
+    ///     — <c>AllObjects</c>, <c>AllSchemaNames</c>, <c>ToDatabaseScript</c>, and so <c>db-dump</c> —
+    ///     only enumerate, and must not connect or run DDL to do it. The default implementation keeps
+    ///     the historical behaviour for any outside <see cref="IMartenDatabase" />.
+    /// </remarks>
+    IFeatureSchema SequenceFeature => Sequences;
+
+    /// <summary>
     ///     The command timeout in seconds that this database's own connection string asks for, or null when it
     ///     does not name one.
     /// </summary>
@@ -164,7 +177,32 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// <returns></returns>
     Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default);
 
+    /// <summary>
+    ///     Mark the events with these sequence numbers as skipped. Requires
+    ///     <see cref="IEventStoreOptions.EnableEventSkippingInProjectionsOrSubscriptions" />.
+    /// </summary>
+    /// <remarks>
+    ///     Throws <see cref="InvalidOperationException" /> under
+    ///     <see cref="IEventStoreOptions.UseTenantPartitionedEvents" />, where every tenant numbers its own
+    ///     events and a sequence alone matches one event per tenant. Use
+    ///     <see cref="MarkEventsAsSkipped(string, long[], CancellationToken)" /> there.
+    /// </remarks>
     Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default);
+
+    /// <summary>
+    ///     Mark the events with these sequence numbers that belong to <paramref name="tenantId" /> as
+    ///     skipped. Requires <see cref="IEventStoreOptions.EnableEventSkippingInProjectionsOrSubscriptions" />.
+    ///     Under conjoined event tenancy only that tenant's events are touched, which is what
+    ///     <see cref="IEventStoreOptions.UseTenantPartitionedEvents" /> needs; under any other tenancy
+    ///     style the database is already the scope and the tenant is not consulted.
+    /// </summary>
+    /// <remarks>
+    ///     #5234. A default interface implementation that throws, so the member is additive for anyone
+    ///     implementing <see cref="IMartenDatabase" />.
+    /// </remarks>
+    Task MarkEventsAsSkipped(string tenantId, long[] sequences, CancellationToken token = default)
+        => throw new NotSupportedException(
+            $"{GetType().FullName} does not support marking events as skipped for a single tenant.");
 }
 
 public enum ConnectionUsage

@@ -21,10 +21,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Members.Dictionaries;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IValueCollectionMember
 {
     private readonly IDictionaryMember _parent;
@@ -33,6 +29,8 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
     private readonly RootMember _root;
 
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public DictionaryValuesMember(IDictionaryMember parent, StoreOptions options) : base(parent, "Values", typeof(ICollection<>).MakeGenericType(parent.ValueType))
     {
         _parent = parent;
@@ -93,6 +91,10 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
         return m;
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     private SelectorStatement createSelectManySelectorStatement(IStorageSession session,
         SelectorStatement parentStatement, CollectionUsage collectionUsage, QueryStatistics statistics)
     {
@@ -103,8 +105,7 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
                 session.Serializer, ElementType);
         }
 
-        var selectClause =
-            typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(parentStatement.ExportName, ElementType);
+        var selectClause = SelectClauseResolvers.Data(ElementType, parentStatement.ExportName);
         return (SelectorStatement)collectionUsage.BuildSelectManyStatement(session, this, selectClause, statistics, parentStatement);
     }
 
@@ -133,8 +134,7 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
 
     public ISelectClause BuildSelectClauseForExplosion(string fromObject)
     {
-        return typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(fromObject, ExplodeLocator,
-            ElementType);
+        return SelectClauseResolvers.Data(ElementType, fromObject, ExplodeLocator);
     }
 
     public ISqlFragment ParseWhereForAny(Expression body, IReadOnlyStoreOptions options)

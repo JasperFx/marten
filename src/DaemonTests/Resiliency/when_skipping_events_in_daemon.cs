@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Bobcat;
 using DaemonTests.TestingSupport;
 using JasperFx;
 using JasperFx.Core;
@@ -22,6 +23,7 @@ using Xunit;
 
 namespace DaemonTests.Resiliency;
 
+[BobcatFeature("Skipping events that fail to apply")]
 public class when_skipping_events_in_daemon : DaemonContext
 {
     private readonly string[] theNames =
@@ -58,13 +60,10 @@ public class when_skipping_events_in_daemon : DaemonContext
 
 
 
-    private async Task<IProjectionDaemon> PublishTheEvents()
+    [Given("the names are published to a running daemon, the bad ones failing to apply")]
+    internal async Task<IProjectionDaemon> PublishTheEvents()
     {
         var daemon = await StartDaemon();
-
-        var waiter1 = daemon.Tracker.WaitForShardState("CollateNames:All", theNames.Length);
-        var waiter2 = daemon.Tracker.WaitForShardState("NamedDocuments:All", theNames.Length, 5.Minutes());
-
 
         var events = theNames.Select(name => new NameEvent {Name = name})
             .OfType<object>()
@@ -75,8 +74,8 @@ public class when_skipping_events_in_daemon : DaemonContext
 
         await daemon.Tracker.WaitForHighWaterMark(theNames.Length);
 
-        await waiter1;
-        await waiter2;
+        await WaitForShard(daemon, "CollateNames:All", theNames.Length, typeof(NamesByLetter));
+        await WaitForShard(daemon, "NamedDocuments:All", theNames.Length, typeof(NamedDocument), 5.Minutes());
 
         return daemon;
     }
@@ -86,6 +85,7 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         var daemon = await PublishTheEvents();
 
+        // Then every shard is still running
         var shards = daemon.CurrentAgents();
 
         foreach (var shard in shards)
@@ -99,6 +99,7 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         await PublishTheEvents();
 
+        // Then the event projection holds only the good names
         var names = await theSession.Query<NamedDocument>()
             .OrderBy(x => x.Name)
             .Select(x => x.Name)
@@ -109,7 +110,7 @@ public class when_skipping_events_in_daemon : DaemonContext
             .Where(x => !x.Contains("bad", StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
-        names.ShouldHaveTheSameElementsAs(expected);
+        names.ShouldBe(expected);
     }
 
     [Fact]
@@ -117,10 +118,10 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         await PublishTheEvents();
 
+        // Then the aggregate holds only the good J names
         var jNames = await theSession.LoadAsync<NamesByLetter>("J", TestContext.Current.CancellationToken);
 
-        jNames.Names.OrderBy(x => x)
-            .ShouldHaveTheSameElementsAs("Jack", "Jane", "Jeremy", "Jill");
+        jNames.Names.OrderBy(x => x).ShouldBe(["Jack", "Jane", "Jeremy", "Jill"]);
     }
 
     [Fact]
@@ -128,7 +129,7 @@ public class when_skipping_events_in_daemon : DaemonContext
     {
         var daemon = await PublishTheEvents();
 
-        // Drain the dead letter events queued up
+        // When the daemon stops, draining the dead letter events it queued up
         await daemon.StopAllAsync();
 
         #region sample_replacing_logger_per_session
@@ -136,15 +137,19 @@ public class when_skipping_events_in_daemon : DaemonContext
         // session to pipe Marten logging to the xUnit.Net output
         theSession.Logger = new TestOutputMartenLogger(_output);
         #endregion
+        // Then each skipped event is a dead letter for the projection that skipped it
         var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync(TestContext.Current.CancellationToken);
 
-        skipped.Where(x => x.ProjectionName == "NamedDocuments" && x.ShardName == "All")
-            .Select(x => x.EventSequence).OrderBy(x => x)
-            .ShouldHaveTheSameElementsAs(4, 5, 6, 7, 11, 14);
+        // Each subject is a local first: Bobcat.Generators 1.0.0-alpha.1 writes a projected assertion's
+        // subject into a string literal without escaping its newlines, so a chain split across lines
+        // stops the build
+        var namedDocumentsSkipped = skipped.Where(x => x.ProjectionName == "NamedDocuments" && x.ShardName == "All")
+            .Select(x => x.EventSequence).OrderBy(x => x).ToList();
+        namedDocumentsSkipped.ShouldBe([4L, 5, 6, 7, 11, 14]);
 
-        skipped.Where(x => x.ProjectionName == "CollateNames" && x.ShardName == "All")
-            .Select(x => x.EventSequence).OrderBy(x => x)
-            .ShouldHaveTheSameElementsAs(4, 5, 6, 7);
+        var collateNamesSkipped = skipped.Where(x => x.ProjectionName == "CollateNames" && x.ShardName == "All")
+            .Select(x => x.EventSequence).OrderBy(x => x).ToList();
+        collateNamesSkipped.ShouldBe([4L, 5, 6, 7]);
 
     }
 }

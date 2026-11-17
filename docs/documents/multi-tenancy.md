@@ -56,6 +56,7 @@ As with storing, the load operations respect tenancy of the session.
 using (var query = store.QuerySession("tenant1"))
 {
     (await query.Query<User>()
+        .OrderBy(x => x.UserName)
         .Select(x => x.UserName)
         .ToListAsync())
         .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
@@ -232,6 +233,7 @@ Inside the LINQ provider, when you open a session for a specific tenant like so:
 using (var query = store.QuerySession("tenant1"))
 {
     (await query.Query<User>()
+        .OrderBy(x => x.UserName)
         .Select(x => x.UserName)
         .ToListAsync())
         .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
@@ -341,6 +343,11 @@ storeOptions.Policies.AllDocumentsAreMultiTenantedWithPartitioning(x =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L115-L146' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+The primary key of a partitioned, conjoined table is `(tenant_id, id)` (`PrimaryKeyTenancyOrdering.TenantId_Then_Id`),
+both here and with the per-document `MultiTenantedWithPartitioning()`. Before Marten 10 the overload without a
+`PrimaryKeyTenancyOrdering` argument used `(id, tenant_id)` instead; pass `PrimaryKeyTenancyOrdering.Id_Then_TenantId` to
+keep that primary key.
+
 To enable partitioning for a specific document type, use this option:
 
 <!-- snippet: sample_configure_partitioning_on_single_table -->
@@ -428,6 +435,11 @@ storeOptions.Schema.For<Target>().SingleTenanted();
 ### Make all documents start their index by tenant_id
 
 When using conjoined multi tenancy it is often beneficial to have database indexes start with tenant_id. Even when a tenant is specified on the session and PostgreSQL can already restrict queries to the relevant table partition, this does not always fully isolate a single tenant. With hash partitioning, multiple tenants can end up in the same partition, so indexes that do not start with tenant_id may still scan entries belonging to other tenants. By consistently prefixing tenant_id on all indexes, either globally through policies or per document type, Marten allows PostgreSQL to efficiently filter within a partition as well, improving index selectivity and reducing unnecessary index scans in databases with many tenants.
+
+Since Marten 10 this is the default for every conjoined document: its computed indexes start with `tenant_id`, and a
+unique index scoped per tenant does not repeat `tenant_id` at the end. Single-tenanted documents are unaffected. In
+Marten 9 and earlier you opted in with the settings below; set `StartIndexesByTenantId = false` in a policy or call
+`opts.RestoreV9Defaults()` to go back.
 
 <!-- snippet: sample_tenancy-start_indexes_by_tenant_id -->
 <a id='snippet-sample_tenancy-start_indexes_by_tenant_id'></a>
@@ -530,6 +542,38 @@ Options.Schema.For<DocThatShouldBeExempted2>().DoNotPartition();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L38-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exempt_from_partitioning_through_fluent_interface' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+### Partitioning your own tables by tenant <Badge type="tip" text="10.0" />
+
+If you add your own tables to the store through `opts.Storage.ExtendedSchemaObjects` and want them partitioned per
+tenant the same way as the document tables, use `opts.Storage.PartitionPerTenant(table)`:
+
+<!-- snippet: sample_partition_extended_table_per_tenant -->
+<a id='snippet-sample_partition_extended_table_per_tenant'></a>
+```cs
+var table = new Table(new DbObjectName(_schema, "ledger_entries"));
+table.AddColumn<Guid>("id").AsPrimaryKey();
+table.AddColumn<string>("tenant_id").NotNull();
+table.AddColumn<int>("amount");
+
+// One LIST partition per tenant, created as tenants are added,
+// and left alone by later schema migrations
+opts.Storage.PartitionPerTenant(table);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/partition_extended_table_per_tenant.cs#L62-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_partition_extended_table_per_tenant' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The table needs a `tenant_id` column. Marten adds it to the table's primary key, because PostgreSQL requires the
+partition key there, and adds the table to `ExtendedSchemaObjects` if you haven't already. `AddMartenManagedTenantsAsync()`
+then creates each tenant's partition in your table along with the document tables.
+
+You can wire this up by hand, but don't skip `IgnorePartitionsInMigration`. Without it, a schema migration compares
+the partitions it expects with the ones that exist, and on a database that already has tenants it can decide to
+rebuild the whole table through a `_temp` copy. `PartitionPerTenant()` sets it for you, just like Marten does for its
+own tables.
+
+The store has to use Marten-managed tenant partitioning (`Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()`,
+`Events.UseTenantPartitionedEvents` or sharded tenancy). If it doesn't, building the store throws.
 
 ## Deleting Data For a Single Tenant
 

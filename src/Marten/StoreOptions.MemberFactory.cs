@@ -5,10 +5,12 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
+using Marten.Linq.Members.Unions;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Schema.Identity;
@@ -18,8 +20,6 @@ namespace Marten;
 
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class StoreOptions
 {
     internal IQueryableMember CreateQueryableMember(MemberInfo member, IQueryableMember parent)
@@ -31,6 +31,8 @@ public partial class StoreOptions
         return CreateQueryableMember(member, parent, memberType);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     internal IQueryableMember CreateQueryableMember(MemberInfo member, IQueryableMember parent, Type? memberType)
     {
         if (memberType == null)
@@ -48,6 +50,14 @@ public partial class StoreOptions
         }
 
         if (memberType == typeof(string)) return new StringMember(parent, casing, member);
+
+        // #5735: a C# union member (.NET 11; never true before). Ahead of the jsonb fallback below, which
+        // would read the union's Value as a JSON key that STJ never writes.
+        var unionType = Nullable.GetUnderlyingType(memberType) ?? memberType;
+        if (unionType.IsUnion())
+        {
+            return UnionMember.Create(this, parent, member, unionType);
+        }
 
         // 9.0: opaque-container types registered via the optional Marten.Newtonsoft
         // package land here (e.g. JObject). Must be tested before the IDictionary<,>
@@ -136,10 +146,10 @@ public partial class StoreOptions
     }
 }
 
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class ValueTypeMemberSource: IMemberSource
 {
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public bool TryResolve(IQueryableMember parent, StoreOptions options, MemberInfo memberInfo, Type memberType,
         [NotNullWhen(true)]out IQueryableMember? member)
     {

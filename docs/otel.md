@@ -34,7 +34,7 @@ builder.Services.AddOpenTelemetry()
         metrics.AddMeter("Marten");
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L22-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note, you'll need a reference to the `OpenTelemetry.Extensions.Hosting` Nuget for that
@@ -91,8 +91,8 @@ using var store = DocumentStore.For(opts =>
 
 ## Event Store Metrics
 
-You can opt into exporting a metrics counter for the events appended to Marten's event store functionality
-with this option:
+Marten exports a metrics counter for the events appended to Marten's event store functionality. This is on by default
+since Marten 10; before that you opted in with `TrackEventCounters()`, which still works. The switch is:
 
 <!-- snippet: sample_track_event_counters -->
 <a id='snippet-sample_track_event_counters'></a>
@@ -101,8 +101,9 @@ using var store = DocumentStore.For(opts =>
 {
     opts.Connection("some connection string");
 
-    // Track the number of events being appended to the system
-    opts.OpenTelemetry.TrackEventCounters();
+    // Track the number of events being appended to the system.
+    // On by default since Marten 10, set to false to opt out
+    opts.OpenTelemetry.EnableEventCounters = true;
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OtelSamples.cs#L42-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_track_event_counters' title='Start of snippet'>anchor</a></sup>
@@ -119,7 +120,8 @@ This metric has tags for:
 The cost of a command handler that uses [`FetchForWriting`](/scenarios/command_handler_workflow) is
 mostly the cost of rebuilding the aggregate, and that in turn is however many events Marten had to read
 back and fold. How many that is depends entirely on the aggregate's projection lifecycle, and it is not
-something you can see from the outside. Opt into measuring it with:
+something you can see from the outside. Marten measures it by default since 10.0. Before that you opted in with
+`TrackFetchForWritingMetrics()`, which still works. The switch is:
 
 ```cs
 using var store = DocumentStore.For(opts =>
@@ -127,7 +129,8 @@ using var store = DocumentStore.For(opts =>
     opts.Connection("some connection string");
 
     // How many events does each FetchForWriting() call actually replay?
-    opts.OpenTelemetry.TrackFetchForWritingMetrics();
+    // On by default since Marten 10, set to false to opt out
+    opts.OpenTelemetry.EnableFetchForWritingMetrics = true;
 });
 ```
 
@@ -150,8 +153,9 @@ which aggregates dominate your event replay, and the `Live` percentiles tell you
 them to `Inline` would actually save before you commit to that migration.
 
 ::: tip
-Nothing is created until `TrackFetchForWritingMetrics()` is called, so leaving it off costs a null check
-on the fetch path and nothing more. Both tag values are cached per aggregate type, so a recorded fetch
+With `EnableFetchForWritingMetrics = false` the histogram is never created, so turning it off leaves a null check
+on the fetch path and nothing more. With it on and nothing listening to the meter, a fetch checks the histogram's
+`Enabled` flag and records nothing. Both tag values are cached per aggregate type, so a recorded fetch
 allocates nothing on the heap either.
 :::
 

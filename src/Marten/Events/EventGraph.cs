@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
@@ -23,6 +24,7 @@ using Marten.Schema;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Subscriptions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
 using Weasel.Core;
@@ -39,7 +41,7 @@ namespace Marten.Events;
 [UnconditionalSuppressMessage("Trimming", "IL2060",
     Justification = "Class-level: Expression.Call(Type, string, ...) on framework Queryable / Enumerable intrinsics that the trimmer preserves.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide. Kept on the type (#5731): ILC reports the tag-type registration in the static constructor and on the explicit IEventStoreOptions.RegisterTagType<TTag> implementation, neither of which a member-level suppression reaches.")]
 public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEventStoreOptions,
     IDisposable, IAsyncDisposable,
     IAggregationSourceFactory<IQuerySession>, IDescribeMyself
@@ -63,19 +65,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </remarks>
     public const string HStoreTagIndexName = "idx_mt_events_tags";
 
-    private readonly Cache<Type, string> _aggregateNameByType =
-        new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
-
-    private readonly Cache<string, Type> _aggregateTypeByName;
-
     private readonly Cache<string, EventMapping?> _byEventName = new();
     private readonly CancellationTokenSource _cancellation = new();
 
     private readonly Cache<Type, EventMapping> _events = new();
 
     private readonly Lazy<IInlineProjection<IDocumentOperations>[]> _inlineProjections;
-
-    private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
 
     private string? _databaseSchemaName;
 
@@ -88,7 +83,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     // SessionOptions.ForDatabase(...) to query Marten documents with LINQ.
     internal DocumentStore Store => _store;
 
-    private readonly List<ITagTypeRegistration> _tagTypes = new();
     private readonly List<IEventTagRule> _tagRules = new();
 
     // Roots EventMapping<>'s constructor for trimming / Native AOT. Without this root the constructor metadata is trimmed
@@ -113,6 +107,9 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 static closed => parent => (EventMapping)Activator.CreateInstance(closed, parent)!);
             Options.Storage.AddMapping(mapping);
 
+            // jasperfx#1043: seeds EventRegistry's dotnet-name cache, and expires its cached misses
+            RegisterDotNetTypeNames(mapping);
+
             return mapping;
         };
 
@@ -121,8 +118,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         _inlineProjections =
             new Lazy<IInlineProjection<IDocumentOperations>[]>(() =>
                 options.Projections.BuildInlineProjections(_store));
-
-        _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
 
         AddEventType<Archived>();
 
@@ -165,8 +160,18 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         // lookup hits, regardless of StreamIdentity or of any stray Id member on the type.
         if (typeof(TDoc).IsDefined(typeof(BoundaryAggregateAttribute), inherit: false))
         {
-            return typeof(SingleStreamProjection<,>)
-                .CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), typeof(string));
+            // #5649: constructed directly rather than through CloseAndBuildAs. Both type arguments
+            // are known here -- TDoc from the caller and string per the note above -- so closing the
+            // open generic at runtime bought nothing and cost Native AOT everything: ILC cannot see
+            // the instantiation, and the fetch failed with "No parameterless constructor defined for
+            // type SingleStreamProjection`2[Enrollment,System.String]". Writing it out roots the
+            // instantiation at compile time.
+            //
+            // The CS8714 this carries is the same one ProjectionOptions.cs takes for the same
+            // construction: Build<TDoc>() is public and unconstrained, so the compiler cannot see
+            // that TDoc satisfies the notnull constraint. Constraining a public signature to silence
+            // it would be source-breaking for no runtime gain -- CloseAndBuildAs never checked it.
+            return new SingleStreamProjection<TDoc, string>();
         }
 
         var mapping = Options.Storage.MappingFor(typeof(TDoc));
@@ -196,6 +201,9 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         {
             if (_tombstones != null)
             {
+                // #5688: tombstone writes start off the saving caller's path, so let the ones already
+                // started reach the block before it is drained.
+                await WaitForPendingTombstonesAsync().ConfigureAwait(false);
                 await _tombstones.DrainAsync().ConfigureAwait(false);
             }
         }
@@ -235,18 +243,24 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         _tombstones?.SafeDispose();
     }
 
-    public override Type AggregateTypeFor(string aggregateTypeName)
+    // jasperfx#1043: the alias caches, both directions, are EventRegistry's. Marten only says what an
+    // aggregate type's persisted name is, and how to find a type by a name this process has not seen yet.
+    protected override string AliasFor(Type aggregateType)
     {
-        return _aggregateTypeByName[aggregateTypeName];
+        return aggregateType.IsGenericType ? aggregateType.ShortNameInCode() : aggregateType.Name.ToTableAlias();
     }
 
-    public override string AggregateAliasFor(Type aggregateType)
+    protected override Type? FindAggregateType(string aggregateTypeName)
     {
-        var alias = _aggregateNameByType[aggregateType];
+        foreach (var aggregateType in Options.Projections.AllAggregateTypes())
+        {
+            if (aggregateTypeName.EqualsIgnoreCase(AggregateAliasFor(aggregateType)))
+            {
+                return aggregateType;
+            }
+        }
 
-        _aggregateTypeByName.Fill(alias, aggregateType);
-
-        return alias;
+        return null;
     }
 
     public override IEvent BuildEvent(object eventData)
@@ -263,6 +277,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         }
         else
         {
+            // #5735 / jasperfx#1053: a C# union is stored as its active case, so each case gets its own
+            // event type name and the stored JSON (which STJ writes as the bare case anyway) reads back by
+            // that name. The base EventRegistry.BuildEvent does this too, but this override never reaches
+            // it. Before .NET 11 no type is a union and this hands back eventData unchanged.
+            eventData = UnionTypes.Unwrap(eventData);
+
             var mapping = EventMappingFor(eventData.GetType());
             var wrapped = mapping.Wrap(eventData);
             if (_tagRules.Count > 0) applyTagRules(wrapped);
@@ -279,36 +299,29 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool UseAdvisoryLockTransaction { get; set; }
 
     public bool EnableAdvancedAsyncTracking { get; set; }
-    public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
+    /// <summary>
+    /// Events marked as skipped (<c>mt_events.is_skipped</c>) are left out of projections and subscriptions.
+    /// Defaults to <c>true</c> since 10.0 (#5812). The column is always created either way.
+    /// </summary>
+    public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; } = true;
 
     /// <summary>
     /// When enabled, the daemon writes heartbeat, agent_status, pause_reason, running_on_node and the
     /// failure_* columns of the event progression table, and progression reads hydrate them, for
-    /// CritterWatch monitoring. Defaults to <c>false</c>; opt in explicitly.
+    /// CritterWatch monitoring. Defaults to <c>true</c> since 10.0 (#5763); set <c>false</c> to opt out.
     /// </summary>
     /// <remarks>
-    /// #5310 restored a `= true` default here, on the reading that #4687 had intended it and the flip was
-    /// lost to a refactor. That was reversed deliberately: turning it on by default is a BREAKING change,
-    /// because every existing store that never asked for monitoring would silently start writing six
-    /// columns on every shard state transition. "It was meant to be true" is not sufficient reason to
-    /// change what a deployment does on upgrade without it opting in.
-    /// <para>
-    /// The default is therefore false and stays false. #4687's argument -- the values are cheap because
-    /// they come from daemon runtime state that already exists -- remains a fine argument for turning it
-    /// ON, and none at all for turning it on for somebody else.
-    /// </para>
-    /// <para>
     /// This does not decide the SHAPE of mt_event_progression either way. Since #5309 the columns are
     /// always created, because a table shape that depends on configuration means two stores over one
     /// schema can disagree about it and strip each other's columns. This flag gates only reads and
-    /// writes, so leaving it off costs nothing but the (nullable, never-written) columns.
-    /// </para>
+    /// writes. The writes are plain UPDATE statements; the <c>mt_mark_event_progression_extended</c>
+    /// function is no longer part of the schema.
     /// </remarks>
     public bool EnableExtendedProgressionTracking
     {
         get;
         set;
-    }
+    } = true;
 
     /// <summary>
     /// Optional best-effort observer invoked after each successful <c>SaveChangesAsync</c> with the
@@ -321,7 +334,19 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public Action<IReadOnlyList<IEvent>>? AppendObserver { get; set; }
 
 
-    public bool UseArchivedStreamPartitioning { get; set; }
+    private bool? _useArchivedStreamPartitioning;
+
+    /// <summary>
+    /// Partition mt_events and mt_streams (and the other event tables) by <c>is_archived</c>. Defaults to
+    /// <c>true</c> since 10.0 (#5812), except under <see cref="UseTenantPartitionedEvents"/>, where it is off
+    /// unless you set it yourself (and then <c>StoreOptions</c> validation refuses the combination).
+    /// </summary>
+    public bool UseArchivedStreamPartitioning
+    {
+        get => _useArchivedStreamPartitioning ?? !UseTenantPartitionedEvents;
+        set => _useArchivedStreamPartitioning = value;
+    }
+
     public bool UseListenNotifyForEventAppends { get; set; }
 
     /// <summary>
@@ -357,6 +382,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public int? DcbTagVersionFillFactor { get; set; }
 
     /// <summary>
+    /// #5887. What makes a later append conflict with a boundary read by <c>FetchForWritingByTags</c>.
+    /// The default since Marten 10, <see cref="Marten.Events.DcbConflictScope.TagValueAndEventType"/>, honours
+    /// the event types a query condition names; <see cref="Marten.Events.DcbConflictScope.TagValue"/> (the
+    /// Marten 9 default) conflicts on any appended event carrying a tag value the boundary read. Read the remarks on
+    /// <see cref="Marten.Events.DcbConflictScope"/> before changing it on a running system.
+    /// </summary>
+    public DcbConflictScope DcbConflictScope { get; set; } = DcbConflictScope.TagValueAndEventType;
+
+    /// <summary>
     /// When enabled, adds FOR UPDATE to the stream version SELECT inside
     /// mt_quick_append_events for OCC (optimistic concurrency) appends.
     /// This prevents a READ COMMITTED race where two concurrent transactions
@@ -377,11 +411,17 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <see cref="ExistingStreamIdCollisionException"/> to fire on
     /// <c>StartStream</c> when the same identity has already been used — even after
     /// the original stream was archived under <see cref="UseArchivedStreamPartitioning"/>.
-    /// Defaults to false. See https://martendb.io/events/archiving for the
-    /// recommended use cases (typically only needed when stream identities are
-    /// produced outside Marten — e.g. user-supplied string keys).
+    /// Defaults to <c>true</c> since 10.0 (#5812), along with
+    /// <see cref="UseArchivedStreamPartitioning"/>, except under <see cref="UseTenantPartitionedEvents"/>,
+    /// where it is off unless you set it yourself. See https://martendb.io/events/archiving.
     /// </summary>
-    public bool EnableStrictStreamIdentityEnforcement { get; set; } = false;
+    public bool EnableStrictStreamIdentityEnforcement
+    {
+        get => _enableStrictStreamIdentityEnforcement ?? !UseTenantPartitionedEvents;
+        set => _enableStrictStreamIdentityEnforcement = value;
+    }
+
+    private bool? _enableStrictStreamIdentityEnforcement;
 
     /// <summary>
     /// Per-tenant partitioning master flag (CritterStack #209 / Marten #4596).
@@ -428,11 +468,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// Opt into using bigint (64-bit) types for event version, sequence, and return
     /// values in the mt_quick_append_events and mt_get_next_hi PostgreSQL functions.
     /// This prevents integer overflow when sequence values exceed int32 range (~2.1 billion).
-    /// Default is false for backward compatibility. Will become true by default in Marten 9.0.
+    /// Default is true since Marten 9.0.
     /// </summary>
     public bool EnableBigIntEvents { get; set; } = false;
 
-    public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
+    /// <summary>
+    /// Run the side effects (<c>RaiseSideEffects()</c>) of aggregation projections in the Inline lifecycle too.
+    /// Defaults to <c>true</c> since 10.0 (#5812).
+    /// </summary>
+    public bool EnableSideEffectsOnInlineProjections { get; set; } = true;
 
     /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
@@ -486,76 +530,29 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <param name="eventType"></param>
     public override void AddEventType(Type eventType)
     {
-        _events.FillDefault(eventType);
+        // #5735: a union is never stored as itself (BuildEvent unwraps it), so registering one registers
+        // each of its cases, nested unions included. Just eventType when it is not a union.
+        foreach (var type in eventType.ExpandToCaseTypes())
+        {
+            _events.FillDefault(type);
+        }
     }
 
-    // #4515: per-event-type binary serializer registry. EventMapping<T>'s
-    // constructor calls ResolveBinarySerializerFor when the mapping is built
-    // (lazily on first use); UseBinarySerializer<T> populates this dictionary
-    // ahead of time so the resolution lands on the registered instance.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<Type, JasperFx.Events.IEventBinarySerializer> _binarySerializerByType = new();
-
-    /// <inheritdoc />
-    public JasperFx.Events.IEventBinarySerializer? DefaultBinarySerializer { get; set; }
-
-    /// <inheritdoc />
-    public IEventStoreOptions UseBinarySerializer<TEvent>(JasperFx.Events.IEventBinarySerializer serializer)
+    // #4515 / jasperfx#1043: the per-event-type binary serializer registry, DefaultBinarySerializer and the
+    // [BinaryEvent] resolution are EventRegistry's. IEventStoreOptions' fluent form returns the options.
+    IEventStoreOptions IEventStoreOptions.UseBinarySerializer<TEvent>(JasperFx.Events.IEventBinarySerializer serializer)
     {
-        if (serializer == null) throw new ArgumentNullException(nameof(serializer));
-
-        var eventType = typeof(TEvent);
-        _binarySerializerByType[eventType] = serializer;
-
-        // Make sure the mapping exists and is wired with this serializer.
-        // EventMapping<T> reads its BinarySerializer from
-        // ResolveBinarySerializerFor in its constructor, so if the mapping
-        // already exists (e.g. another store-options call referenced the type
-        // first) we need to refresh its serializer reference here too.
-        AddEventType(eventType);
-        var mapping = EventMappingFor(eventType);
-        if (mapping is not null)
-        {
-            mapping.BinarySerializer = serializer;
-        }
-
+        UseBinarySerializer<TEvent>(serializer);
         return this;
     }
 
-    /// <summary>
-    ///     #4515: resolve the binary serializer for an event type. Called from
-    ///     <see cref="EventMapping"/>'s constructor. Precedence: explicit
-    ///     per-type registration via <see cref="UseBinarySerializer{TEvent}"/>
-    ///     beats <see cref="BinaryEventAttribute"/> + <see cref="DefaultBinarySerializer"/>.
-    ///     Returns <c>null</c> for plain JSON events.
-    /// </summary>
-    internal JasperFx.Events.IEventBinarySerializer? ResolveBinarySerializerFor(Type eventType)
+    // A mapping built before a serializer was configured may have latched the old answer
+    protected override void OnBinarySerializersChanged()
     {
-        if (_binarySerializerByType.TryGetValue(eventType, out var explicitSerializer))
+        foreach (var mapping in _events)
         {
-            return explicitSerializer;
+            mapping.ResetBinarySerializer();
         }
-
-        // jasperfx#669/#672: BOTH spellings are honored, in ONE lookup. Marten.Events
-        // .BinaryEventAttribute is what every existing user wrote; JasperFx.Events
-        // .BinaryEventAttribute is the promoted one an event type shared across Marten / Polecat /
-        // Fisher can declare. Marten's now derives from the promoted one (2.51.0 unsealed it for
-        // exactly this), and IsDefined matches attributes assignable to the requested type, so the
-        // base lookup finds the subclass. `inherit: false` is unrelated and stays as it was — it
-        // governs the EVENT type's hierarchy, not the attribute class's.
-        if (eventType.IsDefined(typeof(JasperFx.Events.BinaryEventAttribute), inherit: false))
-        {
-            if (DefaultBinarySerializer is null)
-            {
-                throw new InvalidOperationException(
-                    $"Event type '{eventType.FullName}' is marked with [BinaryEvent] but no IEventBinarySerializer was registered. " +
-                    $"Either call opts.Events.UseBinarySerializer<{eventType.Name}>(...) explicitly, " +
-                    $"or set opts.Events.DefaultBinarySerializer to a store-wide fallback.");
-            }
-
-            return DefaultBinarySerializer;
-        }
-
-        return null;
     }
 
     /// <summary>
@@ -569,36 +566,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         types.Each(AddEventType);
     }
 
-    /// <summary>
-    /// Register a strong-typed identifier as a tag type for DCB support.
-    /// </summary>
-    public ITagTypeRegistration RegisterTagType<TTag>() where TTag : notnull
-    {
-        var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
-        if (existing != null) return existing;
-
-        var registration = TagTypeRegistration.Create<TTag>();
-        _tagTypes.Add(registration);
-        return registration;
-    }
+    // jasperfx#1043: RegisterTagType (all three forms), TagTypes and FindTagType are EventRegistry's, along
+    // with the table-suffix check and the Native AOT remedy in its refusals. Marten adds auto-discovery from
+    // projection identities (autoDiscoverTagTypesFromProjections) through AddTagType.
 
     /// <summary>
-    /// Register a strong-typed identifier as a tag type with a custom table name suffix.
+    /// Whether the strong-typed identifier of an aggregate projection is automatically registered as a
+    /// tag type. Defaults to true. Explicit registrations work either way.
     /// </summary>
-    public ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull
-    {
-        var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
-        if (existing != null) return existing;
-
-        var registration = TagTypeRegistration.Create<TTag>(tableSuffix);
-        _tagTypes.Add(registration);
-        return registration;
-    }
-
-    /// <summary>
-    /// The registered tag types for DCB support.
-    /// </summary>
-    public IReadOnlyList<ITagTypeRegistration> TagTypes => _tagTypes;
+    public bool AutoDiscoverTagTypes { get; set; } = true;
 
     /// <summary>
     /// Derive a DCB tag from an event's own data, for every event appended through this store.
@@ -677,7 +653,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 if (alreadyTagged) return;
             }
 
-            if (!_tagTypes.Any(x => x.TagType == tagType))
+            if (FindTagType(tagType) == null)
             {
                 throw new InvalidOperationException(
                     $"The tag rule for '{rule.Description}' produced a tag of type "
@@ -770,14 +746,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 });
             }
         }
-    }
-
-    /// <summary>
-    /// Find a tag type registration by type, or null if not registered.
-    /// </summary>
-    public ITagTypeRegistration? FindTagType(Type tagType)
-    {
-        return _tagTypes.FirstOrDefault(t => t.TagType == tagType);
     }
 
     public void MapEventType<TEvent>(string eventTypeName) where TEvent : class
@@ -916,20 +884,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         return new DocumentMapping(aggregateType, Options).IdType;
     }
 
-    private Type findAggregateType(string name)
-    {
-        foreach (var aggregateType in Options.Projections.AllAggregateTypes())
-        {
-            var possibleName = _aggregateNameByType[aggregateType];
-            if (name.EqualsIgnoreCase(possibleName))
-            {
-                return aggregateType;
-            }
-        }
-
-        return null;
-    }
-
     public override EventMapping EventMappingFor(Type eventType)
     {
         return _events[eventType];
@@ -991,32 +945,24 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         return StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
     }
 
-    internal Type TypeForDotNetName(string assemblyQualifiedName)
+    /// <summary>
+    ///     The names <see cref="JasperFx.Events.EventRegistry.ResolveEventType"/> cannot load as written.
+    ///     <see cref="Archived"/> and <see cref="Tombstone"/> have moved assembly over Marten's history, so a
+    ///     row written under an older name still resolves to them. The type name is compared whole, not as a
+    ///     substring, which used to send an application's own <c>*.ArchivedOrder</c> to <see cref="Archived"/>.
+    /// </summary>
+    protected override Type? LoadEventType(string dotNetTypeName)
     {
-        if (!_nameToType.Value.TryFind(assemblyQualifiedName, out var value))
-        {
-            if (assemblyQualifiedName.Contains(".Archived"))
-            {
-                value = typeof(Archived);
-            }
-            else if (assemblyQualifiedName.Contains(".Tombstone"))
-            {
-                value = typeof(Tombstone);
-            }
-            else
-            {
-                value = Type.GetType(assemblyQualifiedName);
-            }
+        var loaded = base.LoadEventType(dotNetTypeName);
+        if (loaded != null) return loaded;
 
-            if (value == null)
-            {
-                throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
-            }
+        var comma = dotNetTypeName.IndexOf(',');
+        var typeName = (comma < 0 ? dotNetTypeName : dotNetTypeName[..comma]).Trim();
 
-            _nameToType.Swap(n => n.AddOrUpdate(assemblyQualifiedName, value));
-        }
+        if (typeName.EndsWith(".Archived", StringComparison.Ordinal)) return typeof(Archived);
+        if (typeName.EndsWith(".Tombstone", StringComparison.Ordinal)) return typeof(Tombstone);
 
-        return value;
+        return null;
     }
 
     /// <summary>
@@ -1061,48 +1007,25 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
         _tombstones = new RetryBlock<UpdateBatch>(executeTombstoneBlock, logger, _cancellation.Token);
 
-        // Pre-warm name->type so the first read of each event type from the database
-        // doesn't fall through Type.GetType(assemblyQualifiedName) in TypeForDotNetName,
-        // which is itself O(loaded-assemblies). Populate both AssemblyQualifiedName and
-        // FullName since both shapes appear in event metadata over the lifetime of a
-        // store. Done as a single Swap so we don't churn ImHashMap. Also pre-fill
-        // _byEventName so EventMappingFor(string) skips its O(n) AllEvents() walk on
-        // first lookup of every registered event-type alias.
-        _nameToType.Swap(map =>
+        // Pre-fill _byEventName so EventMappingFor(string) skips its O(n) AllEvents() walk on first lookup
+        // of every registered event-type alias. The name->type cache needs no pre-warming: each mapping
+        // seeded it when it was built (RegisterDotNetTypeNames in _events.OnMissing).
+        foreach (var mapping in _events)
         {
-            foreach (var mapping in _events)
-            {
-                mapping.JsonTransformation(null);
-
-                var docType = mapping.DocumentType;
-                if (docType.AssemblyQualifiedName is { } aqn)
-                {
-                    map = map.AddOrUpdate(aqn, docType);
-                }
-                if (docType.FullName is { } fullName)
-                {
-                    map = map.AddOrUpdate(fullName, docType);
-                }
-
-                _byEventName.Fill(mapping.EventTypeName, mapping);
-            }
-
-            return map;
-        });
+            mapping.JsonTransformation(null);
+            _byEventName.Fill(mapping.EventTypeName, mapping);
+        }
 
         // Pre-warm the aggregate-name -> aggregate-type cache so AggregateTypeFor
         // (and therefore the LINQ-from-aggregate-alias path) doesn't pay the linear
         // AllAggregateTypes() walk on the first lookup of each aggregate alias.
-        // findAggregateType is the OnMissing on _aggregateTypeByName and would do
-        // exactly this work lazily; pre-populating moves the cost off the request
-        // path and into the once-per-store Initialize.
+        // AggregateAliasFor fills both directions of EventRegistry's cache.
         foreach (var aggregateType in Options.Projections.AllAggregateTypes())
         {
-            var alias = _aggregateNameByType[aggregateType];
-            _aggregateTypeByName.Fill(alias, aggregateType);
+            AggregateAliasFor(aggregateType);
         }
 
-        autoDiscoverTagTypesFromProjections();
+        autoDiscoverTagTypesFromProjections(logger);
     }
 
     private static readonly HashSet<Type> PrimitiveIdentityTypes =
@@ -1120,77 +1043,99 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     private static readonly System.Reflection.MethodInfo? CreateTagTypeMethod =
         typeof(TagTypeRegistration).GetMethod(nameof(TagTypeRegistration.Create));
 
-    private void autoDiscoverTagTypesFromProjections()
+    private void autoDiscoverTagTypesFromProjections(ILogger logger)
     {
-        if (CreateTagTypeMethod == null) return;
+        if (!AutoDiscoverTagTypes || CreateTagTypeMethod == null) return;
 
         foreach (var projection in Options.Projections.All.OfType<IAggregateProjection>())
         {
             var identityType = projection.IdentityType;
             if (identityType == null || PrimitiveIdentityTypes.Contains(identityType)) continue;
-            if (_tagTypes.Any(t => t.TagType == identityType)) continue;
+            if (FindTagType(identityType) != null) continue;
 
             try
             {
                 var generic = CreateTagTypeMethod.MakeGenericMethod(identityType);
                 var registration = (ITagTypeRegistration)generic.Invoke(null, [null])!;
                 registration.ForAggregate(projection.AggregateType);
-                _tagTypes.Add(registration);
+                AddTagType(registration);
             }
-            catch
+            catch (Exception e) when (IsToleratedDiscoveryFailure(e, RuntimeFeature.IsDynamicCodeSupported))
             {
-                // Not a valid strong-typed identifier — skip silently
+                // An identity that is simply not a strong-typed identifier is the ordinary case this
+                // discovery pass has to tolerate, and it is not worth a word.
+            }
+            catch (Exception e)
+            {
+                // #5649: everything else used to be swallowed by the same bare catch, which under
+                // Native AOT is a silent wrong answer rather than a tolerated one: MakeGenericMethod
+                // into Create<TTag> closes TagTypeRegistration<,> with MakeGenericType, ILC has no
+                // such instantiation, and the NotSupportedException it raises ("missing native code
+                // or metadata") left the store running with the tag type quietly absent -- the
+                // queries that need it then fail far from the cause.
+                //
+                // Still not rethrown. This runs inside the store's Initialize, and a throw here
+                // would stop an application from starting over a feature it may not use -- the same
+                // trade the CreateTagTypeMethod lookup above already makes. Logged so the answer is
+                // traceable to "could not register" instead of being indistinguishable from "there
+                // was nothing to register".
+                logger.LogWarning(e,
+                    "Unable to automatically register the identity type {IdentityType} of projection {Projection} as an event tag type. Tag queries and boundary-aggregate fetches using this tag will not work. Register it explicitly with {Registration}",
+                    identityType.FullNameInCode(), projection.GetType().FullNameInCode(),
+                    TagTypeRegistration.RegistrationLine(identityType, null, projection.AggregateType));
             }
         }
+    }
+
+    /// <summary>
+    ///     Whether an auto-discovery failure is the ordinary, uninteresting kind: a projection identity that
+    ///     is not a strong-typed identifier at all, which this pass exists to walk past quietly.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         #5649 follow-up. Gated on <paramref name="canEmit" /> because
+    ///         <see cref="InvalidValueTypeException" /> does not only mean "not a value type". Under Native
+    ///         AOT, an application that does not root its own assembly loses the tag's members, and
+    ///         <c>ValueTypeInfo</c> reports a perfectly good tag exactly the same way — which made the one
+    ///         scenario #5649 reported the one scenario that stayed silent, while the
+    ///         <see cref="NotSupportedException" /> path got a warning. With no JIT, nothing here is
+    ///         ordinary, so it falls through to the warning.
+    ///     </para>
+    ///     <para>
+    ///         A <i>trimmed</i> non-AOT image still has dynamic code and so is still silent. Nothing at
+    ///         runtime distinguishes it from an identity that was never a value type, and guessing wrong
+    ///         would mean a warning on every ordinary projection whose identity is a plain custom type.
+    ///     </para>
+    ///     <para>
+    ///         A parameter rather than a direct <see cref="RuntimeFeature.IsDynamicCodeSupported" /> read so
+    ///         a JIT test can exercise the native branch, as in EventRegistry.CreateTagType and
+    ///         <c>ValueTypeIdGeneration.BuildSelectClause</c> (#5600).
+    ///     </para>
+    /// </remarks>
+    internal static bool IsToleratedDiscoveryFailure(Exception e, bool canEmit) => canEmit && isNotAValueType(e);
+
+    /// <summary>
+    /// An identity type that is not a strong-typed identifier at all. ValueTypeInfo.ForType raises
+    /// this before any generic is closed, and MethodInfo.Invoke wraps it, so the chain is walked.
+    /// </summary>
+    private static bool isNotAValueType(Exception e)
+    {
+        for (var current = e; current != null; current = current.InnerException)
+        {
+            if (current is InvalidValueTypeException)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public List<Type> GlobalAggregates { get; } = new();
 
-    /// <summary>
-    ///     Keep recently fetched snapshots of <typeparamref name="T" /> in a node local cache so that a
-    ///     subsequent FetchForWriting can skip loading the stored snapshot and read only the events after
-    ///     it. Effectively an identity map for aggregates with a lifetime longer than a session.
-    ///     <para>
-    ///     The cache is never trusted blindly. The stream version is still read from the database on every
-    ///     call, and the optimistic concurrency assertion on append is untouched, so a stale entry costs an
-    ///     extra query and never yields a wrong aggregate. See
-    ///     <see cref="JasperFx.Events.Fetching.IAggregateWriteCache" /> for the full semantics, which are
-    ///     shared with every other Critter Stack store (jasperfx#674).
-    ///     </para>
-    ///     <para>
-    ///     Supported for both <see cref="ProjectionLifecycle.Async" /> and
-    ///     <see cref="ProjectionLifecycle.Inline" />, but they behave differently:
-    ///     </para>
-    ///     <list type="bullet">
-    ///         <item><b>Async</b> — the cached snapshot is a <i>baseline</i>. Events after the cached
-    ///         version are read and folded onto it, so a stale entry just means a larger delta query. The
-    ///         entry is written as soon as the fetch completes, because the daemon (not the session) applies
-    ///         appended events, so the instance cannot drift ahead of the database.</item>
-    ///         <item><b>Inline</b> — the stored snapshot is written in the same transaction as the events
-    ///         and so is always exactly at the stream head. A cached entry is therefore only usable on an
-    ///         <i>exact</i> version match, and anything else falls back to loading the snapshot. The entry
-    ///         is written back only <i>after a successful commit</i>, because the inline projection applies
-    ///         the caller's events to the fetched instance during that commit.</item>
-    ///     </list>
-    /// </summary>
-    /// <param name="sizeLimit">Maximum number of cached aggregates, when the default cache is built</param>
-    /// <remarks>
-    ///     Overridden rather than merely inherited from <see cref="EventRegistry" /> because the write back
-    ///     for the Inline lifecycle needs a session listener, and where a listener lives is Marten's own
-    ///     business. The enrollment itself — the type set, the size limit, resolving the cache — is the
-    ///     shared registry's.
-    /// </remarks>
-    public override void CacheAggregatesForWriting<T>(int sizeLimit = 1000)
-    {
-        base.CacheAggregatesForWriting<T>(sizeLimit);
-
-        // Inline aggregates are written back to the cache only after a successful commit, which needs a
-        // session listener. Harmless for Async-only usage -- the listener no-ops when nothing was tracked.
-        if (!Options.Listeners.Contains(AggregateWriteCacheListener.Instance))
-        {
-            Options.Listeners.Add(AggregateWriteCacheListener.Instance);
-        }
-    }
+    // CacheAggregatesForWriting<T> is EventRegistry's, unchanged. The write back is no longer a session
+    // listener: each DocumentSessionBase owns an AggregateWriteCacheSession (jasperfx#1050), flushed by
+    // SaveChangesAsync after a commit the session owns.
 
     internal DocumentProvider<IEvent>? Provider { get; private set; }
 

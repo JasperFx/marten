@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
@@ -7,6 +9,7 @@ using JasperFx.Documents;
 using JasperFx.Events;
 using JasperFx.Events.ComplianceTests;
 using JasperFx.Events.Documents;
+using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Storage;
 
@@ -61,6 +64,12 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     /// and <c>Metadata.Revision</c>, so the per-tenant revision fact runs rather than skipping.
     /// BuildStoreAsync replays <c>DocumentComplianceConfig.NumericRevisionTypes</c> to match.
     /// </summary>
+    /// <remarks>
+    /// This one flag gates both the per-tenant revision fact of DocumentConjoinedTenancyCompliance AND the whole
+    /// NumericRevisionCompliance suite (enrolled as numeric_revision_compliance in EventSourcingTests). It was
+    /// false from marten#5827 until marten#5788, because Store() on an IRevisioned document ignored its Version
+    /// and the suite failed 6 of its 9 facts.
+    /// </remarks>
     public override bool SupportsNumericRevisions => true;
 
     public override bool SupportsConjoinedDocuments => true;
@@ -121,6 +130,91 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     public override bool SupportsCrossTenantQueries => true;
 
     /// <summary>
+    /// jasperfx#1059 (#5740). Marten's <c>DocumentStore</c> restores a soft-deleted document through
+    /// <c>UndoDeleteWhere</c> plus a re-store in one session, which is what gives the restored row a new version.
+    /// </summary>
+    public override bool SupportsDocumentUndelete => true;
+
+    /// <summary>
+    /// jasperfx#1058 (#5740). <c>QueryDocumentsAsync</c> orders by <c>mt_last_modified</c>, a numeric
+    /// revision or <c>mt_created_at</c>, and refuses the ones the mapping cannot answer -- a Guid version,
+    /// an untracked created time -- rather than ignoring them.
+    /// </summary>
+    public override bool SupportsDocumentMetadataOrdering => true;
+
+    /// <summary>
+    /// jasperfx#785 (#5740). Marten's four soft-delete marker methods, <c>UndoDeleteWhere</c> and
+    /// <c>HardDeleteWhere</c>, reached through the three seam members below.
+    /// </summary>
+    public override bool SupportsSoftDeleteOperators => true;
+
+    /// <summary>
+    /// Marten's load by id has never applied the soft-delete filter: it returns the row, with
+    /// <c>ISoftDeleted</c> members reporting it deleted, as the soft-delete docs describe. The suite pins
+    /// that answer for Marten rather than skipping the facts.
+    /// </summary>
+    public override bool LoadExcludesSoftDeletedDocuments => false;
+
+    /// <summary>
+    /// jasperfx#785 (#5740). <c>TrackedPolicy</c> maps an <c>ITracked</c> document's members onto the
+    /// correlation id, causation id and last-modified-by metadata, which a session stamps from its
+    /// <c>IMetadataContext</c> on every save.
+    /// </summary>
+    public override bool SupportsTrackedDocuments => true;
+
+    /// <summary>
+    /// jasperfx#1070. <c>DocumentTypesAsync</c> fills <c>DocumentTypeRef.IsSoftDeleted</c> from the mapping's
+    /// <c>DeleteStyle</c>, and a sub-class reports its root's.
+    /// </summary>
+    public override bool ReportsDocumentDeleteStyle => true;
+
+    /// <summary>
+    /// jasperfx#1071. <c>PreviewDocumentJsonAsync</c> runs the save's own deserialize and id check, then
+    /// re-serializes with the store's serializer, without opening a session.
+    /// </summary>
+    public override bool SupportsDocumentWritePreview => true;
+
+    /// <summary>
+    /// jasperfx#1077 (marten#5768). A CorrelationId / CausationId / LastModifiedBy filter on a type whose table
+    /// does not capture the column is refused through <c>AssertMetadataFiltersAreCaptured</c>; it used to be
+    /// skipped, returning the unfiltered page.
+    /// </summary>
+    public override bool RefusesUncapturedMetadataFilters => true;
+
+    /// <summary>
+    /// jasperfx#1078 (marten#5768). <c>ExplainDocumentQueryAsync</c> runs the read's own page statement under
+    /// <c>EXPLAIN (ANALYZE, FORMAT JSON)</c> in a read-only transaction that is rolled back.
+    /// </summary>
+    public override bool SupportsDocumentQueryExplain => true;
+
+    /// <summary>
+    /// One <c>Where()</c>, through Marten's own marker methods, and no filtering of our own: the parser is the
+    /// thing under test, including its refusal of an operator against a type that is not soft-deleted.
+    /// </summary>
+    public override async Task<IReadOnlyList<T>> QuerySoftDeletedAsync<T>(IDocumentReadOperations session,
+        SoftDeleteFilter filter, CancellationToken token)
+    {
+        var query = ((IQuerySession)session).Query<T>();
+
+        var filtered = filter.Operator switch
+        {
+            SoftDeleteOperator.MaybeDeleted => query.Where(x => x.MaybeDeleted()),
+            SoftDeleteOperator.IsDeleted => query.Where(x => x.IsDeleted()),
+            SoftDeleteOperator.DeletedSince => query.Where(x => x.DeletedSince(filter.At!.Value)),
+            SoftDeleteOperator.DeletedBefore => query.Where(x => x.DeletedBefore(filter.At!.Value)),
+            _ => throw new ArgumentOutOfRangeException(nameof(filter), filter.Operator, null)
+        };
+
+        return await filtered.ToListAsync(token);
+    }
+
+    public override void UndoDeleteWhere<T>(IDocumentSessionOperations session, Expression<Func<T, bool>> predicate)
+        => ((IDocumentSession)session).UndoDeleteWhere(predicate);
+
+    public override void HardDeleteWhere<T>(IDocumentSessionOperations session, Expression<Func<T, bool>> predicate)
+        => ((IDocumentSession)session).HardDeleteWhere(predicate);
+
+    /// <summary>
     /// Marten spells the cross-tenant escapes as element predicates INSIDE the <c>Where</c>, which the
     /// LINQ parser recognizes from the extension method's declaring type. That is why these are seam
     /// members rather than shared source: built anywhere else, the expression carries a
@@ -144,6 +238,18 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
         options.DisableNpgsqlLogging = true;
         options.NameDataLength = 100;
         options.DatabaseSchemaName = (config.SchemaName ?? "doc_compliance").ToLowerInvariant();
+
+        // The suites treat correlation id, causation id, last modified by and headers as captured only by a
+        // type that asks for them (ITracked, or an explicit mapping). Marten 10 captures them on every
+        // document by default (#5812), so turn them off wherever no member is mapped to them.
+        options.Policies.ForAllDocuments(mapping =>
+        {
+            var metadata = mapping.Metadata;
+            foreach (var column in new[] { metadata.CorrelationId, metadata.CausationId, metadata.LastModifiedBy, metadata.Headers })
+            {
+                if (column.Member == null) column.Enabled = false;
+            }
+        });
 
         // Marten creates document storage on demand, so DocumentTypes is not strictly required
         // here. Registering it anyway means ApplyAllConfiguredChangesToDatabaseAsync below actually

@@ -1,12 +1,12 @@
 # `Marten.EventStorage` — closed-shape event-storage hierarchy
 
-Hand-written, per-`AppendMode` event-storage implementations that replace
+Hand-written, per-`AppendMode` event-storage implementations that replaced
 the runtime-Roslyn-emitted `GeneratedEventDocumentStorage` for the
-event-store write path. Opt-in via `StoreOptions.Events.UseClosedShapeStorage = true`
-in Marten 9; planned default-on in 10.
+event-store write path. Since Marten 9 they are the only event-store write path;
+there is no `UseClosedShapeStorage` switch.
 
-See the [`UseClosedShapeStorage` migration-guide section](../../../docs/migration-guide.md#closed-shape-event-storage)
-for the consumer-facing intro and the v9 / v10 / v11 transition plan.
+See the [event storage migration-guide section](../../../docs/migration-guide.md#closed-shape-event-storage)
+for the consumer-facing intro.
 
 > **#4821 event-storage extraction — done.** The dialect-neutral half of this hierarchy now
 > lives in the shared `Weasel.Storage` package, so Marten (Postgres), Polecat (SQL Server) and
@@ -209,4 +209,3 @@ question; this note is only about the event store.)
 * #4821 extraction into `Weasel.Storage` and its remaining follow-up map — [#5339](https://github.com/JasperFx/marten/issues/5339).
 * Open follow-ups for v10:
   * Delete the three `[Obsolete]` codegen-era operation bases in `../Events/Operations/`.
-  * Flip `UseClosedShapeStorage` to default-on.

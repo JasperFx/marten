@@ -11,7 +11,12 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Services;
 
-public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOptions
+/// <summary>
+///     Marten's OpenTelemetry configuration. The meter, the activity source, the connection tracking level
+///     and the change set counters come from JasperFx's <see cref="JasperFx.OpenTelemetry.OpenTelemetryOptions{TChangeSet}" />
+///     (jasperfx#1054): one <c>Meter</c> and one <c>ActivitySource</c> named "Marten" for the whole process.
+/// </summary>
+public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOptions<IChangeSet>
 {
     public OpenTelemetryOptions(): base("Marten")
     {
@@ -31,16 +36,22 @@ public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOp
     internal const string InlinePlan = "Inline";
     internal const string AsyncPlan = "Async";
 
-    // Null until TrackFetchForWritingMetrics() opts in, so an application that never asks for these
-    // metrics pays a null check on the fetch path and nothing else.
+    // Null until the store is built with EnableFetchForWritingMetrics on, so an application that turns these
+    // metrics off pays a null check on the fetch path and nothing else.
     private Histogram<long>? _eventsReplayed;
-
-    internal List<Action<IChangeSet>> Applications { get; } = new();
+    private bool _eventCountersExported;
 
     /// <summary>
-    ///     Opt into the <c>marten.fetch_for_writing.events_replayed</c> histogram: how many events a
-    ///     single <c>FetchForWriting()</c> call had to read back and fold to reconstruct the aggregate,
-    ///     tagged by aggregate type and by which fetch plan served it.
+    ///     Export the <c>marten.event.append</c> counter: one count per appended event, tagged by event type
+    ///     and tenant id. On by default since 10.0 (#5812); set to <c>false</c> to opt out.
+    /// </summary>
+    public bool EnableEventCounters { get; set; } = true;
+
+    /// <summary>
+    ///     Record the <c>marten.fetch_for_writing.events_replayed</c> histogram: how many events a single
+    ///     <c>FetchForWriting()</c> call had to read back and fold to reconstruct the aggregate, tagged by
+    ///     aggregate type and by which fetch plan served it. On by default since 10.0 (#5812); set to
+    ///     <c>false</c> to opt out.
     /// </summary>
     /// <remarks>
     ///     This is the number behind the cost of the command handler workflow. A <c>Live</c> aggregate
@@ -48,12 +59,35 @@ public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOp
     ///     not caught up on yet, and an <c>Inline</c> one always replays zero. Recording all three lets you
     ///     see what a lifecycle change would actually buy before making it.
     /// </remarks>
+    public bool EnableFetchForWritingMetrics { get; set; } = true;
+
+    /// <summary>
+    ///     Opt into the <c>marten.fetch_for_writing.events_replayed</c> histogram. On by default since 10.0, so
+    ///     this is the same as setting <see cref="EnableFetchForWritingMetrics" /> to <c>true</c>.
+    /// </summary>
     public void TrackFetchForWritingMetrics()
     {
-        _eventsReplayed ??= Meter.CreateHistogram<long>(
-            "marten.fetch_for_writing.events_replayed",
-            "events",
-            "Events read back and folded into the aggregate by a single FetchForWriting() call");
+        EnableFetchForWritingMetrics = true;
+    }
+
+    /// <summary>
+    ///     Called when the store is built, so the two switches above can be set in any order.
+    /// </summary>
+    internal void ApplyDefaultMetrics()
+    {
+        if (EnableEventCounters && !_eventCountersExported)
+        {
+            _eventCountersExported = true;
+            exportEventCounters();
+        }
+
+        if (EnableFetchForWritingMetrics)
+        {
+            _eventsReplayed ??= Meter.CreateHistogram<long>(
+                "marten.fetch_for_writing.events_replayed",
+                "events",
+                "Events read back and folded into the aggregate by a single FetchForWriting() call");
+        }
     }
 
     /// <summary>
@@ -75,28 +109,21 @@ public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOp
     }
 
     /// <summary>
-    /// Add a custom counter that will be applied after a DocumentSession is committed
-    /// </summary>
-    /// <param name="name"></param>
-    /// <param name="units"></param>
-    /// <param name="recordAction"></param>
-    /// <typeparam name="T"></typeparam>
-    public void ExportCounterOnChangeSets<T>(string name, string units, Action<Counter<T>, IChangeSet> recordAction) where T : struct
-    {
-        var counter = Meter.CreateCounter<T>(name, units);
-        Applications.Add(commit =>
-        {
-            recordAction(counter, commit);
-        });
-    }
-
-    /// <summary>
-    /// Direct Marten to export counters on the events being appended
+    /// Direct Marten to export counters on the events being appended. On by default since 10.0, so this is
+    /// the same as setting <see cref="EnableEventCounters" /> to <c>true</c>.
     /// </summary>
     public void TrackEventCounters()
     {
+        EnableEventCounters = true;
+    }
+
+    private void exportEventCounters()
+    {
         ExportCounterOnChangeSets<long>("marten.event.append", "events", (counter, commit) =>
         {
+            // #5730: nothing is listening to the meter, so do not walk every committed event to build tags
+            if (!counter.Enabled) return;
+
             foreach (var e in commit.GetEvents())
             {
                 counter.Add(1, new TagList
@@ -109,24 +136,12 @@ public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOp
     }
 }
 
-internal class MartenCommitMetrics(ILogger Logger, List<Action<IChangeSet>> applications): DocumentSessionListenerBase
+internal class MartenCommitMetrics(ILogger Logger, OpenTelemetryOptions options): DocumentSessionListenerBase
 {
-    public List<Action<IChangeSet>> Applications { get; } = applications;
-
     public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
     {
-        foreach (var application in Applications)
-        {
-            try
-            {
-                application(commit);
-            }
-            catch (Exception e)
-            {
-                // Really don't expect this as the metrics should be
-                Logger.LogError(e, "Metrics gathering failure");
-            }
-        }
+        // Each counter is caught and logged on its own: the commit is already durable here.
+        options.RecordCommit(commit, Logger);
         return Task.CompletedTask;
     }
 }

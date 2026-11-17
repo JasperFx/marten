@@ -6,6 +6,11 @@ because a workflow is completed, maybe through time based expiry rules, or maybe
 from the system. To help optimize Marten's event store usage, you can take advantage of the stream archiving to 
 mark events as archived on a stream by stream basis. 
 
+::: warning Archiving is not erasure
+Archiving marks or moves events, it does not remove them, and the data is still in the database. If you need to
+erase a person's data, for example for a GDPR request, see [Personal data and crypto-shredding with Tayra](/events/protection#personal-data-and-crypto-shredding-with-tayra).
+:::
+
 ::: warning
 You can obviously use pure SQL to modify the events persisted by Marten. While that might be valuable in some cases,
 we urge you to be cautious about doing so.
@@ -13,9 +18,10 @@ we urge you to be cautious about doing so.
 
 The impact of archiving an event stream is:
 
-* In the "classic" usage of Marten, the relevant stream and event rows are marked with an `is_archived = TRUE`
-* With the "opt in" table partitioning model for "hot/cold" storage described in the next section, the stream and event rows are
-  moved to the archived partition tables for streams and events
+* With the table partitioning model for "hot/cold" storage described below (the default since Marten 10), the stream and
+  event rows are moved to the archived partition tables for streams and events
+* Without partitioning (the default before Marten 10, and under per-tenant event partitioning), the relevant stream and
+  event rows are marked with an `is_archived = TRUE`
 * The [async daemon](/events/projections/async-daemon) subsystem process that processes projections and subscriptions in a background process automatically ignores
   archived events -- but that can be modified on a per projection/subscription basis
 * Archived events are excluded by default from any event data queries through the LINQ support in Marten
@@ -36,6 +42,11 @@ public async Task SampleArchive(IDocumentSession session, string streamId)
 
 As in all cases with an `IDocumentSession`, you need to call `SaveChanges()` to commit the
 unit of work.
+
+::: tip
+Archiving keeps the data. To delete a stream and its events for good, see
+[Deleting a Stream Permanently](#deleting-a-stream-permanently).
+:::
 
 Archiving the same stream again preserves one archived copy of its stream and event rows,
 including when hot/cold partitioning is enabled. A single-stream projection with
@@ -78,40 +89,92 @@ var events = await theSession.Events.QueryAllRawEvents()
 ## Appending to an Archived Stream
 
 An archived stream is closed to new events. Appending to one fails the transaction with
-`Marten.Exceptions.InvalidStreamOperationException` and the message
-`Attempted to append event to archived stream with Id '{id}'.` — in Rich append mode the stream state is read before the
+`JasperFx.Events.ArchivedStreamException`, whose `Id` is the stream's id or key — the same type Polecat and Fisher throw
+(before Marten 10 this was the generic `Marten.Exceptions.InvalidStreamOperationException`). In Rich append mode the stream state is read before the
 append and the check happens in Marten (`RichEventAppender`), and in Quick append mode the `mt_quick_append_events` function
-raises SQLSTATE `MT001` which Marten translates into the same exception. Either way you get one exception type and one
-message, so this does not change with `EventAppendMode`.
+raises SQLSTATE `MT001` which Marten translates into the same exception. Either way you get the same exception, so this
+does not change with `EventAppendMode`.
 
-There is no un-archive API in Marten. Archiving is a terminal step for a stream — a stream that should keep receiving events
-should not have been archived. Recovering one means flipping `is_archived` back with SQL on both `mt_streams` and
-`mt_events` (and, under [hot/cold partitioning](/events/archiving.html#hot-cold-storage-partitioning), moving the rows back
-out of the archived partitions), which is exactly the kind of direct manipulation the warning at the top of this page
-cautions about.
+To reopen an archived stream, un-archive it first. See [Un-archiving a Stream](#un-archiving-a-stream) below.
 
 Note that `StartStream` against an archived stream's id is a **different** failure. The id is still in use, so it is an
-identity collision (`ExistingStreamIdCollisionException`), not an archived-stream error — except under
-`UseArchivedStreamPartitioning`, where the archived row lives in a different partition and the reuse is silently allowed
-unless you also set `EnableStrictStreamIdentityEnforcement`. See
+identity collision (`ExistingStreamIdCollisionException`), not an archived-stream error. Under
+`UseArchivedStreamPartitioning` the archived row lives in a different partition, and it is
+`EnableStrictStreamIdentityEnforcement` (also on by default since Marten 10) that still refuses the reuse; turn it off
+and the reuse is silently allowed. See
 [Strict Stream Identity After Archive](/events/archiving.html#strict-stream-identity-after-archive) below.
+
+## Un-archiving a Stream
+
+`UnArchiveStream()` reverses `ArchiveStream()`. The stream and all of its events become live again: they come back in
+`FetchStreamAsync()`, live aggregation, `FetchForWriting()`, raw event queries and tag queries, and the stream
+accepts appends again.
+
+<!-- snippet: sample_unarchive_stream -->
+<a id='snippet-sample_unarchive_stream'></a>
+```cs
+await using var session = theStore.LightweightSession();
+
+// Queue the un-archive. Like ArchiveStream, nothing touches the
+// database until SaveChangesAsync
+session.Events.UnArchiveStream(streamId);
+
+// The string-keyed overload is used when StreamIdentity is AsString:
+// session.Events.UnArchiveStream("customer-123");
+
+await session.SaveChangesAsync();
+
+// The stream and its events are live again, and can be appended to
+session.Events.Append(streamId, new LedgerOpened("appended after un-archiving"));
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Archiving/unarchiving_streams.cs#L847-L864' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_unarchive_stream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`UnArchiveStream()` has a `Guid` overload and a `string` overload, matching your `StreamIdentity`. Calling the
+overload that does not match the store's configured identity throws an `InvalidOperationException` right away.
+Both are declared on the shared `JasperFx.Events.IEventStoreOperations`, so code written against that interface
+(for Marten, Polecat or Fisher) can un-archive a stream too.
+
+Some details worth knowing:
+
+* **It is queued.** Nothing happens until you call `SaveChangesAsync()`, and the un-archive commits or rolls back
+  with the rest of the unit of work.
+* **Un-archive in its own save.** Save the un-archive before you append to the stream. Appending in the same
+  `SaveChangesAsync()` as the un-archive is not supported: in Rich append mode the append is still refused with
+  `ArchivedStreamException`.
+* **The version does not change.** The stream keeps the version it had when it was archived, so an append with an
+  expected version, or through `FetchForWriting()`, works as it did before the archive.
+* **It is safe to repeat.** Un-archiving a stream that is not archived does nothing. Un-archiving a stream that does
+  not exist is not an error and creates nothing. A stream can be archived and un-archived any number of times.
+* **Only the named stream changes.** Under conjoined tenancy, only the stream in the session's tenant is un-archived.
+  The same stream id in another tenant stays archived.
+* **Hot/cold partitioning.** Under `UseArchivedStreamPartitioning`, the stream and event rows move from the archived
+  partitions back to the active ones. The DCB tag rows and natural key rows move with them, so tag queries and
+  natural key lookups find the stream again. If another stream has claimed the natural key while this one was
+  archived, the other stream keeps it.
+* **A reused identity is refused.** Under `UseArchivedStreamPartitioning` without
+  [strict stream identity](/events/archiving.html#strict-stream-identity-after-archive), a new stream can be started with an archived
+  stream's id. Two live streams cannot share an id, so un-archiving the old stream then fails on
+  `SaveChangesAsync()` with an `InvalidStreamOperationException`, and nothing is changed. Archive or delete the new
+  stream first.
+* **Projections are not rewound.** `ArchiveStream()` appends no event, so projections never see the archive or the
+  un-archive. An inline or async snapshot stays as it was and picks up new events as usual. The restored events keep
+  their sequence numbers, which the async daemon has already passed, so they are not processed a second time. If the
+  stream was archived by an [`Archived` event](/events/archiving.html#archived-event), that event is still in the stream after un-archiving,
+  and any document your projection deleted or changed when it handled that event stays as it is. Rebuild the
+  projection if it should reflect the reopened stream.
 
 ## Hot/Cold Storage Partitioning <Badge type="tip" text="7.25" />
 
-::: warning
-This option will only be beneficial if you are being aggressive about marking obsolete, old, or expired event data
-as archived.
-:::
+Marten uses PostgreSQL native table partitioning on the event and event stream data to keep the "hot" (active) and
+"cold" (archived) events in separate partition tables. This is on by default since Marten 10, and was opt in before.
+It keeps the active `mt_streams` and `mt_events` tables smaller, which pretty well always results in better
+performance over time if you archive streams. If you never archive anything, it costs very little.
 
-Want your system using Marten to scale and perform even better than it already does? If you're leveraging
-event archiving in your application workflow, you can possibly derive some significant performance and scalability
-improvements by opting into using PostgreSQL native table partitioning on the event and event stream data
-to partition the "hot" (active) and "cold" (archived) events into separate partition tables. 
-
-The long and short of this option is that it keeps the active `mt_streams` and `mt_events` tables smaller, which pretty
-well always results in better performance over time.
-
-The simple flag for this option is:
+It is off under [per-tenant event partitioning](/events/multitenancy.html#per-tenant-event-partitioning), which
+partitions the same tables by tenant instead. To turn it off yourself, set the flag to `false` or call
+`opts.RestoreV9Defaults()`:
 
 <!-- snippet: sample_turn_on_stream_archival_partitioning -->
 <a id='snippet-sample_turn_on_stream_archival_partitioning'></a>
@@ -121,8 +184,8 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection("some connection string");
 
-    // Turn on the PostgreSQL table partitioning for
-    // hot/cold storage on archived events
+    // PostgreSQL table partitioning for hot/cold storage
+    // on archived events. On by default since Marten 10
     opts.Events.UseArchivedStreamPartitioning = true;
 });
 ```
@@ -130,7 +193,8 @@ builder.Services.AddMarten(opts =>
 <!-- endSnippet -->
 
 ::: warning
-If you are turning this option on to an existing system, you may want to run the database schema migration script
+If you are turning this option on (or off) for an existing system, including by upgrading to Marten 10 with the default,
+you may want to run the database schema migration script
 by hand rather than trying to let Marten do it automatically. The data migration from non-partitioned to partitioned
 will probably require system downtime because it actually has to copy the old table data, drop the old table, create the new 
 table, copy all the existing data from the temp table to the new partitioned table, and finally drop the temporary table.
@@ -139,11 +203,11 @@ table, copy all the existing data from the temp table to the new partitioned tab
 ### Strict Stream Identity After Archive <Badge type="tip" text="8.x" />
 
 ::: tip
-This setting is only necessary when stream identity is generated **outside** of
-Marten — most commonly when the user is providing string keys themselves
-(order numbers, external reference ids, etc.). With Marten-generated `Guid`
-ids, accidental reuse is vanishingly unlikely, so the default of `false` is
-fine for most projects.
+This setting is on by default since Marten 10, along with
+`UseArchivedStreamPartitioning`, and off under per-tenant event partitioning. It matters most when stream identity is
+generated **outside** of Marten — most commonly when the user is providing string keys themselves (order numbers,
+external reference ids, etc.). With Marten-generated `Guid` ids, accidental reuse is vanishingly unlikely, so
+turning it off to save the extra insert per new stream is reasonable.
 :::
 
 When `UseArchivedStreamPartitioning = true` is enabled, archiving a stream
@@ -161,8 +225,8 @@ still fires, so reuse throws `ExistingStreamIdCollisionException`. Without
 extra configuration, the partitioning mode is therefore **less strict** about
 identity reuse than the non-partitioned mode.
 
-If you want the strict behavior under both modes, opt in to the
-`EnableStrictStreamIdentityEnforcement` flag:
+The `EnableStrictStreamIdentityEnforcement` flag gives you the strict behavior under both modes. These are the
+Marten 10 defaults, written out:
 
 ```cs
 var builder = Host.CreateApplicationBuilder();
@@ -181,17 +245,19 @@ Under the hood Marten creates a sibling, **non-partitioned**
 `mt_streams_identity` table whose primary key is just the stream identity
 (`(id)`, or `(tenant_id, id)` under conjoined tenancy). Each `StartStream` is
 rewritten to also INSERT into that table in the same prepared statement (via
-a modifying CTE), so a duplicate identity raises a unique violation that
+a modifying CTE), and so is an append that creates a new stream in the Quick
+append modes, so a duplicate identity raises a unique violation that
 Marten translates into the same `ExistingStreamIdCollisionException` you'd
 expect in non-partitioned mode. Archive does **not** touch
 `mt_streams_identity`, so the identity row stays put and the protection
-spans the active / archived divide.
+spans the active / archived divide. When the table is first created, Marten
+fills it from `mt_streams`, so streams from before the flag was turned on are
+covered too.
 
-The flag is cheap when partitioning is off — it adds a second tiny INSERT
-per stream creation — but the practical reason to enable it is exactly the
-combination above. If you only have Marten-generated `Guid` stream ids and
-don't use partitioning, the default `mt_streams` primary key already
-enforces this and the flag is unnecessary.
+The flag is cheap — it adds a second tiny INSERT per stream creation — and the
+practical reason for it is exactly the combination above. If you turn
+partitioning off, the `mt_streams` primary key already enforces this and the
+flag is unnecessary.
 
 ## Archived Event <Badge type="tip" text="7.34" />
 
@@ -364,3 +430,81 @@ runs is entirely governed by the user-defined handlers on that projection —
 `Archived` is just an event and receives no special treatment at the
 `EvolveAsync` level. The ownership guard described above only scopes the
 stream-archival side effect.
+
+## Deleting a Stream Permanently
+
+Archiving is a soft delete: the stream and its events stay in the database, just out of the way.
+When the data really has to go, for example to purge a customer's records or to clean up after a
+plan or workflow that should leave nothing behind, use `TombstoneStream()` instead. It is a **hard
+delete** of the stream and every event in it:
+
+<!-- snippet: sample_tombstone_stream -->
+<a id='snippet-sample_tombstone_stream'></a>
+```cs
+await using var session = theStore.LightweightSession();
+
+// Queue a hard delete of the stream, its events and their tag rows.
+// Nothing touches the database until SaveChangesAsync.
+session.Events.TombstoneStream(streamId);
+
+// The string-keyed overload is used when StreamIdentity is AsString:
+// session.Events.TombstoneStream("customer-123");
+
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Archiving/tombstoning_streams.cs#L270-L283' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tombstone_stream' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`TombstoneStream()` has a `Guid` overload and a `string` overload, matching your
+`StreamIdentity`. Calling the overload that does not match the store's configured identity throws
+an `InvalidOperationException` right away, the same guard the other stream operations use. The
+method is part of the shared `JasperFx.Events.IEventStoreOperations` contract, so code written
+against that abstraction works the same way on Marten, Polecat and Fisher.
+
+What `TombstoneStream()` does, compared with `ArchiveStream()`:
+
+| | `ArchiveStream()` | `TombstoneStream()` |
+| --- | --- | --- |
+| Stream row in `mt_streams` | kept, marked archived (or moved to the archived partition) | deleted |
+| Event rows in `mt_events` | kept, marked archived | deleted |
+| DCB tag rows (`mt_event_tag_*`) | kept | deleted |
+| Can be undone | yes, with `UnArchiveStream()` | no |
+| Stream id can start a new stream | depends on partitioning and strict identity settings | yes |
+| Projected documents | left alone | left alone |
+
+Some details worth knowing:
+
+* **It is queued.** Like every other `IDocumentSession` operation, nothing happens until you call
+  `SaveChangesAsync()`, and the delete commits or rolls back with the rest of the unit of work.
+* **Tag rows go too.** For every registered DCB tag type, the stream's rows in that type's
+  `mt_event_tag_*` table are deleted along with the events, so tag queries and
+  `EventsExistAsync()` no longer find them. In `DcbStorageMode.HStore` the tags live on the event
+  rows and leave with them.
+* **It is tenant scoped.** Under conjoined event tenancy the delete only reaches the session's
+  tenant. Another tenant's stream with the same id is untouched.
+* **A missing stream is a no-op.** Deleting a stream that does not exist, or that was already
+  deleted, is not an error.
+* **Every storage layout is covered.** The delete reaches the archived partition when
+  `UseArchivedStreamPartitioning` is on, so archived streams can be deleted too, and the tenant's
+  partition under `UseTenantPartitionedEvents`. Natural key rows are removed with the stream. With
+  `EnableStrictStreamIdentityEnforcement`, the identity is released as well, so the same id can start
+  a new stream afterwards.
+* **Sequence numbers are not reused.** The event sequence is left alone. The deleted events'
+  sequence numbers stay spent, so an async projection or subscription whose high water mark has
+  already moved past them can never miss an event that later takes one of those numbers. Expect a
+  gap in the sequence where the deleted events were.
+* **Projected documents are left alone.** Nothing is "un-applied". Snapshots, single or multi
+  stream projection documents and flat table rows built from the deleted events stay where they
+  are. If they should go too, delete them in the same session with `session.Delete<T>(id)` or
+  `session.DeleteWhere<T>()`.
+
+::: warning
+There is no way to recover a deleted stream. If you need to keep the data for audit or historical
+queries, archive the stream instead.
+:::
+
+::: tip
+In Marten's internals, "tombstone" also names the bookkeeping stream Marten uses to fill gaps in the
+event sequence after a failed append. That has nothing to do with `TombstoneStream()`, which takes
+its name from the shared `IEventStoreOperations` contract.
+:::

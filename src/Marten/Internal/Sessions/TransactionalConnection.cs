@@ -31,77 +31,81 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
     public TransactionalConnection(SessionOptions options)
     {
         _options = options;
+        ExceptionTransforms = options.ExceptionTransforms;
         _connection = _options.Connection;
 
         CommandTimeout = _options.Timeout ?? _connection?.CommandTimeout ?? 30;
     }
 
-    public NpgsqlConnection Connection
+    /// <summary>
+    ///     The current connection, without opening one. Null until the lifetime has connected; use
+    ///     <see cref="OpenConnectionAsync" /> to connect first.
+    /// </summary>
+    public NpgsqlConnection? Connection => _connection;
+
+    public async ValueTask<NpgsqlConnection> OpenConnectionAsync(CancellationToken token)
     {
-        get
-        {
-            EnsureConnected();
-            return _connection!;
-        }
+        await EnsureConnectedAsync(token).ConfigureAwait(false);
+        return _connection!;
     }
 
     public int CommandTimeout { get; set; }
 
     public NpgsqlTransaction? Transaction { get; protected set; }
 
+    /// <remarks>
+    ///     #5881: the connection is disposed whatever happens before it. The RLS lifetimes' reset in
+    ///     <see cref="BeforeCloseAsync" /> no longer throws, and a failed one keeps the connection out of the pool
+    ///     instead. Before, it threw past the dispose and the connection was never given back.
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
-        if (Transaction != null)
+        try
         {
-            await Transaction.DisposeAsync().ConfigureAwait(false);
-        }
+            if (Transaction != null)
+            {
+                await Transaction.DisposeAsync().ConfigureAwait(false);
+            }
 
-        if (_connection is { State: ConnectionState.Open })
-        {
-            await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            if (_connection is { State: ConnectionState.Open })
+            {
+                await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            }
         }
-
-        if (_connection != null)
+        finally
         {
-            await _connection.DisposeAsync().ConfigureAwait(false);
+            if (_connection != null)
+            {
+                await _connection.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 
+    /// <remarks>
+    ///     #5861: the only synchronous database call this lifetime still makes is the RLS lifetimes' tenant reset in
+    ///     <see cref="resetBeforeSynchronousRelease" />. It runs only for a connection this lifetime opened, never a
+    ///     caller-supplied one, and only after the transaction is gone, because a reset inside an aborted transaction
+    ///     would fail.
+    /// </remarks>
     public void Dispose()
     {
         Transaction?.SafeDispose();
-        if (_connection is { State: ConnectionState.Open })
+        Transaction = null;
+
+        if (_connection is { State: ConnectionState.Open } && !ReferenceEquals(_connection, _options.Connection))
         {
-            BeforeClose(_connection);
+            resetBeforeSynchronousRelease(_connection);
         }
+
         _connection?.SafeDispose();
     }
 
-    public virtual void Apply(NpgsqlCommand command)
+    /// <summary>
+    ///     #5861: the hook a synchronous <see cref="Dispose" /> calls before it releases a connection this lifetime
+    ///     opened. Only the RLS lifetimes use it. It must not throw.
+    /// </summary>
+    protected virtual void resetBeforeSynchronousRelease(NpgsqlConnection connection)
     {
-        EnsureConnected();
-
-        command.Connection = _connection;
-        command.Transaction = Transaction;
-        command.CommandTimeout = CommandTimeout;
-    }
-
-    public void Apply(NpgsqlBatch batch)
-    {
-        EnsureConnected();
-
-        batch.Connection = _connection;
-        batch.Transaction = Transaction;
-        batch.Timeout = CommandTimeout;
-    }
-
-    public virtual void BeginTransaction()
-    {
-        EnsureConnected();
-        if (Transaction == null)
-        {
-            Transaction = _connection.BeginTransaction(_options.IsolationLevel);
-        }
     }
 
     // TODO -- this should be ValueTask
@@ -130,25 +134,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             .BeginTransactionAsync(_options.IsolationLevel, token).ConfigureAwait(false);
     }
 
-    public void Commit()
-    {
-        if (Transaction == null)
-        {
-            throw new InvalidOperationException("Trying to commit a transaction that was never started");
-        }
-
-        Transaction.Commit();
-        Transaction.Dispose();
-        Transaction = null;
-
-        if (_connection is { State: ConnectionState.Open })
-        {
-            BeforeClose(_connection);
-        }
-        _connection?.Close();
-        _connection = null;
-    }
-
     public async Task CommitAsync(CancellationToken token)
     {
         if (Transaction == null)
@@ -164,7 +149,10 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         {
             if (_connection.State == ConnectionState.Open)
             {
-                await BeforeCloseAsync(_connection, token).ConfigureAwait(false);
+                // #5688: the work is committed by now. A cancelled token must not turn that into a
+                // reported failure -- the RLS lifetimes run a command here -- and send the caller off
+                // to write tombstones over sequence numbers that are already taken.
+                await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
             }
             await _connection.CloseAsync().ConfigureAwait(false);
             await _connection.DisposeAsync().ConfigureAwait(false);
@@ -173,29 +161,17 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         _connection = null;
     }
 
-    public void Rollback()
-    {
-        if (Transaction != null)
-        {
-            Transaction.Rollback();
-            Transaction.Dispose();
-            Transaction = null;
-
-            if (_connection is { State: ConnectionState.Open })
-            {
-                BeforeClose(_connection);
-            }
-            _connection?.Close();
-            _connection?.Dispose();
-            _connection = null;
-        }
-    }
-
+    /// <remarks>
+    ///     #5688: the token is deliberately not passed on. A rollback is how a cancelled unit of work gives
+    ///     back its locks, and Npgsql honours an already-cancelled token by throwing <i>without sending</i>
+    ///     <c>ROLLBACK</c> -- which left the transaction <c>idle in transaction</c>, still holding the stream's
+    ///     row lock and the uncommitted <c>mt_events</c> rows, until the session was disposed.
+    /// </remarks>
     public async Task RollbackAsync(CancellationToken token)
     {
         if (Transaction != null)
         {
-            await Transaction.RollbackAsync(token).ConfigureAwait(false);
+            await Transaction.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
             await Transaction.DisposeAsync().ConfigureAwait(false);
             Transaction = null;
 
@@ -203,7 +179,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             {
                 if (_connection.State == ConnectionState.Open)
                 {
-                    await BeforeCloseAsync(_connection, token).ConfigureAwait(false);
+                    await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
                 }
                 await _connection.CloseAsync().ConfigureAwait(false);
                 await _connection.DisposeAsync().ConfigureAwait(false);
@@ -213,29 +189,38 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         }
     }
 
-
-    public void EnsureConnected()
+    /// <summary>
+    ///     #5688. Ends the transaction after a failure, whatever state the failure left it in.
+    /// </summary>
+    /// <remarks>
+    ///     A rollback that itself fails -- a broken connection, a transaction the failed commit already
+    ///     completed -- must not replace the exception that caused it, and must not leave the transaction
+    ///     or the connection behind: disposing them is what returns the backend, and with it the locks.
+    /// </remarks>
+    private async Task rollbackAfterFailureAsync()
     {
-        if (_connection == null)
+        try
         {
-#pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
+            await RollbackAsync(CancellationToken.None).ConfigureAwait(false);
         }
-        else if (discardBrokenConnection())
+        catch (Exception e)
         {
-            _connection.SafeDispose();
-#pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
-        }
+            Logger.LogFailure(e, "Failure trying to rollback after a failed unit of work");
 
-        if (_connection.State == ConnectionState.Closed)
-        {
-            _connection.Open();
-            AfterOpened(_connection);
+            if (Transaction != null)
+            {
+                Transaction.SafeDispose();
+                Transaction = null;
+            }
+
+            if (_connection != null && !ReferenceEquals(_connection, _options.Connection))
+            {
+                _connection.SafeDispose();
+                _connection = null;
+            }
         }
     }
+
 
     public async ValueTask EnsureConnectedAsync(CancellationToken token)
     {
@@ -256,7 +241,31 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         if (_connection.State == ConnectionState.Closed)
         {
             await _connection.OpenAsync(token).ConfigureAwait(false);
-            await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
+
+            try
+            {
+                await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // #5881: an open connection reads as "already set up" to the next call, which would skip
+                // AfterOpenedAsync and run without the row level security tenant. Close it, so the next call
+                // opens it again and sets it up properly, and so it is back in the pool in the meantime.
+                await closeAfterFailedSetupAsync(_connection).ConfigureAwait(false);
+                throw;
+            }
+        }
+    }
+
+    private async Task closeAfterFailedSetupAsync(NpgsqlConnection connection)
+    {
+        try
+        {
+            await connection.CloseAsync().ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            Logger.LogFailure(e, "Failure trying to close a connection after setting it up failed");
         }
     }
 
@@ -268,7 +277,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
     ///         Npgsql reports a broken connection as <see cref="ConnectionState.Closed" /> -- the break shows only
     ///         in <see cref="NpgsqlConnection.FullState" /> -- so testing <c>State</c> alone made the reopen below
     ///         look like the ordinary "not connected yet" path. It is not. Reopening acquires a <i>different</i>
-    ///         backend, and <see cref="Apply(NpgsqlCommand)" /> then hands the command the stale
+    ///         backend, and <see cref="ApplyAsync(NpgsqlCommand, CancellationToken)" /> then hands the command the stale
     ///         <see cref="NpgsqlTransaction" />, which Npgsql accepts without complaint. The command runs with no
     ///         transaction at all, and a <c>Serializable</c> session quietly starts answering from a newer
     ///         snapshot than the one it was opened to hold.
@@ -303,41 +312,14 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         return true;
     }
 
-    protected virtual void AfterOpened(NpgsqlConnection connection)
-    {
-    }
-
     protected virtual Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
     {
         return Task.CompletedTask;
     }
 
-    protected virtual void BeforeClose(NpgsqlConnection connection)
-    {
-    }
-
     protected virtual Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)
     {
         return Task.CompletedTask;
-    }
-
-    public int Execute(NpgsqlCommand cmd)
-    {
-        Apply(cmd);
-
-        try
-        {
-            var returnValue = cmd.ExecuteNonQuery();
-            Logger.LogSuccess(cmd);
-
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(cmd, e);
-            throw;
-        }
     }
 
     public async Task<int> ExecuteAsync(NpgsqlCommand command,
@@ -353,24 +335,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
                 .ConfigureAwait(false);
             Logger.LogSuccess(command);
 
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(command, e);
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlCommand command)
-    {
-        Apply(command);
-
-        try
-        {
-            var returnValue = command.ExecuteReader();
-            Logger.LogSuccess(command);
             return returnValue;
         }
         catch (Exception e)
@@ -400,24 +364,6 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         {
             noteTransactionFailure(e);
             handleCommandException(command, e);
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlBatch batch)
-    {
-        Apply(batch);
-
-        try
-        {
-            var reader = batch.ExecuteReader();
-            Logger.LogSuccess(batch);
-            return reader;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(batch, e);
             throw;
         }
     }
@@ -455,40 +401,52 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             foreach (var page in pages)
             {
                 var batch = page.Compile();
-                await using var reader = await ExecuteReaderAsync(batch, token).ConfigureAwait(false);
+                await ApplyAsync(batch, token).ConfigureAwait(false);
+                await using var reader = await executePageReaderAsync(page, batch, token).ConfigureAwait(false);
                 await page.ApplyCallbacksAsync(reader, exceptions, token).ConfigureAwait(false);
                 await reader.CloseAsync().ConfigureAwait(false);
             }
         }
         catch (Exception e)
         {
-            await RollbackAsync(token).ConfigureAwait(false);
+            await rollbackAfterFailureAsync().ConfigureAwait(false);
             Logger.LogFailure(new NpgsqlCommand(), e);
-            pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+            transformAndThrow(pages, e);
         }
 
         if (exceptions.Count == 1)
         {
-            await RollbackAsync(token).ConfigureAwait(false);
+            await rollbackAfterFailureAsync().ConfigureAwait(false);
             var ex = exceptions.Single();
             ExceptionDispatchInfo.Throw(ex);
         }
 
         if (exceptions.Any())
         {
-            await RollbackAsync(token).ConfigureAwait(false);
+            await rollbackAfterFailureAsync().ConfigureAwait(false);
             throw new AggregateException(exceptions);
         }
 
-        if (participants is { Count: > 0 })
+        // #5688: the participants and the commit fail inside the transaction too -- a participant can
+        // throw, and a token cancelled after the last statement makes CommitAsync throw before COMMIT is
+        // ever sent. Either way the transaction is still open and has to be ended here.
+        try
         {
-            foreach (var participant in participants)
+            if (participants is { Count: > 0 })
             {
-                await participant.BeforeCommitAsync(Connection, Transaction!, token).ConfigureAwait(false);
+                foreach (var participant in participants)
+                {
+                    await participant.BeforeCommitAsync(_connection!, Transaction!, token).ConfigureAwait(false);
+                }
             }
-        }
 
-        await CommitAsync(token).ConfigureAwait(true);
+            await CommitAsync(token).ConfigureAwait(true);
+        }
+        catch (Exception)
+        {
+            await rollbackAfterFailureAsync().ConfigureAwait(false);
+            throw;
+        }
 
         // #5603: only now is the participants' work durable. A participant holding provisional state
         // -- the EF Core change tracker -- accepts it here, never in BeforeCommitAsync, because that

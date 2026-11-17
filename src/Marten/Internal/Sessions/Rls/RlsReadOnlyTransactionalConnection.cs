@@ -17,23 +17,20 @@ internal sealed class RlsReadOnlyTransactionalConnection: ReadOnlyTransactionalC
         _settingName = settingName;
     }
 
-    protected override void AfterOpened(NpgsqlConnection connection)
-    {
-        RlsSessionVariableApplier.Apply(connection, _settingName, _tenantId);
-    }
-
     protected override Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
     {
         return RlsSessionVariableApplier.ApplyAsync(connection, _settingName, _tenantId, token);
     }
 
-    protected override void BeforeClose(NpgsqlConnection connection)
+    // #5861: the one synchronous call Marten 10 keeps. See RlsSessionVariableApplier.ResetBeforeSynchronousRelease.
+    protected override void resetBeforeSynchronousRelease(NpgsqlConnection connection)
     {
-        RlsSessionVariableApplier.Reset(connection, _settingName);
+        RlsSessionVariableApplier.ResetBeforeSynchronousRelease(connection, _settingName, _options.Tenant?.Database, Logger);
     }
 
     protected override Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)
     {
-        return RlsSessionVariableApplier.ResetAsync(connection, _settingName, token);
+        // #5881: never throws, so a failed reset cannot keep the connection from being disposed
+        return RlsSessionVariableApplier.ResetBeforeReleaseAsync(connection, _settingName, _options.Tenant?.Database, Logger);
     }
 }

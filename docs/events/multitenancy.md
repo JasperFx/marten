@@ -132,8 +132,7 @@ be appended as the default tenant id _no matter what the session's tenant id is_
 This is an advanced, opt-in option aimed at large multi-tenanted event stores where a single, shared
 event store becomes a scalability bottleneck. It builds on the conjoined event tenancy described above
 by physically isolating each tenant's events and giving the async daemon a per-tenant view of progress.
-See [JasperFx/marten#4596](https://github.com/JasperFx/marten/issues/4596) and
-[CritterStack #209](https://github.com/JasperFx/CritterWatch/issues/209) for the full design.
+See [JasperFx/marten#4596](https://github.com/JasperFx/marten/issues/4596) for the full design.
 :::
 
 For systems with many tenants and very high event volumes, you can opt into **per-tenant event partitioning**.
@@ -200,6 +199,13 @@ combination with no further configuration:
   `Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()` (though the two compose if you want partitioned
   document tables too).
 
+::: tip
+One agent per (projection × tenant) also means the memory the daemon holds grows with the number of tenant agents
+running on a node. If a node runs short of memory while many tenants are rebuilding or catching up at once, see
+[Bounding Daemon Memory with Per-Tenant Agents](/events/projections/async-daemon#bounding-daemon-memory-with-per-tenant-agents)
+for the opt-in `TenantLoadBudget` setting.
+:::
+
 ### Constraints
 
 Per-tenant partitioning is validated at `DocumentStore` construction. The following combinations throw immediately
@@ -211,7 +217,9 @@ rather than failing opaquely later:
   ahead of time from a shared reader and is explicitly out of scope. See
   ["Rich" vs "Quick" Appends](/events/appending#rich-vs-quick-appends).
 * **Cannot currently be combined with `UseArchivedStreamPartitioning`.** Sub-partitioning the event tables by both
-  `tenant_id` and `is_archived` is a planned follow-up; pick one for now.
+  `tenant_id` and `is_archived` is a planned follow-up. `UseArchivedStreamPartitioning` and
+  `EnableStrictStreamIdentityEnforcement` are on by default since Marten 10, but both switch off when
+  `UseTenantPartitionedEvents` is on. Setting `UseArchivedStreamPartitioning = true` yourself alongside it is refused.
 
 ### Registering Tenants
 

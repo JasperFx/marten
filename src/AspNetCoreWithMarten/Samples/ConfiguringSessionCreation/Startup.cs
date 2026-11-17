@@ -31,9 +31,10 @@ public class CustomSessionFactory: ISessionFactory
     {
         // Opting for the "lightweight" session
         // option with no identity map tracking
-        // and choosing to use Serializable transactions
-        // just to be different
-        return _store.LightweightSession(IsolationLevel.Serializable);
+        // and choosing to use RepeatableRead transactions
+        // just to be different. A Serializable session has to be
+        // opened asynchronously, so it can't come from here
+        return _store.LightweightSession(IsolationLevel.RepeatableRead);
     }
 }
 

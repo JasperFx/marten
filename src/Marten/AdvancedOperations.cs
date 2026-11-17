@@ -62,8 +62,7 @@ public class AdvancedOperations
         var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
         foreach (var database in databases.OfType<MartenDatabase>())
         {
-            var detector = new HighWaterDetector(database, _store.Events, NullLogger.Instance);
-            await detector.AdvanceHighWaterMarkToLatest(token).ConfigureAwait(false);
+            await advanceHighWaterMarkAsync(database, null, token).ConfigureAwait(false);
         }
     }
 
@@ -78,8 +77,22 @@ public class AdvancedOperations
         tenantId = _store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         var tenant = await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
 
-        var detector = new HighWaterDetector((MartenDatabase)tenant.Database, _store.Events, NullLogger.Instance);
-        await detector.AdvanceHighWaterMarkToLatest(token).ConfigureAwait(false);
+        await advanceHighWaterMarkAsync((MartenDatabase)tenant.Database, tenantId, token).ConfigureAwait(false);
+    }
+
+    private async Task advanceHighWaterMarkAsync(MartenDatabase database, string? tenantId, CancellationToken token)
+    {
+        // These overloads are more lenient about the tenant than IEventStore.AdvanceHighWaterMarkToLatestAsync
+        // (#5738 / jasperfx#1031): on a store with one mark per database, a named tenant advances its database's
+        // mark. Under per-tenant partitioned events the daemon never reads the store-global row, so they advance
+        // the tenant's own mark, or every tenant's when none is named.
+        IReadOnlyList<string?> marks = !_store.Options.Events.UseTenantPartitionedEvents
+            ? [null]
+            : tenantId == null
+                ? await DocumentStore.managedTenantMarksAsync(database, token).ConfigureAwait(false)
+                : [tenantId];
+
+        await _store.AdvanceHighWaterMarksAsync(database, marks, null, token).ConfigureAwait(false);
     }
 
 
@@ -824,11 +837,28 @@ public class AdvancedOperations
 
         var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
 
+        // These are partition suffixes, and a suffix is not always a tenant id: a Guid tenant's is its
+        // hyphen-free "N" form (#4567), and the dictionary and Func overloads of AddMartenManagedTenantsAsync
+        // take any suffix. The tenant's registry entry, tag rows and progression rows carry its id, so map
+        // the suffixes while the registry rows still exist. The drop deletes them.
+        var tenantIds = _store.Options.Events.UseTenantPartitionedEvents
+            ? await Marten.Internal.PerTenantPartitionedCleanup.FindTenantIdsForSuffixesAsync(
+                _store.Options, _store.Tenancy.Default.Database, suffixes, token).ConfigureAwait(false)
+            : [];
+
         // #4683: capture sequence-suffix mapping BEFORE the partition drop. Weasel's drop may
         // clear the tenant from the partition registry, and we still need the suffix to drop
         // the freestanding mt_events_sequence_{suffix} afterwards.
         var capturedSuffixes = Marten.Internal.PerTenantPartitionedCleanup.CaptureSequenceSuffixes(
-            _store.Options, database, suffixes);
+            _store.Options, database, tenantIds);
+
+        if (_store.Options.Events.UseTenantPartitionedEvents)
+        {
+            // The drop takes the tenants' mt_events partitions, which their DCB tag rows still reference
+            // (#5694)
+            await Marten.Internal.PerTenantPartitionedCleanup.DeleteSideTableRowsAsync(
+                _store.Options, _store.Tenancy.Default.Database, tenantIds, logger, token).ConfigureAwait(false);
+        }
 
         await _store.Options.TenantPartitions.Partitions.DropPartitionFromAllTables(database, logger, suffixes,
             token).ConfigureAwait(false);
@@ -837,7 +867,7 @@ public class AdvancedOperations
         // removed tenants. The partition drop above leaves the freestanding sequence orphaned
         // and the progression rows untouched; both leak across drop-tenant cycles otherwise.
         await Marten.Internal.PerTenantPartitionedCleanup.RunAsync(
-            _store.Options, _store.Tenancy.Default.Database, suffixes, capturedSuffixes, token)
+            _store.Options, _store.Tenancy.Default.Database, tenantIds, capturedSuffixes, token)
             .ConfigureAwait(false);
     }
 

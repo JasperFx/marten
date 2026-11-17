@@ -17,21 +17,29 @@ namespace Marten.Events.Operations;
 /// Inserts a tag row by looking up seq_id from the event's id.
 /// Used in Quick append mode where sequences aren't pre-assigned.
 /// </summary>
+/// <remarks>
+/// #5896: <c>mt_events</c> has no index on <c>id</c> (unless <c>EnableUniqueIndexOnEventId</c>), so a bare
+/// <c>where id = $1</c> scanned the whole table for every tag row written this way. The lookup goes through
+/// the stream instead: <c>stream_id</c> (after <c>tenant_id</c> under conjoined tenancy) leads
+/// <c>pk_mt_events_stream_and_version</c>, which bounds it by the length of one stream.
+/// </remarks>
 internal class InsertEventTagByEventIdOperation: IStorageOperation, NoDataReturnedCall
 {
     private readonly string _schemaName;
     private readonly ITagTypeRegistration _registration;
     private readonly Guid _eventId;
+    private readonly object _streamIdentity;
     private readonly object _value;
     private readonly bool _isConjoined;
     private readonly bool _useArchivedPartitioning;
 
     public InsertEventTagByEventIdOperation(string schemaName, ITagTypeRegistration registration, Guid eventId,
-        object tagValue, bool isConjoined = false, bool useArchivedPartitioning = false)
+        object streamIdentity, object tagValue, bool isConjoined = false, bool useArchivedPartitioning = false)
     {
         _schemaName = schemaName;
         _registration = registration;
         _eventId = eventId;
+        _streamIdentity = streamIdentity;
         _value = registration.ExtractValue(tagValue);
         _isConjoined = isConjoined;
         _useArchivedPartitioning = useArchivedPartitioning;
@@ -74,7 +82,15 @@ internal class InsertEventTagByEventIdOperation: IStorageOperation, NoDataReturn
         }
 
         builder.Append(_schemaName);
-        builder.Append(".mt_events where id = ");
+        builder.Append(".mt_events where stream_id = ");
+        builder.AppendParameter(_streamIdentity);
+        if (_isConjoined)
+        {
+            builder.Append(" and tenant_id = ");
+            builder.AppendParameter(session.TenantId);
+        }
+
+        builder.Append(" and id = ");
         builder.AppendParameter(_eventId);
         builder.Append(" on conflict do nothing");
     }

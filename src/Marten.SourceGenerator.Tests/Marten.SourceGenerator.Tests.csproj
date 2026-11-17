@@ -7,7 +7,7 @@
              which breaks `dotnet test` adapter discovery on this SDK. Use the
              multi-TFM form to stay consistent with every other test project in the
              solution. -->
-        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
@@ -16,14 +16,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
-        <!-- VersionOverride: the analyzer-only generator project pins
-             Microsoft.CodeAnalysis.CSharp to 4.8.0 for broad analyzer-host
-             compatibility. This test project ProjectReferences Marten, which
-             transitively brings in Microsoft.CodeAnalysis.Common 4.14.0 via
-             JasperFx.RuntimeCompiler. Bumping the test project's reference to
-             match resolves the NU1107 conflict; the test project is not an
-             analyzer, so the broader-compat constraint doesn't apply here. -->
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="5.0.0" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
         <PackageReference Include="xunit.v3" />
         <PackageReference Include="xunit.runner.visualstudio">
             <PrivateAssets>all</PrivateAssets>

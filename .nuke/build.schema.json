@@ -37,6 +37,7 @@
         "Init",
         "InitDb",
         "InstallMdSnippets",
+        "LocalGate",
         "NpmInstall",
         "Pack",
         "PublishDocs",
@@ -44,8 +45,10 @@
         "RebuildDb",
         "RecordBenchmarks",
         "Restore",
+        "TakeLocalUpstream",
         "Test",
         "TestAotRuntime",
+        "TestAotRuntimeJit",
         "TestAspnetcore",
         "TestBaseLib",
         "TestCompiledQueries",
@@ -160,7 +163,56 @@
         "DisableTestRetry": {
           "type": "boolean"
         },
+        "Feed": {
+          "type": "string",
+          "description": "Folder Pack copies the .nupkg files into, and TakeLocalUpstream adds as a NuGet source"
+        },
         "Framework": {
+          "type": "string"
+        },
+        "GateDatabase": {
+          "type": "string",
+          "description": "LocalGate: connection string of the Postgres server the units' databases are created on"
+        },
+        "GateInclude": {
+          "type": "array",
+          "description": "LocalGate: opt-in suites: postgis, timescaledb, multihost, stress",
+          "items": {
+            "type": "string"
+          }
+        },
+        "GateLaneTag": {
+          "type": "string",
+          "description": "LocalGate: tag in every lane database name; default is a hash of this checkout's path"
+        },
+        "GateOnly": {
+          "type": "array",
+          "description": "LocalGate: run only these suites, by name (Linq) or project (LinqTests)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "GateSerializer": {
+          "type": "string",
+          "description": "LocalGate: DEFAULT_SERIALIZER for every unit: Newtonsoft, SystemTextJson, or split (CI's net10/net11 pairing)"
+        },
+        "GateSkipBuild": {
+          "type": "boolean",
+          "description": "LocalGate: skip the solution build, the Release hosts are already there"
+        },
+        "GateTimescaleDatabase": {
+          "type": "string",
+          "description": "LocalGate: TimescaleDB server for --gate-include timescaledb (default localhost:5433)"
+        },
+        "GateWorkerBudget": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "LocalGate: worker processes across every unit at once (default: half the cores)",
+          "format": "int32"
+        },
+        "PreviousTestLedger": {
           "type": "string"
         },
         "Profile": {
@@ -172,6 +224,25 @@
         "Solution": {
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
+        },
+        "TestWorkers": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "UpstreamVersion": {
+          "type": "string",
+          "description": "TakeLocalUpstream: version of the local JasperFx packages to pin (e.g. 3.0.0-local.1)"
+        },
+        "Version": {
+          "type": "string",
+          "description": "Package version for Pack, overriding <Version> in Directory.Build.props (e.g. 10.0.0-local.1)"
+        },
+        "WeaselVersion": {
+          "type": "string",
+          "description": "TakeLocalUpstream: version of the local Weasel packages to pin (e.g. 10.0.0-local.1)"
         }
       }
     },

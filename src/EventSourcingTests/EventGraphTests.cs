@@ -89,9 +89,10 @@ public class EventGraphTests
     }
 
     [Fact]
-    public void archive_partitioning_is_off_by_default()
+    public void archive_partitioning_is_on_by_default()
     {
-        theGraph.UseArchivedStreamPartitioning.ShouldBeFalse();
+        // Since 10.0 (#5812)
+        theGraph.UseArchivedStreamPartitioning.ShouldBeTrue();
     }
 
     [Fact]
@@ -196,11 +197,11 @@ public class EventGraphTests
     }
 
     [Fact]
-    public void enable_event_skipping_should_be_disabled_by_default()
+    public void enable_event_skipping_is_on_by_default()
     {
-        // Opt-in feature: defaults to false (the V8 behavior was retained for 9.0).
-        // Silently skipping poison events is too surprising to be on out of the box.
-        theGraph.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeFalse();
+        // Since 10.0 (#5812). This only filters events someone has marked as skipped; nothing is
+        // skipped automatically.
+        theGraph.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeTrue();
     }
 
     [Fact]

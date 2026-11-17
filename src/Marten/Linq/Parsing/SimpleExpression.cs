@@ -8,6 +8,7 @@ using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
+using Marten.Linq.Members.Unions;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.SqlGeneration.Filters;
@@ -204,12 +205,11 @@ internal class SimpleExpression: ExpressionVisitor
                 var index = (int)node.Right.ReduceToConstant().Value;
                 Members.Insert(0, new ArrayIndexMember(index));
 
-                if (node.Left is MemberExpression m)
-                {
-                    return VisitMember(m);
-                }
-
-                return base.VisitBinary(node);
+                // #5949: visit only the array. base.VisitBinary() also rebuilt this node from what its children
+                // returned, and every visit here returns null, so a jagged `x.Grid[1][0]` threw
+                // ArgumentNullException ('array') out of Expression.ArrayIndex(). The index is consumed above.
+                Visit(node.Left);
+                return null;
 
             case ExpressionType.Equal:
                 var left = new SimpleExpression(_queryableMembers, node.Left);
@@ -245,6 +245,13 @@ internal class SimpleExpression: ExpressionVisitor
 
                 return null;
 
+            case ExpressionType.Convert or ExpressionType.ConvertChecked or ExpressionType.TypeAs
+                when UnionMembers.CaseCastFor(node) is { } cast:
+                // #5735: (Card)x.Payment.Value or x.Payment.Value as Card names the case it reads
+                Members.Insert(0, cast);
+                Visit(node.Operand);
+                return null;
+
             case ExpressionType.Convert:
                 if (node.Operand is ConstantExpression c)
                 {
@@ -272,7 +279,7 @@ internal class SimpleExpression: ExpressionVisitor
                 return null;
         }
 
-        throw new BadLinqExpressionException(node);
+        throw new BadLinqExpressionException($"Marten can not (yet) support the Linq expression '{node}'");
     }
 
     protected override Expression VisitMember(MemberExpression node)

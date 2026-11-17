@@ -27,6 +27,11 @@ internal class OperatorLibrary
 
         Add<SelectManyOperator>();
         Add<GroupJoinOperator>();
+
+        // #5731 / #5910: FullJoin (.NET 11) is refused with the reason. Join, LeftJoin and RightJoin never
+        // get here: JoinOperatorRewriter turns them into GroupJoin + SelectMany first. Matching on the
+        // name alone keeps this independent of the target framework.
+        Add<UnsupportedJoinOperator>();
         Add<SelectOperator>();
         Add<GroupByOperator>();
         Add<AnyOperator>();

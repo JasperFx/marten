@@ -28,10 +28,29 @@ public partial class MartenDatabase : ICrossTenantRebuildSource
     /// because a freshly-registered tenant that has never been rebuilt yet
     /// would otherwise be skipped — that's the opposite of what
     /// "rebuild X everywhere" should do.
+    /// <para>
+    /// The lookup table is created by a full schema apply or by registering the
+    /// first tenant, not by the event storage, so a database whose schema is
+    /// created lazily has none until its first tenant is registered. No tenant
+    /// lives there yet: the answer is an empty list, on which the daemon keeps
+    /// the store-global shard (<c>StartAllAsync</c>, the coordinator's per-tenant
+    /// shard expansion, the store-global rebuild and <c>CatchUpAsync</c>) exactly
+    /// as it does for an empty table.
+    /// </para>
     /// </summary>
-    public Task<IReadOnlyList<string>> FindRebuildTenantsAsync(string projectionName, CancellationToken token)
+    public async Task<IReadOnlyList<string>> FindRebuildTenantsAsync(string projectionName, CancellationToken token)
     {
-        return FetchManagedTenantIdsAsync(token);
+        try
+        {
+            return await FetchManagedTenantIdsAsync(token).ConfigureAwait(false);
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            // Answered here rather than in FetchManagedTenantIdsAsync: its other callers handle a
+            // missing table themselves, and ShardedTenancy's tenant removal reads it as "nothing
+            // was ever provisioned on this shard" and skips its cleanup.
+            return [];
+        }
     }
 
     /// <summary>

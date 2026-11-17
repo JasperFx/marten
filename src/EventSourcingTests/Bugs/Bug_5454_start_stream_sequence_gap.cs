@@ -57,6 +57,9 @@ public class Bug_5454_start_stream_sequence_gap: OneOffConfigurationsContext
     private static async Task<(long lastValue, long maxSeq, long tombstones)> ReadSequenceStateAsync(
         DocumentStore store)
     {
+        // #5688: tombstones are written off the failed save's path
+        await store.Options.EventGraph.WaitForPendingTombstonesAsync();
+
         var schema = store.Options.Events.DatabaseSchemaName;
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();

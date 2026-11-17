@@ -12,8 +12,6 @@ namespace Marten.Internal;
     Justification = "Class-level: DAM-annotated field/property assigned from a reflective lookup whose source type is preserved at the registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2091",
     Justification = "Class-level: generic type argument doesn't carry the DAM annotation of its target. The argument types flow in from StoreOptions / projection-registration on the caller side and are preserved by the trimmer at that boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class SecondaryDocumentStores
 {
     private readonly List<IStoreConfig> _files = new();
@@ -42,8 +40,6 @@ public interface IConfigureMarten<T>: IConfigureMarten where T : IDocumentStore
     Justification = "Class-level: DAM-annotated field/property assigned from a reflective lookup whose source type is preserved at the registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2091",
     Justification = "Class-level: generic type argument doesn't carry the DAM annotation of its target. The argument types flow in from StoreOptions / projection-registration on the caller side and are preserved by the trimmer at that boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
 {
     private readonly Func<IServiceProvider, StoreOptions> _configuration;
@@ -88,6 +84,8 @@ internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
         return options;
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public T Build(IServiceProvider provider)
     {
         var options = BuildStoreOptions(provider);

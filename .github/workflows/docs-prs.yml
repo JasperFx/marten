@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - master
+      - '9.0'
   pull_request:
     branches:
       - master
+      - '9.0'
 
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -39,11 +41,11 @@ jobs:
         name: run cSpell
 
       - name: Install .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            9.0.x
             10.0.x
+            11.0.x
 
       - name: Build docs
         run: ./build.sh docs-build

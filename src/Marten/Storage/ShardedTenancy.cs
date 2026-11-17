@@ -9,6 +9,7 @@ using JasperFx;
 using JasperFx.Core;
 using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
+using Marten.Exceptions;
 using Marten.Schema;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -114,7 +115,10 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
             return new Tenant(tenantId, database);
         }
 
-        database = findOrAssignTenantDatabaseAsync(tenantId).GetAwaiter().GetResult();
+        // #5986: a tenant that already has a shard and whose partitions already exist is resolved with synchronous
+        // I/O on this thread. Blocking a pool thread on the asynchronous lookup and #4942 repair starved the pool on
+        // a burst of first sessions for tenants this process had not seen yet.
+        database = findOrAssignTenantDatabaseSynchronously(tenantId);
         return new Tenant(tenantId, database);
     }
 
@@ -144,6 +148,20 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         if (_databasesById.TryFind(tenantIdOrDatabaseIdentifier, out database))
         {
             return database;
+        }
+
+        // _databasesById is filled only by AddDatabaseAsync and BuildDatabases, so on a store that has not
+        // read its pool yet a shard's database id misses both caches. Falling through would register it as a
+        // tenant on whichever shard the assignment strategy picks, and run partition DDL for it there, which
+        // is what IProjectionCoordinator.DaemonForDatabase(shardId) did right after start. An id that names a
+        // pooled database and is not itself an assigned tenant is that database.
+        if (await isUnassignedPoolDatabaseAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false))
+        {
+            await BuildDatabases().ConfigureAwait(false);
+            if (_databasesById.TryFind(tenantIdOrDatabaseIdentifier, out database))
+            {
+                return database;
+            }
         }
 
         return await findOrAssignTenantDatabaseAsync(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
@@ -419,13 +437,18 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         // #4607: filter out soft-deleted assignments so disabled tenants are not
         // resolvable — mirrors MasterTableTenancy's `disabled = false` gate.
         var result = await _dataSource.Value
-            .CreateCommand(
-                $"select database_id from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id and {MartenTenantAssignmentTable.DisabledColumn} = false")
+            .CreateCommand(selectActiveAssignmentSql)
             .With("id", tenantId)
             .ExecuteScalarAsync(ct).ConfigureAwait(false);
 
         return result as string;
     }
+
+    /// <summary>
+    /// The shard of a tenant's active assignment, read by both the asynchronous and the synchronous lookup.
+    /// </summary>
+    private string selectActiveAssignmentSql =>
+        $"select database_id from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id and {MartenTenantAssignmentTable.DisabledColumn} = false";
 
     public async ValueTask AssignTenantAsync(string tenantId, string databaseId, CancellationToken ct)
     {
@@ -633,6 +656,14 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         if (registered.Contains(tenantId, StringComparer.Ordinal))
         {
             var logger = _options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+
+            if (_options.Events.UseTenantPartitionedEvents)
+            {
+                // The drop takes the tenant's mt_events partition, which its DCB tag rows still
+                // reference (#5694)
+                await Internal.PerTenantPartitionedCleanup.DeleteSideTableRowsAsync(
+                    _options, database, [tenantId], logger, ct).ConfigureAwait(false);
+            }
 
             try
             {
@@ -854,6 +885,67 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 #pragma warning disable MA0032
     #region Internals
 
+    private async Task<bool> isUnassignedPoolDatabaseAsync(string id)
+    {
+        await maybeApplyChanges().ConfigureAwait(false);
+        await maybeSeedDatabases().ConfigureAwait(false);
+
+        // Any assignment row, disabled or not, keeps the id on the tenant path: a disabled tenant must still
+        // surface as DisabledTenantException there (#4607), and a cached tenant already won in FindOrCreateDatabase.
+        var result = await _dataSource.Value
+            .CreateCommand(
+                $"select exists (select 1 from {_schemaName}.{DatabasePoolTable.TableName} where database_id = :id) and not exists (select 1 from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id)")
+            .With("id", id)
+            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false);
+
+        return result is true;
+    }
+
+    /// <summary>
+    /// #5995: the shard a tenant is already assigned to, loaded from the pool the same way
+    /// <see cref="BuildDatabases"/> loads it when this store has not cached it yet. Throws
+    /// <see cref="AssignedShardNotFoundException"/> when the pool no longer has that shard: the tenant's data is on
+    /// it, so the tenant must never be handed to the assignment strategy instead.
+    /// </summary>
+    /// <param name="conn">An open connection to the control database to read the pool on, or null to use a new one</param>
+    private async Task<MartenDatabase> findOrLoadAssignedShardAsync(NpgsqlConnection? conn, string tenantId,
+        string databaseId)
+    {
+        if (_databasesById.TryFind(databaseId, out var database)) return database;
+
+        var sql =
+            $"select connection_string from {_schemaName}.{DatabasePoolTable.TableName} where database_id = :id";
+        await using var cmd = conn != null ? conn.CreateCommand(sql) : _dataSource.Value.CreateCommand(sql);
+        var connectionString = await cmd.With("id", databaseId)
+            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false) as string;
+
+        if (connectionString.IsEmpty())
+        {
+            throw new AssignedShardNotFoundException(tenantId, databaseId);
+        }
+
+        connectionString = _configuration.CorrectedConnectionString(connectionString);
+        var loaded = new MartenDatabase(_options, _options.NpgsqlDataSourceFactory.Create(connectionString),
+            databaseId);
+
+        // Publish it unless a concurrent resolution got there first, so every caller shares one instance
+        while (true)
+        {
+            var current = _databasesById;
+            if (current.TryFind(databaseId, out database))
+            {
+                await loaded.DisposeAsync().ConfigureAwait(false);
+                return database;
+            }
+
+            if (ReferenceEquals(Interlocked.CompareExchange(ref _databasesById,
+                    current.AddOrUpdate(databaseId, loaded), current), current))
+            {
+                return loaded;
+            }
+        }
+    }
+
     private async Task<MartenDatabase> findOrAssignTenantDatabaseAsync(string tenantId)
     {
         // The single choke point for auto-provisioning: GetTenant, GetTenantAsync and FindOrCreateDatabase
@@ -876,8 +968,14 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         var databaseId = await FindDatabaseForTenantAsync(tenantId, CancellationToken.None)
             .ConfigureAwait(false);
 
-        if (databaseId != null && _databasesById.TryFind(databaseId, out var database))
+        MartenDatabase database;
+        if (databaseId != null)
         {
+            // #5995: an existing assignment is final here. A store that was given no AddDatabase() and has not run
+            // BuildDatabases() has not cached the tenant's shard yet, so load that one shard from the pool rather
+            // than falling through to Step 2, which used to re-run the assignment strategy and move the tenant.
+            database = await findOrLoadAssignedShardAsync(null, tenantId, databaseId).ConfigureAwait(false);
+
             database.TenantIds.Fill(tenantId);
             _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
 
@@ -948,8 +1046,13 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
                 throw new DisabledTenantException(tenantId);
             }
 
-            if (existingDbId != null && _databasesById.TryFind(existingDbId, out database))
+            if (existingDbId != null)
             {
+                // #5995: an assignment made by another process since Step 1 is just as final. The assignment
+                // strategy only ever runs for a tenant that has no row at all, so two processes resolving the same
+                // new tenant cannot leave it on two shards.
+                database = await findOrLoadAssignedShardAsync(conn, tenantId, existingDbId).ConfigureAwait(false);
+
                 database.TenantIds.Fill(tenantId);
                 _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
                 foundExistingAssignment = true;
@@ -1028,6 +1131,101 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         return database;
     }
 
+    /// <summary>
+    /// #5986: <see cref="findOrAssignTenantDatabaseAsync"/> for the synchronous <see cref="GetTenant"/>. A tenant that
+    /// already has an active assignment to a shard this store has cached is resolved with synchronous I/O on the
+    /// calling thread, and its #4942 first-sight repair is skipped when <see cref="ProvisionedTenantCheck"/> finds
+    /// nothing for it to do. In steady state, a warm database seen by a cold process, nothing here waits on a
+    /// <see cref="Task"/>.
+    /// </summary>
+    /// <remarks>
+    /// Everything else still blocks on the asynchronous path, which is unchanged:
+    /// <list type="bullet">
+    /// <item>the first resolution in the process, while the pool tables still need their schema check or the
+    /// configured databases still need seeding;</item>
+    /// <item>a tenant with no active assignment: a new tenant goes through the user's asynchronous
+    /// <see cref="ITenantAssignmentStrategy.AssignTenantToDatabaseAsync"/>, and a disabled one is refused there;</item>
+    /// <item>an assignment to a shard this store has not cached yet;</item>
+    /// <item>a tenant whose registry row, partitions or event sequence are not all in place, which gets the repair;</item>
+    /// <item>a control or shard database with <c>Multiplexing=true</c>, on which Npgsql refuses synchronous I/O.</item>
+    /// </list>
+    /// The cache is updated before the repair, and the repair runs only on first sight per process, exactly as on
+    /// the asynchronous path.
+    /// </remarks>
+    private MartenDatabase findOrAssignTenantDatabaseSynchronously(string tenantId)
+    {
+        if (!canResolveSynchronously())
+        {
+            return findOrAssignTenantDatabaseAsync(tenantId).GetAwaiter().GetResult();
+        }
+
+        // The same guard findOrAssignTenantDatabaseAsync applies before anything else
+        AdvancedOperations.AssertTenantIdSafeForDdl(tenantId);
+
+        var previouslyKnown = _tenantToDatabase.TryFind(tenantId, out _);
+
+        var databaseId = findDatabaseForTenantSynchronously(tenantId);
+        if (databaseId == null || !_databasesById.TryFind(databaseId, out var database))
+        {
+            return findOrAssignTenantDatabaseAsync(tenantId).GetAwaiter().GetResult();
+        }
+
+        // Step 1 of findOrAssignTenantDatabaseAsync, with the repair skipped when it would change nothing
+        database.TenantIds.Fill(tenantId);
+        _tenantToDatabase = _tenantToDatabase.AddOrUpdate(tenantId, database);
+
+        if (!previouslyKnown && !isProvisionedSynchronously(database, tenantId))
+        {
+            createPartitionsForTenant(database, tenantId, CancellationToken.None).GetAwaiter().GetResult();
+        }
+
+        return database;
+    }
+
+    /// <summary>
+    /// Whether <see cref="findOrAssignTenantDatabaseAsync"/>'s one-off work, the pool schema check and the seeding,
+    /// is already behind this store, and the control database allows synchronous I/O.
+    /// </summary>
+    private bool canResolveSynchronously()
+    {
+        var autoCreate = _configuration.AutoCreate ?? _options.AutoCreateSchemaObjects;
+        if (!_hasAppliedChanges && autoCreate != AutoCreate.None) return false;
+        if (!_hasSeeded && _configuration.SeedDatabases.Count > 0) return false;
+
+        return !isMultiplexing(_dataSource.Value);
+    }
+
+    private string? findDatabaseForTenantSynchronously(string tenantId)
+    {
+        using var conn = _dataSource.Value.OpenConnection();
+        using var cmd = conn.CreateCommand(selectActiveAssignmentSql).With("id", tenantId);
+        return cmd.ExecuteScalar() as string;
+    }
+
+    /// <summary>
+    /// False whenever the check cannot answer, so the caller falls back to the repair and to whatever it would have
+    /// done or thrown before #5986.
+    /// </summary>
+    private bool isProvisionedSynchronously(MartenDatabase database, string tenantId)
+    {
+        if (isMultiplexing(database.DataSource)) return false;
+
+        try
+        {
+            return ProvisionedTenantCheck.IsProvisioned(_options, database, tenantId);
+        }
+        catch (Exception)
+        {
+            // 42P01 from a shard that has no registry table yet, an unreachable shard, anything at all: the tenant is
+            // already cached at this point, so a failure here must not cost it the repair this is its only chance at
+            return false;
+        }
+    }
+
+    // Npgsql refuses synchronous I/O when multiplexing is on
+    private static bool isMultiplexing(NpgsqlDataSource dataSource)
+        => new NpgsqlConnectionStringBuilder(dataSource.ConnectionString).Multiplexing;
+
     private async Task createPartitionsForTenant(MartenDatabase database, string tenantId, CancellationToken ct)
     {
         if (_options.TenantPartitions == null) return;
@@ -1064,11 +1262,13 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
     private async Task maybeApplyChanges()
     {
-        if (!_hasAppliedChanges &&
-            (_configuration.AutoCreate ?? _options.AutoCreateSchemaObjects) != AutoCreate.None)
+        // ShardedTenancyOptions.AutoCreate overrides the store's setting for the master database tables, so
+        // it has to choose the mode they are migrated under, not only whether they are migrated.
+        var autoCreate = _configuration.AutoCreate ?? _options.AutoCreateSchemaObjects;
+        if (!_hasAppliedChanges && autoCreate != AutoCreate.None)
         {
             await _poolDatabase.Value
-                .ApplyAllConfiguredChangesToDatabaseAsync(_options.AutoCreateSchemaObjects)
+                .ApplyAllConfiguredChangesToDatabaseAsync(autoCreate)
                 .ConfigureAwait(false);
             _hasAppliedChanges = true;
         }

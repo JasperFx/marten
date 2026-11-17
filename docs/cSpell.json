@@ -3,6 +3,7 @@
   "language": "en",
   "words": [
     "jasperfx",
+    "HMAC",
     "batchable",
     "TimescaleDB",
     "timescaledb",
@@ -101,6 +102,7 @@
     "firstname",
     "lastname",
     "fkey",
+    "fillfactor",
     "Netram",
     "namelast",
     "gwid",
@@ -130,7 +132,8 @@
     "SQLSTATE",
     "SQLSTATEs",
     "tsvector",
-    "unpartitioned"
+    "unpartitioned",
+    "unwrapper"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links

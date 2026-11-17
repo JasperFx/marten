@@ -124,7 +124,10 @@ public class master_table_multi_tenancy_seeding : IAsyncLifetime
 
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
 
-        await _host.ClearAllTenantDatabaseRecordsAsync();
+        // #5733: no ClearAllTenantDatabaseRecordsAsync here. The "tenants" schema is dropped above, so
+        // there is nothing stale to clear, and these tests are about the SEEDED tenants: clearing the
+        // records used to leave them resolving only because the cache was never evicted. Clearing now
+        // evicts (MasterTableTenancyBase), so it would leave nothing to test.
     }
 
     public async ValueTask DisposeAsync()
@@ -134,10 +137,10 @@ public class master_table_multi_tenancy_seeding : IAsyncLifetime
     }
 
     [Fact]
-    public void add_application_name_to_connections()
+    public async Task add_application_name_to_connections()
     {
-        using var query3 = theStore.QuerySession("tenant3");
-        var builder = new NpgsqlConnectionStringBuilder(query3.Connection.ConnectionString);
+        await using var query3 = theStore.QuerySession("tenant3");
+        var builder = new NpgsqlConnectionStringBuilder((await query3.GetConnectionAsync()).ConnectionString);
         builder.ApplicationName.ShouldBe("Sample");
     }
 
@@ -324,7 +327,7 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
         await using var session =
             await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" }, TestContext.Current.CancellationToken);
 
-        session.Connection.Database.ShouldBe("tenant1");
+        (await session.GetConnectionAsync()).Database.ShouldBe("tenant1");
     }
 
     [Fact]
@@ -600,5 +603,112 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
 
         tenant.Database.CreateConnection().Database.ShouldBe("tenant2");
 
+    }
+
+    private static async Task runAgainstMasterTableAsync(string sql)
+    {
+        // Stands in for another node (or an operator) changing the control table behind this
+        // instance's back, so nothing here goes through the tenancy's own eviction.
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await conn.CreateCommand(sql).ExecuteNonQueryAsync();
+    }
+
+    /// <summary>
+    ///     #5733 (weasel#809): a refresh used to only add, so a tenant whose row another node deleted
+    ///     went on resolving from this instance's cache until the process restarted.
+    /// </summary>
+    [Fact]
+    public async Task a_tenant_deleted_elsewhere_is_evicted_by_the_next_refresh()
+    {
+        var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
+
+        await tenancy.AddDatabaseRecordAsync("tenant1", tenant1ConnectionString);
+        await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
+        (await tenancy.GetTenantAsync("tenant2")).TenantId.ShouldBe("tenant2");
+
+        await runAgainstMasterTableAsync("delete from tenants.mt_tenant_databases where tenant_id = 'tenant2'");
+
+        var databases = await tenancy.BuildDatabases();
+        databases.OfType<MartenDatabase>().Select(x => x.Identifier).ShouldBe(["tenant1"]);
+
+        var ex = await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+        {
+            await tenancy.GetTenantAsync("tenant2");
+        });
+        ex.ShouldNotBeOfType<DisabledTenantException>();
+    }
+
+    /// <summary>
+    ///     #5733 (weasel#809): the disabled twin. The refresh evicts it, and the next lookup reads the
+    ///     row and refuses it as disabled rather than unknown (#5479).
+    /// </summary>
+    [Fact]
+    public async Task a_tenant_disabled_elsewhere_is_evicted_by_the_next_refresh()
+    {
+        var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
+
+        await tenancy.AddDatabaseRecordAsync("tenant1", tenant1ConnectionString);
+        await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
+        (await tenancy.GetTenantAsync("tenant2")).TenantId.ShouldBe("tenant2");
+
+        await runAgainstMasterTableAsync(
+            "update tenants.mt_tenant_databases set disabled = true where tenant_id = 'tenant2'");
+
+        await tenancy.BuildDatabases();
+
+        await Should.ThrowAsync<DisabledTenantException>(async () =>
+        {
+            await tenancy.GetTenantAsync("tenant2");
+        });
+
+        (await tenancy.GetTenantAsync("tenant1")).TenantId.ShouldBe("tenant1");
+    }
+
+    /// <summary>
+    ///     #5733: deleting or clearing records evicts the cached tenants. Both used to touch only the
+    ///     table, so a removed tenant kept resolving from the cache.
+    /// </summary>
+    [Fact]
+    public async Task deleting_and_clearing_records_evict_the_cached_tenants()
+    {
+        var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
+
+        await tenancy.AddDatabaseRecordAsync("tenant1", tenant1ConnectionString);
+        await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
+        (await tenancy.GetTenantAsync("tenant1")).TenantId.ShouldBe("tenant1");
+        (await tenancy.GetTenantAsync("tenant2")).TenantId.ShouldBe("tenant2");
+
+        await tenancy.DeleteDatabaseRecordAsync("tenant1");
+        await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+        {
+            await tenancy.GetTenantAsync("tenant1");
+        });
+
+        await tenancy.ClearAllDatabaseRecordsAsync();
+        await Should.ThrowAsync<UnknownTenantIdException>(async () =>
+        {
+            await tenancy.GetTenantAsync("tenant2");
+        });
+    }
+
+    [Fact]
+    public async Task find_or_create_database_caches_what_it_resolves()
+    {
+        var tenancy = (MasterTableTenancy)theStore.Options.Tenancy;
+
+        await tenancy.AddDatabaseRecordAsync("tenant1", tenant1ConnectionString);
+        await tenancy.BuildDatabases();
+
+        // Written behind the tenancy's back, so the first lookup is a genuine miss. It used to build a
+        // new MartenDatabase -- and a new data source -- on every call without caching either.
+        await runAgainstMasterTableAsync(
+            $"insert into tenants.mt_tenant_databases (tenant_id, connection_string) values ('tenant3', '{tenant3ConnectionString}')");
+
+        var first = await tenancy.FindOrCreateDatabase("tenant3");
+        var second = await tenancy.FindOrCreateDatabase("tenant3");
+
+        second.ShouldBeSameAs(first);
+        (await tenancy.TryFindDatabase("never-registered")).ShouldBeNull();
     }
 }

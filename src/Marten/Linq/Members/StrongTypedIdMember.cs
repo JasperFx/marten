@@ -51,7 +51,9 @@ internal class StrongTypedIdMember<TOuter, TInner>: IdMember, IValueTypeMember<T
             return op == "=" ? new IsNullFilter(this) : new IsNotNullFilter(this);
         }
 
-        var def = new CommandParameter(Expression.Constant(_innerValue(constant.Value)));
+        var value = constant.Value is TInner inner ? inner : _innerValue(constant.Value);
+
+        var def = new CommandParameter(Expression.Constant(value));
         return new ComparisonFilter(this, def, op);
     }
 

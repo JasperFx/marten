@@ -1,12 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Resources;
 using Marten.Schema;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Weasel.Core;
@@ -22,17 +23,31 @@ internal class MartenActivator<T>: MartenActivator where T : IDocumentStore
     }
 }
 
-internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
+/// <summary>
+///     Marten's startup hosted service: create databases, migrate, roll partitions, assert, then seed.
+///     The order and the failure handling come from JasperFx's <see cref="StoreActivator{TStore,TDatabase}" />
+///     (jasperfx#1054); this supplies what each step means for Marten and the global migration lock.
+/// </summary>
+internal class MartenActivator: StoreActivator<IDocumentStore, IDatabase>, IGlobalLock<NpgsqlConnection>
 {
-    private readonly ILogger<MartenActivator> _logger;
-
-    public MartenActivator(IDocumentStore store, ILogger<MartenActivator> logger)
+    public MartenActivator(IDocumentStore store, ILogger<MartenActivator> logger): base(store, logger)
     {
-        _logger = logger;
-        Store = store.As<DocumentStore>();
+        DocumentStore = store.As<DocumentStore>();
     }
 
-    public DocumentStore Store { get; }
+    public DocumentStore DocumentStore { get; }
+
+    protected override bool ShouldApplyChangesOnStartup => DocumentStore.Options.ShouldApplyChangesOnStartup;
+
+    protected override bool ShouldAssertDatabaseMatchesConfigurationOnStartup =>
+        DocumentStore.Options.ShouldAssertDatabaseMatchesConfigurationOnStartup;
+
+    protected override ResourceMigrationFailureMode FailureMode => DocumentStore.Options.ResourceMigrationFailureMode;
+
+    protected override IEnumerable<JasperFx.IInitialData<IDocumentStore>> InitialData => DocumentStore.Options.InitialData;
+
+    // GH-3521 (jasperfx#543): only non-null in the multi-host test-harness divergence case.
+    protected override string? ApplicationAssemblyReuseWarning => DocumentStore.Options.ApplicationAssemblyReuseWarning;
 
     /// <summary>
     ///     Poll for the apply-changes advisory lock until <see cref="StoreOptions.ApplyChangesLockTimeout" />
@@ -51,12 +66,12 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
     /// </remarks>
     public async Task<AttainLockResult> TryAttainLock(NpgsqlConnection conn, CancellationToken ct = default)
     {
-        var deadline = DateTimeOffset.UtcNow + Store.Options.ApplyChangesLockTimeout;
+        var deadline = DateTimeOffset.UtcNow + DocumentStore.Options.ApplyChangesLockTimeout;
         var delay = 50;
 
         while (true)
         {
-            var result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct)
+            var result = await conn.TryGetGlobalLock(DocumentStore.Options.ApplyChangesLockId, cancellation: ct)
                 .ConfigureAwait(false);
 
             // ShouldReconnect is the caller's business: Weasel opens a fresh connection and calls back in.
@@ -76,85 +91,67 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
 
     public Task ReleaseLock(NpgsqlConnection conn, CancellationToken ct = default)
     {
-        return conn.ReleaseGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct);
+        return conn.ReleaseGlobalLock(DocumentStore.Options.ApplyChangesLockId, cancellation: ct);
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        // GH-3521 (jasperfx#543): surface the application-assembly-reuse warning buffered from
-        // JasperFxOptions during StoreOptions.ReadJasperFxOptions. Only non-null in the multi-host
-        // test-harness divergence case, so this stays silent for a normal single-host application.
-        if (Store.Options.ApplicationAssemblyReuseWarning.IsNotEmpty())
-        {
-            _logger.LogWarning("{ApplicationAssemblyReuseWarning}", Store.Options.ApplicationAssemblyReuseWarning);
-        }
+    private IReadOnlyList<IDatabase>? _databases;
 
-        if (Store.Options.CreateDatabases != null)
+    protected override async Task CreateDatabasesAsync(CancellationToken token)
+    {
+        if (DocumentStore.Options.CreateDatabases != null)
         {
             var databaseGenerator = new DatabaseGenerator();
             await databaseGenerator
-                .CreateDatabasesAsync(Store.Tenancy, Store.Options.CreateDatabases, cancellationToken)
+                .CreateDatabasesAsync(DocumentStore.Tenancy, DocumentStore.Options.CreateDatabases, token)
                 .ConfigureAwait(false);
         }
 
-        var databases = await Store.Tenancy.BuildDatabases().ConfigureAwait(false);
-
-        if (Store.Options.ShouldApplyChangesOnStartup)
-        {
-            var failureMode = Store.Options.ResourceMigrationFailureMode;
-            foreach (PostgresqlDatabase database in databases)
-            {
-                // #4750: propagate the failure mode so Weasel's apply returns rather than throwing when it
-                // can't attain the global migration lock (e.g. a replica that loses the lock race during a
-                // multi-replica rolling deploy).
-                database.ResourceMigrationFailureMode = failureMode;
-
-                try
-                {
-                    await database
-                        .ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate, ct: cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception e) when (failureMode == ResourceMigrationFailureMode.ContinueOnFailures)
-                {
-                    // Belt-and-suspenders for migration failures of any kind (not just the lock timeout):
-                    // log and keep starting up rather than crash-looping. FailFast (default) rethrows.
-                    _logger.LogError(e,
-                        "Failed to apply configured database changes to {Database} at startup. Continuing startup anyway because ResourceMigrationFailureMode is ContinueOnFailures.",
-                        database.Identifier);
-                }
-            }
-
-            // #5093: roll every configured rolling-window RANGE partition forward and retire the aged ones.
-            // The migration above already provisions the leading edge — with a partition manager attached the
-            // delta is additive — but migration never removes data, so the retention drop has to be driven
-            // separately. Gated on the same opt-in as the migration itself: applying changes on startup is
-            // how a host says "Marten owns this schema", and dropping partitions is emphatically a schema
-            // change. It runs BEFORE the assert below on purpose — once the clock crosses a period boundary
-            // the database is legitimately missing the new leading-edge partition, and asserting first would
-            // fail a deployment over a difference this pass is about to close.
-            await RollingPartitions
-                .ApplyAsync(databases.OfType<PostgresqlDatabase>(), _logger, rollForward: true, dropAged: true,
-                    cancellationToken).ConfigureAwait(false);
-        }
-
-        if (Store.Options.ShouldAssertDatabaseMatchesConfigurationOnStartup)
-        {
-            foreach (var database in databases)
-            {
-                await database.AssertDatabaseMatchesConfigurationAsync(cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        foreach (var initialData in Store.Options.InitialData)
-        {
-            _logger.LogInformation("Applying initial data {InitialData}", initialData);
-            await initialData.Populate(Store, cancellationToken).ConfigureAwait(false);
-        }
+        // Always build the databases, as MartenActivator always has, even when neither apply nor assert
+        // is opted in. Master-table tenancy migrates its control table and writes its seeded tenants
+        // there, and an IInitialData that writes into a seeded tenant depends on that having happened.
+        // StoreActivator only asks for the databases when it is going to migrate or assert, so they are
+        // built here and handed back from BuildDatabasesAsync.
+        _databases = await DocumentStore.Tenancy.BuildDatabases().ConfigureAwait(false);
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    protected override async ValueTask<IReadOnlyList<IDatabase>> BuildDatabasesAsync(CancellationToken token)
     {
-        return Task.CompletedTask;
+        return _databases ?? await DocumentStore.Tenancy.BuildDatabases().ConfigureAwait(false);
     }
+
+    protected override async Task ApplyChangesAsync(IDatabase database, CancellationToken token)
+    {
+        var postgresqlDatabase = (PostgresqlDatabase)database;
+
+        // #4750: propagate the failure mode so Weasel's apply returns rather than throwing when it
+        // can't attain the global migration lock (e.g. a replica that loses the lock race during a
+        // multi-replica rolling deploy).
+        postgresqlDatabase.ResourceMigrationFailureMode = FailureMode;
+
+        await postgresqlDatabase
+            .ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate, ct: token)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     #5093: roll every configured rolling-window RANGE partition forward and retire the aged ones.
+    ///     The migration already provisions the leading edge, but migration never removes data, so the
+    ///     retention drop has to be driven separately. Gated on the same opt-in as the migration itself,
+    ///     and run BEFORE the assert on purpose: once the clock crosses a period boundary the database is
+    ///     legitimately missing the new leading-edge partition, and asserting first would fail a
+    ///     deployment over a difference this pass is about to close.
+    /// </summary>
+    protected override async Task AfterApplyingChangesAsync(IReadOnlyList<IDatabase> migrated, CancellationToken token)
+    {
+        await RollingPartitions
+            .ApplyAsync(migrated.OfType<PostgresqlDatabase>(), Logger, rollForward: true, dropAged: true, token)
+            .ConfigureAwait(false);
+    }
+
+    protected override Task AssertDatabaseMatchesConfigurationAsync(IDatabase database, CancellationToken token)
+    {
+        return database.AssertDatabaseMatchesConfigurationAsync(token);
+    }
+
+    protected override string DescribeDatabase(IDatabase database) => database.Identifier;
 }

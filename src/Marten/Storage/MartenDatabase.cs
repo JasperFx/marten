@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.ExceptionServices;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -26,7 +28,12 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
 {
     private readonly StorageFeatures _features;
 
-    private Lazy<SequenceFactory> _sequences;
+    private RuntimeSequences _sequences;
+
+    // #5665: the same Hi-Lo feature, built but never applied, for the paths that only describe the
+    // schema. See SequenceFeature below.
+    private Lazy<SequenceFactory> _sequenceFeature;
+
     private ILogger? _logger;
 
     // #5269: resolved once from this database's own connection string. Lazy rather than eager because it
@@ -91,6 +98,9 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
     Uri IProjectionDatabase.DatabaseUri => Describe().DatabaseUri();
 
     public ISequences Sequences => _sequences.Value;
+
+    /// <inheritdoc />
+    public IFeatureSchema SequenceFeature => _sequenceFeature.Value;
 
     public IProviderGraph Providers { get; }
 
@@ -254,14 +264,84 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProje
 
     private void resetSequences()
     {
-        _sequences = new Lazy<SequenceFactory>(() =>
+        // The runtime seam. Reading this hands out sequences that are about to be advanced against
+        // mt_get_next_hi, so the storage has to be there — there is no later point at which an id
+        // assignment could ask for it.
+        _sequences = new RuntimeSequences(() =>
         {
             var sequences = new SequenceFactory(Options, this);
 
-            generateOrUpdateFeature(typeof(SequenceFactory), sequences, default, true).AsTask().GetAwaiter()
-                .GetResult();
+            // #5969: genuinely synchronous, because the caller usually is. The first id a session.Store()
+            // assigns lands here, on whatever thread the application stored from, while every other storing
+            // thread waits on RuntimeSequences' lock for it. This used to block on Weasel's asynchronous
+            // migration, which needed a free thread-pool thread to finish, and under a burst of synchronous
+            // writers there was none: the whole process stalled until the pool injected more threads.
+            // Nothing here needs another thread to complete, so the wait is a few round trips long.
+            // With AutoCreate.None it does nothing at all, as the asynchronous version effectively did.
+            SynchronousFeatureMigration.Apply(CreateConnection, Migrator, AutoCreate, MigrationLogger, sequences);
 
             return sequences;
         });
+
+        // #5665: the schema-management seam. Identical objects, no apply. A SequenceFactory's
+        // IFeatureSchema half is derived entirely from StoreOptions, so this describes exactly what
+        // the applying instance above would — it just never touches the database to do it.
+        _sequenceFeature = new Lazy<SequenceFactory>(() => new SequenceFactory(Options, this));
+    }
+
+    /// <summary>
+    ///     #5784: the runtime <see cref="Sequences" />, built once and shared exactly as the
+    ///     <see cref="Lazy{T}" /> it replaces was, except that a failed build is not kept. Lazy's default
+    ///     mode caches a factory exception for good, so a first id allocation that ran into an outage made
+    ///     every later allocation rethrow that same exception long after the database came back.
+    /// </summary>
+    /// <remarks>
+    ///     Builds still run one at a time and only a successful one is published, so there is never more
+    ///     than one <see cref="SequenceFactory" /> per database (per reset). A caller that queued behind an
+    ///     attempt which then failed gets that attempt's failure, as it would have from Lazy, instead of
+    ///     starting another connection timeout of its own. Only a call that starts after a failure retries.
+    /// </remarks>
+    private sealed class RuntimeSequences
+    {
+        private readonly Func<SequenceFactory> _build;
+        private readonly Lock _locker = new();
+        private SequenceFactory? _value;
+        private int _failures;
+        private ExceptionDispatchInfo? _lastFailure;
+
+        public RuntimeSequences(Func<SequenceFactory> build)
+        {
+            _build = build;
+        }
+
+        public SequenceFactory Value => Volatile.Read(ref _value) ?? build();
+
+        private SequenceFactory build()
+        {
+            var failuresBeforeWaiting = Volatile.Read(ref _failures);
+
+            lock (_locker)
+            {
+                if (_value != null) return _value;
+
+                if (_failures != failuresBeforeWaiting)
+                {
+                    _lastFailure!.Throw();
+                }
+
+                try
+                {
+                    var value = _build();
+                    Volatile.Write(ref _value, value);
+                    return value;
+                }
+                catch (Exception e)
+                {
+                    _lastFailure = ExceptionDispatchInfo.Capture(e);
+                    Volatile.Write(ref _failures, _failures + 1);
+                    throw;
+                }
+            }
+        }
     }
 }

@@ -55,7 +55,7 @@ public class Customer
     [Identity] public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L807-L815' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_databaseschemaname_attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L840-L848' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_databaseschemaname_attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Type Aliases
@@ -102,7 +102,7 @@ opts.Schema.For<Target>()
     // Any other table level storage parameter by name
     .StorageParameter("autovacuum_vacuum_scale_factor", 0.01);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/document_table_storage_parameters.cs#L20-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_document_table_storage_parameters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/document_table_storage_parameters.cs#L21-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_document_table_storage_parameters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten reads the parameters of an existing table back from the database and applies a changed value with `ALTER TABLE ... SET (...)` as part of the normal schema migration. A few things to know:

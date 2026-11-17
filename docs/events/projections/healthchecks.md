@@ -95,6 +95,29 @@ The check is deliberately conservative to avoid false positives:
 - **Store-global reading.** It reads database state, so it is correct on any node regardless of
   which one runs the agent; it fails only when *no* node is advancing the mark.
 
+### Separate stores
+
+`AddMartenHighWaterHealthCheck()` checks the default store registered with `AddMarten()`. For a
+store registered with `AddMartenStore<TStore>()`, use the generic overload. It probes that store,
+and with `autoRestart` it restarts the agent through that store's own projection coordinator
+(see [marten#5705](https://github.com/JasperFx/marten/issues/5705)):
+
+```cs
+Services.AddMartenStore<IInvoicingStore>(opts =>
+{
+    // ...
+}).AddAsyncDaemon(DaemonMode.Solo);
+
+Services.AddHealthChecks()
+    .AddMartenHighWaterHealthCheck<IInvoicingStore>(
+        staleThreshold: TimeSpan.FromSeconds(30),
+        autoRestart: true);
+```
+
+Call it once per store. Each store's check is registered under its own name,
+`HighWaterHealthCheck:IInvoicingStore`, with its own settings, so it can sit beside the default
+store's check. Every option below works the same way on the generic overload.
+
 ### Sharded and multi-tenant stores
 
 On a multi-database store (`MultiTenantedWithShardedDatabases`, or any store with more than one
@@ -145,7 +168,8 @@ Services.AddHealthChecks().AddMartenHighWaterHealthCheck(
 
 Both overloads register the settings through a factory, so replacing
 `HighWaterHealthCheckSettings` in the container is also a supported way to override the filter if
-you need to reach further into DI than the predicate allows.
+you need to reach further into DI than the predicate allows. That applies to the default store's
+check only: a separate store's check carries its settings with its own registration.
 
 Under `UseTenantPartitionedEvents` the high-water mark is tracked **per tenant** as
 `HighWaterMark:<tenant>` progression rows rather than a single store-global `HighWaterMark`, and

@@ -108,6 +108,49 @@ public class delete_all_tenant_data_orphan_sequence_pin : PartitionedStoreContex
     }
 
     [Fact]
+    public async Task RemoveMartenManagedTenantsAsync_cleans_up_a_guid_tenant_named_by_its_partition_suffix()
+    {
+        // A Guid tenant's partition suffix is its hyphen-free "N" form (#4567), which is what
+        // RemoveMartenManagedTenantsAsync is given. Its per-tenant sequence is named after the suffix,
+        // but its registry entry and its progression rows are keyed by the canonical Guid string.
+        var drop = Guid.NewGuid();
+        var keep = Guid.NewGuid();
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, drop, keep);
+
+        await using (var session = Store.LightweightSession(drop.ToString()))
+        {
+            session.Events.StartStream(Guid.NewGuid(), new DelEvent("x"));
+            await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await SeedProgressionRowsAsync(Schema, new[]
+        {
+            $"HighWaterMark:{drop}",
+            $"DelCountProjection:All:{drop}",
+            $"HighWaterMark:{keep}",
+            $"DelCountProjection:All:{keep}",
+        });
+
+        (await SequenceExistsAsync(Schema, $"mt_events_sequence_{drop:N}")).ShouldBeTrue();
+
+        await Store.Advanced.RemoveMartenManagedTenantsAsync(new[] { drop.ToString("N") }, CancellationToken.None);
+
+        (await TableExistsAsync(Schema, $"mt_events_{drop:N}")).ShouldBeFalse();
+
+        var sequenceLeft = await SequenceExistsAsync(Schema, $"mt_events_sequence_{drop:N}");
+        var afterNames = await ReadProgressionRowNamesAsync(Schema);
+        var rowsLeft = afterNames.Where(n => MentionsTenant(n, drop.ToString())).ToArray();
+        afterNames.ShouldSatisfyAllConditions(
+            () => sequenceLeft.ShouldBeFalse("the removed tenant's per-tenant sequence must not be left behind"),
+            () => rowsLeft.ShouldBeEmpty("the removed tenant's progression rows must not be left behind"));
+
+        // The other Guid tenant is untouched
+        (await SequenceExistsAsync(Schema, $"mt_events_sequence_{keep:N}")).ShouldBeTrue();
+        afterNames.ShouldContain($"HighWaterMark:{keep}");
+        afterNames.ShouldContain($"DelCountProjection:All:{keep}");
+    }
+
+    [Fact]
     public async Task DeleteAllTenantDataAsync_removes_per_tenant_progression_rows_and_preserves_store_global()
     {
         // Two tenants. We seed the progression rows directly via SQL rather than driving the

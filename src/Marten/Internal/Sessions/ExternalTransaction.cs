@@ -27,6 +27,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         Connection = options.Connection!;
         Transaction = options.Transaction;
         _options = options;
+        ExceptionTransforms = options.ExceptionTransforms;
 
         CommandTimeout = _options.Timeout ?? Connection?.CommandTimeout ?? 30;
     }
@@ -53,13 +54,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         // Nothing
     }
 
-    public virtual void Apply(NpgsqlCommand command)
-    {
-        command.Connection = Connection;
-        command.Transaction = Transaction;
-        command.CommandTimeout = CommandTimeout;
-    }
-
     public virtual Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
     {
         command.Connection = Connection;
@@ -67,13 +61,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         command.CommandTimeout = CommandTimeout;
 
         return Task.CompletedTask;
-    }
-
-    public virtual void Apply(NpgsqlBatch batch)
-    {
-        batch.Connection = Connection;
-        batch.Transaction = Transaction;
-        batch.Timeout = CommandTimeout;
     }
 
     public virtual Task ApplyAsync(NpgsqlBatch batch, CancellationToken token)
@@ -85,14 +72,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         return Task.CompletedTask;
     }
 
-    public void Commit()
-    {
-        if (_options.OwnsTransactionLifecycle)
-        {
-            Transaction.Commit();
-        }
-    }
-
     public async Task CommitAsync(CancellationToken token)
     {
         if (_options.OwnsTransactionLifecycle)
@@ -102,19 +81,12 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
     }
 
-    public void Rollback()
-    {
-        if (_options.OwnsTransactionLifecycle)
-        {
-            Transaction.Rollback();
-        }
-    }
-
     public Task RollbackAsync(CancellationToken token)
     {
         if (_options.OwnsTransactionLifecycle)
         {
-            return Transaction.RollbackAsync(token);
+            // #5688: never with the caller's token -- see TransactionalConnection.RollbackAsync.
+            return Transaction.RollbackAsync(CancellationToken.None);
         }
 
         return Task.CompletedTask;
@@ -122,38 +94,14 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
 
     public NpgsqlConnection Connection { get; }
 
-    public void BeginTransaction()
+    public ValueTask<NpgsqlConnection> OpenConnectionAsync(CancellationToken token)
     {
-        // Nothing
+        return new ValueTask<NpgsqlConnection>(Connection);
     }
 
     public ValueTask BeginTransactionAsync(CancellationToken token)
     {
         return new ValueTask();
-    }
-
-    public void EnsureConnected()
-    {
-        // Nothing
-    }
-
-    public int Execute(NpgsqlCommand cmd)
-    {
-        Apply(cmd);
-
-        try
-        {
-            var returnValue = cmd.ExecuteNonQuery();
-            Logger.LogSuccess(cmd);
-
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(cmd, e);
-            throw;
-        }
     }
 
     public async Task<int> ExecuteAsync(NpgsqlCommand command,
@@ -169,24 +117,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
                 .ConfigureAwait(false);
             Logger.LogSuccess(command);
 
-            return returnValue;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(command, e);
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlCommand command)
-    {
-        Apply(command);
-
-        try
-        {
-            var returnValue = command.ExecuteReader();
-            Logger.LogSuccess(command);
             return returnValue;
         }
         catch (Exception e)
@@ -216,24 +146,6 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         {
             noteTransactionFailure(e);
             handleCommandException(command, e);
-            throw;
-        }
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlBatch batch)
-    {
-        Apply(batch);
-
-        try
-        {
-            var reader = batch.ExecuteReader();
-            Logger.LogSuccess(batch);
-            return reader;
-        }
-        catch (Exception e)
-        {
-            noteTransactionFailure(e);
-            handleCommandException(batch, e);
             throw;
         }
     }
@@ -274,7 +186,8 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
             foreach (var page in pages)
             {
                 var batch = page.Compile();
-                await using var reader = await ExecuteReaderAsync(batch, token).ConfigureAwait(false);
+                await ApplyAsync(batch, token).ConfigureAwait(false);
+                await using var reader = await executePageReaderAsync(page, batch, token).ConfigureAwait(false);
                 await page.ApplyCallbacksAsync(reader, exceptions, token).ConfigureAwait(false);
             }
         }
@@ -282,7 +195,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         {
             await RollbackAsync(token).ConfigureAwait(false);
             Logger.LogFailure(new NpgsqlCommand(), e);
-            pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
+            transformAndThrow(pages, e);
         }
 
         if (exceptions.Count == 1)

@@ -195,7 +195,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         await theSession.SaveChangesAsync();
 
-        var dbNow = (DateTime)theSession.Connection.CreateCommand().Sql("select now();").ExecuteScalar();
+        var dbNow = (DateTime)(await (await theSession.GetConnectionAsync()).CreateCommand().Sql("select now();").ExecuteScalarAsync())!;
         var now = new DateTimeOffset(dbNow).AddSeconds(5);
 
         var all = await theSession.Events.QueryAllRawEvents().ToListAsync();

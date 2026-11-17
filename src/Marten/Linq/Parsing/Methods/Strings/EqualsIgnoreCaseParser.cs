@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods.Strings;
@@ -19,9 +19,9 @@ internal class EqualsIgnoreCaseParser: IMethodCallParser
     public ISqlFragment Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
         MethodCallExpression expression)
     {
-        var locator = memberCollection.MemberFor(expression.Arguments[0]).RawLocator;
+        var member = memberCollection.MemberFor(expression.Arguments[0]);
         var value = expression.Arguments.Last().Value();
 
-        return new WhereFragment($"{locator} ~~* ?", value.As<string>());
+        return new StringEqualsIgnoreCaseFilter(member, new CommandParameter(value));
     }
 }

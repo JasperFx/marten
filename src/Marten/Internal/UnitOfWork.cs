@@ -19,6 +19,15 @@ internal class UnitOfWork: ISessionWorkTracker
     private readonly List<Weasel.Storage.IStorageOperation> _operations = new();
     private readonly IMartenSession _parent;
 
+    /// <summary>
+    ///     #5730: every document an operation has been queued for in this unit of work, by reference. Lets
+    ///     <see cref="Add" /> skip the walk over <see cref="_operations" /> that looks for an earlier
+    ///     operation on the same document, which made queueing N documents O(N²). Only ever cleared alongside
+    ///     <see cref="_operations" />, never pruned when an operation is ejected or purged, so a stale entry
+    ///     costs at most the walk this replaces and a document can never be missing from it.
+    /// </summary>
+    private HashSet<object?>? _queuedDocuments;
+
     public UnitOfWork(IMartenSession parent)
     {
         _parent = parent;
@@ -27,12 +36,22 @@ internal class UnitOfWork: ISessionWorkTracker
     internal UnitOfWork(IEnumerable<Weasel.Storage.IStorageOperation> operations)
     {
         _operations.AddRange(operations);
+
+        foreach (var operation in _operations)
+        {
+            if (operation is IDocumentStorageOperation o)
+            {
+                _queuedDocuments ??= new HashSet<object?>(ReferenceEqualityComparer.Instance);
+                _queuedDocuments.Add(o.Document);
+            }
+        }
     }
 
     public void Reset()
     {
         _operations.Clear();
         _eventOperations.Clear();
+        _queuedDocuments?.Clear();
         Streams.Clear();
     }
 
@@ -40,8 +59,13 @@ internal class UnitOfWork: ISessionWorkTracker
     {
         if (operation is IDocumentStorageOperation o)
         {
-            _operations.RemoveAll(x =>
-                x is IDocumentStorageOperation && x.As<IDocumentStorageOperation>().Document == o.Document);
+            _queuedDocuments ??= new HashSet<object?>(ReferenceEqualityComparer.Instance);
+
+            // #5730: only a document seen before can have an earlier operation to replace
+            if (!_queuedDocuments.Add(o.Document))
+            {
+                removeOperationsFor(o.Document);
+            }
         }
 
         if (operation.DocumentType == typeof(IEvent))
@@ -52,6 +76,12 @@ internal class UnitOfWork: ISessionWorkTracker
         {
             _operations.Add(operation);
         }
+    }
+
+    // Kept out of Add so the lambda's closure is only allocated when there is something to remove
+    private void removeOperationsFor(object? document)
+    {
+        _operations.RemoveAll(x => x is IDocumentStorageOperation op && op.Document == document);
     }
 
     public IReadOnlyList<Weasel.Storage.IStorageOperation> AllOperations
@@ -233,6 +263,7 @@ internal class UnitOfWork: ISessionWorkTracker
     {
         _operations.Clear();
         _eventOperations.Clear();
+        _queuedDocuments?.Clear();
         Streams.Clear();
     }
 
@@ -246,18 +277,18 @@ internal class UnitOfWork: ISessionWorkTracker
             || (op is IIdentifiedOperation<T, TId> typed && typed.Id.Equals(id)));
     }
 
-    public bool TryFindStream(string streamKey, [NotNullWhen(true)]out StreamAction? stream)
+    public bool TryFindStream(string streamKey, string? tenantId, [NotNullWhen(true)]out StreamAction? stream)
     {
         stream = Streams
-            .FirstOrDefault(x => x.Key == streamKey);
+            .FirstOrDefault(x => x.Key == streamKey && (tenantId == null || x.TenantId == tenantId));
 
         return stream != null;
     }
 
-    public bool TryFindStream(Guid streamId, [NotNullWhen(true)]out StreamAction? stream)
+    public bool TryFindStream(Guid streamId, string? tenantId, [NotNullWhen(true)]out StreamAction? stream)
     {
         stream = Streams
-            .FirstOrDefault(x => x.Id == streamId);
+            .FirstOrDefault(x => x.Id == streamId && (tenantId == null || x.TenantId == tenantId));
 
         return stream != null;
     }
@@ -270,14 +301,32 @@ internal class UnitOfWork: ISessionWorkTracker
             return false;
         }
 
-        var rawTypes = _operations
-            .Where(x => x.Role() != OperationRole.Other)
-            .Select(x => x.DocumentType)
-            .Where(x => x != null)
-            .Where(x => x != typeof(StorageFeatures))
-            .Distinct().ToArray();
+        // #5730: one pass, and nothing allocated until a second document type turns up. A unit of work
+        // touching a single document type -- the common case -- cannot need ordering, so it is answered
+        // without the four LINQ iterators, the Distinct set and the array this used to build on every save.
+        Type? firstType = null;
+        List<Type>? distinctTypes = null;
+        foreach (var operation in _operations)
+        {
+            if (operation.Role() == OperationRole.Other) continue;
 
-        if (rawTypes.Length <= 1) return false;
+            var documentType = operation.DocumentType;
+            if (documentType == null || documentType == typeof(StorageFeatures)) continue;
+
+            if (firstType == null)
+            {
+                firstType = documentType;
+            }
+            else if (documentType != firstType)
+            {
+                distinctTypes ??= [firstType];
+                if (!distinctTypes.Contains(documentType)) distinctTypes.Add(documentType);
+            }
+        }
+
+        if (distinctTypes == null) return false;
+
+        var rawTypes = distinctTypes.ToArray();
 
         var hasRelationship = rawTypes.Any(x => options.Storage.GetTypeDependencies(x).Intersect(rawTypes).Any());
 

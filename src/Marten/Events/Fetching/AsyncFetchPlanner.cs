@@ -39,11 +39,17 @@ internal class AsyncFetchPlanner: IFetchPlanner
                     $"The aggregate type {typeof(TDoc).FullNameInCode()} is the subject of a multi-stream projection and cannot be used with FetchForWriting");
             }
 
-            if (projection.Lifecycle == ProjectionLifecycle.Async)
+            // #6033: see InlineFetchPlanner. The async plan reads the stored document first as well.
+            if (projection.Lifecycle == ProjectionLifecycle.Async
+                && !options.CustomProjectionStorageProviders.ContainsKey(typeof(TDoc)))
             {
                 if (options.Storage.FindMapping(typeof(TDoc)) is DocumentMapping { Metadata.Revision.Enabled: true })
                 {
-                    plan = new FetchAsyncPlan<TDoc, TId>(options.EventGraph, identity, options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly));
+                    // Never through the identity map. The events after the snapshot are folded straight onto
+                    // this document, so it has to be an instance nothing else can reach: the map would hand a
+                    // second fetch the folded document, to fold the same events onto again, and would hand the
+                    // first fetch a document the caller loaded, to be changed under them.
+                    plan = new FetchAsyncPlan<TDoc, TId>(options.EventGraph, identity, options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.None));
                     return true;
                 }
             }

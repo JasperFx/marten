@@ -277,30 +277,32 @@ There are some exceptions to this behavior:
 2. When creating a session with serializable transaction isolation levels, the connection is opened immediately and sticky throughout. I.e., `IDocumentStore.******SerializableSessionAsync()`
 3. When opting to have Marten enroll in ambient transactions (`SessionOptions.ForCurrentTransaction()`)
 4. When choosing to use explicit transaction boundaries (see the next section)
-5. When using the session's underlying connection for user defined querying.
+5. When using the session's underlying connection for user defined querying (`GetConnectionAsync()`).
 
 ::: info
 This ability to directly access and use the session's connection was originally intended to make Marten easy to integrate
 with [Dapper](https://github.com/DapperLib/Dapper).
 :::
 
-To the last point, using this code will quietly move the session to having a "sticky" connection:
+To the last point, using this code will quietly move the session to having a "sticky" connection. Marten 10 replaced the
+synchronous `IQuerySession.Connection` property with `GetConnectionAsync()`:
 
 <!-- snippet: sample_using_session_connection_directly -->
 <a id='snippet-sample_using_session_connection_directly'></a>
 ```cs
 public static async Task using_session_connection(IQuerySession session)
 {
-    // Accessing the session.Connection object will quietly open
-    // a "sticky" connection for the session
-    var openCount = await session.Connection
+    // GetConnectionAsync() opens a "sticky" connection for the session
+    // if it does not already have one. The session owns it, so don't dispose it
+    var connection = await session.GetConnectionAsync();
 
-        // This is using a helper extension method from Weasel
+    // This is using a helper extension method from Weasel
+    var openCount = await connection
         .CreateCommand("select count(*) from tasks where status = 'open'")
         .ExecuteScalarAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExplicitTransactions.cs#L11-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_session_connection_directly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExplicitTransactions.cs#L11-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_session_connection_directly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can register SQL statements to be executed as part of the `SaveChanges()` / `SaveChangesAsync()` batch and transaction through
@@ -321,42 +323,21 @@ by querying through an active transaction. In that case, your syntax is:
 ```cs
 public static async Task explicit_transactions(IDocumentSession session)
 {
-    // If in synchronous code, but don't mix this in real async code!!!!
-    session.BeginTransaction();
-
-    // Favor this within async code
+    // Opens the session's connection and begins its transaction. There is no
+    // synchronous BeginTransaction() as of Marten 10
     await session.BeginTransactionAsync(CancellationToken.None);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExplicitTransactions.cs#L27-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicit_transactions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExplicitTransactions.cs#L28-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicit_transactions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### "Sticky" Connections
 
-To revert Marten back to its V6 and earlier "sticky" connection handling, use this option:
-
-<!-- snippet: sample_use_sticky_connection_lifetimes -->
-<a id='snippet-sample_use_sticky_connection_lifetimes'></a>
-```cs
-using var store = DocumentStore.For(opts =>
-{
-    opts.Connection("some connection string");
-
-    // Opt into V6 and earlier "sticky" connection
-    // handling
-    opts.UseStickyConnectionLifetimes = true;
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/sticky_connection_mode.cs#L30-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_sticky_connection_lifetimes' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-With this setting, Marten uses a single connection to the Postgresql database in each `IQuerySession` or `IDocumentSession`.
-The connection is only opened on the first call to the database, but after that remains open until the `IQuerySession`/`IDocumentSession` is disposed. A couple things to note:
-
-- It's imperative that any `IQuerySession`/`IDocumentSession` opened is disposed in order to recover and reuse
-  connections to the underlying database
-- Because the connection is "sticky" to the session, you can utilize serializable transactions. In the future, Marten will
-  also enable you to opt into [locking documents read from the session](https://github.com/JasperFx/marten/issues/356).
+Marten 10 removed the `UseStickyConnectionLifetimes` option that brought back the V6 and earlier "sticky" connection
+handling for every session. When one session needs to hold a single connection until it is disposed, for example
+for a serializable transaction, call `BeginTransactionAsync()` or `GetConnectionAsync()` on that session, or open it
+with `OpenSerializableSessionAsync()`. Either way, it's imperative that the session is disposed so the connection goes
+back to the pool.
 
 There is no place within Marten where it keeps a stateful connection open across sessions.
 
@@ -523,7 +504,7 @@ var user = new User { FirstName = "Jeremy", LastName = "Miller" };
 // Manually adding the new user to the session
 session.Store(user);
 
-var existing = session.Query<User>().Single(x => x.FirstName == "Max");
+var existing = await session.Query<User>().SingleAsync(x => x.FirstName == "Max");
 existing.Internal = false;
 
 // Manually marking an existing user as changed
@@ -555,7 +536,7 @@ var user = new User { FirstName = "Jeremy", LastName = "Miller" };
 // Manually adding the new user to the session
 session.Store(user);
 
-var existing = session.Query<User>().Single(x => x.FirstName == "Max");
+var existing = await session.Query<User>().SingleAsync(x => x.FirstName == "Max");
 existing.Internal = false;
 
 // Marking another existing User document as deleted

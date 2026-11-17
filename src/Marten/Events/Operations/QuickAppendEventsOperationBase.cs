@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
@@ -38,8 +39,16 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         var pg = original as PostgresException ?? original.InnerException as PostgresException;
         if (pg is { SqlState: ArchivedStreamSqlState })
         {
-            transformed = new InvalidStreamOperationException(
-                $"Attempted to append event to archived stream with Id '{Stream.Id}'.");
+            // marten#5476 / marten#5847: the shared JasperFx.Events type, as Polecat and Fisher throw.
+            transformed = new ArchivedStreamException(Stream.Key ?? (object)Stream.Id);
+            return true;
+        }
+
+        // #6051: an append that creates its stream claims the id in mt_streams_identity, and an id claimed
+        // already is refused there whatever the action was. That is a reused stream identity, as it is for Start.
+        if (pg is { SqlState: PostgresErrorCodes.UniqueViolation, TableName: StreamIdentityEnforcementTable.TableName })
+        {
+            transformed = new ExistingStreamIdCollisionException((object)Stream.Key ?? Stream.Id, Stream.AggregateType);
             return true;
         }
 
@@ -62,7 +71,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
                 Stream.Key ?? (object)Stream.Id,
                 Stream.AggregateType,
                 expected: Stream.ExpectedVersionOnServer ?? -1,
-                actual: -1);
+                actual: ReadActualVersion(pg));
             return true;
         }
 
@@ -70,13 +79,30 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         return false;
     }
 
+    /// <summary>
+    ///     #5914: the stream's version as <c>mt_quick_append_events</c> found it, out of MT003's own message
+    ///     (<c>... expected %, actual %</c>). Unlike the rich path's <c>Detail</c>, Npgsql never redacts
+    ///     <see cref="PostgresException.MessageText" />, so this needs no <c>Include Error Detail</c>. -1 when the
+    ///     message does not carry it: a lost start race (23505) has no version to report.
+    /// </summary>
+    internal static long ReadActualVersion(PostgresException? pg)
+    {
+        if (pg is not { SqlState: OptimisticVersionMismatchSqlState, MessageText: { } message })
+        {
+            return -1;
+        }
+
+        const string marker = "actual ";
+        var index = message.LastIndexOf(marker, StringComparison.Ordinal);
+        return index >= 0 && long.TryParse(message.AsSpan(index + marker.Length).Trim(), out var actual)
+            ? actual
+            : -1;
+    }
+
     private bool IsLostStartRace(PostgresException? pg)
         => Stream.ActionType == StreamActionType.Start
-           && pg is
-           {
-               SqlState: PostgresErrorCodes.UniqueViolation,
-               TableName: StreamsTable.TableName or StreamIdentityEnforcementTable.TableName
-           };
+           && pg is { SqlState: PostgresErrorCodes.UniqueViolation }
+           && StreamsTable.IsStreamCollisionTable(pg.TableName);
 
     // 9.0 (#4385): per-batch column-array rentals from ArrayPool<T>.Shared, returned in
     // Dispose() once the whole unit of work is finished. NOT in PostprocessAsync: the resilience
@@ -114,10 +140,15 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
 
     private PooledList<T> rentColumn<T>(int count)
     {
-        _rentals ??= new List<IDisposable>(12);
         var list = new PooledList<T>(count);
-        _rentals.Add(list);
+        trackRental(list);
         return list;
+    }
+
+    private void trackRental(IDisposable rental)
+    {
+        _rentals ??= new List<IDisposable>(12);
+        _rentals.Add(rental);
     }
 
     private void releaseColumnRentals()
@@ -150,6 +181,34 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         IStorageSession session,
         Func<IEvent, byte[]?>? serializeEventBdata = null)
     {
+        writeBasicParametersCore(builder, session, serializeEventBdata, binarySerializerFor: null);
+    }
+
+    /// <summary>
+    ///     As <see cref="writeBasicParameters(IGroupedParameterBuilder, IStorageSession, Func{IEvent, byte[]})" />,
+    ///     but a binary event's payload is written straight into a pooled buffer through
+    ///     <see cref="JasperFx.Events.IEventBinarySerializer.Serialize(Type, object, System.Buffers.IBufferWriter{byte})" />
+    ///     and bound to the <c>bdatas bytea[]</c> parameter as a slice of it, with no per-event <c>byte[]</c>
+    ///     (#5731, jasperfx#1187).
+    /// </summary>
+    /// <param name="binarySerializerFor">
+    ///     The binary serializer for an event, or <c>null</c> for an event that is stored as JSON.
+    /// </param>
+    protected void writeBasicParametersWithPooledBdata(
+        IGroupedParameterBuilder builder,
+        IStorageSession session,
+        Func<IEvent, JasperFx.Events.IEventBinarySerializer?> binarySerializerFor)
+    {
+        ArgumentNullException.ThrowIfNull(binarySerializerFor);
+        writeBasicParametersCore(builder, session, serializeEventBdata: null, binarySerializerFor);
+    }
+
+    private void writeBasicParametersCore(
+        IGroupedParameterBuilder builder,
+        IStorageSession session,
+        Func<IEvent, byte[]?>? serializeEventBdata,
+        Func<IEvent, JasperFx.Events.IEventBinarySerializer?>? binarySerializerFor)
+    {
         var param1 = Stream.AggregateTypeName.IsEmpty() ? builder.AppendParameter<object>(DBNull.Value) :  builder.AppendParameter(Stream.AggregateTypeName);
         param1.NpgsqlDbType = NpgsqlDbType.Varchar;
 
@@ -168,11 +227,6 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         var typeNames = rentColumn<string>(count);
         var dotNetTypeNames = rentColumn<string>(count);
         var jsonBodies = rentColumn<byte[]>(count);
-        // #4515 Phase 2: parallel bdata column — bytes for binary events,
-        // null for JSON. Always rented even when no binary events are
-        // registered, because the mt_quick_append_events function signature
-        // unconditionally carries the bdatas bytea[] parameter.
-        var bdataArray = rentColumn<byte[]>(count);
 
         for (int i = 0; i < count; i++)
         {
@@ -180,19 +234,37 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
             ids[i] = e.Id;
             typeNames[i] = e.EventTypeName;
             dotNetTypeNames[i] = e.DotNetTypeName;
+        }
 
-            var bdataBytes = serializeEventBdata?.Invoke(e);
-            if (bdataBytes is not null)
+        // #4515 Phase 2: the parallel bdata column — bytes for a binary event, NULL for a JSON one. Always
+        // bound, even when no binary events are registered, because the mt_quick_append_events function
+        // signature unconditionally carries the bdatas bytea[] parameter. Filling it also fills jsonBodies:
+        // a binary event gets the {} placeholder there, a JSON event its serialized payload.
+        PooledList<ReadOnlyMemory<byte>?>? pooledBdata = null;
+        PooledList<byte[]>? bdataArray = null;
+        if (binarySerializerFor is not null)
+        {
+            pooledBdata = writePooledBdata(session, events, jsonBodies, binarySerializerFor);
+        }
+        else
+        {
+            bdataArray = rentColumn<byte[]>(count);
+            for (int i = 0; i < count; i++)
             {
-                // Binary event — placeholder in data, real payload in bdata.
-                jsonBodies[i] = s_emptyJsonObjectUtf8;
-                bdataArray[i] = bdataBytes;
-            }
-            else
-            {
-                // JSON event — payload in data, NULL in bdata.
-                jsonBodies[i] = SerializeToUtf8(session.Serializer, e.Data);
-                bdataArray[i] = null!;
+                var e = events[i];
+                var bdataBytes = serializeEventBdata?.Invoke(e);
+                if (bdataBytes is not null)
+                {
+                    // Binary event — placeholder in data, real payload in bdata.
+                    jsonBodies[i] = s_emptyJsonObjectUtf8;
+                    bdataArray[i] = bdataBytes;
+                }
+                else
+                {
+                    // JSON event — payload in data, NULL in bdata.
+                    jsonBodies[i] = SerializeToUtf8(session.Serializer, e.Data);
+                    bdataArray[i] = null!;
+                }
             }
         }
 
@@ -208,12 +280,97 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         var param6 = builder.AppendParameter<IList<byte[]>>(jsonBodies);
         param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
 
-        // #4515 Phase 2: bdata bytea[] — must appear in the call-site parameter
-        // sequence in the same position as the function signature declares
-        // (right after bodies). The PG function inserts bdatas[index] into
+        // bdatas bytea[] — must appear in the call-site parameter sequence in the same position as the
+        // function signature declares (right after bodies). The PG function inserts bdatas[index] into
         // mt_events.bdata.
-        var param7 = builder.AppendParameter<IList<byte[]>>(bdataArray);
-        param7.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Bytea;
+        if (pooledBdata is not null)
+        {
+            var param7 = builder.AppendParameter<IList<ReadOnlyMemory<byte>?>>(pooledBdata);
+            param7.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Bytea;
+        }
+        else
+        {
+            var param7 = builder.AppendParameter<IList<byte[]>>(bdataArray!);
+            param7.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Bytea;
+        }
+    }
+
+    /// <summary>
+    ///     #5731: every binary event of the batch is serialized into ONE pooled buffer, and the
+    ///     <c>bdatas</c> column carries slices of it. The slices are only taken once every event has been
+    ///     written, because a write that grows the buffer moves it to a new rented array and returns the
+    ///     old one to the pool, so a slice taken earlier would point at memory someone else now owns.
+    /// </summary>
+    /// <remarks>
+    ///     <b>Lifetime.</b> The buffer is a rental of this operation, released with the column arrays in
+    ///     <see cref="Dispose" /> once the whole unit of work has finished, never in <c>PostprocessAsync</c>:
+    ///     Npgsql copies a parameter's bytes only when the batch executes, and the resilience pipeline can
+    ///     execute the same <c>NpgsqlBatch</c> again on a retry (#5262). Releasing it any earlier would send
+    ///     another event's bytes, or another library's, to <c>mt_events.bdata</c>.
+    /// </remarks>
+    private PooledList<ReadOnlyMemory<byte>?> writePooledBdata(
+        IStorageSession session,
+        IReadOnlyList<IEvent> events,
+        PooledList<byte[]> jsonBodies,
+        Func<IEvent, JasperFx.Events.IEventBinarySerializer?> binarySerializerFor)
+    {
+        var count = events.Count;
+
+        // Rented and zeroed (PooledList clears reference-carrying slots), so a JSON event's slot is a
+        // null ReadOnlyMemory<byte>?, which Npgsql writes as NULL.
+        var bdataArray = rentColumn<ReadOnlyMemory<byte>?>(count);
+
+        PooledByteBufferWriter? buffer = null;
+        int[]? ends = null;
+
+        try
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var e = events[i];
+                var binarySerializer = binarySerializerFor(e);
+                if (binarySerializer is null)
+                {
+                    // JSON event — payload in data, NULL in bdata.
+                    jsonBodies[i] = SerializeToUtf8(session.Serializer, e.Data);
+                    continue;
+                }
+
+                if (buffer is null)
+                {
+                    buffer = new PooledByteBufferWriter(256);
+                    trackRental(buffer);
+
+                    ends = ArrayPool<int>.Shared.Rent(count);
+                    ends.AsSpan(0, count).Fill(-1);
+                }
+
+                // Binary event — placeholder in data, real payload in bdata.
+                binarySerializer.Serialize(e.EventType, e.Data, buffer);
+                ends![i] = buffer.WrittenCount;
+                jsonBodies[i] = s_emptyJsonObjectUtf8;
+            }
+
+            if (buffer is not null)
+            {
+                var written = buffer.WrittenMemory;
+                var start = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    var end = ends![i];
+                    if (end < 0) continue;
+
+                    bdataArray[i] = written.Slice(start, end - start);
+                    start = end;
+                }
+            }
+        }
+        finally
+        {
+            if (ends is not null) ArrayPool<int>.Shared.Return(ends);
+        }
+
+        return bdataArray;
     }
 
     /// <summary>
@@ -255,7 +412,15 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         var events = Stream.Events;
         var count = events.Count;
         var headers = rentColumn<byte[]>(count);
-        for (int i = 0; i < count; i++) headers[i] = SerializeToUtf8(session.Serializer, events[i].Headers);
+        // An event without headers is stored as SQL NULL, as the rich append path and the bulk appender
+        // store it. Serializing the null would store the jsonb literal `null`, which every read then hands
+        // to the serializer as a Dictionary<string, object> -- a type a source-generated resolver for an
+        // AOT app has no reason to know about.
+        for (int i = 0; i < count; i++)
+        {
+            var eventHeaders = events[i].Headers;
+            headers[i] = eventHeaders is null ? null! : SerializeToUtf8(session.Serializer, eventHeaders);
+        }
 
         var param = builder.AppendParameter<IList<byte[]>>(headers);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
@@ -349,6 +514,34 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
             var param = builder.AppendParameter<IList<string?>>(values);
             param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
         }
+    }
+
+    /// <summary>
+    /// #5896: in <see cref="DcbStorageMode.HStore"/> the bulk function takes the events' tags as one
+    /// <c>hstore[]</c> parallel to the events array and writes them in its own insert. Bound in the slot the
+    /// TagTables mode's per-type arrays occupy; the two never both apply.
+    /// </summary>
+    protected bool writesHstoreTags => Events is { DcbStorageMode: DcbStorageMode.HStore, TagTypes.Count: > 0 };
+
+    protected void writeHstoreTagValues(IGroupedParameterBuilder builder)
+    {
+        var events = Stream.Events;
+        var count = events.Count;
+
+        // Null where an event carries no tag of a registered type -- the same rule, and the same refusal of
+        // two values of one tag type, as BuildHstore applies everywhere else hstore tags are written.
+        var values = new Dictionary<string, string>?[count];
+        for (var i = 0; i < count; i++)
+        {
+            var tags = events[i].Tags;
+            if (tags is not { Count: > 0 }) continue;
+
+            var hstore = EventTagOperations.BuildHstore(Events, tags);
+            values[i] = hstore.Count == 0 ? null : hstore;
+        }
+
+        var param = builder.AppendParameter<IList<Dictionary<string, string>?>>(values);
+        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Hstore;
     }
 
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)

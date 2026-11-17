@@ -158,10 +158,13 @@ public class write_retries_are_skipped_at_high_isolation : IntegrationContext
     [InlineData(IsolationLevel.RepeatableRead, true)]
     [InlineData(IsolationLevel.Serializable, true)]
     [InlineData(IsolationLevel.Snapshot, true)]
-    public void the_retry_pipeline_is_skipped_only_from_repeatable_read_upwards(
+    public async Task the_retry_pipeline_is_skipped_only_from_repeatable_read_upwards(
         IsolationLevel level, bool expectedToSkip)
     {
-        using var session = theStore.LightweightSession(new SessionOptions { IsolationLevel = level });
+        // #5861: a Serializable session can only be opened asynchronously.
+        await using var session = level == IsolationLevel.Serializable
+            ? await theStore.LightweightSerializableSessionAsync(new SessionOptions())
+            : theStore.LightweightSession(new SessionOptions { IsolationLevel = level });
 
         ((DocumentSessionBase)session).retriesAreUnsoundForThisSession().ShouldBe(expectedToSkip);
     }

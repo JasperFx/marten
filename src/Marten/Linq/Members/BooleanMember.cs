@@ -3,6 +3,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -17,7 +18,10 @@ internal class BooleanMember: QueryableMember, IComparableMember, IBooleanMember
     {
         TypedLocator = $"CAST({RawLocator} as {pgType})";
 
-        _isNullable = member.GetRawMemberType().IsNullable();
+        // #5949: the element of a bool[] or List<bool> is an ElementMember, which has no member type of its own.
+        // Reading it threw, so no bool collection on a document could be queried at all.
+        _isNullable = (member is ElementMember element ? element.ReflectedType : member.GetRawMemberType())!
+            .IsNullable();
     }
 
     public ISqlFragment BuildIsTrueFragment()

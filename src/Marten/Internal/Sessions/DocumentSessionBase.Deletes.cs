@@ -15,8 +15,6 @@ namespace Marten.Internal.Sessions;
 
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public abstract partial class DocumentSessionBase
 {
     public void Delete<T>(T entity) where T : notnull
@@ -79,6 +77,8 @@ public abstract partial class DocumentSessionBase
         ejectById<T>(id);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public void Delete<T>(object id) where T : notnull
     {
         // 9.0 (#4373): delegate-cached factory keyed on id.GetType().
@@ -160,6 +160,8 @@ public abstract partial class DocumentSessionBase
         _workTracker.Add(deletion);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public void DeleteObjects(IEnumerable<object> documents)
     {
         assertNotDisposed();

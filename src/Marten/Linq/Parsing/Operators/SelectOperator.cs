@@ -32,14 +32,40 @@ public class SelectOperator: LinqOperator
             select = l.Body;
         }
 
+        var followsSelectMany = selectLambda != null && FollowsPlainSelectMany(expression);
+
+        // #5933: Select(v => v) after a SelectMany() changes nothing, so leave the query exactly as it would
+        // be without it
+        if (followsSelectMany && select == selectLambda!.Parameters[0])
+        {
+            return;
+        }
+
         var usage = query.CollectionUsageFor(expression);
+
+        // #5933: a Select() after SelectMany() that maps an element to the same type -- v => v % 3 over an int
+        // collection -- would otherwise share one usage with every operator after it, and with every operator
+        // before it, so a Where() or OrderBy() after the projection could not be told apart from one before it.
+        // Operators are applied outermost first, so everything already on the current usage comes after this
+        // Select(); start a new usage for the Select() and whatever precedes it.
+        // #5955: the same holds for a top-level Select() that maps a document to its own type -- x => x.Inner,
+        // where Inner is another Target -- whose OrderBy() was otherwise applied to the documents themselves.
+        var splitsTheUsage = followsSelectMany ||
+                             (selectLambda != null && select != selectLambda.Parameters[0] &&
+                              ProjectsTheQueriedDocuments(expression));
+
+        if (splitsTheUsage && previousUsage != null && previousUsage == usage)
+        {
+            usage = query.StartNewCollectionUsageFor(expression);
+        }
 
         // Expression hoisting for .Select().Where() chains (GH-3009).
         // When the select body is a simple member access (e.g., x => x.Inner), we can
         // rewrite post-Select Where expressions to reference the original document type
-        // by prepending the select member path.
-        if (selectLambda != null && select is MemberExpression memberSelect && previousUsage != null
-            && previousUsage.WhereExpressions.Any())
+        // by prepending the select member path. #5933: not after a SelectMany(), where the projected rows are
+        // filtered by the operators that follow the projection, as they are for any other projection.
+        if (!followsSelectMany && selectLambda != null && select is MemberExpression memberSelect &&
+            previousUsage != null && previousUsage.WhereExpressions.Any())
         {
             if (previousUsage == usage)
             {
@@ -53,6 +79,59 @@ public class SelectOperator: LinqOperator
         }
 
         usage.SelectExpression = select;
+    }
+
+    /// <summary>
+    /// #5933: does this Select() project the rows of a plain <c>SelectMany(x => x.Collection)</c>, with only
+    /// row-preserving operators (Where, OrderBy, paging, Distinct, other Select()s) in between? A SelectMany()
+    /// with a result selector, which is how GroupJoin() and the two-collection overload are flattened, is
+    /// compiled elsewhere and is left alone.
+    /// </summary>
+    internal static bool FollowsPlainSelectMany(MethodCallExpression select)
+    {
+        var source = select.Arguments[0];
+        while (source is MethodCallExpression call)
+        {
+            switch (call.Method.Name)
+            {
+                case "SelectMany":
+                    return call.Arguments.Count == 2;
+
+                case "Where" or "OrderBy" or "OrderByDescending" or "ThenBy" or "ThenByDescending" or "Take"
+                    or "Skip" or "Distinct" or "Select":
+                    source = call.Arguments[0];
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// #5955: does this Select() project the queried documents themselves, with only row-preserving operators
+    /// (Where, OrderBy, paging, Distinct) between it and the query's root?
+    /// </summary>
+    internal static bool ProjectsTheQueriedDocuments(MethodCallExpression select)
+    {
+        var source = select.Arguments[0];
+        while (source is MethodCallExpression call)
+        {
+            switch (call.Method.Name)
+            {
+                case "Where" or "OrderBy" or "OrderByDescending" or "ThenBy" or "ThenByDescending" or "Take"
+                    or "Skip" or "Distinct":
+                    source = call.Arguments[0];
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        return source is ConstantExpression;
     }
 
     internal static void HoistWhereExpressions(

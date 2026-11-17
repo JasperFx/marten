@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten.Events;
+using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema;
@@ -51,7 +52,14 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         await conn.OpenAsync(ct).ConfigureAwait(false);
 
         var schemas = AllSchemaNames();
-        var tables = await conn.ExistingTablesAsync("mt_%", schemas, ct: ct).ConfigureAwait(false);
+
+        // jasperfx#809 (#5740): projection start floors are configuration an operator or a first start
+        // pinned, not data, and they have to outlive a data reset as they outlive rebuild teardown. A reset
+        // that cleared them would make the next first start re-pin at the current high water and silently
+        // skip everything appended in between. CompletelyRemoveAllAsync still drops the table.
+        var tables = (await conn.ExistingTablesAsync("mt_%", schemas, ct: ct).ConfigureAwait(false))
+            .Where(x => !x.Name.EqualsIgnoreCase(ProjectionFloorTable.Name))
+            .ToList();
 
         if (!tables.Any())
         {
@@ -101,12 +109,15 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(cmd, e);
+            MartenExceptionTransformer.WrapAndThrow(Options.Advanced.ExceptionTransforms, cmd, e);
         }
     }
 
     public async Task CompletelyRemoveAllAsync(CancellationToken ct = default)
     {
+        // #5688: see DeleteAllEventDataAsync
+        await Options.EventGraph.WaitForPendingTombstonesAsync().ConfigureAwait(false);
+
         await using var conn = CreateConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
         var schemas = AllSchemaNames();
@@ -144,6 +155,12 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
     public async Task DeleteAllEventDataAsync(CancellationToken ct = default)
     {
+        // #5688: a failed save's tombstones are written in the background, at the sequence numbers it
+        // drew. This wipe restarts mt_events_sequence at 1, so one landing after it would occupy a
+        // number the sequence is about to hand out again, and the next append to reach it fails on
+        // pkey_mt_events_seq_id. Let the writes already started finish first.
+        await Options.EventGraph.WaitForPendingTombstonesAsync().ConfigureAwait(false);
+
         await EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
         await using var connection = CreateConnection();
@@ -179,6 +196,9 @@ IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_streams' AND table_schema = '{Options.Events.DatabaseSchemaName}')
 THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.mt_streams CASCADE; END IF;
 IF EXISTS(SELECT * FROM information_schema.tables
+WHERE table_name = '{StreamIdentityEnforcementTable.TableName}' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.{StreamIdentityEnforcementTable.TableName}; END IF;
+IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_event_progression' AND table_schema = '{Options.Events.DatabaseSchemaName}')
 THEN delete from {Options.Events.DatabaseSchemaName}.mt_event_progression; END IF;
 END; $$;
@@ -205,8 +225,24 @@ END; $$;
             eventsWhere += tenantPart;
         }
 
+        // The stream's DCB tag rows go first: each mt_event_tag_* table has a foreign key to mt_events that
+        // does not cascade. Under conjoined tenancy the tag rows are matched on (seq_id, tenant_id), because
+        // seq_id alone is not an event under per-tenant sequences (#5234).
+        var schema = Options.Events.DatabaseSchemaName;
+        var tagKey = Options.Events.TenancyStyle == TenancyStyle.Conjoined ? "seq_id, tenant_id" : "seq_id";
+        var tagDeletes = Options.EventGraph.DcbStorageMode == DcbStorageMode.HStore
+            ? ""
+            : string.Concat(Options.EventGraph.TagTypes.Select(tagType =>
+                $"delete from {schema}.mt_event_tag_{tagType.TableSuffix} where ({tagKey}) in (select {tagKey} from {schema}.mt_events where {eventsWhere});"));
+
+        // #5812: under strict stream identity enforcement (on by default since 10.0) the stream's identity row goes
+        // too, or the id could never be used again
+        var identityDelete = Options.EventGraph.EnableStrictStreamIdentityEnforcement
+            ? $";delete from {schema}.{StreamIdentityEnforcementTable.TableName} where {streamsWhere}"
+            : "";
+
         var cmd = conn.CreateCommand(
-            $"delete from {Options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {Options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
+            $"{tagDeletes}delete from {schema}.mt_events where {eventsWhere};delete from {schema}.mt_streams where {streamsWhere}{identityDelete}");
         cmd.AddNamedParameter("id", streamId);
 
         if (Options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())

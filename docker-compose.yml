@@ -14,6 +14,10 @@ services:
     # default 64MB shm leaves parallel queries almost no headroom and the test
     # suite can fail with "53100: could not resize shared memory segment"
     shm_size: '512mb'
+    # The stock 100 connections is fewer than four EventSourcingTests lanes hold at once, and the
+    # local gate (`./build.sh LocalGate`, #5725) runs up to half the cores' worth of test hosts
+    # against this one server. The gate sizes its worker budget to what is free here.
+    command: postgres -c max_connections=500
     ports:
       - "5432:5432"
     environment:

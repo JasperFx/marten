@@ -34,8 +34,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2087",
     Justification = "Class-level: generic method/type argument flows reflective Type values into a DAM-annotated target. Source preserved at the registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2091",
@@ -302,6 +300,10 @@ public static class MartenServiceCollectionExtensions
                 options.DisableNpgsqlLogging = true;
             }
 
+            // A custom IMartenLogger replaces the session logging only; the daemon,
+            // MartenDatabase etc. still need the ILoggerFactory
+            options.LogFactory = s.GetService<ILoggerFactory>();
+
             if (options.Logger().GetType() != typeof(NulloMartenLogger))
             {
                 return new DocumentStore(options);
@@ -309,8 +311,6 @@ public static class MartenServiceCollectionExtensions
 
             var logger = s.GetService<ILogger<IDocumentStore>>() ?? new NullLogger<IDocumentStore>();
             options.Logger(new DefaultMartenLogger(logger));
-
-            options.LogFactory = s.GetService<ILoggerFactory>();
 
             return new DocumentStore(options);
         });
@@ -691,8 +691,11 @@ public static class MartenServiceCollectionExtensions
                     Services.AddScoped<TSubscription>();
                     Services.ConfigureMarten<T>((s, opts) =>
                     {
-                        var subscription = new ScopedSubscriptionServiceWrapper<TSubscription>(s);
-                        opts.Projections.Subscribe(subscription, configure);
+                        // jasperfx#1050: the shared wrapper, which keeps the container scope open around
+                        // the whole page, commit and listener included, rather than only ProcessEventsAsync
+                        var subscription =
+                            new ScopedSubscriptionServiceWrapper<TSubscription, IDocumentOperations, IQuerySession, ISubscription>(s);
+                        opts.Projections.SubscribeScoped(subscription, configure);
                     });
                     break;
             }
@@ -1017,8 +1020,11 @@ public static class MartenServiceCollectionExtensions
                     Services.AddScoped<T>();
                     Services.ConfigureMarten((s, opts) =>
                     {
-                        var subscription = new ScopedSubscriptionServiceWrapper<T>(s);
-                        opts.Projections.Subscribe(subscription, configure);
+                        // jasperfx#1050: the shared wrapper, which keeps the container scope open around
+                        // the whole page, commit and listener included, rather than only ProcessEventsAsync
+                        var subscription =
+                            new ScopedSubscriptionServiceWrapper<T, IDocumentOperations, IQuerySession, ISubscription>(s);
+                        opts.Projections.SubscribeScoped(subscription, configure);
                     });
                     break;
             }
@@ -1195,8 +1201,8 @@ internal class SetEventStoreInstrumentation: IConfigureMarten, IEventStoreInstru
         // #5310: "was it assigned" and "is it true" are different questions, and keying off the backing
         // field keeps them apart. #4981's guard was `if (ExtendedProgressionEnabled)`, which cannot
         // distinguish "left alone" from "deliberately turned off" -- harmless while the EventGraph
-        // default is false, and silently wrong the moment anything changes that. Kept even though the
-        // default went back to false, because it is correct for either one and costs nothing.
+        // default was false, and silently wrong the moment anything changed that. Kept even though the
+        // default is true again, because it is correct for either one and costs nothing.
         if (_extendedProgressionEnabled.HasValue)
         {
             options.EventGraph.EnableExtendedProgressionTracking = _extendedProgressionEnabled.Value;
@@ -1212,9 +1218,9 @@ internal class SetEventStoreInstrumentation: IConfigureMarten, IEventStoreInstru
 
     public bool ExtendedProgressionEnabled
     {
-        // Unset reads as the EventGraph default this adapter would leave in place (false), so reading
-        // the property before the store is built does not misreport what the store will get.
-        get => _extendedProgressionEnabled ?? false;
+        // Unset reads as the EventGraph default this adapter would leave in place (true since 10.0), so
+        // reading the property before the store is built does not misreport what the store will get.
+        get => _extendedProgressionEnabled ?? true;
         set => _extendedProgressionEnabled = value;
     }
 
@@ -1242,7 +1248,7 @@ internal class SetEventStoreInstrumentation<T>: IConfigureMarten<T>, IEventStore
 
     public bool ExtendedProgressionEnabled
     {
-        get => _extendedProgressionEnabled ?? false;
+        get => _extendedProgressionEnabled ?? true;
         set => _extendedProgressionEnabled = value;
     }
 

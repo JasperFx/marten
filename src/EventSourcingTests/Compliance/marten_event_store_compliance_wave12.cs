@@ -29,3 +29,13 @@ namespace EventSourcingTests.Compliance;
 
 public class stream_state_query_compliance
     : StreamStateQueryCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+/*
+ * JasperFx 2.94.0 (jasperfx#1073): the bodies of one event type as a real IQueryable<T>, the
+ * QueryStreamStates sibling, so it is enrolled beside it. Marten's QueryEventData<T> is
+ * QueryRawEventDataOnly<T> under the store-agnostic name; the refusal shapes the shared suite does not
+ * pin are in EventSourcingTests/query_event_data_tests.cs.
+ */
+
+public class event_data_query_compliance
+    : EventDataQueryCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;

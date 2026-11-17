@@ -1,9 +1,11 @@
 #nullable enable
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Tags;
+using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Dcb;
@@ -84,6 +86,51 @@ public class auto_discover_tag_types_from_projections: OneOffConfigurationsConte
         });
 
         theStore.Events.FindTagType(typeof(Guid)).ShouldBeNull();
+    }
+
+    [Fact]
+    public void auto_discovery_is_on_by_default()
+    {
+        new StoreOptions().EventGraph.AutoDiscoverTagTypes.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task nothing_is_registered_or_built_when_auto_discovery_is_turned_off()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.AutoDiscoverTagTypes = false;
+            opts.Projections.Add<TicketSummaryProjection>(ProjectionLifecycle.Inline);
+        });
+
+        theStore.Events.FindTagType(typeof(TicketId)).ShouldBeNull();
+        theStore.Events.TagTypes.ShouldBeEmpty();
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream(streamId, new TicketOpened("Fix bug"));
+        await theSession.SaveChangesAsync();
+
+        // The point of the option, so read it from the catalog rather than from the configuration
+        await using var query = theStore.QuerySession();
+        var tagTables = await query.AdvancedSql.QueryAsync<string>(
+            "select table_name from information_schema.tables where table_schema = ? and table_name like 'mt_event_tag%'",
+            CancellationToken.None, theStore.Options.DatabaseSchemaName);
+        tagTables.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void explicit_registration_still_works_when_auto_discovery_is_turned_off()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.AutoDiscoverTagTypes = false;
+            opts.Events.RegisterTagType<TicketId>("custom_ticket").ForAggregate<TicketSummary>();
+            opts.Projections.Add<TicketSummaryProjection>(ProjectionLifecycle.Inline);
+        });
+
+        var registration = theStore.Events.FindTagType(typeof(TicketId));
+        registration.ShouldNotBeNull();
+        registration.TableSuffix.ShouldBe("custom_ticket");
     }
 
     [Fact]

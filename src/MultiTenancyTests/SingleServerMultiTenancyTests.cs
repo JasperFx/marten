@@ -37,7 +37,7 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
 
     private async Task DropDatabaseIfExists(string databaseName)
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         await conn.KillIdleSessions(databaseName);
@@ -157,6 +157,46 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
         var database = await theTenancy.FindOrCreateDatabase("tenant1");
         tenant.Database.ShouldBeSameAs(database);
         tenant.TenantId.ShouldBe("tenant1");
+    }
+
+    // #5985: the synchronous resolution honours the tenant-to-database mapping, and shares its database with the
+    // asynchronous path
+    [Fact]
+    public async Task build_mapped_tenants_synchronously()
+    {
+        theTenancy.WithTenants("tenant1", "tenant2").InDatabaseNamed("database1");
+
+        (await DatabaseExists("database1")).ShouldBeFalse();
+        var tenant1 = theTenancy.GetTenant("tenant1");
+        (await DatabaseExists("database1")).ShouldBeTrue();
+        (await DatabaseExists("tenant1")).ShouldBeFalse();
+
+        tenant1.TenantId.ShouldBe("tenant1");
+        tenant1.Database.Identifier.ShouldBe("database1");
+
+        theTenancy.GetTenant("tenant2").Database.ShouldBeSameAs(tenant1.Database);
+        (await theTenancy.GetTenantAsync("tenant2")).Database.ShouldBeSameAs(tenant1.Database);
+        (await theTenancy.FindOrCreateDatabase("database1")).ShouldBeSameAs(tenant1.Database);
+    }
+
+    // #5985: Npgsql refuses synchronous I/O under multiplexing, so a multiplexed master connection keeps the
+    // asynchronous path rather than failing with NotSupportedException
+    [Fact]
+    public async Task build_tenant_synchronously_when_the_master_connection_is_multiplexed()
+    {
+        var multiplexed = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+        {
+            Multiplexing = true
+        }.ConnectionString;
+
+        var tenancy = new SingleServerMultiTenancy(dataSourceFactory, multiplexed, new StoreOptions());
+
+        (await DatabaseExists("tenant3")).ShouldBeFalse();
+        var tenant = tenancy.GetTenant("tenant3");
+        (await DatabaseExists("tenant3")).ShouldBeTrue();
+
+        tenant.Database.ShouldBeSameAs(await tenancy.FindOrCreateDatabase("tenant3"));
+        await tenancy.DisposeAsync();
     }
 
     [Fact]

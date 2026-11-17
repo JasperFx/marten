@@ -18,7 +18,7 @@ but will no longer be applied:
 Definitely check out [Rebuilding a Single Stream](/events/projections/rebuilding.html#rebuilding-a-single-stream) for part of the recipe for "healing" a system from bad events.
 :::
 
-To get started, you will first have to enable potential event skipping like this:
+Skipping is on by default since Marten 10. Before that it was opt in, and this is the setting:
 
 <!-- snippet: sample_enabling_event_skipping -->
 <a id='snippet-sample_enabling_event_skipping'></a>
@@ -28,20 +28,17 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-    // This is false by default for backwards compatibility,
-    // turning this on will add an extra column and filtering during
-    // various event store operations
+    // On by default since Marten 10. Set it to false to stop
+    // filtering skipped events out of projections, subscriptions
+    // and aggregation
     opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = true;
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventSkipping.cs#L14-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_event_skipping' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-That flag just enables the ability to mark events as _skipped_. As you'd imagine, that 
-flag alters Marten behavior by:
-
-1. Adds a new field called `is_skipped` to your `mt_events` table
-2. Adds an additional filter on `is_skipped = FALSE` on many event store operations detailed above
+The `is_skipped` column on `mt_events` is always there in Marten 10. The flag adds the `is_skipped = FALSE` filter to
+the event store operations listed above. Set it to `false` (or call `opts.RestoreV9Defaults()`) to leave that filter off.
 
 To mark events as skipped, you can either use raw SQL against your `mt_events` table, or
 this helper API:
@@ -58,4 +55,35 @@ public static async Task mark_events_as_skipped(
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventSkipping.cs#L30-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mark_events_as_skipped' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Multi-tenancy
+
+If you use multi-tenancy, find the database that holds the tenant's events, and name the tenant too.
+With conjoined tenancy and `UseTenantPartitionedEvents`, every tenant numbers its own events, so a
+sequence alone matches the same-numbered event of every other tenant. In that mode the overload that
+takes only the sequences throws an `InvalidOperationException` rather than skip other tenants' events,
+and raw SQL against `mt_events` needs a `tenant_id` predicate as well as the `seq_id` one:
+
+<!-- snippet: sample_mark_events_as_skipped_by_tenant -->
+<a id='snippet-sample_mark_events_as_skipped_by_tenant'></a>
+```cs
+public static async Task mark_events_as_skipped_by_tenant(
+    IDocumentStore store,
+    long[] sequences,
+    string tenantId,
+    CancellationToken cancellation)
+{
+    // If you're using multi-tenancy through separate databases,
+    // you'll need to use the correct database
+    var database = await store.Storage.FindOrCreateDatabase(tenantId);
+
+    // And name the tenant. With conjoined tenancy and
+    // UseTenantPartitionedEvents, every tenant numbers its own
+    // events, so a sequence alone matches the same-numbered
+    // event of every other tenant
+    await database.MarkEventsAsSkipped(tenantId, sequences, cancellation);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventSkipping.cs#L40-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mark_events_as_skipped_by_tenant' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

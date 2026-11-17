@@ -90,7 +90,7 @@ public class StatementMap<T>: IEventHandler
 
     private void createFunctionName(Table table)
     {
-        var functionName = $"mt_upsert_{table.Identifier.Name.ToLower()}_{typeof(T).NameInCode().ToLower().Sanitize()}";
+        var functionName = $"mt_upsert_{table.Identifier.Name.ToLowerInvariant()}_{typeof(T).NameInCode().ToLowerInvariant().Sanitize()}";
         _functionIdentifier = new PostgresqlObjectName(table.Identifier.Schema, functionName);
     }
 

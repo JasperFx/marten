@@ -174,7 +174,7 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
         if (_dict.Count > 0)
         {
             builder.Append(", ");
-            builder.AppendParameter(JsonbPayload.ToJson(_serializer, _dict), NpgsqlDbType.Jsonb);
+            builder.AppendParameter(JsonbPayload.ToUtf8(_serializer, _dict), NpgsqlDbType.Jsonb);
             ParameterName = builder.LastParameterName;
         }
 
@@ -308,7 +308,7 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
                 if (leaf is IInlinedJsonPathValueFilter { JsonPathValueIsInlined: true } &&
                     leaf.Values().Any(v => v.Value.Equals(value)))
                 {
-                    throw new Marten.Exceptions.BadLinqExpressionException(
+                    throw new BadLinqExpressionException(
                         "string.Contains()/EndsWith() and case-insensitive string comparisons inside a collection predicate embed the search text in the SQL, so a compiled query cannot re-bind the value between executions. Use a case-sensitive StartsWith(), move the filter out of the compiled query, or query with session.Query<T>() instead.");
                 }
             }
@@ -351,7 +351,7 @@ internal class JsonPathExistsFilter: ISqlFragment, ICollectionAwareFilter, IComp
         {
             var payload = CompiledQueryDictionaryBuilder.Build(dictRef(), usagesRef(), query, default);
             parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
-            parameter.Value = payload is null ? DBNull.Value : JsonbPayload.ToJson(serializer, payload);
+            parameter.Value = payload is null ? DBNull.Value : JsonbPayload.ToUtf8(serializer, payload);
         };
     }
 

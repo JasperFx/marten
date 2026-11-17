@@ -15,7 +15,15 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class StatementOperation: Statement, IStorageOperation
+/// <summary>
+/// An UPDATE or DELETE built from a LINQ predicate. It never returns rows, so it is a
+/// <see cref="NoDataReturnedCall" />, and that is load-bearing (#5743). Without the marker the batch called
+/// <c>NextResult</c> after this statement, which produced no result set, and so skipped the NEXT operation's
+/// result instead. A numeric-revision upsert queued after <c>UndoDeleteWhere</c> or <c>HardDeleteWhere</c> then
+/// read nothing back and reported a ConcurrencyException for a write that had not conflicted. Its subclasses
+/// (<see cref="Deletion" />, <c>PatchOperation</c>) always carried the marker; only the bare uses did not.
+/// </summary>
+internal class StatementOperation: Statement, IStorageOperation, NoDataReturnedCall
 {
     private readonly IOperationFragment _operation;
     private readonly IDocumentStorage _storage;

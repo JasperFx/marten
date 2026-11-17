@@ -63,7 +63,11 @@ public class caching_async_aggregates_for_writing: OneOffConfigurationsContext
         stream.Aggregate.CCount.ShouldBe(expected.CCount);
         stream.Aggregate.Id.ShouldBe(streamId);
 
-        // ... and the fetch left a snapshot behind at the stream version
+        // Nothing is in the cache until the session commits (jasperfx#1050)...
+        theCache.Keys.ShouldBeEmpty();
+        await session.SaveChangesAsync();
+
+        // ... and then the fetch has left a snapshot behind at the stream version
         var (_, version) = theCache.SingleEntry();
         version.ShouldBe(6);
     }
@@ -81,6 +85,9 @@ public class caching_async_aggregates_for_writing: OneOffConfigurationsContext
         await using (var warmUp = theStore.LightweightSession())
         {
             await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+            // jasperfx#1050: nothing reaches the cache before the session commits
+            await warmUp.SaveChangesAsync();
         }
 
         // Deliberately poison the cached baseline. If the next fetch replays the whole stream, ACount comes
@@ -102,7 +109,9 @@ public class caching_async_aggregates_for_writing: OneOffConfigurationsContext
         stream.CurrentVersion.ShouldBe(5);
         stream.Aggregate.ACount.ShouldBe(102);
 
-        // and the poisoned-but-now-folded snapshot is written back at the real stream version
+        // and the poisoned-but-now-folded snapshot is written back at the real stream version once the
+        // session commits
+        await session.SaveChangesAsync();
         var (aggregate, version) = theCache.SingleEntry();
         version.ShouldBe(5);
         ((SimpleAggregate)aggregate).ACount.ShouldBe(102);
@@ -120,6 +129,9 @@ public class caching_async_aggregates_for_writing: OneOffConfigurationsContext
         await using (var warmUp = theStore.LightweightSession())
         {
             await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+            // jasperfx#1050: nothing reaches the cache before the session commits
+            await warmUp.SaveChangesAsync();
         }
 
         // The cache is now three versions behind
@@ -153,6 +165,9 @@ public class caching_async_aggregates_for_writing: OneOffConfigurationsContext
         await using (var warmUp = theStore.LightweightSession())
         {
             await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+            // jasperfx#1050: nothing reaches the cache before the session commits
+            await warmUp.SaveChangesAsync();
         }
 
         await using var session = theStore.LightweightSession();
@@ -187,6 +202,9 @@ public class caching_async_aggregates_for_writing: OneOffConfigurationsContext
         await using (var warmUp = theStore.LightweightSession())
         {
             await warmUp.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+            // jasperfx#1050: nothing reaches the cache before the session commits
+            await warmUp.SaveChangesAsync();
         }
 
         // Pretend the database was restored out from under a cache that had run ahead
@@ -199,7 +217,8 @@ public class caching_async_aggregates_for_writing: OneOffConfigurationsContext
         stream.CurrentVersion.ShouldBe(3);
         stream.Aggregate.ACount.ShouldBe(3);
 
-        // and the cache healed itself on the same call rather than staying poisoned
+        // and the cache healed itself on the same round, once the session commits, rather than staying poisoned
+        await session.SaveChangesAsync();
         var (aggregate, version) = theCache.SingleEntry();
         version.ShouldBe(3);
         ((SimpleAggregate)aggregate).ACount.ShouldBe(3);
@@ -237,6 +256,7 @@ public class caching_async_aggregates_for_writing: OneOffConfigurationsContext
             var stream = await one.Events.FetchForWriting<SimpleAggregate>(streamId);
             stream.Aggregate.ACount.ShouldBe(3);
             stream.Aggregate.BCount.ShouldBe(0);
+            await one.SaveChangesAsync();
         }
 
         await using (var two = theStore.LightweightSession("two"))
@@ -244,6 +264,7 @@ public class caching_async_aggregates_for_writing: OneOffConfigurationsContext
             var stream = await two.Events.FetchForWriting<SimpleAggregate>(streamId);
             stream.Aggregate.ACount.ShouldBe(0);
             stream.Aggregate.BCount.ShouldBe(2);
+            await two.SaveChangesAsync();
         }
 
         theCache.Keys.Count.ShouldBe(2);
@@ -344,6 +365,22 @@ public class MartenTestAggregateWriteCache: IAggregateWriteCache
     public void Evict(AggregateCacheKey key)
     {
         _entries.TryRemove(key, out _);
+    }
+
+    // The write-back (AggregateWriteCacheSession.Flush, jasperfx#1050) goes through StoreIfNewer. Its default
+    // is a TryTake then a Store, which would count every write-back as a fetch's hit or miss.
+    public bool StoreIfNewer(AggregateCacheKey key, object aggregate, long version)
+    {
+        var stored = true;
+        _entries.AddOrUpdate(key, (aggregate, version), (_, existing) =>
+        {
+            if (existing.Version <= version) return (aggregate, version);
+
+            stored = false;
+            return existing;
+        });
+
+        return stored;
     }
 
     public AggregateCacheKey SingleKey()

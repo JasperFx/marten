@@ -171,6 +171,95 @@ public static class HighWaterHealthCheckExtensions
             includeExternallyManaged, databaseFilter));
     }
 
+    /// <summary>
+    ///     marten#5705: the same check for an ancillary store registered with
+    ///     <c>AddMartenStore&lt;TStore&gt;()</c>. The parameterless overloads check the default
+    ///     <see cref="IDocumentStore" />, which is not registered at all when an application uses only
+    ///     separate stores. This one probes <typeparamref name="TStore" /> and, with
+    ///     <paramref name="autoRestart" />, restarts through that store's own
+    ///     <see cref="Marten.Events.Daemon.Coordination.IProjectionCoordinator{T}" />.
+    ///     <para>
+    ///         Call it once per store. Each store gets its own check, named
+    ///         <c>HighWaterHealthCheck:&lt;store type&gt;</c>, with its own settings, so registering it
+    ///         never changes the default store's check.
+    ///     </para>
+    /// </summary>
+    /// <typeparam name="TStore">The store's marker interface, as passed to <c>AddMartenStore&lt;TStore&gt;()</c>.</typeparam>
+    /// <param name="builder"><see cref="IHealthChecksBuilder" /></param>
+    /// <param name="staleThreshold">See the non-generic overload. Defaults to 30 seconds.</param>
+    /// <param name="minimumGap">See the non-generic overload. Defaults to 1.</param>
+    /// <param name="autoRestart">See the non-generic overload. Defaults to <c>false</c>.</param>
+    /// <param name="databaseFilter">See the non-generic overload. Defaults to <c>null</c> (every database).</param>
+    /// <param name="includeExternallyManaged">See the non-generic overload. Defaults to <c>false</c>.</param>
+    public static IHealthChecksBuilder AddMartenHighWaterHealthCheck<TStore>(
+        this IHealthChecksBuilder builder,
+        TimeSpan? staleThreshold = null,
+        long minimumGap = 1,
+        bool autoRestart = false,
+        Func<IMartenDatabase, bool>? databaseFilter = null,
+        bool includeExternallyManaged = false
+    ) where TStore : class, IDocumentStore
+    {
+        return builder.registerHighWaterHealthCheck<TStore>(new HighWaterHealthCheckSettings(
+            staleThreshold ?? TimeSpan.FromSeconds(30), minimumGap, autoRestart, databaseFilter,
+            includeExternallyManaged));
+    }
+
+    /// <summary>
+    ///     marten#5705: the provider-aware filter overload (marten#5061) for an ancillary store registered
+    ///     with <c>AddMartenStore&lt;TStore&gt;()</c>. See the other generic overload.
+    /// </summary>
+    /// <typeparam name="TStore">The store's marker interface, as passed to <c>AddMartenStore&lt;TStore&gt;()</c>.</typeparam>
+    /// <param name="builder"><see cref="IHealthChecksBuilder" /></param>
+    /// <param name="databaseFilter">
+    ///     Provider-aware predicate, invoked once per database per probe. Return <c>true</c> for the
+    ///     databases this node should assert on.
+    /// </param>
+    /// <param name="staleThreshold">See the non-generic overload. Defaults to 30 seconds.</param>
+    /// <param name="minimumGap">See the non-generic overload. Defaults to 1.</param>
+    /// <param name="autoRestart">See the non-generic overload. Defaults to <c>false</c>.</param>
+    /// <param name="includeExternallyManaged">See the non-generic overload. Defaults to <c>false</c>.</param>
+    public static IHealthChecksBuilder AddMartenHighWaterHealthCheck<TStore>(
+        this IHealthChecksBuilder builder,
+        Func<IServiceProvider, IMartenDatabase, bool> databaseFilter,
+        TimeSpan? staleThreshold = null,
+        long minimumGap = 1,
+        bool autoRestart = false,
+        bool includeExternallyManaged = false
+    ) where TStore : class, IDocumentStore
+    {
+        ArgumentNullException.ThrowIfNull(databaseFilter);
+
+        return builder.registerHighWaterHealthCheck<TStore>(new HighWaterHealthCheckSettings(
+            staleThreshold ?? TimeSpan.FromSeconds(30), minimumGap, autoRestart, DatabaseFilter: null,
+            includeExternallyManaged, databaseFilter));
+    }
+
+    /// <summary>
+    ///     marten#5705: the name a store's high-water check is registered under, so a caller filtering
+    ///     health check results can find it.
+    /// </summary>
+    public static string HighWaterHealthCheckNameFor<TStore>() where TStore : class, IDocumentStore =>
+        $"{nameof(HighWaterHealthCheck)}:{typeof(TStore).Name}";
+
+    private static IHealthChecksBuilder registerHighWaterHealthCheck<TStore>(this IHealthChecksBuilder builder,
+        HighWaterHealthCheckSettings settings) where TStore : class, IDocumentStore
+    {
+        // The settings travel with this store's registration rather than through the
+        // HighWaterHealthCheckSettings singleton, which belongs to the default store's check. Replacing
+        // that singleton here would silently re-configure the default check, or another store's.
+        // One tracker serves every store's check: its keys start with the database identifier, which is
+        // the store's StoreName, so two stores never share a key even when they share a database.
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.TryAddSingleton<HighWaterStateTracker>();
+        return builder.Add(new HealthCheckRegistration(
+            HighWaterHealthCheckNameFor<TStore>(),
+            services => ActivatorUtilities.CreateInstance<HighWaterHealthCheck<TStore>>(services, settings),
+            failureStatus: null,
+            tags: new[] { "Marten", "AsyncDaemon", "HighWater", typeof(TStore).Name }
+        ));
+    }
+
     private static IHealthChecksBuilder registerHighWaterHealthCheck(this IHealthChecksBuilder builder,
         HighWaterHealthCheckSettings settings)
     {
@@ -215,6 +304,23 @@ public static class HighWaterHealthCheckExtensions
             new();
 
         public ConcurrentDictionary<string, DateTimeOffset> Restarts { get; } = new();
+    }
+
+    /// <summary>
+    ///     marten#5705: the health check for an ancillary store registered with
+    ///     <c>AddMartenStore&lt;TStore&gt;()</c>. Probes <typeparamref name="TStore" /> and restarts
+    ///     through its <see cref="Marten.Events.Daemon.Coordination.IProjectionCoordinator{T}" />.
+    /// </summary>
+    public class HighWaterHealthCheck<TStore>: HighWaterHealthCheck where TStore : class, IDocumentStore
+    {
+        public HighWaterHealthCheck(TStore store, HighWaterHealthCheckSettings settings, TimeProvider timeProvider,
+            HighWaterStateTracker tracker, IServiceProvider services)
+            : base(store, settings, timeProvider, tracker, services)
+        {
+        }
+
+        protected override IProjectionCoordinator? resolveCoordinator(IServiceProvider services) =>
+            services.GetService<Marten.Events.Daemon.Coordination.IProjectionCoordinator<TStore>>();
     }
 
     /// <summary>
@@ -525,6 +631,14 @@ public static class HighWaterHealthCheckExtensions
             _tracker.Restarts.TryRemove(databaseIdentifier, out _);
         }
 
+        /// <summary>
+        ///     The coordinator <c>autoRestart</c> asks for this store's daemon. The default store's check
+        ///     uses the unmarked <see cref="IProjectionCoordinator" />; an ancillary store's check uses its
+        ///     own (marten#5705).
+        /// </summary>
+        protected virtual IProjectionCoordinator? resolveCoordinator(IServiceProvider services) =>
+            services.GetService<IProjectionCoordinator>();
+
         // marten#4986 item 1: opt-in remediation. Ask the local coordinator's daemon to restart the
         // high-water poll loop for this database — loop only, never advancing the mark. Best-effort and
         // capped to once per staleness window so the (faster) health-check cadence can't thrash a loop
@@ -544,7 +658,7 @@ public static class HighWaterHealthCheckExtensions
                 return " An auto-restart was already attempted within the current staleness window.";
             }
 
-            var coordinator = _services.GetService<IProjectionCoordinator>();
+            var coordinator = resolveCoordinator(_services);
             if (coordinator is null)
             {
                 return " (autoRestart is enabled but no IProjectionCoordinator is registered to restart the agent.)";

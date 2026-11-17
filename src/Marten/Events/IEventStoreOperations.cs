@@ -1,10 +1,12 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Tags;
 
 namespace Marten.Events;
 
@@ -22,6 +24,18 @@ namespace Marten.Events;
 ///   <item><c>StreamLatestJson&lt;T&gt;</c> — Marten-specific JSON-passthrough
 ///   optimization that streams raw aggregate JSON to a destination stream.</item>
 /// </list>
+/// <para>
+/// <c>UnArchiveStream(Guid)</c> / <c>UnArchiveStream(string)</c> are inherited from
+/// <see cref="JasperFx.Events.IEventStoreOperations"/> (jasperfx#1186, JasperFx 3.3.0) rather than
+/// redeclared here. Marten-specific behaviour: under <c>UseArchivedStreamPartitioning</c> the stream's
+/// rows move back out of the archived partition, with their DCB tag and natural key rows, and an
+/// un-archive is refused with <see cref="Marten.Exceptions.InvalidStreamOperationException"/> on
+/// <c>SaveChangesAsync</c> when a new live stream has since reused the archived stream's identity.
+/// Projections are not rewound.
+/// </para>
+/// The read-only tag queries are declared both on <see cref="JasperFx.Events.IEventStoreOperations"/>
+/// and on Marten's <see cref="IQueryEventStore"/>, and are redeclared here so that a call through
+/// this interface is not ambiguous between the two.
 /// </remarks>
 public interface IEventStoreOperations : JasperFx.Events.IEventStoreOperations, IEventOperations, IQueryEventStore
 {
@@ -43,4 +57,13 @@ public interface IEventStoreOperations : JasperFx.Events.IEventStoreOperations, 
     /// the async projection is caught up. Returns true if found, false if not found.
     /// </summary>
     Task<bool> StreamLatestJson<T>(string id, Stream destination, CancellationToken cancellation = default) where T : class;
+
+    /// <inheritdoc cref="IQueryEventStore.EventsExistAsync"/>
+    new Task<bool> EventsExistAsync(EventTagQuery query, CancellationToken cancellation = default);
+
+    /// <inheritdoc cref="IQueryEventStore.QueryByTagsAsync"/>
+    new Task<IReadOnlyList<IEvent>> QueryByTagsAsync(EventTagQuery query, CancellationToken cancellation = default);
+
+    /// <inheritdoc cref="IQueryEventStore.AggregateByTagsAsync{T}"/>
+    new Task<T?> AggregateByTagsAsync<T>(EventTagQuery query, CancellationToken cancellation = default) where T : class;
 }

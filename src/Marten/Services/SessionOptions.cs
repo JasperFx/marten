@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using JasperFx.Core.Exceptions;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading;
@@ -104,15 +105,50 @@ public sealed class SessionOptions
     internal bool OwnsConnection { get; set; } = true;
 
     /// <summary>
+    ///     #5888: a read-only session that must still run on the primary, whatever
+    ///     <see cref="MultiHostSettings.ReadSessionPreference" /> says. The async daemon's event loader pairs
+    ///     every page it reads with a high-water mark taken on the primary; reading that page from a lagging
+    ///     standby returns a short page whose ceiling is the high-water mark, and progression is written past
+    ///     events the standby has not replayed yet.
+    /// </summary>
+    internal bool ReadFromPrimary { get; set; }
+
+    /// <summary>
     ///     If set to true, this allows a session to be opened for "any"
     ///     tenant even if the StoreOptions.Advanced.DefaultTenantUsageEnabled is disabled normally
     ///     in this DocumentStore
     /// </summary>
     public bool AllowAnyTenant { get; set; }
 
+    /// <summary>
+    ///     #5682: the store's <see cref="AdvancedOptions.ExceptionTransforms" />, picked up when the session is
+    ///     initialized so every connection lifetime built from these options reports through them.
+    /// </summary>
+    internal ExceptionTransforms? ExceptionTransforms { get; private set; }
+
+    /// <summary>
+    ///     #5861: the message a synchronous session factory throws when asked for a <c>Serializable</c> session.
+    /// </summary>
+    internal const string SerializableSessionsMustBeOpenedAsynchronously =
+        "Synchronous data access is not supported in Marten 10, and a Serializable session has to open its connection " +
+        "and begin its transaction when it is created. Open it with LightweightSerializableSessionAsync(), " +
+        "IdentitySerializableSessionAsync(), DirtyTrackedSerializableSessionAsync(), QuerySerializableSessionAsync() " +
+        "or OpenSerializableSessionAsync() instead.";
+
+    /// <remarks>
+    ///     #5861: the synchronous path can no longer build a <c>Serializable</c> session it owns the connection of,
+    ///     because that meant opening the connection and beginning the transaction without awaiting. The
+    ///     <c>*SerializableSessionAsync</c> factories go through <see cref="InitializeAsync" /> instead.
+    /// </remarks>
     internal IConnectionLifetime Initialize(DocumentStore store, CommandRunnerMode mode,
         OpenTelemetryOptions telemetryOptions)
     {
+        if (IsolationLevel == IsolationLevel.Serializable && OwnsConnection && OwnsTransactionLifecycle)
+        {
+            throw new NotSupportedException(SerializableSessionsMustBeOpenedAsynchronously);
+        }
+
+        ExceptionTransforms = store.Options.Advanced.ExceptionTransforms;
         Mode = mode;
         Tenant ??= TenantId != StorageConstants.DefaultTenantId ? store.Tenancy.GetTenant(store.Options.TenantIdStyle.MaybeCorrectTenantId(TenantId)) : store.Tenancy.Default;
 
@@ -145,20 +181,6 @@ public sealed class SessionOptions
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
-            if (IsolationLevel == IsolationLevel.Serializable)
-            {
-                var transaction = mode == CommandRunnerMode.ReadOnly
-                    ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = timeout }
-                    : new TransactionalConnection(this) { CommandTimeout = timeout };
-                transaction.BeginTransaction();
-                return transaction;
-            }
-
-            if (store.Options.UseStickyConnectionLifetimes)
-            {
-                return new TransactionalConnection(this) { CommandTimeout = timeout };
-            }
-
             return new AutoClosingLifetime(this, store.Options);
         }
 
@@ -187,20 +209,6 @@ public sealed class SessionOptions
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
-            if (IsolationLevel == IsolationLevel.Serializable)
-            {
-                TransactionalConnection transaction = mode == CommandRunnerMode.ReadOnly
-                    ? new RlsReadOnlyTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout }
-                    : new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
-                transaction.BeginTransaction();
-                return transaction;
-            }
-
-            if (store.Options.UseStickyConnectionLifetimes)
-            {
-                return new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
-            }
-
             return new RlsAutoClosingLifetime(this, store.Options, tenantId, rls);
         }
 
@@ -224,6 +232,7 @@ public sealed class SessionOptions
 
     internal AutoClosingLifetime BuildAutoClosingLifetime(DocumentStore store)
     {
+        ExceptionTransforms = store.Options.Advanced.ExceptionTransforms;
         return store.Options.RlsTenantSessionSetting is { } rls && Tenant is not null
             ? new RlsAutoClosingLifetime(this, store.Options, Tenant.TenantId, rls)
             : new AutoClosingLifetime(this, store.Options);
@@ -232,6 +241,7 @@ public sealed class SessionOptions
     internal async Task<IConnectionLifetime> InitializeAsync(DocumentStore store, CommandRunnerMode mode,
         CancellationToken token)
     {
+        ExceptionTransforms = store.Options.Advanced.ExceptionTransforms;
         Mode = mode;
         Tenant ??= TenantId != StorageConstants.DefaultTenantId
             ? await store.Tenancy.GetTenantAsync(store.Options.TenantIdStyle.MaybeCorrectTenantId(TenantId)).ConfigureAwait(false)
@@ -267,7 +277,16 @@ public sealed class SessionOptions
             // point its transaction opens. Leaving it to the first command meant the sticky connection
             // below carried no transaction at all, so the session was neither serializable nor
             // auto-closing: it just held one connection open for its lifetime with nothing protecting it.
-            await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            // #5881: nothing else has this lifetime yet, so a failure here has to give its connection back
+            try
+            {
+                await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                await transaction.DisposeAfterFailureAsync().ConfigureAwait(false);
+                throw;
+            }
 
             return transaction;
         }
@@ -307,7 +326,16 @@ public sealed class SessionOptions
             // point its transaction opens. Leaving it to the first command meant the sticky connection
             // below carried no transaction at all, so the session was neither serializable nor
             // auto-closing: it just held one connection open for its lifetime with nothing protecting it.
-            await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            // #5881: nothing else has this lifetime yet, so a failure here has to give its connection back
+            try
+            {
+                await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                await transaction.DisposeAfterFailureAsync().ConfigureAwait(false);
+                throw;
+            }
 
             return transaction;
         }

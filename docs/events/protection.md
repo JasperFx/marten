@@ -1,8 +1,9 @@
 # Removing Protected Information <Badge type="tip" text="7.31" />
 
-::: info
-The Marten team is at least considering support for [crypto-shredding](https://en.wikipedia.org/wiki/Crypto-shredding) in Marten 8.0,
-but no definite plans have been made yet.
+::: tip
+Masking rewrites data you already stored. If you need to protect individual fields of personal data, or
+to "forget" one person's data on request, see [Personal data and crypto-shredding with Tayra](#personal-data-and-crypto-shredding-with-tayra)
+below.
 :::
 
 For a variety of reasons, you may wish to remove or mask sensitive data elements in a Marten database without necessarily deleting the information as a whole. Documents can be amended
@@ -148,8 +149,33 @@ the affected tenants' events from a backup or your archival storage. Stores that
 store-unique there.
 :::
 
+::: warning
+Masking reaches archived streams, and skipped events, because neither is erased by being set aside. Every source does: both
+kinds of `IncludeStream()`, and `IncludeEvents()` unless your filter rules them out itself with `IsArchived`.
+
+Before this was fixed, masking read through the same paths as everything else and left those rows out, so protected data stayed
+in place while the pass reported success. If you relied on masking for data that was archived, or skipped, when you ran it, run the
+same `ApplyEventDataMasking()` call again after upgrading. That also runs your rules again over everything the first pass reached, so
+if a rule isn't safe to run twice, such as one that draws a new pseudonym, add `x.IsArchived` to the filter of an `IncludeEvents()` that
+still names the same subject, like `IncludeEvents(x => x.StreamId == streamId && x.IsArchived)`. Never use `x.IsArchived` as the whole
+filter for this, which masks every archived event in the store.
+:::
+
 Here's a couple more facts you might need to know:
 
 * The masking rules can only be done at configuration time (as of right now)
 * You can apply multiple masking rules for certain event types, and all will be applied when you use the masking API
 * The masking has absolutely no impact on event archiving or projected data -- unless you rebuild the projection data after applying the data masking of course
+
+## Personal data and crypto-shredding with Tayra
+
+The masking above rewrites events after the fact. It is not a tool for protecting individual fields of personal
+data as they are written, and it cannot "forget" one person's data everywhere it ended up.
+
+For that, the officially sanctioned answer for the Critter Stack is [Tayra](https://tayra.dev). Tayra provides
+field-level encryption of personal data, HMAC blind indexes so you can still query on encrypted fields, and GDPR
+Article 17 erasure by deleting a data subject's key (crypto-shredding). `Tayra.Marten` covers documents and events,
+inline, live and async projections, and multi-tenancy, and `Tayra.Wolverine` covers message bodies, the outbox, the
+inbox and dead letters. See the [Tayra documentation](https://docs.tayra.dev) to get started.
+
+Marten will not build its own crypto-shredding mechanism; use Tayra for that job.

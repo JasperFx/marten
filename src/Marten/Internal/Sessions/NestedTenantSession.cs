@@ -7,6 +7,8 @@ using Marten.Events.Aggregation;
 using Marten.Internal.Storage;
 using Marten.Storage;
 
+using Marten.Services;
+
 namespace Marten.Internal.Sessions;
 
 internal class NestedTenantSession: DocumentSessionBase, ITenantOperations
@@ -34,6 +36,12 @@ internal class NestedTenantSession: DocumentSessionBase, ITenantOperations
     }
 
     public IDocumentSession Parent => _parent;
+
+    // One unit of work, one commit, so one write-back (jasperfx#1050). The cache keys carry the tenant.
+    internal override JasperFx.Events.Fetching.AggregateWriteCacheSession AggregateWriteCache =>
+        _parent.AggregateWriteCache;
+
+    internal override void OnAggregateCommitted(Action<IChangeSet> advance) => _parent.OnAggregateCommitted(advance);
 
     // #4801 — Eject from THIS nested session's own identity map (and any dirty tracker),
     // not the parent's. The map is no longer shared with the parent, so delegating the

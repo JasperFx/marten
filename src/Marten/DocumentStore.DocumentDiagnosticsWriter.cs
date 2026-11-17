@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -11,12 +12,14 @@ using JasperFx.Core.Reflection;
 using JasperFx.Documents;
 using Marten.Schema;
 using Marten.Util;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten;
 
 /// <summary>
-/// The write half of the diagnostics contract (jasperfx#870 §6, #5543): a monitoring console edits or
-/// deletes one document by type name and raw JSON, without referencing Marten.
+/// The write half of the diagnostics contract (jasperfx#870 §6, #5543): a monitoring console edits,
+/// previews an edit (jasperfx#1071), deletes or restores (jasperfx#1059) one document by type name and raw
+/// JSON, without referencing Marten.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -38,20 +41,13 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
         typeof(IDocumentOperations).RequireMethod(nameof(IDocumentOperations.UpdateExpectedVersion),
             BindingFlags.Public | BindingFlags.Instance));
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     async Task<DocumentWriteResult> IDocumentStoreDiagnosticsWriter.SaveDocumentJsonAsync(
         DocumentWriteRequest request, CancellationToken token)
     {
-        var target = resolveDiagnosticsTargetForWrite(request.DocumentTypeName);
+        var (target, document) = deserializeForWrite(request);
         var tenantId = DocumentQueryOptions.NormalizeTenantId(request.TenantId);
-
-        var document = deserialize(target.RequestedType, request.Json);
-
-        if (!idsAgree(target.Mapping, document, request.Id))
-        {
-            throw new ArgumentException(
-                $"The id in the JSON does not match the requested id '{request.Id}'. A diagnostic save will not guess which one was meant.",
-                nameof(request));
-        }
 
         if (request.ExpectedVersion != null)
         {
@@ -118,6 +114,23 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
         return await savedAsync(request.DocumentTypeName, request.Id, tenantId, token).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// jasperfx#1071: a dry run of <see cref="IDocumentStoreDiagnosticsWriter.SaveDocumentJsonAsync" />. The
+    /// same deserialize step and the same refusals as the save (<see cref="deserializeForWrite" />), then the
+    /// document re-serialized with the store's own serializer, which is what the save's upsert binds to the
+    /// <c>data</c> column. No session is opened, so nothing is read or written and
+    /// <see cref="DocumentWriteRequest.ExpectedVersion" /> plays no part.
+    /// </summary>
+    Task<string> IDocumentStoreDiagnosticsWriter.PreviewDocumentJsonAsync(
+        DocumentWriteRequest request, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+
+        var (_, document) = deserializeForWrite(request);
+
+        return Task.FromResult(Serializer.ToJson(document));
+    }
+
     async Task<DocumentWriteResult> IDocumentStoreDiagnosticsWriter.DeleteDocumentAsync(
         DocumentDeleteRequest request, CancellationToken token)
     {
@@ -152,6 +165,132 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
         }
 
         return new DocumentWriteResult(DocumentWriteStatus.Deleted);
+    }
+
+    private static readonly Lazy<MethodInfo> _queueUndelete = new(() =>
+        typeof(DocumentStore).RequireMethod(nameof(queueUndelete), BindingFlags.NonPublic | BindingFlags.Static));
+
+    /// <summary>
+    /// jasperfx#1059 (#5740): restore one soft-deleted document — <c>UndoDeleteWhere</c> by type name and id.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b><c>UndoDeleteWhere</c> alone is not enough</b>, because it only clears <c>mt_deleted</c> and
+    /// <c>mt_deleted_at</c>: the row would come back live with the version it was deleted at. A console that
+    /// read the deleted row and then saw a restore and a second delete behind its back would hold a version
+    /// token that still matched, so a stale undelete would go through. The document is therefore also stored
+    /// again, in the same session and so the same transaction, which is what stamps a new version and
+    /// last-modified time, refreshes the duplicated fields and fires the commit listeners — an undelete that
+    /// is indistinguishable from one the application made, for the reason the class remarks give for saves.
+    /// <c>UndoDeleteWhere</c> itself is left as it is: changing what it writes would change the public API's
+    /// behaviour for every application that calls it.
+    /// </para>
+    /// <para>
+    /// <c>ExpectedVersion</c> is compared rather than put in the statement, with the same reasoning and the
+    /// same window as <see cref="IDocumentStoreDiagnosticsWriter.DeleteDocumentAsync" />.
+    /// </para>
+    /// </remarks>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    async Task<DocumentWriteResult> IDocumentStoreDiagnosticsWriter.UndeleteDocumentAsync(
+        DocumentUndeleteRequest request, CancellationToken token)
+    {
+        var target = resolveDiagnosticsTargetForWrite(request.DocumentTypeName);
+
+        // A type that hard-deletes has nothing to restore. Answered rather than thrown, so a console can offer
+        // the action per type without guarding the call -- and before any read, so the answer does not depend
+        // on whether a row happens to exist.
+        if (!target.IsSoftDeleted)
+        {
+            return new DocumentWriteResult(DocumentWriteStatus.NotSupported);
+        }
+
+        var tenantId = DocumentQueryOptions.NormalizeTenantId(request.TenantId);
+
+        var current = await loadStoredDocumentAsync(request.DocumentTypeName, request.Id, tenantId, token)
+            .ConfigureAwait(false);
+
+        // A live row is NotFound too: an undelete that did nothing must not look like one that succeeded.
+        if (current is not { IsDeleted: true })
+        {
+            return new DocumentWriteResult(DocumentWriteStatus.NotFound);
+        }
+
+        if (request.ExpectedVersion != null && current.Version != request.ExpectedVersion)
+        {
+            return new DocumentWriteResult(DocumentWriteStatus.ConcurrencyConflict, current);
+        }
+
+        var documentType = typeFor(target, current);
+        var document = deserialize(documentType, current.Json);
+        var id = valueOf(target.Mapping.IdMember, document)
+                 ?? throw new InvalidOperationException(
+                     $"The stored '{request.DocumentTypeName}' document '{request.Id}' deserialized without an id.");
+
+        // A numeric revision has to be advanced explicitly: a plain Store() of a revisioned type takes the
+        // revision the document carries as the expected one and is refused. current + 1 is also a guard in the
+        // statement itself, so a concurrent write to the same row loses with a ConcurrencyException rather than
+        // being overwritten.
+        //
+        // Not for a projection document (#5773). Its revision is the version of the stream it reflects, and
+        // current + 1 would put it ahead of the stream, so the async fetch's delta query would skip the next
+        // event. A plain Store() is accepted there, and takes the revision from the stream again.
+        long? nextRevision = target.Mapping.UseNumericRevisions && !target.Mapping.UseVersionFromMatchingStream &&
+                             long.TryParse(current.Version, out var revision)
+            ? revision + 1
+            : null;
+
+        try
+        {
+            await using var session = openDiagnosticsSession(tenantId);
+            _queueUndelete.Value.MakeGenericMethod(documentType)
+                .Invoke(null, [session, target.Mapping.IdMember, document, id, nextRevision]);
+
+            await session.SaveChangesAsync(token).ConfigureAwait(false);
+        }
+        catch (TargetInvocationException e) when (e.InnerException != null)
+        {
+            throw e.InnerException;
+        }
+        catch (ConcurrencyException)
+        {
+            var latest = await loadStoredDocumentAsync(request.DocumentTypeName, request.Id, tenantId, token)
+                .ConfigureAwait(false);
+            return new DocumentWriteResult(DocumentWriteStatus.ConcurrencyConflict, latest);
+        }
+
+        return new DocumentWriteResult(DocumentWriteStatus.Undeleted,
+            await loadStoredDocumentAsync(request.DocumentTypeName, request.Id, tenantId, token).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// <c>UndoDeleteWhere&lt;T&gt;(x =&gt; x.Id == id)</c> and the re-store, for a document type known only at
+    /// runtime, so the soft-delete exclusion, sub-class narrowing and tenant scoping are the ones Marten applies
+    /// to every other <c>UndoDeleteWhere</c>.
+    /// </summary>
+    private static void queueUndelete<T>(IDocumentSession session, MemberInfo idMember, T document, object id,
+        long? nextRevision) where T : notnull
+    {
+        // The upsert is queued FIRST, and that order is load-bearing. Queued after the UndoDeleteWhere statement,
+        // a numeric-revision upsert in the same batch reports a ConcurrencyException that did not happen, even
+        // though the row's revision is below the one requested.
+        if (nextRevision.HasValue)
+        {
+            session.UpdateRevision(document, nextRevision.Value);
+        }
+        else
+        {
+            session.Store(document);
+        }
+
+        // Marten's upsert already writes mt_deleted from the document, so for most types the row is live after
+        // the line above. UndoDeleteWhere is what says so explicitly, and what clears mt_deleted_at whatever the
+        // document carries.
+        var x = Expression.Parameter(typeof(T), "x");
+        var member = Expression.MakeMemberAccess(x, idMember);
+        var body = Expression.Equal(member, Expression.Constant(id, member.Type));
+
+        session.UndoDeleteWhere(Expression.Lambda<Func<T, bool>>(body, x));
     }
 
     private IDocumentSession openDiagnosticsSession(string? normalizedTenantId)
@@ -204,6 +343,30 @@ public partial class DocumentStore : IDocumentStoreDiagnosticsWriter
             .FirstOrDefault(x => x.DocumentType.FullNameInCodeEquals(document.DocumentType));
 
         return subClass?.DocumentType ?? target.RequestedType;
+    }
+
+    /// <summary>
+    /// The half of a save that decides what would be stored, shared by
+    /// <see cref="IDocumentStoreDiagnosticsWriter.SaveDocumentJsonAsync" /> and
+    /// <see cref="IDocumentStoreDiagnosticsWriter.PreviewDocumentJsonAsync" /> so a preview can never accept
+    /// what a save refuses, or the other way round: resolve the type name (unknown is an
+    /// <see cref="ArgumentException"/>), deserialize with the store's serializer, and refuse an id in the JSON
+    /// that disagrees with the one the request names.
+    /// </summary>
+    private (DiagnosticsTarget Target, object Document) deserializeForWrite(DocumentWriteRequest request)
+    {
+        var target = resolveDiagnosticsTargetForWrite(request.DocumentTypeName);
+
+        var document = deserialize(target.RequestedType, request.Json);
+
+        if (!idsAgree(target.Mapping, document, request.Id))
+        {
+            throw new ArgumentException(
+                $"The id in the JSON does not match the requested id '{request.Id}'. A diagnostic save will not guess which one was meant.",
+                nameof(request));
+        }
+
+        return (target, document);
     }
 
     private object deserialize(Type documentType, string json)

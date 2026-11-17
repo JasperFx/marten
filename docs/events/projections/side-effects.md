@@ -198,8 +198,8 @@ to join the [Marten Discord room](https://discord.gg/BGkCDx5d).
 
 ## Side Effects in Inline Projections <Badge type="tip" text="7.40" />
 
-By default, Marten will only process projection "side effects" during continuous asynchronous processing. However, if you
-wish to use projection side effects while running projections with an `Inline` lifecycle, you can do that with this setting:
+Since Marten 10, projection "side effects" run for `Inline` projections as well as during continuous asynchronous
+processing. Marten 9 and earlier only ran them in the async daemon unless you turned on this setting, which is now the default:
 
 <!-- snippet: sample_using_enablesideeffectsoninlineprojections -->
 <a id='snippet-sample_using_enablesideeffectsoninlineprojections'></a>
@@ -209,8 +209,8 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-    // This is your magic setting to tell Marten to process any projection
-    // side effects even when running Inline
+    // On by default since Marten 10. Set it to false to only run
+    // projection side effects in the async daemon
     opts.Events.EnableSideEffectsOnInlineProjections = true;
 });
 ```

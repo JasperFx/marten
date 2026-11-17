@@ -107,6 +107,7 @@ public class bootstrapping_with_service_collection_extensions
     {
         using var container = Container.For(x =>
         {
+            x.AddLogging();
             x.AddMarten(provider =>
             {
                 var options = new StoreOptions();
@@ -118,6 +119,8 @@ public class bootstrapping_with_service_collection_extensions
 
         var store = container.GetRequiredService<IDocumentStore>();
         store.Options.Logger().ShouldBeOfType<ConsoleMartenLogger>();
+        // A custom session logger must not cost the daemon/database their ILoggerFactory (GH-5761)
+        ((StoreOptions)store.Options).LogFactory.ShouldNotBeNull();
     }
 
     [Fact]

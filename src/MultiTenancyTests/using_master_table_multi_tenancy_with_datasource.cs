@@ -127,7 +127,10 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
 
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
 
-        await _host.ClearAllTenantDatabaseRecordsAsync();
+        // #5733: no ClearAllTenantDatabaseRecordsAsync here. The "tenants" schema is dropped above, so
+        // there is nothing stale to clear, and these tests are about the SEEDED tenants: clearing the
+        // records used to leave them resolving only because the cache was never evicted. Clearing now
+        // evicts (MasterTableTenancyBase), so it would leave nothing to test.
     }
 
     public async ValueTask DisposeAsync()
@@ -137,10 +140,10 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
     }
 
     [Fact]
-    public void add_application_name_to_connections()
+    public async Task add_application_name_to_connections()
     {
-        using var query3 = theStore.QuerySession("tenant3");
-        var builder = new NpgsqlConnectionStringBuilder(query3.Connection.ConnectionString);
+        await using var query3 = theStore.QuerySession("tenant3");
+        var builder = new NpgsqlConnectionStringBuilder((await query3.GetConnectionAsync()).ConnectionString);
         builder.ApplicationName.ShouldBe("Sample");
     }
 
@@ -248,7 +251,7 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         await using var session =
             await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" }, TestContext.Current.CancellationToken);
 
-        session.Connection.Database.ShouldBe("tenant1");
+        (await session.GetConnectionAsync()).Database.ShouldBe("tenant1");
     }
 
     [Fact]

@@ -1,10 +1,14 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
+using Marten.Linq.Members.Unions;
+using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.SqlGeneration;
 using Marten.Schema.Indexing.FullText;
 using Weasel.Postgresql.SqlGeneration;
@@ -84,7 +88,158 @@ public class Ordering
             return TextRank.Build(collection, Direction);
         }
 
+        // #5957: a key computed from the document's members, OrderBy(x => -x.Number). MemberFinder walked past the
+        // computation to the member underneath it and silently ordered by x.Number instead.
+        // #5968: and the same for a key over the child documents a SelectMany() flattens
+        if (_literal.IsEmpty() && MemberName.IsEmpty() &&
+            collection is DocumentQueryableMemberCollection or ChildCollectionMember &&
+            ComputedKeyBody(Expression) is { } computed)
+        {
+            return buildComputedKey(collection, computed);
+        }
+
         return new LiteralOrdering(BuildExpression(collection));
+    }
+
+    /// <summary>
+    ///     #5957: the serializer of the store, which decides how a computed key's enums and types are written.
+    ///     Captured when the ordering is parsed.
+    /// </summary>
+    internal ISerializer? Serializer { get; init; }
+
+    private ISqlFragment buildComputedKey(IQueryableMemberCollection collection, Expression body)
+    {
+        if (Serializer == null)
+        {
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate the OrderBy() key '{body}': no serializer was captured for it");
+        }
+
+        if (!FlattenedRowProjection.TryTranslateScalar(body, collection, Serializer, out var fragment, out var reason))
+        {
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate the OrderBy() key '{body}' into SQL that orders the way .NET does: {reason}. Order by a member of the document, or by a key Marten can compute: member access, arithmetic, widening casts, string concatenation, ToUpper(), ToLower(), Length, or ToString() of an integer or a Guid. Or sort in memory after the query.");
+        }
+
+        if (CasingRule == CasingRule.CaseInsensitive && body.Type == typeof(string))
+        {
+            fragment = new ComputedKeyFragment(fragment, "lower(", ")");
+        }
+
+        return new ComputedKeyFragment(fragment, "", Direction == OrderingDirection.Desc ? " desc" : "");
+    }
+
+    /// <summary>
+    ///     #5957: the body of a key selector that computes a value from the document, such as
+    ///     <c>x => -x.Number</c>, <c>x => x.Number % 3</c> or <c>x => x.Code + x.Name</c>, rather than reading a
+    ///     member. Null for a plain member chain, which keeps resolving exactly as it always has -- including
+    ///     <c>x.Name.Length</c>, which resolves to <c>length()</c> as a member since #5941.
+    /// </summary>
+    internal static Expression? ComputedKeyBody(Expression? expression)
+    {
+        while (expression is UnaryExpression { NodeType: ExpressionType.Quote } quote)
+        {
+            expression = quote.Operand;
+        }
+
+        // Only a key selector computes anything. OrderBy("Name") names its member as a string.
+        if (expression is not LambdaExpression lambda)
+        {
+            return null;
+        }
+
+        expression = lambda.Body;
+
+        // A key selector typed as object boxes its value
+        var body = expression is UnaryExpression { NodeType: ExpressionType.Convert } box && box.Type == typeof(object)
+            ? box.Operand
+            : expression;
+
+        return isPlainKey(body) ? null : body;
+    }
+
+    /// <summary>
+    ///     Is this a chain the member lookup resolves exactly: members (a string's Length among them), an element by
+    ///     position or a dictionary key, an array length or Count(), a case conversion of a string, and conversions
+    ///     that do not change the value?
+    /// </summary>
+    private static bool isPlainKey(Expression? node)
+    {
+        while (true)
+        {
+            switch (node)
+            {
+                case null:
+                case ParameterExpression:
+                    return true;
+
+                case MemberExpression member:
+                    node = member.Expression;
+                    continue;
+
+                case UnaryExpression { NodeType: ExpressionType.ArrayLength } length:
+                    node = length.Operand;
+                    continue;
+
+                case UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked or ExpressionType.TypeAs } conversion
+                    when UnionMembers.CaseCastFor(conversion) != null || conversion.Type == typeof(object) ||
+                         (Nullable.GetUnderlyingType(conversion.Type) ?? conversion.Type) ==
+                         (Nullable.GetUnderlyingType(conversion.Operand.Type) ?? conversion.Operand.Type):
+                    node = conversion.Operand;
+                    continue;
+
+                case BinaryExpression { NodeType: ExpressionType.ArrayIndex } index:
+                    node = index.Left;
+                    continue;
+
+                case MethodCallExpression call when call.IsElementIndexer():
+                    node = call.Object ?? call.Arguments[0];
+                    continue;
+
+                case MethodCallExpression { Method.Name: "get_Item", Object: not null } call
+                    when call.Method.DeclaringType.Closes(typeof(IDictionary<,>)):
+                    node = call.Object;
+                    continue;
+
+                case MethodCallExpression { Object: not null, Arguments.Count: 0 } call
+                    when call.Object.Type == typeof(string) && call.Method.Name is nameof(string.ToLower)
+                        or nameof(string.ToUpper) or nameof(string.ToLowerInvariant) or nameof(string.ToUpperInvariant):
+                    node = call.Object;
+                    continue;
+
+                case MethodCallExpression { Method.Name: nameof(Enumerable.Count), Object: null, Arguments.Count: 1 } call
+                    when call.Method.DeclaringType == typeof(Enumerable):
+                    node = call.Arguments[0];
+                    continue;
+
+                default:
+                    return false;
+            }
+        }
+    }
+
+    /// <summary>
+    ///     #5957: a translated key, wrapped in SQL text
+    /// </summary>
+    private sealed class ComputedKeyFragment: ISqlFragment
+    {
+        private readonly ISqlFragment _inner;
+        private readonly string _prefix;
+        private readonly string _suffix;
+
+        public ComputedKeyFragment(ISqlFragment inner, string prefix, string suffix)
+        {
+            _inner = inner;
+            _prefix = prefix;
+            _suffix = suffix;
+        }
+
+        public void Apply(ICommandBuilder builder)
+        {
+            builder.Append(_prefix);
+            _inner.Apply(builder);
+            builder.Append(_suffix);
+        }
     }
 
     public string BuildExpression(IQueryableMemberCollection collection)
@@ -136,6 +291,13 @@ public class Ordering
             && collection.MemberFor(call.Object) is IDictionaryMember dictionary)
         {
             return dictionary.MemberForKey(call.Arguments[0].Value());
+        }
+
+        // #5949: an element read by position, x.Values[1], x.Grid[1][0] or x.Children[0].Name. MemberFinder
+        // treats the index as invalid, so it resolves the way the same chain does in a Where() comparison.
+        if (expression.HasElementIndex())
+        {
+            return collection.MemberForIndexedChain(expression);
         }
 
         // Deliberately the original expression, not the unwrapped one: the unwrapping above

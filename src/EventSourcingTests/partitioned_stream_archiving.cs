@@ -163,7 +163,8 @@ public class partitioned_stream_archiving: OneOffConfigurationsContext
     [Fact]
     public async Task a_reused_stream_id_still_reports_an_archive_collision()
     {
-        configure(false, false);
+        // Strict stream identity (on by default since 10.0, #5812) would refuse the reuse this test needs
+        configure(false, false, strictIdentity: false);
         var id = Guid.NewGuid();
         startStream(theSession, id);
         await theSession.SaveChangesAsync();
@@ -187,11 +188,12 @@ public class partitioned_stream_archiving: OneOffConfigurationsContext
         (await countRows(connection, "mt_events", id, StorageConstants.DefaultTenantId, true)).ShouldBe(2);
     }
 
-    private void configure(bool stringIdentity, bool conjoined)
+    private void configure(bool stringIdentity, bool conjoined, bool strictIdentity = true)
     {
         StoreOptions(opts =>
         {
             opts.Events.UseArchivedStreamPartitioning = true;
+            opts.Events.EnableStrictStreamIdentityEnforcement = strictIdentity;
             opts.Events.StreamIdentity = stringIdentity ? StreamIdentity.AsString : StreamIdentity.AsGuid;
             opts.Events.TenancyStyle = conjoined ? TenancyStyle.Conjoined : TenancyStyle.Single;
         });

@@ -19,6 +19,8 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
     private static readonly string NullResultMessage =
         $"The cast to value type '{typeof(T).FullNameInCode()}' failed because the materialized value is null. Either the result type's generic parameter or the query must use a nullable type.";
 
+    private ISerializer _serializer;
+
     public NewScalarSelectClause(string locator, string from)
     {
         FromObject = from;
@@ -69,6 +71,12 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
 
     public ISelector BuildSelector(IStorageSession session)
     {
+        // #6064: an enum stored as text is read back by the name the serializer stores it under
+        if (typeof(T).IsEnum)
+        {
+            _serializer = session.Serializer as ISerializer;
+        }
+
         return this;
     }
 
@@ -125,37 +133,8 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
         return await ReadScalarAsync(reader, 0, token).ConfigureAwait(false);
     }
 
-    private static T ReadScalar(DbDataReader reader, int ordinal)
-    {
-        if (!typeof(T).IsEnum)
-        {
-            return reader.GetFieldValue<T>(ordinal);
-        }
+    private T ReadScalar(DbDataReader reader, int ordinal) => ScalarFieldReader.Read<T>(reader, ordinal, _serializer);
 
-        if (reader.GetFieldType(ordinal) == typeof(string))
-        {
-            var s = reader.GetFieldValue<string>(ordinal);
-            return Enum.Parse<T>(s, ignoreCase: true);
-        }
-
-        var i = reader.GetFieldValue<int>(0);
-        return (T)Enum.ToObject(typeof(T), i);
-    }
-
-    private static async Task<T> ReadScalarAsync(DbDataReader reader, int ordinal, CancellationToken token)
-    {
-        if (!typeof(T).IsEnum)
-        {
-            return await reader.GetFieldValueAsync<T>(ordinal, token).ConfigureAwait(false);
-        }
-
-        if (reader.GetFieldType(ordinal) == typeof(string))
-        {
-            var s = await reader.GetFieldValueAsync<string>(ordinal, token).ConfigureAwait(false);
-            return Enum.Parse<T>(s, ignoreCase: true);
-        }
-
-        var i = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
-        return (T)Enum.ToObject(typeof(T), i);
-    }
+    private Task<T> ReadScalarAsync(DbDataReader reader, int ordinal, CancellationToken token)
+        => ScalarFieldReader.ReadAsync<T>(reader, ordinal, token, _serializer);
 }

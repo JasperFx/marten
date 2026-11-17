@@ -8,7 +8,14 @@ namespace Marten.Linq.QueryHandlers;
 
 internal class LinqConstants
 {
-    internal static readonly string StatsColumn = "count(*) OVER() as total_rows";
+    /// <summary>
+    /// The alias <see cref="StatsColumn" /> gives the count. Named separately because an include's
+    /// temp table materialises the column, and reading it back by name is not the same statement as
+    /// computing it (#5654).
+    /// </summary>
+    internal static readonly string StatsColumnName = "total_rows";
+
+    internal static readonly string StatsColumn = $"count(*) OVER() as {StatsColumnName}";
     internal static readonly string IdListTableName = "mt_temp_id_list";
 
     internal static readonly ISelector<string> StringValueSelector =

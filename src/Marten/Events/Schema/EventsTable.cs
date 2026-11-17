@@ -13,7 +13,18 @@ namespace Marten.Events.Schema;
 
 internal class EventsTable: Table
 {
-    public EventsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, "mt_events"))
+    public EventsTable(EventGraph events): this(events, false)
+    {
+    }
+
+    /// <summary>
+    ///     #5765: <paramref name="forSchema" /> builds the table as the database must be shaped, which
+    ///     always includes the cheap, nullable columns (the metadata columns and <c>is_skipped</c>) even when
+    ///     their flag is off. Two stores or apps on one schema that differ only in those flags would otherwise
+    ///     drop each other's columns (#5309). Every other caller wants the ACTIVE shape, the one the
+    ///     append/select code reads and writes, so the flags keep governing behavior.
+    /// </summary>
+    internal EventsTable(EventGraph events, bool forSchema): base(new PostgresqlObjectName(events.DatabaseSchemaName, "mt_events"))
     {
         foreach (var index in events.IgnoredIndexes)
             IgnoredIndexes.Add(index);
@@ -53,12 +64,12 @@ internal class EventsTable: Table
 
         AddColumn<DotNetTypeColumn>().AllowNulls();
 
-        AddIfActive(events.Metadata.CorrelationId);
-        AddIfActive(events.Metadata.CausationId);
-        AddIfActive(events.Metadata.Headers);
-        AddIfActive(events.Metadata.UserName);
+        AddIfActive(events.Metadata.CorrelationId, forSchema);
+        AddIfActive(events.Metadata.CausationId, forSchema);
+        AddIfActive(events.Metadata.Headers, forSchema);
+        AddIfActive(events.Metadata.UserName, forSchema);
 
-        if (events.EnableEventSkippingInProjectionsOrSubscriptions)
+        if (forSchema || events.EnableEventSkippingInProjectionsOrSubscriptions)
         {
             AddColumn<bool>("is_skipped").DefaultValueByExpression("FALSE");
         }
@@ -253,9 +264,9 @@ internal class EventsTable: Table
         return columns;
     }
 
-    private void AddIfActive(MetadataColumn column)
+    private void AddIfActive(MetadataColumn column, bool forSchema)
     {
-        if (column.Enabled)
+        if (forSchema || column.Enabled)
         {
             AddColumn(column);
         }

@@ -254,6 +254,8 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
     public abstract Weasel.Storage.IStorageOperation UpdateStreamVersion(StreamAction stream);
     public abstract Weasel.Storage.IStorageOperation AssertStreamVersion(StreamAction stream);
     public abstract Weasel.Storage.IStorageOperation ArchiveStream(object streamId, string tenantId);
+    public abstract Weasel.Storage.IStorageOperation UnArchiveStream(object streamId, string tenantId);
+    public abstract Weasel.Storage.IStorageOperation DeleteStream(object streamId, string tenantId);
 
     public string StreamStateSelectSql => Marten.EventStorage.StreamStateSql.Build(Events);
 
@@ -276,7 +278,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
             var typeName = reader.GetFieldValue<string>(2);
             if (typeName.IsNotEmpty())
             {
-                state.AggregateType = Events.AggregateTypeFor(typeName);
+                state.AggregateType = Events.TryResolveAggregateType(typeName);
             }
         }
 
@@ -313,7 +315,7 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
             var typeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             if (typeName.IsNotEmpty())
             {
-                state.AggregateType = Events.AggregateTypeFor(typeName);
+                state.AggregateType = Events.TryResolveAggregateType(typeName);
             }
         }
 
@@ -382,8 +384,8 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
                     $"or set opts.Events.DefaultBinarySerializer.");
             }
 
-            var bytes = reader.GetFieldValue<byte[]>(3);
-            var data = mapping.BinarySerializer.Deserialize(mapping.DocumentType, bytes);
+            // #5731: deserialize from a rented buffer rather than an exact-length byte[] per row.
+            var data = BinaryEventPayload.Read(reader, 3, mapping.BinarySerializer, mapping.DocumentType);
             @event = mapping.Wrap(data);
         }
         else
@@ -439,8 +441,9 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
                         $"or set opts.Events.DefaultBinarySerializer.");
                 }
 
-                var bytes = await reader.GetFieldValueAsync<byte[]>(3, token).ConfigureAwait(false);
-                var data = mapping.BinarySerializer.Deserialize(mapping.DocumentType, bytes);
+                // #5731: as the sync overload. The row is already buffered once ReadAsync has returned, so
+                // the synchronous column copy inside BinaryEventPayload.Read does no I/O.
+                var data = BinaryEventPayload.Read(reader, 3, mapping.BinarySerializer, mapping.DocumentType);
                 @event = mapping.Wrap(data);
             }
             else
@@ -506,15 +509,8 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
             throw new UnknownEventTypeException(eventTypeName, sequence);
         }
 
-        Type type;
-        try
-        {
-            type = Events.TypeForDotNetName(dotnetTypeName);
-        }
-        catch (ArgumentNullException)
-        {
-            throw new UnknownEventTypeException(dotnetTypeName, sequence);
-        }
+        var type = Events.ResolveEventType(dotnetTypeName)
+                   ?? throw new UnknownEventTypeException(dotnetTypeName, sequence);
 
         return Events.EventMappingFor(type);
     }

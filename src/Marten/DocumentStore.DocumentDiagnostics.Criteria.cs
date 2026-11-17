@@ -68,8 +68,8 @@ public partial class DocumentStore
     /// What did NOT need a rule, against the jasperfx#869 spike's findings on Polecat and Fisher: date member
     /// access (<c>PlacedAt.Year</c>, <c>.Month</c>, <c>.Day</c>, <c>.Date</c>) and <c>string.Length</c> throw
     /// honestly here; <c>Items.Count</c>, <c>Tags.Length</c>, <c>Count()</c>, <c>Any(…)</c>,
-    /// <c>Tags.Any(it = …)</c>, decimals, nested members and nulls translate correctly; inline
-    /// <c>in (1, 2, 3)</c> still throws (use <c>in @0</c>). Two further differences are corrected rather than
+    /// <c>Tags.Any(it = …)</c>, decimals, nested members, nulls and inline <c>in (1, 2, 3)</c> (an array
+    /// literal to LINQ) translate correctly. Two further differences are corrected rather than
     /// refused, so they cost the operator nothing: null placement in an ordering (PostgreSQL puts nulls last
     /// ascending, C# first — the diagnostic read appends <c>NULLS FIRST</c> / <c>NULLS LAST</c>) and the Kind of
     /// a <see cref="DateTime" /> argument (see <see cref="DateTimeKindAdapter" />).
@@ -228,8 +228,8 @@ public partial class DocumentStore
         Justification = "jasperfx#869: DocumentQueryCriteria.ApplyCriteriaTo resolves members of the document type reflectively. Document types are preserved at the StoreOptions registration boundary per the AOT publishing guide.")]
     [UnconditionalSuppressMessage("Trimming", "IL2060",
         Justification = "jasperfx#869: MakeGenericMethod over a mapped document type, which is preserved at the StoreOptions registration boundary.")]
-    private Task<DocumentQueryResult> queryWithCriteriaAsync(DiagnosticsTarget target, IMartenDatabase database,
-        DocumentQueryOptions options, int pageNumber, int pageSize, CancellationToken token)
+    private Task<DocumentQueryOutcome> queryWithCriteriaAsync(DiagnosticsTarget target, IMartenDatabase database,
+        DocumentQueryOptions options, int pageNumber, int pageSize, bool explain, CancellationToken token)
     {
         if (!DocumentQueryCriteria.IsAvailable)
         {
@@ -241,16 +241,16 @@ public partial class DocumentStore
         }
 
         // An async method: everything it throws arrives in the task, never as a TargetInvocationException.
-        return (Task<DocumentQueryResult>)_queryWithCriteriaOfT.Value.MakeGenericMethod(target.RequestedType)
-            .Invoke(this, [target, database, options, pageNumber, pageSize, token])!;
+        return (Task<DocumentQueryOutcome>)_queryWithCriteriaOfT.Value.MakeGenericMethod(target.RequestedType)
+            .Invoke(this, [target, database, options, pageNumber, pageSize, explain, token])!;
     }
 
     [UnconditionalSuppressMessage("AOT", "IL3050",
         Justification = "jasperfx#869: only reached through queryWithCriteriaAsync, which refuses under Native AOT first.")]
     [UnconditionalSuppressMessage("Trimming", "IL2026",
         Justification = "jasperfx#869: only reached through queryWithCriteriaAsync, which refuses under Native AOT first.")]
-    private async Task<DocumentQueryResult> queryWithCriteriaOfTAsync<T>(DiagnosticsTarget target,
-        IMartenDatabase database, DocumentQueryOptions options, int pageNumber, int pageSize,
+    private async Task<DocumentQueryOutcome> queryWithCriteriaOfTAsync<T>(DiagnosticsTarget target,
+        IMartenDatabase database, DocumentQueryOptions options, int pageNumber, int pageSize, bool explain,
         CancellationToken token) where T : notnull
     {
         var tenantId = DocumentQueryOptions.NormalizeTenantId(options.TenantId) ?? StorageConstants.DefaultTenantId;
@@ -304,19 +304,24 @@ public partial class DocumentStore
         if (!idMatches)
         {
             // An id that is not a value of the identity type matches nothing -- the raw read's answer too.
-            return emptyPage(pageNumber, pageSize);
+            return DocumentQueryOutcome.Empty(pageNumber, pageSize,
+                "the id is not a value of the document's identity type, so it matches nothing without a read");
         }
 
         var provider = ((MartenLinqQueryable<T>)composed).MartenProvider;
         var reader = new StoredDocumentReader(target, "d");
         var rows = new List<StoredDocument>();
-        long total;
+        long total = 0;
 
         try
         {
-            var countHandler = new LinqQueryParser(provider, session, composed.Expression, SingleValueMode.LongCount)
-                .BuildHandler<long>();
-            total = await provider.ExecuteHandlerAsync(countHandler, token).ConfigureAwait(false);
+            // jasperfx#1078: an explain is of the page query alone, so it runs no count.
+            if (!explain)
+            {
+                var countHandler = new LinqQueryParser(provider, session, composed.Expression, SingleValueMode.LongCount)
+                    .BuildHandler<long>();
+                total = await provider.ExecuteHandlerAsync(countHandler, token).ConfigureAwait(false);
+            }
 
             var page = composed.Skip((pageNumber - 1) * pageSize).Take(pageSize);
             var statements = new LinqQueryParser(provider, session, page.Expression).BuildStatements();
@@ -337,6 +342,14 @@ public partial class DocumentStore
                 }
             }
 
+            // jasperfx#1058 (#5740): a metadata key leads the caller's own ordering, which then only breaks its
+            // ties. Inserted before the tenant below, so it ends up second under AllTenants. QueryDocumentsAsync
+            // already refused an ordering the mapping cannot answer, so this cannot throw.
+            if (MetadataOrdering(target, options, "d") is { } metadataOrdering)
+            {
+                selector.Ordering.Expressions.Insert(0, new LiteralOrdering(metadataOrdering));
+            }
+
             // Tenant first under AllTenants (jasperfx#928: a page never repeats another tenant's row), then
             // the caller's ordering as Marten translated it, then the identity column so equal keys still page
             // deterministically -- (tenant_id, id) is the conjoined primary key, so the order is total.
@@ -349,6 +362,15 @@ public partial class DocumentStore
 
             var command = statements.Top.BuildCommand(session);
 
+            if (explain)
+            {
+                // Inside the try: a statement the provider built but PostgreSQL refuses is the same
+                // untranslatable criterion here as it is to the read. The tenant goes along so a store using
+                // row-level security explains under the same tenant setting this session would have applied.
+                return new DocumentQueryOutcome(null,
+                    await explainPageAsync(database, command, target, tenantId, token).ConfigureAwait(false));
+            }
+
             await using var dbReader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
             while (await dbReader.ReadAsync(token).ConfigureAwait(false))
             {
@@ -360,7 +382,7 @@ public partial class DocumentStore
             throw options.Untranslatable(e);
         }
 
-        return new DocumentQueryResult(rows, total, pageNumber, pageSize);
+        return new DocumentQueryOutcome(new DocumentQueryResult(rows, total, pageNumber, pageSize), null);
     }
 
     /// <summary>
@@ -369,14 +391,12 @@ public partial class DocumentStore
     /// themselves.
     /// </summary>
     /// <remarks>
-    /// JasperFx's own test plus Marten's <see cref="Marten.Exceptions.BadLinqExpressionException" />, which
-    /// stays on Marten's exception hierarchy (marten#5346) rather than deriving from the JasperFx type
-    /// <see cref="DocumentQueryCriteria.IsTranslationFailure" /> recognizes.
+    /// JasperFx's own test, which already recognizes the <see cref="JasperFx.BadLinqExpressionException" />
+    /// Marten throws (marten#5847), plus Marten's DateTime-kind refusals.
     /// </remarks>
     private static bool isCriteriaTranslationFailure(Exception e)
         => e is not DocumentCriteriaNotSupportedException
            && (DocumentQueryCriteria.IsTranslationFailure(e)
-               || e is Marten.Exceptions.BadLinqExpressionException
                // A DateTime of the wrong Kind for the column it is compared with -- the arm
                // DateTimeKindAdapter does not cover, e.g. an in-process Local argument against a
                // timestamptz duplicated field.

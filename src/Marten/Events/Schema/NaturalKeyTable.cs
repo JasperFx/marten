@@ -12,9 +12,15 @@ namespace Marten.Events.Schema;
 
 internal class NaturalKeyTable: Table, ISchemaObject
 {
+    /// <summary>
+    /// The one place the table's name is built, so the per-tenant cleanup that deletes from it (#5742) cannot
+    /// drift from the DDL that creates it.
+    /// </summary>
+    public static PostgresqlObjectName TableNameFor(EventGraph events, NaturalKeyDefinition naturalKey)
+        => new(events.DatabaseSchemaName, $"mt_natural_key_{naturalKey.AggregateType.Name.ToLowerInvariant()}");
+
     public NaturalKeyTable(EventGraph events, NaturalKeyDefinition naturalKey)
-        : base(new PostgresqlObjectName(events.DatabaseSchemaName,
-            $"mt_natural_key_{naturalKey.AggregateType.Name.ToLowerInvariant()}"))
+        : base(TableNameFor(events, naturalKey))
     {
         // Determine the column type for the natural key value
         var columnType = naturalKey.InnerType == typeof(int) ? "integer"

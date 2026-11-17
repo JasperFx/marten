@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
+using Marten.Services;
 using Npgsql;
 
 namespace Marten.Internal.Sessions;
@@ -13,6 +15,69 @@ namespace Marten.Internal.Sessions;
 internal class ConnectionLifetimeBase
 {
     public IMartenSessionLogger Logger { get; set; } = new NulloMartenLogger();
+
+    /// <summary>
+    ///     #5682: the store's application-registered exception transforms, from the <see cref="SessionOptions" />
+    ///     this lifetime was built from.
+    /// </summary>
+    internal ExceptionTransforms? ExceptionTransforms { get; set; }
+
+    /// <summary>
+    ///     Translate a batch failure: the failing operations' own transforms, then the application's, then
+    ///     Marten's built-ins.
+    /// </summary>
+    protected void transformAndThrow(IEnumerable<IExceptionTransform> operationTransforms, Exception e)
+        => MartenExceptionTransformer.InOrder(ExceptionTransforms, operationTransforms).TransformAndThrow(e);
+
+    /// <summary>
+    ///     #5914: translate a failure of a unit of work with the transform of the operation whose statement
+    ///     raised it -- see <see cref="OperationPage.TransformsFor" /> -- then the application's, then Marten's.
+    /// </summary>
+    protected void transformAndThrow(IReadOnlyList<OperationPage> pages, Exception e)
+        => transformAndThrow(OperationPage.TransformsFor(pages, e), e);
+
+    /// <summary>
+    ///     #5914: open the reader over one page's batch. A failure is translated by the operations whose
+    ///     statements the reader executed (<see cref="OperationPage.TryTransformExecuteFailure" />) and by nothing
+    ///     else here; the caller's <see cref="transformAndThrow(IReadOnlyList{OperationPage}, Exception)" />
+    ///     then applies the application's and Marten's transforms.
+    /// </summary>
+    /// <remarks>
+    ///     The lifetimes that keep a connection open used to go through their own
+    ///     <c>ExecuteReaderAsync(NpgsqlBatch)</c>, whose <c>handleCommandException</c> runs the application's
+    ///     and Marten's built-in transforms -- so a statement that failed before the first result set was
+    ///     translated before ANY operation was offered it, the reverse of the order
+    ///     <see cref="MartenExceptionTransformer.InOrder" /> documents (#5682), and Marten's last built-in had
+    ///     already wrapped it in a <see cref="MartenCommandException" />. <see cref="AutoClosingLifetime" />
+    ///     never did that. The caller must have applied the connection and transaction.
+    /// </remarks>
+    protected async Task<DbDataReader> executePageReaderAsync(OperationPage page, NpgsqlBatch batch,
+        CancellationToken token)
+    {
+        Logger.OnBeforeExecute(batch);
+
+        try
+        {
+            var reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false);
+            Logger.LogSuccess(batch);
+            return reader;
+        }
+        catch (Exception e)
+        {
+            noteTransactionFailure(e);
+            Logger.LogFailure(batch, e);
+
+            // The SQL has to survive to the MartenCommandException the outer translation may build
+            e.RecordNpgsqlBatch(batch);
+
+            if (page.TryTransformExecuteFailure(e, out var transformed))
+            {
+                throw transformed;
+            }
+
+            throw;
+        }
+    }
 
     /// <summary>
     ///     The first failure that made this lifetime unusable, or null while it is still healthy.
@@ -81,14 +146,14 @@ internal class ConnectionLifetimeBase
     {
         Logger.LogFailure(cmd, e);
 
-        MartenExceptionTransformer.WrapAndThrow(cmd, e);
+        MartenExceptionTransformer.WrapAndThrow(ExceptionTransforms, cmd, e);
     }
 
     protected void handleCommandException(NpgsqlBatch batch, Exception e)
     {
         Logger.LogFailure(batch, e);
 
-        MartenExceptionTransformer.WrapAndThrow(batch, e);
+        MartenExceptionTransformer.WrapAndThrow(ExceptionTransforms, batch, e);
     }
 }
 
@@ -129,15 +194,21 @@ internal static class ConnectionLifetimeExtensions
 
 public interface ITransactionStarter
 {
-    IAlwaysConnectedLifetime Start();
     Task<IAlwaysConnectedLifetime> StartAsync(CancellationToken token);
 }
 
+/// <remarks>
+///     Marten 10 (#5861): the synchronous <c>Connection</c> getter, which opened the connection on first use,
+///     and <c>BeginTransaction()</c> are gone. Use <see cref="OpenConnectionAsync" /> and
+///     <see cref="BeginTransactionAsync" />.
+/// </remarks>
 public interface IAlwaysConnectedLifetime : IConnectionLifetime
 {
-    NpgsqlConnection Connection { get; }
+    /// <summary>
+    ///     The lifetime's connection, opening it first if it is not open yet. The lifetime owns it.
+    /// </summary>
+    ValueTask<NpgsqlConnection> OpenConnectionAsync(CancellationToken token);
 
-    void BeginTransaction();
     ValueTask BeginTransactionAsync(CancellationToken token);
 }
 
@@ -147,15 +218,10 @@ public interface IConnectionLifetime: IAsyncDisposable, IDisposable
     IMartenSessionLogger Logger { get; set; }
     int CommandTimeout { get; }
 
-    int Execute(NpgsqlCommand cmd);
     Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new());
-
-    DbDataReader ExecuteReader(NpgsqlCommand command);
 
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command,
         CancellationToken token = default);
-
-    DbDataReader ExecuteReader(NpgsqlBatch batch);
 
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlBatch batch,
         CancellationToken token = default);

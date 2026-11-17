@@ -1,57 +1,44 @@
 #nullable enable
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Marten.Internal;
-using Marten.Internal.Operations;
 using Marten.Internal.Storage;
-using Marten.Linq.Selectors;
-using Marten.Schema;
-using Marten.Storage;
+using Marten.Linq;
+using Marten.Linq.Members;
+using Marten.Linq.Parsing;
+using Marten.Linq.QueryHandlers;
+using Marten.Linq.SqlGeneration;
+using Marten.Storage.Metadata;
 
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// Closed-shape <see cref="DirtyCheckedDocumentStorage{T, TId}"/> base.
-/// Sealed concurrency-mode leaves provide the write factories +
-/// <c>BuildSelector</c>. See <see cref="LightweightClosedShapeStorage{TDoc,TId}"/>
-/// for the rationale (#4659).
+///     The dirty-tracking storage: Weasel's <see cref="DirtyTrackingClosedShapeDocumentStorage{TDoc,TId}" />
+///     (weasel#811, #5733) with Marten's LINQ facet.
 /// </summary>
-public abstract class DirtyCheckedClosedShapeStorage<TDoc, TId>: DirtyCheckedDocumentStorage<TDoc, TId>
+internal sealed class DirtyCheckedClosedShapeStorage<TDoc, TId>: DirtyTrackingClosedShapeDocumentStorage<TDoc, TId>, ILinqDocumentStorage, IHaveMetadataColumns
     where TDoc : notnull
     where TId : notnull
 {
-    protected readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
+    private readonly MartenClosedShapeStorageRules<TDoc, TId> _martenRules;
 
-    // #4828: expose the descriptor's dialect as the base storage dialect (Strategy).
-    protected override IStorageDialect Dialect => _descriptor.Dialect;
-
-    protected DirtyCheckedClosedShapeStorage(DocumentMapping mapping, DocumentStorageDescriptor<TDoc, TId> descriptor)
-        : base(mapping)
+    public DirtyCheckedClosedShapeStorage(DocumentStorageDescriptor<TDoc, TId> descriptor, MartenClosedShapeStorageRules<TDoc, TId> rules)
+        : base(descriptor, rules)
     {
-        _descriptor = descriptor;
+        _martenRules = rules;
     }
 
-    public override TId Identity(TDoc document)
-        => _descriptor.Identification.Identity(document);
+    // ---- Marten's LINQ facet (ILinqDocumentStorage), the same on every tracking mode ----
 
-    public override TId AssignIdentity(TDoc document, string tenantId, IStorageDatabase database)
-        => _descriptor.Identification.AssignIfMissing(document, database);
+    public IQueryableMemberCollection QueryMembers => _martenRules.QueryMembers;
 
-    public override object RawIdentityValue(TId id)
-        => _descriptor.Identification.ToRawSqlValue(id);
+    public ISelectClause SelectClauseWithDuplicatedFields
+        => MartenClosedShapeLinq.SelectClauseWithDuplicatedFields<TDoc>(this);
 
-    public override System.Data.Common.DbParameter BuildManyIdParameter(TId[] ids)
-        => Dialect.CreateIdArrayParameter(
-            System.Array.ConvertAll(ids, id => _descriptor.Identification.ToRawSqlValue(id)),
-            _descriptor.Identification.RawSqlType);
+    void ISqlFragment.Apply(ICommandBuilder builder) => Apply(builder);
 
-    // #4667 Phase 2 — session-free projection load; see Lightweight peer.
-    public override Task<TDoc?> LoadProjectedAsync(TId id, IStorageDatabase database, string tenantId, CancellationToken token)
-        => ClosedShapeProjectionLoader<TDoc, TId>.LoadAsync(
-            BuildLoadCommand(id, tenantId), _descriptor, _descriptor.Serializer, database, token);
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
+        ISqlFragment currentStatement) where TResult : notnull
+        => LinqQueryParser.BuildHandler<TDoc, TResult>((ISelector<TDoc>)BuildSelector(session), statement);
 
-    public override Task<IReadOnlyList<TDoc>> LoadManyProjectedAsync(TId[] ids, IStorageDatabase database, string tenantId, CancellationToken token)
-        => ClosedShapeProjectionLoader<TDoc, TId>.LoadManyAsync(
-            BuildLoadManyCommand(ids, tenantId), _descriptor, _descriptor.Serializer, database, token);
+    public ISelectClause UseStatistics(QueryStatistics statistics) => new StatsSelectClause<TDoc>(this, statistics);
+
+    MetadataColumn[] IHaveMetadataColumns.MetadataColumns() => _martenRules.MetadataColumns;
 }

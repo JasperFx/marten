@@ -18,9 +18,9 @@ public class EventSkipping
         {
             opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-            // This is false by default for backwards compatibility,
-            // turning this on will add an extra column and filtering during
-            // various event store operations
+            // On by default since Marten 10. Set it to false to stop
+            // filtering skipped events out of projections, subscriptions
+            // and aggregation
             opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = true;
         });
 
@@ -37,17 +37,23 @@ public class EventSkipping
     }
     #endregion
 
-    // If you're using multi-tenancy through separate databases,
-    // you'll need to use the correct database
+    #region sample_mark_events_as_skipped_by_tenant
     public static async Task mark_events_as_skipped_by_tenant(
         IDocumentStore store,
         long[] sequences,
         string tenantId,
         CancellationToken cancellation)
     {
+        // If you're using multi-tenancy through separate databases,
+        // you'll need to use the correct database
         var database = await store.Storage.FindOrCreateDatabase(tenantId);
-        await database.MarkEventsAsSkipped(sequences, cancellation);
-    }
 
+        // And name the tenant. With conjoined tenancy and
+        // UseTenantPartitionedEvents, every tenant numbers its own
+        // events, so a sequence alone matches the same-numbered
+        // event of every other tenant
+        await database.MarkEventsAsSkipped(tenantId, sequences, cancellation);
+    }
+    #endregion
 
 }

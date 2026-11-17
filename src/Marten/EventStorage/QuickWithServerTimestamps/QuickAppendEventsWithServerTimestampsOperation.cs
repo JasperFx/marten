@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using JasperFx.Events;
 using Marten.Events.Operations;
 using Marten.Internal;
@@ -26,11 +27,15 @@ internal sealed class QuickAppendEventsWithServerTimestampsOperation: QuickAppen
 {
     private readonly QuickWithServerTimestampsEventStorageDescriptor _descriptor;
 
+    private readonly Func<IEvent, JasperFx.Events.IEventBinarySerializer?> _binarySerializerFor;
+
     public QuickAppendEventsWithServerTimestampsOperation(
-        QuickWithServerTimestampsEventStorageDescriptor descriptor, StreamAction stream)
+        QuickWithServerTimestampsEventStorageDescriptor descriptor, StreamAction stream,
+        Func<IEvent, JasperFx.Events.IEventBinarySerializer?> binarySerializerFor)
         : base(stream)
     {
         _descriptor = descriptor;
+        _binarySerializerFor = binarySerializerFor;
     }
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
@@ -47,7 +52,9 @@ internal sealed class QuickAppendEventsWithServerTimestampsOperation: QuickAppen
         // #4515 Phase 2: SerializeEventBdata gives the binary bytes per event
         // (null for JSON events). Appends a bdatas bytea[] parameter right
         // after bodies in the function call.
-        writeBasicParameters(pb, session, _descriptor.SerializeEventBdata);
+        // #5731: binary events are written into a pooled buffer owned by this operation rather than
+        // through the descriptor's byte[]-returning SerializeEventBdata.
+        writeBasicParametersWithPooledBdata(pb, session, _binarySerializerFor);
 
         // Order MUST match the dialect's function-signature ordering:
         // metadata columns first, then timestamps, then tag arrays.
@@ -62,6 +69,7 @@ internal sealed class QuickAppendEventsWithServerTimestampsOperation: QuickAppen
         writeTimestamps(pb);
 
         if (_descriptor.HasTagWrites) writeAllTagValues(pb);
+        else if (writesHstoreTags) writeHstoreTagValues(pb);
 
         // #4614 / #4765: trailing optimistic-concurrency parameter, now always
         // on the function signature (default NULL) and always bound. See

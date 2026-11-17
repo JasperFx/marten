@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
+using System.Data.Common;
 using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions;
 using NetTopologySuite.Geometries;
@@ -89,7 +89,6 @@ public static class PostGISExtensions
                   $"ST_GeomFromGeoJSON(d.data->'{jsonPath}')::{pgType}, " +
                   $"$1, $2)";
 
-        var results = new List<T>();
         var database = session.As<QuerySession>().Database;
         await using var conn = database.CreateConnection();
         await conn.OpenAsync().ConfigureAwait(false);
@@ -100,16 +99,7 @@ public static class PostGISExtensions
         cmd.Parameters.Add(new NpgsqlParameter { Value = distanceMeters });
 
         await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        var serializer = store.Serializer;
-
-        while (await reader.ReadAsync().ConfigureAwait(false))
-        {
-            var json = await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(new MemoryStream(Encoding.UTF8.GetBytes(json)));
-            if (doc != null) results.Add(doc);
-        }
-
-        return results;
+        return await readDocumentsAsync<T>(reader, store.Serializer).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -133,7 +123,6 @@ public static class PostGISExtensions
                   $"ST_GeomFromGeoJSON(d.data->'{jsonPath}')::{pgType}, " +
                   $"$1)";
 
-        var results = new List<T>();
         var database = session.As<QuerySession>().Database;
         await using var conn = database.CreateConnection();
         await conn.OpenAsync().ConfigureAwait(false);
@@ -143,16 +132,7 @@ public static class PostGISExtensions
         cmd.Parameters.Add(new NpgsqlParameter { Value = geometry, NpgsqlDbType = NpgsqlDbType.Geometry });
 
         await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        var serializer = store.Serializer;
-
-        while (await reader.ReadAsync().ConfigureAwait(false))
-        {
-            var json = await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(new MemoryStream(Encoding.UTF8.GetBytes(json)));
-            if (doc != null) results.Add(doc);
-        }
-
-        return results;
+        return await readDocumentsAsync<T>(reader, store.Serializer).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -176,7 +156,6 @@ public static class PostGISExtensions
                   $"ST_GeomFromGeoJSON(d.data->'{jsonPath}')::{pgType}, " +
                   $"$1)";
 
-        var results = new List<T>();
         var database = session.As<QuerySession>().Database;
         await using var conn = database.CreateConnection();
         await conn.OpenAsync().ConfigureAwait(false);
@@ -186,25 +165,35 @@ public static class PostGISExtensions
         cmd.Parameters.Add(new NpgsqlParameter { Value = geometry, NpgsqlDbType = NpgsqlDbType.Geometry });
 
         await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        var serializer = store.Serializer;
+        return await readDocumentsAsync<T>(reader, store.Serializer).ConfigureAwait(false);
+    }
+
+    #region Private helpers
+
+    /// <summary>
+    ///     #5731: every spatial query used to read the jsonb column as a .NET string, encode that back
+    ///     to UTF-8 and wrap the bytes in a <see cref="MemoryStream" /> for the serializer — two whole
+    ///     copies of each document before deserialization started. The serializer reads the column
+    ///     itself, the same way Marten's own document selectors do.
+    /// </summary>
+    private static async Task<IReadOnlyList<T>> readDocumentsAsync<T>(DbDataReader reader, ISerializer serializer)
+        where T : class
+    {
+        var results = new List<T>();
 
         while (await reader.ReadAsync().ConfigureAwait(false))
         {
-            var json = await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(new MemoryStream(Encoding.UTF8.GetBytes(json)));
+            var doc = await serializer.FromJsonAsync<T>(reader, 0).ConfigureAwait(false);
             if (doc != null) results.Add(doc);
         }
 
         return results;
     }
 
-    #region Private helpers
-
     private static async Task<IReadOnlyList<T>> ExecuteSpatialQuery<T>(
         IQuerySession session, DocumentStore store, string sql,
         Point point, int limit) where T : class
     {
-        var results = new List<T>();
         var database = session.As<QuerySession>().Database;
         await using var conn = database.CreateConnection();
         await conn.OpenAsync().ConfigureAwait(false);
@@ -215,16 +204,7 @@ public static class PostGISExtensions
         cmd.Parameters.Add(new NpgsqlParameter { Value = limit });
 
         await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
-        var serializer = store.Serializer;
-
-        while (await reader.ReadAsync().ConfigureAwait(false))
-        {
-            var json = await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
-            var doc = serializer.FromJson<T>(new MemoryStream(Encoding.UTF8.GetBytes(json)));
-            if (doc != null) results.Add(doc);
-        }
-
-        return results;
+        return await readDocumentsAsync<T>(reader, store.Serializer).ConfigureAwait(false);
     }
 
     private static MemberInfo GetMemberInfo<T>(Expression<Func<T, object?>> expression)

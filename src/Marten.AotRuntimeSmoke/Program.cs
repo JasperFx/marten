@@ -27,6 +27,24 @@
 //   child collection      a containment filter serialized its jsonb payload through the consumer's
 //                         source-generated resolver, which carries documents and not object[],
 //                         Dictionary<string, object> or the enum being compared (#5374).
+//   projections           every Select() into a new object closed its select clause over
+//                         selectExpression.Type with Activator.CreateInstance, so a NAMED DTO
+//                         projection failed natively just as hard as an anonymous one, before the
+//                         serializer was ever reached. An anonymous projection then still cannot be
+//                         materialized by a source-generated resolver that replaced the
+//                         reflection-based one, and Marten now says so with the remedy (#5624).
+//   boundary aggregate    EventGraph.Build<TDoc>() closed SingleStreamProjection<,> with
+//                         CloseAndBuildAs for a [BoundaryAggregate], even though both type
+//                         arguments are known at compile time (TDoc, and string per jasperfx#324).
+//                         ILC has no such instantiation, so every DCB boundary fetch threw
+//                         "No parameterless constructor defined for type
+//                         SingleStreamProjection`2[...]" (#5649).
+//   DCB tags              RegisterTagType<TTag>() let JasperFx close TagTypeRegistration<TTag, TInner>
+//                         with MakeGenericType and read the tag's members with ValueTypeInfo, so the
+//                         store could not even be CONFIGURED. RegisterTagType<TTag, TInner>(unwrapper)
+//                         closes it at compile time and reflects over nothing; the checks below run
+//                         tagging, tag rules, tag queries and the consistency boundary on it, and hold
+//                         the inferring overload to naming that remedy instead of failing opaquely.
 //   diagnostics criteria  IDocumentStoreDiagnostics Where / OrderBy (jasperfx#869) are translated with
 //                         runtime code generation, so a native binary must REFUSE them -- before any
 //                         generic method is closed over the document type -- not crash, and never
@@ -43,7 +61,10 @@ using System.Text.Json.Serialization;
 using JasperFx;
 using JasperFx.Documents;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Tags;
 using Marten;
+using Marten.Exceptions;
 using Marten.Linq;
 using Weasel.Core;
 
@@ -65,6 +86,10 @@ var store = DocumentStore.For(o =>
     o.Schema.For<Declaratie>();
     // #5589: names the three types so the identity generics are closed at compile time.
     o.RegisterValueTypeId<Declaratie, DeclaratieId, Guid>();
+    // #5635: the scalar select clause is `where T : struct`, so a consumer enum projected on its
+    // own -- Select(x => x.Soort) -- is the one projected type #5624's registry cannot close from
+    // MartenLinqQueryable<T>. Marten roots its own scalar types; this names ours.
+    o.RegisterScalarType<Soort>();
 
     o.Events.StreamIdentity = StreamIdentity.AsString;
     o.Events.AddEventType<DossierGeopend>();
@@ -74,6 +99,15 @@ var store = DocumentStore.For(o =>
     // SingleStreamProjection<,> at runtime. Dossier is deliberately not named by a Schema.For<T>()
     // either, so this also covers the aggregate's mapping being built from a Type.
     o.Projections.LiveStreamAggregation<Dossier, string>();
+
+    // DCB: the inner type is named and the unwrapper passed, so nothing is closed and nothing is
+    // reflected over at runtime. The tag types are records over a Guid and a string, the two inner
+    // types a tag table is most often keyed by.
+    o.Events.AddEventType<ConsultGehouden>();
+    o.Events.RegisterTagType<PatientId, Guid>(x => x.Value, "patient").ForAggregate<Behandeltraject>();
+    o.Events.RegisterTagType<ZorgverlenerCode, string>(x => x.Value, "zorgverlener")
+        .ForAggregate<Behandeltraject>();
+    o.Events.TagWith<ConsultGehouden>(e => new ZorgverlenerCode(e.Zorgverlener));
 });
 
 DecimalOperatorRoots.Root();
@@ -101,7 +135,7 @@ try
         });
         writing.Store(new Declaratie
         {
-            Id = declaratieId, Prestatiecode = "12000", Bedrag = 42
+            Id = declaratieId, Prestatiecode = "12000", Bedrag = 42, Korting = 5
         });
         writing.Store(new Declaratie
         {
@@ -261,6 +295,146 @@ try
         return ids.Count == 1 && ids[0] == declaratieId;
     });
 
+    // #5624 — every one of the projection shapes below threw
+    // "MissingMethodException: No parameterless constructor defined for type
+    // 'SelectDataSelectClause`1[...]'" from a native binary, because the parser only has
+    // selectExpression.Type and closed the clause over it with Activator.CreateInstance.
+    await Check("LINQ projection into a NAMED type", async () =>
+    {
+        var summaries = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+            .Select(x => new PraktijkSamenvatting { AgbCode = x.AgbCode, Naam = x.Naam }).ToListAsync();
+        return summaries.Count == 1 && summaries[0].Naam == "Praktijk Jansen";
+    });
+
+    await Check("GroupBy into a NAMED type", async () =>
+    {
+        var tallies = await session.Query<Praktijk>().GroupBy(x => x.Soort)
+            .Select(g => new SoortTally { Soort = g.Key, Count = g.Count() }).ToListAsync();
+        return tallies.Count == 2;
+    });
+
+    await Check("scalar projection (string)", async () =>
+    {
+        var names = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910").Select(x => x.Naam)
+            .ToListAsync();
+        return names.Count == 1 && names[0] == "Praktijk Jansen";
+    });
+
+    await Check("scalar projection (decimal)", async () =>
+    {
+        var amounts = await session.Query<Declaratie>().Where(x => x.Prestatiecode == "12000")
+            .Select(x => x.Bedrag).ToListAsync();
+        return amounts.Count == 1 && amounts[0] == 42m;
+    });
+
+    await Check("collection member projection", async () =>
+    {
+        var regels = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910").Select(x => x.Regels)
+            .ToListAsync();
+        return regels.Count == 1 && regels[0].Count == 1;
+    });
+
+    await Check("SelectMany over a child collection", async () =>
+    {
+        var regels = await session.Query<Praktijk>().SelectMany(x => x.Regels).ToListAsync();
+        return regels.Count == 1;
+    });
+
+    // #5635: the scalar shapes whose clause or selector is `where T : struct`. The enum ones need
+    // the RegisterScalarType<Soort>() above; the nullable decimal needs nothing -- its gap was the
+    // reflectively-closed NullableSelector<decimal> / ListQueryHandler<decimal?> pair, which the
+    // registry now carries for every scalar type Marten knows.
+    await Check("enum scalar projection, list", async () =>
+    {
+        var soorten = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+            .Select(x => x.Soort).ToListAsync();
+        return soorten.Count == 1 && soorten[0] == Soort.Huisarts;
+    });
+
+    await Check("enum scalar projection, single value", async () =>
+    {
+        var soort = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+            .Select(x => x.Soort).FirstOrDefaultAsync();
+        return soort == Soort.Huisarts;
+    });
+
+    await Check("nullable enum member projection", async () =>
+    {
+        var soorten = await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+            .Select(x => x.OptioneleSoort).ToListAsync();
+        return soorten.Count == 1 && soorten[0] == Soort.Huisarts;
+    });
+
+    await Check("nullable decimal member projection", async () =>
+    {
+        var kortingen = await session.Query<Declaratie>().Where(x => x.Prestatiecode == "12000")
+            .Select(x => x.Korting).ToListAsync();
+        return kortingen.Count == 1 && kortingen[0] == 5m;
+    });
+
+    await Check("enum aggregate (Max)", async () =>
+    {
+        var max = await session.Query<Praktijk>().MaxAsync(x => x.Soort);
+        return max == Soort.Apotheek;
+    });
+
+    // #5624 proper: the projected type is handed to the consumer's serializer, and no
+    // [JsonSerializable(...)] can name an anonymous type. This store assigns TypeInfoResolver
+    // directly, so there is no reflection-based resolver behind the context and the projection
+    // cannot be materialized -- under a JIT every bit as much as natively. Marten says so instead
+    // of letting System.Text.Json advise an impossible annotation.
+    await Check("anonymous projection is refused with the remedy", async () =>
+    {
+        try
+        {
+            await session.Query<Praktijk>().Where(x => x.AgbCode == "01059910")
+                .Select(x => new { x.AgbCode, x.Naam }).ToListAsync();
+            return false;
+        }
+        catch (MartenNotSupportedException e)
+        {
+            return e.Message.Contains("UseTypeInfoResolver") && e.InnerException is NotSupportedException;
+        }
+    });
+
+    await Check("anonymous GroupBy projection is refused with the remedy", async () =>
+    {
+        try
+        {
+            await session.Query<Praktijk>().GroupBy(x => x.Soort).Select(g => new { g.Key, Count = g.Count() })
+                .ToListAsync();
+            return false;
+        }
+        catch (MartenNotSupportedException e)
+        {
+            return e.Message.Contains("UseTypeInfoResolver");
+        }
+    });
+
+    // ...and the remedy that exception names, exercised from the native binary. UseTypeInfoResolver
+    // combines the context with a DefaultJsonTypeInfoResolver, and that reflection fallback DOES
+    // work natively for an anonymous type -- the consumer's assembly is a TrimmerRootAssembly, so
+    // its metadata survives. IsReflectionEnabledByDefault is false here, which governs the resolver
+    // System.Text.Json picks when none was supplied, not one Marten constructed outright.
+    await Check("anonymous projection works with the resolver CHAINED", async () =>
+    {
+        var serializer = new Marten.Services.SystemTextJsonSerializer();
+        serializer.UseTypeInfoResolver(SmokeJson.Default);
+
+        await using var chained = DocumentStore.For(o =>
+        {
+            o.Connection(connection);
+            o.Serializer(serializer);
+            o.AutoCreateSchemaObjects = AutoCreate.None;
+            o.DatabaseSchemaName = "aot_runtime_smoke";
+            o.Schema.For<Praktijk>();
+        });
+
+        await using var s = chained.QuerySession();
+        var summaries = await s.Query<Praktijk>().Select(x => new { x.AgbCode, x.Naam }).ToListAsync();
+        return summaries.Count == 2;
+    });
+
     var diagnostics = (IDocumentStoreDiagnostics)store;
 
     await Check("diagnostics page without criteria", async () =>
@@ -285,6 +459,17 @@ try
         }
     });
 
+    // #5649. Exercised directly rather than through AggregateByTagsAsync, because this aggregate's
+    // tag type is deliberately not registered at all. This is the one site that fix moves, and it is
+    // the site the reported MissingMethodException came from; the DCB checks below reach the same
+    // branch through the fetch itself, on explicit RegisterTagType<TTag, TInner> registrations.
+    await Check("boundary aggregate aggregator source", () =>
+    {
+        var source = store.Events.Build<Toegangsgrens>();
+        return Task.FromResult(source is Marten.Events.Aggregation.SingleStreamProjection<Toegangsgrens, string>);
+    });
+
+    await CheckDcbAsync();
 }
 catch (Exception e)
 {
@@ -348,6 +533,122 @@ async Task CheckRenamedEnumMemberAsync()
         var found = await session.Query<Aanlevering>()
             .Where(x => wanted.Contains(x.Zorgvorm)).ToListAsync();
         return found.Count == 1 && found[0].Id == id;
+    });
+
+    // #5635: Zorgvorm is deliberately NOT registered, unlike Soort on the main store. A native
+    // binary cannot close the scalar clause over it, and the bare Activator.CreateInstance message
+    // -- "No parameterless constructor defined for type 'NewScalarSelectClause`1[Zorgvorm]'" --
+    // tells the consumer nothing. Marten names the one line that fixes it. A JIT still answers the
+    // query, so either outcome passes here; a RAW MissingMethodException fails both ways. The JIT's
+    // answer has to be the renamed member (#6064), which ./build.sh test-aot-runtime-jit and LocalGate check.
+    await Check("an unregistered enum scalar projection names RegisterScalarType", async () =>
+    {
+        try
+        {
+            var zorgvormen = await session.Query<Aanlevering>().Select(x => x.Zorgvorm).ToListAsync();
+            return zorgvormen.Count == 1 && zorgvormen[0] == Zorgvorm.Apotheek;
+        }
+        catch (MartenNotSupportedException e)
+        {
+            return e.Message.Contains("RegisterScalarType<Zorgvorm>()");
+        }
+    });
+}
+
+// Dynamic Consistency Boundary tags, all from the explicit RegisterTagType<TTag, TInner> registrations
+// in the store above.
+async Task CheckDcbAsync()
+{
+    var patient = new PatientId(Guid.NewGuid());
+    var zorgverlener = new ZorgverlenerCode("01059910");
+    var traject = new EventTagQuery().Or<PatientId>(patient);
+
+    ConsultGehouden Consult(string verrichting) => new(patient.Value, zorgverlener.Value, verrichting);
+
+    await Check("DCB append with tags", async () =>
+    {
+        await using var s = store.LightweightSession();
+        var eerste = s.Events.BuildEvent(Consult("intake"));
+        eerste.WithTag(patient); // the zorgverlener tag comes from the TagWith rule
+        s.Events.Append("traject-1", eerste);
+        await s.SaveChangesAsync();
+        return true;
+    });
+
+    await Check("DCB query by a Guid-backed tag", async () =>
+    {
+        await using var s = store.LightweightSession();
+        return (await s.Events.QueryByTagsAsync(traject)).Count == 1;
+    });
+
+    await Check("DCB query by a string-backed tag added by a TagWith rule", async () =>
+    {
+        await using var s = store.LightweightSession();
+        return (await s.Events.QueryByTagsAsync(new EventTagQuery().Or<ZorgverlenerCode>(zorgverlener))).Count == 1
+               && await s.Events.EventsExistAsync(new EventTagQuery().Or<ZorgverlenerCode>(zorgverlener));
+    });
+
+    await Check("DCB FetchForWritingByTags into a [BoundaryAggregate] and append", async () =>
+    {
+        await using var s = store.LightweightSession();
+        var boundary = await s.Events.FetchForWritingByTags<Behandeltraject>(traject);
+        if (boundary.Aggregate?.Consulten != 1) return false;
+
+        var vervolg = s.Events.BuildEvent(Consult("controle"));
+        vervolg.WithTag(patient);
+        boundary.AppendOne(vervolg);
+        await s.SaveChangesAsync();
+
+        await using var q = store.LightweightSession();
+        return (await q.Events.AggregateByTagsAsync<Behandeltraject>(traject))?.Consulten == 2;
+    });
+
+    await Check("DCB boundary refuses a concurrent append", async () =>
+    {
+        await using var first = store.LightweightSession();
+        await using var second = store.LightweightSession();
+        var b1 = await first.Events.FetchForWritingByTags<Behandeltraject>(traject);
+        var b2 = await second.Events.FetchForWritingByTags<Behandeltraject>(traject);
+
+        var e1 = first.Events.BuildEvent(Consult("telefonisch"));
+        e1.WithTag(patient);
+        b1.AppendOne(e1);
+        await first.SaveChangesAsync();
+
+        var e2 = second.Events.BuildEvent(Consult("telefonisch"));
+        e2.WithTag(patient);
+        b2.AppendOne(e2);
+        try
+        {
+            await second.SaveChangesAsync();
+            return false;
+        }
+        catch (DcbConcurrencyException)
+        {
+            return true;
+        }
+    });
+
+    // The inferring overload cannot work natively, so it has to say what to write instead. A JIT process
+    // (`dotnet run` of this project) closes the generic and simply registers it. Neither RuntimeFeature flag
+    // tells the two apart here -- PublishAot turns IsDynamicCodeSupported off under `dotnet run` as well, and
+    // CoreCLR derives IsDynamicCodeCompiled from it -- so the check accepts either outcome, and nothing else.
+    await Check("inferred tag registration names the explicit overload under Native AOT", () =>
+    {
+        try
+        {
+            var options = new StoreOptions();
+            var registered = options.Events.RegisterTagType<VerwijzingId>("verwijzing").SimpleType == typeof(Guid);
+            Console.WriteLine("     (inferred registration succeeded, as under a JIT)");
+            return Task.FromResult(registered);
+        }
+        catch (InvalidOperationException e)
+        {
+            Console.WriteLine("     (inferred registration refused with the remedy, as natively)");
+            return Task.FromResult(e.InnerException is NotSupportedException or MissingMethodException
+                                       or JasperFx.Core.Reflection.InvalidValueTypeException
+                                   && e.Message.Contains("RegisterTagType<VerwijzingId, Guid>(x => x.Value, \"verwijzing\")"));
+        }
     });
 }
 
@@ -418,6 +719,23 @@ public class Declaratie
     public DeclaratieId Id { get; set; }
     public string Prestatiecode { get; set; } = "";
     public decimal Bedrag { get; set; }
+    public decimal? Korting { get; set; }
+}
+
+/// <summary>
+/// #5624. The nameable half of a LINQ projection: a consumer can write
+/// [JsonSerializable(typeof(PraktijkSamenvatting))] for this and cannot for an anonymous type.
+/// </summary>
+public class PraktijkSamenvatting
+{
+    public string AgbCode { get; set; } = "";
+    public string Naam { get; set; } = "";
+}
+
+public class SoortTally
+{
+    public Soort Soort { get; set; }
+    public int Count { get; set; }
 }
 
 public class Aanlevering
@@ -457,11 +775,49 @@ public record DossierGeopend(string Nummer, string Naam);
 
 public record RegelToegevoegd(string Prestatiecode);
 
+public readonly record struct PatientId(Guid Value);
+
+public readonly record struct ZorgverlenerCode(string Value);
+
+/// <summary>Only ever registered through the inferring overload, so nothing roots its instantiation.</summary>
+public readonly record struct VerwijzingId(Guid Value);
+
+public record ConsultGehouden(Guid Patient, string Zorgverlener, string Verrichting);
+
+/// <summary>
+/// A pure boundary aggregate over the DCB tags: no identity, so only the [BoundaryAggregate] marker gets the
+/// source generator to emit its evolver, and only a tag query can load it.
+/// </summary>
+[BoundaryAggregate]
+public class Behandeltraject
+{
+    public int Consulten { get; set; }
+
+    public void Apply(ConsultGehouden _) => Consulten++;
+}
+
+// #5649: a *pure* DCB boundary aggregate -- Apply methods, no identity of any kind. The
+// [BoundaryAggregate] marker is the only thing that makes EventGraph.Build<TDoc>() take the branch
+// under test, and its id is unconditionally string (jasperfx#324).
+[BoundaryAggregate]
+public class Toegangsgrens
+{
+    public int Geopend { get; set; }
+    public int Regels { get; set; }
+
+    public void Apply(DossierGeopend _) => Geopend++;
+    public void Apply(RegelToegevoegd _) => Regels++;
+}
+
 [JsonSerializable(typeof(Praktijk))]
 [JsonSerializable(typeof(Declaratie))]
 [JsonSerializable(typeof(DeclaratieId))]
+[JsonSerializable(typeof(PraktijkSamenvatting))]
+[JsonSerializable(typeof(SoortTally))]
 [JsonSerializable(typeof(Aanlevering))]
 [JsonSerializable(typeof(Dossier))]
 [JsonSerializable(typeof(DossierGeopend))]
 [JsonSerializable(typeof(RegelToegevoegd))]
+[JsonSerializable(typeof(ConsultGehouden))]
+[JsonSerializable(typeof(Behandeltraject))]
 public partial class SmokeJson: JsonSerializerContext;

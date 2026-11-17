@@ -14,14 +14,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.CompiledQueries;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2075",
     Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class QueryCompiler
 {
     internal static readonly IList<IParameterFinder> Finders = new List<IParameterFinder> { new EnumParameterFinder() };
@@ -104,7 +100,8 @@ internal class QueryCompiler
             var values = new DateTime[count];
             for (var i = 0; i < values.Length; i++)
             {
-                values[i] = value.AddDays(-1);
+                value = value.AddDays(-1);
+                values[i] = value;
             }
 
             return values;
@@ -116,7 +113,8 @@ internal class QueryCompiler
             var values = new DateTimeOffset[count];
             for (var i = 0; i < values.Length; i++)
             {
-                values[i] = value.AddDays(-1);
+                value = value.AddDays(-1);
+                values[i] = value;
             }
 
             return values;
@@ -161,6 +159,10 @@ internal class QueryCompiler
         Finders.Add(finder);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public static CompiledQueryPlan BuildQueryPlan(QuerySession session, Type queryType, StoreOptions storeOptions)
     {
         var querySignature = queryType.FindInterfaceThatCloses(typeof(ICompiledQuery<,>));
@@ -187,6 +189,9 @@ internal class QueryCompiler
 
         // This *could* throw
         var queryTemplate = plan.CreateQueryTemplate(query);
+
+        QueryObjectReads.AssertEveryReadBinds(plan, queryTemplate, queryTemplate.QueryIs(),
+            ((IMartenSession)session).Options);
 
         var statistics = plan.GetStatisticsIfAny(query);
         var parser = BuildDatabaseCommand(session, queryTemplate, statistics, plan);

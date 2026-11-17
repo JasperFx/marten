@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using JasperFx.Events.Protected;
 using Marten.Events.Operations;
 using Marten.Events.Protected;
@@ -17,6 +19,7 @@ using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 using Weasel.Postgresql;
 
 using Marten.Services;
@@ -44,10 +47,17 @@ internal partial class EventStore
         // nothing the caller can act on.
         _store.Events.EnsureAsStringStorage(_session);
 
+        // The same refusal Append and StartStream make. Compaction rewrites one event and deletes the rest,
+        // so it must never be pointed at anything wider than a stream the caller named.
+        if (string.IsNullOrEmpty(streamKey))
+        {
+            throw new ArgumentOutOfRangeException(nameof(streamKey), "The stream key cannot be null or empty");
+        }
+
         var request = new StreamCompactingRequest<T>(streamKey);
         configure?.Invoke(request);
 
-        await request.ExecuteAsync(_session).ConfigureAwait(false);
+        await MartenStreamCompacting.Instance.CompactAsync(request, _session).ConfigureAwait(false);
     }
 
     public async Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null)
@@ -58,99 +68,163 @@ internal partial class EventStore
         // `if (!events.Any()) return;` guard -- so compaction silently did nothing at all.
         _store.Events.EnsureAsGuidStorage(_session);
 
+        // See the string overload above
+        if (streamId == Guid.Empty)
+        {
+            throw new ArgumentOutOfRangeException(nameof(streamId), "Cannot use an empty Guid as the stream id");
+        }
+
         var request = new StreamCompactingRequest<T>(streamId);
         configure?.Invoke(request);
 
-        await request.ExecuteAsync(_session).ConfigureAwait(false);
+        await MartenStreamCompacting.Instance.CompactAsync(request, _session).ConfigureAwait(false);
     }
 }
 
 /// <summary>
-///     Marten-side execution of <see cref="StreamCompactingRequest{T}"/> (the data
-///     shape now lives in <see cref="JasperFx.Events.Protected"/> per the dedupe
-///     pillar — see jasperfx#214 / PR #274). Each product owns its own
-///     <c>ExecuteAsync</c>; only the request shape and the
-///     <see cref="IEventsArchiver{TOperations}"/> hook are shared.
+///     Marten's half of the shared <see cref="StreamCompactingExecution{TSession}"/> (jasperfx#1048): the
+///     fold, the archiver closures Marten can call, and the delete and watermark operations. The read, the
+///     order everything is queued in and the refusals are the shared base's.
 /// </summary>
-internal static class StreamCompactingExecution
+internal sealed class MartenStreamCompacting: StreamCompactingExecution<DocumentSessionBase>
 {
-    /// <summary>
-    ///     Drive the compaction against a Marten <see cref="DocumentSessionBase"/>:
-    ///     fetch the events to be replaced, build a <see cref="Compacted{T}"/>
-    ///     snapshot via the aggregator, optionally invoke the archiver (if the
-    ///     request's <see cref="StreamCompactingRequest{T}.Archiver"/> closes the
-    ///     generic over Marten's <see cref="IDocumentOperations"/>), then queue the
-    ///     replacement + delete operations on the session.
-    /// </summary>
-    internal static async Task ExecuteAsync<T>(this StreamCompactingRequest<T> request, DocumentSessionBase session)
-        where T : class
+    public static readonly MartenStreamCompacting Instance = new();
+
+    private MartenStreamCompacting()
     {
-        var logger = ((IMartenSession)session).Options.LogFactory?.CreateLogger<StreamCompactingRequest<T>>() ??
-                     ((IMartenSession)session).Options.DotNetLogger ?? NullLogger<StreamCompactingRequest<T>>.Instance;
+    }
 
-        // 1. Find the aggregator
-        var aggregator = FindAggregator<T>(session);
+    public async Task CompactAsync<T>(StreamCompactingRequest<T> request, DocumentSessionBase session) where T : class
+    {
+        var options = ((IMartenSession)session).Options;
+        var logger = options.LogFactory?.CreateLogger<StreamCompactingRequest<T>>() ??
+                     options.DotNetLogger ?? NullLogger<StreamCompactingRequest<T>>.Instance;
 
-        // 2. Find the events
-        IReadOnlyList<IEvent> events;
-        if (((IMartenSession)session).Options.Events.StreamIdentity == StreamIdentity.AsGuid)
+        // Built ahead of the read, so a type with no aggregation conventions is refused before anything else
+        FindAggregator<T>(session);
+
+        if (await ExecuteAsync(request, session).ConfigureAwait(false))
         {
-            events = await session.Events.FetchStreamAsync(request.StreamId!.Value, request.Version,
-                request.Timestamp, token: request.CancellationToken).ConfigureAwait(false);
+            logger.LogInformation("Compacted stream {Id} from Version {Version} and down",
+                (object?)request.StreamId ?? request.StreamKey, request.Version);
         }
         else
         {
-            events = await session.Events.FetchStreamAsync(request.StreamKey!, request.Version,
-                request.Timestamp, token: request.CancellationToken).ConfigureAwait(false);
+            logger.LogInformation(
+                "Left stream {Id} alone: there was nothing to compact, or its events fold to no {AggregateType}",
+                (object?)request.StreamId ?? request.StreamKey, typeof(T).FullNameInCode());
         }
+    }
 
-        if (!events.Any()) return;
-        if (events is [{ Data: Compacted<T> }]) return;
+    protected override IEventStoreOperations EventsFor(DocumentSessionBase session) => session.Events;
 
-        var sequences = events.Select(x => x.Sequence).Take(events.Count - 1).ToArray();
+    protected override async ValueTask<T?> BuildAggregateAsync<T>(DocumentSessionBase session,
+        IReadOnlyList<IEvent> events, CancellationToken token) where T : class
+    {
+        var aggregate = await FindAggregator<T>(session).BuildAsync(events, session, default, token).ConfigureAwait(false);
 
-        request.Version = events[events.Count - 1].Version;
-        request.Sequence = events[events.Count - 1].Sequence;
-
-        // 3. Aggregate up to the new snapshot
-        var aggregate = await aggregator.BuildAsync(events, session, default, request.CancellationToken)
-            .ConfigureAwait(false);
-
-        // 4. Optional archiving. The lifted IEventsArchiver marker is non-generic
-        //    so the data class doesn't have to flow a TOperations parameter; the
-        //    product downcasts to the closed-generic at execution time. Marten's
-        //    callbacks close on IDocumentOperations.
-        if (request.Archiver is IEventsArchiver<IDocumentOperations> archiver)
+        // Called ahead of anything being queued, and only with the events about to be folded: the last one becomes
+        // the Compacted<T>, and the rest are deleted. A stream that folds to nothing is left alone anyway.
+        if (aggregate != null && events.Count > 0)
         {
-            await archiver.MaybeArchiveAsync(session, request, events, request.CancellationToken)
-                .ConfigureAwait(false);
+            await ensureNoAsyncShardIsBehindAsync<T>(session, events[^1], token).ConfigureAwait(false);
         }
 
-        if (((IMartenSession)session).Options.Events.StreamIdentity == StreamIdentity.AsGuid)
+        return aggregate;
+    }
+
+    /// <summary>
+    ///     #6050: refuses to compact while an async projection or subscription has not processed the events being
+    ///     compacted. Compaction deletes them and rewrites the last one into a <see cref="Compacted{T}" />, so a
+    ///     multi-stream projection, a composite, another view of the stream or a subscription (Wolverine's event
+    ///     forwarding included) that had not reached them yet would never see them. A single-stream projection
+    ///     of <typeparamref name="T" /> itself is exempt: it fast-forwards over the snapshot.
+    /// </summary>
+    /// <remarks>
+    ///     The same rule as <c>MarkStreamCold</c>'s lag guard: a shard is behind unless its
+    ///     <c>mt_event_progression</c> row has reached the last event's sequence, and a shard with no row (one
+    ///     that never ran) is behind. A shard's row is the one for this session's tenant (<c>{shard}:{tenant}</c>)
+    ///     when the daemon keeps per-tenant progress, else the store-global one. Read before anything is queued: a
+    ///     shard only moves forward, so one that has caught up here is still caught up at commit.
+    /// </remarks>
+    private static async Task ensureNoAsyncShardIsBehindAsync<T>(DocumentSessionBase session, IEvent last,
+        CancellationToken token) where T : class
+    {
+        var options = ((IMartenSession)session).Options;
+
+        var exempt = options.Projections.All
+            .Where(x => x is IAggregateProjection { Scope: AggregationScope.SingleStream } aggregate &&
+                        aggregate.AggregateType == typeof(T))
+            .Select(x => x.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var tenantId = session.TenantId;
+        var shards = options.Projections.AllShards()
+            .Where(x => !exempt.Contains(x.Name.Name))
+            .Select(x => (Global: x.Name.Identity,
+                Tenant: ShardName.Compose(x.Name.Name, x.Name.ShardKey, tenantId, x.Name.Version).Identity))
+            .Distinct()
+            .ToArray();
+
+        if (shards.Length == 0)
         {
-            logger.LogInformation("Successfully archived events for Stream {Id} from Version {Version} and down",
-                request.StreamId, request.Version);
+            return;
         }
-        else
+
+        var names = shards.SelectMany(x => new[] { x.Global, x.Tenant }).Distinct().ToArray();
+        var cmd = new NpgsqlCommand(
+            $"select name, last_seq_id from {options.EventGraph.ProgressionTable} where name = any(@names)");
+        cmd.Parameters.AddWithValue("names", names);
+
+        var progress = new Dictionary<string, long>(StringComparer.Ordinal);
+        await using (var reader = await ((IMartenSession)session).ExecuteReaderAsync(cmd, token).ConfigureAwait(false))
         {
-            logger.LogInformation("Successfully archived events for Stream {Key} from Version {Version} and down",
-                request.StreamKey, request.Version);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                progress[await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false)] =
+                    await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
+            }
         }
 
-        var compacted = new Compacted<T>(aggregate!,
-            request.StreamId ?? Guid.Empty, request.StreamKey ?? string.Empty);
+        var behind = shards
+            .Select(x => (Name: progress.ContainsKey(x.Tenant) ? x.Tenant : x.Global,
+                Seq: progress.TryGetValue(x.Tenant, out var t) ? t : progress.GetValueOrDefault(x.Global)))
+            .Where(x => x.Seq < last.Sequence)
+            .Select(x => $"{x.Name} (at {x.Seq})")
+            .ToArray();
 
-        session.Events.CompletelyReplaceEvent(request.Sequence, compacted);
+        if (behind.Length > 0)
+        {
+            throw new InvalidOperationException(
+                $"Cannot compact stream '{(object?)last.StreamKey ?? last.StreamId}' through version {last.Version} " +
+                $"(sequence {last.Sequence}) yet: these async projections or subscriptions have not processed its " +
+                $"events: {string.Join(", ", behind)}. Compacting deletes them, so those would never see them. " +
+                "Nothing was compacted; try again once they caught up.");
+        }
+    }
 
+    // Both closures are accepted, as Polecat does (polecat#423). IEventsArchiver<T> is invariant, so an
+    // IEventsArchiver<IDocumentSession> is not an IEventsArchiver<IDocumentOperations>.
+    protected override async Task<bool> TryArchiveAsync<T>(DocumentSessionBase session,
+        StreamCompactingRequest<T> request, IReadOnlyList<IEvent> events) where T : class
+    {
+        return await TryArchiveThroughAsync<IDocumentSession, T>(session, request, events).ConfigureAwait(false)
+               || await TryArchiveThroughAsync<IDocumentOperations, T>(session, request, events).ConfigureAwait(false);
+    }
+
+    protected override void DeleteEvents(DocumentSessionBase session, long[] sequences)
+    {
         session.QueueOperation(new DeleteEventsOperation(sequences));
+    }
 
-        // jasperfx#740 (marten#5333): record the compaction watermark on mt_streams so
-        // StreamState.CompactedVersion — and the (Version - CompactedVersion) growth measure the
-        // Stream Compaction Policies are built on — reads truthfully. request.Version is the
-        // version of the last event folded into the Compacted<T> snapshot: the caller's cutoff for
-        // a partial compaction, the stream's current version for a full one.
+    // jasperfx#740 (marten#5333): record the compaction watermark on mt_streams so
+    // StreamState.CompactedVersion -- and the (Version - CompactedVersion) growth measure the
+    // Stream Compaction Policies are built on -- reads truthfully.
+    protected override void RecordCompactionWatermark(DocumentSessionBase session, Guid? streamId,
+        string? streamKey, long version)
+    {
         session.QueueOperation(new RecordCompactionWatermarkOperation(
-            ((IMartenSession)session).Options.EventGraph, request.StreamId, request.StreamKey, request.Version));
+            ((IMartenSession)session).Options.EventGraph, streamId, streamKey, version));
     }
 
     /// <summary>
@@ -214,8 +288,9 @@ internal static class StreamCompactingExecution
 /// interface. That contract has been lifted to
 /// <see cref="IEventsArchiver{TOperations}"/> in <c>JasperFx.Events.Protected</c>
 /// per the dedupe pillar so Marten and Polecat share a single contract — Marten
-/// archivers now close the generic over <see cref="IDocumentOperations"/>; Polecat
-/// archivers close it over <c>Polecat.IDocumentOperations</c>.
+/// archivers now close the generic over <see cref="IDocumentOperations"/> or
+/// <see cref="IDocumentSession"/>; Polecat archivers close it over the same two types of its own.
+/// Marten refuses to compact with an archiver closed over anything else.
 /// </remarks>
 public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOperations>
 {
@@ -297,7 +372,31 @@ internal class DeleteEventsOperation: IStorageOperation, NoDataReturnedCall
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        builder.Append($"delete from {((IMartenSession)session).Options.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(");
+        var events = ((IMartenSession)session).Options.EventGraph;
+        var schema = events.DatabaseSchemaName;
+
+        // The DCB tag rows of the folded events go in the same statement, ahead of the events. Each
+        // mt_event_tag_* table has a foreign key to mt_events that does NOT cascade, so deleting a tagged
+        // event while its tag rows remain is refused with 23503. Same shape as DeleteStreamOperation: the
+        // CTEs share one snapshot and the key is checked at the end of the statement, when both are gone.
+        // HStore mode keeps tags inline on mt_events and has no tag tables.
+        IReadOnlyList<JasperFx.Events.Tags.ITagTypeRegistration> tagTypes =
+            events.DcbStorageMode == DcbStorageMode.HStore ? [] : events.TagTypes;
+
+        for (var i = 0; i < tagTypes.Count; i++)
+        {
+            builder.Append(i == 0 ? "with " : ", ");
+            builder.Append($"tag{i} as (delete from {schema}.mt_event_tag_{tagTypes[i].TableSuffix} where seq_id = ANY(");
+            builder.AppendParameter(_sequences);
+            builder.Append(")");
+
+            // The tag tables carry tenant_id under conjoined tenancy, and seq_id alone is not an event
+            // there (#5234, below)
+            builder.AppendConjoinedTenantFilter(session);
+            builder.Append(") ");
+        }
+
+        builder.Append($"delete from {schema}.mt_events where seq_id = ANY(");
         builder.AppendParameter(_sequences);
         builder.Append(")");
 

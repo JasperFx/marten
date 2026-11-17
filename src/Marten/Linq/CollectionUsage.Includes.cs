@@ -16,8 +16,6 @@ namespace Marten.Linq;
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2072",
     Justification = "Class-level: assigns the result of a reflective Type/MethodInfo lookup into a DAM-annotated target. Source types are preserved at the registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class CollectionUsage
 {
     public List<MethodCallExpression> IncludeExpressions { get; } = new();
@@ -25,6 +23,8 @@ public partial class CollectionUsage
 
     private bool _hasParsedIncludes = false;
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. The select clauses closed over a PROJECTED type now resolve through SelectClauseResolvers, which holds a compile-time instantiation for every type that reached MartenLinqQueryable<T>; the reflective path here remains the fallback for a JIT (#5624). Marten 9 retired the codegen-write step the earlier wording cited.")]
     public void ParseIncludes(IQueryableMemberCollection collection, IStorageSession session)
     {
         if (_hasParsedIncludes) return;

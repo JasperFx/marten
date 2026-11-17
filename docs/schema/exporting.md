@@ -37,6 +37,17 @@ public async Task export_ddl()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExportingDDL.cs#L9-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_export-ddl' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: tip
+Exporting is offline. `ToDatabaseScript()`, `WriteCreationScriptToFile()`, `WriteScriptsByType()` and the
+`db-dump` command all build the script from your configuration alone — they neither connect to the database nor
+create anything in it. That holds whatever id strategies your documents use, so `db-dump` is safe to run on a
+build machine that has no database in reach.
+
+Everything else in the `db-` family does need a database, because it works out the difference between your
+configuration and what is already there: `db-patch` and `db-assert` connect and read, and `db-apply` connects
+and writes.
+:::
+
 For the moment, Marten is not directly supporting any kind of database migration strategy. There are community tools build on top of Marten for managing schema db migration, refer to our [community section](/community/tools-and-libraries.html#sable) for more details.
 
 The code above creates the following SQL script below, with these elements:

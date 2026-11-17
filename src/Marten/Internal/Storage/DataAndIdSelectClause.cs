@@ -10,7 +10,13 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal.Storage;
 
-internal class DataAndIdSelectClause<T>: ISelectClause, IModifyableFromObject where T: notnull
+/// <summary>
+/// #5653: non-generic marker so an include's passthrough can recognise this clause without
+/// knowing its document type.
+/// </summary>
+internal interface IDataAndIdSelectClause;
+
+internal class DataAndIdSelectClause<T>: ISelectClause, IModifyableFromObject, IDataAndIdSelectClause where T: notnull
 {
     private readonly IDocumentStorage<T> _inner;
 

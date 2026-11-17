@@ -99,7 +99,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
     /// </summary>
     public string JSONBLocator { get; set; }
 
-    public Type MemberType { get; protected set; }
+    public Type MemberType { get; protected internal set; }
 
     public virtual string BuildOrderingExpression(Ordering ordering, CasingRule casingRule)
     {

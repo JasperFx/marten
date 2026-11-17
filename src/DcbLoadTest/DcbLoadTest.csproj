@@ -9,6 +9,9 @@
 
     <ItemGroup>
         <ProjectReference Include="../Marten/Marten.csproj" />
+        <!-- The boundary aggregates' Apply methods are dispatched by the compile-time generator;
+             without it FetchForWritingByTags throws InvalidProjectionException at runtime -->
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
 </Project>

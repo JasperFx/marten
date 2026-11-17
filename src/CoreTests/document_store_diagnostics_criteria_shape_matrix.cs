@@ -155,8 +155,9 @@ public class document_store_diagnostics_criteria_shape_matrix
         new("Tags.Contains", "Tags.Contains(@0)", ["vip"], Verdict.Correct),
 
         // in-lists
-        new("inline in (ints)", "Score in (1, 2, 3)", null, Verdict.Refused),
-        new("inline in (strings)", "CustomerName in (\"Ann\", \"Bob\")", null, Verdict.Refused),
+        // Dynamic LINQ renders an inline list as an array literal, which LINQ Contains() translates.
+        new("inline in (ints)", "Score in (1, 2, 3)", null, Verdict.Correct),
+        new("inline in (strings)", "CustomerName in (\"Ann\", \"Bob\")", null, Verdict.Correct),
         new("in @0 ints", "Score in @0", [new[] { 1, 3 }], Verdict.Correct),
         new("in @0 strings", "CustomerName in @0", [new[] { "Ann", "Bob" }], Verdict.Correct),
         // Dynamic LINQ cannot close Contains over a string[] and an enum member; the parser refuses it everywhere.
@@ -192,7 +193,8 @@ public class document_store_diagnostics_criteria_shape_matrix
         new("EndsWith", "CustomerName.EndsWith(@0)", ["b"], Verdict.Correct),
         new("ToLower =", "CustomerName.ToLower() = @0", ["ann"], Verdict.Correct),
         new("ToUpper StartsWith", "CustomerName.ToUpper().StartsWith(@0)", ["AN"], Verdict.Correct),
-        new("string .Length", "CustomerName.Length > @0", [3], Verdict.Refused),
+        // #5941: Length of a string member translates to length(), where it used to locate a JSON field
+        new("string .Length", "CustomerName.Length > @0", [3], Verdict.Correct),
 
         // booleans, Guids, composition
         new("bool member", "IsPriority", null, Verdict.Correct),

@@ -18,8 +18,6 @@ namespace Marten.Util;
     Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2080",
     Justification = "Class-level: DAM-annotated static field assigned from a reflective lookup. Source type preserved at the registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal static class GenericsExtensions
 {
     public static bool IsGenericInterfaceImplementation(this object obj, Type openInterfaceType)
@@ -42,6 +40,8 @@ internal static class GenericsExtensions
         return unwrapper(obj);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     private static Func<object, object> BuildUnwrapper(Type inputType)
     {
         // Find an IEnumerable<Nullable<T>> interface, if any, on the input type.

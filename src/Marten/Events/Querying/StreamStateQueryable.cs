@@ -70,14 +70,26 @@ internal class StreamStateQueryProvider: IQueryProvider, IDocumentQueryExecutor
     private readonly DocumentStore _store;
     private readonly Tenant _tenant;
     private readonly string? _tenantIdOverride;
+    private readonly bool _allTenants;
 
     public StreamStateQueryProvider(QuerySession session, DocumentStore store, Tenant tenant,
-        string? tenantIdOverride)
+        string? tenantIdOverride) : this(session, store, tenant, tenantIdOverride, false)
+    {
+    }
+
+    /// <param name="allTenants">
+    /// jasperfx#1079: read every tenant's streams -- no tenant predicate at all -- for
+    /// <c>IEventStore.QueryStreamStatesForAllTenants()</c>. The session is only the connection and the
+    /// executor then; its tenant scopes nothing.
+    /// </param>
+    public StreamStateQueryProvider(QuerySession session, DocumentStore store, Tenant tenant,
+        string? tenantIdOverride, bool allTenants)
     {
         _session = session;
         _store = store;
         _tenant = tenant;
         _tenantIdOverride = tenantIdOverride;
+        _allTenants = allTenants;
     }
 
     private string effectiveTenantId => _tenantIdOverride ?? _tenant.TenantId;
@@ -178,8 +190,16 @@ internal class StreamStateQueryProvider: IQueryProvider, IDocumentQueryExecutor
 
     private void writeFromAndWhere(ICommandBuilder builder, StreamStateQueryPlan plan)
     {
-        builder.Append($"from {_store.Events.DatabaseSchemaName}.{StreamsTable.TableName} where tenant_id = ");
-        builder.AppendParameter(effectiveTenantId);
+        if (_allTenants)
+        {
+            // jasperfx#1079: every tenant's rows. "where TRUE" keeps the predicates below uniform.
+            builder.Append($"from {_store.Events.DatabaseSchemaName}.{StreamsTable.TableName} where TRUE");
+        }
+        else
+        {
+            builder.Append($"from {_store.Events.DatabaseSchemaName}.{StreamsTable.TableName} where tenant_id = ");
+            builder.AppendParameter(effectiveTenantId);
+        }
 
         foreach (var predicate in plan.Predicates)
         {
@@ -222,10 +242,12 @@ internal class StreamStateQueryProvider: IQueryProvider, IDocumentQueryExecutor
 
     private void writeSelectSql(ICommandBuilder builder, StreamStateQueryPlan plan)
     {
-        // The column list and ordering are owned by StreamStateSql/ISelector<StreamState> — the
-        // same row shape the fetch path reads, so the two surfaces cannot drift apart.
+        // The first seven columns and their order are owned by StreamStateSql/ISelector<StreamState> — the
+        // same row shape the fetch path reads, so the two surfaces cannot drift apart. tenant_id rides after
+        // them (jasperfx#1079) and is read by StreamStateListQueryHandler alone, leaving the shared selector
+        // untouched. Every mt_streams table has the column: a single-tenanted store writes its default tenant.
         builder.Append(
-            $"select id, version, type, timestamp, created, is_archived, {StreamsTable.CompactedVersionColumn} ");
+            $"select id, version, type, timestamp, created, is_archived, {StreamsTable.CompactedVersionColumn}, tenant_id ");
         writeFromAndWhere(builder, plan);
         writeOrderingAndPaging(builder, plan);
     }
@@ -626,6 +648,7 @@ internal class StreamStateQueryTranslator
         nameof(StreamState.Created) => "created",
         nameof(StreamState.IsArchived) => "is_archived",
         nameof(StreamState.CompactedVersion) => StreamsTable.CompactedVersionColumn,
+        nameof(StreamState.TenantId) => "tenant_id",
         nameof(StreamState.AggregateType) => throw new NotSupportedException(
             "StreamState.AggregateType only supports equality comparison against a Type value in QueryStreamStates()."),
         _ => throw new NotSupportedException(
@@ -659,6 +682,9 @@ internal class StreamStateQueryTranslator
 /// </summary>
 internal class StreamStateListQueryHandler: IQueryHandler<IReadOnlyList<StreamState>>
 {
+    /// <summary>Where <c>tenant_id</c> sits in the queryable's select list, after the selector's seven.</summary>
+    internal const int TenantIdOrdinal = 7;
+
     private readonly Action<ICommandBuilder> _configure;
 
     public StreamStateListQueryHandler(Action<ICommandBuilder> configure)
@@ -676,7 +702,11 @@ internal class StreamStateListQueryHandler: IQueryHandler<IReadOnlyList<StreamSt
         var states = new List<StreamState>();
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            states.Add(await selector.ResolveAsync(reader, token).ConfigureAwait(false));
+            var state = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+
+            // jasperfx#1079: the tenant column the queryable selects after the shared seven.
+            state.TenantId = await reader.GetFieldValueAsync<string>(TenantIdOrdinal, token).ConfigureAwait(false);
+            states.Add(state);
         }
 
         return states;

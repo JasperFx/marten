@@ -178,7 +178,7 @@ public class jasper_fx_mechanics
     [Fact]
     public async Task integration_with_describe_command_line()
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
@@ -221,7 +221,7 @@ public class jasper_fx_mechanics
 
     private async Task<IHostBuilder> complexHostBuilder()
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
@@ -410,7 +410,7 @@ public class jasper_fx_mechanics
     {
         // Sanity: when EnableAdvancedTracking is not set (default false), ReadJasperFxOptions does not
         // touch EnableExtendedProgressionTracking at all -- the stores keep the Marten default, which is
-        // off. The point is that JasperFxOptions is not the thing deciding it.
+        // on. The point is that JasperFxOptions is not the thing deciding it.
         using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
@@ -430,10 +430,10 @@ public class jasper_fx_mechanics
             }).StartAsync();
 
         var main = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        main.Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+        main.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
 
         var first = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
-        first.Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+        first.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
     }
 
     [Fact]

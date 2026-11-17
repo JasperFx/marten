@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using JasperFx.Events.Documents;
 using Marten.Events;
 using Marten.Exceptions;
@@ -66,14 +67,17 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         return new MartenLinqQueryable<TElement>(_session, this, expression);
     }
 
+    // #5861: every synchronous single-result or aggregating LINQ operator (First(), Count(), Any(), Sum()...)
+    // lands here with the operator's own Queryable method on top of the expression, which is what lets the
+    // refusal name the asynchronous operator to use.
     public object Execute(Expression expression)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw SynchronousLinqRefusal.ForExecution(expression);
     }
 
     public TResult Execute<TResult>(Expression expression)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw SynchronousLinqRefusal.ForExecution(expression);
     }
 
     internal async ValueTask EnsureStorageExistsAsync(LinqQueryParser parser,
@@ -122,7 +126,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(_session.Options.Advanced.ExceptionTransforms, e);
             throw;
         }
     }
@@ -164,7 +168,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(_session.Options.Advanced.ExceptionTransforms, e);
         }
 
         return default;
@@ -188,7 +192,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(_session.Options.Advanced.ExceptionTransforms, e);
         }
 
         return default;
@@ -205,7 +209,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         }
         catch (Exception e)
         {
-            MartenExceptionTransformer.WrapAndThrow(e);
+            MartenExceptionTransformer.WrapAndThrow(_session.Options.Advanced.ExceptionTransforms, e);
         }
 
         return default;
@@ -213,7 +217,7 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
 
     public T? ExecuteHandler<T>(IQueryHandler<T> handler)
     {
-        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
+        throw new NotSupportedException(SynchronousLinqRefusal.Preamble + ". Use ExecuteHandlerAsync() instead.");
     }
 
 
@@ -268,6 +272,19 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
     internal async Task<CursorPageResult> StreamCursorPage(Expression expression, IReadOnlyList<string> keyColumns,
         Type[] keyTypes, int pageSize, CancellationToken token)
     {
+        await using var page = await StreamCursorPageUtf8(expression, keyColumns, keyTypes, pageSize, token)
+            .ConfigureAwait(false);
+        var itemsJson = await page.ItemsUtf8.ReadAllTextAsync().ConfigureAwait(false);
+        return new CursorPageResult(itemsJson, page.Count, page.NextCursor);
+    }
+
+    /// <summary>
+    /// <see cref="StreamCursorPage"/> without decoding the items: the page's JSON array stays the UTF-8
+    /// bytes read off the reader, for a caller that writes it out as bytes. The caller disposes the page.
+    /// </summary>
+    internal async Task<CursorPageUtf8> StreamCursorPageUtf8(Expression expression, IReadOnlyList<string> keyColumns,
+        Type[] keyTypes, int pageSize, CancellationToken token)
+    {
         var parser = new LinqQueryParser(this, _session, expression);
 
         await EnsureStorageExistsAsync(parser, token).ConfigureAwait(false);
@@ -283,11 +300,20 @@ internal class MartenLinqQueryProvider: IQueryProvider, IDocumentQueryExecutor
         await using var reader = await _session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
         var read = await reader.StreamCursorKeyset(keyTypes, pageSize, token).ConfigureAwait(false);
 
-        var nextCursor = read is { HasMore: true, LastKeys: not null }
-            ? CursorPagination.EncodeCursor(read.LastKeys)
-            : null;
+        string? nextCursor;
+        try
+        {
+            nextCursor = read is { HasMore: true, LastKeys: not null }
+                ? CursorPagination.EncodeCursor(read.LastKeys, _session.Serializer)
+                : null;
+        }
+        catch
+        {
+            await read.ItemsUtf8.DisposeAsync().ConfigureAwait(false);
+            throw;
+        }
 
-        return new CursorPageResult(read.ItemsJson, read.Count, nextCursor);
+        return new CursorPageUtf8(read.ItemsUtf8, read.Count, nextCursor);
     }
 
     /// <summary>

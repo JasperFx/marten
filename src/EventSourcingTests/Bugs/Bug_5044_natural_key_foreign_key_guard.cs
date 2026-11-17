@@ -78,7 +78,10 @@ public class Bug_5044_natural_key_foreign_key_guard: IAsyncLifetime
 select count(*) from pg_constraint con
 join pg_class rel on rel.oid = con.conrelid
 join pg_namespace nsp on nsp.oid = rel.relnamespace
-where nsp.nspname = @schema and rel.relname = 'mt_natural_key_widget' and con.contype = 'f'";
+where nsp.nspname = @schema and rel.relname = 'mt_natural_key_widget' and con.contype = 'f'
+  -- Under archived-stream partitioning (the 10.0 default) PostgreSQL adds a child constraint per referenced
+  -- partition of mt_streams; count only the declared one
+  and con.conparentid = 0";
             cmd.Parameters.AddWithValue("schema", schema);
             var count = (long)(await cmd.ExecuteScalarAsync())!;
             count.ShouldBe(1, $"schema {schema} should have its own foreign key on mt_natural_key_widget");

@@ -1,3 +1,4 @@
+using JasperFx.Events.Tags;
 using System;
 using System.Collections.Generic;
 using JasperFx.Core.Reflection;
@@ -12,32 +13,50 @@ namespace Marten.Events.Operations;
 internal static class EventTagOperations
 {
     /// <summary>
-    /// #4591: queue the producer-side bump of <c>mt_dcb_tag_version</c> for every
+    /// #4591: collect the producer-side bump of <c>mt_dcb_tag_version</c> for every
     /// distinct (tag_table, tag_value) tuple appearing on the stream's tagged
     /// events. Must be called for every save that may write tagged events,
     /// regardless of whether tags are persisted via per-type tables (TagTables),
     /// the HStore column, or the bulk PostgreSQL function — without this, plain
     /// <c>session.Events.Append</c> commits silently bypass the DCB boundary
     /// check held by another in-flight session.
+    ///
+    /// #5887: this is also the ONLY thing that moves a version. The boundary check locks and
+    /// compares the rows it read without bumping them, so a boundary conflicts with a later save
+    /// exactly when that save appended an event carrying a tag the boundary read. The bumps are
+    /// collected on the session rather than queued per stream, and queued once together with the
+    /// boundary check -- see <see cref="DocumentSessionBase.QueueDcbTagVersionOperations"/>.
     /// </summary>
-    public static void QueueDcbVersionBumpIfNeeded(EventGraph eventGraph, DocumentSessionBase session, StreamAction stream)
+    public static void CollectDcbVersionBumps(EventGraph eventGraph, DocumentSessionBase session, StreamAction stream)
     {
         if (eventGraph.TagTypes.Count == 0) return;
 
-        var seen = new HashSet<(string, string)>();
-        var entries = new List<(string TagTable, string TagValue)>();
+        // #5887: anything but the default also maintains a version per (tag value, event type), the
+        // one a query condition naming event types checks under DcbConflictScope.TagValueAndEventType.
+        var recordEventTypes = eventGraph.DcbConflictScope != DcbConflictScope.TagValue;
 
         foreach (var @event in stream.Events)
         {
             var tags = @event.Tags;
             if (tags == null || tags.Count == 0) continue;
 
-            CollectDcbVersionTargets(eventGraph, tags, seen, entries);
-        }
+            foreach (var tag in tags)
+            {
+                var registration = eventGraph.FindTagType(tag.TagType);
+                if (registration == null) continue;
 
-        if (entries.Count > 0)
-        {
-            session.QueueOperation(new DcbTagVersionBumpOperation(eventGraph, entries));
+                var raw = registration.ExtractValue(tag.Value);
+                if (raw == null) continue;
+
+                var tagValue = TagValueStringifier.Stringify(raw);
+                session.CollectDcbVersionBump(registration.TableSuffix, tagValue);
+
+                if (recordEventTypes)
+                {
+                    session.CollectDcbVersionBump(
+                        DcbTagVersionKeys.ForEventType(registration.TableSuffix, @event.EventTypeName), tagValue);
+                }
+            }
         }
     }
 
@@ -88,6 +107,7 @@ internal static class EventTagOperations
         var isConjoined = eventGraph.TenancyStyle == TenancyStyle.Conjoined;
         var useArchived = eventGraph.UseArchivedStreamPartitioning;
         var isHStore = eventGraph.DcbStorageMode == DcbStorageMode.HStore;
+        var streamIdentity = StreamIdentityOf(eventGraph, stream);
 
         foreach (var @event in stream.Events)
         {
@@ -99,7 +119,7 @@ internal static class EventTagOperations
                 var hstore = BuildHstore(eventGraph, tags);
                 if (hstore.Count == 0) continue;
 
-                session.QueueOperation(new SetEventTagsHstoreByEventIdOperation(schema, @event.Id, hstore, isConjoined));
+                session.QueueOperation(new SetEventTagsHstoreByEventIdOperation(schema, @event.Id, streamIdentity, hstore, isConjoined));
                 continue;
             }
 
@@ -108,7 +128,7 @@ internal static class EventTagOperations
                 var registration = eventGraph.FindTagType(tag.TagType);
                 if (registration == null) continue;
 
-                session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id, tag.Value, isConjoined, useArchived));
+                session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id, streamIdentity, tag.Value, isConjoined, useArchived));
             }
         }
     }
@@ -135,6 +155,7 @@ internal static class EventTagOperations
         var schema = eventGraph.DatabaseSchemaName;
         var isConjoined = eventGraph.TenancyStyle == TenancyStyle.Conjoined;
         var useArchived = eventGraph.UseArchivedStreamPartitioning;
+        var streamIdentity = StreamIdentityOf(eventGraph, stream);
 
         foreach (var @event in stream.Events)
         {
@@ -151,35 +172,17 @@ internal static class EventTagOperations
                 if (seen.Add(registration.TagType)) continue;
 
                 session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id,
-                    tag.Value, isConjoined, useArchived));
+                    streamIdentity, tag.Value, isConjoined, useArchived));
             }
         }
     }
 
-    // #4591: collect canonical (tag_table, tag_value) tuples for the
-    // mt_dcb_tag_version producer-bump operation. Skips tag types that aren't
-    // registered for storage and dedupes tuples already seen in this save.
-    private static void CollectDcbVersionTargets(EventGraph eventGraph,
-        IReadOnlyList<EventTag> tags,
-        HashSet<(string, string)> seen,
-        List<(string TagTable, string TagValue)> entries)
-    {
-        foreach (var tag in tags)
-        {
-            var registration = eventGraph.FindTagType(tag.TagType);
-            if (registration == null) continue;
-
-            var raw = registration.ExtractValue(tag.Value);
-            if (raw == null) continue;
-
-            var canonical = TagValueStringifier.Stringify(raw);
-            var key = (registration.TableSuffix, canonical);
-            if (seen.Add(key))
-            {
-                entries.Add((registration.TableSuffix, canonical));
-            }
-        }
-    }
+    /// <summary>
+    /// #5896: the stream's identity as <c>mt_events.stream_id</c> stores it, for the by-event-id operations to
+    /// find their row through <c>pk_mt_events_stream_and_version</c> rather than an unindexed <c>id</c>.
+    /// </summary>
+    private static object StreamIdentityOf(EventGraph eventGraph, StreamAction stream)
+        => eventGraph.StreamIdentity == StreamIdentity.AsGuid ? stream.Id : stream.Key!;
 
     /// <summary>
     /// Build an HSTORE-compatible <c>Dictionary&lt;string, string&gt;</c> from an event's

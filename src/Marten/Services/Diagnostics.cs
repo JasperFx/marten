@@ -70,15 +70,15 @@ public class Diagnostics: IDiagnostics
     ///     Method to fetch Postgres server version
     /// </summary>
     /// <returns>Returns version</returns>
-    public Version GetPostgresVersion()
+    public async Task<Version> GetPostgresVersionAsync(CancellationToken token = default)
     {
         if (_postgreSqlVersion != null)
         {
             return _postgreSqlVersion;
         }
 
-        using var conn = _store.Tenancy.Default.Database.CreateConnection();
-        conn.Open();
+        await using var conn = _store.Tenancy.Default.Database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
 
         _postgreSqlVersion = conn.PostgreSqlVersion;
 

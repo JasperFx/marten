@@ -105,12 +105,17 @@ public class no_data_returned_call_sql_audit
 
         foreach (var statement in statements)
         {
-            ReturnsRows.IsMatch(statement).ShouldBeFalse(
+            // #6035: only the top level of a statement decides whether it returns rows. A data-modifying
+            // CTE (`with doomed as (delete ... returning seq_id) delete from ...`) returns its rows to the
+            // statement around it, not to the client, so a RETURNING inside parentheses is not a result set.
+            var topLevel = TopLevelText(statement);
+
+            ReturnsRows.IsMatch(MainClause(topLevel)).ShouldBeFalse(
                 $"{operationType.FullNameInCode()} is marked NoDataReturnedCall, but emits a statement that returns a result set:{Environment.NewLine}  {statement}{Environment.NewLine}" +
                 "OperationPage.ApplyCallbacksAsync will not advance the reader past it, so the next operation in the batch will read this result set instead of its own. " +
                 "Use the DO $$ BEGIN PERFORM ...; END $$ form (see NotifyEventAppendedOperation and #5210), or drop the NoDataReturnedCall marker.");
 
-            HasReturning.IsMatch(statement).ShouldBeFalse(
+            HasReturning.IsMatch(topLevel).ShouldBeFalse(
                 $"{operationType.FullNameInCode()} is marked NoDataReturnedCall, but emits a RETURNING clause, which produces a result set:{Environment.NewLine}  {statement}");
         }
     }
@@ -134,6 +139,34 @@ public class no_data_returned_call_sql_audit
         ReturnsRows.IsMatch(sql).ShouldBeFalse();
         sql.ShouldContain("PERFORM pg_notify");
         sql.ShouldStartWith("DO $$");
+    }
+
+    [Fact]
+    public void a_returning_clause_inside_a_data_modifying_cte_is_not_a_result_set()
+    {
+        // #6035: DeleteStreamOperation deletes the stream's events in a CTE and reads their tags back with
+        // RETURNING to move the DCB versions. Those rows go to the outer statement, never to the client.
+        var cte = "with doomed_events as (delete from mt_events where stream_id = :p0 returning seq_id, type) " +
+                  "delete from mt_streams where id = :p1";
+
+        HasReturning.IsMatch(TopLevelText(cte)).ShouldBeFalse();
+        ReturnsRows.IsMatch(MainClause(TopLevelText(cte))).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void a_result_set_after_a_cte_is_still_caught()
+    {
+        // The CTE rule must not hide a statement that really does return rows after its WITH list.
+        var returning = "with doomed as (delete from mt_events where stream_id = :p0 returning seq_id) " +
+                        "delete from mt_streams where id = :p1 returning id";
+        HasReturning.IsMatch(TopLevelText(returning)).ShouldBeTrue();
+
+        var select = "with doomed as (delete from mt_events where stream_id = :p0 returning seq_id) " +
+                     "select count(*) from doomed";
+        ReturnsRows.IsMatch(MainClause(TopLevelText(select))).ShouldBeTrue();
+
+        // A parenthesis inside a string literal must not end the top level early.
+        HasReturning.IsMatch(TopLevelText("delete from t where name = ')' returning id")).ShouldBeTrue();
     }
 
     [Fact]
@@ -229,7 +262,16 @@ public class no_data_returned_call_sql_audit
             return instance;
         }
 
-        foreach (var field in type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+        // #5733: walk the whole hierarchy. GetFields does not return a base class's private fields, and
+        // ExecuteSqlStorageOperation now keeps its statement in Weasel.Storage's QueuedSqlOperation.
+        var fields = new List<FieldInfo>();
+        for (var current = type; current != null && current != typeof(object); current = current.BaseType)
+        {
+            fields.AddRange(current.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
+                                              BindingFlags.DeclaredOnly));
+        }
+
+        foreach (var field in fields)
         {
             var fieldType = field.FieldType;
 
@@ -259,6 +301,56 @@ public class no_data_returned_call_sql_audit
 
         return instance;
     }
+
+    /// <summary>
+    /// #6035. The statement with everything inside parentheses and string literals removed, which leaves
+    /// only the clauses that decide what the statement hands back to the client.
+    /// </summary>
+    private static string TopLevelText(string statement)
+    {
+        var builder = new System.Text.StringBuilder(statement.Length);
+        var depth = 0;
+        var inLiteral = false;
+
+        foreach (var c in statement)
+        {
+            if (inLiteral)
+            {
+                if (c == '\'') inLiteral = false;
+                continue;
+            }
+
+            switch (c)
+            {
+                case '\'':
+                    inLiteral = true;
+                    break;
+                case '(':
+                    depth++;
+                    break;
+                case ')':
+                    if (depth > 0) depth--;
+                    break;
+                default:
+                    if (depth == 0) builder.Append(c);
+                    break;
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>
+    /// #6035. The top level text after any WITH list, so a SELECT that follows CTEs is still seen.
+    /// </summary>
+    private static string MainClause(string topLevel)
+    {
+        return WithList.Replace(topLevel, string.Empty);
+    }
+
+    private static readonly Regex WithList =
+        new(@"^\s*with\s+(recursive\s+)?(\w+\s+as\s+((not\s+)?materialized\s+)?,?\s*)+",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static string[] SplitStatements(string sql)
     {

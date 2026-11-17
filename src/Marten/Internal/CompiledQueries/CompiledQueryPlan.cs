@@ -17,8 +17,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.CompiledQueries;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2070",
@@ -27,8 +25,6 @@ namespace Marten.Internal.CompiledQueries;
     Justification = "Class-level: assigns the result of a reflective Type/MethodInfo lookup into a DAM-annotated target. Source types are preserved at the registration boundary.")]
 [UnconditionalSuppressMessage("Trimming", "IL2075",
     Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class CompiledQueryPlan : ICommandBuilder
 {
     public Type QueryType { get; }
@@ -128,6 +124,10 @@ public class CompiledQueryPlan : ICommandBuilder
     ///     has native code for them. Only enum-valued members fall through to the reflective
     ///     <c>CloseAndBuildAs</c>, which needs a JIT.
     /// </summary>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     private static IQueryMember buildQueryMember(MemberInfo member, Type memberType)
     {
         foreach (var finder in QueryCompiler.Finders)
@@ -362,19 +362,25 @@ public class CompiledQueryPlan : ICommandBuilder
 
     public ICompiledQuery<TDoc, TOut> CreateQueryTemplate<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query) where TDoc : notnull
     {
-        foreach (var parameter in QueryMembers) parameter.StoreValue(query);
-
-        if (query is not IQueryPlanning && areAllMemberValuesUnique(query))
-        {
-            return query;
-        }
-
+        // #5711: plan from a generated template, never from the caller's instance by preference. The
+        // plan pairs a parameter with a member by matching values, so a caller whose value happens to
+        // equal one of the query's literals ("BB" against `x.Name == Name || x.Name == "BB"`) would bind
+        // that literal to the member, and every later execution would replace it. The template's
+        // values are generated (GUID strings, large negative numbers), so they don't collide with one.
         try
         {
             return (ICompiledQuery<TDoc, TOut>)TryCreateUniqueTemplate(query.GetType());
         }
         catch (Exception e)
         {
+            // A query type the template cannot be built for plans from the caller's instance, as every
+            // query did before #5711, as long as its values tell the members apart.
+            foreach (var parameter in QueryMembers) parameter.StoreValue(query);
+            if (query is not IQueryPlanning && areAllMemberValuesUnique(query))
+            {
+                return query;
+            }
+
             throw new InvalidCompiledQueryException("Unable to create a Compiled Query template", e);
         }
     }
@@ -394,21 +400,27 @@ public class CompiledQueryPlan : ICommandBuilder
 
         var ctorArgs = valueSource.ArgsFor(constructor);
         var query = Activator.CreateInstance(type, ctorArgs);
+
+        // Every successful return stores the template's own values: they are what the plan's
+        // parameters will carry, and so what MatchParameters has to find
         if (query is IQueryPlanning planning)
         {
             planning.SetUniqueValuesForQueryPlanning();
-            foreach (var member in QueryMembers) member.StoreValue(query);
+            if (areAllMemberValuesUnique(query))
+            {
+                foreach (var member in QueryMembers) member.StoreValue(query);
+                return query;
+            }
         }
 
-        if (areAllMemberValuesUnique(query))
-        {
-            return query;
-        }
-
+        // #5711: a freshly constructed query is not a usable template merely because its members differ
+        // from one another. A lone member left at its default (a null string, a zero) is "unique" and
+        // still matches no parameter, or matches a literal, so generated values always go in.
         foreach (var queryMember in QueryMembers) queryMember.TryWriteValue(valueSource, query);
 
         if (areAllMemberValuesUnique(query))
         {
+            foreach (var member in QueryMembers) member.StoreValue(query);
             return query;
         }
 
@@ -461,9 +473,85 @@ public class CompiledQueryPlan : ICommandBuilder
                             break;
                         }
                     }
+
+                    usage.Setter ??= usage.Member == null ? tryBindArrayElements(options, usage.Parameter) : null;
                 }
             }
         }
+    }
+
+    /// <summary>
+    ///     An array parameter that no query member matches as a whole, because the query built it
+    ///     inline from several of its members: <c>new[] { First, Second }.Contains(x.Name)</c>, or
+    ///     <c>x.Name.IsOneOf(new[] { First, Second })</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Matching is by value, so each element is matched on its own against the scalar members'
+    ///     planning values, the way a scalar parameter is. A matched element is re-read from its member
+    ///     on every execution; an element no member accounts for is a literal and keeps its value.
+    ///     Without this the whole array is a hard-coded literal, so every later execution would
+    ///     silently run with the values the plan was built from.
+    /// </remarks>
+    private Action<NpgsqlParameter, object>? tryBindArrayElements(StoreOptions options, NpgsqlParameter parameter)
+    {
+        if (parameter.Value is not Array planned || planned is byte[] || planned.Rank != 1 || planned.Length == 0)
+        {
+            return null;
+        }
+
+        var members = QueryMembers.Where(x => !x.Type.IsArray).OfType<IArrayElementSource>().ToArray();
+        if (members.Length == 0)
+        {
+            return null;
+        }
+
+        var sources = new (IArrayElementSource Member, bool AsStored)?[planned.Length];
+        var anyBound = false;
+        for (var i = 0; i < planned.Length; i++)
+        {
+            var element = planned.GetValue(i);
+            foreach (var member in members)
+            {
+                if (Equals(member.ElementValue(options, false), element))
+                {
+                    sources[i] = (member, false);
+                }
+                else if (Equals(member.ElementValue(options, true), element))
+                {
+                    sources[i] = (member, true);
+                }
+                else
+                {
+                    continue;
+                }
+
+                anyBound = true;
+                break;
+            }
+        }
+
+        if (!anyBound)
+        {
+            return null;
+        }
+
+        var dbType = parameter.NpgsqlDbType;
+        return (target, query) =>
+        {
+            // A copy of the planning array, so literal elements keep their values and the element
+            // type is the one the plan rendered, without building an array type at runtime.
+            var values = (Array)planned.Clone();
+            for (var i = 0; i < sources.Length; i++)
+            {
+                if (sources[i] is { } source)
+                {
+                    values.SetValue(source.Member.ElementValueFrom(query, options, source.AsStored), i);
+                }
+            }
+
+            target.NpgsqlDbType = dbType;
+            target.Value = values;
+        };
     }
 
 }

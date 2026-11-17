@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Bobcat;
 using EventSourcingTests.Aggregation;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
@@ -18,6 +19,7 @@ using Xunit;
 
 namespace DaemonTests;
 
+[BobcatFeature("Catching up projections and subscriptions")]
 public class catching_up_mode_for_projections_and_subscriptions : OneOffConfigurationsContext, IAsyncLifetime
 {
     private EventStoreStatistics statistics;
@@ -59,6 +61,7 @@ public class catching_up_mode_for_projections_and_subscriptions : OneOffConfigur
     [Fact]
     public async Task all_shards_advanced_to_the_high_water_mark()
     {
+        // Then every shard has advanced to the high water mark
         foreach (var shardState in progress)
         {
             shardState.Sequence.ShouldBe(statistics.EventSequenceNumber);
@@ -68,7 +71,7 @@ public class catching_up_mode_for_projections_and_subscriptions : OneOffConfigur
     [Fact]
     public async Task have_the_expected_documents_from_EventProjection()
     {
-        // EventProjection ran
+        // Then the event projection wrote one document per AEvent
         (await theSession.Query<ADoc>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(6);
 
         var sequences = (await theSession.Events.QueryAllRawEvents().ToListAsync(TestContext.Current.CancellationToken))
@@ -82,8 +85,9 @@ public class catching_up_mode_for_projections_and_subscriptions : OneOffConfigur
     [Fact]
     public async Task aggregation_projection_can_catch_up()
     {
-        // Aggregation too
+        // Then the aggregation built one LetterCounts per stream
         (await theSession.Query<EventSourcingTests.Aggregation.LetterCounts>().CountAsync(TestContext.Current.CancellationToken)).ShouldBe(5);
+        // And the first stream's counts match its letters
         var counts = await theSession.LoadAsync<EventSourcingTests.Aggregation.LetterCounts>(streamId, TestContext.Current.CancellationToken);
         counts.ACount.ShouldBe(2);
         counts.BCount.ShouldBe(5);
@@ -94,7 +98,7 @@ public class catching_up_mode_for_projections_and_subscriptions : OneOffConfigur
     [Fact]
     public async Task subscription_catches_up()
     {
-        // Subscription
+        // Then the subscription saw every event, in order
         LetterEventsSubscription.Events.Count.ShouldBe((int)statistics.EventCount);
         LetterEventsSubscription.Events.Last().Sequence.ShouldBe(statistics.EventCount);
     }

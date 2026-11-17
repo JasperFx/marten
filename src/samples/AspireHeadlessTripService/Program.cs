@@ -1,10 +1,11 @@
-﻿using DaemonTests;
+﻿using DaemonTests.Aggregations;
+using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
-using EventSourcingTests.Projections;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -43,8 +44,11 @@ builder.Services.AddMarten(opts =>
 {
     opts.DatabaseSchemaName = "cli";
 
+    // Under the AspireHost sample, Aspire passes its PostgreSQL server in as ConnectionStrings:marten. A
+    // database-per-tenant store needs the server's connection string rather than one NpgsqlDataSource, so this
+    // reads the string instead of using AddNpgsqlDataSource + UseNpgsqlDataSource().
     opts.MultiTenantedWithSingleServer(
-        ConnectionSource.ConnectionString,
+        builder.Configuration.GetConnectionString("marten") ?? ConnectionSource.ConnectionString,
         t => t.WithTenants("tenant1", "tenant2", "tenant3")
     );
 

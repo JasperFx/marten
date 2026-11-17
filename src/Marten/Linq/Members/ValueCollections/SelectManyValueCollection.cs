@@ -11,8 +11,6 @@ namespace Marten.Linq.Members.ValueCollections;
 /// This takes the place of the ValueCollectionMember when this member
 /// is used inside of a SelectMany() clause
 /// </summary>
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class SelectManyValueCollection: IValueCollectionMember
 {
     private readonly StoreOptions _options;
@@ -34,6 +32,8 @@ public class SelectManyValueCollection: IValueCollectionMember
         Element = element;
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public SelectManyValueCollection(Type elementType, IQueryableMember parentMember, StoreOptions options)
     {
         ElementType = elementType;
@@ -54,6 +54,13 @@ public class SelectManyValueCollection: IValueCollectionMember
         if (member is ElementMember)
         {
             return Element;
+        }
+
+        // #5941: a member of the flattened element itself -- n.Length, n.ToUpper() -- belongs to the element.
+        // It used to be located as a JSON field of the element, CAST(d.data ->> 'Length' as integer).
+        if (Element is StringMember element)
+        {
+            return element.FindMember(member);
         }
 
         return _options.CreateQueryableMember(member, _root);

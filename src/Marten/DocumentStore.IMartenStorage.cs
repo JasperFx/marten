@@ -42,7 +42,7 @@ public partial class DocumentStore: IMartenStorage
         var databases = await Tenancy.BuildDatabases().ConfigureAwait(false);
 
         await Parallel.ForEachAsync(databases,
-                async (d, token) => await d.ApplyAllConfiguredChangesToDatabaseAsync(ct: token).ConfigureAwait(false))
+                async (d, token) => await d.ApplyAllConfiguredChangesToDatabaseAsync(@override, ct: token).ConfigureAwait(false))
             .ConfigureAwait(false);
     }
 

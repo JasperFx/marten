@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using JasperFx.Events.Daemon.HighWater;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,13 @@ public sealed class PostgresqlListenWakeup(
     public const string DefaultChannel = "mt_events_appended";
 
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
-    private readonly SemaphoreSlim _signal = new(0);
+    // #5730: one slot that a notification fills and a wait empties. A burst of NOTIFYs between two polls
+    // used to raise a SemaphoreSlim's count once each, and the next WaitAsync drained them one call at a
+    // time; extra notifications now simply find the slot full and are dropped on arrival.
+    private readonly Channel<bool> _signal = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
+    {
+        FullMode = BoundedChannelFullMode.DropWrite, SingleReader = true, SingleWriter = false
+    });
     private readonly CancellationTokenSource _lifetime = new();
     private NpgsqlConnection? _connection;
     private Task? _receiveTask;
@@ -60,14 +67,31 @@ public sealed class PostgresqlListenWakeup(
             return;
         }
 
-        // Drain any accumulated signals so we don't spin through
-        // multiple rapid iterations after a burst of notifications.
-        while (_signal.CurrentCount > 0)
-        {
-            await _signal.WaitAsync(0, token).ConfigureAwait(false);
-        }
+        // Discard a notification that arrived before this wait, so we don't spin through
+        // an extra rapid iteration after a burst of notifications.
+        var reader = _signal.Reader;
+        reader.TryRead(out _);
 
-        await _signal.WaitAsync(timeout, token).ConfigureAwait(false);
+        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+        timeoutSource.CancelAfter(timeout);
+
+        try
+        {
+            if (await reader.WaitToReadAsync(timeoutSource.Token).ConfigureAwait(false))
+            {
+                reader.TryRead(out _);
+            }
+            else
+            {
+                // Completed by Dispose. Wait out the timeout rather than return at once, so a caller
+                // still polling a disposed wakeup cannot spin.
+                await Task.Delay(Timeout.InfiniteTimeSpan, timeoutSource.Token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (!token.IsCancellationRequested)
+        {
+            // The timeout elapsed with no notification: the ordinary polling fallback
+        }
     }
 
     private async Task ensureListeningAsync(CancellationToken token)
@@ -142,7 +166,7 @@ public sealed class PostgresqlListenWakeup(
 
     private void onNotification(object sender, NpgsqlNotificationEventArgs e)
     {
-        _signal.Release();
+        _signal.Writer.TryWrite(true);
     }
 
     public void Dispose()
@@ -186,7 +210,7 @@ public sealed class PostgresqlListenWakeup(
             _connection = null;
         }
 
-        _signal.Dispose();
+        _signal.Writer.TryComplete();
         _connectionLock.Dispose();
         _lifetime.Dispose();
     }

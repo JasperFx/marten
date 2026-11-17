@@ -48,10 +48,8 @@ public class event_query_command_end_to_end
                 opts.Events.AddEventType<CliCargoLoaded>();
                 opts.Events.AddEventType<CliCargoInspected>();
 
-                if (enableUserName)
-                {
-                    opts.Events.MetadataConfig.UserNameEnabled = true;
-                }
+                // Set both ways: the user name is captured by default since 10.0 (#5812)
+                opts.Events.MetadataConfig.UserNameEnabled = enableUserName;
             }));
     }
 

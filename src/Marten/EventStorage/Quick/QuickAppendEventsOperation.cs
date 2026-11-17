@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using JasperFx.Events;
 using Marten.Events.Operations;
 using Marten.Internal;
@@ -34,10 +35,14 @@ internal sealed class QuickAppendEventsOperation: QuickAppendEventsOperationBase
 {
     private readonly QuickEventStorageDescriptor _descriptor;
 
-    public QuickAppendEventsOperation(QuickEventStorageDescriptor descriptor, StreamAction stream)
+    private readonly Func<IEvent, JasperFx.Events.IEventBinarySerializer?> _binarySerializerFor;
+
+    public QuickAppendEventsOperation(QuickEventStorageDescriptor descriptor, StreamAction stream,
+        Func<IEvent, JasperFx.Events.IEventBinarySerializer?> binarySerializerFor)
         : base(stream)
     {
         _descriptor = descriptor;
+        _binarySerializerFor = binarySerializerFor;
     }
 
     public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
@@ -57,7 +62,9 @@ internal sealed class QuickAppendEventsOperation: QuickAppendEventsOperationBase
         // session serializer to a sized UTF-8 byte[] (no intermediate string
         // alloc) for JSON events; binary events (#4515) get a {} JSON
         // placeholder in bodies and their bytes in the parallel bdatas[].
-        writeBasicParameters(pb, session, _descriptor.SerializeEventBdata);
+        // #5731: binary events are written into a pooled buffer owned by this operation rather than
+        // through the descriptor's byte[]-returning SerializeEventBdata.
+        writeBasicParametersWithPooledBdata(pb, session, _binarySerializerFor);
 
         // Configuration-gated metadata column arrays. Order MUST match the
         // dialect's QuickAppendEventFunction.WriteCreateStatement column
@@ -74,6 +81,7 @@ internal sealed class QuickAppendEventsOperation: QuickAppendEventsOperationBase
         // appender), so the operation just calls the helper when the
         // dialect flagged this configuration as needing tag writes.
         if (_descriptor.HasTagWrites) writeAllTagValues(pb);
+        else if (writesHstoreTags) writeHstoreTagValues(pb);
 
         // #4614 / #4765: the trailing optimistic-concurrency parameter is now
         // always on the function signature (default NULL). Every Quick append —

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,14 +13,12 @@ using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Linq.QueryHandlers;
 using Marten.Util;
+using Npgsql;
 using System.Diagnostics.CodeAnalysis;
+using Weasel.Postgresql;
 
 namespace Marten.Services.BatchQuerying;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal partial class BatchedQuery: IBatchedQuery
 {
     private readonly List<Type> _documentTypes = new();
@@ -116,6 +115,10 @@ internal partial class BatchedQuery: IBatchedQuery
 
     public IBatchEvents Events => this;
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public Task<T?> Load<T>(object id) where T : class
     {
         var loader = typeof(Loader<>).CloseAndBuildAs<ILoader>(id.GetType());
@@ -177,6 +180,25 @@ internal partial class BatchedQuery: IBatchedQuery
             return;
         }
 
+        try
+        {
+            await executeAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception e)
+        {
+            // #6034: every item Execute() did not get to read has to finish too, or awaiting it after a
+            // caught failure hangs forever. Items already read keep their results.
+            foreach (var item in _items)
+            {
+                item.Fail(e, token);
+            }
+
+            throw;
+        }
+    }
+
+    private async Task executeAsync(CancellationToken token)
+    {
         // Refuse the batch here as well as at enlist time. The enlist-time check throws SYNCHRONOUSLY only
         // when the non-exclusive fetch is added second, because FetchForExclusiveWriting is async and an
         // exception in an async method's body arrives as a faulted task instead. In that ordering the
@@ -204,13 +226,31 @@ internal partial class BatchedQuery: IBatchedQuery
 
         var command = Parent.BuildCommand(_items.Select(x => x.Handler));
 
-        await using var reader = await Parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        DbDataReader opened;
+        try
+        {
+            opened = await Parent.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        }
+        catch (Exception e) when (asStreamLocked(_items[0], e) is { } locked)
+        {
+            throw locked;
+        }
+
+        await using var reader = opened;
         await _items[0].ReadAsync(reader, Parent, token).ConfigureAwait(false);
 
         // 9.0 (#4375): indexed loop avoids the Skip+ToArray buffer allocation per batch query.
         for (var i = 1; i < _items.Count; i++)
         {
-            var hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
+            bool hasNext;
+            try
+            {
+                hasNext = await reader.NextResultAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception e) when (asStreamLocked(_items[i], e) is { } locked)
+            {
+                throw locked;
+            }
 
             if (!hasNext)
             {
@@ -219,6 +259,30 @@ internal partial class BatchedQuery: IBatchedQuery
 
             await _items[i].ReadAsync(reader, Parent, token).ConfigureAwait(false);
         }
+    }
+
+    // An exclusive fetch writes its `for update` first, so a failure while the reader advances INTO that
+    // item's results is the wait on that stream's row lock, and only that failure is translated.
+    private static StreamLockedException? asStreamLocked(IBatchQueryItem item, Exception e)
+    {
+        if (item.Handler is not IExclusiveFetchHandler exclusive || exclusive.ExclusiveStreamId is null)
+        {
+            return null;
+        }
+
+        var npgsql = e is MartenCommandException command
+            ? command.InnerException as NpgsqlException
+            : e as NpgsqlException;
+
+        if (npgsql is null)
+        {
+            return null;
+        }
+
+        var waitedOnLock = npgsql.SqlState == PostgresErrorCodes.InFailedSqlTransaction
+                           || MartenCommandException.IsReadTimeout(npgsql);
+
+        return waitedOnLock ? new StreamLockedException(exclusive.ExclusiveStreamId, npgsql) : null;
     }
 
     public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query) where TDoc : class
@@ -296,6 +360,10 @@ internal partial class BatchedQuery: IBatchedQuery
         return checkExists<T, Guid>(id);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public Task<bool> CheckExists<T>(object id) where T : class
     {
         var checker = typeof(ExistsChecker<>).CloseAndBuildAs<IExistsChecker>(id.GetType());

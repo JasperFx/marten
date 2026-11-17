@@ -22,7 +22,7 @@ AOT publishing is the right choice for serverless / Lambda / fast-restart worklo
 
 ## How Marten 9 differs from the broader Critter Stack AOT story
 
-The [JasperFx AOT publishing guide](https://github.com/JasperFx/jasperfx/blob/main/docs/codegen/aot.md) describes a **two-phase model** where dev-time `dotnet run -- codegen write` produces pre-built `Internal/Generated/*.cs` files that the publish-time AOT compile then consumes. **That two-phase model does not apply to Marten 9.**
+The [JasperFx AOT publishing guide](https://shared-libs.jasperfx.net/codegen/aot) describes a **two-phase model** where dev-time `dotnet run -- codegen write` produces pre-built `Internal/Generated/*.cs` files that the publish-time AOT compile then consumes. **That two-phase model does not apply to Marten 9.**
 
 ```mermaid
 graph LR
@@ -131,14 +131,49 @@ dotnet publish -c Release /p:PublishAot=true -r linux-x64 -o ./publish
 
 A successful publish produces a single self-contained binary (plus a few native dependency `.so` / `.dll` files) under `./publish`. The Roslyn graph is absent; the binary loads pre-generated source-generator output baked into the assembly directly.
 
+## The command line in the native binary
+
+An application that ends in `RunJasperFxCommands(args)` goes through the JasperFx command line on every
+start, because `run` is the default command. Since JasperFx 2.101.0 that works from the native binary, and
+so do `help`, `describe`, `check-env`, `resources`, `projections` and Marten's own `marten` command. The
+commands are found and created through registrations that `JasperFx.SourceGenerator` emits at compile time
+instead of by reflection, so:
+
+- **Every assembly that contributes commands must be built with the generator.** Marten, JasperFx and
+  JasperFx.Events are. Add it to your own application for your own commands. A command from an assembly
+  built without it is simply missing from `help` in the native binary.
+- **The `db-*` commands are Weasel's,** so they are available natively from the Weasel release built with
+  the generator.
+- `ApplyJasperFxExtensions` and `RunJasperFxCommands` still carry trimming warnings for assemblies built
+  without the generator. Suppress them on an explicit `Main`, as shown in
+  [Running the command line in an AOT binary](https://shared-libs.jasperfx.net/codegen/aot#running-the-command-line-in-an-aot-binary).
+
+See [Native AOT](https://shared-libs.jasperfx.net/cli/#native-aot) in the JasperFx command line
+documentation for the package reference and the details.
+
 ## What works, what doesn't
 
 As of Marten 9.0.0-alpha:
 
 ### Works (AOT-clean)
 
-- **`UseSystemTextJsonForSerialization`** with the default `JsonSerializerOptions` or a user-supplied one. For best AOT results, pass a source-generated `JsonSerializerContext`.
+- **`UseSystemTextJsonForSerialization`** with the default `JsonSerializerOptions` or a user-supplied one. For best AOT results, supply a source-generated `JsonSerializerContext` — and prefer `SystemTextJsonSerializer.UseTypeInfoResolver(MyContext.Default)` over assigning `JsonSerializerOptions.TypeInfoResolver` yourself. The former *combines* your context with a reflection-based resolver behind it; the latter replaces the reflection resolver outright, and then any type your context cannot name — an anonymous projection in particular — has no metadata at all. See [an anonymous projection cannot be materialized](#a-projection-into-an-anonymous-type-cannot-be-materialized).
 - **Document storage** — `Schema.For<TDoc>()` and the entire CRUD / LINQ surface for closed-shape document types with a **Guid / string / int / long** identity, including the containment and JSONPath filters a child-collection query compiles to (#5377).
+- **`Select()` projections** — into a named DTO (`Select(x => new Summary { ... })`), into a collection member (`Select(x => x.Lines)`), the element type of a `SelectMany(x => x.Lines)`, and a scalar member of any framework type, nullable included (`string`, `decimal?`, `Guid`, `DateTime`/`DateOnly`/`TimeOnly`, the integral and floating-point types). Every one of these closed its select clause over `selectExpression.Type` with `Activator.CreateInstance` until #5624, so they all failed natively — a *named* DTO projection just as hard as an anonymous one, and before the serializer was reached. A list of *nullable* scalars needed one more pair of instantiations (`NullableSelector<T>` feeding `ListQueryHandler<T?>`) and was fixed in #5635.
+- **A scalar projection of your own enum or struct** — `Select(x => x.Status)`, `MaxAsync(x => x.Status)` — **once you register the type**, one line per value type:
+
+  ```cs
+  opts.RegisterScalarType<Status>();
+  ```
+
+  Marten's scalar select clause is declared `where T : struct`, and the registration point #5624 added — `MartenLinqQueryable<T>`, which every projected type passes through — constrains its own `T` only to `notnull`, so Marten cannot close that clause for a type it doesn't know. It roots the scalar types it renders itself, which is why `decimal` and `DateOnly` need nothing. Without the call, under AOT:
+
+  ```text
+  MissingMethodException: No parameterless constructor defined for type
+  'Marten.Linq.SqlGeneration.NewScalarSelectClause`1[YourEnum]'
+  ```
+
+  Under a JIT the call does nothing and costs nothing. Projecting the same enum as a *member* of a named type (`Select(x => new StatusView { Status = x.Status })`) never needed it, and neither does filtering on it. See [#5635](https://github.com/JasperFx/marten/issues/5635).
 - **Strong-typed identities** (Vogen, StronglyTypedId, a plain `readonly record struct`) — **once you register them**, which is one extra line per document type:
 
   ```cs
@@ -172,6 +207,13 @@ As of Marten 9.0.0-alpha:
   This one is **not Marten's code**, which is worth knowing before you go looking in the wrong place. Writing `.Where(x => x.Amount > 10)` against an `IQueryable<T>` makes the compiler emit code in *your* assembly that builds the expression tree at runtime, and `Expression.GreaterThan` on two decimals cannot use an IL comparison — `decimal` has no primitive `>` — so it looks up `System.Decimal.op_GreaterThan` by reflection. The trimmer has no reason to keep an operator nothing statically calls, and the factory then reports it as *"The binary operator GreaterThan is not defined for the types 'System.Decimal' and 'System.Decimal'"*. Equality is fine; it is the ordering comparisons that need the operator. See [#5597](https://github.com/JasperFx/marten/issues/5597), and note `Marten.AotRuntimeSmoke` covers this so the behaviour stays pinned if the runtime changes it.
 
 - **Event storage** — `StartStream`, `Append`, `FetchStream`, `FetchStreamStateAsync`, `AggregateStreamAsync`, `QueryAllRawEvents`, the async daemon. Reading an event needed a JIT until [#5373](https://github.com/JasperFx/marten/issues/5373): the events table closed its per-column reader over the column's member type at runtime.
+- **Dynamic Consistency Boundary tags** — **once you register them with the explicit overload**, one line per tag type:
+
+  ```cs
+  opts.Events.RegisterTagType<StudentId, Guid>(x => x.Value, "student");
+  ```
+
+  `RegisterTagType<TTag>()` reflects over the tag's members and closes `TagTypeRegistration<TTag, TInner>` at runtime, so it fails while the store is being configured when the image has no code for that instantiation — and the exception names the line above. Tag types found by [automatic registration](/events/dcb#automatic-tag-type-registration) take the same path and are left unregistered when it fails, with a logged warning naming the line, so register those explicitly too. With explicit registrations, tagging, tag rules, `EventTagQuery`, `EventsExistAsync`, `AggregateByTagsAsync` and `FetchForWritingByTags` into a `[BoundaryAggregate]` run natively. See [DCB → Registering Tag Types under Trimming or Native AOT](/events/dcb#registering-tag-types-under-trimming-or-native-aot).
 - **Projections** — registered either as a projection type (`Projections.Add<T>(...)`) or, for a self-aggregating type, through the identity-typed `LiveStreamAggregation<TDoc, TId>()` / `Snapshot<TDoc, TId>(...)` overloads: `SingleStreamProjection<TDoc, TId>`, `MultiStreamProjection<TDoc, TId>`, `EventProjection`, `CustomProjection`, and `EventApplier` — the JasperFx.Events source generator emits `[GeneratedEvolver]` dispatchers at compile time for each registration. Marten calls `Options.Projections.DiscoverGeneratedEvolvers(...)` at startup (`src/Marten/DocumentStore.cs:84`) to pick them up.
 - **Compiled queries** registered through `Marten.SourceGenerator` in an assembly marked `[JasperFxAssembly]`.
 - **Secondary stores** registered via `services.AddMartenStore<TInterface>()` — Marten 9 builds the implementation type via `System.Reflection.Emit` (PR [#4459](https://github.com/JasperFx/marten/pull/4459)). The trimmer warning at the emit site carries a `[RequiresDynamicCode]` annotation; published apps that use this surface can either suppress or rely on the runtime fall-through to keep working.
@@ -190,7 +232,6 @@ As of Marten 9.0.0-alpha:
 
 - **F# single-case discriminated-union ids.** The C# strong-typed id wrappers are covered by `RegisterValueTypeId<TDoc, TWrapper, TInner>()` above, but an F# DU id is a reference type and routes through a different select clause (`FSharpDiscriminatedUnionIdSelectClause`), which that registration cannot name. Still fine under a JIT. Tracked with the rest of [#5589](https://github.com/JasperFx/marten/issues/5589).
 - **`.IsOneOf(...)` over a strong-typed id** reaches `ConvertFromWrapperArray` through a reflective method lookup that the trimmer can drop. Equality and ordering on a strong-typed id are fine.
-
 - **`Marten.Newtonsoft`** — Newtonsoft.Json is fundamentally AOT-hostile. The package's csproj deliberately leaves `IsAotCompatible` off (see PR [#4468](https://github.com/JasperFx/marten/pull/4468)). Use `UseSystemTextJsonForSerialization` instead.
 - **`services.AddRuntimeCompilation()`** — the seam doesn't exist in Marten 9. If you have it in your composition root from a pre-9 app, delete the call.
 - **Pre-built `Internal/Generated/`** — irrelevant to Marten 9. Delete the folder.
@@ -316,6 +357,40 @@ whose type Marten hands to the serializer rather than one it renders itself. A c
 `JavaScriptEncoder` is not a concern: Postgres parses the payload into jsonb, where an escaped and an
 unescaped character are the same character.
 
+### A projection into an anonymous type cannot be materialized
+
+```text
+MartenNotSupportedException: Cannot materialize the LINQ projection into the anonymous type
+'<>f__AnonymousType0`2[System.String,System.Int32]' because MyApp.MyJsonContext has no
+JsonTypeInfo for it, and an anonymous type cannot be named by a [JsonSerializable] attribute.
+```
+
+A `Select(x => new { ... })` projection is rendered as a `jsonb_build_object(...)` and then
+deserialized **into the anonymous type**. `[JsonSerializable(typeof(...))]` needs a nameable type, so
+there is no way to put `<>f__AnonymousType0<string, int>` into a `JsonSerializerContext` — the
+remedy System.Text.Json's own `NotSupportedException` advises is impossible to follow, which is why
+Marten replaces it with the message above. It is **not** an AOT-specific failure: a JIT process whose
+options carry a context-only resolver fails exactly the same way.
+
+Two remedies, and which one you want depends on how much reflection you are willing to keep:
+
+```cs
+// 1. Keep a reflection-based resolver behind your context. Anonymous projections work, natively
+//    too -- the fallback resolves the anonymous type from metadata ILC kept because your own
+//    assembly is a TrimmerRootAssembly (step 1 of the recipe above).
+var serializer = new SystemTextJsonSerializer();
+serializer.UseTypeInfoResolver(MyJsonContext.Default);
+opts.Serializer(serializer);
+
+// 2. Or forgo reflection entirely -- and project into a named type your context does cover.
+opts.UseSystemTextJsonForSerialization(new JsonSerializerOptions { TypeInfoResolver = MyJsonContext.Default });
+// then, instead of Select(x => new { x.Name, x.Count }):
+.Select(x => new Summary { Name = x.Name, Count = x.Count })   // [JsonSerializable(typeof(Summary))]
+```
+
+The same applies to a `GroupBy(...).Select(g => new { g.Key, Count = g.Count() })`, which is the
+shape most grouping examples are written in.
+
 ### Secondary store throws `MissingMethodException` at boot
 
 `AddMartenStore<TInterface>` uses `System.Reflection.Emit` to materialize the implementation type at runtime (Marten 9 ripped out the Roslyn-emit subclass path in PR [#4459](https://github.com/JasperFx/marten/pull/4459)). Native AOT supports `Reflection.Emit` only on full-AOT runtimes that include the JIT; some trimming configurations strip it. If a secondary store throws `MissingMethodException` at boot, check:
@@ -340,7 +415,7 @@ Native AOT publish layers an additional speedup on top by eliminating JIT warmup
 
 - [Master plan: Marten 9.0](https://github.com/JasperFx/marten/issues/4349)
 - [AOT compliance pillar (JasperFx)](https://github.com/JasperFx/jasperfx/issues/213)
-- [JasperFx AOT publishing guide](https://github.com/JasperFx/jasperfx/blob/main/docs/codegen/aot.md) — the broader Critter Stack story (Wolverine + the two-phase model)
+- [JasperFx AOT publishing guide](https://shared-libs.jasperfx.net/codegen/aot) — the broader Critter Stack story (Wolverine + the two-phase model)
 - [Marten.SourceGenerator README](https://github.com/JasperFx/marten/blob/master/src/Marten.SourceGenerator/README.md) — the compiled-query AOT story
 - [Migration Guide: Runtime code generation removed](/migration-guide#runtime-code-generation-removed) — the 8.x → 9.0 migration for the codegen pipeline
 - [.NET trim warning reference](https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trim-warnings/) — Microsoft's catalog of IL warning codes

@@ -24,10 +24,15 @@ public interface IDiagnostics
         DocumentTracking trackingMode = DocumentTracking.QueryOnly) where TDoc : notnull where TReturn : notnull;
 
     /// <summary>
-    ///     Method to fetch Postgres server version
+    ///     Fetch the PostgreSQL server version of the store's default database. The result is cached
+    ///     after the first call.
     /// </summary>
+    /// <remarks>
+    ///     Marten 10 (#5729): replaces the synchronous <c>GetPostgresVersion()</c>, which opened a
+    ///     connection synchronously.
+    /// </remarks>
     /// <returns>Returns version</returns>
-    Version GetPostgresVersion();
+    Task<Version> GetPostgresVersionAsync(CancellationToken token = default);
 
     /// <summary>
     ///     Find the Postgresql EXPLAIN PLAN for this compiled query

@@ -151,6 +151,26 @@ public class nullable_types : IntegrationContext
             .ShouldBe(2);
     }
 
+    // #5635: a list of nullable scalars is the one projection whose handler AND selector are both
+    // closed over the non-nullable struct -- NullableSelector<int> feeding
+    // ListQueryHandler<int?> -- and both now come from SelectClauseResolvers rather than from a
+    // reflective MakeGenericType. Null has to survive the trip as null rather than as 0.
+    [Fact]
+    public async Task project_a_list_of_nullable_scalars()
+    {
+        theSession.Store(new Target { String = "nullable-projection", NullableNumber = 3 });
+        theSession.Store(new Target { String = "nullable-projection", NullableNumber = null });
+        theSession.Store(new Target { String = "nullable-projection", NullableNumber = 7 });
+
+        await theSession.SaveChangesAsync();
+
+        var numbers = await theSession.Query<Target>().Where(x => x.String == "nullable-projection")
+            .OrderBy(x => x.NullableNumber).Select(x => x.NullableNumber).ToListAsync();
+
+        // Postgres sorts NULL last by default
+        numbers.ShouldBe(new int?[] { 3, 7, null });
+    }
+
     protected override async Task fixtureSetup()
     {
         await theStore.Advanced.ResetAllData();

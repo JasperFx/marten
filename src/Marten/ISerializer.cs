@@ -32,7 +32,7 @@ public enum ValueCasting
     Relaxed
 }
 
-public interface ISerializer: IStorageSerializer
+public interface ISerializer: IStorageSerializer, Weasel.Core.ISerializer
 {
     // #4819: the db-neutral WriteToParameter(DbParameter) from IStorageSerializer bridges to
     // Marten's Npgsql-typed WriteToParameter below. Every Marten serializer is Npgsql-backed, so
@@ -40,16 +40,58 @@ public interface ISerializer: IStorageSerializer
     void IStorageSerializer.WriteToParameter(DbParameter parameter, object? value)
         => WriteToParameter((NpgsqlParameter)parameter, value);
 
+    // #5733: Marten's serializer is also the Critter Stack's shared Weasel.Core.ISerializer, so a
+    // Marten serializer can be handed to anything written against that contract. It also brings
+    // FromJson<T>(string) / FromJson(Type, string), default-implemented over the stream overloads.
+    // The members both bases declare are re-declared here so a call through Marten's ISerializer
+    // binds to one member instead of being ambiguous between the two; one public implementation
+    // satisfies all three slots.
+
     /// <summary>
     ///     Just gotta tell Marten if enum's are stored
     ///     as int's or string's in the JSON
     /// </summary>
-    EnumStorage EnumStorage { get; }
+    new EnumStorage EnumStorage { get; }
 
     /// <summary>
     ///     Specify whether properties in the JSON document should use Camel or Pascal casing.
     /// </summary>
-    Casing Casing { get; }
+    new Casing Casing { get; }
+
+    /// <summary>
+    ///     Serialize a document object into a JSON string.
+    /// </summary>
+    new string ToJson(object? document);
+
+    /// <summary>
+    ///     Deserialize a JSON stream into an object of type T.
+    /// </summary>
+    new T FromJson<T>(Stream stream);
+
+    /// <summary>
+    ///     Deserialize a JSON value from a data-reader column into an object of type T.
+    /// </summary>
+    new T FromJson<T>(DbDataReader reader, int index);
+
+    /// <summary>
+    ///     Deserialize a JSON stream into the supplied type.
+    /// </summary>
+    new object FromJson(Type type, Stream stream);
+
+    /// <summary>
+    ///     Deserialize a JSON value from a data-reader column into the supplied type.
+    /// </summary>
+    new object FromJson(Type type, DbDataReader reader, int index);
+
+    /// <summary>
+    ///     Asynchronously deserialize a JSON stream into an object of type T.
+    /// </summary>
+    new ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    ///     Asynchronously deserialize a JSON stream into the supplied type.
+    /// </summary>
+    new ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default);
 
     /// <summary>
     ///     Controls how the Linq Select() behavior needs to work in the database

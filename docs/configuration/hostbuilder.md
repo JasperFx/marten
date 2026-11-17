@@ -81,8 +81,13 @@ The second option is to supply a [nested closure](https://martinfowler.com/dslCa
 The samples below use `CritterStackDefaults(...)` to wire per-environment defaults for resource
 auto-create and code generation mode. `CritterStackDefaults` and the underlying `JasperFxOptions`
 are part of the shared JasperFx infrastructure that Marten and Wolverine consume in common — see
-the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/) for the full set
+the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/configuration/critter-stack-defaults.html) for the full set
 of options and how development / production defaults are resolved.
+
+`ResourceAutoCreate` is the default `AutoCreate` for every [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html)
+in the application, so setting it to `None` for `Production` turns off automatic schema migration for Marten *and* for Wolverine's
+message storage in one place. The schema still has to get there somehow; see
+[Schema Migrations and Patches](/schema/migrations#choosing-an-approach) for the deployment-time options.
 :::
 
 <!-- snippet: sample_addmartenbynestedclosure -->
@@ -274,7 +279,7 @@ public interface IConfigureMarten: JasperFx.IConfigureStore<StoreOptions>
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1093-L1103' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1102-L1112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're working with multiple databases class like so:
@@ -337,7 +342,7 @@ public interface IAsyncConfigureMarten: JasperFx.IAsyncConfigureStore<StoreOptio
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1105-L1116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1114-L1125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As an example from the tests, here's a custom version that uses the Feature Management service:
@@ -432,13 +437,14 @@ public class CustomSessionFactory: ISessionFactory
     {
         // Opting for the "lightweight" session
         // option with no identity map tracking
-        // and choosing to use Serializable transactions
-        // just to be different
-        return _store.LightweightSession(IsolationLevel.Serializable);
+        // and choosing to use RepeatableRead transactions
+        // just to be different. A Serializable session has to be
+        // opened asynchronously, so it can't come from here
+        return _store.LightweightSession(IsolationLevel.RepeatableRead);
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L12-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customsessionfactory' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L12-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customsessionfactory' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To register the custom session factory, use the `BuildSessionsWith()` method as shown in this example:
@@ -464,7 +470,7 @@ services.CritterStackDefaults(x =>
     x.Production.ResourceAutoCreate = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L55-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L56-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session factories can also be used to build out and attach custom `IDocumentSessionListener` objects or replace the logging as we'll see in the next section.

@@ -126,7 +126,12 @@ public class dynamic_tenant_lifecycle_on_shard_during_daemon: IAsyncLifetime
         opts.Schema.For<ShardedDaemonCounter>().DocumentAlias("ws1dyn_sdc");
     }
 
+    // Retry is opt-in under the supervisor (JasperFx/bobcat#565), and this test earned it with
+    // evidence: in 33 green master runs (2026-09 to 2026-10-15) its first attempt failed in 3 —
+    // "1 should be 3 but was not", the daemon not yet caught up on the shard — and passed on a
+    // fresh-process retry every time. A pass on the retry is still reported as FLAKY.
     [Fact]
+    [Trait("Retry", "3")]
     public async Task tenant_added_to_shard_mid_run_is_provisioned_and_catches_up_without_daemon_restart()
     {
         _store = (DocumentStore)DocumentStore.For(Configure);

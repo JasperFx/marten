@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -20,7 +22,8 @@ namespace Marten.Events.Projections;
 /// claim (#5344). Nothing on the write side ever did: archival runs through
 /// <c>mt_archive_stream</c>, which has never touched <c>mt_natural_key_X</c>, so the row's own
 /// <c>is_archived</c> column is only maintained under <c>UseArchivedStreamPartitioning</c>, where
-/// the cascading foreign key moves it along with its stream. Readers get the flag off
+/// <c>mt_archive_stream</c> and <c>mt_unarchive_stream</c> copy the row between partitions along with its
+/// stream (marten#5476; before that the cascading foreign key deleted it on archive). Readers get the flag off
 /// <c>mt_streams</c> instead — see <c>FetchNaturalKeyPlan.BuildNaturalKeyToStreamQuery</c>.
 /// </remarks>
 internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IProjectionSchemaSource
@@ -87,6 +90,19 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
     {
         foreach (var @event in events)
         {
+            // #6032: compaction folds the event that carried the key into a Compacted<T>, which no mapping
+            // names. Teardown has emptied the table, so read the key off the compacted snapshot instead, or
+            // a live stream comes out of the rebuild with no natural key.
+            if (tryReadCompactedKey(@event.Data, out var compactedKey))
+            {
+                if (compactedKey != null)
+                {
+                    queueUpsertSql(operations, @event.StreamId, @event.StreamKey, @event.TenantId, compactedKey);
+                }
+
+                continue;
+            }
+
             foreach (var mapping in _naturalKey.EventMappings)
             {
                 if (mapping.EventType.IsAssignableFrom(@event.Data.GetType()))
@@ -100,6 +116,37 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// #6032: is this the <see cref="Compacted{T}"/> of this projection's aggregate, and if so, the
+    /// unwrapped natural key its snapshot carries (null when the snapshot has none).
+    /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2075",
+        Justification = "Reads Compacted<T>.Snapshot off a Compacted<T> of the registered aggregate type, which the projection registration preserves, the same as NaturalKeyDefinition's own reflection over that type.")]
+    private bool tryReadCompactedKey(object data, out object? key)
+    {
+        key = null;
+
+        var dataType = data.GetType();
+        if (!dataType.IsGenericType || dataType.GetGenericTypeDefinition() != typeof(Compacted<>)
+                                    || dataType.GetGenericArguments()[0] != _naturalKey.AggregateType)
+        {
+            return false;
+        }
+
+        var snapshot = dataType.GetProperty(nameof(Compacted<object>.Snapshot))!.GetValue(data);
+        if (snapshot == null) return true;
+
+        var rawValue = _naturalKey.Member switch
+        {
+            PropertyInfo property => property.GetValue(snapshot),
+            FieldInfo field => field.GetValue(snapshot),
+            _ => null
+        };
+
+        key = _naturalKey.Unwrap(rawValue);
+        return true;
     }
 
     /// <summary>

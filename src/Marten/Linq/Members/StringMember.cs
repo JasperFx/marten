@@ -8,14 +8,27 @@ namespace Marten.Linq.Members;
 
 public class StringMember: QueryableMember, IComparableMember
 {
-    private readonly string _lowerLocator;
+    private string _lowerLocator;
 
     internal static StringMember ForArrayIndex(ValueCollectionMember parent, ArrayIndexMember member)
     {
+        return ForIndexedElement(parent, parent.RawLocator, member);
+    }
+
+    /// <summary>
+    ///     #5949: the string element at <paramref name="member" /> of the jsonb array at
+    ///     <paramref name="jsonbLocator" />, which may itself be an element of another array (<c>x.Words[1][0]</c>).
+    /// </summary>
+    internal static StringMember ForIndexedElement(IQueryableMember parent, string jsonbLocator, ArrayIndexMember member)
+    {
+        var locator = $"{jsonbLocator} ->> {member.Index}";
         return new StringMember(parent, Casing.Default, member)
         {
-            RawLocator = $"{parent.RawLocator} ->> {member.Index}",
-            TypedLocator = $"{parent.RawLocator} ->> {member.Index}"
+            RawLocator = locator,
+            TypedLocator = locator,
+
+            // The constructor built this from the placeholder locator, before the one above replaced it
+            _lowerLocator = $"lower({locator})"
         };
     }
 
@@ -50,6 +63,8 @@ public class StringMember: QueryableMember, IComparableMember
             {
                 RawLocator = $"trim({RawLocator})", TypedLocator = $"trim({RawLocator})"
             },
+            // #5941
+            nameof(string.Length) when member is PropertyInfo => new StringLengthMember(this),
             _ => base.FindMember(member)
         };
     }
