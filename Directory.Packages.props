@@ -894,15 +894,19 @@
          span members, which the bdata write and read paths now use (marten#5731). jasperfx#1186, UnArchiveStream on
          the shared IEventStoreOperations, which Marten's own interface no longer redeclares. jasperfx#1192 is a
          JasperFx codegen fix for non-string [FromKeyedServices] keys with no Marten change. -->
-    <PackageVersion Include="JasperFx" Version="3.3.0" />
-    <PackageVersion Include="JasperFx.Events" Version="3.3.0" />
+    <!-- JasperFx 3.4.0 (from 3.3.0): jasperfx#1194/#1195, the evolver generator no longer emits an evolver for an
+         open generic aggregate or one nested behind private / protected (that generated code broke the build with
+         CS0246 / CS0122); it reports the new JFXEVT008 warning instead, unless another dispatcher in the compilation
+         already covers the type. Generator only, no runtime change. -->
+    <PackageVersion Include="JasperFx" Version="3.4.0" />
+    <PackageVersion Include="JasperFx.Events" Version="3.4.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.3.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.4.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -921,11 +925,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.3.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.4.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.3.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.4.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -1228,9 +1232,20 @@
              resolve. NOT ADOPTED yet; it is the rest of marten#5985 on master.
            * weasel#842 (weasel#839): SingleServerDatabaseCollection.FindOrCreateDatabaseSynchronously.
              NOT ADOPTED yet; also marten#5985. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.4" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.4" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.4" />
+    <!-- Weasel 10.0.0-alpha.6 (from alpha.4, through alpha.5). JasperFx floor still 3.0.0. All additive.
+           * weasel#849 (#855): protected HiloSequenceBase.InstallCount and TrySetCurrentHi(raw, installCountBefore),
+             so an install from outside an advance can take the overlap rule weasel#840 gives an advance. NOT ADOPTED
+             yet; HiLoSequence.SetFloor still installs through TrySetCurrentHi(raw), as given.
+           * weasel#850 (#856): protected virtual MasterTableTenancyBase.TryProvisionControlTableSynchronously, which
+             declines by default. NOT ADOPTED yet; overriding it in MasterTableTenancy lets TryResolveTenant answer in
+             a cold process before any asynchronous call has provisioned the control table (marten#5985 follow-up).
+           * weasel#851 (#854): EventTypeAllowList.UpcastSourceAliases keeps a source alias that is also a declared
+             alias. Marten's daemon does not page through EventTypeAllowList, so nothing changes here.
+           * Weasel.Sqlite only: weasel#857 (Microsoft.Data.Sqlite 10.0.15), #861 (collations), #863 (JSON column
+             reads). Marten does not reference Weasel.Sqlite. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.6" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.6" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.6" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
