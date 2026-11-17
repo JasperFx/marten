@@ -62,6 +62,11 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         startNewPage(session);
     }
 
+    /// <summary>
+    ///     The sequence this batch's range starts after: every event at or below it was projected by an earlier batch.
+    /// </summary>
+    internal long SequenceFloor { get; init; }
+
     private IMartenSession Session => _session ?? throw new InvalidOperationException("Session already released");
 
     public List<IChangeListener> Listeners { get; } = new();
@@ -255,6 +260,11 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     }
 
     void ISessionWorkTracker.EjectAllOfType(Type type)
+    {
+        throw new NotSupportedException();
+    }
+
+    void ISessionWorkTracker.RemoveOperationsOfType<TOperation>()
     {
         throw new NotSupportedException();
     }

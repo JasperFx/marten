@@ -35,14 +35,20 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         var handler = new LoadByIdHandler<TDoc, TId>((IDocumentStorage<TDoc, TId>)storage, id);
         handler.ConfigureCommand(builder, session);
 
-        await using var reader =
-            await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+        InlineRead read;
+        await using (var reader =
+                     await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false))
+        {
+            read = await ReadWithExpectedVersion(session, id, expectedStartingVersion, cancellation, reader, handler)
+                .ConfigureAwait(false);
+        }
 
-        return await ReadIntoStreamWithExpectedVersion(session, id, expectedStartingVersion, cancellation, reader, handler).ConfigureAwait(false);
+        return await buildStreamAsync(session, id, read, (IDocumentStorage<TDoc, TId>)storage, null, default,
+            cancellation).ConfigureAwait(false);
     }
 
 
-    private async Task<IEventStream<TDoc>> ReadIntoStreamWithExpectedVersion(DocumentSessionBase session, TId id, long expectedStartingVersion,
+    private async Task<InlineRead> ReadWithExpectedVersion(DocumentSessionBase session, TId id, long expectedStartingVersion,
         CancellationToken cancellation, DbDataReader reader, LoadByIdHandler<TDoc, TId> handler)
     {
         long version = 0;
@@ -63,18 +69,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
 
-            _events.Options.OpenTelemetry
-                .RecordEventsReplayed(0, _aggregateTypeName, OpenTelemetryOptions.InlinePlan);
-
-            // As an optimization, put the document in the identity map for later
-            if (document != null && ((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
-            {
-                session.StoreDocumentInItemMap(id, document);
-            }
-
-            return version == 0
-                ? _identityStrategy.StartStream(document, session, id, cancellation)
-                : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+            return new InlineRead(version, document);
         }
         catch (Exception e)
         {
@@ -98,20 +93,24 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         session.AssertIsDocumentSession();
         var storage = findDocumentStorage(session);
         var handler = new LoadByIdHandler<TDoc, TId>((IDocumentStorage<TDoc, TId>)storage, id);
-        return new WithStartingVersionHandler(this, id, handler, expectedStartingVersion);
+        return new WithStartingVersionHandler(this, id, storage, handler, expectedStartingVersion);
     }
 
-    internal class WithStartingVersionHandler: IQueryHandler<IEventStream<TDoc>>
+    internal class WithStartingVersionHandler: IFinishesAfterTheReader<IEventStream<TDoc>>
     {
         private readonly FetchInlinedPlan<TDoc, TId> _parent;
         private readonly TId _id;
+        private readonly IDocumentStorage<TDoc, TId> _storage;
         private readonly LoadByIdHandler<TDoc, TId> _handler;
         private readonly long _version;
+        private InlineRead _read;
 
-        public WithStartingVersionHandler(FetchInlinedPlan<TDoc, TId> parent, TId id, LoadByIdHandler<TDoc, TId> handler, long version)
+        public WithStartingVersionHandler(FetchInlinedPlan<TDoc, TId> parent, TId id,
+            IDocumentStorage<TDoc, TId> storage, LoadByIdHandler<TDoc, TId> handler, long version)
         {
             _parent = parent;
             _id = id;
+            _storage = storage;
             _handler = handler;
             _version = version;
         }
@@ -128,9 +127,21 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             throw new NotImplementedException();
         }
 
-        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
-            return _parent.ReadIntoStreamWithExpectedVersion((DocumentSessionBase)session, _id, _version, token, reader, _handler);
+            _read = await _parent.ReadWithExpectedVersion((DocumentSessionBase)session, _id, _version, token, reader,
+                _handler).ConfigureAwait(false);
+        }
+
+        public Task<IEventStream<TDoc>> FinishAsync(IStorageSession session, CancellationToken token)
+        {
+            return _parent.buildStreamAsync((DocumentSessionBase)session, _id, _read, _storage, null, default, token);
+        }
+
+        public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
+            await ReadAsync(reader, session, token).ConfigureAwait(false);
+            return await FinishAsync(session, token).ConfigureAwait(false);
         }
     }
 

@@ -41,6 +41,10 @@ internal class NestedTenantSession: DocumentSessionBase, ITenantOperations
     internal override JasperFx.Events.Fetching.AggregateWriteCacheSession AggregateWriteCache =>
         _parent.AggregateWriteCache;
 
+    // One unit of work, one set of observed cold versions, verified when the parent commits
+    internal override System.Collections.Generic.Dictionary<(string TenantId, string StreamKey), long> ObservedColdVersions =>
+        _parent.ObservedColdVersions;
+
     internal override void OnAggregateCommitted(Action<IChangeSet> advance) => _parent.OnAggregateCommitted(advance);
 
     // #4801 — Eject from THIS nested session's own identity map (and any dirty tracker),

@@ -33,15 +33,24 @@ internal partial class FetchLivePlan<TDoc, TId>
             .ConfigureAwait(false);
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
+        configureColdBoundary(builder, id);
 
         var handler = _identityStrategy.BuildEventQueryHandler(IsGlobal, id, selector);
         handler.ConfigureCommand(builder, session);
 
-        var batch = builder.Compile();
-        await using var reader =
-            await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
+        LiveRead read;
+        await using (var reader =
+                     await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false))
+        {
+            read = await readAsync(reader, session, handler, false, cancellation).ConfigureAwait(false);
+        }
 
-        var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        return await foldAsync(session, id, read, cancellation).ConfigureAwait(false);
+    }
+
+    private async Task<TDoc?> foldAsync(QuerySession session, TId id, LiveRead read, CancellationToken cancellation)
+    {
+        var events = await eventsToFoldAsync(session, id, read, cancellation).ConfigureAwait(false);
         return await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
     }
 
@@ -79,11 +88,12 @@ internal partial class FetchLivePlan<TDoc, TId>
         return new ReadOnlyQueryHandler(this, id);
     }
 
-    public class ReadOnlyQueryHandler: IQueryHandler<TDoc?>
+    public class ReadOnlyQueryHandler: IFinishesAfterTheReader<TDoc?>
     {
         private readonly FetchLivePlan<TDoc, TId> _parent;
         private readonly TId _id;
         private readonly IQueryHandler<IReadOnlyList<IEvent>> _handler;
+        private LiveRead _read;
 
         public ReadOnlyQueryHandler(FetchLivePlan<TDoc, TId> parent, TId id)
         {
@@ -95,13 +105,24 @@ internal partial class FetchLivePlan<TDoc, TId>
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
+            _parent.configureColdBoundary(builder, _id);
             _handler.ConfigureCommand(builder, session);
+        }
+
+        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
+            _read = await _parent.readAsync(reader, session, _handler, false, token).ConfigureAwait(false);
+        }
+
+        public Task<TDoc?> FinishAsync(IStorageSession session, CancellationToken token)
+        {
+            return _parent.foldAsync((QuerySession)session, _id, _read, token);
         }
 
         public async Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
-            var events = await _handler.HandleAsync(reader, session, token).ConfigureAwait(false);
-            return await _parent._aggregator.BuildAsync(events, (QuerySession)session, default, _id, _parent._documentStorage, token).ConfigureAwait(false);
+            await ReadAsync(reader, session, token).ConfigureAwait(false);
+            return await FinishAsync(session, token).ConfigureAwait(false);
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

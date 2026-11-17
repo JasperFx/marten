@@ -84,6 +84,9 @@ internal class UnitOfWork: ISessionWorkTracker
         _operations.RemoveAll(x => x is IDocumentStorageOperation op && op.Document == document);
     }
 
+    internal Weasel.Storage.IStorageOperation? LastEventOperation =>
+        _eventOperations.Count == 0 ? null : _eventOperations[^1];
+
     public IReadOnlyList<Weasel.Storage.IStorageOperation> AllOperations
     {
         get
@@ -265,6 +268,12 @@ internal class UnitOfWork: ISessionWorkTracker
         _eventOperations.Clear();
         _queuedDocuments?.Clear();
         Streams.Clear();
+    }
+
+    public void RemoveOperationsOfType<TOperation>() where TOperation : Weasel.Storage.IStorageOperation
+    {
+        _operations.RemoveAll(x => x is TOperation);
+        _eventOperations.RemoveAll(x => x is TOperation);
     }
 
     public void PurgeOperations<T, TId>(TId id) where T : notnull where TId : notnull

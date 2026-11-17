@@ -1287,6 +1287,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
                 "https://github.com/JasperFx/marten/issues/4596). Pick one for now.");
         }
 
+        if (EventGraph.ColdEventStore != null && EventGraph.StreamIdentity != StreamIdentity.AsString)
+        {
+            throw new InvalidOperationException(
+                "Cold event storage supports string stream identity only. Use Events.StreamIdentity = " +
+                "StreamIdentity.AsString with Events.UseColdEventStore().");
+        }
+
         // #4596 Session 1: per-tenant event partitioning re-uses Marten's existing
         // ManagedListPartitions machinery via the `mt_tenant_partitions` lookup
         // table. The EventsTable / StreamsTable schema needs the same

@@ -15,6 +15,8 @@
              [RequiresDynamicCode] / [RequiresUnreferencedCode] / [DynamicallyAccessedMembers]
              surfaces during our own build rather than downstream consumers'. -->
         <IsAotCompatible>true</IsAotCompatible>
+        <!-- Marten's own experimental APIs (ColdEventStorage.DiagnosticId) -->
+        <NoWarn>$(NoWarn);MARTEN001</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <None Remove="Schema\SQL\mt_grams_array.sql" />

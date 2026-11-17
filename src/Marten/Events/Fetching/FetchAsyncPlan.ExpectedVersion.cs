@@ -52,77 +52,15 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         endSharedSnapshot(builder, sharedSnapshot);
 
         var batch = builder.Compile();
-        await using var reader =
-            await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
-
-        return await ReadIntoStream(session, id, expectedStartingVersion, cancellation, reader, loadHandler, selector).ConfigureAwait(false);
-    }
-
-    private async Task<IEventStream<TDoc>> ReadIntoStream(DocumentSessionBase session, TId id, long expectedStartingVersion,
-        CancellationToken cancellation, DbDataReader reader, LoadByIdHandler<TDoc, TId> loadHandler, IEventStorage selector)
-    {
-        long version = 0;
-        try
+        AsyncRead read;
+        await using (var reader =
+                     await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false))
         {
-            // Read the latest version
-            if (await reader.ReadAsync(cancellation).ConfigureAwait(false))
-            {
-                version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
-            }
-
-            if (expectedStartingVersion != version)
-            {
-                throw new ConcurrencyException(
-                    $"Expected the existing version to be {expectedStartingVersion}, but was {version}",
-                    typeof(TDoc), id);
-            }
-
-            // Fetch the existing aggregate -- if any!
-            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
-            var document = await loadHandler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-
-            // Read in any events from after the current state of the aggregate
-            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
-            var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-            _events.Options.OpenTelemetry
-                .RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.AsyncPlan);
-
-            if (events.Any())
-            {
-                document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
-            }
-
-            if (document != null)
-            {
-                _storage.SetIdentity(document, id);
-            }
-
-            var stream = version == 0
-                ? _identityStrategy.StartStream(document, session, id, cancellation)
-                : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
-
-            // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
-            if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
-            {
-                session.StoreDocumentInItemMap(id, stream);
-            }
-
-            return stream;
+            read = await readForWritingAsync(session, id, cancellation, reader, loadHandler, selector,
+                expectedStartingVersion).ConfigureAwait(false);
         }
-        catch (Exception e)
-        {
-            if (e.InnerException is NpgsqlException { SqlState: PostgresErrorCodes.InFailedSqlTransaction })
-            {
-                throw new StreamLockedException(id, e.InnerException);
-            }
 
-            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
-            {
-                throw new StreamLockedException(id, e.InnerException!);
-            }
-
-            throw;
-        }
+        return await buildStreamAsync(session, id, read, default, false, false, cancellation).ConfigureAwait(false);
     }
 
     public IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id, long expectedStartingVersion)
@@ -135,8 +73,9 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         return new ExpectedVersionQueryHandler(this, id, expectedStartingVersion, canShareOneSnapshot(dsb));
     }
 
-    public class ExpectedVersionQueryHandler: IQueryHandler<IEventStream<TDoc>>, IOpensItsOwnTransaction
+    public class ExpectedVersionQueryHandler: IFinishesAfterTheReader<IEventStream<TDoc>>, IOpensItsOwnTransaction
     {
+        private AsyncRead _read;
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
         private readonly long _expectedStartingVersion;
@@ -188,11 +127,22 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             endSharedSnapshot(builder, sharedSnapshot);
         }
 
-        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
             var documentSessionBase = (DocumentSessionBase)session;
-            return _parent.ReadIntoStream(documentSessionBase, _id, _expectedStartingVersion, token, reader,
-                _loadHandler, documentSessionBase.EventStorage());
+            _read = await _parent.readForWritingAsync(documentSessionBase, _id, token, reader, _loadHandler,
+                documentSessionBase.EventStorage(), _expectedStartingVersion).ConfigureAwait(false);
+        }
+
+        public Task<IEventStream<TDoc>> FinishAsync(IStorageSession session, CancellationToken token)
+        {
+            return _parent.buildStreamAsync((DocumentSessionBase)session, _id, _read, default, false, false, token);
+        }
+
+        public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
+            await ReadAsync(reader, session, token).ConfigureAwait(false);
+            return await FinishAsync(session, token).ConfigureAwait(false);
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

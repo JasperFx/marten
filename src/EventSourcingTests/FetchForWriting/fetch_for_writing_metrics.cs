@@ -77,6 +77,28 @@ public class fetch_for_writing_metrics: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task fetch_latest_of_a_live_aggregate_is_not_counted()
+    {
+        StoreOptions(opts => opts.OpenTelemetry.TrackFetchForWritingMetrics());
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<MeteredAggregate>(streamId, new AEvent(), new AEvent());
+        await theSession.SaveChangesAsync();
+
+        using var recorder = new EventsReplayedRecorder(MetricName);
+
+        await using var session = theStore.LightweightSession();
+        (await session.Events.FetchLatest<MeteredAggregate>(streamId))!.ACount.ShouldBe(2);
+
+        var batch = session.CreateBatchQuery();
+        var batched = batch.Events.FetchLatest<MeteredAggregate>(streamId);
+        await batch.Execute();
+        (await batched)!.ACount.ShouldBe(2);
+
+        recorder.Measurements.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task nothing_is_recorded_without_the_opt_in()
     {
         // Note the absence of TrackFetchForWritingMetrics()

@@ -9,6 +9,7 @@ using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using Marten.Events.Archiving;
+using Marten.Events.Cold;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
@@ -174,7 +175,18 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         var docs = ((IMartenSession)_session).Options.EventGraph.UseIdentityMapForAggregates
             ? await _storage.LoadManyAsync(identities, _session, cancellationToken).ConfigureAwait(false)
             : await _storage.LoadManyProjectedAsync(identities, _session.Database, TenantId, cancellationToken).ConfigureAwait(false);
-        return docs.ToDictionary(doc => _storage.Identity(doc));
+        var loaded = docs.ToDictionary(doc => _storage.Identity(doc));
+
+        // A single-stream aggregation whose document went to cold storage with the stream's events starts from there
+        if (loaded.Count < identities.Length
+            && ColdAggregationStart.For<TDoc, TId>(((IMartenSession)_session).Options.EventGraph) is { } cold)
+        {
+            var unwrap = streamIdUnwrapperFor<TId>();
+            await cold.AddMissingAsync(_session, identities, loaded, id => (string)unwrap(id), this, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return loaded;
     }
 
     public void SetIdentity(TDoc document, TId identity)
