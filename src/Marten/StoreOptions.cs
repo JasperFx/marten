@@ -1309,6 +1309,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             _ = new Schema.MartenManagedTenantListPartitions(this, schemaName: null);
         }
+
+        // #5684: tables registered through Storage.PartitionPerTenant()
+        Storage.ApplyTenantPartitioning(TenantPartitions);
     }
 
     /// <summary>
