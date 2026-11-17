@@ -15,6 +15,7 @@ using Marten.Events.Protected;
 using Marten.Events.Rewriting;
 using Marten.Events.TestSupport;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -300,11 +301,11 @@ public class AdvancedOperations
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         Each session is opened as that database's default tenant (<see cref="SessionOptions.ForDatabase" />).
-    ///         For conjoined (multi-tenanted) documents, a plain <c>Query&lt;T&gt;()</c> therefore only sees the
-    ///         default tenant's rows, which is usually nothing. Under <c>MultiTenantedWithShardedDatabases()</c>
-    ///         every document is conjoined. Use <c>AnyTenant()</c> or <c>TenantIsOneOf(...)</c> in the query to
-    ///         read across the tenants in each database.
+    ///         The query reads every tenant. For conjoined (multi-tenanted) documents and events, each session
+    ///         reads every tenant's rows in its database wherever an ordinary session would read only its own
+    ///         tenant: LINQ queries, compiled queries, <c>LoadAsync()</c> / <c>LoadManyAsync()</c> and
+    ///         <c>FetchStreamAsync()</c>. An <c>AnyTenant()</c> or <c>TenantIsOneOf(...)</c> in the query still
+    ///         applies as written.
     ///     </para>
     ///     <para>
     ///         Results are grouped per database: each database's items stay together, in the order
@@ -322,14 +323,15 @@ public class AdvancedOperations
         int maxParallelism = 8,
         CancellationToken token = default)
     {
+        ArgumentNullException.ThrowIfNull(query);
         return QueryAcrossAllDatabasesAsync<T>((session, _, ct) => query(session, ct), maxParallelism, token);
     }
 
     /// <summary>
     ///     Like <see cref="QueryAcrossAllDatabasesAsync{T}(Func{IQuerySession,CancellationToken,Task{IReadOnlyList{T}}},int,CancellationToken)" />,
     ///     but also hands the <see cref="IMartenDatabase" /> to the query, for work that lives beside the
-    ///     documents rather than in them, such as the async daemon progression. The same remarks about the
-    ///     default tenant and the order of the results apply.
+    ///     documents rather than in them, such as the async daemon progression. The same remarks about tenants
+    ///     and the order of the results apply.
     /// </summary>
     public async Task<IReadOnlyList<T>> QueryAcrossAllDatabasesAsync<T>(
         Func<IQuerySession, IMartenDatabase, CancellationToken, Task<IReadOnlyList<T>>> query,
@@ -342,14 +344,95 @@ public class AdvancedOperations
         var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);
         assertHasDatabases(databases);
 
-        var perDatabase = new IReadOnlyList<T>[databases.Count];
+        return await queryDatabasesAsync(databases.Select(x => (x, SessionTenantScope.AllTenants)).ToArray(),
+            query, maxParallelism, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Run one query for the given tenants only. Only the databases that hold those tenants are visited, and
+    ///     each session reads only those tenants' rows of conjoined documents and events, as if the query said
+    ///     <c>TenantIsOneOf(tenantIds)</c>. Otherwise the same as
+    ///     <see cref="QueryAcrossAllDatabasesAsync{T}(Func{IQuerySession,CancellationToken,Task{IReadOnlyList{T}}},int,CancellationToken)" />.
+    /// </summary>
+    /// <param name="query">The query to run in each database</param>
+    /// <param name="maxParallelism">
+    ///     How many databases are queried concurrently. Each slot holds one connection to a different database.
+    /// </param>
+    /// <param name="token"></param>
+    /// <param name="tenantIds">The tenants to read. No tenant ids is an empty result.</param>
+    /// <exception cref="UnknownTenantIdException">A tenant id the store does not know</exception>
+    public Task<IReadOnlyList<T>> QueryAcrossAllDatabasesAsync<T>(
+        Func<IQuerySession, CancellationToken, Task<IReadOnlyList<T>>> query,
+        int maxParallelism,
+        CancellationToken token,
+        params string[] tenantIds)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        return QueryAcrossAllDatabasesAsync<T>((session, _, ct) => query(session, ct), maxParallelism, token,
+            tenantIds);
+    }
+
+    /// <summary>
+    ///     Like <see cref="QueryAcrossAllDatabasesAsync{T}(Func{IQuerySession,CancellationToken,Task{IReadOnlyList{T}}},int,CancellationToken,string[])" />,
+    ///     but also hands the <see cref="IMartenDatabase" /> to the query.
+    /// </summary>
+    /// <exception cref="UnknownTenantIdException">A tenant id the store does not know</exception>
+    public async Task<IReadOnlyList<T>> QueryAcrossAllDatabasesAsync<T>(
+        Func<IQuerySession, IMartenDatabase, CancellationToken, Task<IReadOnlyList<T>>> query,
+        int maxParallelism,
+        CancellationToken token,
+        params string[] tenantIds)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(tenantIds);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxParallelism, 1);
+
+        var corrected = tenantIds.Select(x => _store.Options.TenantIdStyle.MaybeCorrectTenantId(x)).Distinct()
+            .ToArray();
+        if (corrected.Length == 0) return [];
+
+        // Prefer the store's own database objects; a sharded store can hand back a fresh one for a tenant
+        var databases = (await _store.Storage.AllDatabases().ConfigureAwait(false))
+            .ToDictionary(x => x.Identifier);
+
+        // TryFindDatabase is the read-only lookup: it never assigns or creates a tenant
+        var tenantsByDatabase = new Dictionary<string, (IMartenDatabase Database, List<string> TenantIds)>();
+        foreach (var tenantId in corrected)
+        {
+            var found = await _store.Tenancy.TryFindDatabase(tenantId).ConfigureAwait(false)
+                        ?? throw new UnknownTenantIdException(tenantId);
+
+            if (!tenantsByDatabase.TryGetValue(found.Identifier, out var group))
+            {
+                group = (databases.GetValueOrDefault(found.Identifier) ?? found, new List<string>());
+                tenantsByDatabase[found.Identifier] = group;
+            }
+
+            group.TenantIds.Add(tenantId);
+        }
+
+        return await queryDatabasesAsync(
+            tenantsByDatabase.Values.Select(x => (x.Database, SessionTenantScope.For(x.TenantIds.ToArray())))
+                .ToArray(), query, maxParallelism, token).ConfigureAwait(false);
+    }
+
+    private async Task<IReadOnlyList<T>> queryDatabasesAsync<T>(
+        (IMartenDatabase Database, SessionTenantScope Scope)[] targets,
+        Func<IQuerySession, IMartenDatabase, CancellationToken, Task<IReadOnlyList<T>>> query,
+        int maxParallelism,
+        CancellationToken token)
+    {
+        var perDatabase = new IReadOnlyList<T>[targets.Length];
         await Parallel.ForEachAsync(
-                Enumerable.Range(0, databases.Count),
+                Enumerable.Range(0, targets.Length),
                 new ParallelOptions { MaxDegreeOfParallelism = maxParallelism, CancellationToken = token },
                 async (index, ct) =>
                 {
-                    var database = databases[index];
-                    await using var session = _store.QuerySession(SessionOptions.ForDatabase(database));
+                    var (database, scope) = targets[index];
+                    var options = SessionOptions.ForDatabase(database);
+                    options.TenantScope = scope;
+
+                    await using var session = _store.QuerySession(options);
                     perDatabase[index] = await query(session, database, ct).ConfigureAwait(false);
                 })
             .ConfigureAwait(false);
