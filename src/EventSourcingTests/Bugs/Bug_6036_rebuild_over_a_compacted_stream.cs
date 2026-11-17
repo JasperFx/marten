@@ -163,4 +163,50 @@ public class Bug_6036_rebuild_over_a_compacted_stream: OneOffConfigurationsConte
         versioned.Version.ShouldBe(5);
         (await query.MetadataForAsync(versioned)).CurrentRevision.ShouldBe(5);
     }
+
+    [Fact]
+    public async Task an_async_snapshot_without_a_version_member_catches_up_over_a_compaction()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<Plain>(SnapshotLifecycle.Async));
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var id = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<Plain>(id, new PlainOpened(id), new PlainTouched(1), new PlainTouched(2));
+            await session.SaveChangesAsync();
+        }
+
+        using (var daemon = await theStore.BuildProjectionDaemonAsync())
+        {
+            await daemon.StartAllAsync();
+            await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(30));
+            await daemon.StopAllAsync();
+        }
+
+        // The document is at version 3. Two more events, then compacting folds all five into the last one
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.Append(id, new PlainTouched(3), new PlainTouched(4));
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.LightweightSession())
+        {
+            await session.Events.CompactStreamAsync<Plain>(id);
+            await session.SaveChangesAsync();
+        }
+
+        using (var daemon = await theStore.BuildProjectionDaemonAsync())
+        {
+            await daemon.StartAllAsync();
+            await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(30));
+        }
+
+        await using var query = theStore.QuerySession();
+        var plain = await query.LoadAsync<Plain>(id);
+        plain.ShouldNotBeNull();
+        plain.Touches.ShouldBe(10);
+        (await query.MetadataForAsync(plain)).CurrentRevision.ShouldBe(5);
+    }
 }

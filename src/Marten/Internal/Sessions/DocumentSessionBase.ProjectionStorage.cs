@@ -200,8 +200,9 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
             //
             // #6036: lastEvent is null when the slice held nothing after a Compacted<T>: the runner fast-forwards
             // over the snapshot and keeps only the events behind it. The snapshot's own mapped revision, when it
-            // has one, is the version the compaction folded through. Otherwise the revision is left at 0, which
-            // inserts a single stream document at its stream's version, and moves an existing one up by one.
+            // has one, is the version the compaction folded through. Otherwise the revision is left at 0, and the
+            // single stream document is written at its stream's version, as Bug_6036 checks for both a new and an
+            // existing document.
             if (lastEvent != null)
             {
                 r.Revision = scope == AggregationScope.SingleStream ? lastEvent.Version : lastEvent.Sequence;
