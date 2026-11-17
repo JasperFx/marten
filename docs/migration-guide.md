@@ -19,31 +19,179 @@
 You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
 On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605.
 
-### Synchronous connection access is gone <Badge type="warning" text="breaking" />
+### Runtime-async on `net11.0` <Badge type="warning" text="behavior change" />
 
-Npgsql 10 removed its synchronous APIs, and Marten 9 already made the synchronous data-access methods throw
-`NotSupportedException` ([Synchronous data access removed](#synchronous-data-access-removed)). Marten 10 deletes
-what was left of that half:
+The `net11.0` build of Marten is compiled with the C# compiler's runtime-async feature, so its async methods run as
+.NET 11 runtime-async methods instead of compiler-built state machines. That allocates less per call, but stack
+traces, debugger stepping and any APM agent or profiler that hooks async state machines may look or behave
+differently. The `net10.0` build is unchanged.
+
+To build Marten from source without it, pass `-p:MartenRuntimeAsync=false`. Code that Marten's source generators
+write into your project is compiled by your project, so your own compiler settings decide there
+([#5886](https://github.com/JasperFx/marten/issues/5886)).
+
+### Synchronous data access is gone {#synchronous-data-access-is-gone-in-10-0-0}
+
+::: warning Breaking change
+This is the change most applications hit first when they move to Marten 10. It compiles cleanly where LINQ is
+concerned, so a missed call only shows up at runtime.
+:::
+
+Marten 9 made the synchronous data-access methods throw ([Synchronous data access removed](#synchronous-data-access-removed)).
+Marten 10 finishes the job ([#5861](https://github.com/JasperFx/marten/issues/5861)): the synchronous session members
+that were left are deleted, and every synchronous LINQ operator on a Marten query throws a
+`NotSupportedException` that names the asynchronous operator to use.
+
+#### Synchronous LINQ operators throw
+
+Calling a synchronous LINQ operator on a Marten query (`ToList()`, `ToArray()`, `ToDictionary()`, `First()`,
+`Single()`, `Count()`, `Any()`, `Sum()`, `foreach` and the rest) still compiles, because the operators come from
+.NET's `System.Linq`, but it throws when it runs. Before:
+
+```cs
+var users = session.Query<User>().Where(x => x.Active).ToList();
+var first = session.Query<User>().First(x => x.UserName == "jdm");
+var count = session.Query<User>().Count();
+
+foreach (var user in session.Query<User>())
+{
+    Console.WriteLine(user.UserName);
+}
+```
+
+After:
+
+```cs
+var users = await session.Query<User>().Where(x => x.Active).ToListAsync();
+var first = await session.Query<User>().FirstAsync(x => x.UserName == "jdm");
+var count = await session.Query<User>().CountAsync();
+
+await foreach (var user in session.Query<User>().ToAsyncEnumerable())
+{
+    Console.WriteLine(user.UserName);
+}
+```
+
+The exception names the operator you called and the one to use instead. For a single-result or aggregating operator:
+
+```text
+System.NotSupportedException: Synchronous data access is not supported in Marten 10: First() would query the database synchronously. Use await FirstAsync() instead.
+```
+
+For anything that enumerates the query (`ToList()`, `ToArray()`, `ToDictionary()`, `ToHashSet()`, `foreach`):
+
+```text
+System.NotSupportedException: Synchronous data access is not supported in Marten 10: enumerating a Marten query (foreach, ToList(), ToArray(), ToDictionary(), ToHashSet() and the like) would query the database synchronously. Use await ToListAsync() instead, or await foreach over ToAsyncEnumerable().
+```
+
+`ToPagedList()` names `ToPagedListAsync()` the same way, and an operator with no direct asynchronous counterpart
+(`Aggregate()`, say) lists the ones that exist. The replacements:
+
+| Synchronous | Marten 10 |
+| --- | --- |
+| `ToList()`, `ToArray()`, `ToDictionary()`, `ToHashSet()` | `await ToListAsync()`, then convert the list |
+| `foreach (var x in query)` | `await foreach (var x in query.ToAsyncEnumerable())` |
+| `First()`, `FirstOrDefault()`, `Single()`, `SingleOrDefault()` | `await FirstAsync()`, `FirstOrDefaultAsync()`, `SingleAsync()`, `SingleOrDefaultAsync()` |
+| `Count()`, `LongCount()`, `Any()` | `await CountAsync()`, `LongCountAsync()`, `AnyAsync()` |
+| `Sum()`, `Min()`, `Max()`, `Average()` | `await SumAsync()`, `MinAsync()`, `MaxAsync()`, `AverageAsync()` |
+| `All(predicate)` | `!await AnyAsync(...)` with the predicate negated |
+| `Last()`, `LastOrDefault()` | reverse the ordering, then `await FirstAsync()` / `FirstOrDefaultAsync()` |
+| `ToPagedList(page, size)` | `await ToPagedListAsync(page, size)` |
+
+Composing a query is untouched. `Where()`, `OrderBy()`, `Select()`, sub-queries inside a predicate
+(`x.Children.Any(...)`), `Include()`, compiled queries and `ToCommand()` build an expression and never execute it;
+only the operator at the end decides whether the database is queried.
+
+#### Removed session members
+
+| Removed | Use instead |
+| --- | --- |
+| `IQuerySession.Connection` | `await session.GetConnectionAsync(token)` |
+| `IDocumentSession.BeginTransaction()` | `await session.BeginTransactionAsync(token)` |
+| `IDocumentStore.LightweightSession(IsolationLevel.Serializable)`, and the same for `IdentitySession`, `DirtyTrackedSession`, `OpenSession(SessionOptions)` and `QuerySession(SessionOptions)` with `IsolationLevel.Serializable` | `await store.LightweightSerializableSessionAsync()`, `IdentitySerializableSessionAsync()`, `DirtyTrackedSerializableSessionAsync()`, `OpenSerializableSessionAsync(options)` or `QuerySerializableSessionAsync()` |
+
+`GetConnectionAsync()` behaves as reading `Connection` did. It opens the session's connection if need be and, on a
+session that otherwise opens and closes a connection per command, pins the session to one connection and begins its
+transaction, so your own commands run in the session's transaction. The session still owns the connection: do not
+dispose it. Before:
+
+```cs
+var count = await session.Connection
+    .CreateCommand("select count(*) from tasks where status = 'open'")
+    .ExecuteScalarAsync();
+
+session.BeginTransaction();
+```
+
+After:
+
+```cs
+var connection = await session.GetConnectionAsync();
+var count = await connection
+    .CreateCommand("select count(*) from tasks where status = 'open'")
+    .ExecuteScalarAsync();
+
+await session.BeginTransactionAsync(CancellationToken.None);
+```
+
+The synchronous session factories keep their `IsolationLevel` parameter, and `ReadCommitted` (the default),
+`RepeatableRead` and the other levels still work. Only `Serializable` is refused, because a Serializable session has
+to open its connection and begin its transaction as it is created:
+
+```text
+System.NotSupportedException: Synchronous data access is not supported in Marten 10, and a Serializable session has to open its connection and begin its transaction when it is created. Open it with LightweightSerializableSessionAsync(), IdentitySerializableSessionAsync(), DirtyTrackedSerializableSessionAsync(), QuerySerializableSessionAsync() or OpenSerializableSessionAsync() instead.
+```
+
+A custom `ISessionFactory` that returned `LightweightSession(IsolationLevel.Serializable)` has to change too, since
+`ISessionFactory.OpenSession()` is synchronous.
+
+#### Sessions are still `IDisposable`, but prefer `await using`
+
+Sessions keep `Dispose()`, so `using var session = store.LightweightSession();` still compiles and works. With
+[row level security](/documents/multi-tenancy#row-level-security-) on, a synchronous `Dispose()` makes one synchronous
+database call: it resets the tenant setting on a connection the session opened, before releasing that connection to
+the pool. This is the only synchronous database call left in Marten 10. It is there so a stale tenant cannot outlive
+the session on a pooled connection when the connection string sets `No Reset On Close=true`. If the reset fails,
+`Dispose()` does not throw. Marten logs the failure and makes sure the connection is not returned to the pool as
+healthy.
+
+A connection you supplied (`SessionOptions.ForTransaction()`) is yours, so a synchronous `Dispose()` leaves its tenant
+setting alone. `DisposeAsync()` resets it. Either way, `await using` is still the recommended way to dispose a
+session.
+
+#### Lower-level changes
+
+These only matter if you implement or call Marten's connection plumbing directly:
 
 - `IConnectionLifetime` no longer has `Execute`, `ExecuteReader(NpgsqlCommand)` or `ExecuteReader(NpgsqlBatch)`.
-  Only implementers of that interface are affected.
+- `IAlwaysConnectedLifetime` loses `Connection` and `BeginTransaction()` and gains `OpenConnectionAsync(CancellationToken)`.
+  `ITransactionStarter` loses `Start()`; use `StartAsync(CancellationToken)`.
 - `QuerySession.ExecuteReader(NpgsqlBatch)` is deleted; use `ExecuteReaderAsync`.
 - `IDiagnostics.GetPostgresVersion()` is replaced by `GetPostgresVersionAsync(CancellationToken)`.
-
-The public entry points that still open or close a connection without awaiting (`IQuerySession.Connection`,
-`IDocumentSession.BeginTransaction()`, the synchronous `Serializable` session factories and synchronous
-`Dispose()`) remain. Hi-Lo sequences now reserve their next block asynchronously; see below.
+- `QuerySession.SynchronousNotSupportedMessage` now reads
+  `Synchronous data access is not supported in Marten 10. Use the asynchronous equivalent.`
 
 ### HiLo blocks are reserved one block ahead
 
 HiLo ids are still assigned synchronously in `session.Store()`, but each sequence now reserves its **next** block in the
 background with an asynchronous database call as soon as it starts using the current one (#5862). Exhausting a block normally
-no longer blocks the storing thread on the database; the synchronous fetch is kept only as a fallback for when the next block
-has not arrived yet, or the background fetch failed.
+no longer blocks the storing thread on the database. When the next block has not arrived yet, `Store()` fetches one synchronously
+straight away, as it always did, rather than waiting on the background fetch; waiting on asynchronous work from a synchronous
+`Store()` is what let a burst of storing threads starve the thread pool
+([#5969](https://github.com/JasperFx/marten/issues/5969)). The first id a database issues builds or updates `mt_hilo` and
+`mt_get_next_hi` with synchronous database calls instead of blocking on Weasel's asynchronous migration, and with
+`AutoCreate.None` it no longer reads the catalog at all.
 
 Each process can therefore hold one unused block, so expect gaps of up to `MaxLo` ids when a process stops, and ids are no
 longer guaranteed to be contiguous across a block boundary. They are still unique and, within one process, increasing.
 Nothing needs to change in your code. See [How HiLo blocks are fetched](/documents/identity#how-hilo-blocks-are-fetched).
+
+The `mt_get_next_hi` function behind HiLo is now a single atomic increment ([#5938](https://github.com/JasperFx/marten/issues/5938)).
+The old version read the current value and then updated it only if it was unchanged, returning `-1` to every caller that another
+caller overtook. Marten retried those calls with no backoff, and under heavy concurrent load a sequence could exhaust
+`MaxAdvanceToNextHiAttempts` and throw `HiloSequenceAdvanceToNextHiAttemptsExceededException`. The new version makes overlapping
+callers wait on the row lock instead, and each gets a block. It is an ordinary schema change, applied with the rest of your
+schema migration; until it is applied, the old function keeps working as it did.
 
 ### Abstractions lifted into JasperFx and Weasel <Badge type="warning" text="recompile" />
 
@@ -130,6 +278,43 @@ Sessions opened with `ConcurrencyChecks.Disabled` still overwrite without a chec
 dirty-tracking session, a loaded document that was changed and then passed to `UpdateRevision()`/`TryUpdateRevision()`
 lost its explicit revision to the automatically detected change, so the revision check never ran.
 
+### Private aggregate constructors run again {#private-aggregate-constructors-run-again}
+
+::: warning Behavior change
+This changes what happens when an aggregate is created, compared with Marten 9 and the earlier 10.0 alphas.
+:::
+
+When the source-generated dispatcher has to create an aggregate and the type's only parameterless constructor is
+`private`, `protected` or `internal`, it now calls that constructor through a generated `[UnsafeAccessor]`
+([jasperfx#1188](https://github.com/JasperFx/jasperfx/issues/1188), JasperFx 3.3.0,
+[#5915](https://github.com/JasperFx/marten/issues/5915)). The constructor body and every field and property
+initializer run, which is what Marten 8 did through `Activator.CreateInstance(nonPublic: true)`. The accessor is
+bound by the JIT or by Native AOT's compiler, not by reflection, so it is trim and AOT safe.
+
+Marten 9 and the 10.0 alphas created such an aggregate with `RuntimeHelpers.GetUninitializedObject` instead, so
+nothing in the constructor ran. Code that worked around that keeps working: an `Apply` that initializes a list with
+`??=` finds it already initialized. Check two things when upgrading:
+
+- **A private parameterless constructor with side effects now runs.** If it raises an event, registers the instance
+  somewhere, increments a counter or sets a default that `Apply` overwrites, that happens again for every aggregate
+  the dispatcher creates, including on every live aggregation and every projection rebuild.
+- **Initializers set state before the first `Apply`.** A property initializer such as `Status = Status.Draft` that
+  was skipped in Marten 9 is now in place when the first event is applied.
+
+A type with no parameterless constructor at all (a record with a primary constructor, for example), a generic
+aggregate type, and an aggregate type nested inside a `private` or `protected` type are still created without
+running a constructor. See [Handler methods must be public](#aggregation-public-handlers).
+
+### Binary events are written and read through pooled buffers
+
+`IEventBinarySerializer` gains `Serialize(Type, object, IBufferWriter<byte>)` and
+`Deserialize(Type, ReadOnlySpan<byte>)` (JasperFx 3.3.0). Both are default members over the `byte[]` pair, so an
+existing serializer keeps compiling and working unchanged. Marten now uses them for `mt_events.bdata`: Quick appends
+and `BulkInsertEventsAsync` serialize into pooled buffers, and reads deserialize from a span over a rented buffer,
+so a serializer that overrides them (`Marten.MemoryPack` does) no longer costs one array per event on those paths
+([#5731](https://github.com/JasperFx/marten/issues/5731)). `Rich` appends still allocate one array per binary
+event. See [Pooled buffers](/events/binary-serialization#pooled-buffers).
+
 ### C# 15 union types on `net11.0` <Badge type="tip" text="new" />
 
 On `net11.0`, a document member or an event may be a C# union. An appended union is recorded as its active case,
@@ -144,13 +329,216 @@ Newtonsoft serializer, and a patch path through a case. On `net10.0` no type is 
 `session.Events.UnArchiveStream(Guid)` and `UnArchiveStream(string)` reverse `ArchiveStream()`. The stream and its
 events become live again and accept appends, including under `UseArchivedStreamPartitioning`, where the rows (and
 their DCB tag and natural key rows) move back out of the archived partitions. This is the operation the
-`ArchivedStreamException` message points to. See
+`ArchivedStreamException` message points to. Both overloads are declared on the shared
+`JasperFx.Events.IEventStoreOperations` (JasperFx 3.3.0), which Marten's `IEventStoreOperations` inherits. See
 [Un-archiving a Stream](/events/archiving.html#un-archiving-a-stream).
 
 The schema gains one function, `mt_unarchive_stream`. With `UseArchivedStreamPartitioning` and natural keys,
 `mt_archive_stream` also changes: it now copies the natural key rows into the archived partition instead of letting
 the foreign key cascade delete them, so un-archiving can restore them. Both changes apply with your normal schema
 migration.
+
+### LINQ `Join()`, `LeftJoin()` and `RightJoin()` translate <Badge type="tip" text="new" />
+
+- `Queryable.Join()`, .NET 10's `LeftJoin()` and `RightJoin()`, and the .NET 11 overloads of the three that return
+  `(Outer, Inner)` tuples now translate to SQL joins. Marten rewrites each into the `GroupJoin()` + `SelectMany()`
+  (+ `DefaultIfEmpty()`) form it already translated, so the SQL is the same as for that form. `FullJoin()` is still
+  refused, as are a few shapes the rewrite cannot answer correctly: an operator other than `Where()` before the join,
+  a source that is not `session.Query<T>()`, a composite key, a comparer, and a join of a join. See
+  [Joining Documents with GroupJoin](/documents/querying/linq/group-join#join-leftjoin-rightjoin-and-fulljoin).
+- Two fixes to the `GroupJoin()` + `SelectMany()` form that the new operators share. `Any()` over a join now asks
+  whether the join has a row; it used to answer for the outer side alone, ignoring the join and any filter on the inner
+  side. A `Where()` on the inner side after a left join (`DefaultIfEmpty()`) now throws `BadLinqExpressionException`;
+  it used to be applied before the join, which kept the outer rows the filter should have removed.
+
+### LINQ `jsonb` filter parameters
+
+- The containment (`@>`) and JSONPath filters LINQ builds for child-collection and dictionary queries bind their
+  `jsonb` parameter as UTF-8 `byte[]` rather than a string, as document writes already did. A logger that prints
+  `NpgsqlParameter.Value` shows `System.Byte[]` for that parameter; `Encoding.UTF8.GetString` recovers the JSON.
+
+### LINQ `Count()` after `Take()` or `Skip()` counts the page <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5920](https://github.com/JasperFx/marten/issues/5920)), so these counts change value.
+  `Count()` and `LongCount()` after `Take()` and/or `Skip()` now return the number of rows on that page, as LINQ to
+  Objects does. Marten used to put the `LIMIT`/`OFFSET` on the `count(*)` itself, so `Take(n).Count()` returned the
+  full count and `Skip(k).Count()` or `Skip(k).Take(n).Count()` returned `0`. The paged query is now counted from a
+  CTE. Compiled queries, `SelectMany()` before or after the paging, and `Take(0).Any()` (which returned `true`) are
+  fixed too. A count without `Take()` or `Skip()` sends exactly the SQL it did before.
+
+### LINQ `Take()` or `Skip()` before `SelectMany()` pages the parent documents <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5928](https://github.com/JasperFx/marten/issues/5928)), so these queries return different
+  rows. `OrderBy(x => x.Number).Take(3).SelectMany(x => x.Children)` now returns every child of the first three
+  documents, as LINQ to Objects and EF Core do. Marten used to put the `LIMIT`/`OFFSET` on the statement that
+  flattens the collection, so it returned the first three children overall. `Skip()`, `Skip().Take()`, value
+  collections (`SelectMany(x => x.Numbers)`), and `First()`, `Single()` and `Any()` after such a query follow the
+  paged documents too. Paging after the `SelectMany()` still pages the flattened rows, and a `SelectMany()` without
+  paging before it sends exactly the SQL it did before. The flattened rows come back in the order of the paged
+  documents, and in collection order within each document.
+
+### LINQ indexes into document arrays translate everywhere <Badge type="warning" text="behavior change" />
+
+- [#5949](https://github.com/JasperFx/marten/issues/5949): an index into an array or list on the document,
+  `x.Values[1]`, `x.List[1]` or `x.Values.ElementAt(1)`, now translates in `OrderBy()`/`ThenBy()` and `Select()` as
+  well as in `Where()`, and jagged indexes such as `x.Grid[1][0]` translate in all three. A `bool[]` or `List<bool>`
+  on the document can be queried too. Before, it could not be queried at all. See
+  [Reading an Element by Position](/documents/querying/linq/child-collections#reading-an-element-by-position).
+- The behavior change: a **negative** index now throws `BadLinqExpressionException`. It used to translate to a
+  negative `jsonb` index, which PostgreSQL reads from the end of the array, so `x.Values[-1]` silently compared the
+  last element.
+- An index past the end of the stored array reads as `null`, as it always has in `Where()`.
+
+### LINQ ordering by a value that reads nothing from the document <Badge type="tip" text="new" />
+
+- [#5950](https://github.com/JasperFx/marten/issues/5950): `OrderBy()`, `OrderByDescending()`, `ThenBy()` and
+  `ThenByDescending()` over a static member, a captured variable or a literal used to throw
+  `Invalid OrderBy() expression`. Such a key is the same for every document, so it is now dropped from the
+  `ORDER BY`, and the remaining keys keep their order, as in LINQ to Objects. The SQL for every other ordering is
+  unchanged.
+
+### LINQ: a second `OrderBy()` re-sorts <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5959](https://github.com/JasperFx/marten/issues/5959)), so these queries return a different
+  order. `OrderBy(x => x.Category).OrderBy(x => x.Name)` now orders by `Name`, then `Category`, as LINQ to Objects
+  does: a later `OrderBy()`/`OrderByDescending()` (or `OrderBySql()`, `OrderByTextRank()`, `OrderByNgramRank()`)
+  re-sorts, and the earlier keys only break its ties. Marten used to put the later key behind the earlier ones.
+  If you relied on that, write the chain with `ThenBy()`. A chain with one `OrderBy()` sends exactly the SQL it did
+  before, and so does `OrderBy("a", "b")`, which is now built with `ThenBy()`. `ThenByTextRank()` followed by
+  another `ThenBy()` now keeps its place in the chain instead of moving to the end.
+
+### LINQ computed `OrderBy()` keys are computed <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5957](https://github.com/JasperFx/marten/issues/5957)), so these queries return a different
+  order or throw. A key computed from the document's members, such as `OrderBy(x => -x.Number)`, used to be
+  replaced by the member underneath it: that query sent `order by CAST(d.data ->> 'Number' as integer)` and came
+  back in ascending order. Computed keys over the document now translate with the computed `Select()` translation
+  (negation, arithmetic including `%`, widening casts, string concatenation, `ToUpper()`/`ToLower()`, `Length`,
+  `ToString()` of an integer or a `Guid`). A key with no exact SQL translation, such as decimal division, floating
+  point `%`, a narrowing cast (`(byte)x.Number`), a conditional, a `Math` call or an enum stored as a string cast
+  to an integer, now throws `BadLinqExpressionException`. Order by a member, or sort in memory after the query.
+  A plain member key sends exactly the SQL it did before.
+- The same applies, as of [#5968](https://github.com/JasperFx/marten/issues/5968), to a key over the child
+  documents a `SelectMany()` flattens, `SelectMany(x => x.Children).OrderBy(c => -c.Index)`, and to a key over
+  either side of a `Join()` or `GroupJoin()`, `Join(...).OrderBy(r => -r.Amount)`. Both used to order by the member
+  under the negation, and both refused arithmetic such as `% 3`.
+
+### LINQ `Select()` after `SelectMany()` projects the flattened rows <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5933](https://github.com/JasperFx/marten/issues/5933)), so these queries return different
+  rows or throw where they used to return wrong data. `SelectMany(x => x.Values).Select(v => v % 3)` returned the raw
+  values: the projection was dropped whenever it was arithmetic or a method call over the flattened element. A
+  `Where()`, `OrderBy()` or `Take()` applied after a projection of child documents was dropped as well.
+- The projection is now computed in SQL over the flattened rows, and every operator after it (`Where()`,
+  `OrderBy()`, `Distinct()`, `Skip()`/`Take()`, `Count()`, `Any()`, `First()`, `Sum()` and the rest) applies to
+  the projected value. Member access, arithmetic, string concatenation, `ToUpper()`, `ToLower()`, `Length`,
+  `ToString()` of an integer or a `Guid`, widening casts, enum to integer, and anonymous types or DTOs built from
+  those translate.
+- A projection with no exact SQL translation, such as a `Math` call, a conditional, decimal division or a narrowing
+  cast, now throws `BadLinqExpressionException` instead of returning the raw rows. So does a `Where()`, `OrderBy()`
+  or `Distinct()` applied after an object projection of a flattened row. Apply those before the `Select()`, or
+  project in memory after `ToListAsync()`. A `SelectMany()` without a `Select()` after it sends exactly the SQL it
+  did before.
+
+### LINQ `SelectMany()` over a duplicated array field works
+
+- A bug fix ([#5934](https://github.com/JasperFx/marten/issues/5934)). `SelectMany()` over an array field duplicated
+  into its own column (`Duplicate(x => x.Numbers)` or `[DuplicateField]`) failed: fetching failed with `42P01`
+  (a CTE that was never declared) and counting with `42883` (`jsonb_array_length()` with no argument). The
+  duplicated column is now flattened with `unnest()` and counted with `array_length()`, and `Where()`, `OrderBy()`,
+  paging, `First()`/`Single()` and `Select()` after the `SelectMany()` apply as they do to a collection that is not
+  duplicated. A `SelectMany()` over a collection that is not duplicated sends exactly the SQL it did before.
+
+### LINQ `SelectMany()` over an enum collection works
+
+- A bug fix ([#5940](https://github.com/JasperFx/marten/issues/5940)). `SelectMany(x => x.Colours)` over an array or
+  list of enums threw `InvalidCastException`, because each flattened element was read as the enum type from the
+  integer or text column it is stored in. The element is now read as the stored value and converted, under both
+  `EnumStorage.AsInteger` and `EnumStorage.AsString`, and `Where()`, `Distinct()`, `First()` and the rest work
+  after it. `OrderBy()` sorts by the stored value, so by name under `EnumStorage.AsString`, as an `OrderBy()` on
+  an enum member of a document already does. The SQL is unchanged.
+
+### LINQ string `Length` and string methods after `SelectMany()` translate
+
+- A bug fix ([#5941](https://github.com/JasperFx/marten/issues/5941)). After `SelectMany()` over a string collection,
+  `Where(n => n.Length == 4)` failed with `42883`, because `Length` was located as a JSON field inside the string.
+  `OrderBy(n => n.Length)` and `OrderBy(n => n.ToUpper())` ordered by the string itself. `Length` now translates
+  to PostgreSQL's `length()`, on a flattened string and on a string member of a document alike, and `ToUpper()`,
+  `ToLower()` and `Trim()` of a flattened string translate in `Where()` and `OrderBy()` as they do for a document's
+  member. PostgreSQL's `length()` counts characters where .NET counts UTF-16 code units, so the two differ for a
+  string holding an emoji or another character outside the Basic Multilingual Plane.
+
+### LINQ computed top-level `Select()` projections translate
+
+- A bug fix ([#5942](https://github.com/JasperFx/marten/issues/5942)). `Select(x => x.Number % 3)` failed with
+  `ArgumentNullException`, `Select(x => x.Id.ToString())` with `ArgumentException`, and a cast such as
+  `Select(x => (long)x.Number)` with `NotSupportedException`. Arithmetic, negation, widening casts, enum to
+  integer, string concatenation, `ToUpper()`, `ToLower()`, `Length`, and `ToString()` of an integer or a `Guid` are
+  now computed in SQL, and `Where()`, `OrderBy()`, `Distinct()`, paging, `Count()`, `First()` and the aggregates
+  after the `Select()` apply to the computed value. Anything else, such as a `Math` call, a conditional, decimal
+  division or a narrowing cast, throws `BadLinqExpressionException` naming the projection. Member, object and
+  `ExplicitSql()` projections send exactly the SQL they did before.
+
+### LINQ `OrderBy()` after a projection orders the projected values <Badge type="warning" text="behavior change" />
+
+- A correctness fix ([#5955](https://github.com/JasperFx/marten/issues/5955)), so these queries return rows in a
+  different order, or throw where they used to return them in the wrong order. Over a flattened value collection,
+  `SelectMany(x => x.Values).OrderBy(v => -v)` ordered by `v`: any key was taken as the element itself. The key is
+  now computed in SQL. After a top-level `Select()`, `Select(x => x.Number).OrderBy(n => n)` dropped the
+  `OrderBy()`. The projected values are now ordered, and `Skip()`/`Take()` after the ordering page them.
+- An `OrderBy()` after an anonymous type, a DTO or a projection to another document now throws
+  `BadLinqExpressionException`. It used to be dropped, or for a projection to the document's own type, such as
+  `Select(x => x.Inner)`, it was applied to the documents. Order before the `Select()` instead. A key that has no
+  exact SQL translation, such as a `Math` call, is refused the same way.
+
+### `UseStickyConnectionLifetimes` is gone <Badge type="warning" text="breaking" />
+
+`StoreOptions.UseStickyConnectionLifetimes`, which brought back the Marten 6 behavior of holding one connection open for
+the whole life of every session, has been removed. Sessions use and release connections as they go.
+
+When one session needs to keep one connection, ask for it on that session: `await session.BeginTransactionAsync()` or
+`await session.GetConnectionAsync()` pins the session to a connection until it is disposed, and the serializable
+sessions (`OpenSerializableSessionAsync()`, `QuerySerializableSessionAsync()`) and a caller-supplied connection or
+transaction (`SessionOptions.ForConnection()`, `SessionOptions.ForTransaction()`) do the same.
+
+### `AllDocumentsAreMultiTenantedWithPartitioning(configure)` uses `(tenant_id, id)` primary keys <Badge type="warning" text="schema change" />
+
+The overload of `Policies.AllDocumentsAreMultiTenantedWithPartitioning()` that takes only the partitioning lambda now
+uses `PrimaryKeyTenancyOrdering.TenantId_Then_Id`, the same primary key as the per-document
+`MultiTenantedWithPartitioning()`. In 9.x it used `Id_Then_TenantId`, so the next migration rewrites the primary key of
+every table this policy partitions. To keep the old primary key, pass it:
+
+```cs
+opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(
+    x => x.ByExternallyManagedListPartitions(),
+    PrimaryKeyTenancyOrdering.Id_Then_TenantId);
+### Declaring the same computed index twice throws <Badge type="warning" text="behavior change" />
+
+Two `Index()` calls on one document type that resolve to the same index name, for example the same member twice,
+or the same member again with `Casing = Lower`, now throw an `InvalidOperationException` while the document is
+configured. The message names the document type, the member and the index. In 9.x both were accepted and the
+failure came much later, when a migration was computed against an existing table, as an
+`ArgumentException: An item with the same key has already been added` that named only the index
+([#6019](https://github.com/JasperFx/marten/issues/6019)).
+
+Declare the index once. If you really want a second index over the same member, give it its own name:
+
+```cs
+opts.Schema.For<Order>().Index(x => x.CustomerEmail);
+opts.Schema.For<Order>().Index(x => x.CustomerEmail, x =>
+{
+    x.Casing = ComputedIndex.Casings.Lower;
+    x.Name = "idx_order_customer_email_lower";
+});
+```
+
+### Stream compaction waits for async projections and subscriptions <Badge type="warning" text="behavior change" />
+
+`CompactStreamAsync()` now throws an `InvalidOperationException` while an asynchronous projection or subscription has
+not processed the events it would delete, including one that has never run. Nothing is compacted; compact again once
+they caught up. A single stream projection of the compacted type is not checked, since it reads the `Compacted<T>`
+snapshot. In 9.x those events were deleted anyway, and a multi-stream projection or a subscription that was behind
+never saw them ([#6050](https://github.com/JasperFx/marten/issues/6050), [compacting](/events/compacting)).
 
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
@@ -159,6 +547,14 @@ migration.
 | [`EnableExtendedProgressionTracking`](#enableextendedprogressiontracking-is-on-by-default) is on | `opts.RestoreV9Defaults()`, or `opts.Events.EnableExtendedProgressionTracking = false` |
 | [DCB conflicts scoped by event type](#dcb-conflicts-are-scoped-by-event-type-by-default-) (`DcbConflictScope.TagValueAndEventType`) | `opts.RestoreV9Defaults()`, or `opts.Events.DcbConflictScope = DcbConflictScope.TagValue` |
 | [Side-effect gate](/events/projections/rebuilding#suppressing-side-effects-during-the-blue-green-warm-up) (`GateSideEffectsBehindPriorVersion`, jasperfx#1075) is on | `opts.RestoreV9Defaults()`, or `GateSideEffectsBehindPriorVersion = false` on the projection |
+| [**Side effects run on inline projections**](#side-effects-run-on-inline-projections) (`EnableSideEffectsOnInlineProjections`) | `opts.RestoreV9Defaults()`, or `opts.Events.EnableSideEffectsOnInlineProjections = false` |
+| [Archived-stream partitioning and strict stream identity](#archived-stream-partitioning-is-on-by-default) are on (`UseArchivedStreamPartitioning`, `EnableStrictStreamIdentityEnforcement`); schema change | `opts.RestoreV9Defaults()`, or set both to `false` on `opts.Events` |
+| [Document metadata columns](#document-metadata-is-on-by-default) `correlation_id`, `causation_id`, `headers`, `last_modified_by` are on; schema change | `opts.RestoreV9Defaults()`, or `opts.Policies.ForAllDocuments(x => x.Metadata.CausationId.Enabled = false)` and the same for the other three |
+| [Computed indexes on conjoined documents start with `tenant_id`](#conjoined-indexes-start-with-tenant-id) (`StartIndexesByTenantId`); schema change | `opts.RestoreV9Defaults()`, or `opts.Policies.ForAllDocuments(x => x.StartIndexesByTenantId = false)` |
+| [All event metadata](#all-event-metadata-is-on-by-default) (causation id, correlation id, headers, user name) is on | `opts.RestoreV9Defaults()`, or set the `opts.Events.MetadataConfig.*Enabled` flags to `false` |
+| [Skipped events are filtered](#event-skipping-is-on-by-default) (`EnableEventSkippingInProjectionsOrSubscriptions`) | `opts.RestoreV9Defaults()`, or `opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = false` |
+| [Event counters and `FetchForWriting` metrics](#metrics-are-on-by-default) are exported | `opts.RestoreV9Defaults()`, or `opts.OpenTelemetry.EnableEventCounters = false` and `opts.OpenTelemetry.EnableFetchForWritingMetrics = false` |
+| [System.Text.Json `AllowOutOfOrderMetadataProperties`](#allow-out-of-order-metadata-properties) is on | `opts.RestoreV9Defaults()`, or `o.AllowOutOfOrderMetadataProperties = false` in the `configure` callback of `UseSystemTextJsonForSerialization()` |
 | [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created-) | none; schema change, see below |
 
 `opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0
@@ -188,6 +584,22 @@ when skipping is enabled, and metadata is only written and selected when its fla
 
 Deliberately still conditional, because they are expensive or change the table's shape: tenant partitioning of
 `mt_events`, table fillfactor, and the DCB `hstore` tags column and its GIN index.
+
+### `MetadataConfig.EnableAll()` also enables the user name {#metadataconfig-enableall-also-enables-the-user-name} <Badge type="warning" text="behavior change" />
+
+`opts.Events.MetadataConfig.EnableAll()` now turns on `UserNameEnabled` along with the causation id, correlation id
+and headers ([#6012](https://github.com/JasperFx/marten/pull/6012)). In 9.x it left the user name off, despite
+documenting itself as enabling all optional metadata. A store that calls `EnableAll()` now writes the session's
+`LastModifiedBy` to `mt_events.user_name` on every appended event, and reads it back as `IEvent.UserName`.
+
+There's no schema change: the `user_name` column is always created in 10.0 (see above). Events are never
+rewritten, so if your `LastModifiedBy` holds a person's name or login and you have data-retention rules, decide
+before upgrading whether you want it stored. To keep the 9.x behavior, turn it off after `EnableAll()`:
+
+```cs
+opts.Events.MetadataConfig.EnableAll();
+opts.Events.MetadataConfig.UserNameEnabled = false;
+```
 
 ### `StreamLockedException` now lives in `JasperFx.Events` and derives from `ConcurrencyException`
 
@@ -224,6 +636,22 @@ on all three stores:
   `UseMandatoryStreamTypeDeclaration`. Match on the type and its members, not on the message.
 - Source that names the old types needs `using JasperFx.Events;` (or `using JasperFx;` for `BadLinqExpressionException`),
   and assemblies compiled against Marten 9 must be recompiled.
+
+### A failed save reports the failing operation's exception <Badge type="warning" text="behavior change" />
+
+When one statement of a `SaveChangesAsync()` batch fails, the exception is now translated by the operation that
+queued that statement ([#5914](https://github.com/JasperFx/marten/issues/5914)). Before, a neighboring operation
+could claim it. Most visibly, under the default `QuickWithServerTimestamps` append mode, a `FetchForWriting()`
+append that lost its version check in the same save as a `StartStream()` threw `ExistingStreamIdCollisionException`
+for the new stream. It now throws `EventStreamUnexpectedMaxEventIdException` (a `ConcurrencyException`) for the
+fetched stream, so retry policies on `ConcurrencyException` see it. A genuine duplicate `StartStream()` is still an
+`ExistingStreamIdCollisionException`, now naming the duplicate stream rather than another stream started in the
+same save. Under the `Quick` append modes, the version conflict's message now reports the stream's actual version
+instead of `-1`.
+
+Sessions with a sticky connection, an external transaction or an ambient `TransactionScope` now also offer a
+failure to the failing operation before the transforms in `AdvancedOptions.ExceptionTransforms`, which is the order
+the other sessions already used.
 
 ### `EnableExtendedProgressionTracking` is on by default
 
@@ -270,6 +698,178 @@ To keep the Marten 9 behavior:
 ```cs
 opts.Events.DcbConflictScope = DcbConflictScope.TagValue;
 ```
+
+### Side effects run on inline projections {#side-effects-run-on-inline-projections} <Badge type="danger" text="behavior change" />
+
+::: danger Inline projections now run their side effects
+**`opts.Events.EnableSideEffectsOnInlineProjections` now defaults to `true`. If any of your aggregation projections
+override `RaiseSideEffects()` and run `Inline`, that code now runs on every `SaveChangesAsync()` that touches the
+projection, inside the same unit of work. Messages it publishes and documents or events it stores go out where they
+did not before.** In Marten 9 those side effects only ran in the async daemon.
+:::
+
+Check every `SingleStreamProjection` and `MultiStreamProjection` with a `RaiseSideEffects()` override that is
+registered with `ProjectionLifecycle.Inline`. Projections running `Async` are unchanged. See
+[Side Effects in Inline Projections](/events/projections/side-effects#side-effects-in-inline-projections). To keep the
+9.x behavior:
+
+```cs
+opts.Events.EnableSideEffectsOnInlineProjections = false;
+```
+
+### Archived-stream partitioning is on by default {#archived-stream-partitioning-is-on-by-default} <Badge type="warning" text="schema change" />
+
+`opts.Events.UseArchivedStreamPartitioning` and `opts.Events.EnableStrictStreamIdentityEnforcement` now default to
+`true` ([Hot/Cold Storage Partitioning](/events/archiving#hot-cold-storage-partitioning)). `mt_events`, `mt_streams` and
+the other event tables are list-partitioned by `is_archived`, so archiving a stream moves its rows to the archived
+partitions, and a new `mt_streams_identity` table keeps a stream id from being reused after its stream is archived.
+
+::: warning The first schema migration rebuilds mt_events and mt_streams
+On an existing event store, the first schema apply after upgrading turns `mt_events` and `mt_streams` into partitioned
+tables. PostgreSQL cannot partition a table in place, so the migration copies each table to a temporary one, drops it,
+creates the partitioned table and copies the rows back. That takes time and locks proportional to the size of your
+event store. Generate the migration script and run it in a maintenance window, or keep the 9.x shape by turning the
+setting off (below) and decide later.
+:::
+
+The same migration also releases `mt_events_sequence` from its `OWNED BY mt_events.seq_id` link
+(`ALTER SEQUENCE ... OWNED BY NONE`), so rebuilding `mt_events` can no longer drop the sequence along with it. Marten
+10 creates the sequence without an owner.
+
+Both settings are off under [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning)
+(`UseTenantPartitionedEvents`), which partitions the same tables by tenant. Marten 9 refused that combination at
+startup; Marten 10 only refuses it when you set `UseArchivedStreamPartitioning = true` yourself.
+
+Strict stream identity adds one small insert per new stream. The migration that creates `mt_streams_identity` fills it
+from `mt_streams`, archived streams included, so streams that existed before the upgrade are covered too
+([#6051](https://github.com/JasperFx/marten/issues/6051)). To keep the 9.x behavior:
+
+```cs
+opts.Events.UseArchivedStreamPartitioning = false;
+opts.Events.EnableStrictStreamIdentityEnforcement = false;
+```
+
+Decide this before the first schema migration under Marten 10. Taking an event store that has already been
+partitioned back to unpartitioned fails the migration for now ([weasel#871](https://github.com/JasperFx/weasel/issues/871)).
+
+### Document metadata is on by default {#document-metadata-is-on-by-default} <Badge type="warning" text="schema change" />
+
+Every document type now has the `correlation_id`, `causation_id`, `headers` and `last_modified_by` metadata columns, and
+every write stores the session's `CorrelationId`, `CausationId`, headers and `LastModifiedBy` in them
+([Marten Metadata](/documents/metadata)). In Marten 9 each column was opt in per document type.
+
+The first schema apply after upgrading adds the four nullable columns to every document table and replaces the upsert
+functions. Adding a nullable column is a metadata-only change in PostgreSQL. A document type that maps these columns to
+its own members, through `ITracked` or `Metadata(...)`, is unaffected.
+
+`last_modified_by` holds whatever `IDocumentSession.LastModifiedBy` is set to. If that is a person's name or login and
+you have data-retention rules, decide before upgrading whether you want it stored. To keep the 9.x behavior for all
+documents, call `opts.RestoreV9Defaults()`, or turn the columns off with a policy:
+
+```cs
+opts.Policies.ForAllDocuments(x =>
+{
+    x.Metadata.CausationId.Enabled = false;
+    x.Metadata.CorrelationId.Enabled = false;
+    x.Metadata.Headers.Enabled = false;
+    x.Metadata.LastModifiedBy.Enabled = false;
+});
+```
+
+`RestoreV9Defaults()` decides this when each document mapping is built, so a policy, attribute or
+`Schema.For<T>().Metadata(...)` that turns one of the columns back on still does, wherever it is in your configuration.
+
+### Computed indexes on conjoined documents start with `tenant_id` {#conjoined-indexes-start-with-tenant-id} <Badge type="warning" text="schema change" />
+
+`StartIndexesByTenantId` now defaults to `true` for conjoined (multi-tenanted) documents
+([details](/documents/multi-tenancy#make-all-documents-start-their-index-by-tenant-id)). Every computed index on such a
+document leads with `tenant_id`, so a query in one tenant's session reads only that tenant's index entries. Single
+tenanted documents are unchanged.
+
+- A unique index scoped `TenancyScope.PerTenant` now leads with `tenant_id` instead of ending with it.
+- A unique index scoped `TenancyScope.Global` (the default for `UniqueIndex()` and `[UniqueIndex]`) does **not** get
+  `tenant_id`, so it stays unique across tenants. This also applies when you set `StartIndexesByTenantId` yourself;
+  in Marten 9 that setting quietly turned a global unique index into a per-tenant one, and the first migration now
+  puts it back to global, which fails if two tenants already share a value.
+
+The first schema apply after upgrading drops and recreates every computed index on a conjoined document. Building an
+index on a large table takes time and blocks writes to it, so generate the migration script and run it in a maintenance
+window if that matters to you. To keep the 9.x indexes:
+
+```cs
+opts.Policies.ForAllDocuments(x => x.StartIndexesByTenantId = false);
+```
+
+### All event metadata is on by default {#all-event-metadata-is-on-by-default}
+
+`opts.Events.MetadataConfig` now has `CausationIdEnabled`, `CorrelationIdEnabled`, `HeadersEnabled` and
+`UserNameEnabled` all `true` ([Event Metadata](/events/metadata)). Every appended event stores the session's
+causation id, correlation id, headers and `LastModifiedBy`, and `IEvent` reads them back. There's no schema change: the
+columns are always created in 10.0 (see above). As with [`EnableAll()`](#metadataconfig-enableall-also-enables-the-user-name),
+events are never rewritten, so decide whether you want a user name in `mt_events` before upgrading. To keep the 9.x
+behavior:
+
+```cs
+opts.Events.MetadataConfig.CausationIdEnabled = false;
+opts.Events.MetadataConfig.CorrelationIdEnabled = false;
+opts.Events.MetadataConfig.HeadersEnabled = false;
+opts.Events.MetadataConfig.UserNameEnabled = false;
+```
+
+### Skipped events are filtered by default {#event-skipping-is-on-by-default}
+
+`opts.Events.EnableEventSkippingInProjectionsOrSubscriptions` now defaults to `true`. Events marked as skipped are left
+out of projections, subscriptions, `AggregateStreamAsync()`, `FetchLatest()` and `FetchForWriting()`
+([Marking Events as Skipped](/events/skipping)). Nothing is skipped until you mark an event, so the visible change is
+the `is_skipped = FALSE` filter on those event reads. No schema change: the column is always created in 10.0. To keep
+the 9.x behavior:
+
+```cs
+opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = false;
+```
+
+### Event counters and `FetchForWriting` metrics are on by default {#metrics-are-on-by-default}
+
+`opts.OpenTelemetry.EnableEventCounters` (the `marten.event.append` counter) and
+`opts.OpenTelemetry.EnableFetchForWritingMetrics` (the `marten.fetch_for_writing.events_replayed` histogram) are new
+and default to `true` ([Open Telemetry](/otel)). Both are cheap when nothing listens to the "Marten" meter.
+`TrackEventCounters()` and `TrackFetchForWritingMetrics()` still compile and now just set these to `true`. To keep the
+9.x behavior:
+
+```cs
+opts.OpenTelemetry.EnableEventCounters = false;
+opts.OpenTelemetry.EnableFetchForWritingMetrics = false;
+```
+
+### System.Text.Json allows out-of-order metadata properties {#allow-out-of-order-metadata-properties}
+
+Marten's System.Text.Json serializer now sets `AllowOutOfOrderMetadataProperties = true`. `jsonb` does not keep
+property order, so a polymorphic type (`[JsonDerivedType]`) could fail to read when `$type` was not stored first
+([details](/configuration/json)). It only affects types that carry `$type`, `$id` or `$ref` metadata. To keep the 9.x
+behavior:
+
+```cs
+opts.UseSystemTextJsonForSerialization(configure: o => o.AllowOutOfOrderMetadataProperties = false);
+```
+
+## Key Changes in 9.61.0
+
+### Sharded tenancy never reassigns a tenant that already has a shard <Badge type="warning" text="behavior change" />
+
+With `MultiTenantedWithShardedDatabases`, a store that had not loaded the database pool (no `AddDatabase()`, no
+`BuildDatabases()`) could resolve a tenant that was already assigned to a shard by running the assignment strategy
+again and overwriting the assignment. The tenant moved to another shard while its data stayed on the old one, and
+nothing reported it ([#5995](https://github.com/JasperFx/marten/issues/5995)). Two processes racing to assign the
+same new tenant could end up on different shards the same way.
+
+An existing assignment is now final. When the assigned shard isn't cached, Marten loads that one shard from the pool
+table, and your assignment strategy only runs for a tenant with no assignment at all. If the pool no longer contains
+the assigned shard, Marten throws the new `Marten.Exceptions.AssignedShardNotFoundException`. It names the tenant and
+the shard (`TenantId`, `DatabaseId`), and the tenant is not reassigned. To fix it, register the shard in the pool
+again or assign the tenant explicitly. The assignment table's foreign key to the pool normally prevents this, so
+you'll only see it if a pool row was removed some other way.
+
+No schema change is involved.
 
 ## Key Changes in 9.60.0
 
@@ -498,11 +1098,22 @@ Marten 10 follows the same rule: every changed default can be put back with one 
 | --- | --- | --- |
 | `Events.EnableExtendedProgressionTracking` | `false` | [Async Projection Daemon](events/projections/async-daemon.md) |
 | `Events.DcbConflictScope` | `TagValue` | [Dynamic Consistency Boundaries](events/dcb.md#scoping-conflicts-by-event-type) |
-
 | `GateSideEffectsBehindPriorVersion` on every registered projection | `false` | [Rebuilding](events/projections/rebuilding.md) |
+| `Events.EnableSideEffectsOnInlineProjections` | `false` | [Side Effects](events/projections/side-effects.md#side-effects-in-inline-projections) |
+| `Events.UseArchivedStreamPartitioning` and `Events.EnableStrictStreamIdentityEnforcement` | `false` | [Archiving](events/archiving.md#hot-cold-storage-partitioning) |
+| Document metadata `CausationId`, `CorrelationId`, `Headers` and `LastModifiedBy` | off | [Marten Metadata](documents/metadata.md) |
+| `StartIndexesByTenantId` on conjoined documents | `false` | [Multi-Tenancy](documents/multi-tenancy.md#make-all-documents-start-their-index-by-tenant-id) |
+| `Events.MetadataConfig` causation id, correlation id, headers and user name | `false` | [Event Metadata](events/metadata.md) |
+| `Events.EnableEventSkippingInProjectionsOrSubscriptions` | `false` | [Marking Events as Skipped](events/skipping.md) |
+| `OpenTelemetry.EnableEventCounters` and `OpenTelemetry.EnableFetchForWritingMetrics` | `false` | [Open Telemetry](otel.md) |
+| System.Text.Json `AllowOutOfOrderMetadataProperties` | `false` | [JSON Serialization](configuration/json.md) |
 
 The side-effect gate is a per-projection setting in JasperFx, so `RestoreV9Defaults()` turns it off for every
-projection registered when the store is built, overriding a projection's own value. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
+projection registered when the store is built, overriding a projection's own value. The document metadata and
+`StartIndexesByTenantId` defaults are decided when each document mapping is built, so a policy, attribute or
+`Schema.For<T>()` setting wins wherever it is. The serializer setting is applied to the serializer Marten builds and to
+one you pass in, whichever comes first, and a `configure` callback given to `UseSystemTextJsonForSerialization()` still
+wins. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
 
 ### Breaking changes {#breaking-changes-in-9-0-0}
 
@@ -723,7 +1334,7 @@ A non-public handler does not cause an error. It is skipped without warning.
 | `private void Apply(SomeEvent e)` | Called | Skipped |
 | `internal bool ShouldDelete(SomeEvent e)` | Called | Skipped |
 | `private SomeAggregate(SomeEvent e)` | Called as `Create` | Skipped |
-| `private SomeAggregate()` | Called | The object is created without running a constructor, so field initializers do not run |
+| `private SomeAggregate()` | Called | Called, with its field initializers, from JasperFx 3.3.0 on (see below) |
 
 ```csharp
 // Marten 8
@@ -742,6 +1353,19 @@ public sealed class Invoice : AggregateBase
     public void Apply(LineItemAdded e)  { /* ... */ }
 }
 ```
+
+A non-public parameterless constructor is the exception to the rule above. The generated dispatcher
+calls a `private`, `protected` or `internal` parameterless constructor through a generated
+`[UnsafeAccessor]`, so the constructor body and every field and property initializer run, as in Marten 8
+([jasperfx#1188](https://github.com/JasperFx/jasperfx/issues/1188), JasperFx 3.3.0). Marten 9 and the
+10.0 alphas created such an aggregate without running any constructor; see
+[Private aggregate constructors run again](#private-aggregate-constructors-run-again) for what that
+changes if you are coming from them. Three shapes are still created without running a constructor, so
+their initializers do not run and `Apply` must not depend on them:
+
+- a type with **no** parameterless constructor at all, such as a record with a primary constructor;
+- a generic aggregate type;
+- an aggregate type nested inside a `private` or `protected` type.
 
 This covers `Apply`, `Create` and `ShouldDelete` on self-aggregating types and on
 `SingleStreamProjection` and `MultiStreamProjection` subclasses, `Project` and `ProjectAsync` on
@@ -778,8 +1402,8 @@ these yourself:
 A composite projection now reports one shard name, `<projection-name>/all/v<version>` (for example
 `trips/all/v2`), instead of one per member projection
 ([#4440](https://github.com/JasperFx/marten/issues/4440)). Its members run in sequence against shared
-state, so the whole composite has to run on one node; separate shard names let HotCold distribution
-split it across nodes.
+state, so the whole composite has to run on one node; separate shard names let its members be
+assigned to different nodes.
 
 Code that builds agents or tasks from `ShardNames`, such as Wolverine's `EventSubscriptionAgentFamily`,
 now sees one entry per composite, and tests that expected one shard per member should expect `1`. To
@@ -1104,7 +1728,7 @@ services.CritterStackDefaults(x =>
     x.Production.ResourceAutoCreate = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L55-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L56-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note the usage of `CritterStackDefaults()` above. This will allow you to specify separate behavior for `Development` time vs

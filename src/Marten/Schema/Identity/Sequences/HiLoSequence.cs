@@ -29,9 +29,10 @@ namespace Marten.Schema.Identity.Sequences;
 ///     <b>Block prefetching (#5862).</b> Every time a block (a "hi") is installed, this sequence
 ///     immediately starts reserving the following one in the background with an asynchronous
 ///     <c>mt_get_next_hi</c> call. When <c>Store()</c> exhausts the current block, the prefetched
-///     block is swapped in with no database round trip. Only if the prefetch has not completed yet
-///     (or it failed) does the sequence fall back to the old synchronous fetch, so ids are still
-///     assigned the moment a document is stored.
+///     block is swapped in with no database round trip. If there is no prefetch, it failed, or it has
+///     not landed yet, the sequence falls back to the old synchronous fetch straight away, so ids are
+///     still assigned the moment a document is stored. The synchronous path never waits on the
+///     prefetch (#5969).
 ///     </para>
 ///     <para>
 ///     At most one prefetch is in flight per sequence. A prefetch never faults: a failure is
@@ -41,8 +42,8 @@ namespace Marten.Schema.Identity.Sequences;
 ///     Consequences: a process reserves up to one block more than it uses, so ids are lost (gaps)
 ///     when it shuts down holding an unused prefetched block. Ids issued by one sequence instance are
 ///     unique and increasing, but are not guaranteed to be contiguous across a block boundary: when
-///     the synchronous fallback overtakes a prefetch that is still in flight, the block the prefetch
-///     reserved is discarded rather than handed out out of order.
+///     a synchronous fallback overtakes a prefetch still in flight, the block the prefetch reserved is
+///     discarded rather than handed out out of order.
 ///     </para>
 /// </remarks>
 public class HiloSequence: HiloSequenceBase
@@ -108,6 +109,20 @@ public class HiloSequence: HiloSequenceBase
         }
     }
 
+    /// <summary>
+    ///     Move the database's hilo row so that ids above <paramref name="floor" /> are issued from now on,
+    ///     and install a block reserved above it.
+    /// </summary>
+    /// <remarks>
+    ///     Once this returns, no id at or below the floor is issued, even by a <c>NextLong()</c> or
+    ///     <c>NextLongAsync()</c> that was part way through an advance when the floor moved and comes back
+    ///     with a block reserved under the old floor. This does not take the base class's advance locks, so it
+    ///     relies on two rules. A prefetch reserved before the row was updated is discarded rather than
+    ///     installed. And an advance's block that lands after another install, here the block installed by
+    ///     this method, and is not above it is dropped as a gap (weasel#840). The block this method reserves
+    ///     above the floor follows the same rule (weasel#849, #6058): when an advance reserved a higher block
+    ///     after the row moved and installed it first, the floor's block is dropped, so ids never step back.
+    /// </remarks>
     public override async Task SetFloor(long floor)
     {
         var numberOfPages = (long)Math.Ceiling((double)floor / MaxLo);
@@ -128,11 +143,16 @@ public class HiloSequence: HiloSequenceBase
             .With("name", EntityName)
             .ExecuteNonQueryAsync().ConfigureAwait(false);
 
+        // #6058 (weasel#849): counted once the row has moved. A block installed from here on, before the floor's
+        // own, was reserved above the floor as well, and when it is also above the floor's block, the floor's
+        // block is dropped as a gap instead of handing out ids behind it.
+        var installsBefore = InstallCount;
+
         // Anything prefetched while the floor was moving may have been reserved under the old floor
         discardPrefetch();
 
         // And again to get it where we need it to be
-        installHi(await FetchNextHiAsync(CancellationToken.None).ConfigureAwait(false));
+        TrySetCurrentHi(await FetchNextHiAsync(CancellationToken.None).ConfigureAwait(false), installsBefore);
         startPrefetch();
     }
 
@@ -165,10 +185,24 @@ public class HiloSequence: HiloSequenceBase
     }
 
     /// <summary>
-    ///     Install the next block on the synchronous id path (<c>Store()</c>). Uses the prefetched
-    ///     block when it has already arrived; otherwise falls back to a blocking fetch, leaving any
-    ///     prefetch still in flight in place for the block after this one.
+    ///     Install the next block on the synchronous id path (<c>Store()</c>). Uses the prefetched block
+    ///     when it has already arrived. Otherwise, whether the prefetch is still in flight, failed, or was
+    ///     never started, fetches a block of its own with a blocking round trip, straight away.
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///     #5969: this never waits on the prefetch. A thread blocked in <c>Store()</c> is usually a
+    ///     thread-pool thread, and the prefetch is asynchronous work that needs a thread-pool thread to
+    ///     finish, so waiting for it (as #5938 briefly did, for up to five seconds) is exactly how a burst of
+    ///     synchronous writers starves the pool. The blocking fetch needs no other thread.
+    ///     </para>
+    ///     <para>
+    ///     Racing the prefetch for the <c>mt_hilo</c> row is safe since #5938 made <c>mt_get_next_hi</c> a
+    ///     single atomic increment: both callers get a block, neither gets -1. If the prefetch turns out to
+    ///     have reserved the lower block, it is discarded when it is next looked at rather than issued behind
+    ///     a later one, which costs a gap in the ids and never a duplicate.
+    ///     </para>
+    /// </remarks>
     protected override void AdvanceToNextHiSync()
     {
         if (!tryInstallPrefetchedBlock())
@@ -337,8 +371,9 @@ public class HiloSequence: HiloSequenceBase
 
     private NpgsqlCommand GetNexFunctionCommand(NpgsqlConnection conn)
     {
-        // Sproc is expected to return -1 if it's unable to
-        // atomically secure the next hi
+        // The function returns -1 when it could not secure the next hi. Since #5938 it is a single
+        // atomic increment that never does, but a database that has not had that version applied yet
+        // still carries the old compare-and-set, so the retry loops above stay
         return conn.CallFunction(GetNextFunction, "entity")
             .With("entity", EntityName)
             .Returns("next", NpgsqlDbType.Bigint);

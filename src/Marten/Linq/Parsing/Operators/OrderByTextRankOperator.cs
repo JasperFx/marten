@@ -48,15 +48,9 @@ internal class OrderByTextRankOperator: LinqOperator
             IsTransformed = true
         };
 
-        // OrderBy replaces any ordering ahead of it; ThenBy appends after one.
-        if (_then)
-        {
-            usage.OrderingExpressions.Add(ordering);
-        }
-        else
-        {
-            usage.OrderingExpressions.Insert(0, ordering);
-        }
+        // #5959: OrderByTextRank() starts an ordering and ThenByTextRank() extends one, like OrderBy()/ThenBy().
+        // ThenByTextRank() used to append at the very end, behind the keys of any ThenBy() written after it.
+        usage.AddOrdering(ordering, startsTheOrdering: !_then);
     }
 }
 

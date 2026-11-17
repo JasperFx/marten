@@ -48,6 +48,7 @@
         "TakeLocalUpstream",
         "Test",
         "TestAotRuntime",
+        "TestAotRuntimeJit",
         "TestAspnetcore",
         "TestBaseLib",
         "TestCompiledQueries",

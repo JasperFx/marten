@@ -77,13 +77,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                     ? "{}"
                     : serializer.ToJson(e.Data);
             },
-            serializeEventBdata: e =>
-            {
-                var mapping = graph.EventMappingFor(e.EventType);
-                return mapping?.IsBinary == true
-                    ? mapping.BinarySerializer!.Serialize(e.EventType, e.Data)
-                    : null;
-            },
+            serializeEventBdata: e => SerializeBdataToArray(graph, e),
             metadataBinders: metadataBinders)
         {
             IsTenancyConjoined = isConjoined,
@@ -99,6 +93,38 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             ConfigureUpdateStreamVersionCommand = Adapt(BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid)),
         };
     }
+
+    /// <summary>
+    /// The <c>bdata</c> payload of a binary event as an exact-length <c>byte[]</c>, or <c>null</c> for a JSON
+    /// event. This fills Weasel.Storage's <c>SerializeEventBdata</c> descriptor slot, typed
+    /// <c>Func&lt;IEvent, byte[]?&gt;</c>, which the Weasel-owned per-event operations bind as the parameter
+    /// value itself: the Rich append, and the Quick per-event insert used for side-effect replay and
+    /// tombstones.
+    /// </summary>
+    /// <remarks>
+    /// #5731 deliberately leaves this on <c>Serialize(Type, object)</c> rather than the pooled
+    /// <c>Serialize(Type, object, IBufferWriter&lt;byte&gt;)</c>: a slot that has to hand over a sized array
+    /// costs at least one array per event either way, and that is exactly what <c>Serialize(Type, object)</c>
+    /// returns, while staging it in a pooled buffer first would add a second copy for every serializer that
+    /// relies on the interface's default buffer-writer member. Pooling these needs the slot itself to change
+    /// in Weasel.Storage. The batched Quick append, the default append path, does not come through here: its
+    /// operation resolves the serializer with <see cref="BinarySerializerLookup" /> and writes into a pooled
+    /// buffer.
+    /// </remarks>
+    private static byte[]? SerializeBdataToArray(EventGraph graph, IEvent e)
+    {
+        var mapping = graph.EventMappingFor(e.EventType);
+        return mapping?.IsBinary == true
+            ? mapping.BinarySerializer!.Serialize(e.EventType, e.Data)
+            : null;
+    }
+
+    /// <summary>
+    /// #5731: the binary serializer for an event, or <c>null</c> when it is stored as JSON, for the batched
+    /// Quick append operations that write <c>bdata</c> into a pooled buffer.
+    /// </summary>
+    private static Func<IEvent, JasperFx.Events.IEventBinarySerializer?> BinarySerializerLookup(EventGraph graph)
+        => e => graph.EventMappingFor(e.EventType) is { IsBinary: true } mapping ? mapping.BinarySerializer : null;
 
     /// <summary>
     /// Builds the per-call closure that issues the <c>insert into mt_streams</c>
@@ -200,11 +226,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     }
 
     private static bool MatchesStreamCollision(Exception e)
-        => e is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-            TableName: StreamsTable.TableName or StreamIdentityEnforcementTable.TableName
-        };
+        => e is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } pg
+           && StreamsTable.IsStreamCollisionTable(pg.TableName);
 
     private static Action<ICommandBuilder, StreamAction> BuildInsertStreamCommandConfigurer(
         EventGraph graph, bool isConjoined, bool isGuid)
@@ -391,6 +414,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         var quickWithVersionSuffix = BuildAppendEventQuickWithVersionReturningSequenceSuffix(graph);
         var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns, storageDialect);
         var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns, storageDialect);
+        var binarySerializerFor = BinarySerializerLookup(graph);
 
         return new QuickEventStorageDescriptor(
             quickAppendEventsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: false),
@@ -406,13 +430,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                     ? "{}"
                     : serializer.ToJson(e.Data);
             },
-            serializeEventBdata: e =>
-            {
-                var mapping = graph.EventMappingFor(e.EventType);
-                return mapping?.IsBinary == true
-                    ? mapping.BinarySerializer!.Serialize(e.EventType, e.Data)
-                    : null;
-            })
+            serializeEventBdata: e => SerializeBdataToArray(graph, e))
         {
             IsGuidStreamIdentity = isGuid,
             Dialect = storageDialect,
@@ -440,8 +458,10 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             // The Postgres batch shape: array parameters bound to the
             // mt_quick_append_events function. Dialect-owned because the batch
             // SQL + parameter shape are inherently provider-specific.
-            CreateQuickAppendEventsOperation = static (descriptor, stream) =>
-                new QuickAppendEventsOperation(descriptor, stream),
+            // #5731: the batched op writes binary payloads into a pooled buffer, so it resolves each
+            // event's binary serializer itself instead of calling SerializeEventBdata above.
+            CreateQuickAppendEventsOperation = (descriptor, stream) =>
+                new QuickAppendEventsOperation(descriptor, stream, binarySerializerFor),
         };
     }
 
@@ -461,6 +481,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         var quickWithVersionSuffix = BuildAppendEventQuickWithVersionReturningSequenceSuffix(graph);
         var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns, storageDialect);
         var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns, storageDialect);
+        var binarySerializerFor = BinarySerializerLookup(graph);
 
         return new QuickWithServerTimestampsEventStorageDescriptor(
             quickAppendEventsWithServerTimestampsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: true),
@@ -474,13 +495,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                     ? "{}"
                     : serializer.ToJson(e.Data);
             },
-            serializeEventBdata: e =>
-            {
-                var mapping = graph.EventMappingFor(e.EventType);
-                return mapping?.IsBinary == true
-                    ? mapping.BinarySerializer!.Serialize(e.EventType, e.Data)
-                    : null;
-            })
+            serializeEventBdata: e => SerializeBdataToArray(graph, e))
         {
             IsGuidStreamIdentity = isGuid,
             Dialect = storageDialect,
@@ -505,8 +520,9 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             MetadataBinders = quickMetadataBinders,
             AppendEventFullSqlSuffix = ")",
             AppendEventFullMetadataBinders = fullMetadataBinders,
-            CreateQuickAppendEventsOperation = static (descriptor, stream) =>
-                new QuickAppendEventsWithServerTimestampsOperation(descriptor, stream),
+            // #5731: see BuildQuickDescriptor.
+            CreateQuickAppendEventsOperation = (descriptor, stream) =>
+                new QuickAppendEventsWithServerTimestampsOperation(descriptor, stream, binarySerializerFor),
         };
     }
 

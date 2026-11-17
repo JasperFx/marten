@@ -39,12 +39,8 @@ namespace Marten;
 /// <summary>
 ///     The main entry way to using Marten
 /// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2060",
     Justification = "Class-level: Expression.Call(Type, string, ...) on framework Queryable / Enumerable intrinsics that the trimmer preserves.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class DocumentStore: IDocumentStore, IDescribeMyself
 {
     private readonly IMartenLogger _logger;
@@ -596,7 +592,17 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         var connection = await options.InitializeAsync(this, CommandRunnerMode.ReadOnly, cancellation)
             .ConfigureAwait(false);
 
-        return new QuerySession(this, options, connection);
+        // #5881: the connection is open and its transaction begun, but the caller gets nothing to dispose
+        // until the session exists
+        try
+        {
+            return new QuerySession(this, options, connection);
+        }
+        catch (Exception)
+        {
+            await connection.DisposeAfterFailureAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     public Task<IQuerySession> QuerySerializableSessionAsync(CancellationToken cancellation = default)
@@ -663,15 +669,24 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         var connection = await options.InitializeAsync(this, CommandRunnerMode.Transactional, token)
             .ConfigureAwait(false);
 
-        IDocumentSession session = options.Tracking switch
+        // #5881: as above, the caller has nothing to dispose until the session exists
+        try
         {
-            DocumentTracking.None => new LightweightSession(this, options, connection),
-            DocumentTracking.IdentityOnly => new IdentityMapDocumentSession(this, options, connection),
-            DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection),
-            _ => throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking))
-        };
+            IDocumentSession session = options.Tracking switch
+            {
+                DocumentTracking.None => new LightweightSession(this, options, connection),
+                DocumentTracking.IdentityOnly => new IdentityMapDocumentSession(this, options, connection),
+                DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection),
+                _ => throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking))
+            };
 
-        return session;
+            return session;
+        }
+        catch (Exception)
+        {
+            await connection.DisposeAfterFailureAsync().ConfigureAwait(false);
+            throw;
+        }
     }
 
     private void warnIfAsyncDaemonIsDisabledWithAsyncProjections()
@@ -717,6 +732,8 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     /// Scan loaded assemblies for types marked with [NaturalKeyAggregate] by the source generator
     /// and auto-register Inline snapshot projections for any that don't already have a projection.
     /// </summary>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     private void DiscoverNaturalKeyAggregates(Assembly[] assemblies)
     {
         foreach (var assembly in assemblies)
@@ -821,6 +838,8 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         }
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     OptionsDescription IDescribeMyself.ToDescription()
     {
         return OptionsDescription.For(Options);

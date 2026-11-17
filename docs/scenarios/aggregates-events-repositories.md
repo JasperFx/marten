@@ -107,11 +107,10 @@ public sealed class Invoice: AggregateBase
         AddUncommittedEvent(@event);
     }
 
-    // Public parameterless ctor for Marten's event-store replay. Pre-9.0
-    // Marten could call a private parameterless ctor reflectively; the
-    // source-generated dispatch path in 9.0 emits direct calls instead,
-    // which require public visibility. See the 9.0 migration guide.
-    public Invoice()
+    // Parameterless ctor for Marten's event-store replay. It can be private:
+    // the generated dispatcher calls it through [UnsafeAccessor], so the
+    // constructor body and any field initializers run (JasperFx 3.3.0+).
+    private Invoice()
     {
     }
 

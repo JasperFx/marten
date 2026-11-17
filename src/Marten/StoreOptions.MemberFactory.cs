@@ -20,8 +20,6 @@ namespace Marten;
 
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class StoreOptions
 {
     internal IQueryableMember CreateQueryableMember(MemberInfo member, IQueryableMember parent)
@@ -33,6 +31,8 @@ public partial class StoreOptions
         return CreateQueryableMember(member, parent, memberType);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     internal IQueryableMember CreateQueryableMember(MemberInfo member, IQueryableMember parent, Type? memberType)
     {
         if (memberType == null)
@@ -146,10 +146,10 @@ public partial class StoreOptions
     }
 }
 
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class ValueTypeMemberSource: IMemberSource
 {
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public bool TryResolve(IQueryableMember parent, StoreOptions options, MemberInfo memberInfo, Type memberType,
         [NotNullWhen(true)]out IQueryableMember? member)
     {

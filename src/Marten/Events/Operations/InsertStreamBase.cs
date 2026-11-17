@@ -58,12 +58,8 @@ public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, 
 
     private static bool matches(Exception e)
     {
-        return e is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-            TableName: StreamsTable.TableName
-                or StreamIdentityEnforcementTable.TableName
-        };
+        return e is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } pg
+               && StreamsTable.IsStreamCollisionTable(pg.TableName);
     }
 
     public bool TryTransform(Exception original, out Exception transformed)

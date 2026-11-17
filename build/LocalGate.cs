@@ -234,14 +234,50 @@ partial class Build
                     recordTestLedger(ledger, project, framework, unit.Results, GateLedgerDirectory);
             }
 
+            // #6064: the AOT runtime smoke under the JIT. The native run stays ./build.sh test-aot-runtime.
+            var jitSmokeFailure = runsAotRuntimeSmokeUnderJit() ? aotRuntimeSmokeUnderJit() : null;
+
             if (results.ExitCode != 0)
             {
                 Assert.Fail($"LocalGate exited {results.ExitCode}: {results.Clean.Count} clean, " +
                             $"{results.Flaky.Count} passed on retry, {results.Failed.Count} failed, " +
                             $"{results.Indeterminate.Count} indeterminate, {results.NotRun.Count} not run" +
-                            (results.AbortReason is { } reason ? $" — {reason}" : ""));
+                            (results.AbortReason is { } reason ? $" — {reason}" : "") +
+                            (jitSmokeFailure is null ? "" : $"; {jitSmokeFailure}"));
             }
+
+            if (jitSmokeFailure is not null) Assert.Fail(jitSmokeFailure);
         });
+
+    const string AotRuntimeJitSuite = "AotRuntimeJit";
+
+    /// <summary>By default, and under --gate-only when it names AotRuntimeJit.</summary>
+    bool runsAotRuntimeSmokeUnderJit() =>
+        GateOnly.Length == 0 || GateOnly.Contains(AotRuntimeJitSuite, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Runs src/Marten.AotRuntimeSmoke under the JIT from the gate's Release build, on a database of its
+    /// own named like a lane's. Returns the failure, or null.
+    /// </summary>
+    string aotRuntimeSmokeUnderJit()
+    {
+        var builder = new NpgsqlConnectionStringBuilder(gateBaseConnectionString);
+        builder.Database = $"{builder.Database}_aotruntimejit_{laneTag()}";
+        ensureLaneDatabases(gateBaseConnectionString, [builder.ConnectionString]);
+
+        Log.Information("LocalGate: the AOT runtime smoke under the JIT, on {Database}", builder.Database);
+        try
+        {
+            runAotRuntimeSmokeUnderJit("Release", builder.ConnectionString, noBuild: true);
+            Log.Information("LocalGate: AOT runtime smoke under the JIT: OK");
+            return null;
+        }
+        catch (Exception e)
+        {
+            Log.Error("LocalGate: AOT runtime smoke under the JIT FAILED: {Message}", e.Message);
+            return "the AOT runtime smoke failed under the JIT (see its output above)";
+        }
+    }
 
     List<GateSuite> selectGateSuites()
     {
@@ -263,10 +299,13 @@ partial class Build
             suite.Name.Equals(name, StringComparison.OrdinalIgnoreCase) ||
             Path.GetFileNameWithoutExtension(suite.Project).Equals(name, StringComparison.OrdinalIgnoreCase);
 
-        var missing = GateOnly.Where(name => !all.Any(s => matches(s, name))).ToArray();
+        var missing = GateOnly
+            .Where(name => !all.Any(s => matches(s, name)))
+            .Where(name => !name.Equals(AotRuntimeJitSuite, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
         if (missing.Length > 0)
             throw new ArgumentException(
-                $"--gate-only {string.Join(", ", missing)}: no such suite. Known: {string.Join(", ", all.Select(s => s.Name))}.");
+                $"--gate-only {string.Join(", ", missing)}: no such suite. Known: {string.Join(", ", all.Select(s => s.Name))}, {AotRuntimeJitSuite}.");
 
         // --gate-only names a suite outright, opt-in or not.
         return all.Where(s => GateOnly.Any(name => matches(s, name))).ToList();

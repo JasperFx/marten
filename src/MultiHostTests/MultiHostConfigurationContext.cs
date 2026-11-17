@@ -19,7 +19,8 @@ namespace MultiHostTests
         protected readonly string _schemaName;
         private DocumentStore _store;
         private IDocumentSession _session;
-        protected readonly IList<IDisposable> _disposables = new List<IDisposable>();
+        // Thread-safe and null-tolerant, the same as OneOffConfigurationsContext. See #5976
+        protected readonly DisposableTracker _disposables = new();
         private readonly string ConnectionString = "Host=localhost:5440,localhost:5441;Database=marten_testing;Username=user;password=password;Command Timeout=5";
 
         public string SchemaName => _schemaName;
@@ -64,6 +65,16 @@ namespace MultiHostTests
             _store = new DocumentStore(options);
             theDataSource = host;
 
+            // #5979: a test that paused WAL replay on the standby and was killed (or timed out) before resuming
+            // it leaves replay paused, and the compose volume keeps that across runs. Resume defensively so one
+            // aborted test can't fail every later MultiHost test. pg_wal_replay_resume() is a no-op when replay
+            // is not paused.
+            using (var standby = host.CreateConnection(TargetSessionAttributes.Standby))
+            {
+                standby.Open();
+                standby.CreateCommand("select pg_wal_replay_resume()").ExecuteNonQuery();
+            }
+
             _disposables.Add(_store);
             _disposables.Add(host);
 
@@ -103,10 +114,7 @@ namespace MultiHostTests
 
         public void Dispose()
         {
-            foreach (var disposable in _disposables)
-            {
-                disposable.Dispose();
-            }
+            _disposables.DisposeAll();
         }
 
         protected Task AppendEvent(Guid streamId, params object[] events)

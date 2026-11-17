@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,6 +30,8 @@ public class PrefetchedLongDoc
 ///     time with an asynchronous round trip. The synchronous fetch is only the fallback for a block that is
 ///     needed before its prefetch has landed.
 /// </summary>
+// #5935: blocks thread-pool threads on purpose, so it must not run beside other tests
+[Collection(HiloThreadPoolCollection.Name)]
 public class hilo_prefetch_tests: OneOffConfigurationsContext
 {
     private IMartenDatabase database()
@@ -69,10 +72,10 @@ public class hilo_prefetch_tests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public async Task falls_back_to_a_synchronous_fetch_while_the_prefetch_is_still_in_flight()
+    public async Task falls_back_to_a_synchronous_fetch_when_the_prefetch_has_not_landed()
     {
         // A block size of 1 exhausts the block on every id, and the prefetch cannot reach the database
-        // until the gate opens, so every id until then has to come from the synchronous fallback
+        // until the gate opens. Every id until then has to come from the synchronous fallback
         var sequence = new GatedSequence(database(), theStore.Options, uniqueEntity(), 1, reserveBeforeGate: false);
 
         var ids = Enumerable.Range(0, 5).Select(_ => sequence.NextLong()).ToList();
@@ -96,8 +99,8 @@ public class hilo_prefetch_tests: OneOffConfigurationsContext
     [Fact]
     public async Task a_prefetch_overtaken_by_the_fallback_is_discarded_rather_than_issued_out_of_order()
     {
-        // The prefetch reserves hi 1 straight away but is held back from delivering it, so the
-        // synchronous fallback for the second id reserves hi 2
+        // The prefetch reserves hi 1 straight away but is held back from delivering it, so the synchronous
+        // fallback for the second id reserves hi 2
         var sequence = new GatedSequence(database(), theStore.Options, uniqueEntity(), 1, reserveBeforeGate: true);
 
         sequence.NextLong().ShouldBe(1);
@@ -113,6 +116,90 @@ public class hilo_prefetch_tests: OneOffConfigurationsContext
         sequence.DiscardedPrefetchCount.ShouldBe(1);
         sequence.PrefetchedBlockCount.ShouldBe(0);
         sequence.SynchronousFetchCount.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task the_synchronous_path_never_waits_on_a_prefetch_in_flight()
+    {
+        // #5969: the synchronous path used to wait up to five seconds for a prefetch still in flight (#5938).
+        // That blocked a thread-pool thread on asynchronous work that needed a thread-pool thread to finish,
+        // which is how a burst of synchronous Store() calls starved the pool. It now fetches a block of its own
+        var sequence = new GatedSequence(database(), theStore.Options, uniqueEntity(), 1, reserveBeforeGate: false);
+
+        sequence.NextLong().ShouldBe(1);
+
+        // The prefetch of the second block cannot reach the database until the gate opens
+        var stopwatch = Stopwatch.StartNew();
+        sequence.NextLong().ShouldBe(2);
+        stopwatch.Elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(1));
+
+        sequence.SynchronousFetchCount.ShouldBe(2);
+        sequence.PrefetchedBlockCount.ShouldBe(0);
+
+        sequence.OpenGate();
+        await sequence.WaitForPrefetchAsync();
+
+        // The prefetch reserved its hi after the fallback's, so it is simply the next block
+        sequence.NextLong().ShouldBe(3);
+        sequence.SynchronousFetchCount.ShouldBe(2);
+        sequence.PrefetchedBlockCount.ShouldBe(1);
+        sequence.DiscardedPrefetchCount.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task racing_a_prefetch_for_the_hilo_row_costs_the_synchronous_path_no_attempts()
+    {
+        // #5938, deterministically: the prefetch has updated the mt_hilo row but not committed yet, as a
+        // real prefetch has while its round trip is in flight. The synchronous fetch for the next block now
+        // starts at once (#5969) and blocks on the row lock. Under the old compare-and-set mt_get_next_hi it
+        // then found the value it read gone once the prefetch committed and got -1 back, and with a budget of
+        // one attempt it threw HiloSequenceAdvanceToNextHiAttemptsExceededException. The atomic increment
+        // makes it wait for the row and take the block after the prefetch's instead
+        var sequence = new RowHoldingSequence(database(), theStore.Options, uniqueEntity());
+
+        sequence.NextLong().ShouldBe(1);
+        await sequence.PrefetchHoldsTheRow;
+
+        var next = Task.Run(() => sequence.NextLong());
+
+        // Let the prefetch commit only once the synchronous fetch is waiting behind its row lock
+        var sawTheRace = false;
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (!next.IsCompleted && DateTime.UtcNow < deadline)
+        {
+            if (sequence.SynchronousFetchesStarted > 1 && await aFetchIsWaitingOnTheHiloRow())
+            {
+                sawTheRace = true;
+                break;
+            }
+
+            await Task.Delay(10);
+        }
+
+        sequence.Commit();
+
+        sawTheRace.ShouldBeTrue("the synchronous fetch never queued behind the prefetch's row lock");
+
+        // The prefetch reserved hi 1 and the synchronous fetch hi 2
+        (await next).ShouldBe(3);
+        sequence.SynchronousFetchCount.ShouldBe(2);
+        sequence.PrefetchedBlockCount.ShouldBe(0);
+
+        // hi 1 landed behind hi 2, so it is a gap rather than ids issued out of order
+        await sequence.WaitForPrefetchAsync();
+        sequence.NextLong().ShouldBe(4);
+        sequence.DiscardedPrefetchCount.ShouldBe(1);
+        sequence.PrefetchedBlockCount.ShouldBe(0);
+    }
+
+    private async Task<bool> aFetchIsWaitingOnTheHiloRow()
+    {
+        await using var conn = theStore.Tenancy.Default.Database.CreateConnection();
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "select count(*) from pg_stat_activity where datname = current_database() " +
+                          "and wait_event_type = 'Lock' and query like '%mt_get_next_hi%'";
+        return (long)(await cmd.ExecuteScalarAsync())! > 0;
     }
 
     [Fact]
@@ -341,6 +428,57 @@ public class hilo_prefetch_tests: OneOffConfigurationsContext
 
             await _gate.Task;
             return await base.FetchNextHiAsync(ct);
+        }
+    }
+
+    /// <summary>
+    ///     A real sequence with a budget of one attempt per fetch, whose prefetch calls mt_get_next_hi in
+    ///     a transaction it keeps open, holding the updated mt_hilo row, until <see cref="Commit" />.
+    /// </summary>
+    private sealed class RowHoldingSequence: HiloSequence
+    {
+        private readonly IMartenDatabase _database;
+        private readonly string _schema;
+        private readonly TaskCompletionSource _holding = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _commit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _synchronousFetchesStarted;
+
+        public RowHoldingSequence(IMartenDatabase database, StoreOptions options, string entityName)
+            : base(database, options, entityName, new HiloSettings { MaxLo = 1, MaxAdvanceToNextHiAttempts = 1 })
+        {
+            _database = database;
+            _schema = options.DatabaseSchemaName;
+        }
+
+        public Task PrefetchHoldsTheRow => _holding.Task;
+
+        public int SynchronousFetchesStarted => Volatile.Read(ref _synchronousFetchesStarted);
+
+        public void Commit() => _commit.TrySetResult();
+
+        internal override long FetchNextHiSync()
+        {
+            Interlocked.Increment(ref _synchronousFetchesStarted);
+            return base.FetchNextHiSync();
+        }
+
+        internal override async Task<long> FetchNextHiAsync(CancellationToken ct)
+        {
+            await using var conn = _database.CreateConnection();
+            await conn.OpenAsync(ct);
+            await using var tx = await conn.BeginTransactionAsync(ct);
+
+            await using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = $"select {_schema}.mt_get_next_hi(@entity)";
+            cmd.Parameters.AddWithValue("entity", EntityName);
+            var hi = Convert.ToInt64(await cmd.ExecuteScalarAsync(ct));
+
+            _holding.TrySetResult();
+            await _commit.Task;
+
+            await tx.CommitAsync(ct);
+            return hi;
         }
     }
 

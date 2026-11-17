@@ -195,7 +195,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         using var query = documentStore.LightweightSession();
         var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(1, cmd.Command.CommandTimeout);
-        Assert.Equal(1, query.Connection?.CommandTimeout);
+        Assert.Equal(1, (await query.GetConnectionAsync()).CommandTimeout);
     }
 
     [Fact]
@@ -217,7 +217,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         using var query = documentStore.QuerySession(options);
         var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(60, cmd.Command.CommandTimeout);
-        Assert.Equal(1, query.Connection?.CommandTimeout);
+        Assert.Equal(1, (await query.GetConnectionAsync()).CommandTimeout);
     }
 
     [Fact]
@@ -280,22 +280,6 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         options.Initialize(store, CommandRunnerMode.Transactional, new OpenTelemetryOptions(){ TrackConnections = TrackLevel.None })
             .ShouldBeOfType<AutoClosingLifetime>()
             .CommandTimeout.ShouldBe(7);
-    }
-
-    [Fact]
-    public void build_connection_with_sticky_connections_enabled()
-    {
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.UseStickyConnectionLifetimes = true;
-        });
-
-        var options = new SessionOptions{Timeout = 2};
-        options.Initialize(store, CommandRunnerMode.Transactional, new OpenTelemetryOptions(){ TrackConnections = TrackLevel.None })
-            .ShouldBeOfType<TransactionalConnection>()
-            .CommandTimeout.ShouldBe(2)
-            ;
     }
 
     [Fact]

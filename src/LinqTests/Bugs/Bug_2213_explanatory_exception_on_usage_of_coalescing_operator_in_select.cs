@@ -19,7 +19,8 @@ public class Bug_2213_explanatory_exception_on_usage_of_coalescing_operator_in_s
                 .OrderBy(x => (x.First ?? x.Second).Name).ToListAsync();
         });
 
-        ex.Message.ShouldBe("Invalid OrderBy() expression: 'x => (x.First ?? x.Second).Name'");
+        // #5957: a computed key is translated or refused with the reason; a coalesce has no translation
+        ex.Message.ShouldStartWith("Marten cannot translate the OrderBy() key '(x.First ?? x.Second).Name'");
 
 
     }

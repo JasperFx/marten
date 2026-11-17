@@ -29,10 +29,6 @@ namespace Marten.Internal.ClosedShape;
 ///     mapping is retained (#4828). Also carries the LINQ member model and metadata columns the
 ///     Marten storages expose through <see cref="ILinqDocumentStorage" />.
 /// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (LambdaBuilder / FastExpressionCompiler, ValueTypeIdGeneration wrappers). Document types flow in from StoreOptions / Schema.For<T>() and are preserved per the AOT publishing guide.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses FastExpressionCompiler / MakeGenericType for the id and version accessors. AOT consumers supply pre-generated artifacts per the AOT publishing guide.")]
 internal sealed class MartenClosedShapeStorageRules<TDoc, TId>: IClosedShapeStorageRules<TDoc, TId>
     where TDoc : notnull
     where TId : notnull
@@ -53,6 +49,8 @@ internal sealed class MartenClosedShapeStorageRules<TDoc, TId>: IClosedShapeStor
     private readonly Func<TDoc, Guid>? _mappedVersionGetter;
     private readonly Func<TDoc, long>? _mappedRevisionGetter;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (LambdaBuilder / FastExpressionCompiler, ValueTypeIdGeneration wrappers). Document types flow in from StoreOptions / Schema.For<T>() and are preserved per the AOT publishing guide.")]
     public MartenClosedShapeStorageRules(DocumentMapping document)
     {
         TableName = document.TableName;

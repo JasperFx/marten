@@ -175,6 +175,12 @@ public class blue_green_side_effect_gate : IAsyncLifetime
                {
                    opts.Projections.Add(new GateTripProjection { Version = 2 }, ProjectionLifecycle.Async);
                    opts.Events.MessageOutbox = blueOutbox;
+
+                   // Both versions share mt_events, so they must agree on its shape. RestoreV9Defaults() on the
+                   // green side turns archived-stream partitioning off (on by default since 10.0, #5812), and
+                   // Weasel cannot yet take a partitioned mt_events back to unpartitioned in place (weasel#871).
+                   opts.Events.UseArchivedStreamPartitioning = false;
+                   opts.Events.EnableStrictStreamIdentityEnforcement = false;
                }))
         {
             await AppendSingleEventStreams(blue, N);

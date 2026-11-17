@@ -41,7 +41,7 @@ namespace Marten.Events;
 [UnconditionalSuppressMessage("Trimming", "IL2060",
     Justification = "Class-level: Expression.Call(Type, string, ...) on framework Queryable / Enumerable intrinsics that the trimmer preserves.")]
 [UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide. Kept on the type (#5731): ILC reports the tag-type registration in the static constructor and on the explicit IEventStoreOptions.RegisterTagType<TTag> implementation, neither of which a member-level suppression reaches.")]
 public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEventStoreOptions,
     IDisposable, IAsyncDisposable,
     IAggregationSourceFactory<IQuerySession>, IDescribeMyself
@@ -299,7 +299,11 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool UseAdvisoryLockTransaction { get; set; }
 
     public bool EnableAdvancedAsyncTracking { get; set; }
-    public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
+    /// <summary>
+    /// Events marked as skipped (<c>mt_events.is_skipped</c>) are left out of projections and subscriptions.
+    /// Defaults to <c>true</c> since 10.0 (#5812). The column is always created either way.
+    /// </summary>
+    public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; } = true;
 
     /// <summary>
     /// When enabled, the daemon writes heartbeat, agent_status, pause_reason, running_on_node and the
@@ -330,7 +334,19 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public Action<IReadOnlyList<IEvent>>? AppendObserver { get; set; }
 
 
-    public bool UseArchivedStreamPartitioning { get; set; }
+    private bool? _useArchivedStreamPartitioning;
+
+    /// <summary>
+    /// Partition mt_events and mt_streams (and the other event tables) by <c>is_archived</c>. Defaults to
+    /// <c>true</c> since 10.0 (#5812), except under <see cref="UseTenantPartitionedEvents"/>, where it is off
+    /// unless you set it yourself (and then <c>StoreOptions</c> validation refuses the combination).
+    /// </summary>
+    public bool UseArchivedStreamPartitioning
+    {
+        get => _useArchivedStreamPartitioning ?? !UseTenantPartitionedEvents;
+        set => _useArchivedStreamPartitioning = value;
+    }
+
     public bool UseListenNotifyForEventAppends { get; set; }
 
     /// <summary>
@@ -395,11 +411,17 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <see cref="ExistingStreamIdCollisionException"/> to fire on
     /// <c>StartStream</c> when the same identity has already been used — even after
     /// the original stream was archived under <see cref="UseArchivedStreamPartitioning"/>.
-    /// Defaults to false. See https://martendb.io/events/archiving for the
-    /// recommended use cases (typically only needed when stream identities are
-    /// produced outside Marten — e.g. user-supplied string keys).
+    /// Defaults to <c>true</c> since 10.0 (#5812), along with
+    /// <see cref="UseArchivedStreamPartitioning"/>, except under <see cref="UseTenantPartitionedEvents"/>,
+    /// where it is off unless you set it yourself. See https://martendb.io/events/archiving.
     /// </summary>
-    public bool EnableStrictStreamIdentityEnforcement { get; set; } = false;
+    public bool EnableStrictStreamIdentityEnforcement
+    {
+        get => _enableStrictStreamIdentityEnforcement ?? !UseTenantPartitionedEvents;
+        set => _enableStrictStreamIdentityEnforcement = value;
+    }
+
+    private bool? _enableStrictStreamIdentityEnforcement;
 
     /// <summary>
     /// Per-tenant partitioning master flag (CritterStack #209 / Marten #4596).
@@ -446,11 +468,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// Opt into using bigint (64-bit) types for event version, sequence, and return
     /// values in the mt_quick_append_events and mt_get_next_hi PostgreSQL functions.
     /// This prevents integer overflow when sequence values exceed int32 range (~2.1 billion).
-    /// Default is false for backward compatibility. Will become true by default in Marten 9.0.
+    /// Default is true since Marten 9.0.
     /// </summary>
     public bool EnableBigIntEvents { get; set; } = false;
 
-    public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
+    /// <summary>
+    /// Run the side effects (<c>RaiseSideEffects()</c>) of aggregation projections in the Inline lifecycle too.
+    /// Defaults to <c>true</c> since 10.0 (#5812).
+    /// </summary>
+    public bool EnableSideEffectsOnInlineProjections { get; set; } = true;
 
     /// <summary>
     ///     Configure whether event streams are identified with Guid or strings

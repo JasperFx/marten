@@ -152,7 +152,7 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
 
         await using var session = _store.LightweightSession(new SessionOptions { TenantId = tenantId });
 
-        session.Connection.Database.ShouldBe(expectedDatabase);
+        (await session.GetConnectionAsync()).Database.ShouldBe(expectedDatabase);
     }
 
     [Fact]
@@ -244,12 +244,12 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
         await using var s2 = _store.QuerySession(tenant2);
         await using var s3 = _store.QuerySession(tenant3);
 
-        s1.Connection.Database.ShouldBe(_registry.DatabaseForTenant(tenant1));
-        s2.Connection.Database.ShouldBe(_registry.DatabaseForTenant(tenant2));
-        s3.Connection.Database.ShouldBe(_registry.DatabaseForTenant(tenant3));
+        (await s1.GetConnectionAsync()).Database.ShouldBe(_registry.DatabaseForTenant(tenant1));
+        (await s2.GetConnectionAsync()).Database.ShouldBe(_registry.DatabaseForTenant(tenant2));
+        (await s3.GetConnectionAsync()).Database.ShouldBe(_registry.DatabaseForTenant(tenant3));
 
-        s1.Connection.Database.ShouldNotBe(s2.Connection.Database);
-        s2.Connection.Database.ShouldNotBe(s3.Connection.Database);
+        (await s1.GetConnectionAsync()).Database.ShouldNotBe((await s2.GetConnectionAsync()).Database);
+        (await s2.GetConnectionAsync()).Database.ShouldNotBe((await s3.GetConnectionAsync()).Database);
     }
 }
 

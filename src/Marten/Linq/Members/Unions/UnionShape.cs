@@ -37,10 +37,6 @@ namespace Marten.Linq.Members.Unions;
 ///         into a test that matches rows of the other case.
 ///     </para>
 /// </remarks>
-[UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode",
-    Justification = "Reads JsonTypeInfo for union case types from the store's own serializer options; document types and their members are preserved at registration per the AOT publishing guide.")]
-[UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode",
-    Justification = "Reads JsonTypeInfo for union case types from the store's own serializer options; document types and their members are preserved at registration per the AOT publishing guide.")]
 [UnconditionalSuppressMessage("Trimming", "IL2072:DynamicallyAccessedMembers",
     Justification = "Case types come from the union's own public constructors, which event and document registration preserve.")]
 internal sealed class UnionShape
@@ -94,6 +90,10 @@ internal sealed class UnionShape
         return CaseTypes.Where(x => x == underlying || underlying.IsAssignableFrom(x)).ToArray();
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode",
+        Justification = "Reads JsonTypeInfo for union case types from the store's own serializer options; document types and their members are preserved at registration per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode",
+        Justification = "Reads JsonTypeInfo for union case types from the store's own serializer options; document types and their members are preserved at registration per the AOT publishing guide.")]
     private static UnionShape Build(Type unionType, JsonSerializerOptions options, bool enumsAsStrings)
     {
         // GetTypeInfo needs the options read-only. These are the serializer's live write options, which a

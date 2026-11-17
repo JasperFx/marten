@@ -257,11 +257,11 @@ Projections need to be rebuilt when the code that defines them changes in a way 
 Refer to [Rebuilding Projections](/events/projections/rebuilding) for more details.
 
 ::: warning
-Marten by default while creating new object tries to use <b>default constructor</b>. Default constructor doesn't have to be public, might be also private or protected.
+Marten by default while creating new object tries to use <b>default constructor</b>. Default constructor doesn't have to be public, might be also private, protected or internal: the generated dispatcher calls a non-public one through `[UnsafeAccessor]`, so its body and every member initializer run (JasperFx 3.3.0 and later, as in Marten 8).
 
-If class does not have the default constructor then it creates an uninitialized object (see [the Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8) for more info)
+If class does not have the default constructor then it creates an uninitialized object (see [the Microsoft documentation](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.runtimehelpers.getuninitializedobject) for more info). The same happens to a generic aggregate type and to one nested inside a private or protected type, even when it has a non-public default constructor, because the generated code cannot name it.
 
-Because of that, no member initializers will be run so all of them need to be initialized in the event handler methods.
+Because of that, no member initializers will be run for those types, so all of them need to be initialized in the event handler methods.
 :::
 
 ## Projection Lifecycles

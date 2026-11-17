@@ -144,7 +144,10 @@ public class document_store_diagnostics_explain_tests: HostedStoreContext
         var host = await StartHostAsync(opts =>
         {
             opts.DatabaseSchemaName = schema;
-            var mapping = opts.Schema.For<ExplainedParcel>();
+
+            // The parcel does not capture its correlation id, which explain_refuses_a_metadata_filter_the_read_refuses
+            // needs; document metadata is on by default since 10.0 (#5812)
+            var mapping = opts.Schema.For<ExplainedParcel>().Metadata(m => m.CorrelationId.Enabled = false);
             if (indexState)
             {
                 mapping.Index(x => x.State);

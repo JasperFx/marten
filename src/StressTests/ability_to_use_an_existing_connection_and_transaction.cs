@@ -64,11 +64,19 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
     }
 
 
+    // #5861: a Serializable session has to open its connection and begin its transaction as it is created,
+    // which the synchronous factories can no longer do without blocking.
     [Fact]
-    public void can_open_serializable_sync()
+    public void can_not_open_serializable_sync()
     {
-        using var session = theStore.LightweightSession(IsolationLevel.Serializable);
-        session.Connection.State.ShouldBe(ConnectionState.Open);
+        Should.Throw<NotSupportedException>(() => theStore.LightweightSession(IsolationLevel.Serializable));
+    }
+
+    [Fact]
+    public async Task can_open_serializable_async()
+    {
+        await using var session = await theStore.LightweightSerializableSessionAsync();
+        (await session.GetConnectionAsync()).State.ShouldBe(ConnectionState.Open);
     }
 
     // Was can_query_sync_with_session_enlisted_in_transaction_scope, asserting through

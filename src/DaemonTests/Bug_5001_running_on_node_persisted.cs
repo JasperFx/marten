@@ -46,7 +46,7 @@ public class Bug_5001_running_on_node_persisted: DaemonContext
     private async Task<object?> readColumnAsync(string column)
     {
         await using var session = theStore.QuerySession();
-        var raw = await session.Connection
+        var raw = await (await session.GetConnectionAsync())
             .CreateCommand(
                 $"select {column} from {theStore.Events.DatabaseSchemaName}.mt_event_progression where name = :name")
             .With("name", Shard)

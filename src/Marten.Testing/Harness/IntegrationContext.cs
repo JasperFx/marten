@@ -50,7 +50,7 @@ namespace Marten.Testing.Harness
         private readonly DefaultStoreFixture _fixture;
         private DocumentStore _store;
         private IDocumentSession _session;
-        protected readonly IList<IDisposable> Disposables = new List<IDisposable>();
+        protected readonly DisposableTracker Disposables = new();
 
 
         public IntegrationContext(DefaultStoreFixture fixture)
@@ -168,10 +168,8 @@ namespace Marten.Testing.Harness
 
         public virtual void Dispose()
         {
-            foreach (var disposable in Disposables)
-            {
-                disposable.Dispose();
-            }
+            // Skips nulls, disposes each item once, and reports failures after the rest. See #5976
+            Disposables.DisposeAll();
         }
 
         public async ValueTask InitializeAsync()

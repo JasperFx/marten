@@ -450,9 +450,11 @@ public class DocumentMappingTests
 
         var table = new DocumentTable(mapping);
 
+        // correlation_id, causation_id, last_modified_by and headers are on by default since 10.0 (#5812)
         table.Columns.Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn,
-                SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn, "first_name");
+                SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn,
+                "correlation_id", "causation_id", "last_modified_by", "headers", "first_name");
     }
 
     [Fact]
@@ -473,9 +475,11 @@ public class DocumentMappingTests
     {
         var mapping = DocumentMapping.For<IntDoc>();
         var table = new DocumentTable(mapping);
+        // correlation_id, causation_id, last_modified_by and headers are on by default since 10.0 (#5812)
         table.Columns.Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.LastModifiedColumn,
-                SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn);
+                SchemaConstants.VersionColumn, SchemaConstants.DotNetTypeColumn,
+                "correlation_id", "causation_id", "last_modified_by", "headers");
     }
 
     [Fact]

@@ -22,10 +22,6 @@ namespace Marten.Services;
 /// <summary>
 ///     Serializer based on System.Text.Json
 /// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class SystemTextJsonSerializer: ISerializer
 {
     private readonly JsonSerializerOptions _clean;
@@ -63,6 +59,14 @@ public class SystemTextJsonSerializer: ISerializer
         _clean.EnableDynamicTypes();
         _withTypes.EnableDynamicTypes();
 
+        // #5812: on by default since 10.0, so polymorphic JSON reads when "$type" is not the first property
+        // (PostgreSQL's jsonb does not keep property order). Set it back with Configure() or
+        // StoreOptions.RestoreV9Defaults().
+        _optionsDeserialize.AllowOutOfOrderMetadataProperties =
+            _options.AllowOutOfOrderMetadataProperties =
+                _clean.AllowOutOfOrderMetadataProperties =
+                    _withTypes.AllowOutOfOrderMetadataProperties = true;
+
         syncDocumentDeserializeOptions();
     }
 
@@ -72,6 +76,10 @@ public class SystemTextJsonSerializer: ISerializer
     /// </summary>
     internal JsonSerializerOptions WriteOptions => _options;
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public string ToJson(object? document)
     {
         if (document is null)
@@ -83,6 +91,10 @@ public class SystemTextJsonSerializer: ISerializer
         return JsonSerializer.Serialize(document, document.GetType(), _options);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public void WriteTo(IBufferWriter<byte> writer, object? value)
     {
         if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -98,6 +110,10 @@ public class SystemTextJsonSerializer: ISerializer
         }
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public void WriteToParameter(NpgsqlParameter parameter, object? value)
     {
         if (parameter is null) throw new ArgumentNullException(nameof(parameter));
@@ -115,6 +131,10 @@ public class SystemTextJsonSerializer: ISerializer
         parameter.Value = JsonSerializer.SerializeToUtf8Bytes(value, value.GetType(), _options);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public T FromJson<T>(Stream stream)
     {
         using var buffer = SharedBuffer.RentAndCopy(stream.ToSOHSkippingStream());
@@ -133,6 +153,10 @@ public class SystemTextJsonSerializer: ISerializer
         return FromJson<T>(reader.GetStream(index));
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public async ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
     {
         try
@@ -155,6 +179,10 @@ public class SystemTextJsonSerializer: ISerializer
         return await FromJsonAsync<T>(stream, cancellationToken).ConfigureAwait(false);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public object FromJson(Type type, Stream stream)
     {
         using var buffer = SharedBuffer.RentAndCopy(stream.ToSOHSkippingStream());
@@ -166,6 +194,10 @@ public class SystemTextJsonSerializer: ISerializer
         return FromJson(type, reader.GetFieldValue<Stream>(index));
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public async ValueTask<object> FromJsonAsync(Type type, Stream stream,
         CancellationToken cancellationToken = default)
     {
@@ -182,11 +214,19 @@ public class SystemTextJsonSerializer: ISerializer
         return await FromJsonAsync(type, stream, cancellationToken).ConfigureAwait(false);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public string ToCleanJson(object? document)
     {
         return JsonSerializer.Serialize(document, _clean);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public void WriteToCleanJson(IBufferWriter<byte> writer, object? value)
     {
         if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -202,11 +242,19 @@ public class SystemTextJsonSerializer: ISerializer
         }
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public string ToJsonWithTypes(object document)
     {
         return JsonSerializer.Serialize(document, _withTypes);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public void WriteToJsonWithTypes(IBufferWriter<byte> writer, object value)
     {
         if (writer is null) throw new ArgumentNullException(nameof(writer));
@@ -219,6 +267,8 @@ public class SystemTextJsonSerializer: ISerializer
     public ValueCasting ValueCasting => ValueCasting.Strict;
 
     /// <inheritdoc />
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public EnumStorage EnumStorage
     {
         get => _enumStorage;
@@ -300,6 +350,10 @@ public class SystemTextJsonSerializer: ISerializer
     ///     The source-generated <see cref="JsonSerializerContext"/> (e.g. <c>MyContext.Default</c>)
     ///     or any custom <see cref="IJsonTypeInfoResolver"/> to consult first.
     /// </param>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public void UseTypeInfoResolver(IJsonTypeInfoResolver resolver)
     {
         if (resolver is null) throw new ArgumentNullException(nameof(resolver));

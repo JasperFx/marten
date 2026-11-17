@@ -39,13 +39,16 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         CommandTimeout = _options.Timeout ?? _connection?.CommandTimeout ?? StoreOptions.DefaultTimeout;
     }
 
-    public NpgsqlConnection Connection
+    /// <summary>
+    ///     The current connection, without opening one. Null until the lifetime has connected; use
+    ///     <see cref="OpenConnectionAsync" /> to connect first.
+    /// </summary>
+    public NpgsqlConnection? Connection => _connection;
+
+    public async ValueTask<NpgsqlConnection> OpenConnectionAsync(CancellationToken token)
     {
-        get
-        {
-            EnsureConnected();
-            return _connection!;
-        }
+        await BeginTransactionAsync(token).ConfigureAwait(false);
+        return _connection!;
     }
 
     public bool OwnsConnection { get; }
@@ -62,15 +65,25 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
     /// </summary>
     protected internal override bool HasSurvivingTransaction => true;
 
+    /// <remarks>
+    ///     #5881: as <see cref="TransactionalConnection.DisposeAsync" />, the connection is disposed whatever happens
+    ///     before it.
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
-        if (_connection is { State: ConnectionState.Open })
+        try
         {
-            await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            if (_connection is { State: ConnectionState.Open })
+            {
+                await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+            }
         }
-        if (_connection != null)
+        finally
         {
-            await _connection.DisposeAsync().ConfigureAwait(false);
+            if (_connection != null)
+            {
+                await _connection.DisposeAsync().ConfigureAwait(false);
+            }
         }
     }
 
@@ -78,10 +91,12 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
     {
         if (OwnsConnection)
         {
-            if (_connection is { State: ConnectionState.Open })
+            // #5861: the RLS lifetime's one synchronous tenant reset, for a connection this lifetime opened itself
+            if (_connection is { State: ConnectionState.Open } && _options.Connection == null)
             {
-                BeforeClose(_connection);
+                resetBeforeSynchronousRelease(_connection);
             }
+
             _connection?.Close();
             _connection?.Dispose();
         }
@@ -102,24 +117,6 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         batch.Timeout = CommandTimeout;
     }
 
-    public void BeginTransaction()
-    {
-        EnsureConnected();
-    }
-
-    public void EnsureConnected()
-    {
-        if (_connection == null)
-        {
-#pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
-#pragma warning restore CS8602
-            _connection.Open();
-            AfterOpened(_connection);
-            _connection.EnlistTransaction(_options.DotNetTransaction);
-        }
-    }
-
     public ValueTask EnsureConnectedAsync(CancellationToken token)
     {
         return BeginTransactionAsync(token);
@@ -130,25 +127,40 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
         if (_connection == null)
         {
 #pragma warning disable CS8602
-            _connection = _options.Tenant.Database.CreateConnection();
+            var connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
-            await _connection.OpenAsync(token).ConfigureAwait(false);
-            await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
-            _connection.EnlistTransaction(_options.DotNetTransaction);
+
+            // #5881: the lifetime takes the connection only once it is fully set up. Assigned any earlier, a
+            // failure part way -- a token cancelled after the open -- left an open connection that the next
+            // call took as ready, and used without the row level security tenant and outside the ambient
+            // transaction.
+            try
+            {
+                await connection.OpenAsync(token).ConfigureAwait(false);
+                await AfterOpenedAsync(connection, token).ConfigureAwait(false);
+                connection.EnlistTransaction(_options.DotNetTransaction);
+            }
+            catch (Exception)
+            {
+                await connection.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
+
+            _connection = connection;
         }
     }
 
-    protected virtual void AfterOpened(NpgsqlConnection connection)
+    /// <summary>
+    ///     #5861: the hook a synchronous <see cref="Dispose" /> calls before it releases a connection this lifetime
+    ///     opened. Only the RLS lifetime uses it. It must not throw.
+    /// </summary>
+    protected virtual void resetBeforeSynchronousRelease(NpgsqlConnection connection)
     {
     }
 
     protected virtual Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
     {
         return Task.CompletedTask;
-    }
-
-    protected virtual void BeforeClose(NpgsqlConnection connection)
-    {
     }
 
     protected virtual Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)
@@ -235,14 +247,15 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             foreach (var page in pages)
             {
                 var batch = page.Compile();
-                await using var reader = await ExecuteReaderAsync(batch, token).ConfigureAwait(false);
+                await ApplyAsync(batch, token).ConfigureAwait(false);
+                await using var reader = await executePageReaderAsync(page, batch, token).ConfigureAwait(false);
                 await page.ApplyCallbacksAsync(reader, exceptions, token).ConfigureAwait(false);
             }
         }
         catch (Exception e)
         {
             Logger.LogFailure(new NpgsqlCommand(), e);
-            transformAndThrow(pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>(), e);
+            transformAndThrow(pages, e);
         }
 
         if (exceptions.Count == 1)

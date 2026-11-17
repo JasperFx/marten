@@ -33,6 +33,6 @@ internal class OrderByNgramRankOperator : LinqOperator
             IsTransformed = true
         };
 
-        usage.OrderingExpressions.Insert(0, ordering);
+        usage.AddOrdering(ordering, startsTheOrdering: true);
     }
 }

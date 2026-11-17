@@ -60,7 +60,7 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
         var stream1 = await theSession.Events.FetchStreamStateAsync(stream);
         stream1.IsArchived.ShouldBeFalse();
 
-        var isArchived = await theSession.Connection
+        var isArchived = await (await theSession.GetConnectionAsync())
             .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 
@@ -73,7 +73,7 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
         var stream2 = await theSession.Events.FetchStreamStateAsync(stream);
         stream2.IsArchived.ShouldBeTrue();
 
-        isArchived = await theSession.Connection
+        isArchived = await (await theSession.GetConnectionAsync())
             .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 
@@ -103,7 +103,7 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
         var stream1 = await session.Events.FetchStreamStateAsync(stream);
         stream1.IsArchived.ShouldBeFalse();
 
-        var isArchived = await session.Connection
+        var isArchived = await (await session.GetConnectionAsync())
             .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 
@@ -116,7 +116,7 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
         var stream2 = await session.Events.FetchStreamStateAsync(stream);
         stream2.IsArchived.ShouldBeTrue();
 
-        isArchived = await session.Connection
+        isArchived = await (await session.GetConnectionAsync())
             .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 
@@ -127,12 +127,17 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
     [Fact]
     public async Task fetch_stream_filters_out_archived_events()
     {
+        // Archives single events with raw SQL, which only the unpartitioned shape allows: under
+        // UseArchivedStreamPartitioning (the 10.0 default) the row would have to move partitions
+        // without its stream
+        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = false);
+
         var stream = Guid.NewGuid();
 
         theSession.Events.StartStream(stream, new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
-        await theSession.Connection.CreateCommand($"update {SchemaName}.mt_events set is_archived = TRUE where version < 2")
+        await (await theSession.GetConnectionAsync()).CreateCommand($"update {SchemaName}.mt_events set is_archived = TRUE where version < 2")
             .ExecuteNonQueryAsync();
 
         var events = await theSession.Events.FetchStreamAsync(stream);
@@ -160,7 +165,7 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
         var stream1 = await theSession.Events.FetchStreamStateAsync(stream);
         stream1.IsArchived.ShouldBeFalse();
 
-        var isArchived = await theSession.Connection
+        var isArchived = await (await theSession.GetConnectionAsync())
             .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 
@@ -173,7 +178,7 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
         var stream2 = await theSession.Events.FetchStreamStateAsync(stream);
         stream2.IsArchived.ShouldBeTrue();
 
-        isArchived = await theSession.Connection
+        isArchived = await (await theSession.GetConnectionAsync())
             .CreateCommand($"select is_archived from {SchemaName}.mt_events where stream_id = :stream")
             .With("stream", stream).FetchListAsync<bool>();
 

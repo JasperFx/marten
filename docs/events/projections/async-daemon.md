@@ -84,12 +84,19 @@ the current progression point, the daemon
 
 ## Solo vs. HotCold
 
-As of right now, the daemon can run as one of two modes:
+There are three ways to run the daemon:
 
 1. *Solo* -- the daemon will be automatically started when the application is bootstrapped and all projections and projection shards will be started on that node. The assumption with Solo
    is that there is never more than one running system node for your application.
 1. *HotCold* -- the daemon will use a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function individually for each
    projection on each tenant database and **ensure that each projection is running on exactly one running process**.
+   HotCold is failover only. HotCold can do *some* load distribution through intentionally random assignment polling, but you cannot count on a "fair" distribution.
+1. *Wolverine-managed distribution* -- if you have more than one node, this is what we recommend. Wolverine spreads
+   the projections and subscriptions evenly across the running nodes, places them by capacity, keeps blue/green
+   deployments apart, keeps related shards together, lets an operator pause, restart or pin an agent, and tells you
+   why it could not place one. This mode is also more resilient to projection interruptions or a single projection *somehow* hitting the dreaded `ProjectionProgressOutOfOrderException` that can sometimes happen when node clusters are being started or stopped. See [Distributing Work with Wolverine](#distributing-work-with-wolverine) below.
+
+Marten itself will not grow its own distribution of async projections across nodes; that job belongs to Wolverine.
 
 By default the `HotCold` leadership lock is session-scoped (`pg_try_advisory_lock`), so the session
 holding it keeps no transaction open while it is the leader. Set
@@ -176,6 +183,16 @@ executed nothing since before the gap's sequence numbers were handed out, and it
 connections regardless. The evidence supporting that reasoning is durable, so it survives daemon
 restarts, deploys and shard rebalancing.
 
+If something else holds an advisory lock on a connection that only holds the lock and never appends
+events, like Wolverine's transaction-scoped durability pass lock, you can tell the daemon to rule those
+sessions out too <Badge type="tip" text="10.0" />:
+
+```cs
+// The full 64-bit key, exactly as passed to pg_advisory_xact_lock(). A session holding
+// it is still counted if it has written anything at all.
+opts.Projections.IgnoreAdvisoryLockHoldersForGapDetection(lockKey);
+```
+
 If you want a bounded escape hatch anyway — against, say, a leaked application session that holds an
 open transaction forever — set a cap:
 
@@ -232,15 +249,35 @@ These methods are stricter about the tenant than the `Advanced` methods:
 
 ## Projection Distribution
 
-If your Marten store is only using a single database, Marten will distribute projections by projection type. If your store is using
-[separate databases for multi-tenancy](/configuration/multitenancy), the async daemon will group all projections for a single
-database on the same executing node as a purposeful strategy to reduce the total number of connections to the databases.
+With HotCold, Marten takes one leadership lock per projection (or, with
+[separate databases for multi-tenancy](/configuration/multitenancy), one per database, so that a node holds all of a
+database's projections and fewer connections). Whichever node grabs a lock first runs that work. Since every node
+races for every lock, the first node to start up usually ends up with all of it, and the others sit idle until it
+goes away. That is failover, not load distribution.
 
-::: tip
-The built in capability of Marten to distribute projections is somewhat limited, and it's still likely that all projections
-will end up running on the first process to start up. If your system requires better load distribution for increased scalability,
-contact [JasperFx Software](https://jasperfx.net) about their "Critter Stack Pro" product.
-:::
+### Distributing Work with Wolverine
+
+If you run more than one node, use Wolverine-managed distribution instead of HotCold:
+
+```cs
+builder.Services.AddMarten(opts =>
+{
+    // your configuration...
+})
+.IntegrateWithWolverine(opts =>
+{
+    opts.UseWolverineManagedEventSubscriptionDistribution = true;
+});
+```
+
+Wolverine's leader assigns every projection and subscription shard to a node and keeps them spread evenly as nodes
+come and go. It can also place work by node capacity, keep blue/green versions of a projection on the right nodes,
+keep related shards together, let an operator pause, restart or pin a shard, and report why a shard could not be
+placed. See [Projection/Subscription Distribution](https://wolverinefx.net/guide/durability/marten/distribution.html)
+in the Wolverine docs for the details.
+
+To monitor and manage projections and subscriptions across the whole fleet, use
+[CritterWatch](https://critterwatch.jasperfx.net). Wolverine-managed distribution works without CritterWatch too.
 
 ## Daemon Connection Governors <Badge type="tip" text="9.13" /> {#daemon-connection-governors}
 
@@ -1131,6 +1168,75 @@ var latest = await session
 `NonStaleDataTimeoutMode.ThrowException` is the default and matches the behavior of the single-argument
 `QueryForNonStaleData<T>(timeout)` overload, so existing usages are unaffected. Choose
 `NonStaleDataTimeoutMode.ReturnStaleData` only when serving slightly stale data is preferable to a failed query.
+
+## Reading Your Own Writes <Badge type="tip" text="10.0" />
+
+`QueryForNonStaleData` waits for the highest event sequence in the store at the time of the call. On a busy
+system that includes everybody else's events, so a request waits for work it doesn't care about. And a timeout
+there is an exception, even though your write went through just fine.
+
+If what you want is to read back what you just wrote, wait for your own events instead. After
+`SaveChangesAsync()`, `session.LastAppendedSequence` tells you where that commit's events are, and
+`IDocumentStore.WaitForProjectionsAsync()` waits for the named asynchronous projections to get that far:
+
+<!-- snippet: sample_read_your_writes -->
+<a id='snippet-sample_read_your_writes'></a>
+```cs
+await using var session = store.LightweightSession();
+session.Events.StartStream(Guid.NewGuid(), new RywCounted(false));
+await session.SaveChangesAsync();
+
+// Where this commit's events are: database, tenant and sequence
+var position = session.LastAppendedSequence!;
+
+var result = await store.WaitForProjectionsAsync(position, [typeof(RywTally)], 5.Seconds());
+if (result.Reached)
+{
+    var tally = await session.LoadAsync<RywTally>("tally");
+}
+else
+{
+    // Timed out, or the projection is paused or rebuilding. The write succeeded either way,
+    // and result.Shards says how far each shard got
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/read_your_writes.cs#L143-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_read_your_writes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Some things to know:
+
+* The result is a value, not an exception. `Reached` means the projections have your events. `TimedOut` means they
+  don't yet, and `Shards` tells you how far each one got. Return a 202, read anyway, or fall back to a live
+  aggregation. That's your call.
+* A projection that is paused or being rebuilt returns right away with `Paused` or `Rebuilding` instead of making
+  you sit through the timeout. Another node sees a pause only with
+  [extended progression tracking](#extended-progression-tracking) turned on, and a rebuild is only visible on
+  the node running it.
+* The wait polls `mt_event_progression`, so it works on any node, whether or not that node runs the daemon.
+* Pass the projection classes, the documents they write, or the projection names. Asking about something that
+  isn't an asynchronous projection is an `ArgumentException`. An inline projection is already current when
+  `SaveChangesAsync()` returns.
+* The position is the database, the tenant and the sequence. With `UseTenantPartitionedEvents` every tenant has its
+  own sequence, and with a database per tenant every database has its own, and the wait reads the matching
+  progression rows.
+* A [gap in the event sequence](#sequence-gaps-and-the-high-water-mark) below your events holds the wait until the
+  daemon's gap detection skips it, and the daemon's polling interval is the floor on how fast any of this can be.
+
+The position is small and serializes as JSON. It also has a compact text form if you want to hand it to the next
+request in a header:
+
+<!-- snippet: sample_event_store_position_as_header -->
+<a id='snippet-sample_event_store_position_as_header'></a>
+```cs
+var position = new EventStorePosition("main", "tenant-a", 1234);
+
+// "main/tenant-a/1234", safe to put in a header
+var header = position.ToString();
+
+var back = EventStorePosition.Parse(header);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/read_your_writes.cs#L310-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_store_position_as_header' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Migrating a Projection from Inline to Async <Badge type="tip" text="7.35" />
 

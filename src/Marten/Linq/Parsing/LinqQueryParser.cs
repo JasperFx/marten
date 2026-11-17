@@ -27,7 +27,8 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
         _provider = provider;
         Session = session;
 
-        Visit(expression);
+        // #5910: Join / LeftJoin / RightJoin become the GroupJoin + SelectMany form parsed below
+        Visit(JoinOperatorRewriter.Rewrite(expression));
     }
 
     public SingleValueMode? ValueMode { get; }

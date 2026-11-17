@@ -33,9 +33,12 @@ public class Bug_5888_daemon_reads_events_from_primary: MultiHostConfigurationCo
         await AppendEvent(streamId, new Tick());
 
         await waitForStandbyToCatchUpAsync();
-        await pauseStandbyReplayAsync();
         try
         {
+            // #5979: inside the try, so a pause that is requested but never observed as 'paused' still gets the
+            // finally's resume, rather than leaving replay paused for every later test (and the next local run)
+            await pauseStandbyReplayAsync();
+
             // Committed on the primary, invisible to the standby until replay resumes
             await AppendEvent(streamId, new Tick(), new Tick(), new Tick(), new Tick(), new Tick(), new Tick(),
                 new Tick(), new Tick(), new Tick());
@@ -76,9 +79,12 @@ public class Bug_5888_daemon_reads_events_from_primary: MultiHostConfigurationCo
         await AppendEvent(streamId, new Tick());
 
         await waitForStandbyToCatchUpAsync();
-        await pauseStandbyReplayAsync();
         try
         {
+            // #5979: inside the try, so a pause that is requested but never observed as 'paused' still gets the
+            // finally's resume, rather than leaving replay paused for every later test (and the next local run)
+            await pauseStandbyReplayAsync();
+
             await AppendEvent(streamId, new Tick(), new Tick(), new Tick(), new Tick());
 
             var highWater = await fetchHighestSequenceOnPrimaryAsync();

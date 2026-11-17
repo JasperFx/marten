@@ -446,6 +446,9 @@ public class unarchiving_streams: OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Events.UseArchivedStreamPartitioning = true;
+
+            // Strict stream identity (on by default since 10.0, #5812) refuses the reuse this test needs
+            opts.Events.EnableStrictStreamIdentityEnforcement = false;
             opts.Events.TenancyStyle = conjoined ? TenancyStyle.Conjoined : TenancyStyle.Single;
             opts.Events.AddEventType<LedgerOpened>();
             opts.Events.AddEventType<LedgerPosted>();

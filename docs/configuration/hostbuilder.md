@@ -437,13 +437,14 @@ public class CustomSessionFactory: ISessionFactory
     {
         // Opting for the "lightweight" session
         // option with no identity map tracking
-        // and choosing to use Serializable transactions
-        // just to be different
-        return _store.LightweightSession(IsolationLevel.Serializable);
+        // and choosing to use RepeatableRead transactions
+        // just to be different. A Serializable session has to be
+        // opened asynchronously, so it can't come from here
+        return _store.LightweightSession(IsolationLevel.RepeatableRead);
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L12-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customsessionfactory' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L12-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customsessionfactory' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To register the custom session factory, use the `BuildSessionsWith()` method as shown in this example:
@@ -469,7 +470,7 @@ services.CritterStackDefaults(x =>
     x.Production.ResourceAutoCreate = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L55-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L56-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session factories can also be used to build out and attach custom `IDocumentSessionListener` objects or replace the logging as we'll see in the next section.

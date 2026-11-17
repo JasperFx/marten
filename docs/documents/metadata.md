@@ -16,15 +16,16 @@ The available columns for document storage are:
 | `mt_last_modified` | Timestamp of the last time the document record was modified                                       | Yes                                                     |
 | `mt_version`       | `Guid` value that marks the current version of the document. This supports optimistic concurrency | Yes                                                     |
 | `mt_dotnet_type`   | Assembly qualified name of the .Net type persisted to this row                                    | Yes                                                     |
-| `correlation_id`   | User-supplied correlation identifier (`string`)                                                   | No, opt in                                              |
-| `causation_id`     | User-supplied causation identifier (`string`)                                                     | No, opt in                                              |
-| `headers`          | User-supplied key/value pairs for extensible metadata                                             | No, opt in                                              |
+| `correlation_id`   | User-supplied correlation identifier (`string`)                                                   | Yes, since 10.0                                         |
+| `causation_id`     | User-supplied causation identifier (`string`)                                                     | Yes, since 10.0                                         |
+| `headers`          | User-supplied key/value pairs for extensible metadata                                             | Yes, since 10.0                                         |
+| `last_modified_by` | User name of the session that last changed the document (`string`)                                | Yes, since 10.0                                         |
 | `mt_deleted`       | Boolean flag noting whether the document is soft-deleted                                          | Only if the document type is configured as soft-deleted |
 | `mt_deleted_at`    | Timestamp marking when a document was soft-deleted                                                | Only if the document type is configured as soft-deleted |
 | `mt_created_at`    | Timestamp marking when a document was originally created                                          | No, opt in                                              |
 | `tenant_id`        | The identifier of the owning tenant if multi-tenancy is configured for this document.             | Yes, but only for multi-tenancy schemas                 |
 
-## Correlation Id, Causation Id, and Headers
+## Correlation Id, Causation Id, Headers, and Last Modified By
 
 ::: tip
 At this point, the Marten team thinks that using a custom `ISessionFactory` to set
@@ -32,7 +33,10 @@ correlation and causation data is the most likely usage for this feature. The Ma
 plans to build a sample application showing Marten being used with [Open Telemetry](https://opentelemetry.io/) tracing soon.
 :::
 
-The first step is to enable these columns on the document types in your system:
+These four columns are on for every document type by default since Marten 10. In Marten 9 and earlier they were
+opt in, with the settings below. Use the same settings with `false` to turn a column off for one document type or for
+all of them, or call `opts.RestoreV9Defaults()` to go back to the Marten 9 behavior where they are off unless you
+turn them on:
 
 <!-- snippet: sample_enabling_causation_fields -->
 <a id='snippet-sample_enabling_causation_fields'></a>
@@ -81,6 +85,14 @@ public void SettingMetadata(IDocumentSession session, string correlationId, stri
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L59-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_metadata_on_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+`IDocumentSession.LastModifiedBy` works the same way: whatever user name the session carries is written to the
+`last_modified_by` column of every document the session stores. If that is a person's name or login and you have
+data-retention rules, decide whether you want it stored, and turn the column off if not:
+
+```cs
+opts.Policies.ForAllDocuments(x => x.Metadata.LastModifiedBy.Enabled = false);
+```
 
 Headers are a little bit different, with the ability to set individual header key/value pairs
 as shown below:
@@ -185,7 +197,8 @@ checking with mapping of the current version to the `IVersioned.Version` propert
 
 ## Disabling All Metadata
 
-If you want Marten to run lean, you can omit all metadata fields from Marten with this configuration:
+If you want Marten to run lean, you can omit the last modified, .NET type and version fields from Marten with this
+configuration:
 
 <!-- snippet: sample_disableallinformationalfields -->
 <a id='snippet-sample_disableallinformationalfields'></a>
@@ -201,6 +214,9 @@ var store = DocumentStore.For(opts =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L10-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disableallinformationalfields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+`DisableInformationalFields()` leaves the correlation id, causation id, headers and last modified by columns alone.
+Turn those off with `opts.Policies.ForAllDocuments()` as shown above, or with `opts.RestoreV9Defaults()`.
 
 ## Querying by Last Modified
 

@@ -20,8 +20,6 @@ namespace Marten.Internal.Sessions;
 
 [UnconditionalSuppressMessage("Trimming", "IL2067",
     Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession, ITransactionParticipantRegistrar
 {
     internal readonly ISessionWorkTracker _workTracker;
@@ -276,6 +274,8 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public void InsertObjects(IEnumerable<object> documents)
     {
         assertNotDisposed();
@@ -311,6 +311,8 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     public IUnitOfWork PendingChanges => _workTracker;
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     public void StoreObjects(IEnumerable<object> documents)
     {
         assertNotDisposed();
@@ -572,8 +574,19 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     public void EjectPatchedTypes(IUnitOfWork changes)
     {
-        var patchedTypes = changes.Operations().Where(x => x.Role() == OperationRole.Patch).Select(x => x.DocumentType)
-            .Distinct().ToArray();
+        // #5730: runs after every SaveChangesAsync, and almost no unit of work holds a patch, so walk the
+        // operations without allocating and only build the set of patched types once a patch turns up
+        HashSet<Type>? patchedTypes = null;
+        foreach (var operation in changes.Operations())
+        {
+            if (operation.Role() == OperationRole.Patch)
+            {
+                (patchedTypes ??= new HashSet<Type>()).Add(operation.DocumentType);
+            }
+        }
+
+        if (patchedTypes == null) return;
+
         foreach (var type in patchedTypes) EjectAllOfType(type);
     }
 

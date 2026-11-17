@@ -78,5 +78,6 @@ public class MetadataConfig: IReadonlyMetadataConfig
         _parent.CausationId.Enabled = true;
         _parent.CorrelationId.Enabled = true;
         _parent.Headers.Enabled = true;
+        _parent.UserName.Enabled = true;
     }
 }

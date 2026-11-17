@@ -23,13 +23,13 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 internal class ValueTypeIdentifiedIdentitySetter<TDoc, TSimple, TValueType>: IIdentitySetter<TDoc, TSimple>
 {
     private readonly Func<TSimple, TValueType> _converter;
     private readonly Func<TValueType, TSimple> _unwrapper;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public ValueTypeIdentifiedIdentitySetter(ValueTypeInfo valueTypeInfo, IDocumentStorage<TDoc, TValueType> inner)
     {
         Inner = inner;
@@ -64,13 +64,13 @@ internal interface IValueTypeRevisions<TSimple>
     void ClearRevision(IMartenSession session, TSimple id);
 }
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>, ILinqDocumentStorage, IValueTypeStorage<TDoc, TValueType>, IValueTypeRevisions<TSimple> where TDoc : notnull where TSimple : notnull where TValueType : notnull
 {
     private readonly Func<TSimple, TValueType> _converter;
     private readonly Func<TValueType,TSimple> _unwrapper;
 
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public ValueTypeIdentifiedDocumentStorage(ValueTypeInfo valueTypeInfo, IDocumentStorage<TDoc, TValueType> inner)
     {
         Inner = inner;

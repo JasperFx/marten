@@ -27,13 +27,10 @@ internal class ProjectionDocumentSession: DocumentSessionBase, ITransactionParti
         Mode = mode;
     }
 
-    public override NpgsqlConnection Connection
+    public override ValueTask<NpgsqlConnection> GetConnectionAsync(CancellationToken token = default)
     {
-        get
-        {
-            throw new NotSupportedException(
-                "It is not supported to use \"sticky\" connections inside of projections or subscriptions");
-        }
+        throw new NotSupportedException(
+            "It is not supported to use \"sticky\" connections inside of projections or subscriptions");
     }
 
     internal override DocumentTracking TrackingMode => SessionOptions.Tracking;

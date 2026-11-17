@@ -150,21 +150,21 @@ public class LinqExamples
     #endregion
 
     #region sample_select_a_single_value
-    public void select_a_single_value(IDocumentSession session)
+    public async Task select_a_single_value(IDocumentSession session)
     {
-        // Single()/SingleOrDefault() will throw exceptions if more than
+        // SingleAsync()/SingleOrDefaultAsync() will throw exceptions if more than
         // one result is returned from the database
-        session.Query<Target>().Where(x => x.Number == 5).Single();
-        session.Query<Target>().Where(x => x.Number == 5).SingleOrDefault();
+        await session.Query<Target>().Where(x => x.Number == 5).SingleAsync();
+        await session.Query<Target>().Where(x => x.Number == 5).SingleOrDefaultAsync();
 
-        session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).First();
-        session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).FirstOrDefault();
+        await session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).FirstAsync();
+        await session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).FirstOrDefaultAsync();
 
         // Marten does not support Last()/LastOrDefault(). Reverse the ordering
-        // and use First()/FirstOrDefault() instead.
+        // and use FirstAsync()/FirstOrDefaultAsync() instead.
 
-        // Using the query predicate inside of Single/First is supported as well
-        session.Query<Target>().Single(x => x.Number == 5);
+        // Using the query predicate inside of SingleAsync/FirstAsync is supported as well
+        await session.Query<Target>().SingleAsync(x => x.Number == 5);
     }
 
     #endregion
@@ -205,10 +205,10 @@ public class LinqExamples
 
     public async Task sample_aggregation_operations(IQuerySession session)
     {
-        var count = session.Query<Target>().Count();
-        var count2 = await session.Query<Target>().CountAsync();
-        var count3 = session.Query<Target>().LongCount();
-        var count4 = await session.Query<Target>().LongCountAsync();
+        var count = await session.Query<Target>().CountAsync();
+        var count2 = await session.Query<Target>().CountAsync(x => x.Number > 5);
+        var count3 = await session.Query<Target>().LongCountAsync();
+        var count4 = await session.Query<Target>().LongCountAsync(x => x.Number > 5);
 
         var min = await session.Query<Target>().MinAsync(x => x.Number);
         var max = await session.Query<Target>().MaxAsync(x => x.Number);

@@ -384,8 +384,8 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
                     $"or set opts.Events.DefaultBinarySerializer.");
             }
 
-            var bytes = reader.GetFieldValue<byte[]>(3);
-            var data = mapping.BinarySerializer.Deserialize(mapping.DocumentType, bytes);
+            // #5731: deserialize from a rented buffer rather than an exact-length byte[] per row.
+            var data = BinaryEventPayload.Read(reader, 3, mapping.BinarySerializer, mapping.DocumentType);
             @event = mapping.Wrap(data);
         }
         else
@@ -441,8 +441,9 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
                         $"or set opts.Events.DefaultBinarySerializer.");
                 }
 
-                var bytes = await reader.GetFieldValueAsync<byte[]>(3, token).ConfigureAwait(false);
-                var data = mapping.BinarySerializer.Deserialize(mapping.DocumentType, bytes);
+                // #5731: as the sync overload. The row is already buffered once ReadAsync has returned, so
+                // the synchronous column copy inside BinaryEventPayload.Read does no I/O.
+                var data = BinaryEventPayload.Read(reader, 3, mapping.BinarySerializer, mapping.DocumentType);
                 @event = mapping.Wrap(data);
             }
             else

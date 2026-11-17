@@ -40,8 +40,6 @@ using Marten.Util;
 
 namespace Marten;
 
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySession>, ISubscriptionRunner<ISubscription>
 {
     // #5741 (jasperfx#1029 part 2): Marten no longer registers NpgsqlException or MartenCommandException with
@@ -615,6 +613,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         return new ResilientEventLoader(DaemonLoaderPipeline, inner, database);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     private IEnumerable<ISqlFragment> buildEventLoaderFilters(EventFilterable filterable)
     {
         if (filterable.IncludedEventTypes.Any() && !filterable.IncludedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
@@ -957,6 +957,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     Task IEventStore.CompactStreamAsync(string streamKey, string? tenantId, CancellationToken token)
         => compactUntypedAsync(streamKey, tenantId, token);
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     private async Task compactUntypedAsync(Guid streamId, string? tenantId, CancellationToken token)
     {
         await using var session = tenantId == null ? LightweightSession() : LightweightSession(tenantId);
@@ -980,6 +982,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await ((Task)genericMethod.Invoke(null, [session, streamId, token])!).ConfigureAwait(false);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     private async Task compactUntypedAsync(string streamKey, string? tenantId, CancellationToken token)
     {
         await using var session = tenantId == null ? LightweightSession() : LightweightSession(tenantId);

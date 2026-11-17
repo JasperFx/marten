@@ -18,8 +18,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.Sessions;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2087",
     Justification = "Class-level: generic method/type argument flows reflective Type values into a DAM-annotated target. Source preserved at the registration boundary.")]
 public abstract partial class DocumentSessionBase
@@ -44,8 +42,6 @@ public abstract partial class DocumentSessionBase
     }
 }
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2087",
     Justification = "Class-level: generic method/type argument flows reflective Type values into a DAM-annotated target. Source preserved at the registration boundary.")]
 internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where TId : notnull where TDoc : notnull
@@ -201,7 +197,21 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
             // revision is the global sequence, which passes int.MaxValue on a large store -- the case #4526 puts
             // on ILongVersioned and a bigint column. Narrowing an IRevisioned (int) member happens where the
             // value is written back to the document, not here.
-            r.Revision = scope == AggregationScope.SingleStream ? lastEvent.Version : lastEvent.Sequence;
+            //
+            // #6036: lastEvent is null when the slice held nothing after a Compacted<T>: the runner fast-forwards
+            // over the snapshot and keeps only the events behind it. The snapshot's own mapped revision, when it
+            // has one, is the version the compaction folded through. Otherwise the revision is left at 0, and the
+            // single stream document is written at its stream's version, as Bug_6036 checks for both a new and an
+            // existing document.
+            if (lastEvent != null)
+            {
+                r.Revision = scope == AggregationScope.SingleStream ? lastEvent.Version : lastEvent.Sequence;
+            }
+            else if (_storage.MappedRevisionFor(aggregate) is { } mapped && mapped > 0)
+            {
+                r.Revision = mapped;
+            }
+
             r.IgnoreConcurrencyViolation = true;
         }
 
@@ -222,6 +232,8 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
 
     // #4968: resolve the raw stream id (Guid/string) from TId, unwrapping a strong-typed id. The archive
     // operation itself is now built through the dialect's seam factory, so this only handles id extraction.
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     private Func<TId, object> streamIdUnwrapperFor<TId>()
     {
         if (_archiveStreamIdUnwrappers.TryFind(typeof(TId), out var raw))

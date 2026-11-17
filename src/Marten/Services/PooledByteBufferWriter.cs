@@ -69,6 +69,12 @@ internal sealed class PooledByteBufferWriter: IBufferWriter<byte>, IDisposable
     /// </summary>
     public byte[] ToSizedArray() => WrittenMemory.ToArray();
 
+    /// <summary>
+    /// Forgets what has been written so the same rented buffer can stage the next payload. Only safe
+    /// once nothing holds <see cref="WrittenMemory" /> any more: the next write overwrites it in place.
+    /// </summary>
+    public void Reset() => _written = 0;
+
     public void Dispose()
     {
         if (_disposed) return;

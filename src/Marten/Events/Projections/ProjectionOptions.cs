@@ -23,10 +23,6 @@ namespace Marten.Events.Projections;
 /// <summary>
 ///     Used to register projections with Marten
 /// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations, IQuerySession>
 {
     internal readonly IFetchPlanner[] _builtInPlanners =
@@ -87,9 +83,35 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// </summary>
     public TimeSpan? SkipStaleGapsDespiteLiveTransactionsAfter { get; set; }
 
+    private readonly List<long> _ignoredGapDetectionLockKeys = new();
+
+    /// <summary>
+    ///     #5791: tell the async daemon's gap detection that a session holding this advisory lock key only holds
+    ///     the lock and never appends events, so it is not a possible reserver of a sequence gap. Use this for a
+    ///     connection that sits "idle in transaction" holding a transaction-scoped advisory lock, like Wolverine's
+    ///     transaction-scoped durability pass lock. Without it, gap detection holds behind that session until it
+    ///     ends. A session that has written anything is never ruled out, whatever lock it holds.
+    /// </summary>
+    /// <param name="lockKey">
+    ///     The full 64-bit advisory lock key, exactly as passed to <c>pg_advisory_xact_lock(bigint)</c>. A negative
+    ///     <c>int</c> key is the same negative <c>long</c>.
+    /// </param>
+    public void IgnoreAdvisoryLockHoldersForGapDetection(long lockKey)
+    {
+        if (!_ignoredGapDetectionLockKeys.Contains(lockKey))
+        {
+            _ignoredGapDetectionLockKeys.Add(lockKey);
+        }
+    }
+
+    /// <summary>
+    ///     #5791: the advisory lock keys registered through <see cref="IgnoreAdvisoryLockHoldersForGapDetection" />
+    /// </summary>
+    public IReadOnlyList<long> IgnoredAdvisoryLockKeysForGapDetection => _ignoredGapDetectionLockKeys;
+
     /// <summary>
     ///     Opt into a performance optimization that directs Marten to always use the identity map for an
-    ///     Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
+    ///     Inline single stream projection's aggregate type when FetchForWriting() is called. Default is true since Marten 9.0.
     ///     Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
     /// </summary>
     public bool UseIdentityMapForAggregates
@@ -292,6 +314,10 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         return SingleStreamProjection<T>(lifecycle.Map(), configureProjection, asyncConfiguration);
     }
 
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     internal MartenRegistry.DocumentMappingExpression<T> SingleStreamProjection<T>(
         ProjectionLifecycle lifecycle,
         Action<ProjectionBase>? configureProjection = null,

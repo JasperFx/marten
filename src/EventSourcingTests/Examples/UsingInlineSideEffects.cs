@@ -16,8 +16,8 @@ public class UsingInlineSideEffects
         {
             opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-            // This is your magic setting to tell Marten to process any projection
-            // side effects even when running Inline
+            // On by default since Marten 10. Set it to false to only run
+            // projection side effects in the async daemon
             opts.Events.EnableSideEffectsOnInlineProjections = true;
         });
 

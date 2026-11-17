@@ -178,7 +178,7 @@ public class jasper_fx_mechanics
     [Fact]
     public async Task integration_with_describe_command_line()
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
@@ -221,7 +221,7 @@ public class jasper_fx_mechanics
 
     private async Task<IHostBuilder> complexHostBuilder()
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");

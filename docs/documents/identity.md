@@ -214,10 +214,17 @@ The id is still assigned synchronously inside `session.Store()`, so a document's
 As of Marten 10, the sequence reserves the **next** block in the background, with an asynchronous database call, as soon as it
 starts using the current one. When `Store()` exhausts the current block, the block that was fetched ahead of time is swapped in
 without a database round trip, so as long as a block lasts longer than one database round trip, storing a document never
-blocks a thread on the database. Only if the background fetch has not completed yet, because the block was used up faster than
-that (a small `MaxLo`, or a tight loop storing thousands of documents), does `Store()` fall back to fetching a block
-synchronously, as every block was fetched before Marten 10. A background fetch that fails
-is logged as a warning and the next block is simply fetched synchronously; it never surfaces as an exception of its own.
+blocks a thread on the database. If the background fetch has not completed yet, because the block was used up faster than
+that (a small `MaxLo`, or a tight loop storing thousands of documents), `Store()` does not wait for it: it fetches a block
+synchronously itself, as every block was fetched before Marten 10. Waiting would block the storing thread, usually a thread-pool
+thread, on asynchronous work that itself needs a thread-pool thread to finish, and a burst of storing threads could then stall the
+whole process ([#5969](https://github.com/JasperFx/marten/issues/5969)). Since `mt_get_next_hi` became a single atomic increment, the
+two fetches cannot collide; each gets a block of its own. A background fetch that fails is logged as a warning and the next block is
+simply fetched synchronously; it never surfaces as an exception of its own.
+
+The first id a database issues also makes sure the `mt_hilo` table and the `mt_get_next_hi` function exist and are up to date, as
+`AutoCreateSchemaObjects` allows. That check uses synchronous database calls, one statement at a time, so it never waits on the
+thread pool either. With `AutoCreate.None` it does not touch the database at all.
 
 What this means for the ids you see:
 

@@ -46,6 +46,13 @@ public class Bug_5539_quick_append_with_zero_events : OneOffConfigurationsContex
         {
             opts.Events.AppendMode = EventAppendMode.Quick;
             opts.Events.AddEventType(typeof(Ping));
+
+            // quickAppendCommand() calls mt_quick_append_events directly with the signature that has no
+            // metadata arrays, so keep the event metadata off (it is on by default since 10.0)
+            opts.Events.MetadataConfig.CausationIdEnabled = false;
+            opts.Events.MetadataConfig.CorrelationIdEnabled = false;
+            opts.Events.MetadataConfig.HeadersEnabled = false;
+            opts.Events.MetadataConfig.UserNameEnabled = false;
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();

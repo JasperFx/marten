@@ -18,6 +18,8 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
     private static readonly string NullResultMessage =
         $"The cast to value type '{typeof(T).FullNameInCode()}' failed because the materialized value is null. Either the result type's generic parameter or the query must use a nullable type.";
 
+    private ISerializer _serializer;
+
     public ScalarSelectClause(string locator, string from)
     {
         FromObject = from;
@@ -68,6 +70,12 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
 
     public ISelector BuildSelector(IStorageSession session)
     {
+        // #6064: an enum stored as text is read back by the name the serializer stores it under
+        if (typeof(T).IsEnum)
+        {
+            _serializer = session.Serializer as ISerializer;
+        }
+
         return this;
     }
 
@@ -91,7 +99,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
             return null;
         }
 
-        return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
+        return await ScalarFieldReader.ReadAsync<T>(reader, 0, token, _serializer).ConfigureAwait(false);
     }
 
     T? ISelector<T?>.Resolve(DbDataReader reader)
@@ -103,7 +111,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
                 return null;
             }
 
-            return reader.GetFieldValue<T>(0);
+            return ScalarFieldReader.Read<T>(reader, 0, _serializer);
         }
         catch (InvalidCastException e)
         {
@@ -120,7 +128,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
                 return default;
             }
 
-            return reader.GetFieldValue<T>(0);
+            return ScalarFieldReader.Read<T>(reader, 0, _serializer);
         }
         catch (InvalidCastException e)
         {
@@ -135,7 +143,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
             return default;
         }
 
-        return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
+        return await ScalarFieldReader.ReadAsync<T>(reader, 0, token, _serializer).ConfigureAwait(false);
     }
 
     public override string ToString()

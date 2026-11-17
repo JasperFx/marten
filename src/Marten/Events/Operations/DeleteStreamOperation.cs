@@ -95,12 +95,14 @@ internal class DeleteStreamOperation: IStorageOperation, NoDataReturnedCall
 
             sql.Append($"seq_id in (select seq_id from {schema}.mt_events where ");
             streamPredicate("stream_id");
-            sql.Append(")), ");
+            sql.Append(") returning value, seq_id), ");
         }
 
         sql.Append($"doomed_events as (delete from {schema}.mt_events where ");
         streamPredicate("stream_id");
-        sql.Append(')');
+        sql.Append(_events.DcbStorageMode == DcbStorageMode.HStore ? " returning seq_id, type, tags)" : " returning seq_id, type)");
+
+        appendDcbVersionBump(sql, parameters, tagTables);
 
         if (_events.EnableStrictStreamIdentityEnforcement)
         {
@@ -128,6 +130,60 @@ internal class DeleteStreamOperation: IStorageOperation, NoDataReturnedCall
                 npgsqlParameters[i].NpgsqlDbType = NpgsqlDbType.Varchar;
             }
         }
+    }
+
+    /// <summary>
+    /// #6035: move the DCB version of every tag value the deleted events carried, the same version an append
+    /// of those events moved. A boundary that read this stream's tagged events captured that version, so
+    /// without the bump it saved straight through the tombstone as if nothing it read had changed. The row is
+    /// created if it is somehow missing, as an append would, rather than leaving a captured 0 matching.
+    /// </summary>
+    /// <remarks>
+    /// The values come back from the deletes themselves: each tag table's <c>value</c> cast to text, which
+    /// is <see cref="JasperFx.Events.Tags.TagValueStringifier"/>'s form for the supported tag types (text,
+    /// uuid, integer, bigint, smallint), or the hstore pairs, which are written in that form. Rows are taken
+    /// in ordinal order, the order appends lock them in.
+    /// </remarks>
+    private void appendDcbVersionBump(StringBuilder sql, List<bool> parameters,
+        IReadOnlyList<JasperFx.Events.Tags.ITagTypeRegistration> tagTables)
+    {
+        if (_events.TagTypes.Count == 0) return;
+
+        var schema = _events.DatabaseSchemaName;
+        var recordEventTypes = _events.DcbConflictScope != DcbConflictScope.TagValue;
+
+        var sources = new List<string>();
+        if (_events.DcbStorageMode == DcbStorageMode.HStore)
+        {
+            sources.Add("select t.key as k, t.value as v from doomed_events d cross join lateral each(d.tags) t");
+            if (recordEventTypes)
+            {
+                sources.Add(
+                    "select t.key || ':' || d.type, t.value from doomed_events d cross join lateral each(d.tags) t");
+            }
+        }
+        else
+        {
+            for (var i = 0; i < tagTables.Count; i++)
+            {
+                var suffix = tagTables[i].TableSuffix;
+                sources.Add($"select '{suffix}' as k, t.value::text as v from tag{i} t");
+                if (recordEventTypes)
+                {
+                    sources.Add(
+                        $"select '{suffix}:' || d.type, t.value::text from tag{i} t join doomed_events d on d.seq_id = t.seq_id");
+                }
+            }
+        }
+
+        if (sources.Count == 0) return;
+
+        sql.Append($", dcb_bump as (insert into {schema}.mt_dcb_tag_version (tag_table, tag_value, tenant_id, version) ");
+        sql.Append("select k, v, ?, 1 from (select distinct k, v from (");
+        parameters.Add(false);
+        sql.Append(string.Join(" union all ", sources));
+        sql.Append(") tagged) bumps order by k collate \"C\", v collate \"C\" ");
+        sql.Append("on conflict (tag_table, tag_value, tenant_id) do update set version = mt_dcb_tag_version.version + 1)");
     }
 
     public Type DocumentType => typeof(IEvent);

@@ -10,8 +10,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Schema;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 public class SubClasses: IEnumerable<SubClassMapping>
 {
     private readonly StoreOptions _options;
@@ -65,6 +63,8 @@ public class SubClasses: IEnumerable<SubClassMapping>
     ///     <c>Unadvised in projects with many types.</c>
     /// </summary>
     /// <returns></returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     public void AddHierarchy()
     {
         var baseType = _parent.DocumentType;

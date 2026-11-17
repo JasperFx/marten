@@ -18,9 +18,9 @@ public class EventSkipping
         {
             opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-            // This is false by default for backwards compatibility,
-            // turning this on will add an extra column and filtering during
-            // various event store operations
+            // On by default since Marten 10. Set it to false to stop
+            // filtering skipped events out of projections, subscriptions
+            // and aggregation
             opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = true;
         });
 

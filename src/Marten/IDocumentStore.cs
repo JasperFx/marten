@@ -120,6 +120,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// </summary>
     /// <param name="options">Additional options for session</param>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession OpenSession(SessionOptions options);
 
     /// <summary>
@@ -137,6 +143,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     or automatic dirty checking
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
     /// <summary>
@@ -144,6 +156,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     or automatic dirty checking
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession LightweightSession(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
@@ -154,6 +172,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     or automatic dirty checking
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession LightweightSession(SessionOptions options);
 
     /// <summary>
@@ -185,6 +209,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession IdentitySession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
     /// <summary>
@@ -192,6 +222,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession IdentitySession(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
@@ -202,6 +238,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession IdentitySession(SessionOptions options);
 
     /// <summary>
@@ -233,6 +275,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
 
     /// <summary>
@@ -240,6 +288,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession DirtyTrackedSession(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
@@ -249,6 +303,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     dirty checking
     /// </summary>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IDocumentSession DirtyTrackedSession(SessionOptions options);
 
     /// <summary>
@@ -295,6 +355,12 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// </summary>
     /// <param name="options">Additional options for session. DocumentTracking is not applicable for IQuerySession.</param>
     /// <returns></returns>
+    /// <remarks>
+    ///     Marten 10 (#5861): asking for <see cref="IsolationLevel.Serializable" /> here throws
+    ///     <see cref="System.NotSupportedException" /> when Marten would open the connection itself, because a
+    ///     Serializable session has to open its connection and begin its transaction as it is created. Use the
+    ///     matching <c>*SerializableSessionAsync</c> method.
+    /// </remarks>
     IQuerySession QuerySession(SessionOptions options);
 
     /// <summary>
@@ -411,4 +477,34 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     ValueTask<IProjectionDaemon> BuildProjectionDaemonAsync(string? tenantIdOrDatabaseIdentifier = null,
         ILogger? logger = null);
+
+    /// <summary>
+    ///     #6004: wait until the asynchronous projections in <paramref name="projections" /> have processed
+    ///     <paramref name="position" />, so you can read your own writes. Take the position from the session's
+    ///     <c>LastAppendedSequence</c> after <c>SaveChangesAsync</c>, and pass the projection classes or the
+    ///     documents they write.
+    /// </summary>
+    /// <remarks>
+    ///     Polls <c>mt_event_progression</c>, so it works on any node. Waits for your events only, not for other
+    ///     writers' events after them. Never throws on timeout: check <see cref="ProjectionWaitResult.Reached" />,
+    ///     and when it is false, <see cref="ProjectionWaitResult.Shards" /> says how far each shard got. A paused or
+    ///     rebuilding projection returns at once with that status.
+    /// </remarks>
+    /// <param name="position">The position to wait for, normally <c>session.LastAppendedSequence</c>.</param>
+    /// <param name="projections">The projection classes, or the documents they write.</param>
+    /// <param name="timeout">How long to wait.</param>
+    /// <param name="token">Cancelling this throws <see cref="OperationCanceledException" />.</param>
+    Task<ProjectionWaitResult> WaitForProjectionsAsync(EventStorePosition position, IReadOnlyList<Type> projections,
+        TimeSpan timeout, CancellationToken token = default)
+        => throw new NotSupportedException(
+            $"{GetType().FullName} does not implement {nameof(IDocumentStore)}.{nameof(WaitForProjectionsAsync)}.");
+
+    /// <summary>
+    ///     #6004: <see cref="WaitForProjectionsAsync(EventStorePosition, IReadOnlyList{Type}, TimeSpan, CancellationToken)" />
+    ///     by projection or subscription name.
+    /// </summary>
+    Task<ProjectionWaitResult> WaitForProjectionsAsync(EventStorePosition position,
+        IReadOnlyList<string> projectionNames, TimeSpan timeout, CancellationToken token = default)
+        => throw new NotSupportedException(
+            $"{GetType().FullName} does not implement {nameof(IDocumentStore)}.{nameof(WaitForProjectionsAsync)}.");
 }

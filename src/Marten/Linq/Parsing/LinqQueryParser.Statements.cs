@@ -24,6 +24,11 @@ internal partial class LinqQueryParser
             _collectionUsages[i - 1].Inner = _collectionUsages[i];
         }
 
+        foreach (var collectionUsage in _collectionUsages)
+        {
+            collectionUsage.ResetCompilation();
+        }
+
         var documentStorage = (ILinqDocumentStorage)Session.StorageFor(top.ElementType);
         var collection = documentStorage.QueryMembers;
 

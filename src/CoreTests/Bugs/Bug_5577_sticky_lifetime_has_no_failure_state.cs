@@ -20,7 +20,7 @@ public class Bug5577Doc
 }
 
 /// <summary>
-/// #5577 and #5578. A sticky connection lifetime -- UseStickyConnectionLifetimes, Serializable, a
+/// #5577 and #5578. A sticky connection lifetime -- a pinned session, Serializable, a
 /// user-supplied connection, ambient or external transactions -- holds one connection open for the life of
 /// the session. Nothing in TransactionalConnection tracks that the connection or its transaction has become
 /// unusable, so the read retry replays a command against state that cannot be restored.
@@ -57,14 +57,11 @@ public class Bug_5577_sticky_lifetime_has_no_failure_state: OneOffConfigurations
             await setup.SaveChangesAsync();
         }
 
-        await using var session = theStore.QuerySession(new SessionOptions
-        {
-            IsolationLevel = IsolationLevel.Serializable
-        });
+        await using var session = await theStore.QuerySerializableSessionAsync(new SessionOptions());
 
         // establishes the connection and the serializable snapshot
         (await session.LoadAsync<Bug5577Doc>(id))!.Value.ShouldBe(1);
-        var pid = session.Connection!.ProcessID;
+        var pid = (await session.GetConnectionAsync()).ProcessID;
 
         await using (var other = theStore.LightweightSession())
         {
@@ -102,10 +99,7 @@ public class Bug_5577_sticky_lifetime_has_no_failure_state: OneOffConfigurations
     {
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Bug5577Doc));
 
-        await using var session = theStore.QuerySession(new SessionOptions
-        {
-            IsolationLevel = IsolationLevel.Serializable, Timeout = 1
-        });
+        await using var session = await theStore.QuerySerializableSessionAsync(new SessionOptions { Timeout = 1 });
 
         // open the transaction
         await session.Query<Bug5577Doc>().CountAsync(CancellationToken.None);

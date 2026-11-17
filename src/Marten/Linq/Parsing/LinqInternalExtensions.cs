@@ -17,8 +17,6 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing;
 
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 [UnconditionalSuppressMessage("Trimming", "IL2075",
     Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 public static class LinqInternalExtensions
@@ -133,7 +131,18 @@ public static class LinqInternalExtensions
     {
         if (collection is IValueCollectionMember valueCollection)
         {
-            return valueCollection.Element;
+            // #5941: only the element itself is the element. OrderBy(n => n.Length) over flattened strings used to
+            // order by the string, because every expression over a value collection was taken as its element.
+            var elementMembers = valueCollection.ElementType == typeof(string) && expression is not ParameterExpression
+                ? MemberFinder.Determine(expression, invalidExpression)
+                : [];
+
+            if (elementMembers.Length == 0)
+            {
+                return valueCollection.Element;
+            }
+
+            return collection.MemberFor(elementMembers);
         }
 
         if (expression is ParameterExpression)
@@ -194,6 +203,84 @@ public static class LinqInternalExtensions
         }
 
         return member;
+    }
+
+    /// <summary>
+    ///     #5949: is <paramref name="call" /> a positional read of a collection element, <c>x.List[1]</c> or
+    ///     <c>x.Values.ElementAt(1)</c>? A dictionary indexer reads by key and is not.
+    /// </summary>
+    internal static bool IsElementIndexer(this MethodCallExpression call)
+    {
+        if (call.Method.Name == "get_Item")
+        {
+            var declaringType = call.Method.DeclaringType;
+            return call.Object != null && call.Arguments.Count == 1 && call.Arguments[0].Type == typeof(int) &&
+                   declaringType != null && !declaringType.Closes(typeof(IDictionary<,>)) &&
+                   !declaringType.Closes(typeof(IReadOnlyDictionary<,>));
+        }
+
+        return call.Method.DeclaringType == typeof(Enumerable) && call.Method.Name == nameof(Enumerable.ElementAt) &&
+               call.Arguments.Count == 2 && call.Arguments[1].Type == typeof(int);
+    }
+
+    /// <summary>
+    ///     #5949: does the member chain <paramref name="expression" /> read a collection element by position,
+    ///     <c>x.Values[1]</c>, <c>x.Grid[1][0]</c> or <c>x.Children[0].Name</c>? MemberFinder cannot follow an
+    ///     index, so such a chain is resolved by <see cref="MemberForIndexedChain" /> instead.
+    /// </summary>
+    internal static bool HasElementIndex(this Expression? expression)
+    {
+        while (expression != null)
+        {
+            switch (expression)
+            {
+                case BinaryExpression { NodeType: ExpressionType.ArrayIndex }:
+                    return true;
+
+                case MethodCallExpression call when call.IsElementIndexer():
+                    return true;
+
+                case MethodCallExpression call:
+                    expression = call.Object ?? call.Arguments.FirstOrDefault();
+                    break;
+
+                case MemberExpression member:
+                    expression = member.Expression;
+                    break;
+
+                case UnaryExpression unary:
+                    expression = unary.Operand;
+                    break;
+
+                case LambdaExpression lambda:
+                    expression = lambda.Body;
+                    break;
+
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     #5949: resolve a member chain that reads collection elements by position. It goes through the same
+    ///     SimpleExpression walk a Where() comparison has always used for <c>x.Values[1] == 3</c>, so an index
+    ///     resolves to the same member wherever it appears.
+    /// </summary>
+    internal static IQueryableMember MemberForIndexedChain(this IQueryableMemberCollection collection,
+        Expression expression)
+    {
+        if (expression is LambdaExpression lambda)
+        {
+            expression = lambda.Body;
+        }
+
+        var simple = new SimpleExpression(collection, expression);
+        return simple.Member ??
+               throw new BadLinqExpressionException(
+                   $"Marten cannot translate '{expression}' to a member of the document");
     }
 
     public static ISqlFragment ReduceToValue(this IQueryableMemberCollection collection, Expression expression)
@@ -272,8 +359,47 @@ public static class LinqInternalExtensions
             return true;
         }
 
+        // #5943: anything else that reads no lambda parameter is a value as well -- an array index,
+        // `Lookup.Grid[1][0]`, an indexer, `Lookup.Names[2]` or `Lookup.Limits["max"]`, a static member, a
+        // member of one, or arithmetic over any of those. Evaluating the whole closed subtree here, rather
+        // than letting each parser walk into it, is what stops the parsers treating a static or captured
+        // collection as a member of the document. Nothing here can read the document, because every
+        // document member hangs off a lambda parameter.
+        if (IsClosedValue(expression))
+        {
+            constant = ReduceToConstant(expression);
+            return true;
+        }
+
         constant = default;
         return false;
+    }
+
+    /// <summary>
+    ///     True when <paramref name="expression" /> is a value Marten can evaluate on the client: it reads no
+    ///     lambda parameter, and it is not a lambda or a query of its own.
+    /// </summary>
+    internal static bool IsClosedValue(this Expression expression)
+    {
+        switch (expression)
+        {
+            case LambdaExpression:
+            case ParameterExpression:
+            case UnaryExpression { NodeType: ExpressionType.Quote }:
+                return false;
+        }
+
+        // A query is not a value: a closed IQueryable keeps going to the parsers that know what to do
+        // with one, exactly as before. Nor is a span, which cannot be boxed into a constant.
+        if (expression.Type == typeof(void) || expression.Type.IsByRefLike ||
+            typeof(IQueryable).IsAssignableFrom(expression.Type))
+        {
+            return false;
+        }
+
+        var parameters = new FreeParameterFinder();
+        parameters.Visit(expression);
+        return parameters.Found == null;
     }
 
     private static bool isArrayLiteralValue(NewArrayExpression array)
@@ -476,6 +602,8 @@ public static class LinqInternalExtensions
     ///     Overload taking the platform capability explicitly so tests can exercise the interpreted
     ///     path on a runtime that happens to support emitting.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "Consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
     internal static Func<object> CompileValueReader(Expression<Func<object>> lambda, bool canEmit)
     {
         return canEmit
@@ -585,6 +713,66 @@ public static class LinqInternalExtensions
                 return true;
             }
 
+            // #5943: `Lookup.Grid[1][0]`. A one-dimensional array index, and its length, read by reflection
+            // like the members above so the common shapes stay off the emit path.
+            case BinaryExpression { NodeType: ExpressionType.ArrayIndex } arrayIndex:
+            {
+                if (!TryEvaluateWithoutCompiling(arrayIndex.Left, out var target) ||
+                    !TryEvaluateWithoutCompiling(arrayIndex.Right, out var index))
+                {
+                    value = null;
+                    return false;
+                }
+
+                value = ((Array)target!).GetValue(Convert.ToInt64(index, CultureInfo.InvariantCulture));
+                return true;
+            }
+
+            case UnaryExpression { NodeType: ExpressionType.ArrayLength } arrayLength:
+            {
+                if (!TryEvaluateWithoutCompiling(arrayLength.Operand, out var target))
+                {
+                    value = null;
+                    return false;
+                }
+
+                value = ((Array)target!).Length;
+                return true;
+            }
+
+            // An indexer, `Lookup.Names[2]` or `Lookup.Limits["max"]`, and a multi-dimensional array's
+            // `Lookup.Matrix[1, 0]`, which the compiler emits as a call to the array's Get method
+            case MethodCallExpression { Object: not null } call
+                when call.Method.Name == "get_Item" || (call.Object.Type.IsArray && call.Method.Name == "Get"):
+            {
+                if (!TryEvaluateWithoutCompiling(call.Object, out var target) ||
+                    !tryEvaluateAll(call.Arguments, out var arguments))
+                {
+                    value = null;
+                    return false;
+                }
+
+                // The same exception the compiled path raises for a missing key or a bad index, not a
+                // TargetInvocationException around it
+                value = call.Method.Invoke(target, BindingFlags.DoNotWrapExceptions, null, arguments, null);
+                return true;
+            }
+
+            case IndexExpression { Object: not null } indexer:
+            {
+                if (!TryEvaluateWithoutCompiling(indexer.Object, out var target) ||
+                    !tryEvaluateAll(indexer.Arguments, out var arguments))
+                {
+                    value = null;
+                    return false;
+                }
+
+                value = indexer.Indexer != null
+                    ? indexer.Indexer.GetValue(target, BindingFlags.DoNotWrapExceptions, null, arguments, null)
+                    : ((Array)target!).GetValue(arguments.Select(x => Convert.ToInt64(x, CultureInfo.InvariantCulture)).ToArray());
+                return true;
+            }
+
             case NewArrayExpression { NodeType: ExpressionType.NewArrayInit } array:
             {
                 var elementType = array.Type.GetElementType();
@@ -614,6 +802,20 @@ public static class LinqInternalExtensions
                 value = null;
                 return false;
         }
+    }
+
+    private static bool tryEvaluateAll(IReadOnlyList<Expression> expressions, out object?[] values)
+    {
+        values = new object?[expressions.Count];
+        for (var i = 0; i < expressions.Count; i++)
+        {
+            if (!TryEvaluateWithoutCompiling(expressions[i], out values[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -714,6 +916,12 @@ public static class LinqInternalExtensions
         private readonly HashSet<ParameterExpression> _bound = new();
 
         public ParameterExpression? Found { get; private set; }
+
+        // One free parameter settles it; there is no need to walk the rest of the tree
+        public override Expression? Visit(Expression? node)
+        {
+            return Found != null ? node : base.Visit(node);
+        }
 
         protected override Expression VisitLambda<T>(Expression<T> node)
         {

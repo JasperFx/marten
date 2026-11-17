@@ -18,10 +18,17 @@ namespace Marten.Internal.Sessions;
 public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuerySession<IQuerySession>
 {
     public const string SynchronousRemoval =
-        "As of Marten 9.0, only asynchronous data access is supported. Please use the asynchronous equivalent.";
+        "Synchronous data access is not supported in Marten 10. Use the asynchronous equivalent.";
 
+    /// <summary>
+    ///     The message of the <see cref="NotSupportedException" /> thrown by the remaining synchronous members.
+    ///     Synchronous LINQ operators throw a more specific message that names the asynchronous operator to use.
+    /// </summary>
     public const string SynchronousNotSupportedMessage =
-        "As of Marten 9.0, only asynchronous data access is supported";
+        "Synchronous data access is not supported in Marten 10. Use the asynchronous equivalent.";
+
+    internal const string ToPagedListNotSupportedMessage =
+        "Synchronous data access is not supported in Marten 10. Use await ToPagedListAsync() instead.";
 
     internal const char DefaultParameterPlaceholder = '?';
 
@@ -144,24 +151,21 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
 
     public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;
 
-    public virtual NpgsqlConnection Connection
+    public virtual async ValueTask<NpgsqlConnection> GetConnectionAsync(CancellationToken token = default)
     {
-        get
+        switch (_connection)
         {
-            switch (_connection)
+            case IAlwaysConnectedLifetime lifetime:
+                return await lifetime.OpenConnectionAsync(token).ConfigureAwait(false);
+            case ITransactionStarter starter:
             {
-                case IAlwaysConnectedLifetime lifetime:
-                    return lifetime.Connection;
-                case ITransactionStarter starter:
-                {
-                    var l = starter.Start();
-                    _connection = l;
-                    return l.Connection;
-                }
-                default:
-                    throw new InvalidOperationException(
-                        $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
+                var l = await starter.StartAsync(token).ConfigureAwait(false);
+                _connection = l;
+                return await l.OpenConnectionAsync(token).ConfigureAwait(false);
             }
+            default:
+                throw new InvalidOperationException(
+                    $"The current lifetime {_connection} is neither a {nameof(IAlwaysConnectedLifetime)} nor a {nameof(ITransactionStarter)}");
         }
     }
 

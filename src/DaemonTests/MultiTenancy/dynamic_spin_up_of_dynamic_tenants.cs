@@ -46,7 +46,7 @@ public class dynamic_spin_up_of_dynamic_tenants : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         await conn.DropSchemaAsync("tenants");

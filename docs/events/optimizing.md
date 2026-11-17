@@ -26,8 +26,8 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection("some connection string");
 
-    // Turn on the PostgreSQL table partitioning for
-    // hot/cold storage on archived events
+    // PostgreSQL table partitioning for hot/cold storage
+    // on archived events. On by default since Marten 10
     opts.Events.UseArchivedStreamPartitioning = true;
 
     // Use the *much* faster workflow for appending events
@@ -356,8 +356,9 @@ for how it behaves and how to choose a value.
 ## Distributed Async Projections with Wolverine
 
 By default, async projection and subscription processing is coordinated across your application cluster using
-Marten's built-in "Hot/Cold" leader election. An alternative is to use Wolverine's more sophisticated agent
-distribution to spread projection work across all nodes in your application cluster:
+Marten's built-in "Hot/Cold" leader election. That is failover only: the first node to start usually runs all of the
+projection work, and another node takes over only when it dies. If you run more than one node, we recommend
+Wolverine's agent distribution, which spreads projection work across all nodes in your application cluster:
 
 ```cs
 builder.Services.AddMarten(opts =>
@@ -372,7 +373,8 @@ builder.Services.AddMarten(opts =>
 
 This eliminates single-node bottlenecks in multi-instance deployments by distributing projection shards
 across available nodes rather than centralizing all processing on the elected leader. See the
-[Wolverine integration documentation](https://wolverinefx.net/guide/durability/marten/event-sourcing.html)
-for more details.
+[Wolverine distribution documentation](https://wolverinefx.net/guide/durability/marten/distribution.html)
+for more details. [CritterWatch](https://critterwatch.jasperfx.net) adds monitoring and management of the
+projections and subscriptions across the fleet, but the distribution works without it.
 
 For more on this topic, see [Wolverine-managed distribution](https://jeremydmiller.com/2025/06/02/making-event-sourcing-with-marten-go-faster/).

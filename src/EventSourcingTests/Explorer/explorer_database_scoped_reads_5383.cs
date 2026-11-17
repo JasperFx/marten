@@ -79,13 +79,16 @@ public class explorer_database_scoped_reads_5383 : IAsyncLifetime
 
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        // Nothing clears these databases between runs and every test appends the same stream keys.
+        // Nothing clears these databases between runs and every test appends the same stream keys. Strict
+        // stream identity (on by default) keeps every key in mt_streams_identity, which an append to a new stream
+        // claims too since #6051, so it is cleared with the streams.
         foreach (var connectionString in _connectionStrings.Values)
         {
             await using var conn = new NpgsqlConnection(connectionString);
             await conn.OpenAsync();
             await using var cmd = conn.CreateCommand();
-            cmd.CommandText = "truncate table explorer_5383.mt_events, explorer_5383.mt_streams";
+            cmd.CommandText =
+                "truncate table explorer_5383.mt_events, explorer_5383.mt_streams, explorer_5383.mt_streams_identity";
             await cmd.ExecuteNonQueryAsync();
         }
     }

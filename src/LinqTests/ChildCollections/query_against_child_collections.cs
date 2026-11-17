@@ -463,10 +463,35 @@ public class query_against_child_collections: OneOffConfigurationsContext
         await Should.ThrowAsync<BadLinqExpressionException>(async () =>
         {
             var res = await theSession.Query<Article>()
-                .Where(x => x.AuthorArray.Any(s => favAuthors.Intersect(new Guid[] { Guid.NewGuid() }).Any()))
+                .Where(x => favAuthors.Intersect(x.AuthorArray).Any())
                 .OrderBy(x => x.Long)
                 .ToListAsync();
         });
+    }
+
+    // #5943: this used to be the query above, and was refused. Its Any() predicate reads nothing from the
+    // element, so it is one value for every element, as it is in LINQ to Objects, and is evaluated as one.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task query_array_with_an_Intersect_that_reads_nothing_from_the_element(bool overlapping)
+    {
+        await buildAuthorData();
+
+        var others = overlapping ? favAuthors.Take(1).ToArray() : new Guid[] { Guid.NewGuid() };
+
+        var all = await theSession.Query<Article>().ToListAsync();
+        var expected = all.Where(x => x.AuthorArray != null && x.AuthorArray.Any(s => favAuthors.Intersect(others).Any()))
+            .Select(x => x.Long).OrderBy(x => x).ToList();
+
+        var actual = await theSession.Query<Article>()
+            .Where(x => x.AuthorArray.Any(s => favAuthors.Intersect(others).Any()))
+            .OrderBy(x => x.Long)
+            .Select(x => x.Long)
+            .ToListAsync();
+
+        actual.ShouldBe(expected);
+        if (overlapping) actual.ShouldNotBeEmpty();
     }
 
     [Fact]
