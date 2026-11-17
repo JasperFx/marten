@@ -85,6 +85,9 @@ public abstract partial class DocumentSessionBase
             throw;
         }
 
+        // #6004: before the listeners, so an AfterCommitAsync listener can carry the position on
+        recordAppendedPosition();
+
         publishAggregateWrites(_workTracker);
 
         if (_messageBatch != null)
@@ -112,6 +115,62 @@ public abstract partial class DocumentSessionBase
 
         // #5276: and with it any boundary this save read but never appended to.
         ForgetPendingDcbBoundaryAssertions();
+    }
+
+    /// <summary>
+    ///     #6004: where the events this session committed are, for
+    ///     <see cref="IDocumentStore.WaitForProjectionsAsync(EventStorePosition, IReadOnlyList{Type}, TimeSpan, CancellationToken)" />.
+    ///     The highest event sequence any <c>SaveChangesAsync</c> on this session appended, with the session's database
+    ///     and tenant. Null until a commit appends events.
+    /// </summary>
+    /// <remarks>
+    ///     Under <c>UseTenantPartitionedEvents</c> every tenant draws its own sequence, so the position is the one of
+    ///     the session's own tenant, or of the one tenant the commit appended for when that is another. A commit that
+    ///     appends for several tenants other than the session's records the first of them.
+    /// </remarks>
+    public EventStorePosition? LastAppendedSequence { get; private set; }
+
+    private void recordAppendedPosition()
+    {
+        var streams = _workTracker.Streams;
+        if (streams.Count == 0) return;
+
+        string? tenantId = TenantId;
+        long highest = 0;
+
+        if (Options.Events.UseTenantPartitionedEvents)
+        {
+            var appended = streams.Where(x => x.Events.Count > 0).ToList();
+            if (appended.Count == 0) return;
+
+            if (appended.All(x => x.TenantId != TenantId)) tenantId = appended[0].TenantId;
+
+            foreach (var stream in appended.Where(x => x.TenantId == tenantId))
+            {
+                highest = Math.Max(highest, stream.Events.Max(x => x.Sequence));
+            }
+        }
+        else
+        {
+            foreach (var stream in streams)
+            {
+                foreach (var @event in stream.Events)
+                {
+                    highest = Math.Max(highest, @event.Sequence);
+                }
+            }
+        }
+
+        if (highest <= 0) return;
+
+        // Only ever forward: a later commit on the same session cannot move the position back
+        if (LastAppendedSequence != null && LastAppendedSequence.TenantId == tenantId &&
+            LastAppendedSequence.Sequence >= highest)
+        {
+            return;
+        }
+
+        LastAppendedSequence = new EventStorePosition(Database.Identifier, tenantId, highest);
     }
 
     private IMessageBatch? _messageBatch;

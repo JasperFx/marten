@@ -1132,6 +1132,75 @@ var latest = await session
 `QueryForNonStaleData<T>(timeout)` overload, so existing usages are unaffected. Choose
 `NonStaleDataTimeoutMode.ReturnStaleData` only when serving slightly stale data is preferable to a failed query.
 
+## Reading Your Own Writes <Badge type="tip" text="10.0" />
+
+`QueryForNonStaleData` waits for the highest event sequence in the store at the time of the call. On a busy
+system that includes everybody else's events, so a request waits for work it doesn't care about. And a timeout
+there is an exception, even though your write went through just fine.
+
+If what you want is to read back what you just wrote, wait for your own events instead. After
+`SaveChangesAsync()`, `session.LastAppendedSequence` tells you where that commit's events are, and
+`IDocumentStore.WaitForProjectionsAsync()` waits for the named asynchronous projections to get that far:
+
+<!-- snippet: sample_read_your_writes -->
+<a id='snippet-sample_read_your_writes'></a>
+```cs
+await using var session = store.LightweightSession();
+session.Events.StartStream(Guid.NewGuid(), new RywCounted(false));
+await session.SaveChangesAsync();
+
+// Where this commit's events are: database, tenant and sequence
+var position = session.LastAppendedSequence!;
+
+var result = await store.WaitForProjectionsAsync(position, [typeof(RywTally)], 5.Seconds());
+if (result.Reached)
+{
+    var tally = await session.LoadAsync<RywTally>("tally");
+}
+else
+{
+    // Timed out, or the projection is paused or rebuilding. The write succeeded either way,
+    // and result.Shards says how far each shard got
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/read_your_writes.cs#L143-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_read_your_writes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Some things to know:
+
+* The result is a value, not an exception. `Reached` means the projections have your events. `TimedOut` means they
+  don't yet, and `Shards` tells you how far each one got. Return a 202, read anyway, or fall back to a live
+  aggregation. That's your call.
+* A projection that is paused or being rebuilt returns right away with `Paused` or `Rebuilding` instead of making
+  you sit through the timeout. Another node sees a pause only with
+  [extended progression tracking](#extended-progression-tracking) turned on, and a rebuild is only visible on
+  the node running it.
+* The wait polls `mt_event_progression`, so it works on any node, whether or not that node runs the daemon.
+* Pass the projection classes, the documents they write, or the projection names. Asking about something that
+  isn't an asynchronous projection is an `ArgumentException`. An inline projection is already current when
+  `SaveChangesAsync()` returns.
+* The position is the database, the tenant and the sequence. With `UseTenantPartitionedEvents` every tenant has its
+  own sequence, and with a database per tenant every database has its own, and the wait reads the matching
+  progression rows.
+* A [gap in the event sequence](#sequence-gaps-and-the-high-water-mark) below your events holds the wait until the
+  daemon's gap detection skips it, and the daemon's polling interval is the floor on how fast any of this can be.
+
+The position is small and serializes as JSON. It also has a compact text form if you want to hand it to the next
+request in a header:
+
+<!-- snippet: sample_event_store_position_as_header -->
+<a id='snippet-sample_event_store_position_as_header'></a>
+```cs
+var position = new EventStorePosition("main", "tenant-a", 1234);
+
+// "main/tenant-a/1234", safe to put in a header
+var header = position.ToString();
+
+var back = EventStorePosition.Parse(header);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/read_your_writes.cs#L310-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_store_position_as_header' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Migrating a Projection from Inline to Async <Badge type="tip" text="7.35" />
 
 ::: warning
