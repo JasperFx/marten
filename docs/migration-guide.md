@@ -19,6 +19,17 @@
 You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
 On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605.
 
+### Runtime-async on `net11.0` <Badge type="warning" text="behavior change" />
+
+The `net11.0` build of Marten is compiled with the C# compiler's runtime-async feature, so its async methods run as
+.NET 11 runtime-async methods instead of compiler-built state machines. That allocates less per call, but stack
+traces, debugger stepping and any APM agent or profiler that hooks async state machines may look or behave
+differently. The `net10.0` build is unchanged.
+
+To build Marten from source without it, pass `-p:MartenRuntimeAsync=false`. Code that Marten's source generators
+write into your project is compiled by your project, so your own compiler settings decide there
+([#5886](https://github.com/JasperFx/marten/issues/5886)).
+
 ### Synchronous data access is gone {#synchronous-data-access-is-gone-in-10-0-0}
 
 ::: warning Breaking change
@@ -501,6 +512,24 @@ every table this policy partitions. To keep the old primary key, pass it:
 opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(
     x => x.ByExternallyManagedListPartitions(),
     PrimaryKeyTenancyOrdering.Id_Then_TenantId);
+### Declaring the same computed index twice throws <Badge type="warning" text="behavior change" />
+
+Two `Index()` calls on one document type that resolve to the same index name, for example the same member twice,
+or the same member again with `Casing = Lower`, now throw an `InvalidOperationException` while the document is
+configured. The message names the document type, the member and the index. In 9.x both were accepted and the
+failure came much later, when a migration was computed against an existing table, as an
+`ArgumentException: An item with the same key has already been added` that named only the index
+([#6019](https://github.com/JasperFx/marten/issues/6019)).
+
+Declare the index once. If you really want a second index over the same member, give it its own name:
+
+```cs
+opts.Schema.For<Order>().Index(x => x.CustomerEmail);
+opts.Schema.For<Order>().Index(x => x.CustomerEmail, x =>
+{
+    x.Casing = ComputedIndex.Casings.Lower;
+    x.Name = "idx_order_customer_email_lower";
+});
 ```
 
 ### Default changes in 10.0 and how to restore Marten 9 behavior

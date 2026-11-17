@@ -1182,7 +1182,7 @@ public class DocumentMapping<T>: DocumentMapping
 
             var index = new ComputedIndex(this, members);
             configure?.Invoke(index);
-            Indexes.Add(index);
+            addComputedIndex(index);
             return;
         }
 
@@ -1203,6 +1203,23 @@ public class DocumentMapping<T>: DocumentMapping
 
         var index = new ComputedIndex(this, members);
         configure?.Invoke(index);
+        addComputedIndex(index);
+    }
+
+    // #6019: two Index() calls that resolve to the same index name used to be accepted here and fail much
+    // later, inside a migration, with an ArgumentException that named only the index
+    private void addComputedIndex(ComputedIndex index)
+    {
+        var name = index.Name;
+        var existing = Indexes.FirstOrDefault(x => x.Name.EqualsIgnoreCase(name));
+        if (existing != null)
+        {
+            var members = index.MemberPaths.Join(", ");
+            throw new InvalidOperationException(
+                $"Document type {typeof(T).FullNameInCode()} already has an index named '{name}', so Index() over {members} cannot add another one with the same name. " +
+                $"Declare the index once, or give a genuinely second index its own name with x => x.Name = \"...\"");
+        }
+
         Indexes.Add(index);
     }
 
