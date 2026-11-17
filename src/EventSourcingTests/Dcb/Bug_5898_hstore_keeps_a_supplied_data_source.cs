@@ -88,6 +88,59 @@ public class Bug_5898_hstore_keeps_a_supplied_data_source: IAsyncLifetime
         await assertTheStoreRunsOnTheSuppliedDataSource();
     }
 
+    /// <summary>
+    ///     The tests above only failed when they were the first to create the hstore extension in their database:
+    ///     the supplied data source loaded its types on the migration's own connection, before the extension
+    ///     existed, and nothing reloaded them. A database of its own makes that the case every time.
+    /// </summary>
+    [Fact]
+    public async Task hstore_mode_on_a_database_without_the_extension_yet()
+    {
+        var databaseName = $"bug_5898_{Guid.NewGuid():N}"[..24];
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            // template0 takes no connections, so nothing else on the server can hold the create up
+            await conn.CreateCommand($"create database {databaseName} template template0").ExecuteNonQueryAsync();
+        }
+
+        try
+        {
+            var connectionString = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+            {
+                Database = databaseName
+            }.ConnectionString;
+
+            await using var supplied = NpgsqlDataSource.Create(connectionString);
+            await using var store = DocumentStore.For(opts =>
+            {
+                opts.DatabaseSchemaName = "bug_5898";
+                HStore(opts);
+                opts.Connection(supplied);
+            });
+
+            await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            var student = new Bug5898Student(Guid.NewGuid());
+            await using (var session = store.LightweightSession())
+            {
+                var e = session.Events.BuildEvent(new Bug5898Enrolled("Alice"));
+                e.WithTag(student);
+                session.Events.Append(Guid.NewGuid(), e);
+                await session.SaveChangesAsync();
+            }
+
+            await using var query = store.QuerySession();
+            (await query.Events.QueryByTagsAsync(new EventTagQuery().Or(student))).Count.ShouldBe(1);
+        }
+        finally
+        {
+            await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await conn.OpenAsync();
+            await conn.CreateCommand($"drop database if exists {databaseName} with (force)").ExecuteNonQueryAsync();
+        }
+    }
+
     private async Task assertTheStoreRunsOnTheSuppliedDataSource()
     {
         ((PostgresqlDatabase)theStore.Storage.Database).DataSource.ShouldBeSameAs(_supplied);
