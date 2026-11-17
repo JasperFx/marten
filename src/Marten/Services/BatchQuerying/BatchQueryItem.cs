@@ -32,4 +32,18 @@ internal class BatchQueryItem<T>: IBatchQueryItem
         Completion.SetResult(result);
     }
 
+    public void Fail(Exception exception, CancellationToken token)
+    {
+        var failed = exception is OperationCanceledException && token.IsCancellationRequested
+            ? Completion.TrySetCanceled(token)
+            : Completion.TrySetException(exception);
+
+        if (failed)
+        {
+            // The caller already has this exception from Execute() and may never await the item, so mark it
+            // observed rather than let an unawaited item raise TaskScheduler.UnobservedTaskException later.
+            _ = Completion.Task.Exception;
+        }
+    }
+
 }
