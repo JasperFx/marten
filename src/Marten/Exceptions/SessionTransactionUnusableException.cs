@@ -5,8 +5,8 @@ namespace Marten.Exceptions;
 
 /// <summary>
 ///     Thrown when a session that holds one connection open for its whole lifetime --
-///     <c>UseStickyConnectionLifetimes</c>, <see cref="System.Data.IsolationLevel.Serializable" />, a
-///     caller-supplied connection, or an ambient/external transaction -- can no longer be used, because an
+///     a session pinned by <c>BeginTransactionAsync()</c> or <c>GetConnectionAsync()</c>,
+///     <see cref="System.Data.IsolationLevel.Serializable" />, a caller-supplied connection, or an ambient/external transaction -- can no longer be used, because an
 ///     earlier failure left its connection or its transaction in a state nothing can recover.
 /// </summary>
 /// <remarks>

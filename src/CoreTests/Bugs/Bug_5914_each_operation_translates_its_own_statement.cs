@@ -33,11 +33,12 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
     private const string Succeeds = "select 1";
     private const string SucceedsWithoutResult = "do $$ begin perform 1; end $$";
 
-    private IDocumentSession OpenSession(bool sticky, bool applicationTransform = false)
+    // sticky: the session is pinned to one connection by BeginTransactionAsync(), which is what
+    // UseStickyConnectionLifetimes did before 10.0 (TransactionalConnection)
+    private async Task<IDocumentSession> OpenSessionAsync(bool sticky, bool applicationTransform = false)
     {
         StoreOptions(opts =>
         {
-            opts.UseStickyConnectionLifetimes = sticky;
             if (applicationTransform)
             {
                 opts.Advanced.ExceptionTransforms.IfExceptionIs<PostgresException>()
@@ -47,6 +48,7 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
         });
         var session = theStore.LightweightSession();
         _disposables.Add(session);
+        if (sticky) await session.BeginTransactionAsync(CancellationToken.None);
         return session;
     }
 
@@ -62,7 +64,7 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
     public async Task a_statement_behind_a_result_set_is_its_own_operations(bool sticky)
     {
         // The issue's shape: operation 0 is postprocessed, then advancing the reader raises operation 1's error
-        (await ClaimedByAsync(OpenSession(sticky),
+        (await ClaimedByAsync(await OpenSessionAsync(sticky),
                 new Claiming("A", Succeeds), new Claiming("B", Fails), new Claiming("C", Succeeds)))
             .ShouldBe("B");
     }
@@ -72,7 +74,7 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
     [InlineData(true)]
     public async Task a_failing_first_statement_is_its_own_operations(bool sticky)
     {
-        (await ClaimedByAsync(OpenSession(sticky),
+        (await ClaimedByAsync(await OpenSessionAsync(sticky),
                 new Claiming("A", Fails), new Claiming("B", Succeeds)))
             .ShouldBe("A");
     }
@@ -82,7 +84,7 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
     [InlineData(true)]
     public async Task a_failing_last_statement_without_a_result_set_is_its_own_operations(bool sticky)
     {
-        (await ClaimedByAsync(OpenSession(sticky),
+        (await ClaimedByAsync(await OpenSessionAsync(sticky),
                 new Claiming("A", Succeeds), new ClaimingNoData("B", FailsWithoutResult)))
             .ShouldBe("B");
     }
@@ -93,7 +95,7 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
     public async Task a_failure_inside_a_run_without_result_sets_behind_a_result_set(bool sticky)
     {
         // Advancing past A executes B, C and D together; C failed
-        (await ClaimedByAsync(OpenSession(sticky),
+        (await ClaimedByAsync(await OpenSessionAsync(sticky),
                 new Claiming("A", Succeeds), new ClaimingNoData("B", SucceedsWithoutResult),
                 new ClaimingNoData("C", FailsWithoutResult), new Claiming("D", Succeeds)))
             .ShouldBe("C");
@@ -106,7 +108,7 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
     {
         // Opening the reader executes A, B and C together; B failed. Every operation used to be offered it in
         // order, so A answered.
-        (await ClaimedByAsync(OpenSession(sticky),
+        (await ClaimedByAsync(await OpenSessionAsync(sticky),
                 new ClaimingNoData("A", SucceedsWithoutResult), new ClaimingNoData("B", FailsWithoutResult),
                 new Claiming("C", Succeeds), new Claiming("D", Succeeds)))
             .ShouldBe("B");
@@ -118,7 +120,7 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
         // Attributed to B, which declines: A must not get it as a second choice
         var ex = await Should.ThrowAsync<MartenCommandException>(async () =>
         {
-            var session = OpenSession(false);
+            var session = await OpenSessionAsync(false);
             session.QueueOperation(new Claiming("A", Succeeds));
             session.QueueOperation(new Claiming("B", Fails) { Declines = true });
             await session.SaveChangesAsync();
@@ -135,7 +137,7 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
         // #5682's documented order: the operation's own transform, then the application's, then Marten's. A
         // sticky (TransactionalConnection) session opened the reader through its own ExecuteReaderAsync, which
         // ran the application's transforms first, so a first statement's failure never reached its operation.
-        (await ClaimedByAsync(OpenSession(sticky, applicationTransform: true),
+        (await ClaimedByAsync(await OpenSessionAsync(sticky, applicationTransform: true),
                 new Claiming("A", Fails), new Claiming("B", Succeeds)))
             .ShouldBe("A");
     }
@@ -145,7 +147,7 @@ public class Bug_5914_each_operation_translates_its_own_statement: OneOffConfigu
     [InlineData(true)]
     public async Task what_the_failing_operation_declines_goes_to_the_application_not_to_another_operation(bool sticky)
     {
-        (await ClaimedByAsync(OpenSession(sticky, applicationTransform: true),
+        (await ClaimedByAsync(await OpenSessionAsync(sticky, applicationTransform: true),
                 new Claiming("A", Succeeds), new Claiming("B", Fails) { Declines = true }))
             .ShouldBe("application");
     }

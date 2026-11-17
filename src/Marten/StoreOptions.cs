@@ -376,15 +376,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     /// <summary>
-    /// Direct Marten to use the <= V6 behavior of keeping a connection open
-    /// in an IQuerySession or IDocumentSession upon first usage until the session
-    /// is disposed. In V7 and later, the default behavior is an aggressive "use and close"
-    /// policy that tries to close and released used database connections as soon as possible
-    /// Default is false
-    /// </summary>
-    public bool UseStickyConnectionLifetimes { get; set; } = false;
-
-    /// <summary>
     /// The PostgreSQL session setting name used for RLS tenant identification.
     /// Null means RLS is disabled. Defaults to null.
     /// </summary>
@@ -1385,6 +1376,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             _ = new Schema.MartenManagedTenantListPartitions(this, schemaName: null);
         }
+
+        // #5684: tables registered through Storage.PartitionPerTenant()
+        Storage.ApplyTenantPartitioning(TenantPartitions);
     }
 
     /// <summary>
@@ -1493,7 +1487,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             });
         }
 
-        //TODO -- V9 change default PrimaryKeyTenancyOrdering to TenantId_Then_Id
         /// <summary>
         ///     Unless explicitly marked otherwise, all documents should
         ///     use conjoined multi-tenancy and opt into using user defined
@@ -1502,13 +1495,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         /// <param name="configure">Customize the table partitioning on the tenant id</param>
         /// <returns></returns>
         /// <remarks>
-        ///     Uses <see cref="PrimaryKeyTenancyOrdering.Id_Then_TenantId"/> by default for V7-V8 compatibility.
-        ///     This default will change to <see cref="PrimaryKeyTenancyOrdering.TenantId_Then_Id"/> in V9.
-        ///     If you want to opt-in to the V9 default behavior now, use the overload that takes a
-        ///     <see cref="PrimaryKeyTenancyOrdering"/> parameter.
+        ///     Uses <see cref="PrimaryKeyTenancyOrdering.TenantId_Then_Id"/>, the same primary key as the per-document
+        ///     <c>MultiTenantedWithPartitioning()</c>. Before Marten 10 this overload used
+        ///     <see cref="PrimaryKeyTenancyOrdering.Id_Then_TenantId"/>; to keep that primary key, use the overload that
+        ///     takes a <see cref="PrimaryKeyTenancyOrdering"/> parameter.
         /// </remarks>
         public PoliciesExpression AllDocumentsAreMultiTenantedWithPartitioning(Action<PartitioningExpression> configure) =>
-            AllDocumentsAreMultiTenantedWithPartitioning(configure, PrimaryKeyTenancyOrdering.Id_Then_TenantId);
+            AllDocumentsAreMultiTenantedWithPartitioning(configure, PrimaryKeyTenancyOrdering.TenantId_Then_Id);
 
         /// <summary>
         ///     Unless explicitly marked otherwise, all documents should

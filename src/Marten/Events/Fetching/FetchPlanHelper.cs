@@ -13,12 +13,15 @@ internal static class FetchPlanHelper
     /// </summary>
     public static IReadOnlyList<IEvent>? FindPendingEvents<TId>(DocumentSessionBase session, TId id)
     {
-        if (id is Guid guidId && session.WorkTracker.TryFindStream(guidId, out var guidStream))
+        // #6031: only this session's tenant's pending events
+        var tenantId = session.Options.EventGraph.TenantToMatch(session);
+
+        if (id is Guid guidId && session.WorkTracker.TryFindStream(guidId, tenantId, out var guidStream))
         {
             return guidStream.Events;
         }
 
-        if (id is string stringId && session.WorkTracker.TryFindStream(stringId, out var stringStream))
+        if (id is string stringId && session.WorkTracker.TryFindStream(stringId, tenantId, out var stringStream))
         {
             return stringStream.Events;
         }

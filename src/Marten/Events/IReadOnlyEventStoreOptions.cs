@@ -128,8 +128,8 @@ public interface IReadOnlyEventStoreOptions
     EventNamingStyle EventNamingStyle { get; }
 
     /// <summary>
-    /// Opt into more robust tracking of asynchronous projection behavior. Default is false. This will add
-    /// extra tables, functions, and columns to your Marten event store schema
+    /// Opt into more robust tracking of asynchronous projection behavior. Default is true since Marten 9.0.
+    /// This adds extra tables, functions, and columns to your Marten event store schema
     /// </summary>
     public bool EnableAdvancedAsyncTracking { get; }
 

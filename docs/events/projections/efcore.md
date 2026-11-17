@@ -423,6 +423,17 @@ public class MyProjection
 }
 ```
 
+## Reading the aggregate
+
+`FetchLatest`, `FetchForWriting` and `AggregateStreamAsync` fold the stream's events through the
+projection for an EF Core-backed aggregate, whatever its lifecycle, because the aggregate lives in
+your `DbContext`'s table rather than in a Marten document table. That makes the read a fold of the
+whole stream, even for an inline projection.
+
+The `DbContext` handed to `ApplyEvent` during that fold is thrown away afterwards, so anything
+`ApplyEvent` adds to it is not saved. Only the projection itself, inline or async, writes through
+its `DbContext`.
+
 ## Rebuilding
 
 `IProjectionDaemon.RebuildProjectionAsync` works normally for EF Core projections. Because the
