@@ -19,6 +19,17 @@
 You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
 On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605.
 
+### Runtime-async on `net11.0` <Badge type="warning" text="behavior change" />
+
+The `net11.0` build of Marten is compiled with the C# compiler's runtime-async feature, so its async methods run as
+.NET 11 runtime-async methods instead of compiler-built state machines. That allocates less per call, but stack
+traces, debugger stepping and any APM agent or profiler that hooks async state machines may look or behave
+differently. The `net10.0` build is unchanged.
+
+To build Marten from source without it, pass `-p:MartenRuntimeAsync=false`. Code that Marten's source generators
+write into your project is compiled by your project, so your own compiler settings decide there
+([#5886](https://github.com/JasperFx/marten/issues/5886)).
+
 ### Synchronous data access is gone {#synchronous-data-access-is-gone-in-10-0-0}
 
 ::: warning Breaking change

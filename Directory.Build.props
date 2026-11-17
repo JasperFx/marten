@@ -12,6 +12,17 @@
         <TargetFrameworks>net10.0;net11.0</TargetFrameworks>
     </PropertyGroup>
 
+    <!--
+      Runtime-async (#5886, Critter Stack plan decision D4: on by default for net11.0; mirrors JasperFx's
+      JasperFxRuntimeAsync and Wolverine's WolverineRuntimeAsync). The net11.0 assemblies are compiled with the C#
+      compiler's runtime-async feature unless the build passes -p:MartenRuntimeAsync=false. net11.0 only: on net10.0 the
+      compiler refuses it (SYSLIB5007) and the runtime will not load it. Changing it does not trigger a recompile, so
+      build into a separate artifacts path (or clean bin/ and obj/) when you compare the two.
+    -->
+    <PropertyGroup Condition="'$(MartenRuntimeAsync)' != 'false' And '$(TargetFramework)' == 'net11.0'">
+        <Features>$(Features);runtime-async=on</Features>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="DotNet.ReproducibleBuilds" PrivateAssets="All" />
     </ItemGroup>
