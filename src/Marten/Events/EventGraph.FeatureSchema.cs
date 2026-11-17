@@ -58,6 +58,10 @@ public partial class EventGraph: IFeatureSchema
             yield return new Extension("hstore");
         }
 
+        // #5812: must come before any event table, so a migration that rebuilds mt_events cannot take an owned
+        // mt_events_sequence down with it
+        yield return new EventSequenceOwnershipRelease(DatabaseSchemaName);
+
         yield return new StreamsTable(this);
 
         if (EnableStrictStreamIdentityEnforcement)
@@ -72,10 +76,9 @@ public partial class EventGraph: IFeatureSchema
 
         #region sample_using-sequence
 
-        var sequence = new Sequence(new PostgresqlObjectName(DatabaseSchemaName, "mt_events_sequence"))
-        {
-            Owner = eventsTable.Identifier, OwnerColumn = "seq_id"
-        };
+        // Deliberately not OWNED BY mt_events.seq_id (#5812): a rebuild of mt_events would drop it.
+        // See EventSequenceOwnershipRelease.
+        var sequence = new Sequence(new PostgresqlObjectName(DatabaseSchemaName, "mt_events_sequence"));
 
         #endregion
 

@@ -239,6 +239,18 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
         options.NameDataLength = 100;
         options.DatabaseSchemaName = (config.SchemaName ?? "doc_compliance").ToLowerInvariant();
 
+        // The suites treat correlation id, causation id, last modified by and headers as captured only by a
+        // type that asks for them (ITracked, or an explicit mapping). Marten 10 captures them on every
+        // document by default (#5812), so turn them off wherever no member is mapped to them.
+        options.Policies.ForAllDocuments(mapping =>
+        {
+            var metadata = mapping.Metadata;
+            foreach (var column in new[] { metadata.CorrelationId, metadata.CausationId, metadata.LastModifiedBy, metadata.Headers })
+            {
+                if (column.Member == null) column.Enabled = false;
+            }
+        });
+
         // Marten creates document storage on demand, so DocumentTypes is not strictly required
         // here. Registering it anyway means ApplyAllConfiguredChangesToDatabaseAsync below actually
         // builds the tables up front, which keeps the first test of each suite off the lazy-DDL

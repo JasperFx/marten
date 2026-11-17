@@ -8,6 +8,15 @@ public class DocumentMetadataCollection
     public DocumentMetadataCollection(DocumentMapping parent)
     {
         DocumentType = new DocumentTypeColumn(parent);
+
+        // #5812: causation id, correlation id, headers and last modified by are on by default since 10.0.
+        // Decided here, when the mapping is built, so RestoreV9Defaults() works wherever it is called and
+        // policies, attributes and Schema.For<T>() still override it.
+        var enabled = !(parent.StoreOptions?.V9DefaultsRestored ?? false);
+        CausationId.Enabled = enabled;
+        CorrelationId.Enabled = enabled;
+        LastModifiedBy.Enabled = enabled;
+        Headers.Enabled = enabled;
     }
 
     public MetadataColumn Version { get; } = new VersionColumn();

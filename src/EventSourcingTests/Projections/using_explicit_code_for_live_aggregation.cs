@@ -83,6 +83,11 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
         StoreOptions(opts =>
         {
             opts.Projections.Add(new ExplicitCounter(), ProjectionLifecycle.Live);
+
+            // weasel#869: Weasel cannot read back the indexes of a partitioned table in a schema whose name
+            // contains "using", which this class's schema does. Archived-stream partitioning is on by default
+            // since 10.0, so keep mt_events unpartitioned here until that is fixed.
+            opts.Events.UseArchivedStreamPartitioning = false;
         });
 
         var streamId = theSession.Events.StartStream<CountedAggregate>(new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent()).Id;

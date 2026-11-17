@@ -184,7 +184,20 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
     public PrimaryKeyTenancyOrdering PrimaryKeyTenancyOrdering { get; set; } =
         PrimaryKeyTenancyOrdering.TenantId_Then_Id;
 
-    public bool StartIndexesByTenantId { get; set; }
+    private bool? _startIndexesByTenantId;
+
+    /// <summary>
+    ///     Lead every computed index on this document with <c>tenant_id</c>. Defaults to <c>true</c> for a
+    ///     conjoined document since 10.0 (#5812) and stays <c>false</c> for a single-tenanted one;
+    ///     <c>StoreOptions.RestoreV9Defaults()</c> puts back the 9.x default of <c>false</c>. Setting it
+    ///     yourself overrides both.
+    /// </summary>
+    public bool StartIndexesByTenantId
+    {
+        get => _startIndexesByTenantId
+               ?? (TenancyStyle == TenancyStyle.Conjoined && !StoreOptions.V9DefaultsRestored);
+        set => _startIndexesByTenantId = value;
+    }
 
     public bool DisablePartitioningIfAny { get; set; } = false;
 

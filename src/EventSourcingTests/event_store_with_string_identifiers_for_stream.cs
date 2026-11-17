@@ -31,10 +31,11 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
 
         var table = new StreamsTable(events);
 
-        var pk = table.Columns.Single(x => x.IsPrimaryKey);
+        // The primary key also has is_archived under archived-stream partitioning, the 10.0 default
+        var pk = table.Columns.Single(x => x.Name == "id");
 
+        pk.IsPrimaryKey.ShouldBeTrue();
         pk.Type.ShouldBe("varchar");
-        pk.Name.ShouldBe("id");
         table.Columns[0].Name.ShouldBe("id");
     }
 

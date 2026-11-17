@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Events;
+using Marten.Events.Schema;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -88,6 +89,9 @@ internal class TenantDataCleaner
             var eventsSchema = _store.Options.Events.DatabaseSchemaName;
             deleteTenantedDataIfExists(new DbObjectName(eventsSchema, "mt_events"));
             deleteTenantedDataIfExists(new DbObjectName(eventsSchema, "mt_streams"));
+
+            // #5812: strict stream identity enforcement is on by default since 10.0
+            deleteTenantedDataIfExists(new DbObjectName(eventsSchema, StreamIdentityEnforcementTable.TableName));
         }
 
         if (_store.Options.Tenancy is DefaultTenancy)

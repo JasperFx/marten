@@ -141,11 +141,15 @@ This is specifically to do with types stored *within* documents. For polymorphis
 
 Due to `jsonb` providing no guarantee on what order it stores properties in, metadata fields that usually sit at the start of a type can be in any position.
 
-When using types annotated with `[JsonDerivedType]`, you **MUST** opt into the ability for the serializer to find metadata fields that are out of order. 
+Types annotated with `[JsonDerivedType]` need the serializer to find metadata fields that are out of order. Marten's
+System.Text.Json serializer sets this by default since Marten 10:
 
 ```cs
 options.AllowOutOfOrderMetadataProperties = true;
 ```
+
+In Marten 9 and earlier you had to set it yourself. To turn it off, set it to `false` in the `configure` callback of
+`UseSystemTextJsonForSerialization()`, or call `opts.RestoreV9Defaults()`.
 
 ## Source-Generated Metadata <Badge type="tip" text="System.Text.Json" />
 
