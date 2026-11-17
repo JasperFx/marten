@@ -119,8 +119,9 @@ public class HiloSequence: HiloSequenceBase
     ///     with a block reserved under the old floor. This does not take the base class's advance locks, so it
     ///     relies on two rules. A prefetch reserved before the row was updated is discarded rather than
     ///     installed. And an advance's block that lands after another install, here the block installed by
-    ///     this method, and is not above it is dropped as a gap (weasel#840). This method's own blocks are
-    ///     installed as given.
+    ///     this method, and is not above it is dropped as a gap (weasel#840). The block this method reserves
+    ///     above the floor follows the same rule (weasel#849, #6058): when an advance reserved a higher block
+    ///     after the row moved and installed it first, the floor's block is dropped, so ids never step back.
     /// </remarks>
     public override async Task SetFloor(long floor)
     {
@@ -142,11 +143,16 @@ public class HiloSequence: HiloSequenceBase
             .With("name", EntityName)
             .ExecuteNonQueryAsync().ConfigureAwait(false);
 
+        // #6058 (weasel#849): counted once the row has moved. A block installed from here on, before the floor's
+        // own, was reserved above the floor as well, and when it is also above the floor's block, the floor's
+        // block is dropped as a gap instead of handing out ids behind it.
+        var installsBefore = InstallCount;
+
         // Anything prefetched while the floor was moving may have been reserved under the old floor
         discardPrefetch();
 
         // And again to get it where we need it to be
-        installHi(await FetchNextHiAsync(CancellationToken.None).ConfigureAwait(false));
+        TrySetCurrentHi(await FetchNextHiAsync(CancellationToken.None).ConfigureAwait(false), installsBefore);
         startPrefetch();
     }
 

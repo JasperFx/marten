@@ -256,11 +256,10 @@ public class sync_master_table_tenant_resolution
             await MasterTableRows.InsertAsync(schema, ["warm", "sync1", "off1"]);
             await MasterTableRows.DisableAsync(schema, "off1");
 
-            // Before anything asynchronous has run, Weasel declines and the lookup falls back
-            tenancy.TryResolveTenant("sync1", out _).ShouldBeFalse();
+            // #6058: before anything asynchronous has run, the control table is provisioned synchronously
+            // (weasel#850), so even the first lookup is synchronous
             store.Options.Tenancy.GetTenant("warm").TenantId.ShouldBe("warm");
 
-            // The fallback provisioned the control table, so from here every lookup is synchronous
             tenancy.TryResolveTenant("missing", out var unknown).ShouldBeTrue();
             unknown.Database.ShouldBeNull();
 
@@ -282,6 +281,135 @@ public class sync_master_table_tenant_resolution
         {
             await MasterTableRows.DropSchemaAsync(schema);
         }
+    }
+
+    // #6058, the cold-process half of #5985 (weasel#850). Red before MasterTableTenancy overrode
+    // TryProvisionControlTableSynchronously: a process whose first touch is synchronous declined every uncached
+    // tenant until something asynchronous had provisioned the control table, and blocked a thread on the
+    // asynchronous lookup for each of them
+    [Fact]
+    public async Task a_cold_process_resolves_its_first_tenant_synchronously()
+    {
+        var schema = "mt_cold_" + Guid.NewGuid().ToString("N")[..10];
+
+        StoreOptions configure(StoreOptions opts)
+        {
+            opts.DisableNpgsqlLogging = true;
+            opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = schema;
+            });
+            return opts;
+        }
+
+        try
+        {
+            // An earlier process built the control table and recorded the tenants
+            await using (var earlier = DocumentStore.For(opts => configure(opts)))
+            {
+                await ((Marten.Storage.MasterTableTenancy)earlier.Options.Tenancy).TenantDatabase
+                    .ApplyAllConfiguredChangesToDatabaseAsync();
+            }
+
+            await MasterTableRows.InsertAsync(schema, ["cold1", "cold2"]);
+
+            // A fresh store is a cold process: nothing asynchronous has run in it
+            await using var store = DocumentStore.For(opts => configure(opts));
+            var tenancy = (Marten.Storage.MasterTableTenancy)store.Options.Tenancy;
+
+            tenancy.TryResolveTenant("cold1", out var cold1).ShouldBeTrue();
+            cold1.Database.ShouldNotBeNull();
+
+            using (var session = store.LightweightSession("cold2"))
+            {
+                session.TenantId.ShouldBe("cold2");
+            }
+
+            tenancy.FindCachedDatabase("cold2").ShouldNotBeNull();
+            Should.Throw<UnknownTenantIdException>(() => store.Options.Tenancy.GetTenant("cold_missing"));
+        }
+        finally
+        {
+            await MasterTableRows.DropSchemaAsync(schema);
+        }
+    }
+
+    [Fact]
+    public async Task a_cold_process_creates_a_missing_control_table_synchronously()
+    {
+        var schema = "mt_cold_" + Guid.NewGuid().ToString("N")[..10];
+
+        await using var store = DocumentStore.For(opts =>
+        {
+            opts.DisableNpgsqlLogging = true;
+            opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = schema;
+            });
+        });
+
+        var tenancy = (Marten.Storage.MasterTableTenancy)store.Options.Tenancy;
+
+        try
+        {
+            // No control table at all yet: the synchronous lookup creates it, then reads it
+            tenancy.TryResolveTenant("nobody", out var nobody).ShouldBeTrue();
+            nobody.Database.ShouldBeNull();
+
+            // The same table the asynchronous migration builds: nothing is left for it to do
+            await tenancy.TenantDatabase.AssertDatabaseMatchesConfigurationAsync();
+
+            await MasterTableRows.InsertAsync(schema, ["created1"]);
+            store.Options.Tenancy.GetTenant("created1").TenantId.ShouldBe("created1");
+        }
+        finally
+        {
+            await MasterTableRows.DropSchemaAsync(schema);
+        }
+    }
+
+    [Fact]
+    public async Task a_cold_process_does_not_create_the_control_table_when_auto_create_is_off()
+    {
+        var schema = "mt_cold_" + Guid.NewGuid().ToString("N")[..10];
+
+        await using var store = DocumentStore.For(opts =>
+        {
+            opts.DisableNpgsqlLogging = true;
+            opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = schema;
+                x.AutoCreate = AutoCreate.None;
+            });
+        });
+
+        var tenancy = (Marten.Storage.MasterTableTenancy)store.Options.Tenancy;
+
+        try
+        {
+            // The operator owns the schema, so nothing is created, and the read fails as the asynchronous one does
+            Should.Throw<PostgresException>(() => tenancy.TryResolveTenant("nobody", out _))
+                .SqlState.ShouldBe(PostgresErrorCodes.UndefinedTable);
+
+            (await controlTableExistsAsync(schema)).ShouldBeFalse();
+        }
+        finally
+        {
+            await MasterTableRows.DropSchemaAsync(schema);
+        }
+    }
+
+    private static async Task<bool> controlTableExistsAsync(string schema)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "select to_regclass(@name) is not null";
+        cmd.Parameters.AddWithValue("name", schema + ".mt_tenant_databases");
+        return (bool)(await cmd.ExecuteScalarAsync())!;
     }
 
     [Fact]
