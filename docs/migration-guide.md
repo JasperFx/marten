@@ -680,7 +680,9 @@ Both settings are off under [per-tenant event partitioning](/events/multitenancy
 (`UseTenantPartitionedEvents`), which partitions the same tables by tenant. Marten 9 refused that combination at
 startup; Marten 10 only refuses it when you set `UseArchivedStreamPartitioning = true` yourself.
 
-Strict stream identity adds one small insert per new stream. To keep the 9.x behavior:
+Strict stream identity adds one small insert per new stream. It does not yet cover streams that existed before the
+upgrade, or streams created by appending to a new id in the Quick append modes; neither is recorded in
+`mt_streams_identity` ([#6051](https://github.com/JasperFx/marten/issues/6051)). To keep the 9.x behavior:
 
 ```cs
 opts.Events.UseArchivedStreamPartitioning = false;
