@@ -1170,8 +1170,8 @@ these yourself:
 A composite projection now reports one shard name, `<projection-name>/all/v<version>` (for example
 `trips/all/v2`), instead of one per member projection
 ([#4440](https://github.com/JasperFx/marten/issues/4440)). Its members run in sequence against shared
-state, so the whole composite has to run on one node; separate shard names let HotCold distribution
-split it across nodes.
+state, so the whole composite has to run on one node; separate shard names let its members be
+assigned to different nodes.
 
 Code that builds agents or tasks from `ShardNames`, such as Wolverine's `EventSubscriptionAgentFamily`,
 now sees one entry per composite, and tests that expected one shard per member should expect `1`. To
