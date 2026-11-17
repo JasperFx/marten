@@ -539,7 +539,8 @@ async Task CheckRenamedEnumMemberAsync()
     // binary cannot close the scalar clause over it, and the bare Activator.CreateInstance message
     // -- "No parameterless constructor defined for type 'NewScalarSelectClause`1[Zorgvorm]'" --
     // tells the consumer nothing. Marten names the one line that fixes it. A JIT still answers the
-    // query, so either outcome passes here; a RAW MissingMethodException fails both ways.
+    // query, so either outcome passes here; a RAW MissingMethodException fails both ways. The JIT's
+    // answer has to be the renamed member (#6064), which ./build.sh test-aot-runtime-jit and LocalGate check.
     await Check("an unregistered enum scalar projection names RegisterScalarType", async () =>
     {
         try

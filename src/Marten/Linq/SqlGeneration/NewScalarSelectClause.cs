@@ -19,6 +19,8 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
     private static readonly string NullResultMessage =
         $"The cast to value type '{typeof(T).FullNameInCode()}' failed because the materialized value is null. Either the result type's generic parameter or the query must use a nullable type.";
 
+    private ISerializer _serializer;
+
     public NewScalarSelectClause(string locator, string from)
     {
         FromObject = from;
@@ -69,6 +71,12 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
 
     public ISelector BuildSelector(IStorageSession session)
     {
+        // #6064: an enum stored as text is read back by the name the serializer stores it under
+        if (typeof(T).IsEnum)
+        {
+            _serializer = session.Serializer as ISerializer;
+        }
+
         return this;
     }
 
@@ -125,8 +133,8 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
         return await ReadScalarAsync(reader, 0, token).ConfigureAwait(false);
     }
 
-    private static T ReadScalar(DbDataReader reader, int ordinal) => ScalarFieldReader.Read<T>(reader, ordinal);
+    private T ReadScalar(DbDataReader reader, int ordinal) => ScalarFieldReader.Read<T>(reader, ordinal, _serializer);
 
-    private static Task<T> ReadScalarAsync(DbDataReader reader, int ordinal, CancellationToken token)
-        => ScalarFieldReader.ReadAsync<T>(reader, ordinal, token);
+    private Task<T> ReadScalarAsync(DbDataReader reader, int ordinal, CancellationToken token)
+        => ScalarFieldReader.ReadAsync<T>(reader, ordinal, token, _serializer);
 }
