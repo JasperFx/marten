@@ -96,31 +96,33 @@ internal class HighWaterDetector: IHighWaterDetector
     // SingleTenantProjectionDistributor computes one id per shard from the schema qualifier;
     // MultiTenantedProjectionDistributor uses the base DaemonLockId as-is. Recomputed per probe (only
     // while a gap is actually stuck) because the shard list moves at runtime under per-tenant
-    // expansion. Negative ids are dropped: those would encode into pg_locks with a non-zero classid
-    // and the probe's predicate deliberately only matches the classid = 0 space.
+    // expansion. #5791: the probe matches the full 64-bit key, so negative ids are kept, and the keys
+    // an integration registered through IgnoreAdvisoryLockHoldersForGapDetection() (Wolverine's
+    // transaction-scoped durability pass lock) are added to the same set.
     private long[] daemonAdvisoryLockIds()
     {
+        var projections = _graph.Options.Projections;
+        var ids = new HashSet<long>(projections.IgnoredAdvisoryLockKeysForGapDetection);
+
         try
         {
-            var projections = _graph.Options.Projections;
             var baseLockId = projections.DaemonLockId;
 
-            var ids = new HashSet<long> { baseLockId };
+            ids.Add(baseLockId);
             foreach (var shard in projections.AllShards())
             {
                 ids.Add(ProjectionLockIds.Compute(_graph.DatabaseSchemaName, shard.Name, baseLockId));
             }
-
-            return ids.Where(x => x >= 0).ToArray();
         }
         catch (Exception e)
         {
-            // Never let lock-id derivation break gap detection — an empty set is exactly the
-            // pre-#5125 behavior (nothing excluded, the daemon holds).
+            // Never let lock-id derivation break gap detection — leaving the daemon's own ids out is
+            // exactly the pre-#5125 behavior for them (not excluded, the daemon holds).
             _logger.LogDebug(e, "Unable to derive the daemon advisory lock ids for database {Database}",
                 DatabaseIdentity);
-            return [];
         }
+
+        return ids.ToArray();
     }
 
     public HighWaterDetector(MartenDatabase runner, EventGraph graph, ILogger logger)

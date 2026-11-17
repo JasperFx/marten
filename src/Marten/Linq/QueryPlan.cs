@@ -61,6 +61,42 @@ public class QueryPlan
     [JsonPropertyName("Parallel Aware")]
     public bool ParallelAware { get; set; }
 
+    /// <summary>
+    ///     The index this node reads, on an Index Scan, Index Only Scan or Bitmap Index Scan. Null on other nodes.
+    /// </summary>
+    [JsonPropertyName("Index Name")]
+    public string? IndexName { get; set; }
+
+    /// <summary>
+    ///     The condition the index is searched with, on an index scan node.
+    /// </summary>
+    [JsonPropertyName("Index Cond")]
+    public string? IndexCondition { get; set; }
+
+    /// <summary>
+    ///     The condition a Bitmap Heap Scan checks again against each row it fetches.
+    /// </summary>
+    [JsonPropertyName("Recheck Cond")]
+    public string? RecheckCondition { get; set; }
+
+    /// <summary>
+    ///     The condition applied to rows after they were read, e.g. a sequential scan's WHERE clause.
+    /// </summary>
+    [JsonPropertyName("Filter")]
+    public string? Filter { get; set; }
+
+    /// <summary>
+    ///     How many rows <see cref="Filter" /> threw away. Only reported when the plan was explained with ANALYZE.
+    /// </summary>
+    [JsonPropertyName("Rows Removed by Filter")]
+    public decimal? RowsRemovedByFilter { get; set; }
+
+    /// <summary>
+    ///     The direction an index scan walks the index: "Forward", "Backward" or "NoMovement".
+    /// </summary>
+    [JsonPropertyName("Scan Direction")]
+    public string? ScanDirection { get; set; }
+
     [JsonPropertyName("Actual Startup Time")]
     public decimal? ActualStartupTime { get; set; }
 

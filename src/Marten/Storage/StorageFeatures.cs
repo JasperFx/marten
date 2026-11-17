@@ -17,6 +17,7 @@ using StreamState = JasperFx.Events.StreamState;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Schema;
+using Marten.Storage.Metadata;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
@@ -61,6 +62,79 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
     ///     Additional Postgresql tables, functions, or sequences to be managed by this DocumentStore
     /// </summary>
     public List<ISchemaObject> ExtendedSchemaObjects { get; } = new();
+
+    private readonly List<Weasel.Postgresql.Tables.Table> _tablesPartitionedPerTenant = new();
+
+    /// <summary>
+    ///     Partition one of your own tables per tenant, the same way Marten partitions its document tables
+    ///     under Marten-managed tenant partitioning: LIST partitions on <c>tenant_id</c>, one per tenant, created
+    ///     when a tenant is added. The table gets the store's tenant partition manager, <c>tenant_id</c> joins its
+    ///     primary key (PostgreSQL requires the partition key in it), and schema migrations leave the per-tenant
+    ///     partitions alone, so re-applying the schema to a database that already has tenants never rebuilds the
+    ///     table. The table is added to <see cref="ExtendedSchemaObjects" /> if it is not there already.
+    /// </summary>
+    /// <remarks>
+    ///     The store must use Marten-managed tenant partitioning
+    ///     (<c>Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()</c>,
+    ///     <c>Events.UseTenantPartitionedEvents</c> or sharded tenancy), otherwise building the store throws.
+    /// </remarks>
+    /// <param name="table">A table with a <c>tenant_id</c> column</param>
+    public void PartitionPerTenant(Weasel.Postgresql.Tables.Table table)
+    {
+        ArgumentNullException.ThrowIfNull(table);
+
+        if (!table.HasColumn(TenantIdColumn.Name))
+        {
+            throw new ArgumentException(
+                $"Table {table.Identifier} needs a '{TenantIdColumn.Name}' column to be partitioned per tenant", nameof(table));
+        }
+
+        if (!_tablesPartitionedPerTenant.Contains(table))
+        {
+            _tablesPartitionedPerTenant.Add(table);
+        }
+
+        if (!ExtendedSchemaObjects.Contains(table))
+        {
+            ExtendedSchemaObjects.Add(table);
+        }
+    }
+
+    // #5684: applied from StoreOptions.Validate(), once every way of turning on Marten-managed tenant
+    // partitioning has had its chance to create the partition manager
+    internal void ApplyTenantPartitioning(MartenManagedTenantListPartitions? tenantPartitions)
+    {
+        if (_tablesPartitionedPerTenant.Count == 0) return;
+
+        if (tenantPartitions == null)
+        {
+            var tables = _tablesPartitionedPerTenant.Select(x => x.Identifier.QualifiedName).Join(", ");
+            throw new InvalidOperationException(
+                $"Storage.PartitionPerTenant() was called for {tables}, but this store does not use Marten-managed tenant partitioning. " +
+                $"Turn it on with {nameof(StoreOptions.Policies)}.{nameof(StoreOptions.PoliciesExpression.PartitionMultiTenantedDocumentsUsingMartenManagement)}(), " +
+                $"Events.UseTenantPartitionedEvents or sharded tenancy.");
+        }
+
+        foreach (var table in _tablesPartitionedPerTenant)
+        {
+            if (table.Partitioning is Weasel.Postgresql.Tables.Partitioning.ListPartitioning list &&
+                ReferenceEquals(list.PartitionManager, tenantPartitions.Partitions))
+            {
+                continue;
+            }
+
+            table.PartitionByList(TenantIdColumn.Name).UsePartitionManager(tenantPartitions.Partitions);
+
+            // The same exemption Marten's own tables get (#4706, #4753): the per-tenant partitions are created
+            // as tenants are added, so the schema diff must not treat them as unexpected and rebuild the table
+            table.IgnorePartitionsInMigration = true;
+
+            if (table.PrimaryKeyColumns.Count > 0 && !table.PrimaryKeyColumns.Contains(TenantIdColumn.Name))
+            {
+                table.ModifyColumn(TenantIdColumn.Name).AsPrimaryKey();
+            }
+        }
+    }
 
     internal SystemFunctions SystemFunctions { get; }
 

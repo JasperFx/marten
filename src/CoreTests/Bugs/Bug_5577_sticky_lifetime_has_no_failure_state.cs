@@ -20,7 +20,7 @@ public class Bug5577Doc
 }
 
 /// <summary>
-/// #5577 and #5578. A sticky connection lifetime -- UseStickyConnectionLifetimes, Serializable, a
+/// #5577 and #5578. A sticky connection lifetime -- a pinned session, Serializable, a
 /// user-supplied connection, ambient or external transactions -- holds one connection open for the life of
 /// the session. Nothing in TransactionalConnection tracks that the connection or its transaction has become
 /// unusable, so the read retry replays a command against state that cannot be restored.

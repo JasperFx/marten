@@ -21,13 +21,6 @@ namespace CoreTests;
 public class StoreOptionsTests
 {
     [Fact]
-    public void sticky_connections_are_off_by_default()
-    {
-        new StoreOptions()
-            .UseStickyConnectionLifetimes.ShouldBeFalse();
-    }
-
-    [Fact]
     public void STJ_is_the_default_serializer()
     {
         // Qualified since Weasel 9.30.0 lifted an STJ serializer of the same simple name into

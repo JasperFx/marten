@@ -113,6 +113,72 @@ public class gin_index_on_json_data_member: OneOffConfigurationsContext
         planText.ShouldContain("_idx_lines_gin");
     }
 
+    // #6017: GinIndexJsonData() after GinIndexJsonDataMember() used to take over the member index, so the
+    // migration built one index named for the member with the whole-document definition
+    [Fact]
+    public async Task whole_document_gin_index_after_a_member_index_keeps_both()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<GinOrder>()
+                .GinIndexJsonDataMember(x => x.Lines)
+                .GinIndexJsonData();
+        });
+
+        await assertBothGinIndexesExist();
+    }
+
+    [Fact]
+    public async Task whole_document_gin_index_before_a_member_index_keeps_both()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<GinOrder>()
+                .GinIndexJsonData()
+                .GinIndexJsonDataMember(x => x.Lines);
+        });
+
+        await assertBothGinIndexesExist();
+    }
+
+    private async Task assertBothGinIndexesExist()
+    {
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var mapping = theStore.StorageFeatures.MappingFor(typeof(GinOrder));
+        var table = mapping.Schema.Table;
+        var definitions = mapping.Indexes.OfType<Marten.Schema.DocumentIndex>()
+            .Where(x => x.Method == IndexMethod.gin)
+            .ToDictionary(x => x.Name, x => x.ToDDL(table));
+
+        definitions.Count.ShouldBe(2);
+        definitions[$"{table.Identifier.Name}_idx_data"].ShouldContain("USING gin (data jsonb_path_ops)");
+        definitions[$"{table.Identifier.Name}_idx_lines_gin"].ShouldContain("(data -> 'Lines') jsonb_path_ops");
+
+        // and the migration really built both of them
+        var actual = new List<string>();
+        await using var conn = new Npgsql.NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "select indexdef from pg_indexes where schemaname = :schema and tablename = :table and indexdef like '%USING gin%'";
+        cmd.Parameters.AddWithValue("schema", table.Identifier.Schema);
+        cmd.Parameters.AddWithValue("table", table.Identifier.Name);
+        await using (var reader = await cmd.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+            {
+                actual.Add(reader.GetString(0));
+            }
+        }
+
+        actual.Count.ShouldBe(2);
+        actual.ShouldContain(x => x.Contains("_idx_data ") && x.Contains("gin (data jsonb_path_ops)"));
+        actual.ShouldContain(x => x.Contains("_idx_lines_gin ") && x.Contains("((data -> 'Lines'::text)) jsonb_path_ops"));
+
+        await Should.NotThrowAsync(async () =>
+            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
+    }
+
     [Fact]
     public void nested_member_paths_walk_the_arrow_chain()
     {
