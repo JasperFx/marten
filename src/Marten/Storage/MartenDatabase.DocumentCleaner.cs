@@ -196,6 +196,9 @@ IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_streams' AND table_schema = '{Options.Events.DatabaseSchemaName}')
 THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.mt_streams CASCADE; END IF;
 IF EXISTS(SELECT * FROM information_schema.tables
+WHERE table_name = '{StreamIdentityEnforcementTable.TableName}' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.{StreamIdentityEnforcementTable.TableName}; END IF;
+IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_event_progression' AND table_schema = '{Options.Events.DatabaseSchemaName}')
 THEN delete from {Options.Events.DatabaseSchemaName}.mt_event_progression; END IF;
 END; $$;
@@ -232,8 +235,14 @@ END; $$;
             : string.Concat(Options.EventGraph.TagTypes.Select(tagType =>
                 $"delete from {schema}.mt_event_tag_{tagType.TableSuffix} where ({tagKey}) in (select {tagKey} from {schema}.mt_events where {eventsWhere});"));
 
+        // #5812: under strict stream identity enforcement (on by default since 10.0) the stream's identity row goes
+        // too, or the id could never be used again
+        var identityDelete = Options.EventGraph.EnableStrictStreamIdentityEnforcement
+            ? $";delete from {schema}.{StreamIdentityEnforcementTable.TableName} where {streamsWhere}"
+            : "";
+
         var cmd = conn.CreateCommand(
-            $"{tagDeletes}delete from {schema}.mt_events where {eventsWhere};delete from {schema}.mt_streams where {streamsWhere}");
+            $"{tagDeletes}delete from {schema}.mt_events where {eventsWhere};delete from {schema}.mt_streams where {streamsWhere}{identityDelete}");
         cmd.AddNamedParameter("id", streamId);
 
         if (Options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())

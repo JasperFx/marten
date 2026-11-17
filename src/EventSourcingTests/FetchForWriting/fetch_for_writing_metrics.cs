@@ -77,10 +77,27 @@ public class fetch_for_writing_metrics: OneOffConfigurationsContext
     }
 
     [Fact]
-    public async Task nothing_is_recorded_without_the_opt_in()
+    public async Task recorded_by_default()
     {
-        // Note the absence of TrackFetchForWritingMetrics()
+        // On by default since 10.0 (#5812): note the absence of TrackFetchForWritingMetrics()
         StoreOptions(_ => { });
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<MeteredAggregate>(streamId, new AEvent(), new AEvent());
+        await theSession.SaveChangesAsync();
+
+        using var recorder = new EventsReplayedRecorder(MetricName);
+
+        await using var session = theStore.LightweightSession();
+        await session.Events.FetchForWriting<MeteredAggregate>(streamId);
+
+        recorder.Measurements.ShouldHaveSingleItem().Value.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task nothing_is_recorded_after_opting_out()
+    {
+        StoreOptions(opts => opts.OpenTelemetry.EnableFetchForWritingMetrics = false);
 
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<MeteredAggregate>(streamId, new AEvent(), new AEvent());

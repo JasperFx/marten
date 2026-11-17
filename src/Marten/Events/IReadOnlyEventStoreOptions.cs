@@ -41,7 +41,7 @@ public interface IReadOnlyEventStoreOptions
 
     /// <summary>
     /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
-    /// running in an Inline lifecycle. Default is false;
+    /// running in an Inline lifecycle. Default is true since 10.0
     /// </summary>
     bool EnableSideEffectsOnInlineProjections { get; }
 
@@ -62,8 +62,9 @@ public interface IReadOnlyEventStoreOptions
     IReadOnlyList<IEventType> AllKnownEventTypes();
 
     /// <summary>
-    /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
-    /// *if* you are also aggressively using event stream archiving
+    /// Partition the event tables by <c>is_archived</c> with PostgreSQL list partitioning, so archived streams
+    /// and their events stay out of the active partition. Default is true since 10.0, except under
+    /// UseTenantPartitionedEvents, where it is off
     /// </summary>
     bool UseArchivedStreamPartitioning { get; }
 
@@ -74,7 +75,8 @@ public interface IReadOnlyEventStoreOptions
     /// time and a unique violation there is translated into
     /// <see cref="ExistingStreamIdCollisionException"/>. This catches reuse of
     /// an identity even after the original stream was archived under
-    /// <see cref="UseArchivedStreamPartitioning"/>. Defaults to false.
+    /// <see cref="UseArchivedStreamPartitioning"/>. Defaults to true since 10.0, except under
+    /// UseTenantPartitionedEvents, where it is off.
     /// </summary>
     bool EnableStrictStreamIdentityEnforcement { get; }
 
@@ -132,8 +134,8 @@ public interface IReadOnlyEventStoreOptions
     public bool EnableAdvancedAsyncTracking { get; }
 
     /// <summary>
-    /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
-    /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
+    /// Leave events marked as "skipped" in the database out of projections and subscriptions. Use this to
+    /// "cure" bad events. Default is true since 10.0
     /// </summary>
     bool EnableEventSkippingInProjectionsOrSubscriptions { get; }
 

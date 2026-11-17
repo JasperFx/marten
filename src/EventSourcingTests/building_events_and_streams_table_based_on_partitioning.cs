@@ -15,8 +15,18 @@ public class building_events_and_streams_table_based_on_partitioning
     private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
 
     [Fact]
-    public void no_partitioning_by_default()
+    public void archived_partitioning_by_default()
     {
+        // Since 10.0 (#5812)
+        new EventsTable(theGraph).Partitioning.ShouldBeOfType<ListPartitioning>();
+        new StreamsTable(theGraph).Partitioning.ShouldBeOfType<ListPartitioning>();
+    }
+
+    [Fact]
+    public void no_partitioning_when_archived_partitioning_is_off()
+    {
+        theGraph.UseArchivedStreamPartitioning = false;
+
         new EventsTable(theGraph).Partitioning.ShouldBeNull();
         new StreamsTable(theGraph).Partitioning.ShouldBeNull();
     }

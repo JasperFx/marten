@@ -33,7 +33,7 @@ namespace Marten.Events
 
         /// <summary>
         /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
-        /// running in an Inline lifecycle. Default is false;
+        /// running in an Inline lifecycle. Default is true since 10.0; set false (or call StoreOptions.RestoreV9Defaults()) to opt out
         /// </summary>
         bool EnableSideEffectsOnInlineProjections { get; set; }
 
@@ -120,8 +120,9 @@ namespace Marten.Events
         public bool EnableAdvancedAsyncTracking { get; set; }
 
         /// <summary>
-        /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
-        /// *if* you are also aggressively using event stream archiving
+        /// Partition the event tables by <c>is_archived</c> with PostgreSQL list partitioning, so archived streams
+        /// and their events stay out of the active partition. Default is true since 10.0, except under
+        /// UseTenantPartitionedEvents, where it is off. Changing it on an existing store rebuilds mt_events and mt_streams
         /// </summary>
         public bool UseArchivedStreamPartitioning { get; set; }
 
@@ -132,7 +133,8 @@ namespace Marten.Events
         /// table at append time and translates a unique violation there into
         /// <see cref="ExistingStreamIdCollisionException"/>. This catches reuse
         /// of an identity even after the original stream was archived under
-        /// <see cref="UseArchivedStreamPartitioning"/>. Defaults to false.
+        /// <see cref="UseArchivedStreamPartitioning"/>. Defaults to true since 10.0, except under
+    /// UseTenantPartitionedEvents, where it is off.
         /// </summary>
         public bool EnableStrictStreamIdentityEnforcement { get; set; }
 
@@ -210,8 +212,8 @@ namespace Marten.Events
         public EventNamingStyle EventNamingStyle { get; set; }
 
         /// <summary>
-        /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
-        /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
+        /// Leave events marked as "skipped" in the database out of projections and subscriptions. Use this to
+        /// "cure" bad events. Default is true since 10.0
         /// </summary>
         public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 

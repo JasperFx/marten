@@ -93,11 +93,8 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
 
     private bool IsLostStartRace(PostgresException? pg)
         => Stream.ActionType == StreamActionType.Start
-           && pg is
-           {
-               SqlState: PostgresErrorCodes.UniqueViolation,
-               TableName: StreamsTable.TableName or StreamIdentityEnforcementTable.TableName
-           };
+           && pg is { SqlState: PostgresErrorCodes.UniqueViolation }
+           && StreamsTable.IsStreamCollisionTable(pg.TableName);
 
     // 9.0 (#4385): per-batch column-array rentals from ArrayPool<T>.Shared, returned in
     // Dispose() once the whole unit of work is finished. NOT in PostprocessAsync: the resilience

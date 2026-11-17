@@ -726,6 +726,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         if (_serializer == null)
         {
             _serializer = SerializerFactory.New();
+            applyV9SerializerDefaults(_serializer);
             foreach (var configure in SerializationConfigurations)
             {
                 configure(_serializer);
@@ -1042,6 +1043,12 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <param name="serializer"></param>
     public void Serializer(ISerializer serializer)
     {
+        applyV9SerializerDefaults(serializer);
+        setSerializer(serializer);
+    }
+
+    private void setSerializer(ISerializer serializer)
+    {
         _serializer = serializer;
 
         // Reapply any serialization addons
@@ -1083,10 +1090,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             EnumStorage = enumStorage, Casing = casing,
         };
 
+        // The V9 default goes on first so the caller's configure can still override it
+        applyV9SerializerDefaults(serializer);
+
         if (configure is not null)
             serializer.Configure(configure);
 
-        Serializer(serializer);
+        setSerializer(serializer);
     }
 
     /// <summary>
@@ -1096,6 +1106,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public void Serializer<T>() where T : ISerializer, new()
     {
         _serializer = new T();
+        applyV9SerializerDefaults(_serializer);
         foreach (var configuration in SerializationConfigurations)
         {
             configuration(_serializer);
@@ -1168,21 +1179,82 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///         switch, so this is applied when the store is built and overrides a projection's own
     ///         value; to keep the gate on for one projection, do not call this method.
     ///       </item>
+    ///       <item><see cref="EventGraph.EnableEventSkippingInProjectionsOrSubscriptions"/> &rarr; <c>false</c></item>
+    ///       <item>
+    ///         <see cref="EventGraph.MetadataConfig"/>: causation id, correlation id, headers and user name
+    ///         &rarr; <c>false</c>
+    ///       </item>
+    ///       <item>
+    ///         Document metadata: <c>CausationId</c>, <c>CorrelationId</c>, <c>Headers</c> and
+    ///         <c>LastModifiedBy</c> &rarr; off. Applied when each document mapping is built, so policies,
+    ///         attributes and <c>Schema.For&lt;T&gt;()</c> can still turn one back on.
+    ///       </item>
+    ///       <item>
+    ///         <see cref="OpenTelemetryOptions.EnableEventCounters"/> and
+    ///         <see cref="OpenTelemetryOptions.EnableFetchForWritingMetrics"/> &rarr; <c>false</c>
+    ///       </item>
+    ///       <item>
+    ///         System.Text.Json <c>AllowOutOfOrderMetadataProperties</c> &rarr; <c>false</c>, on the serializer
+    ///         Marten builds and on one you pass to <see cref="Serializer(ISerializer)"/>, whichever is
+    ///         configured first. A <c>configure</c> callback given to
+    ///         <see cref="UseSystemTextJsonForSerialization(EnumStorage, Casing, Action{JsonSerializerOptions})"/>
+    ///         still wins.
+    ///       </item>
+    ///       <item>
+    ///         <see cref="DocumentMapping.StartIndexesByTenantId"/> &rarr; <c>false</c> for conjoined documents,
+    ///         applied when each document mapping is built
+    ///       </item>
+    ///       <item><see cref="EventGraph.EnableSideEffectsOnInlineProjections"/> &rarr; <c>false</c></item>
+    ///       <item>
+    ///         <see cref="EventGraph.UseArchivedStreamPartitioning"/> and
+    ///         <see cref="EventGraph.EnableStrictStreamIdentityEnforcement"/> &rarr; <c>false</c>
+    ///       </item>
     ///     </list>
     ///     </para>
     /// </remarks>
     public void RestoreV9Defaults()
     {
+        V9DefaultsRestored = true;
+
         Events.EnableExtendedProgressionTracking = false;
         Events.DcbConflictScope = DcbConflictScope.TagValue;
-        _restoreV9SideEffectGate = true;
+        Events.EnableEventSkippingInProjectionsOrSubscriptions = false;
+        Events.EnableSideEffectsOnInlineProjections = false;
+        Events.UseArchivedStreamPartitioning = false;
+        Events.EnableStrictStreamIdentityEnforcement = false;
+
+        var metadata = Events.MetadataConfig;
+        metadata.CausationIdEnabled = false;
+        metadata.CorrelationIdEnabled = false;
+        metadata.HeadersEnabled = false;
+        metadata.UserNameEnabled = false;
+
+        OpenTelemetry.EnableEventCounters = false;
+        OpenTelemetry.EnableFetchForWritingMetrics = false;
+
+        if (_serializer != null)
+        {
+            applyV9SerializerDefaults(_serializer);
+        }
     }
 
-    private bool _restoreV9SideEffectGate;
+    /// <summary>
+    ///     Set by <see cref="RestoreV9Defaults"/>. Read by the defaults that are decided later than the call:
+    ///     each document mapping's metadata and index defaults, the serializer, and the side-effect gate.
+    /// </summary>
+    internal bool V9DefaultsRestored { get; private set; }
+
+    private void applyV9SerializerDefaults(ISerializer serializer)
+    {
+        if (V9DefaultsRestored && serializer is Marten.Services.SystemTextJsonSerializer stj)
+        {
+            stj.Configure(o => o.AllowOutOfOrderMetadataProperties = false);
+        }
+    }
 
     internal void ApplyRestoredV9SideEffectGate()
     {
-        if (!_restoreV9SideEffectGate) return;
+        if (!V9DefaultsRestored) return;
 
         foreach (var projection in Projections.All.OfType<ProjectionBase>())
         {
@@ -1287,13 +1359,17 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         // tables. Sub-partitioning (archive within tenant, or tenant within archive)
         // is a future deliverable — reject the combination at config time rather than
         // emitting a half-coherent schema.
+        // #5812: archived-stream partitioning is on by default since 10.0 and switches itself off under
+        // UseTenantPartitionedEvents, so this only fires when both were asked for explicitly.
         if (Events.UseTenantPartitionedEvents && Events.UseArchivedStreamPartitioning)
         {
             throw new InvalidOperationException(
                 "Events.UseTenantPartitionedEvents currently cannot be combined with " +
                 "Events.UseArchivedStreamPartitioning. Sub-partitioning mt_events / mt_streams " +
                 "by both tenant_id and is_archived is a planned follow-up (see " +
-                "https://github.com/JasperFx/marten/issues/4596). Pick one for now.");
+                "https://github.com/JasperFx/marten/issues/4596). Archived-stream partitioning is " +
+                "already off by default under UseTenantPartitionedEvents; remove the explicit " +
+                "Events.UseArchivedStreamPartitioning = true.");
         }
 
         // #4596 Session 1: per-tenant event partitioning re-uses Marten's existing
@@ -1649,6 +1725,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     internal void ApplyMetricsIfAny()
     {
+        OpenTelemetry.ApplyDefaultMetrics();
+
         if (OpenTelemetry.Applications.Count > 0)
         {
             var logger = DotNetLogger ?? LogFactory?.CreateLogger<MartenCommitMetrics>() ?? NullLogger<MartenCommitMetrics>.Instance;

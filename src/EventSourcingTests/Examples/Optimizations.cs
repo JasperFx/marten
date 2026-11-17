@@ -18,8 +18,8 @@ public class Optimizations
         {
             opts.Connection("some connection string");
 
-            // Turn on the PostgreSQL table partitioning for
-            // hot/cold storage on archived events
+            // PostgreSQL table partitioning for hot/cold storage
+            // on archived events. On by default since Marten 10
             opts.Events.UseArchivedStreamPartitioning = true;
         });
 
@@ -36,8 +36,8 @@ public class Optimizations
         {
             opts.Connection("some connection string");
 
-            // Turn on the PostgreSQL table partitioning for
-            // hot/cold storage on archived events
+            // PostgreSQL table partitioning for hot/cold storage
+            // on archived events. On by default since Marten 10
             opts.Events.UseArchivedStreamPartitioning = true;
 
             // Use the *much* faster workflow for appending events

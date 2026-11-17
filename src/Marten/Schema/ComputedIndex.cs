@@ -86,7 +86,11 @@ public class ComputedIndex: IndexDefinition
 
     private IEnumerable<string> buildColumns()
     {
-        if (_mapping.StartIndexesByTenantId)
+        // #5812: a unique index scoped globally stays global. Leading it with tenant_id would make it unique per
+        // tenant, which matters now that StartIndexesByTenantId is the default for conjoined documents.
+        var leadWithTenantId = _mapping.StartIndexesByTenantId && !(IsUnique && TenancyScope == TenancyScope.Global);
+
+        if (leadWithTenantId)
         {
             yield return TenantIdColumn.Name;
         }
@@ -123,7 +127,9 @@ public class ComputedIndex: IndexDefinition
             }
         }
 
-        if (TenancyScope == TenancyScope.PerTenant)
+        // Already the leading column when the index starts with tenant_id (the 10.0 default for a conjoined
+        // document), and a second copy adds nothing to the uniqueness
+        if (TenancyScope == TenancyScope.PerTenant && !leadWithTenantId)
         {
             yield return TenantIdColumn.Name;
         }

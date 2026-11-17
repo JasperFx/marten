@@ -217,7 +217,9 @@ rather than failing opaquely later:
   ahead of time from a shared reader and is explicitly out of scope. See
   ["Rich" vs "Quick" Appends](/events/appending#rich-vs-quick-appends).
 * **Cannot currently be combined with `UseArchivedStreamPartitioning`.** Sub-partitioning the event tables by both
-  `tenant_id` and `is_archived` is a planned follow-up; pick one for now.
+  `tenant_id` and `is_archived` is a planned follow-up. `UseArchivedStreamPartitioning` and
+  `EnableStrictStreamIdentityEnforcement` are on by default since Marten 10, but both switch off when
+  `UseTenantPartitionedEvents` is on. Setting `UseArchivedStreamPartitioning = true` yourself alongside it is refused.
 
 ### Registering Tenants
 

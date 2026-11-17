@@ -127,6 +127,11 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
     [Fact]
     public async Task fetch_stream_filters_out_archived_events()
     {
+        // Archives single events with raw SQL, which only the unpartitioned shape allows: under
+        // UseArchivedStreamPartitioning (the 10.0 default) the row would have to move partitions
+        // without its stream
+        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = false);
+
         var stream = Guid.NewGuid();
 
         theSession.Events.StartStream(stream, new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());

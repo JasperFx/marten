@@ -226,11 +226,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     }
 
     private static bool MatchesStreamCollision(Exception e)
-        => e is PostgresException
-        {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-            TableName: StreamsTable.TableName or StreamIdentityEnforcementTable.TableName
-        };
+        => e is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } pg
+           && StreamsTable.IsStreamCollisionTable(pg.TableName);
 
     private static Action<ICommandBuilder, StreamAction> BuildInsertStreamCommandConfigurer(
         EventGraph graph, bool isConjoined, bool isGuid)

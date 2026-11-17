@@ -10,9 +10,22 @@ namespace CoreTests;
 public class applying_metrics
 {
     [Fact]
-    public void should_not_apply_commit_metrics_by_default()
+    public void applies_the_event_counters_by_default()
     {
+        // marten.event.append is exported by default since 10.0 (#5812)
         using var store = DocumentStore.For(ConnectionSource.ConnectionString);
+        store.Options.Listeners.Single().ShouldBeOfType<MartenCommitMetrics>();
+    }
+
+    [Fact]
+    public void should_not_apply_commit_metrics_when_the_event_counters_are_off()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.OpenTelemetry.EnableEventCounters = false;
+        });
+
         store.Options.Listeners.ShouldBeEmpty();
     }
 

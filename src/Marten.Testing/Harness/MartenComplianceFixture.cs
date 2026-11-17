@@ -120,24 +120,13 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             options.Events.StreamIdentity = config.StreamIdentity.Value;
         }
 
-        if (config.EnableCorrelationTracking)
-        {
-            options.Events.MetadataConfig.CorrelationIdEnabled = true;
-            options.Events.MetadataConfig.CausationIdEnabled = true;
-        }
-
-        // Opt-in exactly like correlation tracking above -- the user_name column is only
-        // captured (and only queryable) when the store enables it. Added for the jasperfx#737
-        // EventQueryCompliance suite's user-name filter facts.
-        if (config.EnableUserNameTracking)
-        {
-            options.Events.MetadataConfig.UserNameEnabled = true;
-        }
-
-        if (config.EnableHeaders)
-        {
-            options.Events.MetadataConfig.HeadersEnabled = true;
-        }
+        // Each flag is replayed both ways: all event metadata is on by default since Marten 10 (#5812), and
+        // the suites describe a store that captures only what the config asks for. The user_name column is
+        // what the jasperfx#737 EventQueryCompliance suite's user-name filter facts need.
+        options.Events.MetadataConfig.CorrelationIdEnabled = config.EnableCorrelationTracking;
+        options.Events.MetadataConfig.CausationIdEnabled = config.EnableCorrelationTracking;
+        options.Events.MetadataConfig.UserNameEnabled = config.EnableUserNameTracking;
+        options.Events.MetadataConfig.HeadersEnabled = config.EnableHeaders;
 
         if (config.ConjoinedEventTenancy)
         {

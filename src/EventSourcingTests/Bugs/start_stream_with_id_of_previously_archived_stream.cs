@@ -107,7 +107,13 @@ public class start_stream_with_id_of_previously_archived_stream: OneOffConfigura
     [Fact]
     public async Task sad_path__partitioned__guid__id_of_archived_stream_can_be_reused()
     {
-        StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = true);
+        StoreOptions(opts =>
+        {
+            opts.Events.UseArchivedStreamPartitioning = true;
+
+            // On by default since 10.0 (#5812), and it is what refuses the reuse this test pins
+            opts.Events.EnableStrictStreamIdentityEnforcement = false;
+        });
 
         var stream = Guid.NewGuid();
 
@@ -154,6 +160,9 @@ public class start_stream_with_id_of_previously_archived_stream: OneOffConfigura
         {
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.UseArchivedStreamPartitioning = true;
+
+            // On by default since 10.0 (#5812), and it is what refuses the reuse this test pins
+            opts.Events.EnableStrictStreamIdentityEnforcement = false;
         });
 
         var streamKey = $"order-{Guid.NewGuid():N}";

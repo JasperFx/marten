@@ -524,12 +524,19 @@ public class document_store_diagnostics_tests: HostedStoreContext
         // only the metadata filters QueryDocumentsAsync will accept for the type in front of it.
         var host = await BuildHost("metadata", opts =>
         {
+            // Set both ways: these columns are on for every document by default since 10.0 (#5812)
             opts.Schema.For<DiagWidget>().Metadata(m =>
             {
                 m.CorrelationId.Enabled = true;
+                m.CausationId.Enabled = false;
                 m.LastModifiedBy.Enabled = true;
             });
-            opts.Schema.For<User>().MultiTenanted().SoftDeleted();
+            opts.Schema.For<User>().MultiTenanted().SoftDeleted().Metadata(m =>
+            {
+                m.CorrelationId.Enabled = false;
+                m.CausationId.Enabled = false;
+                m.LastModifiedBy.Enabled = false;
+            });
         });
 
         var usage = await GetUsageAsync(host);
