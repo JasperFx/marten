@@ -404,7 +404,15 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         var events = Stream.Events;
         var count = events.Count;
         var headers = rentColumn<byte[]>(count);
-        for (int i = 0; i < count; i++) headers[i] = SerializeToUtf8(session.Serializer, events[i].Headers);
+        // An event without headers is stored as SQL NULL, as the rich append path and the bulk appender
+        // store it. Serializing the null would store the jsonb literal `null`, which every read then hands
+        // to the serializer as a Dictionary<string, object> -- a type a source-generated resolver for an
+        // AOT app has no reason to know about.
+        for (int i = 0; i < count; i++)
+        {
+            var eventHeaders = events[i].Headers;
+            headers[i] = eventHeaders is null ? null! : SerializeToUtf8(session.Serializer, eventHeaders);
+        }
 
         var param = builder.AppendParameter<IList<byte[]>>(headers);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
