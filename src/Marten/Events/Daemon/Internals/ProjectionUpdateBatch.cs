@@ -259,18 +259,18 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
-    bool ISessionWorkTracker.TryFindStream(string streamKey, out StreamAction stream)
+    bool ISessionWorkTracker.TryFindStream(string streamKey, string? tenantId, out StreamAction stream)
     {
         stream = _streams
-            .FirstOrDefault(x => x.Key == streamKey);
+            .FirstOrDefault(x => x.Key == streamKey && (tenantId == null || x.TenantId == tenantId));
 
         return stream != null;
     }
 
-    bool ISessionWorkTracker.TryFindStream(Guid streamId, out StreamAction stream)
+    bool ISessionWorkTracker.TryFindStream(Guid streamId, string? tenantId, out StreamAction stream)
     {
         stream = _streams
-            .FirstOrDefault(x => x.Id == streamId);
+            .FirstOrDefault(x => x.Id == streamId && (tenantId == null || x.TenantId == tenantId));
 
         return stream != null;
     }

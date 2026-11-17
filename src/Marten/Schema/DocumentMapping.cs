@@ -515,12 +515,29 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
     public DocumentIndex AddGinIndexToData()
     {
-        var index = AddIndex("data");
+        // #6017: only the whole-document index on data can be reused here. A GinIndexJsonDataMember()
+        // index is also a DocumentIndex on "data", but its Mask names one member, so AddIndex("data")
+        // would hand it back and the mask below would overwrite it.
+        var index = Indexes.OfType<DocumentIndex>()
+            .FirstOrDefault(x => x.Columns!.SequenceEqual(["data"]) && isWholeDocumentDataMask(x.Mask));
+
+        if (index == null)
+        {
+            index = new DocumentIndex(this, "data");
+            Indexes.Add(index);
+        }
+
         index.ToGinWithJsonbPathOps();
 
         PropertySearching = PropertySearching.ContainmentOperator;
 
         return index;
+    }
+
+    private static bool isWholeDocumentDataMask(string? mask)
+    {
+        // "? jsonb_path_ops" is the mask IndexDefinition.ToGinWithJsonbPathOps() sets
+        return mask.IsEmpty() || mask == "? jsonb_path_ops";
     }
 
     /// <summary>
@@ -1182,7 +1199,7 @@ public class DocumentMapping<T>: DocumentMapping
 
             var index = new ComputedIndex(this, members);
             configure?.Invoke(index);
-            Indexes.Add(index);
+            addComputedIndex(index);
             return;
         }
 
@@ -1203,6 +1220,23 @@ public class DocumentMapping<T>: DocumentMapping
 
         var index = new ComputedIndex(this, members);
         configure?.Invoke(index);
+        addComputedIndex(index);
+    }
+
+    // #6019: two Index() calls that resolve to the same index name used to be accepted here and fail much
+    // later, inside a migration, with an ArgumentException that named only the index
+    private void addComputedIndex(ComputedIndex index)
+    {
+        var name = index.Name;
+        var existing = Indexes.FirstOrDefault(x => x.Name.EqualsIgnoreCase(name));
+        if (existing != null)
+        {
+            var members = index.MemberPaths.Join(", ");
+            throw new InvalidOperationException(
+                $"Document type {typeof(T).FullNameInCode()} already has an index named '{name}', so Index() over {members} cannot add another one with the same name. " +
+                $"Declare the index once, or give a genuinely second index its own name with x => x.Name = \"...\"");
+        }
+
         Indexes.Add(index);
     }
 

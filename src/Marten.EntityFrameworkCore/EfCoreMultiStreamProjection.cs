@@ -106,22 +106,16 @@ public abstract class EfCoreMultiStreamProjection<
                 cancellation).ConfigureAwait(false);
         }
 
-        // Fallback: no EF-backed storage arrived, so build a DbContext just for this call.
+        // Fallback: no EF-backed storage arrived, so this is a live fold -- AggregateStreamAsync,
+        // FetchLatest or FetchForWriting -- with a NulloIdentitySetter or a document storage. Build a
+        // DbContext just for this call and throw it away. #6033: this used to enlist the context as a
+        // transaction participant on a document session, so anything ApplyEvent added to it was flushed at
+        // the session's next save: a FetchForWriting fold followed by SaveChangesAsync inserted those rows
+        // a second time. A live fold persists nothing, so nothing here is ever flushed. #5457: we created
+        // the context and its eagerly-opened connection, so we dispose them.
         var (dbContext, initialConnection) =
             session.Database.Create<TDbContext>(ConfigureDbContext, _schemaName);
 
-        if (session is ITransactionParticipantRegistrar registrar)
-        {
-            registrar.AddTransactionParticipant(
-                new DbContextTransactionParticipant<TDbContext>(dbContext, initialConnection, _schemaName));
-
-            return await ApplyEventsAsync(snapshot, identity, events, session, dbContext, cancellation)
-                .ConfigureAwait(false);
-        }
-
-        // #5457: see the matching comment in EfCoreSingleStreamProjection -- a session that is not
-        // an ITransactionParticipantRegistrar leaves nobody to release the eagerly-opened
-        // connection, so this branch owns what it created.
         try
         {
             return await ApplyEventsAsync(snapshot, identity, events, session, dbContext, cancellation)

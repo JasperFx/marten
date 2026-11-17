@@ -78,6 +78,32 @@ var store = DocumentStore.For(options =>
 
 In the case above, Marten would add an extra columns to the generated `mt_doc_user` table with `first_name` and `department`. Some users find duplicated fields to be useful for user supplied SQL queries.
 
+## Duplicated `DateTime` and `DateTimeOffset` fields
+
+A duplicated `DateTime` member gets a `timestamp without time zone` column. If the member is time zone aware, use
+`DateTimeOffset` instead, which gets a `timestamp with time zone` column.
+
+If you really want `timestamp with time zone` for `DateTime` members, you can opt in, either for every duplicated
+`DateTime` or for one field:
+
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Every duplicated DateTime member
+    opts.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime = false;
+
+    // Or just this one
+    opts.Schema.For<User>().Duplicate(x => x.CreatedOn, pgType: "timestamp with time zone");
+});
+```
+
+This is not the default, and Marten 10 did not change it, for two reasons. Npgsql only writes a `DateTime` with
+`Kind = Utc` to `timestamp with time zone` and throws for anything else, so an application with local or unspecified
+`DateTime` values would start failing. And flipping the default would `ALTER` every existing `DateTime` duplicated
+column on the next migration.
+
 ## Defining Not Null constraint
 
 By default, the duplicate column is created with NULL constraint. If you want to define the duplicate column with a NOT NULL constraint, use `NotNull` property via `DuplicateFieldAttribute` or pass `notNull: true` for the `Duplicate` fluent interface. See the examples above.
