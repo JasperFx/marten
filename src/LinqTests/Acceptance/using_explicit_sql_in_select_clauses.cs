@@ -20,12 +20,17 @@ public class using_explicit_sql_in_select_clauses : IntegrationContext
         theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
         theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
 
+        // Saved, or the query finds nothing and the assertion below passes on an empty list. With nothing saved
+        // it used to pass whenever no other test had saved a Hank yet, and fail once one had, because -> returns
+        // the JSON text "\"Hank\"" and ->> the value
+        await theSession.SaveChangesAsync();
 
         var firstNames = await theSession.Query<User>().Where(x => x.FirstName == "Hank")
-            .Select(x => x.ExplicitSql<string>("d.data -> 'FirstName'"))
+            .Select(x => x.ExplicitSql<string>("d.data ->> 'FirstName'"))
             .ToListAsync();
 
-        firstNames.All(x => x == "Hank").ShouldBeTrue();
+        firstNames.ShouldNotBeEmpty();
+        firstNames.ShouldAllBe(x => x == "Hank");
     }
 
     [Fact]
@@ -35,12 +40,13 @@ public class using_explicit_sql_in_select_clauses : IntegrationContext
         theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
         theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
         theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
-
+        await theSession.SaveChangesAsync();
 
         var firstNames = await theSession.Query<User>().Where(x => x.FirstName == "Hank")
-            .Select(x => new {Name = x.ExplicitSql<string>("d.data -> 'FirstName'")})
+            .Select(x => new {Name = x.ExplicitSql<string>("d.data ->> 'FirstName'")})
             .ToListAsync();
 
-        firstNames.All(x => x.Name == "Hank").ShouldBeTrue();
+        firstNames.ShouldNotBeEmpty();
+        firstNames.ShouldAllBe(x => x.Name == "Hank");
     }
 }
