@@ -4,6 +4,12 @@ One of the earliest lessons I learned designing software systems is that reignin
 
 Let’s say that you failed to be omniscient in your event stream modeling and ended up with a longer stream of events than you’d ideally like and that is bloating your database size and maybe impacting performance. Maybe you’re going to be in a spot where you don’t really care about all the old events, but really just want to maintain the current projected state and more recent events. And maybe you’d like to throw the old events in some kind of “cold” storage like an S3 bucket or [something to be determined later].
 
+::: warning Compacting is not erasure
+Compacting replaces old events with a snapshot of the aggregate, and that snapshot still carries whatever the old
+events put into it. The archiver you pass may also keep copies of the removed events somewhere else. If you need to
+erase a person's data, for example for a GDPR request, see [Personal data and crypto-shredding with Tayra](/events/protection#personal-data-and-crypto-shredding-with-tayra).
+:::
+
 Enter the new “Stream Compacting.” Let's say that you have event streams for a piece of equipment in a job site, and record
 events every time the equipment is moved around the job site (this is based on an IoT system that one of our users built out with Marten),
 and the stream for a piece of `Equipment` can grow quite large over time -- but you don't necessarily care about events older

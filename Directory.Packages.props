@@ -1228,9 +1228,20 @@
              resolve. NOT ADOPTED yet; it is the rest of marten#5985 on master.
            * weasel#842 (weasel#839): SingleServerDatabaseCollection.FindOrCreateDatabaseSynchronously.
              NOT ADOPTED yet; also marten#5985. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.4" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.4" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.4" />
+    <!-- Weasel 10.0.0-alpha.6 (from alpha.4, through alpha.5). JasperFx floor still 3.0.0. All additive.
+           * weasel#849 (#855): protected HiloSequenceBase.InstallCount and TrySetCurrentHi(raw, installCountBefore),
+             so an install from outside an advance can take the overlap rule weasel#840 gives an advance. NOT ADOPTED
+             yet; HiLoSequence.SetFloor still installs through TrySetCurrentHi(raw), as given.
+           * weasel#850 (#856): protected virtual MasterTableTenancyBase.TryProvisionControlTableSynchronously, which
+             declines by default. NOT ADOPTED yet; overriding it in MasterTableTenancy lets TryResolveTenant answer in
+             a cold process before any asynchronous call has provisioned the control table (marten#5985 follow-up).
+           * weasel#851 (#854): EventTypeAllowList.UpcastSourceAliases keeps a source alias that is also a declared
+             alias. Marten's daemon does not page through EventTypeAllowList, so nothing changes here.
+           * Weasel.Sqlite only: weasel#857 (Microsoft.Data.Sqlite 10.0.15), #861 (collations), #863 (JSON column
+             reads). Marten does not reference Weasel.Sqlite. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.6" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.6" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.6" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

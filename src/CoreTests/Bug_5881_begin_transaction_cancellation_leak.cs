@@ -44,7 +44,7 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
 
     public Bug_5881_begin_transaction_cancellation_leak()
     {
-        _admin = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString) { Database = "postgres" }
+        _admin = new NpgsqlConnectionStringBuilder(ConnectionSource.AdminConnectionString) { Database = "postgres" }
             .ConnectionString;
     }
 
@@ -184,19 +184,15 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
     ///     without the tenant.
     /// </summary>
     [Fact]
-    public async Task sticky_connection_sets_the_tenant_after_a_cancelled_open()
+    public async Task pinned_connection_sets_the_tenant_after_a_cancelled_open()
     {
-        await using var scenario = await Scenario.StartAsync(this, opts =>
-        {
-            opts.UseRowLevelSecurity();
-            opts.UseStickyConnectionLifetimes = true;
-        });
+        await using var scenario = await Scenario.StartAsync(this, opts => opts.UseRowLevelSecurity());
 
         await using (var session = scenario.Store.QuerySession(Tenant))
         {
+            // GetConnectionAsync() pins the session to one connection, as UseStickyConnectionLifetimes did before 10.0
             var token = scenario.Arm();
-            await Should.ThrowAsync<OperationCanceledException>(() =>
-                session.QueryAsync<string>("select current_setting('app.tenant_id', true)", token));
+            await Should.ThrowAsync<OperationCanceledException>(async () => await session.GetConnectionAsync(token));
             scenario.Fired.ShouldBeTrue();
 
             (await session.QueryAsync<string>("select current_setting('app.tenant_id', true)"))
@@ -254,18 +250,6 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
     }
 
     [Fact]
-    public async Task dispose_async_of_a_sticky_session_survives_a_failed_tenant_reset()
-    {
-        await using var scenario = await Scenario.StartAsync(this, opts =>
-        {
-            opts.UseRowLevelSecurity();
-            opts.UseStickyConnectionLifetimes = true;
-        }, onePooledConnectionWithoutResetOnClose);
-
-        await theFailedResetIsContained(scenario, scenario.Store.QuerySession(Tenant));
-    }
-
-    [Fact]
     public async Task dispose_async_of_an_ambient_session_survives_a_failed_tenant_reset()
     {
         await using var scenario = await Scenario.StartAsync(this, opts => opts.UseRowLevelSecurity(),
@@ -307,12 +291,6 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
     }
 
     private System.Data.Common.DbDataReader? _openReader;
-
-    private async Task theFailedResetIsContained(Scenario scenario, IQuerySession session)
-    {
-        var pid = await disposeWithAFailedReset(session);
-        await theTenantDidNotGoBackToThePool(scenario, pid);
-    }
 
     private async Task<int> disposeWithAFailedReset(IQuerySession session)
     {

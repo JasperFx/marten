@@ -19,6 +19,17 @@
 You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
 On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605.
 
+### Runtime-async on `net11.0` <Badge type="warning" text="behavior change" />
+
+The `net11.0` build of Marten is compiled with the C# compiler's runtime-async feature, so its async methods run as
+.NET 11 runtime-async methods instead of compiler-built state machines. That allocates less per call, but stack
+traces, debugger stepping and any APM agent or profiler that hooks async state machines may look or behave
+differently. The `net10.0` build is unchanged.
+
+To build Marten from source without it, pass `-p:MartenRuntimeAsync=false`. Code that Marten's source generators
+write into your project is compiled by your project, so your own compiler settings decide there
+([#5886](https://github.com/JasperFx/marten/issues/5886)).
+
 ### Synchronous data access is gone {#synchronous-data-access-is-gone-in-10-0-0}
 
 ::: warning Breaking change
@@ -479,6 +490,47 @@ migration.
   `BadLinqExpressionException`. It used to be dropped, or for a projection to the document's own type, such as
   `Select(x => x.Inner)`, it was applied to the documents. Order before the `Select()` instead. A key that has no
   exact SQL translation, such as a `Math` call, is refused the same way.
+
+### `UseStickyConnectionLifetimes` is gone <Badge type="warning" text="breaking" />
+
+`StoreOptions.UseStickyConnectionLifetimes`, which brought back the Marten 6 behavior of holding one connection open for
+the whole life of every session, has been removed. Sessions use and release connections as they go.
+
+When one session needs to keep one connection, ask for it on that session: `await session.BeginTransactionAsync()` or
+`await session.GetConnectionAsync()` pins the session to a connection until it is disposed, and the serializable
+sessions (`OpenSerializableSessionAsync()`, `QuerySerializableSessionAsync()`) and a caller-supplied connection or
+transaction (`SessionOptions.ForConnection()`, `SessionOptions.ForTransaction()`) do the same.
+
+### `AllDocumentsAreMultiTenantedWithPartitioning(configure)` uses `(tenant_id, id)` primary keys <Badge type="warning" text="schema change" />
+
+The overload of `Policies.AllDocumentsAreMultiTenantedWithPartitioning()` that takes only the partitioning lambda now
+uses `PrimaryKeyTenancyOrdering.TenantId_Then_Id`, the same primary key as the per-document
+`MultiTenantedWithPartitioning()`. In 9.x it used `Id_Then_TenantId`, so the next migration rewrites the primary key of
+every table this policy partitions. To keep the old primary key, pass it:
+
+```cs
+opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(
+    x => x.ByExternallyManagedListPartitions(),
+    PrimaryKeyTenancyOrdering.Id_Then_TenantId);
+### Declaring the same computed index twice throws <Badge type="warning" text="behavior change" />
+
+Two `Index()` calls on one document type that resolve to the same index name, for example the same member twice,
+or the same member again with `Casing = Lower`, now throw an `InvalidOperationException` while the document is
+configured. The message names the document type, the member and the index. In 9.x both were accepted and the
+failure came much later, when a migration was computed against an existing table, as an
+`ArgumentException: An item with the same key has already been added` that named only the index
+([#6019](https://github.com/JasperFx/marten/issues/6019)).
+
+Declare the index once. If you really want a second index over the same member, give it its own name:
+
+```cs
+opts.Schema.For<Order>().Index(x => x.CustomerEmail);
+opts.Schema.For<Order>().Index(x => x.CustomerEmail, x =>
+{
+    x.Casing = ComputedIndex.Casings.Lower;
+    x.Name = "idx_order_customer_email_lower";
+});
+```
 
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
@@ -1170,8 +1222,8 @@ these yourself:
 A composite projection now reports one shard name, `<projection-name>/all/v<version>` (for example
 `trips/all/v2`), instead of one per member projection
 ([#4440](https://github.com/JasperFx/marten/issues/4440)). Its members run in sequence against shared
-state, so the whole composite has to run on one node; separate shard names let HotCold distribution
-split it across nodes.
+state, so the whole composite has to run on one node; separate shard names let its members be
+assigned to different nodes.
 
 Code that builds agents or tasks from `ShardNames`, such as Wolverine's `EventSubscriptionAgentFamily`,
 now sees one entry per composite, and tests that expected one shard per member should expect `1`. To

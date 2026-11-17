@@ -6,6 +6,11 @@ because a workflow is completed, maybe through time based expiry rules, or maybe
 from the system. To help optimize Marten's event store usage, you can take advantage of the stream archiving to 
 mark events as archived on a stream by stream basis. 
 
+::: warning Archiving is not erasure
+Archiving marks or moves events, it does not remove them, and the data is still in the database. If you need to
+erase a person's data, for example for a GDPR request, see [Personal data and crypto-shredding with Tayra](/events/protection#personal-data-and-crypto-shredding-with-tayra).
+:::
+
 ::: warning
 You can obviously use pure SQL to modify the events persisted by Marten. While that might be valuable in some cases,
 we urge you to be cautious about doing so.

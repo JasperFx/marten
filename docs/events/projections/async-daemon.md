@@ -84,12 +84,19 @@ the current progression point, the daemon
 
 ## Solo vs. HotCold
 
-As of right now, the daemon can run as one of two modes:
+There are three ways to run the daemon:
 
 1. *Solo* -- the daemon will be automatically started when the application is bootstrapped and all projections and projection shards will be started on that node. The assumption with Solo
    is that there is never more than one running system node for your application.
 1. *HotCold* -- the daemon will use a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function individually for each
    projection on each tenant database and **ensure that each projection is running on exactly one running process**.
+   HotCold is failover only. HotCold can do *some* load distribution through intentionally random assignment polling, but you cannot count on a "fair" distribution.
+1. *Wolverine-managed distribution* -- if you have more than one node, this is what we recommend. Wolverine spreads
+   the projections and subscriptions evenly across the running nodes, places them by capacity, keeps blue/green
+   deployments apart, keeps related shards together, lets an operator pause, restart or pin an agent, and tells you
+   why it could not place one. This mode is also more resilient to projection interruptions or a single projection *somehow* hitting the dreaded `ProjectionProgressOutOfOrderException` that can sometimes happen when node clusters are being started or stopped. See [Distributing Work with Wolverine](#distributing-work-with-wolverine) below.
+
+Marten itself will not grow its own distribution of async projections across nodes; that job belongs to Wolverine.
 
 By default the `HotCold` leadership lock is session-scoped (`pg_try_advisory_lock`), so the session
 holding it keeps no transaction open while it is the leader. Set
@@ -176,6 +183,16 @@ executed nothing since before the gap's sequence numbers were handed out, and it
 connections regardless. The evidence supporting that reasoning is durable, so it survives daemon
 restarts, deploys and shard rebalancing.
 
+If something else holds an advisory lock on a connection that only holds the lock and never appends
+events, like Wolverine's transaction-scoped durability pass lock, you can tell the daemon to rule those
+sessions out too <Badge type="tip" text="10.0" />:
+
+```cs
+// The full 64-bit key, exactly as passed to pg_advisory_xact_lock(). A session holding
+// it is still counted if it has written anything at all.
+opts.Projections.IgnoreAdvisoryLockHoldersForGapDetection(lockKey);
+```
+
 If you want a bounded escape hatch anyway — against, say, a leaked application session that holds an
 open transaction forever — set a cap:
 
@@ -232,15 +249,35 @@ These methods are stricter about the tenant than the `Advanced` methods:
 
 ## Projection Distribution
 
-If your Marten store is only using a single database, Marten will distribute projections by projection type. If your store is using
-[separate databases for multi-tenancy](/configuration/multitenancy), the async daemon will group all projections for a single
-database on the same executing node as a purposeful strategy to reduce the total number of connections to the databases.
+With HotCold, Marten takes one leadership lock per projection (or, with
+[separate databases for multi-tenancy](/configuration/multitenancy), one per database, so that a node holds all of a
+database's projections and fewer connections). Whichever node grabs a lock first runs that work. Since every node
+races for every lock, the first node to start up usually ends up with all of it, and the others sit idle until it
+goes away. That is failover, not load distribution.
 
-::: tip
-The built in capability of Marten to distribute projections is somewhat limited, and it's still likely that all projections
-will end up running on the first process to start up. If your system requires better load distribution for increased scalability,
-contact [JasperFx Software](https://jasperfx.net) about their "Critter Stack Pro" product.
-:::
+### Distributing Work with Wolverine
+
+If you run more than one node, use Wolverine-managed distribution instead of HotCold:
+
+```cs
+builder.Services.AddMarten(opts =>
+{
+    // your configuration...
+})
+.IntegrateWithWolverine(opts =>
+{
+    opts.UseWolverineManagedEventSubscriptionDistribution = true;
+});
+```
+
+Wolverine's leader assigns every projection and subscription shard to a node and keeps them spread evenly as nodes
+come and go. It can also place work by node capacity, keep blue/green versions of a projection on the right nodes,
+keep related shards together, let an operator pause, restart or pin a shard, and report why a shard could not be
+placed. See [Projection/Subscription Distribution](https://wolverinefx.net/guide/durability/marten/distribution.html)
+in the Wolverine docs for the details.
+
+To monitor and manage projections and subscriptions across the whole fleet, use
+[CritterWatch](https://critterwatch.jasperfx.net). Wolverine-managed distribution works without CritterWatch too.
 
 ## Daemon Connection Governors <Badge type="tip" text="9.13" /> {#daemon-connection-governors}
 

@@ -111,7 +111,7 @@ public class find_database_for_tenant
 
     private static async Task DropDatabaseIfExists(string databaseName)
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
         await conn.KillIdleSessions(databaseName);
         await conn.DropDatabase(databaseName);
