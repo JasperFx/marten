@@ -90,12 +90,11 @@ There are three ways to run the daemon:
    is that there is never more than one running system node for your application.
 1. *HotCold* -- the daemon will use a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function individually for each
    projection on each tenant database and **ensure that each projection is running on exactly one running process**.
-   HotCold is failover only. In practice the first node to start takes every shard, and a second node only takes
-   over when the first one dies. It does not spread the work.
+   HotCold is failover only. HotCold can do *some* load distribution through intentionally random assignment polling, but you cannot count on a "fair" distribution.
 1. *Wolverine-managed distribution* -- if you have more than one node, this is what we recommend. Wolverine spreads
    the projections and subscriptions evenly across the running nodes, places them by capacity, keeps blue/green
    deployments apart, keeps related shards together, lets an operator pause, restart or pin an agent, and tells you
-   why it could not place one. See [Distributing Work with Wolverine](#distributing-work-with-wolverine) below.
+   why it could not place one. This mode is also more resilient to projection interruptions or a single projection *somehow* hitting the dreaded `ProjectionProgressOutOfOrderException` that can sometimes happen when node clusters are being started or stopped. See [Distributing Work with Wolverine](#distributing-work-with-wolverine) below.
 
 Marten itself will not grow its own distribution of async projections across nodes; that job belongs to Wolverine.
 
