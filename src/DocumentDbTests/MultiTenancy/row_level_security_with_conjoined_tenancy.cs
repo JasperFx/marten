@@ -67,16 +67,18 @@ public class row_level_security_with_conjoined_tenancy: OneOffConfigurationsCont
     }
 
     [Fact]
-    public async Task sets_session_tenant_setting_for_sticky_connection_lifetime()
+    public async Task sets_session_tenant_setting_for_a_pinned_connection()
     {
         StoreOptions(opts =>
         {
             opts.Schema.For<Target>().MultiTenanted();
             opts.UseRowLevelSecurity();
-            opts.UseStickyConnectionLifetimes = true;
         });
 
         await using var session = theStore.QuerySession("tenant_blue");
+
+        // Pins the session to one connection, as UseStickyConnectionLifetimes did before 10.0
+        await session.GetConnectionAsync();
         var value = (await session.QueryAsync<string>("select current_setting('app.tenant_id')")).Single();
 
         value.ShouldBe("tenant_blue");
@@ -190,16 +192,13 @@ public class row_level_security_with_conjoined_tenancy: OneOffConfigurationsCont
         reader.GetBoolean(1).ShouldBeTrue();
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task postgres_blocks_cross_tenant_reads_when_rls_enabled(bool useStickyConnectionLifetimes)
+    [Fact]
+    public async Task postgres_blocks_cross_tenant_reads_when_rls_enabled()
     {
         StoreOptions(opts =>
         {
             opts.Schema.For<Target>().MultiTenanted();
             opts.UseRowLevelSecurity();
-            opts.UseStickyConnectionLifetimes = useStickyConnectionLifetimes;
         });
 
         var targetA = Target.Random();

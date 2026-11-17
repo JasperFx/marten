@@ -181,11 +181,6 @@ public sealed class SessionOptions
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
-            if (store.Options.UseStickyConnectionLifetimes)
-            {
-                return new TransactionalConnection(this) { CommandTimeout = timeout };
-            }
-
             return new AutoClosingLifetime(this, store.Options);
         }
 
@@ -214,11 +209,6 @@ public sealed class SessionOptions
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
-            if (store.Options.UseStickyConnectionLifetimes)
-            {
-                return new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
-            }
-
             return new RlsAutoClosingLifetime(this, store.Options, tenantId, rls);
         }
 

@@ -3,6 +3,7 @@
   "language": "en",
   "words": [
     "jasperfx",
+    "HMAC",
     "batchable",
     "TimescaleDB",
     "timescaledb",
