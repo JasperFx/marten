@@ -11,6 +11,7 @@ using Marten.Events.Dcb;
 using Marten.Events.Fetching;
 using StreamState = JasperFx.Events.StreamState;
 using Marten.Events.Querying;
+using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 
 namespace Marten.Services.BatchQuerying;
@@ -53,6 +54,7 @@ internal partial class BatchedQuery: IBatchEvents
             Version = version,
             Timestamp = timestamp,
             TenantId = Parent.TenantId,
+            TenantScope = SessionTenantScope.For(Parent),
             FromVersion = fromVersion
         };
 
@@ -72,6 +74,7 @@ internal partial class BatchedQuery: IBatchEvents
             Version = version,
             Timestamp = timestamp,
             TenantId = Parent.TenantId,
+            TenantScope = SessionTenantScope.For(Parent),
             FromVersion = fromVersion
         };
 

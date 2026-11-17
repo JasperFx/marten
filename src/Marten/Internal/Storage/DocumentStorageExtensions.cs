@@ -1,6 +1,8 @@
 #nullable enable
+using Marten.Internal.Sessions;
 using Marten.Schema.Arguments;
 using Marten.Storage.Metadata;
+using Weasel.Storage;
 
 namespace Marten.Internal.Storage;
 
@@ -8,6 +10,21 @@ namespace Marten.Internal.Storage;
 // Postgres-typed (PG ICommandBuilder + TenantIdColumn), so it stays Marten-side.
 internal static class DocumentStoreExtensions
 {
+    /// <summary>
+    ///     The tenant filter for a by-id read: the session's own tenant, or the tenant scope a
+    ///     QueryAcrossAllDatabasesAsync session reads (every tenant, or a list).
+    /// </summary>
+    public static void AddTenancyFilter(this IDocumentStorage storage, ICommandBuilder sql, IStorageSession session)
+    {
+        if (storage.TenancyStyle == TenancyStyle.Conjoined && SessionTenantScope.For(session) is { } scope)
+        {
+            scope.AppendFilter(sql);
+            return;
+        }
+
+        storage.AddTenancyFilter(sql, session.TenantId);
+    }
+
     public static void AddTenancyFilter(this IDocumentStorage storage, ICommandBuilder sql, string tenantId)
     {
         if (storage.TenancyStyle == TenancyStyle.Conjoined)
