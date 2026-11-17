@@ -374,7 +374,7 @@ internal static class SingleServerDatabases
 {
     public static async Task CreateAsync(string[] databaseNames)
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         foreach (var databaseName in databaseNames)
@@ -387,7 +387,7 @@ internal static class SingleServerDatabases
 
     public static async Task DropAsync(string[] databaseNames)
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         foreach (var databaseName in databaseNames)

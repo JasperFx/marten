@@ -44,7 +44,7 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
 
     public Bug_5881_begin_transaction_cancellation_leak()
     {
-        _admin = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString) { Database = "postgres" }
+        _admin = new NpgsqlConnectionStringBuilder(ConnectionSource.AdminConnectionString) { Database = "postgres" }
             .ConnectionString;
     }
 
