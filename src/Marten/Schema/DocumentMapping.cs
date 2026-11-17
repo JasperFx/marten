@@ -523,12 +523,29 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
     public DocumentIndex AddGinIndexToData()
     {
-        var index = AddIndex("data");
+        // #6017: only the whole-document index on data can be reused here. A GinIndexJsonDataMember()
+        // index is also a DocumentIndex on "data", but its Mask names one member, so AddIndex("data")
+        // would hand it back and the mask below would overwrite it.
+        var index = Indexes.OfType<DocumentIndex>()
+            .FirstOrDefault(x => x.Columns!.SequenceEqual(["data"]) && isWholeDocumentDataMask(x.Mask));
+
+        if (index == null)
+        {
+            index = new DocumentIndex(this, "data");
+            Indexes.Add(index);
+        }
+
         index.ToGinWithJsonbPathOps();
 
         PropertySearching = PropertySearching.ContainmentOperator;
 
         return index;
+    }
+
+    private static bool isWholeDocumentDataMask(string? mask)
+    {
+        // "? jsonb_path_ops" is the mask IndexDefinition.ToGinWithJsonbPathOps() sets
+        return mask.IsEmpty() || mask == "? jsonb_path_ops";
     }
 
     /// <summary>
