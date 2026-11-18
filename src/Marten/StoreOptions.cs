@@ -1898,7 +1898,7 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     written
     /// </summary>
     [IgnoreDescription]
-    public PostgresqlMigrator Migrator { get; } = new();
+    public PostgresqlMigrator Migrator { get; } = new MartenMigrator();
 
     /// <summary>
     /// Configuration options when using a <see cref="NpgsqlMultiHostDataSource"/>

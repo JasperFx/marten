@@ -99,6 +99,13 @@ internal static class SynchronousFeatureMigration
         migration.AssertPatchingIsValid(autoCreate);
 
         applyAll(conn, migration, migrator, autoCreate, logger ?? new DefaultMigrationLogger());
+
+        // As MartenMigrator does on the async path: a type an extension adds is unknown to the data source until
+        // its types are reloaded
+        if (MartenMigrator.CreatesAnExtension(migration))
+        {
+            conn.ReloadTypes();
+        }
     }
 
     /// <summary>

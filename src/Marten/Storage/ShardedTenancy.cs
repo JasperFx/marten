@@ -1240,6 +1240,11 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         var partitions = _options.TenantPartitions.Partitions;
         var dict = new Dictionary<string, string> { { tenantId, tenantId } };
 
+        // As AdvancedOperations.AddMartenManagedTenantsAsync: concurrent onboarding of the same tenant on this shard
+        // waits for the first caller instead of racing it (#4596). Held across the partitions and the sequence.
+        await using var provisioning = await TenantProvisioningLock
+            .AcquireAsync(database, _options.DatabaseSchemaName, ct).ConfigureAwait(false);
+
         await partitions.AddPartitionToAllTables(
             NullLogger.Instance, database, dict, ct).ConfigureAwait(false);
 
