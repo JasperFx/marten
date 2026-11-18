@@ -114,10 +114,11 @@ partial class Build
     const string ShardDatabasesTrack = "shard-databases";
 
     /// <summary>
-    /// The default database itself, reached past the lane. Only StressTests does that now:
-    /// EventSourcingTests' testing_projections used to hard-code localhost:5432/marten_testing and its
-    /// fixed "incidents" schema, so any other process on that database (the other framework, another
-    /// worktree) ran into it. It now uses ConnectionSource like every other test.
+    /// Whole databases with fixed names that EventSourcingTests reaches past its lanes for: the
+    /// multi-database explorer suites (explorer_5383_north and _south, and the compliance tenant
+    /// databases). Two frameworks of EventSourcingTests running at once deadlock on them, so the track
+    /// keeps them apart, and StressTests away from them. (testing_projections used to reach the default
+    /// database too; it uses ConnectionSource now.)
     /// </summary>
     const string DefaultDatabaseTrack = "default-database";
 
@@ -164,7 +165,7 @@ partial class Build
     IReadOnlyList<GateSuite> gateSuites() =>
     [
         new("Daemon", "src/DaemonTests/DaemonTests.csproj", Tracks: [TenantDatabasesTrack]),
-        new("EventSourcing", "src/EventSourcingTests/EventSourcingTests.csproj", Workers: 4),
+        new("EventSourcing", "src/EventSourcingTests/EventSourcingTests.csproj", Workers: 4, Tracks: [DefaultDatabaseTrack]),
         new("Linq", "src/LinqTests/LinqTests.csproj", Workers: 4),
         new("TenantPartitionedEvents", "src/TenantPartitionedEventsTests/TenantPartitionedEventsTests.csproj", Tracks: [ShardDatabasesTrack]),
         new("DocumentDb", "src/DocumentDbTests/DocumentDbTests.csproj"),
