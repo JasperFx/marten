@@ -54,6 +54,53 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         document.CCount.ShouldBe(2);
     }
 
+    // #6094: the second fetch of a new stream writes to the action the first one started
+    [Fact]
+    public async Task fetch_new_stream_for_writing_twice_Guid_identifier()
+    {
+        var streamId = Guid.NewGuid();
+
+        await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var second = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        second.CurrentVersion.ShouldBe(0);
+
+        theSession.Events.Append(streamId, new AEvent());
+        second.AppendOne(new BEvent());
+
+        theSession.PendingChanges.Streams().Count(x => x.Id == streamId).ShouldBe(1);
+
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(1);
+        (await theSession.Events.FetchStreamStateAsync(streamId))!.Version.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task fetch_new_stream_for_writing_twice_string_identifier()
+    {
+        UseStreamIdentity(StreamIdentity.AsString);
+
+        var streamKey = Guid.NewGuid().ToString();
+
+        await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamKey);
+        var second = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamKey);
+        second.CurrentVersion.ShouldBe(0);
+
+        theSession.Events.Append(streamKey, new AEvent());
+        second.AppendOne(new BEvent());
+
+        theSession.PendingChanges.Streams().Count(x => x.Key == streamKey).ShouldBe(1);
+
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamKey);
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(1);
+        (await theSession.Events.FetchStreamStateAsync(streamKey))!.Version.ShouldBe(2);
+    }
+
     [Fact]
     public async Task fetch_new_stream_for_writing_Guid_identifier_in_batch()
     {

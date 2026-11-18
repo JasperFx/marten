@@ -617,4 +617,81 @@ public class async_fetch_edge_cases: OneOffConfigurationsContext
         (await query.Events.FetchStreamStateAsync(existing, TestContext.Current.CancellationToken))!
             .Version.ShouldBe(4);
     }
+
+    // #6094: a caller's own batch has no fallback. When it is refused, the fetches read before the refused one have
+    // already started their new streams in the session, and the caller retries. The retry fetches the new
+    // stream again, and appending by id must still land on the one stream the retry's handle writes to.
+
+    [Fact]
+    public async Task a_refused_batch_retried_by_the_caller_starts_a_new_stream_once()
+    {
+        var existing = await aStreamOfABCAsync();
+        await catchTheDaemonUpAsync();
+        var newId = Guid.NewGuid();
+
+        await using var session = theStore.LightweightSession();
+        var pause = new async_fetch_reads_in_a_safe_order.PauseTheFirstRead(() => deleteTheSnapshotAsync(existing),
+            fetchIndex: 1);
+        session.Logger = pause;
+
+        // The new stream is fetched first, so the batch starts it before the existing stream's fetch is refused
+        var batch = session.CreateBatchQuery();
+        _ = batch.Events.FetchForWriting<SimpleAggregate>(newId);
+        _ = batch.Events.FetchForWriting<SimpleAggregate>(existing);
+
+        var ex = await Should.ThrowAsync<SnapshotRaceException>(() =>
+            batch.Execute(TestContext.Current.CancellationToken));
+        ex.Id.ShouldBe(existing);
+        await pause.Paused;
+
+        // The caller's retry
+        var fresh = await session.Events.FetchForWriting<SimpleAggregate>(newId, TestContext.Current.CancellationToken);
+        var other = await session.Events.FetchForWriting<SimpleAggregate>(existing, TestContext.Current.CancellationToken);
+
+        fresh.CurrentVersion.ShouldBe(0);
+        fresh.Aggregate.ShouldBeNull();
+
+        session.Events.Append(newId, new AEvent(), new BEvent());
+        fresh.AppendOne(new CEvent());
+        other.AppendOne(new DEvent());
+
+        session.PendingChanges.Streams().Count(x => x.Id == newId).ShouldBe(1);
+        session.PendingChanges.Streams().Count(x => x.Id == existing).ShouldBe(1);
+
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await using var query = theStore.QuerySession();
+        var events = await query.Events.FetchStreamAsync(newId, token: TestContext.Current.CancellationToken);
+        events.Select(x => x.Version).ShouldBe(new long[] { 1, 2, 3 });
+
+        (await query.Events.FetchStreamStateAsync(newId, TestContext.Current.CancellationToken))!
+            .Version.ShouldBe(3);
+        (await query.Events.FetchStreamStateAsync(existing, TestContext.Current.CancellationToken))!
+            .Version.ShouldBe(4);
+    }
+
+    [Fact]
+    public async Task fetching_a_new_stream_twice_starts_it_once()
+    {
+        var newId = Guid.NewGuid();
+
+        await using var session = theStore.LightweightSession();
+        var first = await session.Events.FetchForWriting<SimpleAggregate>(newId, TestContext.Current.CancellationToken);
+        var second = await session.Events.FetchForWriting<SimpleAggregate>(newId, TestContext.Current.CancellationToken);
+
+        first.CurrentVersion.ShouldBe(0);
+        second.CurrentVersion.ShouldBe(0);
+
+        session.Events.Append(newId, new AEvent());
+        second.AppendOne(new BEvent());
+
+        session.PendingChanges.Streams().Count(x => x.Id == newId).ShouldBe(1);
+
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await using var query = theStore.QuerySession();
+        var events = await query.Events.FetchStreamAsync(newId, token: TestContext.Current.CancellationToken);
+        events.Select(x => x.Data.GetType()).ShouldBe(new[] { typeof(AEvent), typeof(BEvent) });
+        events.Select(x => x.Version).ShouldBe(new long[] { 1, 2 });
+    }
 }

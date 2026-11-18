@@ -67,7 +67,14 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     IEventStream<TDoc> IEventIdentityStrategy<Guid>.StartStream<TDoc>(TDoc? document, DocumentSessionBase session,
         Guid id, CancellationToken cancellation) where TDoc : class
     {
-        var action = _store.Events.StartEmptyStream(session, id);
+        // #6094: a stream this session already started (an earlier fetch of the same new stream, or a refused
+        // batch the caller is retrying) gets the same action, or the session would start it twice
+        if (!session.WorkTracker.TryFindStream(id, _store.Events.TenantToMatch(session), out var action)
+            || action.ActionType != StreamActionType.Start)
+        {
+            action = _store.Events.StartEmptyStream(session, id);
+        }
+
         action.AggregateType = typeof(TDoc);
         action.ExpectedVersionOnServer = 0;
 
@@ -132,7 +139,13 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     IEventStream<TDoc> IEventIdentityStrategy<string>.StartStream<TDoc>(TDoc? document, DocumentSessionBase session,
         string id, CancellationToken cancellation) where TDoc : class
     {
-        var action = _store.Events.StartEmptyStream(session, id);
+        // #6094: see the Guid overload
+        if (!session.WorkTracker.TryFindStream(id, _store.Events.TenantToMatch(session), out var action)
+            || action.ActionType != StreamActionType.Start)
+        {
+            action = _store.Events.StartEmptyStream(session, id);
+        }
+
         action.AggregateType = typeof(TDoc);
         action.ExpectedVersionOnServer = 0;
 
