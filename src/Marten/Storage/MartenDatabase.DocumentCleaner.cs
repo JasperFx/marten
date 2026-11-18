@@ -61,6 +61,8 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         // skip everything appended in between. CompletelyRemoveAllAsync still drops the table.
         var tables = (await conn.ExistingTablesAsync("mt_%", schemas, ct: ct).ConfigureAwait(false))
             .Where(x => !x.Name.EqualsIgnoreCase(ProjectionFloorTable.Name))
+            // jasperfx#1215 / #1222: the same goes for the ceilings and cursors of rewrites and backfills
+            .Where(x => !x.Name.EqualsIgnoreCase(EventRangeMarkTable.Name))
             .ToList();
 
         if (!tables.Any())

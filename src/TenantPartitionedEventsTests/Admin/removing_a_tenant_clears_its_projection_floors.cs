@@ -115,4 +115,22 @@ insert into {schema}.mt_high_water_late_events (seq_id, tenant_id, stream_id, ev
                 .ShouldBe("skip_rem_kept");
         }
     }
+
+    // jasperfx#1215 / #1222: a cursor left behind by the tenant's previous incarnation would make a new rewrite of it
+    // start after events that were never rewritten
+    [Fact]
+    public async Task RemoveMartenManagedTenantsAsync_removes_the_tenants_event_range_marks()
+    {
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "mark_rem", "mark_rem_kept");
+        const string key = "rewrite:tenant-removal:cursor";
+        await Database.SetEventRangeMarkAsync(key, "mark_rem", 100);
+        await Database.SetEventRangeMarkAsync(key, "mark_rem_kept", 200);
+        await Database.SetEventRangeMarkAsync(key, null, 300);
+
+        await Store.Advanced.RemoveMartenManagedTenantsAsync(["mark_rem"], CancellationToken.None);
+
+        (await Database.FetchEventRangeMarkAsync(key, "mark_rem")).ShouldBeNull();
+        (await Database.FetchEventRangeMarkAsync(key, "mark_rem_kept")).ShouldBe(200);
+        (await Database.FetchEventRangeMarkAsync(key, null)).ShouldBe(300);
+    }
 }

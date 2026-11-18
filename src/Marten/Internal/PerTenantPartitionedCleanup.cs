@@ -212,6 +212,7 @@ internal static class PerTenantPartitionedCleanup
         var eventsSchema = options.Events.DatabaseSchemaName;
 
         await DeleteProjectionFloorsAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
+        await DeleteEventRangeMarksAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
         await DeleteHighWaterSkipsAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
 
         var progressionRows = await CollectMatchingProgressionRowsAsync(
@@ -297,6 +298,33 @@ internal static class PerTenantPartitionedCleanup
         catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
         {
             // Nothing was ever pinned in a database without the table.
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// jasperfx#1215 / #1222: a removed tenant's event-range marks go with it, for the same reason as its floors. A
+    /// re-added tenant restarts its sequence at 1, so a cursor left behind would make a new rewrite of that tenant
+    /// start after events that were never rewritten.
+    /// </summary>
+    private static async Task DeleteEventRangeMarksAsync(string eventsSchema, IMartenDatabase database,
+        IReadOnlyCollection<string> tenantIds, CancellationToken token)
+    {
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            var command = conn.CreateCommand(
+                $"DELETE FROM \"{eventsSchema}\".\"{Events.Schema.EventRangeMarkTable.Name}\" WHERE tenant_id = ANY(:tenants)");
+            command.Parameters.AddWithValue("tenants", tenantIds.ToArray());
+            await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            // Nothing was ever marked in a database without the table.
         }
         finally
         {

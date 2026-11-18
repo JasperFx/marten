@@ -144,3 +144,31 @@ all, and the last cursor `OnProgress` reported is where to pick it up again. The
 and when the rewrite runs, is up to you.
 
 Because unchanged events are never written, starting over from the beginning is always safe, only slower.
+
+`StopAfter(sequence)` leaves the events after that sequence alone. Take the sequence when you decide to run the
+rewrite, so a transform never touches events appended after that:
+
+```cs
+var ceiling = await store.Storage.Database.FetchHighestEventSequenceNumber();
+
+await store.Advanced.RewriteStoredEventsAsync(x =>
+{
+    x.Transform<PersonMoved>(e => e with { City = e.City.ToUpperInvariant() });
+    x.StopAfter(ceiling);
+});
+```
+
+## Running a rewrite as a job
+
+Marten also implements `IEventStore.RewriteStoredEventsAsync` from JasperFx, which a Wolverine job uses to run a
+rewrite one database at a time. A transform used that way is registered by name:
+
+```cs
+opts.EventGraph.AddRewriteTransform<PersonMoved>("upper-case-city",
+    e => e with { City = e.City.ToUpperInvariant() });
+```
+
+The job's ceiling and cursor are kept in the `mt_event_range_marks` table. Each page is written in one transaction
+with its cursor, so a job that crashes and resumes never sends an event through a transform twice. Under per-tenant
+event partitions, a job for the whole database goes through the tenants one after another, each with its own ceiling
+and cursor.

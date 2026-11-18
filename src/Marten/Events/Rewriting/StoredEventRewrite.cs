@@ -25,6 +25,11 @@ public sealed class StoredEventRewrite
     internal string? TenantId { get; private set; }
     internal string? DatabaseIdentifier { get; private set; }
     internal Dictionary<string, StoredEventRewriteCursor> ResumeCursors { get; } = new();
+    internal Dictionary<string, long> StopAfterSequences { get; } = new();
+    internal long? StopAfterSequence { get; private set; }
+
+    // jasperfx#1215: stored type names a definition lists that no registered event type answers to
+    internal List<string> TypeNames { get; } = new();
 
     /// <summary>
     ///     Events read per page, and written back in one statement. Default 500.
@@ -116,6 +121,32 @@ public sealed class StoredEventRewrite
         DatabaseIdentifier = databaseIdentifier;
         return this;
     }
+
+    /// <summary>
+    ///     Leave events after this sequence alone, in every database the rewrite covers. Take the sequence when the
+    ///     rewrite is first requested, so a <see cref="Transform{T}" /> never changes events appended after that.
+    /// </summary>
+    public StoredEventRewrite StopAfter(long sequence)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(sequence);
+        StopAfterSequence = sequence;
+        return this;
+    }
+
+    /// <summary>
+    ///     Leave events after this sequence alone in one database, by its <c>Identifier</c>. Overrides
+    ///     <see cref="StopAfter(long)" /> for that database.
+    /// </summary>
+    public StoredEventRewrite StopAfter(string databaseIdentifier, long sequence)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(databaseIdentifier);
+        ArgumentOutOfRangeException.ThrowIfNegative(sequence);
+        StopAfterSequences[databaseIdentifier] = sequence;
+        return this;
+    }
+
+    internal long? StopAfterFor(string databaseIdentifier)
+        => StopAfterSequences.TryGetValue(databaseIdentifier, out var sequence) ? sequence : StopAfterSequence;
 
     /// <summary>
     ///     Continue a database from a cursor an earlier run reported.

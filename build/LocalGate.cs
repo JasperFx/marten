@@ -114,9 +114,11 @@ partial class Build
     const string ShardDatabasesTrack = "shard-databases";
 
     /// <summary>
-    /// The default database itself, reached past the lane: EventSourcingTests' testing_projections
-    /// hard-codes localhost:5432/marten_testing. Every other unit is relocated, so this only keeps two
-    /// frameworks of EventSourcingTests apart, and StressTests away from it.
+    /// Whole databases with fixed names that EventSourcingTests reaches past its lanes for: the
+    /// multi-database explorer suites (explorer_5383_north and _south, and the compliance tenant
+    /// databases). Two frameworks of EventSourcingTests running at once deadlock on them, so the track
+    /// keeps them apart, and StressTests away from them. (testing_projections used to reach the default
+    /// database too; it uses ConnectionSource now.)
     /// </summary>
     const string DefaultDatabaseTrack = "default-database";
 
