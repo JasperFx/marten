@@ -95,24 +95,24 @@ internal class DeleteStreamOperation: IStorageOperation, NoDataReturnedCall
 
         sql.Append("with ");
 
-        var tagTables = _events.DcbStorageMode == DcbStorageMode.HStore
-            ? (IReadOnlyList<JasperFx.Events.Tags.ITagTypeRegistration>)Array.Empty<JasperFx.Events.Tags.ITagTypeRegistration>()
-            : _events.TagTypes;
-
-        // Tag rows first in intent: they reference the events. The subquery reads the same snapshot
-        // as the events delete below, so it still finds the stream's sequence numbers.
-        for (var i = 0; i < tagTables.Count; i++)
+        // Tag rows first in intent: they reference the events. Built by the same code as compaction's (#6049).
+        // The subquery reads the same snapshot as the events delete below, so it still finds the stream's
+        // sequence numbers.
+        if (EventTagRowDeletes.TablesFor(_events).Count > 0)
         {
-            sql.Append($"tag{i} as (delete from {schema}.mt_event_tag_{tagTables[i].TableSuffix} where ");
-            if (conjoined)
-            {
-                sql.Append("tenant_id = ? and ");
-                parameters.Add(false);
-            }
-
-            sql.Append($"seq_id in (select seq_id from {schema}.mt_events where ");
-            streamPredicate("stream_id");
-            sql.Append(")), ");
+            EventTagRowDeletes.AppendCtes(_events, text => sql.Append(text),
+                seqId =>
+                {
+                    sql.Append($"{seqId} in (select seq_id from {schema}.mt_events where ");
+                    streamPredicate("stream_id");
+                    sql.Append(')');
+                },
+                () =>
+                {
+                    sql.Append('?');
+                    parameters.Add(false);
+                });
+            sql.Append(", ");
         }
 
         sql.Append($"doomed_events as (delete from {schema}.mt_events where ");
