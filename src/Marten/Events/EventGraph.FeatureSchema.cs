@@ -147,6 +147,10 @@ public partial class EventGraph: IFeatureSchema
         if (TagTypes.Count > 0)
         {
             yield return new DcbTagVersionTable(this);
+
+            // #6035: every value that table holds comes from here, so a row deleted by a tombstone and
+            // created again can never match a capture of the old one.
+            yield return DcbTagVersionTable.BuildSequence(this);
         }
     }
 }
