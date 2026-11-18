@@ -24,6 +24,10 @@ internal class RichEventAppender: IEventAppender
         var sequencesFetch = batch.AddItem(fetcher);
 
         var storage = session.EventStorage();
+
+        // #6083: lock every stream row this unit of work appends to, in a stable order, before any append
+        LockStreamsForAppend.QueueIfManyStreams(eventGraph, session);
+
         var streamActions = session.WorkTracker.Streams.Where(x => x.Events.Any()).ToArray();
 
         var appends = streamActions
