@@ -69,10 +69,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: tests-${{ github.workflow }}-${{ github.ref }}
   # Superseded PR pushes are worth cancelling — 30 jobs per push adds up. A master or 9.0 run is
   # not: it is the record for that commit, and cancelling it leaves a gap in exactly the history the
   # flakiness roll-up is read against.
+  #
+  # cancel-in-progress: false alone doesn't protect them (#6063). A group holds one running run and at
+  # most one pending run, and a newer run joining the group cancels the pending one. So master and
+  # 9.0 runs get a group per commit and never share one; PR runs keep one group per ref.
+  group: tests-${{ github.workflow }}-${{ github.ref }}-${{ (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/9.0') && github.sha || 'latest' }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' && github.ref != 'refs/heads/9.0' }}
 
 jobs:
