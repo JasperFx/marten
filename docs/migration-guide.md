@@ -666,6 +666,16 @@ when skipping is enabled, and metadata is only written and selected when its fla
 Deliberately still conditional, because they are expensive or change the table's shape: tenant partitioning of
 `mt_events`, table fillfactor, and the DCB `hstore` tags column and its GIN index.
 
+### `mt_high_water_skips` has a tenant column, and late events are recovered {#late-events-are-recovered} <Badge type="warning" text="schema change" />
+
+`mt_high_water_skips` gets new columns: `tenant_id`, which is now part of its primary key, `reason`, `gaps` and
+`closed_at`. There is a new table, `mt_high_water_late_events`. The `mt_mark_progression_with_skip` function changes
+to match the new key. The first schema apply after upgrading makes these changes and keeps the existing rows.
+
+The daemon now checks skipped sequence ranges for events that commit late, records them, and rebuilds their streams
+in async single-stream projections ([details](/events/projections/async-daemon#events-that-commit-late)).
+`opts.Events.EnableAdvancedAsyncTracking = false` turns that off. The schema change stays either way.
+
 ### `MetadataConfig.EnableAll()` also enables the user name {#metadataconfig-enableall-also-enables-the-user-name} <Badge type="warning" text="behavior change" />
 
 `opts.Events.MetadataConfig.EnableAll()` now turns on `UserNameEnabled` along with the causation id, correlation id

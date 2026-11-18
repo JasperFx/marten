@@ -203,8 +203,9 @@ open transaction forever — set a cap:
 opts.Projections.SkipStaleGapsDespiteLiveTransactionsAfter = 5.Minutes();
 ```
 
-Use it deliberately: past the cap the daemon skips on a *suspicion* of deadness, so an append that
-commits inside the skipped range will never be projected. PostgreSQL's own
+Use it deliberately: past the cap the daemon skips on a *suspicion* of deadness, so async projections
+and subscriptions that are already past an append that commits inside the skipped range will not see it
+(see [Events that commit late](#events-that-commit-late) for what Marten does about that). PostgreSQL's own
 `idle_in_transaction_session_timeout` is usually the better backstop, since it removes the cause
 rather than working around it. Note that it will also kill Wolverine's transaction-scoped listener
 locks if you use them.
@@ -217,9 +218,9 @@ await store.Advanced.AdvanceHighWaterMarkToLatestAsync(CancellationToken.None);
 ```
 
 ::: warning
-`AdvanceHighWaterMarkToLatestAsync()` is a manual override. Anything still in flight below the new
-mark will never be projected, so reach for it when you have established that a gap is genuinely dead
-and not as routine maintenance.
+`AdvanceHighWaterMarkToLatestAsync()` is a manual override. Async projections and subscriptions will
+not see anything still in flight below the new mark when it commits, so reach for it when you have
+established that a gap is genuinely dead and not as routine maintenance.
 :::
 
 With `UseTenantPartitionedEvents`, each tenant has its own mark. The overload taking a tenant id advances that
@@ -246,6 +247,34 @@ These methods are stricter about the tenant than the `Advanced` methods:
 * Without per-tenant partitioning, every tenant shares a database's single mark. Naming a tenant throws an
   error, because it would otherwise advance every tenant's events.
 * With partitioning, a null tenant selects every tenant's mark. `expectedCurrentMark` then needs a named tenant.
+
+### Events that commit late {#events-that-commit-late} <Badge type="tip" text="10.0" />
+
+Every skip is recorded in `mt_high_water_skips`, with the reason for it and the sequence numbers inside the
+skipped range that had no committed event yet. For an hour after a skip, the daemon checks those sequence
+numbers every 10 seconds. An event that turns up there is one that async projections and subscriptions
+already past it did not see. For each one the daemon:
+
+* records it in `mt_high_water_late_events` with its sequence, tenant, stream and event type,
+* logs a warning and counts it in the `marten.daemon.late_events` metric, tagged by event type, tenant
+  and skip reason,
+* rebuilds the event's stream in every async single-stream projection that handles that event type,
+  through the shard that runs the projection, the same way as `RebuildSingleStreamAsync()`. Side effects
+  do not run in that rebuild.
+
+Other projections and subscriptions are not repaired, because they cannot safely take an event out of
+order. Use the ledger to decide whether to rebuild them.
+
+A range skipped because no transaction that could fill it was alive should never fill. If one does, the
+daemon logs it as an error, because that is a bug in Marten's high water detection. Please report it.
+
+The window and the interval are configurable, and this needs `opts.Events.EnableAdvancedAsyncTracking`
+(on by default):
+
+```cs
+opts.Projections.LateEventDetectionWindow = 1.Hours();
+opts.Projections.LateEventProbeInterval = 10.Seconds();
+```
 
 ## Projection Distribution
 

@@ -212,6 +212,7 @@ internal static class PerTenantPartitionedCleanup
         var eventsSchema = options.Events.DatabaseSchemaName;
 
         await DeleteProjectionFloorsAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
+        await DeleteHighWaterSkipsAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
 
         var progressionRows = await CollectMatchingProgressionRowsAsync(
             eventsSchema, database, tenantIds, token).ConfigureAwait(false);
@@ -257,6 +258,30 @@ internal static class PerTenantPartitionedCleanup
     /// progression rows these are not leftovers of the partition drop, so they are deleted whether or not
     /// anything else was found. A floor table the schema has not been migrated to yet has nothing to delete.
     /// </summary>
+    /// <summary>
+    /// #6007: a removed tenant's recorded high water skips and late events go with it, for the same reason as its
+    /// floors: a re-added tenant restarts its sequence at 1, and its new events would be read as filling the old
+    /// skipped ranges.
+    /// </summary>
+    private static async Task DeleteHighWaterSkipsAsync(string eventsSchema, IMartenDatabase database,
+        IReadOnlyCollection<string> tenantIds, CancellationToken token)
+    {
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            var command = conn.CreateCommand(
+                $"DELETE FROM \"{eventsSchema}\".\"{Events.Schema.EventProgressionSkippingTable.Name}\" WHERE tenant_id = ANY(:tenants);" +
+                $"DELETE FROM \"{eventsSchema}\".\"{Events.Schema.LateEventsTable.Name}\" WHERE tenant_id = ANY(:tenants);");
+            command.Parameters.AddWithValue("tenants", tenantIds.ToArray());
+            await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            // Nothing was ever skipped in a database without the tables.
+        }
+    }
+
     private static async Task DeleteProjectionFloorsAsync(string eventsSchema, IMartenDatabase database,
         IReadOnlyCollection<string> tenantIds, CancellationToken token)
     {
