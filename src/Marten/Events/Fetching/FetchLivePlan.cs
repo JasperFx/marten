@@ -14,12 +14,16 @@ using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
 using System.Diagnostics.CodeAnalysis;
+using JasperFx.Events.Fetching;
+using Marten.Storage;
 
 namespace Marten.Events.Fetching;
 
 internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class where TId : notnull
 {
     private readonly IAggregator<TDoc, TId, IQuerySession> _aggregator;
+    private readonly EventGraph _events;
+    private readonly IAggregateWriteCache? _cache;
     private readonly IIdentitySetter<TDoc, TId> _documentStorage;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
     private readonly OpenTelemetryOptions _telemetry;
@@ -34,6 +38,7 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
     {
         IsGlobal = events.GlobalAggregates.Contains(typeof(TDoc));
 
+        _events = events;
         _identityStrategy = identityStrategy;
         _documentStorage = documentStorage;
         _telemetry = events.Options.OpenTelemetry;
@@ -54,9 +59,29 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
             _aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
                           ?? typeof(IdentityForwardingAggregator<,,,>).CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _documentStorage, typeof(TDoc), idType, simpleType, typeof(IQuerySession));
         }
+
+        // #5225: CacheAggregatesForWriting<T>() for a Live aggregate. Resolved once per plan, and only for an
+        // enrolled type, so a store that never opted in builds no cache key on any fetch. See FetchAsyncPlan.
+        if (events.AggregateWriteCaching.IsEnabled(typeof(TDoc)))
+        {
+            _cache = events.AggregateWriteCaching.ResolveCache(typeof(TDoc));
+        }
     }
 
     public bool IsGlobal { get; }
 
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Live;
+
+    /// <summary>
+    ///     The cache key for a stream. The database and the tenant are always part of it, because getting either
+    ///     wrong would hand one tenant's aggregate to another. The same key as <see cref="FetchAsyncPlan{TDoc,TId}" />.
+    /// </summary>
+    private AggregateCacheKey cacheKeyFor(DocumentSessionBase session, TId id)
+    {
+        return new AggregateCacheKey(
+            typeof(TDoc),
+            session.Database.Identifier,
+            IsGlobal ? AggregateCacheKey.GlobalTenant : session.TenantId,
+            id);
+    }
 }

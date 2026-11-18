@@ -202,6 +202,23 @@ state that is durable only if that commit happens to succeed. Deferring the writ
 removes the hazard rather than mitigating it: a rolled-back commit simply leaves no entry, and the next
 fetch reloads from the database.
 
+### Live aggregates <Badge type="tip" text="10.0" />
+
+An aggregate with no stored snapshot, built Live on every fetch, can be enrolled the same way:
+
+```csharp
+// No Snapshot<Order>() registration: Order is built Live
+opts.Events.CacheAggregatesForWriting<Order>();
+```
+
+A hit reads the stream version and only the events after the cached version, and folds them onto the cached
+aggregate, instead of reading and folding the whole stream. That is the case of a chain of commands over one
+stream, each in its own session: every hop after the first reads only what the hop before it appended. The
+aggregate goes into the cache after a successful commit, at the version it was fetched at, so the next fetch
+reads that session's own events as part of its delta. An archived stream is never served from the cache.
+
+Before Marten 10, enrolling a Live aggregate was accepted and did nothing.
+
 ### What the cache actually removes under Inline
 
 Unlike Async there is no delta query to shrink here, so the entire value of the cache under Inline is the

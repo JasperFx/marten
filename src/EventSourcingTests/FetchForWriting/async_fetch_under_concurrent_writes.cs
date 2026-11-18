@@ -41,7 +41,13 @@ public abstract class async_fetch_under_concurrent_writes: OneOffConfigurationsC
     {
         DaemonRunning,
         DaemonRunningWithTheWriteCache,
-        RewoundAndDeleted
+        RewoundAndDeleted,
+
+        /// <summary>
+        /// #5225: no snapshot at all. The aggregate is Live and enrolled in the write cache, so every fetch for
+        /// writing starts from whatever the cache holds and reads only the events after it.
+        /// </summary>
+        LiveWithTheWriteCache
     }
 
     public enum WriteFetch
@@ -73,12 +79,15 @@ public abstract class async_fetch_under_concurrent_writes: OneOffConfigurationsC
     [InlineData(SnapshotMovement.DaemonRunning)]
     [InlineData(SnapshotMovement.DaemonRunningWithTheWriteCache)]
     [InlineData(SnapshotMovement.RewoundAndDeleted)]
+    [InlineData(SnapshotMovement.LiveWithTheWriteCache)]
     public async Task no_event_is_lost_or_applied_twice(SnapshotMovement movement)
     {
+        var live = movement == SnapshotMovement.LiveWithTheWriteCache;
         StoreOptions(opts =>
         {
             opts.Events.UseIdentityMapForAggregates = false;
-            _subject.Configure(opts, movement == SnapshotMovement.DaemonRunningWithTheWriteCache);
+            _subject.Configure(opts, movement is SnapshotMovement.DaemonRunningWithTheWriteCache or SnapshotMovement.LiveWithTheWriteCache,
+                live);
         });
 
         var ct = TestContext.Current.CancellationToken;
@@ -100,7 +109,7 @@ public abstract class async_fetch_under_concurrent_writes: OneOffConfigurationsC
         var refusedBatches = 0;
         var rewinds = 0;
 
-        var daemon = movement == SnapshotMovement.RewoundAndDeleted
+        var daemon = movement is SnapshotMovement.RewoundAndDeleted or SnapshotMovement.LiveWithTheWriteCache
             ? null
             : await theStore.BuildProjectionDaemonAsync();
         if (daemon != null) await daemon.StartAllAsync();
@@ -338,7 +347,8 @@ public class TickTallyWithAStrongTypedId: IRevisioned
 /// <summary>Drives one tally aggregate through the fetches, by Guid or string stream identity.</summary>
 public abstract class TallySubject
 {
-    public abstract void Configure(StoreOptions opts, bool writeCache);
+    /// <param name="live">No snapshot: the aggregate is built Live on every fetch (#5225).</param>
+    public abstract void Configure(StoreOptions opts, bool writeCache, bool live = false);
     public abstract object NewId();
     public abstract void Start(IDocumentSession session, object id, Tick tick);
     public abstract void Append(IDocumentSession session, object id, Tick tick);
@@ -364,10 +374,10 @@ public sealed class TallySubject<T>(
     Func<object> newId,
     Func<T, IReadOnlyList<long>> seenOf): TallySubject where T : class
 {
-    public override void Configure(StoreOptions opts, bool writeCache)
+    public override void Configure(StoreOptions opts, bool writeCache, bool live = false)
     {
         configure(opts);
-        opts.Projections.Snapshot<T>(SnapshotLifecycle.Async);
+        if (!live) opts.Projections.Snapshot<T>(SnapshotLifecycle.Async);
         if (writeCache) opts.Events.CacheAggregatesForWriting<T>();
     }
 
