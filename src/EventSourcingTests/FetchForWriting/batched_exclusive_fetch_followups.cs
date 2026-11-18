@@ -80,24 +80,13 @@ public class batched_exclusive_fetch_followups: OneOffConfigurationsContext
     }
 
     /// <summary>
-    /// A non-exclusive <c>FetchForWriting</c> for an Async-snapshot aggregate brackets its reads in
-    /// <c>begin transaction … end</c>, and that <c>end</c> commits the session's transaction — taking an
-    /// exclusive fetch's row lock with it. The combination has never worked: the warm path already failed
-    /// with <c>InvalidOperationException: This NpgsqlTransaction has completed</c> from
-    /// <c>SaveChangesAsync</c>, and before #5532 the cold path silently committed with no lock at all.
-    /// Refusing it at the offending call replaces an Npgsql message several layers away with one naming
-    /// what the caller did.
-    ///
-    /// Both orderings, and the assertion is on <c>Execute()</c> rather than on the enlisting call, because
-    /// only one ordering can throw synchronously: <c>FetchForExclusiveWriting</c> is <c>async</c>, so an
-    /// exception in its body arrives as a faulted task, and a caller following the documented shape
-    /// (enlist, <c>Execute()</c>, then await the items) would reach <c>Execute()</c> before observing it.
-    /// <c>Execute()</c> refusing is therefore the guarantee that matters.
+    /// A non-exclusive Async fetch and an exclusive one share a batch in either order, and the exclusive
+    /// fetch's row lock survives the batch, to be released by <c>SaveChangesAsync</c>.
     /// </summary>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task a_mixed_batch_is_refused_with_an_explanation(bool exclusiveFirst)
+    public async Task a_mixed_batch_works_and_keeps_the_lock(bool exclusiveFirst)
     {
         StoreOptions(opts =>
         {
@@ -114,75 +103,41 @@ public class batched_exclusive_fetch_followups: OneOffConfigurationsContext
         await using var session = theStore.LightweightSession();
         var batch = session.CreateBatchQuery();
 
-        InvalidOperationException ex;
-
+        Task<IEventStream<SimpleAggregate>> exclusive;
+        Task<IEventStream<SimpleAggregate>> other;
         if (exclusiveFirst)
         {
-            // Exclusive first: the non-exclusive fetch is added second, through the synchronous AddItem,
-            // so this ordering is caught at the offending call.
-            _ = batch.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
-            ex = Should.Throw<InvalidOperationException>(
-                () => batch.Events.FetchForWriting<SimpleAggregate>(otherId));
+            exclusive = batch.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
+            other = batch.Events.FetchForWriting<SimpleAggregate>(otherId);
         }
         else
         {
-            // Non-exclusive first: the exclusive fetch faults its own task rather than throwing, so the
-            // refusal has to come from Execute() -- otherwise the batch would be sent.
-            _ = batch.Events.FetchForWriting<SimpleAggregate>(otherId);
-            _ = batch.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
-            ex = await Should.ThrowAsync<InvalidOperationException>(() => batch.Execute());
+            other = batch.Events.FetchForWriting<SimpleAggregate>(otherId);
+            exclusive = batch.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
         }
 
-        ex.Message.ShouldContain("cannot share a batch");
-        ex.Message.ShouldContain("ProjectionLifecycle.Async");
+        await batch.Execute();
+
+        (await other).Aggregate!.BCount.ShouldBe(1);
+        var locked = await exclusive;
+        locked.Aggregate!.ACount.ShouldBe(1);
+
+        await using var second = theStore.LightweightSession();
+        var blocked = second.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
+        await Task.Delay(750);
+        blocked.IsCompleted.ShouldBeFalse();
+
+        locked.AppendOne(new CEvent());
+        await session.SaveChangesAsync();
+        (await blocked).Aggregate!.CCount.ShouldBe(1);
     }
 
     /// <summary>
-    /// Whichever order they were enlisted in, <c>Execute()</c> must refuse rather than send a batch whose
-    /// <c>end</c> would commit the session's transaction out from under the exclusive fetch's lock.
+    /// #5535. A non-exclusive <c>FetchForWriting</c> for an Async-snapshot aggregate works wherever it is
+    /// enlisted in its batch.
     /// </summary>
     [Fact]
-    public async Task execute_refuses_a_mixed_batch_enlisted_exclusive_first()
-    {
-        StoreOptions(opts =>
-        {
-            opts.Connection(Unpooled);
-            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
-        });
-
-        var streamId = Guid.NewGuid();
-        var otherId = Guid.NewGuid();
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent());
-        theSession.Events.StartStream<SimpleAggregate>(otherId, new BEvent());
-        await theSession.SaveChangesAsync();
-
-        await using var session = theStore.LightweightSession();
-        var batch = session.CreateBatchQuery();
-        _ = batch.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
-
-        // Swallow the enlist-time refusal so the batch is left in the mixed state Execute() must catch.
-        try
-        {
-            _ = batch.Events.FetchForWriting<SimpleAggregate>(otherId);
-        }
-        catch (InvalidOperationException)
-        {
-        }
-
-        await Should.ThrowAsync<InvalidOperationException>(() => batch.Execute());
-    }
-
-    /// <summary>
-    /// #5535, which is independent of the exclusive-fetch interaction above and bites with no exclusive fetch
-    /// involved. A non-exclusive <c>FetchForWriting</c> for an Async-snapshot aggregate wraps its reads in
-    /// <c>begin transaction isolation level repeatable read read only</c> … <c>end</c>, and PostgreSQL only
-    /// accepts that as the FIRST statement in a transaction. Enlisted after anything else it failed at
-    /// <c>Execute()</c> with <c>25001: SET TRANSACTION ISOLATION LEVEL must be called before any query</c> —
-    /// naming an isolation level the caller never mentioned and saying nothing about ordering, while nothing
-    /// about <c>CreateBatchQuery()</c> suggests one of its members has to go first.
-    /// </summary>
-    [Fact]
-    public async Task an_async_snapshot_fetch_for_writing_must_be_first_in_its_batch()
+    public async Task an_async_snapshot_fetch_for_writing_can_come_after_other_operations()
     {
         StoreOptions(opts =>
         {
@@ -197,18 +152,17 @@ public class batched_exclusive_fetch_followups: OneOffConfigurationsContext
         await using var session = theStore.LightweightSession();
         var batch = session.CreateBatchQuery();
 
-        // Anything at all ahead of it is enough; a plain document load will do.
-        _ = batch.Load<SimpleAggregate>(streamId);
+        // Anything at all ahead of it; a plain document load will do.
+        var load = batch.Load<SimpleAggregate>(streamId);
+        var item = batch.Events.FetchForWriting<SimpleAggregate>(streamId);
+        await batch.Execute();
 
-        var ex = Should.Throw<InvalidOperationException>(
-            () => batch.Events.FetchForWriting<SimpleAggregate>(streamId));
-
-        ex.Message.ShouldContain("FIRST operation in its batch");
-        ex.Message.ShouldContain("repeatable read read only");
+        (await load).ShouldBeNull();
+        (await item).CurrentVersion.ShouldBe(1);
     }
 
     /// <summary>
-    /// The position that does work keeps working — the fix is about ordering, not about forbidding the call.
+    /// First in its batch.
     /// </summary>
     [Fact]
     public async Task an_async_snapshot_fetch_for_writing_is_fine_first_in_its_batch()

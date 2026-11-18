@@ -27,16 +27,16 @@ namespace EventSourcingTests.FetchForWriting;
 ///
 /// <para>
 /// The window is microseconds wide. It is widened deterministically here with the technique the
-/// reporter of #5604 used: a session logger appends a <c>pg_sleep</c> to the document read, and the
-/// daemon is run while that read is parked.
+/// reporter of #5604 used: a session logger puts a <c>pg_sleep</c> in whichever of the document read and
+/// the events read comes first, and the daemon is run while that read is parked.
 /// </para>
 /// </summary>
 public class Bug_5604_fetch_latest_needs_one_snapshot: OneOffConfigurationsContext
 {
     /// <summary>
-    /// Holds the snapshot document read open long enough for the daemon to commit a snapshot
-    /// underneath it. Keyed off the SHAPE of the batch — a document load by id followed by an mt_events
-    /// read — so it only ever stretches the read under test, and goes inert rather than silently
+    /// Holds the first read open long enough for the daemon to commit a snapshot
+    /// underneath it. Keyed off the SHAPE of the batch — a document load by id and an mt_events
+    /// read, in either order — so it only ever stretches the read under test, and goes inert rather than silently
     /// delaying something else the day the batch stops being built this way.
     /// </summary>
     public sealed class DelaySnapshotRead(double seconds): IMartenSessionLogger
@@ -46,12 +46,15 @@ public class Bug_5604_fetch_latest_needs_one_snapshot: OneOffConfigurationsConte
             var commands = batch.BatchCommands.Cast<NpgsqlBatchCommand>().ToList();
             var snapshotRead = commands.FindIndex(c =>
                 c.CommandText.Contains("mt_doc_simpleaggregate") && c.CommandText.Contains("where id = "));
+            var eventsRead = commands.FindIndex(c => c.CommandText.Contains("mt_events as d"));
 
-            if (snapshotRead >= 0 &&
-                commands.Skip(snapshotRead + 1).Any(c => c.CommandText.Contains("mt_events as d")))
+            if (snapshotRead >= 0 && eventsRead >= 0)
             {
-                commands[snapshotRead].CommandText +=
-                    $" and (select true from pg_sleep({seconds.ToString(CultureInfo.InvariantCulture)}))";
+                // Whichever of the two reads comes first
+                var first = commands[Math.Min(snapshotRead, eventsRead)];
+                var where = first.CommandText.IndexOf(" where ", StringComparison.Ordinal) + " where ".Length;
+                first.CommandText = first.CommandText.Insert(where,
+                    $"(select true from pg_sleep({seconds.ToString(CultureInfo.InvariantCulture)})) and ");
             }
         }
 
@@ -209,50 +212,53 @@ public class Bug_5604_fetch_latest_needs_one_snapshot: OneOffConfigurationsConte
     }
 
     [Fact]
-    public async Task a_batched_fetch_latest_has_to_be_first_in_its_batch()
+    public async Task a_batched_fetch_latest_can_come_after_other_operations()
     {
-        // The cost, and a deliberate BEHAVIOUR CHANGE: PostgreSQL accepts
-        // `begin transaction isolation level …` only as a transaction's first statement, so a batched
-        // FetchLatest for an Async aggregate inherits the #5535 must-be-first rule that FetchForWriting
-        // already had. Refused at the enlisting call, naming the call to move, rather than as a bare
-        // 25001 out of Execute().
         anAsyncSnapshot();
         var id = await appendThreeEventStreamAsync();
 
         await using var session = theStore.LightweightSession();
         var batch = session.CreateBatchQuery();
-        batch.Load<User>(Guid.NewGuid());
+        var load = batch.Load<User>(Guid.NewGuid());
+        var query = batch.Events.FetchLatest<SimpleAggregate>(id);
+        await batch.Execute(TestContext.Current.CancellationToken);
 
-        var ex = Should.Throw<InvalidOperationException>(() => batch.Events.FetchLatest<SimpleAggregate>(id));
-
-        ex.Message.ShouldContain("has to be the FIRST operation in its batch");
-        ex.Message.ShouldContain("FetchLatest");
-        ex.Message.ShouldContain("SimpleAggregate");
+        (await load).ShouldBeNull();
+        (await query)!.CCount.ShouldBe(1);
     }
 
     [Fact]
-    public async Task a_batched_fetch_latest_cannot_share_a_batch_with_an_exclusive_fetch()
+    public async Task a_batched_fetch_latest_can_share_a_batch_with_an_exclusive_fetch()
     {
-        // The other rule that comes with the bracket: its `end` would commit the session transaction
-        // holding the exclusive fetch's row lock. Message must name FetchLatest, not FetchForWriting.
+        // The exclusive fetch's row lock has to survive the rest of the batch, to be released by SaveChanges.
         anAsyncSnapshot();
         var id = await appendThreeEventStreamAsync();
+        var lockedId = await appendThreeEventStreamAsync();
 
         await using var session = theStore.LightweightSession();
         var batch = session.CreateBatchQuery();
-        batch.Events.FetchLatest<SimpleAggregate>(id);
+        var latest = batch.Events.FetchLatest<SimpleAggregate>(id);
+        var exclusive = batch.Events.FetchForExclusiveWriting<SimpleAggregate>(lockedId);
+        await batch.Execute(TestContext.Current.CancellationToken);
 
-        var ex = Should.Throw<InvalidOperationException>(() =>
-            batch.Events.FetchForExclusiveWriting<SimpleAggregate>(Guid.NewGuid()));
+        (await latest)!.CCount.ShouldBe(1);
+        var locked = await exclusive;
+        locked.Aggregate!.CCount.ShouldBe(1);
 
-        ex.Message.ShouldContain("FetchForExclusiveWriting cannot share a batch with FetchLatest");
+        await using var other = theStore.LightweightSession();
+        var blocked = other.Events.FetchForExclusiveWriting<SimpleAggregate>(lockedId,
+            TestContext.Current.CancellationToken);
+        await Task.Delay(750, TestContext.Current.CancellationToken);
+        blocked.IsCompleted.ShouldBeFalse();
+
+        locked.AppendOne(new DEvent());
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+        (await blocked).Aggregate!.DCount.ShouldBe(1);
     }
 
     [Fact]
     public async Task a_batched_fetch_latest_inside_a_caller_owned_transaction_need_not_be_first()
     {
-        // #5611's guard suppresses the bracket inside a caller-owned transaction, so neither rule
-        // applies there -- the same relief FetchForWriting got.
         anAsyncSnapshot();
         var id = await appendThreeEventStreamAsync();
 
@@ -276,8 +282,7 @@ public class Bug_5604_fetch_latest_needs_one_snapshot: OneOffConfigurationsConte
     [Fact]
     public async Task fetch_latest_does_not_commit_a_caller_owned_transaction()
     {
-        // The #5611 hazard, now that FetchLatest emits the bracket too: it must not commit the caller's
-        // transaction. Without the guard this test loses the rollback exactly as FetchForWriting did.
+        // The #5611 hazard: a fetch must not commit the caller's transaction.
         anAsyncSnapshot();
         var id = await appendThreeEventStreamAsync();
 

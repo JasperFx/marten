@@ -290,11 +290,8 @@ public class native_batch_reads: OneOffConfigurationsContext
     [Fact]
     public async Task fetch_many_for_writing_works_for_an_async_projected_aggregate()
     {
-        // The batch refuses to mix an EXCLUSIVE fetch with a non-exclusive one for an Async-projected
-        // aggregate, because the non-exclusive handler brackets its reads in its own transaction and
-        // the 'end' would release the exclusive row lock. FetchManyForWriting only ever enlists
-        // non-exclusive fetches, so it is outside that rule -- but several self-transacting handlers
-        // in one batch is the shape worth pinning, since the per-id default never produced it.
+        // Several Async fetches in one batch is the shape worth pinning, since the per-id default never
+        // produced it.
         StoreOptions(opts =>
             opts.Projections.Snapshot<BatchReadAsyncAggregate>(JasperFx.Events.Projections.SnapshotLifecycle.Async));
 

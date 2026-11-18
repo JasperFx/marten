@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
+using Marten.Exceptions;
 
 namespace Marten.Events;
 
@@ -56,23 +57,6 @@ internal partial class EventStore
             return Array.Empty<IEventStream<T>>();
         }
 
-        // An Async-projected aggregate cannot be batched more than once. Its fetch brackets its reads
-        // in `begin transaction isolation level repeatable read read only` so they share one snapshot,
-        // and PostgreSQL only accepts that as the FIRST statement in a transaction -- so the second
-        // one in a batch is refused outright. Falling back to the sequential shape keeps this working
-        // for that lifecycle, which is what the JasperFx default did and what callers already rely on;
-        // refusing instead would make the faster path a regression for anyone using Async snapshots.
-        if (FindFetchPlan<T, TId>().Lifecycle == ProjectionLifecycle.Async)
-        {
-            var sequential = new IEventStream<T>[identities.Count];
-            for (var i = 0; i < identities.Count; i++)
-            {
-                sequential[i] = await fetchOne(identities[i]).ConfigureAwait(false);
-            }
-
-            return sequential;
-        }
-
         var batch = _session.CreateBatchQuery();
 
         // Enlisting is synchronous and hands back an unawaited Task per stream; nothing is executed
@@ -83,7 +67,23 @@ internal partial class EventStore
             pending[i] = enlist(batch, identities[i]);
         }
 
-        await batch.Execute(cancellation).ConfigureAwait(false);
+        try
+        {
+            await batch.Execute(cancellation).ConfigureAwait(false);
+        }
+        catch (SnapshotRaceException)
+        {
+            // An Async snapshot went backwards mid-batch, as it does while a projection is rebuilt. A batch
+            // cannot redo one fetch, but the single-stream fetch can, so fall back to one per stream.
+            // Nothing was handed out yet, so the abandoned batch items are never observed.
+            var sequential = new IEventStream<T>[identities.Count];
+            for (var i = 0; i < identities.Count; i++)
+            {
+                sequential[i] = await fetchOne(identities[i]).ConfigureAwait(false);
+            }
+
+            return sequential;
+        }
 
         var streams = new IEventStream<T>[identities.Count];
         for (var i = 0; i < identities.Count; i++)

@@ -89,13 +89,6 @@ internal class ConnectionLifetimeBase
     ///     caused it. False for <see cref="AutoClosingLifetime" />, which opens and closes per operation and
     ///     so has nothing to poison.
     /// </summary>
-    /// <remarks>
-    ///     #5611 made this <c>internal</c> as well as <c>protected</c>. A second caller needs the same
-    ///     question answered with the same precision: a fetch that is about to emit <c>begin transaction
-    ///     isolation level … end</c> has to know whether that <c>end</c> would commit a transaction it did
-    ///     not open. Read it through <see cref="ConnectionLifetimeExtensions.HasSurvivingTransaction" />
-    ///     rather than casting, so the decorating lifetimes are unwrapped.
-    /// </remarks>
     protected internal virtual bool HasSurvivingTransaction => false;
 
     /// <summary>
@@ -160,25 +153,20 @@ internal class ConnectionLifetimeBase
 internal static class ConnectionLifetimeExtensions
 {
     /// <summary>
-    ///     #5611. Whether this lifetime is inside a transaction that outlives the current call -- so that a
-    ///     caller about to emit <c>end</c> can know it would be committing somebody else's work.
+    ///     Whether this lifetime is inside a transaction that outlives the current call, so that work done
+    ///     through it is not yet committed when the call returns.
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         <see cref="ConnectionLifetimeBase.HasSurvivingTransaction" /> already answers this with the
-    ///         right precision per lifetime. The only reason this wrapper exists is that
-    ///         <see cref="EventTracingConnectionLifetime" /> decorates an inner lifetime WITHOUT deriving
-    ///         from the base, so asking the outer object directly would answer <c>false</c> for a session
-    ///         that is very much inside a transaction, whenever OpenTelemetry tracing happens to be on.
-    ///         That is a bug that only appears once tracing is configured, which is exactly the kind that
-    ///         reaches production.
+    ///         <see cref="ConnectionLifetimeBase.HasSurvivingTransaction" /> answers this with the right
+    ///         precision per lifetime. This wrapper exists because <see cref="EventTracingConnectionLifetime" />
+    ///         decorates an inner lifetime without deriving from the base, so asking the outer object directly
+    ///         would answer <c>false</c> for a session that is inside a transaction whenever OpenTelemetry
+    ///         tracing is on.
     ///     </para>
     ///     <para>
-    ///         An implementation Marten does not recognise answers <c>false</c>, which leaves today's
-    ///         behaviour in place for it. Every lifetime Marten itself builds is covered by one of the two
-    ///         branches below; a foreign <see cref="IConnectionLifetime" /> that carries a surviving
-    ///         transaction cannot be detected from out here, and guessing <c>true</c> would quietly disable
-    ///         the shared snapshot (#5604) for every such session instead.
+    ///         An implementation Marten does not recognise answers <c>false</c>. Every lifetime Marten itself
+    ///         builds is covered by one of the two branches below.
     ///     </para>
     /// </remarks>
     internal static bool HasSurvivingTransaction(this IConnectionLifetime lifetime)
