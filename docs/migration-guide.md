@@ -666,6 +666,20 @@ when skipping is enabled, and metadata is only written and selected when its fla
 Deliberately still conditional, because they are expensive or change the table's shape: tenant partitioning of
 `mt_events`, table fillfactor, and the DCB `hstore` tags column and its GIN index.
 
+### DCB tag versions come from a sequence, and a tombstone erases tag values <Badge type="warning" text="schema change" />
+
+If you register a DCB tag type, the schema gains a sequence, `mt_dcb_tag_version_sequence`, and every new
+`mt_dcb_tag_version` version comes from it ([#6035](https://github.com/JasperFx/marten/issues/6035)). It's additive, so
+any `AutoCreate` setting but `None` adds it on first use, and existing rows keep working. Under `AutoCreate.None`, apply
+the migration before deploying, because tagged appends fail without the sequence.
+
+- `TombstoneStream` deletes a tag's `mt_dcb_tag_version` row once no other stream carries it, and never creates one. See
+  [what a tombstone erases](/events/dcb#what-a-tombstone-erases).
+- `mt_dcb_tag_version.version` is no longer a count of commits.
+- Two boundaries in one session over the same tag now conflict when they read different versions.
+- Finish a rolling upgrade before relying on this: a node still on Marten 9 counts up from the current value and doesn't
+  delete rows.
+
 ### `MetadataConfig.EnableAll()` also enables the user name {#metadataconfig-enableall-also-enables-the-user-name} <Badge type="warning" text="behavior change" />
 
 `opts.Events.MetadataConfig.EnableAll()` now turns on `UserNameEnabled` along with the causation id, correlation id
