@@ -807,6 +807,11 @@ public class AdvancedOperations
             }
         }
 
+        // Concurrent onboarding of the same tenant waits here for the first caller rather than racing its
+        // CREATE ... IF NOT EXISTS into a 23505 (#4596). Held across the partitions and the sequences below.
+        await using var provisioning = await TenantProvisioningLock
+            .AcquireAsync(database, _store.Options.DatabaseSchemaName, token).ConfigureAwait(false);
+
         var statuses = await _store.Options.TenantPartitions.Partitions.AddPartitionToAllTables(
             logger,
             database,
