@@ -577,6 +577,13 @@ between its two reads, as it does while a projection is rebuilt, still throws `S
 batch. Outside a batch Marten redoes the fetch itself, and `FetchManyForWriting()` falls back to one fetch per stream
 ([#5799](https://github.com/JasperFx/marten/pull/5799)).
 
+### A `Live` aggregate's `FetchForWriting()` reports the newest version it read <Badge type="warning" text="behavior change" />
+
+`FetchForWriting()` on a `Live` aggregate now reports the newest stream version its two reads saw, the rule `Async`
+has followed since #5799. Before, an append that committed between the version read and the events read was folded
+into the aggregate while the stream reported the older version, so the save failed against an append the aggregate
+already contained ([#6079](https://github.com/JasperFx/marten/pull/6079), [#5225](https://github.com/JasperFx/marten/issues/5225)).
+
 ### `RebuildSingleStreamAsync()` goes through the daemon, and refuses when another node runs the projection <Badge type="warning" text="behavior change" />
 
 For a document written by an asynchronous single-stream projection, every `Advanced.RebuildSingleStreamAsync()`
