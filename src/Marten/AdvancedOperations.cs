@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Protected;
 using JasperFx.MultiTenancy;
@@ -481,88 +482,127 @@ public class AdvancedOperations
     }
 
     /// <summary>
-    ///     Convenience method to rebuild the projected document of type T for a single stream
-    ///     identified by id
-    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
+    ///     Rebuild the projected document of type <typeparamref name="T" /> for the single stream identified by
+    ///     <paramref name="id" />, and commit it. The repair for one stream whose read model is wrong, where a full
+    ///     <c>RebuildProjectionAsync</c> would replay every stream the projection owns.
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="token"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public async Task RebuildSingleStreamAsync<T>(string id, CancellationToken token = default) where T : class
-    {
-        await using var session = _store.LightweightSession();
-        var document = await session.Events.AggregateStreamAsync<T>(id, token: token).ConfigureAwait(false);
-        session.Store(document!);
-        await session.SaveChangesAsync(token).ConfigureAwait(false);
-    }
+    /// <remarks>
+    ///     <para>
+    ///         <b>Three paths, in this order (marten#6071).</b> When <typeparamref name="T" /> is written by an
+    ///         asynchronous single-stream projection:
+    ///     </para>
+    ///     <list type="number">
+    ///         <item>
+    ///             A daemon of this store in this process is running the projection's shard: the rebuild goes
+    ///             through it (<c>IProjectionDaemon.RebuildIdentityAsync</c>) and is bound to the shard's next
+    ///             batch, which re-folds the stream and commits it with the shard's progression, so it cannot race
+    ///             the shard. This returns when that batch commits.
+    ///         </item>
+    ///         <item>
+    ///             Otherwise, when the shard's progression row was written within the last 30 seconds by a running
+    ///             agent, the rebuild is refused with <see cref="IdentityRebuildRefusedException" />
+    ///             (<see cref="IdentityRebuildRefusal.ShardLiveOnAnotherNode" />). Another node is advancing the
+    ///             shard; rebuild through the daemon there.
+    ///         </item>
+    ///         <item>
+    ///             Otherwise the stream is live-aggregated and stored here, outside any daemon. <b>That is only safe
+    ///             when no daemon is running the projection.</b> Without extended progression tracking an idle shard
+    ///             stops rewriting its row, so a daemon on another node that has had nothing to do for 30 seconds
+    ///             looks stopped and the write is not refused.
+    ///         </item>
+    ///     </list>
+    ///     <para>
+    ///         An inline or live projection, or a type no projection writes, always takes the third path.
+    ///     </para>
+    ///     <para>
+    ///         A stream that folds to nothing deletes the document, which is what a full rebuild leaves for that
+    ///         stream. This used to throw from <c>Store(null)</c>.
+    ///     </para>
+    /// </remarks>
+    /// <exception cref="IdentityRebuildRefusedException">
+    ///     The projection's shard is running on another node, or the daemon running it here refused (it has never
+    ///     committed, or it is being rebuilt).
+    /// </exception>
+    public Task RebuildSingleStreamAsync<T>(string id, CancellationToken token = default) where T : class
+        => rebuildSingleStreamAsync<T>(id, () => _store.LightweightSession(),
+            (session, ct) => session.Events.AggregateStreamAsync<T>(id, token: ct), token);
+
+    /// <inheritdoc cref="RebuildSingleStreamAsync{T}(string, CancellationToken)" />
+    public Task RebuildSingleStreamAsync<T>(Guid id, CancellationToken token = default) where T : class
+        => rebuildSingleStreamAsync<T>(id,
+            () => _store.LightweightSession(new SessionOptions { ConcurrencyChecks = ConcurrencyChecks.Disabled }),
+            (session, ct) => session.Events.AggregateStreamAsync<T>(id, token: ct), token);
 
     /// <summary>
-    ///     Convenience method to rebuild the projected document of type T for a single stream
-    ///     identified by id
-    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="token"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public async Task RebuildSingleStreamAsync<T>(Guid id, CancellationToken token = default) where T : class
-    {
-        await using var session = _store.LightweightSession(new SessionOptions{ConcurrencyChecks = ConcurrencyChecks.Disabled});
-        var document = await session.Events.AggregateStreamAsync<T>(id, token: token).ConfigureAwait(false);
-        session.Store(document!);
-        await session.SaveChangesAsync(token).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(string, CancellationToken)"/>.
-    ///     Convenience method to rebuild the projected document of type T for a single stream
-    ///     identified by <paramref name="streamKey"/> under the supplied <paramref name="tenantId"/>.
+    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(string, CancellationToken)"/>, for the
+    ///     stream identified by <paramref name="streamKey"/> under the supplied <paramref name="tenantId"/>.
     ///     Required when <see cref="Marten.Events.IEventStoreOptions.TenancyStyle"/> is
     ///     <see cref="Marten.Storage.TenancyStyle.Conjoined"/> or when running under sharded
     ///     multi-tenancy — the event load and the upsert both have to be scoped to the
     ///     tenant or you get a default-tenant lookup miss / write.
-    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
     ///     #4668 — new overload, not a default parameter, so existing call sites bind unchanged.
     /// </summary>
+    /// <remarks>See <see cref="RebuildSingleStreamAsync{T}(string, CancellationToken)" /> for the three paths.</remarks>
     /// <param name="streamKey">The string-keyed stream id.</param>
     /// <param name="tenantId">Tenant id to scope the rebuild session and the projected-document upsert to.</param>
     /// <param name="token"></param>
     /// <typeparam name="T"></typeparam>
-    public async Task RebuildSingleStreamAsync<T>(string streamKey, string tenantId, CancellationToken token = default) where T : class
-    {
-        await using var session = _store.LightweightSession(tenantId);
-        var document = await session.Events.AggregateStreamAsync<T>(streamKey, token: token).ConfigureAwait(false);
-        session.Store(document!);
-        await session.SaveChangesAsync(token).ConfigureAwait(false);
-    }
+    public Task RebuildSingleStreamAsync<T>(string streamKey, string tenantId, CancellationToken token = default) where T : class
+        => rebuildSingleStreamAsync<T>(streamKey, () => _store.LightweightSession(tenantId),
+            (session, ct) => session.Events.AggregateStreamAsync<T>(streamKey, token: ct), token);
 
     /// <summary>
-    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(Guid, CancellationToken)"/>.
-    ///     Convenience method to rebuild the projected document of type T for a single stream
-    ///     identified by <paramref name="streamId"/> under the supplied <paramref name="tenantId"/>.
+    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(Guid, CancellationToken)"/>, for the
+    ///     stream identified by <paramref name="streamId"/> under the supplied <paramref name="tenantId"/>.
     ///     Required when <see cref="Marten.Events.IEventStoreOptions.TenancyStyle"/> is
     ///     <see cref="Marten.Storage.TenancyStyle.Conjoined"/> or when running under sharded
     ///     multi-tenancy — the event load and the upsert both have to be scoped to the
     ///     tenant or you get a default-tenant lookup miss / write.
-    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
     ///     #4668 — new overload, not a default parameter, so existing call sites bind unchanged.
     /// </summary>
+    /// <remarks>See <see cref="RebuildSingleStreamAsync{T}(string, CancellationToken)" /> for the three paths.</remarks>
     /// <param name="streamId">The Guid-keyed stream id.</param>
     /// <param name="tenantId">Tenant id to scope the rebuild session and the projected-document upsert to.</param>
     /// <param name="token"></param>
     /// <typeparam name="T"></typeparam>
-    public async Task RebuildSingleStreamAsync<T>(Guid streamId, string tenantId, CancellationToken token = default) where T : class
-    {
+    public Task RebuildSingleStreamAsync<T>(Guid streamId, string tenantId, CancellationToken token = default) where T : class
         // Mirror the Guid-overload's ConcurrencyChecks.Disabled posture so behavior matches
         // the existing non-tenanted Guid path beyond the tenant scope.
-        await using var session = _store.LightweightSession(new SessionOptions
+        => rebuildSingleStreamAsync<T>(streamId,
+            () => _store.LightweightSession(new SessionOptions
+            {
+                ConcurrencyChecks = ConcurrencyChecks.Disabled,
+                TenantId = tenantId
+            }),
+            (session, ct) => session.Events.AggregateStreamAsync<T>(streamId, token: ct), token);
+
+    private async Task rebuildSingleStreamAsync<T>(object streamId, Func<IDocumentSession> openSession,
+        Func<IDocumentSession, CancellationToken, Task<T?>> aggregate, CancellationToken token) where T : class
+    {
+        await using var session = openSession();
+
+        if (_store.AsyncSingleStreamProjectionFor(typeof(T)) is { } projection
+            && await _store.TryRebuildIdentityThroughDaemonAsync(projection, session.Database, session.TenantId,
+                streamId, token).ConfigureAwait(false))
         {
-            ConcurrencyChecks = ConcurrencyChecks.Disabled,
-            TenantId = tenantId
-        });
-        var document = await session.Events.AggregateStreamAsync<T>(streamId, token: token).ConfigureAwait(false);
-        session.Store(document!);
+            return;
+        }
+
+        var document = await aggregate(session, token).ConfigureAwait(false);
+
+        if (document is null)
+        {
+            // Deleted rather than skipped: a full rebuild clears the rows and replays, so a stream that folds to
+            // nothing leaves no document. Skipping would keep whatever the earlier, wrong run wrote, which is what
+            // this is being called to repair. Deleted by the stream's identity, which is the aggregate's.
+            var idType = _store.Options.Storage.FindMapping(typeof(T)).IdType;
+            session.Delete<T>(DocumentStore.DocumentIdentityFor(idType, streamId));
+        }
+        else
+        {
+            session.Store(document);
+        }
+
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 

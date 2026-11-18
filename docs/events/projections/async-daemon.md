@@ -1169,14 +1169,14 @@ var latest = await session
 `QueryForNonStaleData<T>(timeout)` overload, so existing usages are unaffected. Choose
 `NonStaleDataTimeoutMode.ReturnStaleData` only when serving slightly stale data is preferable to a failed query.
 
-## Reading Your Own Writes <Badge type="tip" text="10.0" />
+## Reading Your Own Writes <Badge type="tip" text="10.0" /> {#reading-your-own-writes}
 
 `QueryForNonStaleData` waits for the highest event sequence in the store at the time of the call. On a busy
 system that includes everybody else's events, so a request waits for work it doesn't care about. And a timeout
 there is an exception, even though your write went through just fine.
 
 If what you want is to read back what you just wrote, wait for your own events instead. After
-`SaveChangesAsync()`, `session.LastAppendedSequence` tells you where that commit's events are, and
+`SaveChangesAsync()`, `session.LastAppendedPosition` tells you where that commit's events are, and
 `IDocumentStore.WaitForProjectionsAsync()` waits for the named asynchronous projections to get that far:
 
 <!-- snippet: sample_read_your_writes -->
@@ -1187,7 +1187,7 @@ session.Events.StartStream(Guid.NewGuid(), new RywCounted(false));
 await session.SaveChangesAsync();
 
 // Where this commit's events are: database, tenant and sequence
-var position = session.LastAppendedSequence!;
+var position = session.LastAppendedPosition!;
 
 var result = await store.WaitForProjectionsAsync(position, [typeof(RywTally)], 5.Seconds());
 if (result.Reached)

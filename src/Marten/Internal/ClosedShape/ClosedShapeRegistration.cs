@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Linq;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Internal.Storage;
@@ -45,7 +46,7 @@ public static class ClosedShapeRegistration
                 $"{typeof(TDoc).Name} must use a Guid id to register with sequential-GUID identity — found {mapping.IdType.Name}.");
         }
 
-        var identification = new SequentialGuidIdentification<TDoc>(mapping.IdMember);
+        var identification = new SequentialGuidIdentification<TDoc>(mapping.IdMember, SequentialGuid.PostgresOrder);
         RegisterClosedShape<TDoc, Guid>(documentStore, mapping, identification);
     }
 
@@ -110,7 +111,7 @@ public static class ClosedShapeRegistration
         {
             IIdentification<TDoc, Guid> identification = mapping.IdStrategy is GuidIdGeneration
                 ? new GuidIdentification<TDoc>(mapping.IdMember)
-                : new SequentialGuidIdentification<TDoc>(mapping.IdMember);
+                : new SequentialGuidIdentification<TDoc>(mapping.IdMember, SequentialGuid.PostgresOrder);
             return BuildProvider<TDoc, Guid>(mapping, identification);
         }
 

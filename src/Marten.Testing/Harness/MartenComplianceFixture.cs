@@ -110,6 +110,12 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         options.NameDataLength = 100;
         options.DatabaseSchemaName = (config.SchemaName ?? "compliance").ToLowerInvariant();
 
+        if (_tenantDatabases.Count == 0)
+        {
+            await dropSchemaBuiltUnderTheOtherEventTenancyAsync(connectionStringFor(config),
+                options.DatabaseSchemaName, config.ConjoinedEventTenancy).ConfigureAwait(false);
+        }
+
         if (config.MaxConcurrentRebuildsPerDatabase.HasValue)
         {
             options.Projections.MaxConcurrentRebuildsPerDatabase = config.MaxConcurrentRebuildsPerDatabase;
@@ -259,6 +265,32 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         }
     }
 
+    /// <summary>
+    ///     marten#6071. <c>IdentityRebuildCompliance</c> (JasperFx 3.6.0) runs its conjoined facts in the same schema
+    ///     as its single-tenancy ones, where every other suite gives a conjoined configuration a schema of its own.
+    ///     Migrating an event store between the two tenancy styles fails on a partitioned <c>mt_streams</c>: the
+    ///     primary key change re-adds the <c>mt_events</c> foreign key that <c>mt_events</c>' own delta adds as
+    ///     well (weasel#883). Until both are fixed upstream (jasperfx#1227 for the suite), a schema built under the other event tenancy is
+    ///     dropped before the store is built, which is what a separate schema would have given the suite.
+    /// </summary>
+    private static async Task dropSchemaBuiltUnderTheOtherEventTenancyAsync(string connectionString, string schema,
+        bool conjoined)
+    {
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync().ConfigureAwait(false);
+
+        await using var probe = conn.CreateCommand(
+            "select pg_get_constraintdef(c.oid) from pg_constraint c where c.contype = 'p' and c.conrelid = to_regclass(:streams)");
+        probe.AddNamedParameter("streams", $"{schema}.mt_streams");
+        var primaryKey = await probe.ExecuteScalarAsync().ConfigureAwait(false) as string;
+
+        // No event store in the schema yet, or one built under this tenancy
+        if (primaryKey == null || primaryKey.Contains("tenant_id") == conjoined) return;
+
+        await using var drop = conn.CreateCommand($"drop schema if exists {schema} cascade");
+        await drop.ExecuteNonQueryAsync().ConfigureAwait(false);
+    }
+
     private static string connectionStringFor(ComplianceStoreConfig config)
     {
         if (!config.MaxPoolSize.HasValue)
@@ -333,9 +365,16 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override Task SaveChangesAsync(IDocumentOperations session, CancellationToken token)
         => ((IDocumentSession)session).SaveChangesAsync(token);
 
-    public override Task<T?> LoadDocumentAsync<T>(IQuerySession session, object id, CancellationToken token)
+    /// <remarks>
+    ///     marten#6071: a soft-deleted document loads as null. Marten's <c>LoadAsync</c> returns a soft-deleted
+    ///     document (the document suites model that with <c>LoadExcludesSoftDeletedDocuments</c>), and the event
+    ///     store suites read "loaded" as "live": <c>IdentityRebuildCompliance</c>'s soft-delete facts are the first
+    ///     to store a projected document soft-deleted (jasperfx#1227).
+    /// </remarks>
+    public override async Task<T?> LoadDocumentAsync<T>(IQuerySession session, object id, CancellationToken token)
         where T : class
-        => id switch
+    {
+        var document = await (id switch
         {
             Guid guidId => session.LoadAsync<T>(guidId, token),
             int intId => session.LoadAsync<T>(intId, token),
@@ -343,7 +382,20 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             string stringId => session.LoadAsync<T>(stringId, token),
             _ => throw new ArgumentOutOfRangeException(nameof(id),
                 $"Marten cannot load documents by an identity of type {id.GetType().FullName}")
-        };
+        }).ConfigureAwait(false);
+
+        if (document != null
+            && ((DocumentStore)session.DocumentStore).Options.Storage.FindMapping(typeof(T)) is Marten.Schema.DocumentMapping
+            {
+                DeleteStyle: JasperFx.DeleteStyle.SoftDelete
+            }
+            && (await session.MetadataForAsync(document, token).ConfigureAwait(false))?.Deleted == true)
+        {
+            return null;
+        }
+
+        return document;
+    }
 
     public override void StoreDocument<T>(IDocumentOperations session, T document) => session.Store(document);
 
@@ -825,6 +877,18 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsTombstoneStream => true;
 
     /// <summary>
+    ///     marten#6071 (jasperfx#1201): the store reads one stream's events for a per-identity re-fold
+    ///     (<c>LoadEventsForIdentityRebuildAsync</c>), its projection storage hard deletes by id, and an empty
+    ///     range <c>(C, C]</c> records progression through the same floor-checked update as any other batch.
+    /// </summary>
+    public override bool SupportsIdentityRebuild => true;
+
+    /// <summary>
+    ///     marten#6071: the registrar's <c>SoftDeleted&lt;TDoc&gt;()</c> is <c>Schema.For&lt;TDoc&gt;().SoftDeleted()</c>.
+    /// </summary>
+    public override bool SupportsSoftDeletedProjectionDocuments => true;
+
+    /// <summary>
     ///     marten#5847 (Marten 10): Marten throws the exception types lifted into JasperFx.Events
     ///     directly, so the base nominations hold for every kind but one. DefaultTenantUsageDisabled is
     ///     still Marten's own type.
@@ -901,6 +965,12 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
         public void LiveAggregation<TDoc>() where TDoc : notnull
             => _options.Projections.LiveStreamAggregation<TDoc>();
+
+        /// <summary>
+        ///     jasperfx#1201 (marten#6071).
+        /// </summary>
+        public void SoftDeleted<TDoc>() where TDoc : notnull
+            => _options.Schema.For<TDoc>().SoftDeleted();
 
         /// <summary>
         ///     Marten needs a strong-typed identifier registered before it can use it in LINQ and identity

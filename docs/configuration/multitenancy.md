@@ -138,6 +138,34 @@ If instead you provision a known set of tenant databases up front through
 provider. See [Azure Database for PostgreSQL with Entra ID](/configuration/azure-managed-identity#database-provisioning-with-a-rotating-credential).
 :::
 
+### Provisioning command timeout {#provisioning-command-timeout}
+
+Creating a database can take a while on a busy server, longer than the command timeout you tuned for queries. So
+`CREATE DATABASE` and `DROP DATABASE` run under their own command timeout, two minutes by default. Every other command
+keeps the store's command timeout. The provisioning timeout only ever lengthens the timeout, so a longer store command
+timeout is kept, and `TimeSpan.Zero` means no limit.
+
+```cs
+opts.MultiTenantedWithSingleServer(connectionString, t =>
+{
+    t.WithTenants("tenant1", "tenant2");
+    t.ProvisioningCommandTimeout = TimeSpan.FromMinutes(5);
+});
+```
+
+`CreateDatabasesForTenants()` has the same setting, and extension installs (`CREATE EXTENSION`) use the one on
+Weasel's migrator:
+
+```cs
+opts.CreateDatabasesForTenants(c =>
+{
+    c.ProvisioningCommandTimeout(TimeSpan.FromMinutes(5));
+    c.ForTenant().CheckAgainstPgDatabase();
+});
+
+opts.Advanced.Migrator.ProvisioningCommandTimeout = TimeSpan.FromMinutes(5);
+```
+
 ## Master Table Tenancy Model
 
 ::: info

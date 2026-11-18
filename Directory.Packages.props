@@ -894,15 +894,20 @@
          span members, which the bdata write and read paths now use (marten#5731). jasperfx#1186, UnArchiveStream on
          the shared IEventStoreOperations, which Marten's own interface no longer redeclares. jasperfx#1192 is a
          JasperFx codegen fix for non-string [FromKeyedServices] keys with no Marten change. -->
-    <PackageVersion Include="JasperFx" Version="3.5.0" />
-    <PackageVersion Include="JasperFx.Events" Version="3.5.0" />
+    <!-- JasperFx 3.6.0 (from 3.5.0): jasperfx#1201/#1216, the per-identity rebuild Marten adopts in #6071
+         (SupportsIdentityRebuild, LoadEventsForIdentityRebuildAsync, IProjectionStorage.HardDeleteById,
+         IdentityRebuildGuard, IdentityRebuildCompliance). IStorageOperations.LastAppendedPosition replaces
+         LastAppendedSequence (an obsolete forwarder now). SequentialGuid, which Marten's Guid ids use, and
+         CombGuidIdGeneration is obsolete. -->
+    <PackageVersion Include="JasperFx" Version="3.6.0" />
+    <PackageVersion Include="JasperFx.Events" Version="3.6.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.5.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.6.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -921,11 +926,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.5.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.6.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.5.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.6.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -1239,9 +1244,19 @@
              alias. Marten's daemon does not page through EventTypeAllowList, so nothing changes here.
            * Weasel.Sqlite only: weasel#857 (Microsoft.Data.Sqlite 10.0.15), #861 (collations), #863 (JSON column
              reads). Marten does not reference Weasel.Sqlite. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.6" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.6" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.6" />
+    <!-- Weasel 10.0.0-alpha.10 (from alpha.6, through alpha.7, alpha.8 and alpha.9).
+           * weasel#882/#884: a partitioning rebuild locks the table inside an explicit transaction, and a migration
+             with a rebuild runs in begin/commit with a rollback on failure, so a row committed during the copy aside
+             is no longer lost (Marten's archived-stream partitioning migration).
+           * weasel#875: ProvisioningCommandTimeout for CREATE/DROP DATABASE and extension installs, used by
+             SingleServerMultiTenancy (its base class) and, through WithProvisioningTimeout, DatabaseGenerator (#6060).
+           * weasel#871: a partitioning rebuild makes no index or primary key changes against the old table, so a
+             partitioned mt_events can go back to unpartitioned (blue_green_side_effect_gate no longer works around it).
+           * Sequential Guid ids through JasperFx's SequentialGuid, with IGuidGenerator overloads. Marten's closed-shape
+             registrations pass SequentialGuid.PostgresOrder explicitly. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.10" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.10" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.10" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

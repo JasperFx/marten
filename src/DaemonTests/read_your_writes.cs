@@ -17,7 +17,7 @@ using Xunit;
 namespace DaemonTests;
 
 /// <summary>
-/// #6004: read-your-writes. <c>session.LastAppendedSequence</c> says where a commit's events are, and
+/// #6004: read-your-writes. <c>session.LastAppendedPosition</c> says where a commit's events are, and
 /// <c>store.WaitForProjectionsAsync</c> waits for named projections to process that position, and nothing past
 /// it, by polling <c>mt_event_progression</c>.
 /// </summary>
@@ -42,7 +42,7 @@ public class read_your_writes: OneOffConfigurationsContext
             Enumerable.Range(0, count).Select(i => (object)new RywCounted(fail && i == count - 1)).ToArray());
         await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        return session.LastAppendedSequence.ShouldNotBeNull();
+        return session.LastAppendedPosition.ShouldNotBeNull();
     }
 
     private async Task<long> highestSequenceAsync()
@@ -79,18 +79,18 @@ public class read_your_writes: OneOffConfigurationsContext
         configure(mode);
 
         await using var session = theStore.LightweightSession();
-        session.LastAppendedSequence.ShouldBeNull();
+        session.LastAppendedPosition.ShouldBeNull();
 
         // Documents only: nothing appended, so no position
         session.Store(new RywNote { Id = Guid.NewGuid() });
         await session.SaveChangesAsync(TestContext.Current.CancellationToken);
-        session.LastAppendedSequence.ShouldBeNull();
+        session.LastAppendedPosition.ShouldBeNull();
 
         session.Events.StartStream(Guid.NewGuid(), new RywCounted(false), new RywCounted(false));
         session.Events.StartStream(Guid.NewGuid(), new RywCounted(false));
         await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var first = session.LastAppendedSequence.ShouldNotBeNull();
+        var first = session.LastAppendedPosition.ShouldNotBeNull();
         first.Sequence.ShouldBe(await highestSequenceAsync());
         first.DatabaseIdentifier.ShouldBe(theStore.Storage.Database.Identifier);
         first.TenantId.ShouldBe(session.TenantId);
@@ -98,14 +98,14 @@ public class read_your_writes: OneOffConfigurationsContext
         session.Events.StartStream(Guid.NewGuid(), new RywCounted(false));
         await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var second = session.LastAppendedSequence.ShouldNotBeNull();
+        var second = session.LastAppendedPosition.ShouldNotBeNull();
         second.Sequence.ShouldBe(await highestSequenceAsync());
         second.Sequence.ShouldBeGreaterThan(first.Sequence);
 
         // Another commit with no events keeps the last position
         session.Store(new RywNote { Id = Guid.NewGuid() });
         await session.SaveChangesAsync(TestContext.Current.CancellationToken);
-        session.LastAppendedSequence.ShouldBe(second);
+        session.LastAppendedPosition.ShouldBe(second);
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class read_your_writes: OneOffConfigurationsContext
         await session.SaveChangesAsync();
 
         // Where this commit's events are: database, tenant and sequence
-        var position = session.LastAppendedSequence!;
+        var position = session.LastAppendedPosition!;
 
         var result = await store.WaitForProjectionsAsync(position, [typeof(RywTally)], 5.Seconds());
         if (result.Reached)

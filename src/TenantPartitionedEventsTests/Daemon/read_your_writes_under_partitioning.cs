@@ -39,7 +39,7 @@ public class read_your_writes_under_partitioning: PartitionedStoreContext
             new object[] { new TripStarted(id) }.Concat(Enumerable.Range(0, legs).Select(_ => new TripLeg(1))).ToArray());
         await session.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        return session.LastAppendedSequence.ShouldNotBeNull();
+        return session.LastAppendedPosition.ShouldNotBeNull();
     }
 
     private async Task<long> scalarAsync(string sql)

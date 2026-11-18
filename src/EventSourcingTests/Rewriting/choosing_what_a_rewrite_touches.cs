@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -16,21 +17,25 @@ using Xunit;
 namespace EventSourcingTests.Rewriting;
 
 /// <summary>
-///     Writes a random byte in front of the JSON, the way an encrypting serializer with a random IV never writes
+///     Writes a fresh prefix in front of the JSON, the way an encrypting serializer with a random IV never writes
 ///     the same bytes twice for the same event.
 /// </summary>
 public class RandomPrefixBinarySerializer: JasperFx.Events.IEventBinarySerializer
 {
+    // A counter rather than a random byte: one random byte repeats one time in 256, which made a rewrite of the
+    // same event write the same bytes and count as unchanged now and then
+    private static int _writes;
+
     public byte[] Serialize(Type type, object data)
     {
         var json = JsonSerializer.SerializeToUtf8Bytes(data, type);
-        var bytes = new byte[json.Length + 1];
-        bytes[0] = (byte)Random.Shared.Next(256);
-        json.CopyTo(bytes, 1);
+        var bytes = new byte[json.Length + sizeof(int)];
+        BinaryPrimitives.WriteInt32LittleEndian(bytes, Interlocked.Increment(ref _writes));
+        json.CopyTo(bytes, sizeof(int));
         return bytes;
     }
 
-    public object Deserialize(Type type, byte[] data) => JsonSerializer.Deserialize(data.AsSpan(1), type)!;
+    public object Deserialize(Type type, byte[] data) => JsonSerializer.Deserialize(data.AsSpan(sizeof(int)), type)!;
 }
 
 public class choosing_what_a_rewrite_touches: OneOffConfigurationsContext

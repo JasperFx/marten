@@ -1,4 +1,5 @@
 using System;
+using JasperFx.Core;
 using System.Data.Common;
 using System.IO;
 using System.Threading;
@@ -396,7 +397,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
     {
         if (_events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            var newId = Guid.NewGuid();
+            var newId = SequentialGuid.NextPostgresOrder();
             var action = _events.StartEmptyStream(session, newId);
             action.AggregateType = typeof(TDoc);
             action.ExpectedVersionOnServer = 0;
@@ -404,7 +405,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         }
         else
         {
-            var newKey = Guid.NewGuid().ToString();
+            var newKey = SequentialGuid.NextPostgresOrder().ToString();
             var action = _events.StartEmptyStream(session, newKey);
             action.AggregateType = typeof(TDoc);
             action.ExpectedVersionOnServer = 0;

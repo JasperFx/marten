@@ -1,4 +1,5 @@
 using System;
+using JasperFx.Core;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Sessions;
 using Marten.Schema;
@@ -29,6 +30,6 @@ internal class VersionColumn: MetadataColumn<Guid>, ISelectableColumn
     {
         builder.Append(SchemaConstants.VersionColumn);
         builder.Append(" = ");
-        builder.AppendParameter(Guid.NewGuid());
+        builder.AppendParameter(SequentialGuid.NextPostgresOrder());
     }
 }

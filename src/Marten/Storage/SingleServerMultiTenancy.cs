@@ -33,6 +33,15 @@ public interface ISingleServerMultiTenancy
     /// <param name="databaseName"></param>
     /// <returns></returns>
     ISingleServerMultiTenancy InDatabaseNamed(string databaseName);
+
+    /// <summary>
+    ///     The command timeout for <c>CREATE DATABASE</c> and <c>DROP DATABASE</c> when a tenant's database is
+    ///     provisioned. Two minutes by default. Every other command keeps the store's command timeout, which is
+    ///     usually tuned for queries and can be too short for creating a database on a busy server. It only ever
+    ///     lengthens the timeout: a longer store command timeout is kept. <see cref="TimeSpan.Zero" /> means no
+    ///     limit (marten#6060).
+    /// </summary>
+    TimeSpan ProvisioningCommandTimeout { get; set; }
 }
 
 internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDatabase>, ITenancy,

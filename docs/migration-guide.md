@@ -577,6 +577,51 @@ between its two reads, as it does while a projection is rebuilt, still throws `S
 batch. Outside a batch Marten redoes the fetch itself, and `FetchManyForWriting()` falls back to one fetch per stream
 ([#5799](https://github.com/JasperFx/marten/pull/5799)).
 
+### `RebuildSingleStreamAsync()` goes through the daemon, and refuses when another node runs the projection <Badge type="warning" text="behavior change" />
+
+For a document written by an asynchronous single-stream projection, every `Advanced.RebuildSingleStreamAsync()`
+overload now picks one of three paths ([#6071](https://github.com/JasperFx/marten/issues/6071)):
+
+1. A daemon of this store in this process runs the projection's shard: the rebuild goes through it and is committed
+   with the shard's next batch, so it cannot race the shard. The call returns when that batch commits.
+2. Otherwise, if the shard's progression row was written in the last 30 seconds by a running agent, the call throws
+   `IdentityRebuildRefusedException` with `Reason == IdentityRebuildRefusal.ShardLiveOnAnotherNode`. In 9.x it wrote
+   the document anyway and raced the other node's daemon. Rebuild on the node that runs the projection, or with
+   `IProjectionDaemon.RebuildIdentityAsync()` there.
+3. Otherwise the stream is aggregated and stored here, as in 9.x. That is only safe when no daemon runs the
+   projection anywhere.
+
+Inline and live projections always take the third path. A stream that folds to nothing now deletes the document; in
+9.x that threw `ArgumentNullException` from `Store(null)`. The call also commits on its own; the old doc comment
+saying you had to call `SaveChangesAsync()` was wrong. See [rebuilding a single stream](/events/projections/rebuilding#rebuilding-a-single-stream).
+
+### New Guid ids sort after existing ones, and do not carry a readable timestamp <Badge type="warning" text="behavior change" />
+
+Marten now makes new Guid ids with JasperFx's `SequentialGuid.NextPostgresOrder()`: document ids for
+`SequentialGuidIdGeneration` (the default for `Guid` ids), event ids, stream ids Marten makes for natural keys, and the
+`mt_version` Guids. The ids are strictly ordered within a process and sort the way PostgreSQL compares a `uuid`, so
+inserts go to the end of the index. Ids made by Marten 10 sort after ids made by Marten 9 (COMB) and after
+`Guid.CreateVersion7()` ids, so existing data keeps its order.
+
+They are not version 7 Guids and not COMB Guids. Don't read a timestamp out of an id
+(`CombGuidIdGeneration.GetTimestamp()` does not read the new ones). Use the document's `mt_last_modified` or the
+event's `Timestamp` instead.
+
+### Read-your-writes: `LastAppendedPosition`
+
+The session's position after `SaveChangesAsync()` is `session.LastAppendedPosition` (JasperFx 3.6.0).
+`LastAppendedSequence`, its name in JasperFx 3.5.0, is an obsolete alias that returns the same value. See
+[reading your own writes](/events/projections/async-daemon#reading-your-own-writes).
+
+### Database provisioning has its own command timeout <Badge type="tip" text="new" />
+
+`CREATE DATABASE` and `DROP DATABASE` now run under a provisioning command timeout, two minutes by default, instead of
+the store's command timeout, which is usually tuned for queries
+([#6060](https://github.com/JasperFx/marten/issues/6060)). It only ever lengthens the timeout. Set it on the
+single-server tenancy (`ProvisioningCommandTimeout`), on `CreateDatabasesForTenants()`
+(`ProvisioningCommandTimeout(TimeSpan)`), and for extension installs on `opts.Advanced.Migrator`. See
+[provisioning timeouts](/configuration/multitenancy#provisioning-command-timeout).
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |
@@ -785,8 +830,9 @@ opts.Events.UseArchivedStreamPartitioning = false;
 opts.Events.EnableStrictStreamIdentityEnforcement = false;
 ```
 
-Decide this before the first schema migration under Marten 10. Taking an event store that has already been
-partitioned back to unpartitioned fails the migration for now ([weasel#871](https://github.com/JasperFx/weasel/issues/871)).
+Decide this before the first schema migration under Marten 10 if you can. Taking an event store that has already been
+partitioned back to unpartitioned works, but Weasel has to rebuild `mt_events` and `mt_streams` to do it, copying
+every row ([weasel#871](https://github.com/JasperFx/weasel/issues/871)).
 
 ### Document metadata is on by default {#document-metadata-is-on-by-default} <Badge type="warning" text="schema change" />
 

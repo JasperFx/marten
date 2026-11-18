@@ -86,7 +86,7 @@ public class read_your_writes_per_database: IAsyncLifetime
 
         await session.SaveChangesAsync();
 
-        return session.LastAppendedSequence.ShouldNotBeNull();
+        return session.LastAppendedPosition.ShouldNotBeNull();
     }
 
     [Fact]
