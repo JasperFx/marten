@@ -638,6 +638,7 @@ single-server tenancy (`ProvisioningCommandTimeout`), on `CreateDatabasesForTena
 | [Event counters and `FetchForWriting` metrics](#metrics-are-on-by-default) are exported | `opts.RestoreV9Defaults()`, or `opts.OpenTelemetry.EnableEventCounters = false` and `opts.OpenTelemetry.EnableFetchForWritingMetrics = false` |
 | [System.Text.Json `AllowOutOfOrderMetadataProperties`](#allow-out-of-order-metadata-properties) is on | `opts.RestoreV9Defaults()`, or `o.AllowOutOfOrderMetadataProperties = false` in the `configure` callback of `UseSystemTextJsonForSerialization()` |
 | [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created-) | none; schema change, see below |
+| [New `mt_event_range_marks` table](#new-mt-event-range-marks-table) for stored-event rewrites | none; schema change, see below |
 
 `opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0
 ([details](#restoring-v9-defaults)).
@@ -665,6 +666,14 @@ when skipping is enabled, and metadata is only written and selected when its fla
 
 Deliberately still conditional, because they are expensive or change the table's shape: tenant partitioning of
 `mt_events`, table fillfactor, and the DCB `hstore` tags column and its GIN index.
+
+### New `mt_event_range_marks` table {#new-mt-event-range-marks-table} <Badge type="warning" text="schema change" />
+
+The event store schema has a new table, `mt_event_range_marks`. It holds where a stored-event rewrite stops and how
+far it got, so a rewrite run as a Wolverine job can resume after a crash without rewriting an event twice. It's always
+created, whatever the configuration, and `RestoreV9Defaults()` doesn't remove it. Rebuilds and the `Clean` methods
+leave its rows alone; removing a tenant deletes that tenant's rows. Under `AutoCreate.None`, apply the migration before
+deploying.
 
 ### DCB tag versions come from a sequence, and a tombstone erases tag values <Badge type="warning" text="schema change" />
 

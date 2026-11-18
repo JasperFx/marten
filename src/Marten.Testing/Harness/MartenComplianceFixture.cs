@@ -110,12 +110,6 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         options.NameDataLength = 100;
         options.DatabaseSchemaName = (config.SchemaName ?? "compliance").ToLowerInvariant();
 
-        if (_tenantDatabases.Count == 0)
-        {
-            await dropSchemaBuiltUnderTheOtherEventTenancyAsync(connectionStringFor(config),
-                options.DatabaseSchemaName, config.ConjoinedEventTenancy).ConfigureAwait(false);
-        }
-
         if (config.MaxConcurrentRebuildsPerDatabase.HasValue)
         {
             options.Projections.MaxConcurrentRebuildsPerDatabase = config.MaxConcurrentRebuildsPerDatabase;
@@ -265,32 +259,6 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         }
     }
 
-    /// <summary>
-    ///     marten#6071. <c>IdentityRebuildCompliance</c> (JasperFx 3.6.0) runs its conjoined facts in the same schema
-    ///     as its single-tenancy ones, where every other suite gives a conjoined configuration a schema of its own.
-    ///     Migrating an event store between the two tenancy styles fails on a partitioned <c>mt_streams</c>: the
-    ///     primary key change re-adds the <c>mt_events</c> foreign key that <c>mt_events</c>' own delta adds as
-    ///     well (weasel#883). Until both are fixed upstream (jasperfx#1227 for the suite), a schema built under the other event tenancy is
-    ///     dropped before the store is built, which is what a separate schema would have given the suite.
-    /// </summary>
-    private static async Task dropSchemaBuiltUnderTheOtherEventTenancyAsync(string connectionString, string schema,
-        bool conjoined)
-    {
-        await using var conn = new NpgsqlConnection(connectionString);
-        await conn.OpenAsync().ConfigureAwait(false);
-
-        await using var probe = conn.CreateCommand(
-            "select pg_get_constraintdef(c.oid) from pg_constraint c where c.contype = 'p' and c.conrelid = to_regclass(:streams)");
-        probe.AddNamedParameter("streams", $"{schema}.mt_streams");
-        var primaryKey = await probe.ExecuteScalarAsync().ConfigureAwait(false) as string;
-
-        // No event store in the schema yet, or one built under this tenancy
-        if (primaryKey == null || primaryKey.Contains("tenant_id") == conjoined) return;
-
-        await using var drop = conn.CreateCommand($"drop schema if exists {schema} cascade");
-        await drop.ExecuteNonQueryAsync().ConfigureAwait(false);
-    }
-
     private static string connectionStringFor(ComplianceStoreConfig config)
     {
         if (!config.MaxPoolSize.HasValue)
@@ -366,15 +334,34 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         => ((IDocumentSession)session).SaveChangesAsync(token);
 
     /// <remarks>
-    ///     marten#6071: a soft-deleted document loads as null. Marten's <c>LoadAsync</c> returns a soft-deleted
-    ///     document (the document suites model that with <c>LoadExcludesSoftDeletedDocuments</c>), and the event
-    ///     store suites read "loaded" as "live": <c>IdentityRebuildCompliance</c>'s soft-delete facts are the first
-    ///     to store a projected document soft-deleted (jasperfx#1227).
+    ///     marten#6071: a soft-deleted document loads as null here, although Marten's <c>LoadAsync</c> returns it.
+    ///     JasperFx 3.7 added <c>LoadExcludesSoftDeletedDocuments</c> and <c>IsSoftDeletedAsync</c> for that
+    ///     (jasperfx#1227), but answering false still fails
+    ///     <c>IdentityRebuildCompliance.a_refold_that_recreates_a_soft_deleted_document_leaves_it_not_deleted</c>:
+    ///     its stream is created and closed in one batch, so the projection never stores the document
+    ///     (<c>ActionType.Nothing</c>), and the suite then requires a soft-deleted row to exist. Until the suite
+    ///     accepts "never stored" as not live, this keeps the load answering null for a soft-deleted document.
     /// </remarks>
     public override async Task<T?> LoadDocumentAsync<T>(IQuerySession session, object id, CancellationToken token)
         where T : class
     {
-        var document = await (id switch
+        var document = await loadAsync<T>(session, id, token).ConfigureAwait(false);
+
+        if (document != null
+            && ((DocumentStore)session.DocumentStore).Options.Storage.FindMapping(typeof(T)) is Marten.Schema.DocumentMapping
+            {
+                DeleteStyle: JasperFx.DeleteStyle.SoftDelete
+            }
+            && await IsSoftDeletedAsync<T>(session, id, token).ConfigureAwait(false))
+        {
+            return null;
+        }
+
+        return document;
+    }
+
+    private static Task<T?> loadAsync<T>(IQuerySession session, object id, CancellationToken token) where T : class
+        => id switch
         {
             Guid guidId => session.LoadAsync<T>(guidId, token),
             int intId => session.LoadAsync<T>(intId, token),
@@ -382,19 +369,18 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             string stringId => session.LoadAsync<T>(stringId, token),
             _ => throw new ArgumentOutOfRangeException(nameof(id),
                 $"Marten cannot load documents by an identity of type {id.GetType().FullName}")
-        }).ConfigureAwait(false);
+        };
 
-        if (document != null
-            && ((DocumentStore)session.DocumentStore).Options.Storage.FindMapping(typeof(T)) is Marten.Schema.DocumentMapping
-            {
-                DeleteStyle: JasperFx.DeleteStyle.SoftDelete
-            }
-            && (await session.MetadataForAsync(document, token).ConfigureAwait(false))?.Deleted == true)
-        {
-            return null;
-        }
+    /// <summary>
+    ///     jasperfx#1227: the document's own soft-delete metadata, <c>mt_deleted</c>. The suites only ask once
+    ///     <c>LoadExcludesSoftDeletedDocuments</c> answers false, which it can't yet (see <see cref="LoadDocumentAsync{T}" />).
+    /// </summary>
+    public override async Task<bool> IsSoftDeletedAsync<T>(IQuerySession session, object id, CancellationToken token)
+    {
+        var document = await loadAsync<T>(session, id, token).ConfigureAwait(false);
+        if (document == null) return false;
 
-        return document;
+        return (await session.MetadataForAsync(document, token).ConfigureAwait(false))?.Deleted == true;
     }
 
     public override void StoreDocument<T>(IDocumentOperations session, T document) => session.Store(document);
@@ -703,6 +689,18 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsProjectionFloors => true;
 
     /// <summary>
+    ///     jasperfx#1215 / #1222. <c>MartenDatabase</c> keeps the event-range marks in
+    ///     <c>mt_event_range_marks</c>, which, like the floors, no rebuild or data reset touches.
+    /// </summary>
+    public override bool SupportsEventRangeMarks => true;
+
+    /// <summary>
+    ///     jasperfx#1215. <c>IEventStore.RewriteStoredEventsAsync</c> runs Marten's stored-event rewriter with the
+    ///     page's cursor written in the page's own transaction, and the registrar forwards named transforms.
+    /// </summary>
+    public override bool SupportsEventRewrites => true;
+
+    /// <summary>
     ///     jasperfx#732. Marten's documented registration -- AddMarten(...).AddAsyncDaemon(...) --
     ///     is what has to be under test here, not a hand-built daemon, because the gap this suite
     ///     exists to close (fisher#138) was a store that produced no reachable IProjectionCoordinator
@@ -929,6 +927,12 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         }
 
         public void AddEventType(Type eventType) => _options.Events.AddEventType(eventType);
+
+        /// <summary>
+        ///     jasperfx#1215: named transforms live on the shared <c>EventRegistry</c>.
+        /// </summary>
+        public void AddRewriteTransform<TEvent>(string name, Func<TEvent, TEvent> transform) where TEvent : class
+            => _options.EventGraph.AddRewriteTransform(name, transform);
 
         /// <summary>
         ///     jasperfx#669: both binary-serialization members take the promoted

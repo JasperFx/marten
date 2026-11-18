@@ -100,6 +100,10 @@ public partial class EventGraph: IFeatureSchema
         // jasperfx#809 (#5740): persisted projection start floors, which outlive rebuild teardown
         yield return new ProjectionFloorTable(this);
 
+        // jasperfx#1215 / #1222: the ceilings and cursors of stored-event rewrites and backfills, which outlive
+        // rebuild teardown and data resets like the floors
+        yield return new EventRangeMarkTable(this);
+
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
 
         yield return new ArchiveStreamFunction(this);
