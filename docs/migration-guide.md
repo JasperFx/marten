@@ -677,6 +677,9 @@ the migration before deploying, because tagged appends fail without the sequence
   [what a tombstone erases](/events/dcb#what-a-tombstone-erases).
 - `mt_dcb_tag_version.version` is no longer a count of commits.
 - Two boundaries in one session over the same tag now conflict when they read different versions.
+- Archiving, un-archiving and `AssignTagWhere` move the versions of the tags they touch, and create a row for a tag
+  that has none. `DeleteSingleEventStreamAsync` moves and deletes rows the way `TombstoneStream` does
+  ([#6078](https://github.com/JasperFx/marten/issues/6078)).
 - Finish a rolling upgrade before relying on this: a node still on Marten 9 counts up from the current value and doesn't
   delete rows.
 

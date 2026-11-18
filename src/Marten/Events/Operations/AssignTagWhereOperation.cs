@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Tags;
+using Marten.Events.Dcb;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
@@ -19,19 +20,22 @@ namespace Marten.Events.Operations;
 /// Generates: INSERT INTO schema.mt_event_tag_{suffix} (value, seq_id)
 ///            SELECT @value, d.seq_id FROM schema.mt_events as d WHERE {where}
 ///            ON CONFLICT DO NOTHING
+/// then moves the tag's <c>mt_dcb_tag_version</c> rows (#6078, see <see cref="AssignedTagVersionMove"/>).
 /// </summary>
 internal class AssignTagWhereOperation: IStorageOperation, NoDataReturnedCall
 {
+    private readonly EventGraph _events;
     private readonly string _schemaName;
     private readonly ITagTypeRegistration _registration;
     private readonly object _value;
     private readonly ISqlFragment _whereFragment;
     private readonly bool _isConjoined;
 
-    public AssignTagWhereOperation(string schemaName, ITagTypeRegistration registration, object value,
+    public AssignTagWhereOperation(EventGraph events, ITagTypeRegistration registration, object value,
         ISqlFragment whereFragment, bool isConjoined = false)
     {
-        _schemaName = schemaName;
+        _events = events;
+        _schemaName = events.DatabaseSchemaName;
         _registration = registration;
         _value = value;
         _whereFragment = whereFragment;
@@ -64,6 +68,11 @@ internal class AssignTagWhereOperation: IStorageOperation, NoDataReturnedCall
         builder.Append(".mt_events as d where ");
         _whereFragment.Apply(builder);
         builder.Append(" on conflict do nothing");
+
+        // #6078: a statement of its own, after the tag rows are in
+        builder.StartNewCommand();
+        AssignedTagVersionMove.Append(builder, _events, _registration.TableSuffix,
+            TagValueStringifier.Stringify(_value), session.TenantId, _whereFragment);
     }
 
     public Type DocumentType => typeof(IEvent);
