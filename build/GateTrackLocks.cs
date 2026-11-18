@@ -41,6 +41,10 @@ sealed class GateTrackLocks : IDisposable
     {
         var builder = new NpgsqlConnectionStringBuilder(serverConnectionString)
         {
+            // Advisory locks are scoped to a database, and the fixed names a track stands for are the server's,
+            // so every gate takes them in the server's maintenance database, whatever its base database is
+            Database = "postgres",
+
             // The wait for another gate is as long as that gate's unit, so no command timeout, and the
             // connection is never shared through the pool with anything that expects one.
             CommandTimeout = 0,
