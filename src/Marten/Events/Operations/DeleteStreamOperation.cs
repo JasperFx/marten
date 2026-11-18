@@ -206,18 +206,32 @@ internal class DeleteStreamOperation: IStorageOperation, NoDataReturnedCall
             sql.Append($") k{i}");
         }
 
-        sql.Append($"), locked as (select r.tag_table, r.tag_value from {table} r where exists (select 1 from stream_row)");
-        sql.Append(" and r.tenant_id = ? and (r.tag_table, r.tag_value) in (select k, v from stream_tags)");
-        parameters.Add(false);
-        sql.Append(" order by r.tag_table collate \"C\", r.tag_value collate \"C\" for update) ");
+        sql.Append($"), locked as (select r.tag_table, r.tag_value, r.tenant_id from {table} r where exists (select 1 from stream_row)");
+        appendVersionRowTenant(sql, parameters, conjoined);
+        sql.Append(" and (r.tag_table, r.tag_value) in (select k, v from stream_tags)");
+        sql.Append(" order by r.tag_table collate \"C\", r.tag_value collate \"C\", r.tenant_id collate \"C\" for update) ");
         sql.Append($"update {table} r set version = {DcbTagVersionTable.NextVersionSql(_events)} from locked l ");
-        sql.Append("where r.tenant_id = ? and r.tag_table = l.tag_table and r.tag_value = l.tag_value");
+        sql.Append("where r.tag_table = l.tag_table and r.tag_value = l.tag_value and r.tenant_id = l.tenant_id");
+    }
+
+    /// <summary>
+    /// #6087: which tenant's <c>mt_dcb_tag_version</c> rows are the stream's. Under conjoined tenancy, the stream's
+    /// tenant. Otherwise the database holds one stream per id whatever tenant wrote it, and the rows carry the
+    /// tenant of the session that appended (the real tenant id in a database-per-tenant store, not
+    /// <c>*DEFAULT*</c>), so the rows are the stream's by tag alone. Matching on the tenant there missed them
+    /// whenever the delete ran without the right tenant, which <c>DeleteSingleEventStreamAsync(id)</c> always does.
+    /// </summary>
+    private static void appendVersionRowTenant(StringBuilder sql, List<bool> parameters, bool conjoined)
+    {
+        if (!conjoined) return;
+
+        sql.Append(" and r.tenant_id = ?");
         parameters.Add(false);
     }
 
     /// <summary>
     /// #6035: delete the <c>mt_dcb_tag_version</c> row of every tag on the stream that no other stream in the
-    /// tenant carries, so the value doesn't outlive the events it came from. A row another stream carries is
+    /// tenant (or, not conjoined, in the database) carries, so the value doesn't outlive the events it came from. A row another stream carries is
     /// shared by value and stays, already moved by <see cref="appendDcbVersionMove"/>. An archived stream
     /// counts as carrying its tags, because its events are still stored.
     /// </summary>
@@ -236,8 +250,9 @@ internal class DeleteStreamOperation: IStorageOperation, NoDataReturnedCall
         {
             sql.Append($", dcb_erase{i} as (delete from {_events.DatabaseSchemaName}.{DcbTagVersionTable.TableName} r using (");
             StreamDcbTagKeys.Append(sql, parameters, _events, conjoined, i);
-            sql.Append(") s where r.tenant_id = ? and r.tag_table = s.k and r.tag_value = s.v and not exists (");
-            parameters.Add(false);
+            sql.Append(") s where r.tag_table = s.k and r.tag_value = s.v");
+            appendVersionRowTenant(sql, parameters, conjoined);
+            sql.Append(" and not exists (");
             appendCarriedElsewhere(sql, parameters, conjoined, i);
             sql.Append("))");
         }

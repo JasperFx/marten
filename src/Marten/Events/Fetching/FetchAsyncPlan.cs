@@ -138,17 +138,27 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     ///     What <see cref="writeEventFetchStatement" /> read: the events after the cut-off, the cut-off, and whether
     ///     the stream exists.
     /// </summary>
-    private readonly record struct Delta(IReadOnlyList<IEvent> Events, long Floor, bool StreamExists);
+    /// <param name="CacheHit">
+    ///     #6086: the floor is the cached aggregate's version, which the cached batch statement
+    ///     (<see cref="writeCachedReads" />) chose over the snapshot's.
+    /// </param>
+    private readonly record struct Delta(IReadOnlyList<IEvent> Events, long Floor, bool StreamExists, bool CacheHit = false);
 
-    private async Task<Delta> readDeltaAsync(DbDataReader reader, IEventStorage selector, CancellationToken token)
+    private async Task<Delta> readDeltaAsync(DbDataReader reader, IEventStorage selector, CancellationToken token,
+        bool readsCacheHit = false)
     {
         var events = new List<IEvent>();
         long floor = 0;
         var streamExists = false;
+        var cacheHit = false;
         while (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             floor = await reader.GetFieldValueAsync<long>(_eventFieldCount, token).ConfigureAwait(false);
             streamExists = await reader.GetFieldValueAsync<bool>(_eventFieldCount + 1, token).ConfigureAwait(false);
+            if (readsCacheHit)
+            {
+                cacheHit = await reader.GetFieldValueAsync<bool>(_eventFieldCount + 2, token).ConfigureAwait(false);
+            }
 
             // An empty delta still returns its floor, on one row with no event in it
             if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false)) continue;
@@ -156,7 +166,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
             events.Add(await ((ISelector<IEvent>)selector).ResolveAsync(reader, token).ConfigureAwait(false));
         }
 
-        return new Delta(events, floor, streamExists);
+        return new Delta(events, floor, streamExists, cacheHit);
     }
 
     /// <summary>

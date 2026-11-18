@@ -54,7 +54,10 @@ public class CompositeDocumentCleaner: IDocumentCleaner
     {
         if (tenantId.IsEmpty())
         {
+            // #6087: every database, and done. Going on to look up a tenant for the empty id failed in a store
+            // with no default tenant, after the delete had already run.
             await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId, ct)).ConfigureAwait(false);
+            return;
         }
 
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
@@ -68,7 +71,10 @@ public class CompositeDocumentCleaner: IDocumentCleaner
     {
         if (tenantId.IsEmpty())
         {
+            // #6087: every database, and done. Going on to look up a tenant for the empty id failed in a store
+            // with no default tenant, after the delete had already run.
             await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId, ct)).ConfigureAwait(false);
+            return;
         }
 
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
