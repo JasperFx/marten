@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using Marten.Events.Dcb;
 using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -62,9 +63,14 @@ internal class DeleteStreamOperation: IStorageOperation, NoDataReturnedCall
     public string? TenantId { get; }
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
+        => ConfigureCommand(builder, TenantId ?? session.TenantId);
+
+    /// <summary>
+    /// The same commands without a session, for <c>IDocumentCleaner.DeleteSingleEventStreamAsync</c> (#6078).
+    /// </summary>
+    internal void ConfigureCommand(ICommandBuilder builder, string tenantId)
     {
         var conjoined = _events.TenancyStyle == TenancyStyle.Conjoined;
-        var tenantId = TenantId ?? session.TenantId;
         var schema = _events.DatabaseSchemaName;
 
         // Each placeholder is either the stream identity or the tenant id; record which, in order.
@@ -154,62 +160,6 @@ internal class DeleteStreamOperation: IStorageOperation, NoDataReturnedCall
     }
 
     /// <summary>
-    /// #6035: the (tag_table, tag_value) keys of every <c>mt_dcb_tag_version</c> row the stream's events
-    /// reach, as a query over the events that are still there: the tag type's own key, and the
-    /// <c>{suffix}:{event type}</c> key of the per-event-type versions (#5887). Both kinds are taken whatever
-    /// <see cref="DcbConflictScope"/> says, because the value is the application's data either way, and a
-    /// store that ran under another scope earlier can still hold the rows.
-    /// </summary>
-    /// <remarks>
-    /// Columns: <c>k</c> the row's tag_table, <c>v</c> the value as text, <c>suffix</c> the tag type,
-    /// <c>type</c> the event type (null on the tag type's own key) and <c>raw</c> the value as stored, for
-    /// <see cref="appendCarriedElsewhere"/>. The values are each tag table's <c>value</c> cast to text, which
-    /// is <see cref="JasperFx.Events.Tags.TagValueStringifier"/>'s form for the supported tag types (text,
-    /// uuid, integer, bigint, smallint), or the hstore pairs, which are written in that form.
-    /// </remarks>
-    private void appendStreamTagKeys(StringBuilder sql, List<bool> parameters, bool conjoined, int tagTable)
-    {
-        var schema = _events.DatabaseSchemaName;
-
-        void streamEvents()
-        {
-            sql.Append("e.stream_id = ?");
-            parameters.Add(true);
-            if (conjoined)
-            {
-                sql.Append(" and e.tenant_id = ?");
-                parameters.Add(false);
-            }
-        }
-
-        if (_events.DcbStorageMode == DcbStorageMode.HStore)
-        {
-            sql.Append("select distinct x.k, x.v, x.suffix, x.type from (select t.key as k, t.value as v, t.key as suffix, null::varchar as type ");
-            sql.Append($"from {schema}.mt_events e cross join lateral each(e.tags) t where ");
-            streamEvents();
-            sql.Append(" union all select t.key || ':' || e.type, t.value, t.key, e.type ");
-            sql.Append($"from {schema}.mt_events e cross join lateral each(e.tags) t where ");
-            streamEvents();
-            sql.Append(") x");
-            return;
-        }
-
-        var suffix = _events.TagTypes[tagTable].TableSuffix;
-        var join = conjoined
-            ? "e.seq_id = t.seq_id and e.tenant_id = t.tenant_id"
-            : "e.seq_id = t.seq_id";
-
-        sql.Append("select distinct x.k, x.v, x.raw, x.type from (");
-        sql.Append($"select '{suffix}' as k, t.value::text as v, t.value as raw, null::varchar as type ");
-        sql.Append($"from {schema}.mt_event_tag_{suffix} t join {schema}.mt_events e on {join} where ");
-        streamEvents();
-        sql.Append($" union all select '{suffix}:' || e.type, t.value::text, t.value, e.type ");
-        sql.Append($"from {schema}.mt_event_tag_{suffix} t join {schema}.mt_events e on {join} where ");
-        streamEvents();
-        sql.Append(") x");
-    }
-
-    /// <summary>
     /// #6035: move the version of every <c>mt_dcb_tag_version</c> row the stream's events reach, to a new
     /// value from the sequence. A boundary that read those events captured that version, so without this
     /// it saved straight through the tombstone as if nothing it read had changed.
@@ -247,12 +197,12 @@ internal class DeleteStreamOperation: IStorageOperation, NoDataReturnedCall
         }
 
         sql.Append(" for update), stream_tags as (");
-        var parts = _events.DcbStorageMode == DcbStorageMode.HStore ? 1 : _events.TagTypes.Count;
+        var parts = StreamDcbTagKeys.PartCount(_events);
         for (var i = 0; i < parts; i++)
         {
             if (i > 0) sql.Append(" union all ");
             sql.Append("select k, v from (");
-            appendStreamTagKeys(sql, parameters, conjoined, i);
+            StreamDcbTagKeys.Append(sql, parameters, _events, conjoined, i);
             sql.Append($") k{i}");
         }
 
@@ -281,11 +231,11 @@ internal class DeleteStreamOperation: IStorageOperation, NoDataReturnedCall
     {
         if (_events.TagTypes.Count == 0) return;
 
-        var parts = _events.DcbStorageMode == DcbStorageMode.HStore ? 1 : _events.TagTypes.Count;
+        var parts = StreamDcbTagKeys.PartCount(_events);
         for (var i = 0; i < parts; i++)
         {
             sql.Append($", dcb_erase{i} as (delete from {_events.DatabaseSchemaName}.{DcbTagVersionTable.TableName} r using (");
-            appendStreamTagKeys(sql, parameters, conjoined, i);
+            StreamDcbTagKeys.Append(sql, parameters, _events, conjoined, i);
             sql.Append(") s where r.tenant_id = ? and r.tag_table = s.k and r.tag_value = s.v and not exists (");
             parameters.Add(false);
             appendCarriedElsewhere(sql, parameters, conjoined, i);

@@ -38,8 +38,8 @@ internal readonly record struct DcbTagVersionEntry(
 /// still at 0), which the save has to look at again: a row can't say whether those events are still there.
 /// </summary>
 /// <remarks>
-/// A tag can have events and no row: events appended before the table existed, tags added later with
-/// <c>AssignTagWhere</c>, or per-event-type versions a store recorded only after it changed
+/// A tag can have events and no row: events appended before the table existed, tags added with
+/// <c>AssignTagWhere</c> before #6078, or per-event-type versions a store recorded only after it changed
 /// <see cref="DcbConflictScope"/>. A tombstone of such a stream has no row to move and may not create one,
 /// because it is erasing the value, so nothing would tell a boundary that read those events. The save counts
 /// them again instead. See <see cref="For"/>.

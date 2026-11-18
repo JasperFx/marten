@@ -69,8 +69,8 @@ namespace Marten.Events
         ///     semantics, which are shared across the Critter Stack.
         ///     </para>
         ///     <para>
-        ///     Supported for both the Async and Inline lifecycles; see
-        ///     <see cref="EventGraph.CacheAggregatesForWriting{T}" /> for how they differ.
+        ///     Supported for the Async and Inline lifecycles, and since Marten 10 for Live aggregates, where a hit
+        ///     reads only the events after the cached version instead of the whole stream (#5225).
         ///     </para>
         /// </summary>
         /// <param name="sizeLimit">Maximum number of cached aggregates, when the default cache is built</param>

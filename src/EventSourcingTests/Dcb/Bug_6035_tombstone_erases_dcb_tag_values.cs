@@ -337,7 +337,11 @@ public class Bug_6035_tombstone_erases_dcb_tag_values: OneOffConfigurationsConte
         await Should.ThrowAsync<DcbConcurrencyException>(() => session.SaveChangesAsync());
     }
 
-    /// <summary>The way a tag legitimately has events and no row, with no row deleted by hand.</summary>
+    /// <summary>
+    ///     A tag assigned after the fact by a store older than #6078, which left the tag with events and no row.
+    ///     Since #6078 the assignment creates the row (<c>Bug_6078_operations_move_dcb_tag_versions</c>), so the
+    ///     rows it would have left out are deleted here.
+    /// </summary>
     [Theory]
     [InlineData(DcbStorageMode.TagTables)]
     [InlineData(DcbStorageMode.HStore)]
@@ -353,6 +357,8 @@ public class Bug_6035_tombstone_erases_dcb_tag_values: OneOffConfigurationsConte
             await assign.SaveChangesAsync();
         }
 
+        (await allRowsAsync(course.Value)).ShouldBeGreaterThan(0);
+        await executeAsync($"delete from {SchemaName}.mt_dcb_tag_version where tag_value = '{course.Value}'");
         (await allRowsAsync(course.Value)).ShouldBe(0);
 
         await using var session = theStore.LightweightSession();

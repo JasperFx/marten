@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Tags;
 using Marten.Events.Operations;
 using Marten.Events.Protected;
 using Marten.Internal.Sessions;
@@ -49,8 +50,6 @@ internal partial class EventStore: QueryEventStore, IEventStoreOperations
                                $"Tag type '{tagType.Name}' is not registered. Call RegisterTagType<{tagType.Name}>() first.");
 
         var value = registration.ExtractValue(tag);
-        var schema = _store.Events.DatabaseSchemaName;
-
         // Parse the expression into a SQL WHERE fragment using EventQueryMapping
         var mapping = new EventQueryMapping(_store.Options);
         var holder = new SimpleWhereFragmentHolder();
@@ -72,11 +71,12 @@ internal partial class EventStore: QueryEventStore, IEventStoreOperations
                               ?? throw new InvalidOperationException(
                                   $"Tag value for '{tagType.Name}' is null after extraction.");
             _session.QueueOperation(new AssignTagWhereHstoreOperation(
-                schema, registration.TableSuffix, stringValue, whereFragment, isConjoined));
+                _store.Events, registration.TableSuffix, stringValue, TagValueStringifier.Stringify(value!),
+                whereFragment, isConjoined));
             return;
         }
 
-        var op = new AssignTagWhereOperation(schema, registration, value, whereFragment, isConjoined);
+        var op = new AssignTagWhereOperation(_store.Events, registration, value, whereFragment, isConjoined);
         _session.QueueOperation(op);
     }
 
