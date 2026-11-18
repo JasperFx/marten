@@ -19,10 +19,6 @@ internal class RichEventAppender: IEventAppender
     {
         var batch = session.CreateBatchQuery();
 
-        var fetcher = new EventSequenceFetcher(eventGraph, session.WorkTracker.Streams.Sum(x => x.Events.Count));
-
-        var sequencesFetch = batch.AddItem(fetcher);
-
         var storage = session.EventStorage();
 
         // #6083: lock every stream row this unit of work appends to, in a stable order, before any append
@@ -30,10 +26,19 @@ internal class RichEventAppender: IEventAppender
 
         var streamActions = session.WorkTracker.Streams.Where(x => x.Events.Any()).ToArray();
 
+        // #6098: the stream versions are read before the sequence numbers are reserved, in this one batch.
+        // The versions are assigned from those reads, so the other way round, a session that committed to the
+        // stream between the two statements left this one the next version under an older sequence number,
+        // and the stream read back out of version order. Read first, any commit of an earlier version came
+        // before this session's reservation, and a commit after the read is the usual version conflict.
         var appends = streamActions
             .Where(x => x.ActionType == StreamActionType.Append)
             .Select(x => new RichStreamAppendingStep(x, batch, storage))
             .ToArray();
+
+        var fetcher = new EventSequenceFetcher(eventGraph, session.WorkTracker.Streams.Sum(x => x.Events.Count));
+
+        var sequencesFetch = batch.AddItem(fetcher);
 
         await batch.Execute(token).ConfigureAwait(false);
 
