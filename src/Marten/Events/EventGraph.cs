@@ -726,6 +726,8 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                             if (Interlocked.CompareExchange(ref bootstrapped, 1, 0) != 0) return;
                             using var cmd = connection.CreateCommand();
                             cmd.CommandText = "CREATE EXTENSION IF NOT EXISTS hstore;";
+                            // marten#6060: an extension install is provisioning, not a query
+                            cmd.WithProvisioningTimeout(Options.Advanced.Migrator.ProvisioningCommandTimeout);
                             cmd.ExecuteNonQuery();
                             connection.ReloadTypes();
                         },
@@ -734,6 +736,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                             if (Interlocked.CompareExchange(ref bootstrapped, 1, 0) != 0) return;
                             await using var cmd = connection.CreateCommand();
                             cmd.CommandText = "CREATE EXTENSION IF NOT EXISTS hstore;";
+                            cmd.WithProvisioningTimeout(Options.Advanced.Migrator.ProvisioningCommandTimeout);
                             await cmd.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
                             await connection.ReloadTypesAsync(CancellationToken.None).ConfigureAwait(false);
                         });

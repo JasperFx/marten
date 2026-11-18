@@ -128,7 +128,7 @@ public abstract partial class DocumentSessionBase
     ///     the session's own tenant, or of the one tenant the commit appended for when that is another. A commit that
     ///     appends for several tenants other than the session's records the first of them.
     /// </remarks>
-    public EventStorePosition? LastAppendedSequence { get; private set; }
+    public EventStorePosition? LastAppendedPosition { get; private set; }
 
     private void recordAppendedPosition()
     {
@@ -164,13 +164,13 @@ public abstract partial class DocumentSessionBase
         if (highest <= 0) return;
 
         // Only ever forward: a later commit on the same session cannot move the position back
-        if (LastAppendedSequence != null && LastAppendedSequence.TenantId == tenantId &&
-            LastAppendedSequence.Sequence >= highest)
+        if (LastAppendedPosition != null && LastAppendedPosition.TenantId == tenantId &&
+            LastAppendedPosition.Sequence >= highest)
         {
             return;
         }
 
-        LastAppendedSequence = new EventStorePosition(Database.Identifier, tenantId, highest);
+        LastAppendedPosition = new EventStorePosition(Database.Identifier, tenantId, highest);
     }
 
     private IMessageBatch? _messageBatch;

@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using JasperFx;
 using Npgsql;
 
@@ -28,4 +29,12 @@ public interface IDatabaseCreationExpressions
     ///     the two overloads are last-writer-wins.
     /// </remarks>
     IDatabaseCreationExpressions MaintenanceDatabase(NpgsqlDataSource maintenanceDataSource) => this;
+
+    /// <summary>
+    ///     The command timeout for the <c>CREATE DATABASE</c> and <c>DROP DATABASE</c> statements, two minutes by
+    ///     default. The store's own command timeout is usually tuned for queries and can be too short for creating
+    ///     or dropping a database on a busy server. It only ever lengthens the timeout: a longer command timeout on
+    ///     the maintenance connection is kept. <see cref="TimeSpan.Zero" /> means no limit (marten#6060).
+    /// </summary>
+    IDatabaseCreationExpressions ProvisioningCommandTimeout(TimeSpan timeout) => this;
 }

@@ -15,3 +15,11 @@ namespace EventSourcingTests.Compliance;
 /// </summary>
 public class projection_step_through_compliance
     : ProjectionStepThroughCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;
+
+/// <summary>
+///     marten#6071 (jasperfx#1201). One identity of a single-stream projection re-folded inside the shard that
+///     runs it: Marten's re-fold loader, HardDeleteById on its projection storage, and the empty-range batch an
+///     idle shard carries the rebuild in.
+/// </summary>
+public class identity_rebuild_compliance
+    : IdentityRebuildCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;

@@ -287,7 +287,7 @@ Behavioral notes:
   `(N, old_final]` overlap. Stop the old version before (or as) the new one starts to avoid the
   window; fully coordinated drain-and-handoff is a separate concern.
 
-## Rebuilding a Single Stream <Badge type="tip" text="7.28" />
+## Rebuilding a Single Stream <Badge type="tip" text="7.28" /> {#rebuilding-a-single-stream}
 
 A long standing request has been to be able to rebuild only a single stream or subset of streams
 by stream id (or string key). Marten now has a (admittedly crude) ability to do so with this syntax
@@ -300,3 +300,35 @@ await theStore.Advanced.RebuildSingleStreamAsync<SimpleAggregate>(streamId);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/rebuilding_a_single_stream_projection.cs#L32-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild_single_stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+The call commits the rebuilt document itself. A stream that folds to nothing (its aggregate was deleted, say) deletes
+the document, which is what a full rebuild would leave behind.
+
+When the document is written by an **asynchronous** single-stream projection, Marten 10 takes one of three paths
+([#6071](https://github.com/JasperFx/marten/issues/6071)):
+
+1. **A daemon of this store in this process runs the projection's shard.** The rebuild goes through that daemon and is
+   bound to the shard's next batch. That batch re-folds the stream from its first event and commits the document
+   together with the shard's progression, so the rebuild can't race the shard. The call returns when the batch
+   commits.
+2. **The shard is running on another node.** If the shard's progression row was written in the last 30 seconds by a
+   running agent, the call throws `IdentityRebuildRefusedException` with
+   `Reason == IdentityRebuildRefusal.ShardLiveOnAnotherNode`. Do the rebuild on the node that runs the projection.
+3. **Otherwise** the stream is aggregated and stored right here, outside any daemon. That is only safe when no daemon is
+   running the projection. Without extended progression tracking, a shard on another node that has had nothing to do
+   for 30 seconds stops rewriting its row and looks stopped, so the call isn't refused.
+
+Inline and live projections always take the third path, since there is no shard to race.
+
+You can also rebuild one identity through a running daemon directly. It works for any single-stream projection the
+daemon runs, and refuses with `IdentityRebuildRefusedException` when it can't (the shard isn't running there, is
+rebuilding, or has never committed anything):
+
+```cs
+var result = await daemon.RebuildIdentityAsync("TripProjection", tenantId: null, identity: tripId, token);
+
+// The document is now consistent with every event of its stream up to result.BoundCeiling
+```
+
+A projection whose documents are kept in custom projection storage, like an EF Core entity from
+`Marten.EntityFrameworkCore`, can't be rebuilt one identity at a time. Use `RebuildProjectionAsync()` for those.

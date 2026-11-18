@@ -32,7 +32,7 @@ internal class ReplaceEventOperation<T> : IStorageOperation, NoDataReturnedCall 
         _eventTypeName = mapping.EventTypeName;
         _dotNetType = mapping.DotNetTypeName;
 
-        Id = CombGuidIdGeneration.NewGuid();
+        Id = SequentialGuid.NextPostgresOrder();
     }
 
     public Guid Id { get; }

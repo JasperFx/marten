@@ -37,7 +37,7 @@ branch on identity strategy after startup.
 | File | Role |
 | --- | --- |
 | [`IIdentification.cs`](IIdentification.cs) | The contract — `Identity(TDoc)` + `AssignIfMissing(TDoc, IMartenDatabase)`. |
-| [`SequentialGuidIdentification.cs`](SequentialGuidIdentification.cs) | `Guid` id, no DB round-trip — uses `CombGuidIdGeneration.NewGuid()`. Replaces `IIdGeneration` codegen for the `SequentialGuidIdGeneration` strategy. Accessor delegates from `LambdaBuilder` (FEC). |
+| [`SequentialGuidIdentification.cs`](SequentialGuidIdentification.cs) | `Guid` id, no DB round-trip — uses `SequentialGuid.PostgresOrder` (Weasel's, passed explicitly by `ClosedShapeRegistration`). Replaces `IIdGeneration` codegen for the `SequentialGuidIdGeneration` strategy. Accessor delegates from `LambdaBuilder` (FEC). |
 | [`HiloIntIdentification.cs`](HiloIntIdentification.cs) | `int` id from `IMartenDatabase.Sequences.SequenceFor(documentType).NextInt()`. Replaces `IIdGeneration` codegen for the `HiloIdGeneration` `int` branch. Accessor delegates from `LambdaBuilder` (FEC). |
 | [`HiloLongIdentification.cs`](HiloLongIdentification.cs) | `long` sibling of the above. |
 

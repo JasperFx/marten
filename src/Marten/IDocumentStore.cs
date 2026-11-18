@@ -481,7 +481,7 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <summary>
     ///     #6004: wait until the asynchronous projections in <paramref name="projections" /> have processed
     ///     <paramref name="position" />, so you can read your own writes. Take the position from the session's
-    ///     <c>LastAppendedSequence</c> after <c>SaveChangesAsync</c>, and pass the projection classes or the
+    ///     <c>LastAppendedPosition</c> after <c>SaveChangesAsync</c>, and pass the projection classes or the
     ///     documents they write.
     /// </summary>
     /// <remarks>
@@ -490,7 +490,7 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     ///     and when it is false, <see cref="ProjectionWaitResult.Shards" /> says how far each shard got. A paused or
     ///     rebuilding projection returns at once with that status.
     /// </remarks>
-    /// <param name="position">The position to wait for, normally <c>session.LastAppendedSequence</c>.</param>
+    /// <param name="position">The position to wait for, normally <c>session.LastAppendedPosition</c>.</param>
     /// <param name="projections">The projection classes, or the documents they write.</param>
     /// <param name="timeout">How long to wait.</param>
     /// <param name="token">Cancelling this throws <see cref="OperationCanceledException" />.</param>
