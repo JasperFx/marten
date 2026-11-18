@@ -26,6 +26,9 @@ internal class QuickEventAppender: IEventAppender
     {
         var storage = session.EventStorage();
 
+        // #6083: lock every stream row this unit of work appends to, in a stable order, before any append
+        LockStreamsForAppend.QueueIfManyStreams(eventGraph, session);
+
         // Queue AssertStreamVersion operations for streams with AlwaysEnforceConsistency but no events
         foreach (var stream in session.WorkTracker.Streams.Where(x => !x.Events.Any() && x.AlwaysEnforceConsistency && x.ExpectedVersionOnServer.HasValue))
         {
