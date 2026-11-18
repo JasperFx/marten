@@ -196,17 +196,9 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             }
             catch (Exception e)
             {
-                try
-                {
-                    // #5688: never with the caller's token. Npgsql answers an already-cancelled token by
-                    // throwing without sending ROLLBACK, and that exception would replace this one.
-                    await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
-                }
-                catch (Exception rollbackEx)
-                {
-                    Logger.LogFailure(rollbackEx, "Error trying to rollback an exception");
-                    throw;
-                }
+                // #5688 / #6074: a failed rollback -- a broken connection took the transaction with it -- must not
+                // replace the failure that caused it
+                await tx.RollbackAfterFailureAsync(Logger).ConfigureAwait(false);
 
                 Logger.LogFailure(new NpgsqlCommand(), e);
                 transformAndThrow(pages, e);
@@ -214,14 +206,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
 
             if (exceptions.Count == 1)
             {
-                try
-                {
-                    await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    Logger.LogFailure(e, "Failure trying to rollback an exception");
-                }
+                await tx.RollbackAfterFailureAsync(Logger).ConfigureAwait(false);
 
                 var ex = exceptions.Single();
                 ExceptionDispatchInfo.Throw(ex);
@@ -229,14 +214,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
 
             if (exceptions.Any())
             {
-                try
-                {
-                    await tx.RollbackAsync(CancellationToken.None).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    Logger.LogFailure(e, "Failure trying to rollback an exception");
-                }
+                await tx.RollbackAfterFailureAsync(Logger).ConfigureAwait(false);
 
                 throw new AggregateException(exceptions);
             }
