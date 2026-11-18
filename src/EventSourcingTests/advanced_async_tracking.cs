@@ -146,4 +146,43 @@ public class advanced_async_tracking : OneOffConfigurationsContext, IAsyncLifeti
         var aggregate = await query.LoadAsync<SimpleAggregate>(streamId);
         aggregate.ShouldNotBeNull();
     }
+
+    [Fact]
+    public async Task a_9x_skips_table_migrates_to_the_tenant_keyed_shape_and_keeps_its_rows_6007()
+    {
+        // #6007: Marten 10 adds tenant_id (part of the primary key), reason, gaps and closed_at to
+        // mt_high_water_skips. Put the table back in its 9.x shape with a row in it, then migrate.
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using (var conn = new Npgsql.NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.CreateCommand($@"
+drop table {SchemaName}.mt_high_water_skips;
+create table {SchemaName}.mt_high_water_skips (
+    ending_sequence bigint constraint pkey_mt_high_water_skips_ending_sequence primary key,
+    starting_sequence bigint not null,
+    timestamp timestamp with time zone default transaction_timestamp());
+insert into {SchemaName}.mt_high_water_skips (ending_sequence, starting_sequence) values (500, 400);").ExecuteNonQueryAsync();
+        }
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+
+        var skips = await theDetector.FetchLastProgressionSkipsAsync(100, CancellationToken.None);
+        skips.Single().Ending.ShouldBe(500);
+
+        // The migrated function writes against the new key
+        await theDetector.MarkHighWaterMarkInDatabaseAsync(1000, CancellationToken.None);
+        (await theDetector.TryMarkHighWaterSkippingAsync(1100, 1000, CancellationToken.None)).ShouldBe(1100);
+
+        await using (var conn = new Npgsql.NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            var tenants = await conn.CreateCommand(
+                    $"select string_agg(tenant_id, ',' order by ending_sequence) from {SchemaName}.mt_high_water_skips")
+                .ExecuteScalarAsync();
+            tenants.ShouldBe(",");
+        }
+    }
 }

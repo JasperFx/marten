@@ -128,6 +128,9 @@ public partial class EventGraph: IFeatureSchema
         // table and function, not whether they exist, so a store with it off cannot drop them from a
         // schema another store has it on for.
         yield return new EventProgressionSkippingTable(this);
+
+        // #6007: the ledger of events that committed inside a skipped range
+        yield return new LateEventsTable(this);
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_progression_with_skip",
             "varchar, bigint, bigint");
 
