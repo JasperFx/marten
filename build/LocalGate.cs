@@ -114,9 +114,10 @@ partial class Build
     const string ShardDatabasesTrack = "shard-databases";
 
     /// <summary>
-    /// The default database itself, reached past the lane: EventSourcingTests' testing_projections
-    /// hard-codes localhost:5432/marten_testing. Every other unit is relocated, so this only keeps two
-    /// frameworks of EventSourcingTests apart, and StressTests away from it.
+    /// The default database itself, reached past the lane. Only StressTests does that now:
+    /// EventSourcingTests' testing_projections used to hard-code localhost:5432/marten_testing and its
+    /// fixed "incidents" schema, so any other process on that database (the other framework, another
+    /// worktree) ran into it. It now uses ConnectionSource like every other test.
     /// </summary>
     const string DefaultDatabaseTrack = "default-database";
 
@@ -163,7 +164,7 @@ partial class Build
     IReadOnlyList<GateSuite> gateSuites() =>
     [
         new("Daemon", "src/DaemonTests/DaemonTests.csproj", Tracks: [TenantDatabasesTrack]),
-        new("EventSourcing", "src/EventSourcingTests/EventSourcingTests.csproj", Workers: 4, Tracks: [DefaultDatabaseTrack]),
+        new("EventSourcing", "src/EventSourcingTests/EventSourcingTests.csproj", Workers: 4),
         new("Linq", "src/LinqTests/LinqTests.csproj", Workers: 4),
         new("TenantPartitionedEvents", "src/TenantPartitionedEventsTests/TenantPartitionedEventsTests.csproj", Tracks: [ShardDatabasesTrack]),
         new("DocumentDb", "src/DocumentDbTests/DocumentDbTests.csproj"),

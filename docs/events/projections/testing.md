@@ -52,7 +52,7 @@ public class Invoice
     public void Apply(InvoiceApproved _) => Status = InvoiceStatus.Approved;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L28-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplistic_invoice_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L29-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplistic_invoice_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Live Aggregation
@@ -68,8 +68,7 @@ public async Task test_live_aggregation()
 {
     using var store = DocumentStore.For(opts =>
     {
-        opts.Connection(
-            "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+        opts.Connection(ConnectionSource.ConnectionString);
         opts.DatabaseSchemaName = "incidents";
     });
 
@@ -94,7 +93,7 @@ public async Task test_live_aggregation()
     invoice.Status.ShouldBe(InvoiceStatus.Paid);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L80-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_testing_live_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L81-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_testing_live_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Inline Aggregation
@@ -110,8 +109,7 @@ public async Task test_inline_aggregation()
 {
     using var store = DocumentStore.For(opts =>
     {
-        opts.Connection(
-            "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+        opts.Connection(ConnectionSource.ConnectionString);
         opts.DatabaseSchemaName = "incidents";
 
         // Notice that the "snapshot" is running inline
@@ -143,7 +141,7 @@ public async Task test_inline_aggregation()
     invoice.Status.ShouldBe(InvoiceStatus.Paid);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L116-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_testing_inline_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L116-L155' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_testing_inline_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Async Projections
@@ -167,8 +165,7 @@ public async Task test_async_aggregation()
     // yet.
     using var store = DocumentStore.For(opts =>
     {
-        opts.Connection(
-            "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+        opts.Connection(ConnectionSource.ConnectionString);
         opts.DatabaseSchemaName = "incidents";
 
         // Notice that the "snapshot" is running inline
@@ -210,7 +207,7 @@ public async Task test_async_aggregation()
     invoice.Status.ShouldBe(InvoiceStatus.Paid);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L158-L210' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_test_of_async_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L157-L208' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_test_of_async_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The approach above is pretty simple, but it definitely works against your ability to parallelize tests by rewinding the 
@@ -247,13 +244,17 @@ public async Task test_async_aggregation_with_wait_for()
         {
             services.AddMarten(opts =>
                 {
-                    opts.Connection(
-                        "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+                    opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "incidents";
 
                     // Notice that the "snapshot" is running inline
                     opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
                 })
+
+                // Build the schema before anything else touches it. Otherwise the daemon starting up and
+                // the first SaveChangesAsync below both apply it, and on a busy database one of them can
+                // give up waiting for the other
+                .ApplyAllDatabaseChangesOnStartup()
 
                 // Using Solo in tests will help it start up a little quicker
                 .AddAsyncDaemon(DaemonMode.Solo);
@@ -292,7 +293,7 @@ public async Task test_async_aggregation_with_wait_for()
     invoice.Status.ShouldBe(InvoiceStatus.Paid);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L212-L269' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_wait_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L210-L271' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_wait_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the version above, we can just be using a shared `IHost` and the async daemon already running continuously, pump in 
@@ -411,7 +412,7 @@ public static Invoice Create(IEvent<InvoiceCreated> created)
     };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L43-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_metadata_in_invoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L44-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_metadata_in_invoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 But of course, if that timestamp has some meaning later on and you have any kind of business rules that may need to key
@@ -435,8 +436,7 @@ public async Task test_async_aggregation_with_wait_for_and_fake_time_provider()
         {
             services.AddMarten(opts =>
                 {
-                    opts.Connection(
-                        "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+                    opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "incidents";
 
                     // Notice that the "snapshot" is running inline
@@ -444,6 +444,11 @@ public async Task test_async_aggregation_with_wait_for_and_fake_time_provider()
 
                     opts.Events.TimeProvider = eventsTimeProvider;
                 })
+
+                // Build the schema before anything else touches it. Otherwise the daemon starting up and
+                // the first SaveChangesAsync below both apply it, and on a busy database one of them can
+                // give up waiting for the other
+                .ApplyAllDatabaseChangesOnStartup()
 
                 // Using Solo in tests will help it start up a little quicker
                 .AddAsyncDaemon(DaemonMode.Solo);
@@ -482,7 +487,7 @@ public async Task test_async_aggregation_with_wait_for_and_fake_time_provider()
     invoice.Created.ShouldBe(eventsTimeProvider.Start);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L272-L334' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_fake_time_provider' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L274-L340' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_fake_time_provider' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the sample above, I used the `FakeTimeProvider` from the Microsoft.Extensions.TimeProvider.Testing Nuget package.
