@@ -43,17 +43,27 @@ public class Bug_5379_replaced_event_timestamp_on_non_utc_session: OneOffConfigu
         theSession.Events.StartStream<Letters>(streamId, new AEvent(), new BEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
-        // A floor for the replacement: the snapshot is written strictly after these were appended
-        var appended = (await theSession.Events.FetchStreamAsync(streamId)).Max(x => x.Timestamp);
+        // #6039: both bounds come from the database's clock, the one ReplaceEventOperation stamps with. The
+        // appended events carry the client's clock, which can run ahead of the database's in a Docker VM.
+        var floor = await databaseNowAsync();
 
         await theSession.Events.CompactStreamAsync<Letters>(streamId);
         await theSession.SaveChangesAsync();
-        var compactedBy = DateTimeOffset.UtcNow.AddSeconds(5);
+        var ceiling = await databaseNowAsync();
 
         var compacted = (await theSession.Events.FetchStreamAsync(streamId)).Single();
         compacted.Data.ShouldBeOfType<Compacted<Letters>>();
 
-        compacted.Timestamp.ShouldBeGreaterThanOrEqualTo(appended);
-        compacted.Timestamp.ShouldBeLessThanOrEqualTo(compactedBy);
+        compacted.Timestamp.ShouldBeGreaterThanOrEqualTo(floor);
+        compacted.Timestamp.ShouldBeLessThanOrEqualTo(ceiling);
+    }
+
+    private static async Task<DateTimeOffset> databaseNowAsync()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand("select now()", conn);
+        var now = (DateTime)(await cmd.ExecuteScalarAsync())!;
+        return new DateTimeOffset(DateTime.SpecifyKind(now, DateTimeKind.Utc));
     }
 }
