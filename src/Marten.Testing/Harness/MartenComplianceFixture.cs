@@ -333,32 +333,16 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override Task SaveChangesAsync(IDocumentOperations session, CancellationToken token)
         => ((IDocumentSession)session).SaveChangesAsync(token);
 
-    /// <remarks>
-    ///     marten#6071: a soft-deleted document loads as null here, although Marten's <c>LoadAsync</c> returns it.
-    ///     JasperFx 3.7 added <c>LoadExcludesSoftDeletedDocuments</c> and <c>IsSoftDeletedAsync</c> for that
-    ///     (jasperfx#1227), but answering false still fails
-    ///     <c>IdentityRebuildCompliance.a_refold_that_recreates_a_soft_deleted_document_leaves_it_not_deleted</c>:
-    ///     its stream is created and closed in one batch, so the projection never stores the document
-    ///     (<c>ActionType.Nothing</c>), and the suite then requires a soft-deleted row to exist. Until the suite
-    ///     accepts "never stored" as not live, this keeps the load answering null for a soft-deleted document.
-    /// </remarks>
-    public override async Task<T?> LoadDocumentAsync<T>(IQuerySession session, object id, CancellationToken token)
+    /// <summary>
+    ///     marten#6071: Marten's <c>LoadAsync</c> returns a soft-deleted document, so a load by id here does too, and
+    ///     the suites ask <see cref="IsSoftDeletedAsync{T}" /> whether it came back flagged deleted (jasperfx#1227,
+    ///     jasperfx#1232).
+    /// </summary>
+    public override bool LoadExcludesSoftDeletedDocuments => false;
+
+    public override Task<T?> LoadDocumentAsync<T>(IQuerySession session, object id, CancellationToken token)
         where T : class
-    {
-        var document = await loadAsync<T>(session, id, token).ConfigureAwait(false);
-
-        if (document != null
-            && ((DocumentStore)session.DocumentStore).Options.Storage.FindMapping(typeof(T)) is Marten.Schema.DocumentMapping
-            {
-                DeleteStyle: JasperFx.DeleteStyle.SoftDelete
-            }
-            && await IsSoftDeletedAsync<T>(session, id, token).ConfigureAwait(false))
-        {
-            return null;
-        }
-
-        return document;
-    }
+        => loadAsync<T>(session, id, token);
 
     private static Task<T?> loadAsync<T>(IQuerySession session, object id, CancellationToken token) where T : class
         => id switch
@@ -372,8 +356,7 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         };
 
     /// <summary>
-    ///     jasperfx#1227: the document's own soft-delete metadata, <c>mt_deleted</c>. The suites only ask once
-    ///     <c>LoadExcludesSoftDeletedDocuments</c> answers false, which it can't yet (see <see cref="LoadDocumentAsync{T}" />).
+    ///     jasperfx#1227: the document's own soft-delete metadata, <c>mt_deleted</c>.
     /// </summary>
     public override async Task<bool> IsSoftDeletedAsync<T>(IQuerySession session, object id, CancellationToken token)
     {
