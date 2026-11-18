@@ -1,11 +1,15 @@
+using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql.Tables;
+using Weasel.Postgresql.Tables.Partitioning;
 using Xunit;
 
 namespace CoreTests.Partitioning;
@@ -96,5 +100,72 @@ public class partitioning_and_foreign_keys : OneOffConfigurationsContext
         fk.LinkedNames.ShouldBe(["tenant_id", "id"]);
 
         fk.Name.ShouldBe("mt_doc_issue_tenant_id_assignee_id_fkey");
+    }
+
+    // marten#6092: Issue references User, and both are partitioned per tenant by Marten management
+    private void configureManagedPartitionsWithForeignKey(StoreOptions opts)
+    {
+        opts.Policies.AllDocumentsAreMultiTenanted();
+        opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement(SchemaName);
+
+        opts.Schema.For<User>();
+        opts.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId);
+    }
+
+    private async Task storeUserAndIssueAsync(string tenantId)
+    {
+        var user = new User { Id = Guid.NewGuid(), UserName = tenantId };
+        var issue = new Issue { Id = Guid.NewGuid(), Title = tenantId, AssigneeId = user.Id };
+
+        await using var session = theStore.LightweightSession(tenantId);
+        session.Store(user);
+        session.Store(issue);
+        await session.SaveChangesAsync();
+    }
+
+    private async Task assertOnlyBlueIsLeftAsync()
+    {
+        var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
+        userTable.Partitioning.ShouldBeOfType<ListPartitioning>().Partitions.Select(x => x.Suffix).ShouldBe(["blue"]);
+
+        var issueTable = await theStore.Storage.Database.ExistingTableFor(typeof(Issue));
+        issueTable.Partitioning.ShouldBeOfType<ListPartitioning>().Partitions.Select(x => x.Suffix).ShouldBe(["blue"]);
+
+        // The surviving tenant keeps its rows
+        await using var blue = theStore.QuerySession("blue");
+        (await blue.Query<User>().CountAsync()).ShouldBe(1);
+        (await blue.Query<Issue>().CountAsync()).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task remove_managed_tenant_with_a_foreign_key_between_partitioned_documents()
+    {
+        StoreOptions(configureManagedPartitionsWithForeignKey);
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "red", "blue");
+
+        await storeUserAndIssueAsync("red");
+        await storeUserAndIssueAsync("blue");
+
+        await theStore.Advanced.RemoveMartenManagedTenantsAsync(["red"], CancellationToken.None);
+
+        await assertOnlyBlueIsLeftAsync();
+    }
+
+    [Fact]
+    public async Task delete_all_tenant_data_with_a_foreign_key_between_managed_partitioned_documents()
+    {
+        StoreOptions(configureManagedPartitionsWithForeignKey);
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "red", "blue");
+
+        await storeUserAndIssueAsync("red");
+        await storeUserAndIssueAsync("blue");
+
+        await theStore.Advanced.DeleteAllTenantDataAsync("red", CancellationToken.None);
+
+        await assertOnlyBlueIsLeftAsync();
     }
 }
