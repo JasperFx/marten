@@ -19,8 +19,8 @@ namespace MultiTenancyTests;
 /// command timeout.
 /// </summary>
 /// <remarks>
-/// CREATE DATABASE is made slow by a second session holding a SHARE lock on <c>pg_database</c> for three seconds, which
-/// CREATE DATABASE has to wait for to insert its row. Databases are server-wide, so every one here has a unique name and
+/// CREATE DATABASE is made slow by a second session holding a SHARE lock on <c>pg_database</c>, which CREATE DATABASE
+/// has to wait for to insert its row, until two seconds after the statement is seen waiting. Databases are server-wide, so every one here has a unique name and
 /// is dropped afterwards.
 /// </remarks>
 [Collection("multi-tenancy")]
@@ -107,7 +107,7 @@ public class provisioning_command_timeout: IAsyncLifetime
         var store = singleServerStore();
         var name = newDatabaseName();
 
-        var elapsed = await whileDatabaseCreationIsBlocked(() => store.Tenancy.GetTenantAsync(name).AsTask());
+        var elapsed = await whileDatabaseCreationIsBlocked(name, () => store.Tenancy.GetTenantAsync(name).AsTask());
 
         elapsed.ShouldBeGreaterThan(1.Seconds());
         (await existsOnServer(name)).ShouldBeTrue();
@@ -120,7 +120,7 @@ public class provisioning_command_timeout: IAsyncLifetime
         var store = singleServerStore(x => x.ProvisioningCommandTimeout = 1.Seconds());
         var name = newDatabaseName();
 
-        await whileDatabaseCreationIsBlocked(async () =>
+        await whileDatabaseCreationIsBlocked(name, async () =>
         {
             var ex = await Should.ThrowAsync<NpgsqlException>(() => store.Tenancy.GetTenantAsync(name).AsTask());
             ex.InnerException.ShouldBeOfType<TimeoutException>();
@@ -133,7 +133,7 @@ public class provisioning_command_timeout: IAsyncLifetime
         var name = newDatabaseName();
         var store = storeForDatabase(name);
 
-        var elapsed = await whileDatabaseCreationIsBlocked(() =>
+        var elapsed = await whileDatabaseCreationIsBlocked(name, () =>
             new DatabaseGenerator().CreateDatabasesAsync(store.Tenancy,
                 x => x.MaintenanceDatabase(OneSecondTimeout).ForTenant()));
 
@@ -147,7 +147,7 @@ public class provisioning_command_timeout: IAsyncLifetime
         var name = newDatabaseName();
         var store = storeForDatabase(name);
 
-        await whileDatabaseCreationIsBlocked(async () =>
+        await whileDatabaseCreationIsBlocked(name, async () =>
         {
             var ex = await Should.ThrowAsync<NpgsqlException>(() =>
                 new DatabaseGenerator().CreateDatabasesAsync(store.Tenancy,
@@ -156,7 +156,10 @@ public class provisioning_command_timeout: IAsyncLifetime
         });
     }
 
-    private static async Task<TimeSpan> whileDatabaseCreationIsBlocked(Func<Task> action)
+    // Holds a SHARE lock on pg_database, which CREATE DATABASE waits for to insert its row, until the CREATE DATABASE
+    // for this name has been seen waiting on it and then two more seconds: long enough to sink a one second command
+    // timeout however slowly the statement got there, and well short of two minutes.
+    private static async Task<TimeSpan> whileDatabaseCreationIsBlocked(string databaseName, Func<Task> action)
     {
         await using var blocker = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await blocker.OpenAsync();
@@ -169,18 +172,37 @@ public class provisioning_command_timeout: IAsyncLifetime
         var stopwatch = Stopwatch.StartNew();
         var running = action();
 
-        // Long enough to sink a one second command timeout, and well short of two minutes
-        var released = Task.Delay(3.Seconds()).ContinueWith(_ => tx.RollbackAsync()).Unwrap();
-
         try
         {
-            await running;
+            await theCreateIsWaitingAsync(databaseName, running);
+            await Task.Delay(2.Seconds());
         }
         finally
         {
-            await released;
+            await tx.RollbackAsync();
         }
 
+        await running;
+
         return stopwatch.Elapsed;
+    }
+
+    private static async Task theCreateIsWaitingAsync(string databaseName, Task running)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
+        await conn.OpenAsync();
+
+        var timeout = Stopwatch.StartNew();
+        while (!running.IsCompleted)
+        {
+            await using var cmd = new NpgsqlCommand(
+                "select count(*) from pg_stat_activity where wait_event_type = 'Lock' and query ilike 'create database%' and query like '%' || @name || '%'",
+                conn);
+            cmd.Parameters.AddWithValue("name", databaseName);
+            if ((long)(await cmd.ExecuteScalarAsync())! > 0) return;
+
+            timeout.Elapsed.ShouldBeLessThan(60.Seconds(), "CREATE DATABASE never started waiting on pg_database");
+            await Task.Delay(50);
+        }
     }
 }
