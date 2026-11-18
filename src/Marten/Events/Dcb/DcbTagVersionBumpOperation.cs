@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Services;
@@ -58,9 +59,10 @@ internal class DcbTagVersionBumpOperation: IStorageOperation, NoDataReturnedCall
     {
         var schema = _events.DatabaseSchemaName;
         var tenantId = session.TenantId;
+        var nextVersion = DcbTagVersionTable.NextVersionSql(_events);
 
         // One multi-row INSERT — VALUES list feeds straight into the
-        // ON CONFLICT DO UPDATE that bumps each row by 1. Row-level locks are
+        // ON CONFLICT DO UPDATE that moves each row to a new version. Row-level locks are
         // taken in (tag_table, tag_value) sorted order via the index seek, so
         // concurrent appenders touching the same tag set can't deadlock.
         builder.Append("insert into ");
@@ -82,13 +84,15 @@ internal class DcbTagVersionBumpOperation: IStorageOperation, NoDataReturnedCall
 
             var tenantParam = builder.AppendParameter(tenantId);
             tenantParam.NpgsqlDbType = NpgsqlDbType.Varchar;
-            builder.Append(", 1)");
+            builder.Append(", ");
+            builder.Append(nextVersion);
+            builder.Append(")");
         }
 
-        // ON CONFLICT DO UPDATE references the existing row via the
-        // unqualified table name (`mt_dcb_tag_version.version`) — Postgres
-        // does not accept the schema prefix in this clause.
-        builder.Append(" on conflict (tag_table, tag_value, tenant_id) do update set version = mt_dcb_tag_version.version + 1");
+        // #6035: the new version comes from the sequence, never version + 1, so a row a tombstone deleted and
+        // this created again can't match a capture of the old row. `excluded.version` is the value the
+        // insert drew, so each row draws one value.
+        builder.Append(" on conflict (tag_table, tag_value, tenant_id) do update set version = excluded.version");
     }
 
     public Type DocumentType => typeof(IEvent);

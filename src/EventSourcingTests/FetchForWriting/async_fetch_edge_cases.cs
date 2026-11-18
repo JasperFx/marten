@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx.Core;
@@ -506,5 +507,114 @@ public class async_fetch_edge_cases: OneOffConfigurationsContext
         var ex = await Should.ThrowAsync<SnapshotWithoutStreamException>(() =>
             session.Events.FetchManyForWriting<SimpleAggregate>(ids, TestContext.Current.CancellationToken));
         ex.Id.ShouldBe(ids[1]);
+    }
+
+    // #6073: when FetchManyForWriting falls back to one stream at a time, the abandoned batch has already started
+    // the new streams it fetched. The fallback starts each of them again, so the session must not keep the
+    // batch's start action beside the fallback's: appending by id would find the first, the handle the second.
+
+    [Fact]
+    public async Task fetch_many_for_writing_falls_back_and_starts_a_new_guid_stream_once()
+    {
+        var existing = await aStreamOfABCAsync();
+        await catchTheDaemonUpAsync();
+        var newId = Guid.NewGuid();
+
+        await using var session = theStore.LightweightSession();
+        var pause = new async_fetch_reads_in_a_safe_order.PauseTheFirstRead(() => deleteTheSnapshotAsync(existing),
+            fetchIndex: 1);
+        session.Logger = pause;
+
+        // The new stream is fetched first, so the batch starts it before the existing stream's fetch is refused
+        var streams = await session.Events.FetchManyForWriting<SimpleAggregate>(new[] { newId, existing },
+            TestContext.Current.CancellationToken);
+        await pause.Paused;
+
+        pause.FetchBatches.ShouldBeGreaterThan(1);
+        streams[0].CurrentVersion.ShouldBe(0);
+        streams[0].Aggregate.ShouldBeNull();
+
+        session.Events.Append(newId, new AEvent(), new BEvent());
+        streams[0].AppendOne(new CEvent());
+        streams[1].AppendOne(new DEvent());
+
+        session.PendingChanges.Streams().Count(x => x.Id == newId).ShouldBe(1);
+        session.PendingChanges.Streams().Count(x => x.Id == existing).ShouldBe(1);
+
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await using var query = theStore.QuerySession();
+        var events = await query.Events.FetchStreamAsync(newId, token: TestContext.Current.CancellationToken);
+        events.Select(x => x.Version).ShouldBe(new long[] { 1, 2, 3 });
+
+        var state = await query.Events.FetchStreamStateAsync(newId, TestContext.Current.CancellationToken);
+        state.ShouldNotBeNull();
+        state.Version.ShouldBe(3);
+        state.AggregateType.ShouldBe(typeof(SimpleAggregate));
+
+        (await query.Events.FetchStreamStateAsync(existing, TestContext.Current.CancellationToken))!
+            .Version.ShouldBe(4);
+    }
+
+    [Fact]
+    public async Task fetch_many_for_writing_falls_back_and_starts_a_new_string_stream_once()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Events.UseIdentityMapForAggregates = false;
+        });
+
+        var existing = Guid.NewGuid().ToString();
+        await using (var setup = theStore.LightweightSession())
+        {
+            setup.Events.StartStream<SimpleAggregateAsString>(existing, new AEvent(), new BEvent(), new CEvent());
+            await setup.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await catchTheDaemonUpAsync();
+        var newKey = Guid.NewGuid().ToString();
+
+        await using var session = theStore.LightweightSession();
+        var pause = new async_fetch_reads_in_a_safe_order.PauseTheFirstRead(async () =>
+            {
+                await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+                await conn.OpenAsync(TestContext.Current.CancellationToken);
+                await using var cmd = conn.CreateCommand();
+                cmd.CommandText = $"delete from {SchemaName}.mt_doc_simpleaggregateasstring where id = @id";
+                cmd.Parameters.AddWithValue("id", existing);
+                await cmd.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+            }, snapshotTable: "mt_doc_simpleaggregateasstring", fetchIndex: 1);
+        session.Logger = pause;
+
+        var streams = await session.Events.FetchManyForWriting<SimpleAggregateAsString>(new[] { newKey, existing },
+            TestContext.Current.CancellationToken);
+        await pause.Paused;
+
+        pause.FetchBatches.ShouldBeGreaterThan(1);
+        streams[0].CurrentVersion.ShouldBe(0);
+        streams[0].Aggregate.ShouldBeNull();
+
+        session.Events.Append(newKey, new AEvent(), new BEvent());
+        streams[0].AppendOne(new CEvent());
+        streams[1].AppendOne(new DEvent());
+
+        session.PendingChanges.Streams().Count(x => x.Key == newKey).ShouldBe(1);
+        session.PendingChanges.Streams().Count(x => x.Key == existing).ShouldBe(1);
+
+        await session.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await using var query = theStore.QuerySession();
+        var events = await query.Events.FetchStreamAsync(newKey, token: TestContext.Current.CancellationToken);
+        events.Select(x => x.Version).ShouldBe(new long[] { 1, 2, 3 });
+
+        var state = await query.Events.FetchStreamStateAsync(newKey, TestContext.Current.CancellationToken);
+        state.ShouldNotBeNull();
+        state.Version.ShouldBe(3);
+        state.AggregateType.ShouldBe(typeof(SimpleAggregateAsString));
+
+        (await query.Events.FetchStreamStateAsync(existing, TestContext.Current.CancellationToken))!
+            .Version.ShouldBe(4);
     }
 }

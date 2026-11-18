@@ -193,7 +193,13 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         }
         catch (Exception e)
         {
-            await RollbackAsync(token).ConfigureAwait(false);
+            // #6074: a failed rollback -- a broken connection took the transaction with it -- must not replace
+            // the failure that caused it
+            if (_options.OwnsTransactionLifecycle)
+            {
+                await Transaction.RollbackAfterFailureAsync(Logger).ConfigureAwait(false);
+            }
+
             Logger.LogFailure(new NpgsqlCommand(), e);
             transformAndThrow(pages, e);
         }

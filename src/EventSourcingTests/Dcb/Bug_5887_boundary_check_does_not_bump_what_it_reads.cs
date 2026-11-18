@@ -102,8 +102,9 @@ public class Bug_5887_boundary_check_does_not_bump_what_it_reads: OneOffConfigur
 
         ((await TagVersionAsync("seating_class", classId)) ?? 0).ShouldBe(before);
 
-        // ...and the tag the appended event does carry still moves
-        (await TagVersionAsync("waitlist_class", classId)).ShouldBe(1);
+        // ...and the tag the appended event does carry still moves. #6035: to a value from the sequence,
+        // not a count of the commits
+        (await TagVersionAsync("waitlist_class", classId)).ShouldNotBeNull().ShouldBeGreaterThan(0);
     }
 
     private async Task<long?> TagVersionAsync(string tagTable, Guid value)

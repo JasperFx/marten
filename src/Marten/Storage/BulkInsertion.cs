@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using JasperFx.Core.Reflection;
+using Marten.Internal.Sessions;
 using Marten.Internal.Sessions.Rls;
 using Marten.Internal.Storage;
 using Marten.Schema.BulkLoading;
@@ -65,7 +66,8 @@ internal class BulkInsertion: IDisposable
             }
             catch (Exception)
             {
-                await tx.RollbackAsync(cancellation).ConfigureAwait(false);
+                // #6074: a failed rollback must not replace the failure being rethrown
+                await tx.RollbackAfterFailureAsync().ConfigureAwait(false);
                 throw;
             }
         }
@@ -130,7 +132,8 @@ internal class BulkInsertion: IDisposable
         }
         catch (Exception)
         {
-            await tx.RollbackAsync(cancellation).ConfigureAwait(false);
+            // #6074: a failed rollback must not replace the failure being rethrown
+            await tx.RollbackAfterFailureAsync().ConfigureAwait(false);
             throw;
         }
     }

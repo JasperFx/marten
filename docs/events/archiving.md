@@ -468,6 +468,7 @@ What `TombstoneStream()` does, compared with `ArchiveStream()`:
 | Stream row in `mt_streams` | kept, marked archived (or moved to the archived partition) | deleted |
 | Event rows in `mt_events` | kept, marked archived | deleted |
 | DCB tag rows (`mt_event_tag_*`) | kept | deleted |
+| DCB tag versions (`mt_dcb_tag_version`) | kept | deleted when no other stream carries the tag |
 | Can be undone | yes, with `UnArchiveStream()` | no |
 | Stream id can start a new stream | depends on partitioning and strict identity settings | yes |
 | Projected documents | left alone | left alone |
@@ -479,7 +480,9 @@ Some details worth knowing:
 * **Tag rows go too.** For every registered DCB tag type, the stream's rows in that type's
   `mt_event_tag_*` table are deleted along with the events, so tag queries and
   `EventsExistAsync()` no longer find them. In `DcbStorageMode.HStore` the tags live on the event
-  rows and leave with them.
+  rows and leave with them. The tag's `mt_dcb_tag_version` row goes too once no other stream carries
+  the tag, and a DCB boundary that read the stream's events can't save through the delete. See
+  [what a tombstone erases](/events/dcb#what-a-tombstone-erases).
 * **It is tenant scoped.** Under conjoined event tenancy the delete only reaches the session's
   tenant. Another tenant's stream with the same id is untouched.
 * **A missing stream is a no-op.** Deleting a stream that does not exist, or that was already

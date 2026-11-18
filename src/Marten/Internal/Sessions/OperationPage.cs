@@ -21,15 +21,21 @@ namespace Marten.Internal.Sessions;
 public class OperationPage
 {
     private IMartenSession _session;
+    private readonly NpgsqlBatch _batch = new();
     private readonly BatchBuilder _builder;
     private readonly List<Weasel.Storage.IStorageOperation> _operations = new();
+
+    // The index of each operation's LAST statement in the batch. Most operations write one statement, but
+    // some write several (PatchOperation, DcbTagVersionAssertion, DeleteStreamOperation), so operation i
+    // is not statement i.
+    private readonly List<int> _lastStatements = new();
     private NpgsqlBatch? _compiled;
     private bool _completionIsReadable;
 
     public OperationPage(IMartenSession session)
     {
         _session = session;
-        _builder = new BatchBuilder();
+        _builder = new BatchBuilder(_batch);
     }
 
     public OperationPage(IMartenSession session, IReadOnlyList<Weasel.Storage.IStorageOperation> operations) : this(session)
@@ -39,6 +45,7 @@ public class OperationPage
         {
             _builder.StartNewCommand();
             operation.ConfigureCommand(_builder, _session);
+            _lastStatements.Add(_batch.BatchCommands.Count - 1);
         }
 
         Count = _operations.Count;
@@ -59,14 +66,14 @@ public class OperationPage
         );
         _builder.Append(";");
         _operations.Add(operation);
+        _lastStatements.Add(_batch.BatchCommands.Count - 1);
     }
 
     public NpgsqlBatch Compile()
     {
         // #5502: kept so ApplyCallbacksAsync can read each statement's OWN RecordsAffected.
-        // BatchBuilder.StartNewCommand() appends exactly one NpgsqlBatchCommand per Append() call
-        // above and no Marten operation starts a command of its own, so _operations[i] is always
-        // _compiled.BatchCommands[i]. Every caller compiles a page and applies its callbacks back to
+        // _lastStatements maps each operation to its last statement, because an operation can start
+        // commands of its own. Every caller compiles a page and applies its callbacks back to
         // back on the same instance (see TransactionalConnection.ExecuteBatchPagesAsync and its
         // three siblings), so this is the same batch the reader was opened over.
         _compiled = _builder.Compile();
@@ -223,14 +230,17 @@ public class OperationPage
     /// </summary>
     private int firstIncompleteStatement(int windowStart, int windowEnd)
     {
-        if (!_completionIsReadable || _compiled == null || windowEnd >= _compiled.BatchCommands.Count)
+        if (!_completionIsReadable || _compiled == null || windowEnd >= _lastStatements.Count ||
+            _lastStatements[windowEnd] >= _compiled.BatchCommands.Count)
         {
             return -1;
         }
 
         for (var i = windowStart; i <= windowEnd; i++)
         {
-            var command = _compiled.BatchCommands[i];
+            // An operation of several statements has failed when its last one never completed: statements
+            // complete in order, and an error in an earlier one stops the rest
+            var command = _compiled.BatchCommands[_lastStatements[i]];
 
             // An empty statement answers EmptyQueryResponse, never CommandComplete
             if (command.StatementType == StatementType.Unknown && command.CommandText.AsSpan().Trim(" \t\r\n;").Length > 0)
@@ -313,7 +323,7 @@ public class OperationPage
             return;
         }
 
-        var count = Math.Min(_operations.Count, _compiled.BatchCommands.Count);
+        var count = Math.Min(_operations.Count, _lastStatements.Count);
 
         var anyToCheck = false;
         for (var i = 0; i < count; i++)
@@ -355,7 +365,13 @@ public class OperationPage
                 continue;
             }
 
-            var problem = asserts.DetectRecordsAffectedProblem(_compiled.BatchCommands[i].RecordsAffected);
+            var statement = _lastStatements[i];
+            if (statement >= _compiled.BatchCommands.Count)
+            {
+                continue;
+            }
+
+            var problem = asserts.DetectRecordsAffectedProblem(_compiled.BatchCommands[statement].RecordsAffected);
             if (problem == null)
             {
                 continue;

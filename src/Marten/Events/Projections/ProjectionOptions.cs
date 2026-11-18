@@ -83,6 +83,21 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// </summary>
     public TimeSpan? SkipStaleGapsDespiteLiveTransactionsAfter { get; set; }
 
+    /// <summary>
+    ///     #6007: how long the async daemon keeps checking a sequence range the high water mark skipped for events
+    ///     that commit late. Such an event is recorded in <c>mt_high_water_late_events</c>, logged as a warning and
+    ///     counted in the <c>marten.daemon.late_events</c> metric, and the async single-stream projections that
+    ///     handle it rebuild its stream. A range that is still empty after this long is not checked again.
+    ///     Requires <c>Events.EnableAdvancedAsyncTracking</c>. Default is one hour.
+    /// </summary>
+    public TimeSpan LateEventDetectionWindow { get; set; } = 1.Hours();
+
+    /// <summary>
+    ///     #6007: how often the async daemon checks the skipped ranges described in
+    ///     <see cref="LateEventDetectionWindow" />. Default is 10 seconds.
+    /// </summary>
+    public TimeSpan LateEventProbeInterval { get; set; } = 10.Seconds();
+
     private readonly List<long> _ignoredGapDetectionLockKeys = new();
 
     /// <summary>

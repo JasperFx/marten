@@ -41,6 +41,31 @@ public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOp
     private Histogram<long>? _eventsReplayed;
     private bool _eventCountersExported;
 
+    // #6007: created on the first late event, which a healthy store never has
+    private Counter<long>? _lateEvents;
+
+    internal const string LateEventsMetricName = "marten.daemon.late_events";
+    internal const string SkipReasonTag = "skip.reason";
+
+    /// <summary>
+    ///     #6007: one event that committed inside a sequence range the high water mark had already skipped
+    /// </summary>
+    internal void RecordLateEvent(string eventType, string tenantId, string skipReason)
+    {
+        var counter = LazyInitializer.EnsureInitialized(ref _lateEvents,
+            () => Meter.CreateCounter<long>(LateEventsMetricName, "events",
+                "Events that committed inside a sequence range the high water mark had already skipped"));
+
+        if (!counter.Enabled) return;
+
+        counter.Add(1, new TagList
+        {
+            { OtelConstants.EventType, eventType },
+            { OtelConstants.TenantId, tenantId },
+            { SkipReasonTag, skipReason }
+        });
+    }
+
     /// <summary>
     ///     Export the <c>marten.event.append</c> counter: one count per appended event, tagged by event type
     ///     and tenant id. On by default since 10.0 (#5812); set to <c>false</c> to opt out.

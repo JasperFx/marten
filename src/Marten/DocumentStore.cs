@@ -284,7 +284,8 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         }
         catch
         {
-            await tx.RollbackAsync(cancellation).ConfigureAwait(false);
+            // #6074: a failed rollback must not replace the failure being rethrown
+            await tx.RollbackAfterFailureAsync().ConfigureAwait(false);
             throw;
         }
     }
@@ -326,7 +327,8 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         }
         catch
         {
-            await tx.RollbackAsync(cancellation).ConfigureAwait(false);
+            // #6074: a failed rollback must not replace the failure being rethrown
+            await tx.RollbackAfterFailureAsync().ConfigureAwait(false);
             throw;
         }
     }
@@ -388,7 +390,8 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         }
         catch
         {
-            await tx.RollbackAsync(cancellation).ConfigureAwait(false);
+            // #6074: a failed rollback must not replace the failure being rethrown
+            await tx.RollbackAfterFailureAsync().ConfigureAwait(false);
             throw;
         }
     }

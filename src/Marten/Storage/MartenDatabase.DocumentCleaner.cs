@@ -201,6 +201,12 @@ THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.{StreamIdentityEnforceme
 IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_event_progression' AND table_schema = '{Options.Events.DatabaseSchemaName}')
 THEN delete from {Options.Events.DatabaseSchemaName}.mt_event_progression; END IF;
+IF EXISTS(SELECT * FROM information_schema.tables
+WHERE table_name = '{EventProgressionSkippingTable.Name}' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN delete from {Options.Events.DatabaseSchemaName}.{EventProgressionSkippingTable.Name}; END IF;
+IF EXISTS(SELECT * FROM information_schema.tables
+WHERE table_name = '{LateEventsTable.Name}' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN delete from {Options.Events.DatabaseSchemaName}.{LateEventsTable.Name}; END IF;
 END; $$;
 ";
     }

@@ -161,6 +161,69 @@ public class Bug_4867_per_tenant_high_water_advancement
         statistics.CurrentMark.ShouldBe(99, "never rewind a persisted per-tenant mark");
     }
 
+    // #6007: a per-tenant skip is recorded under its tenant when the coordinator persists the mark that carries it,
+    // and an event that later commits inside it is found within that tenant only
+    [Fact]
+    public async Task a_per_tenant_skip_is_recorded_for_its_tenant_and_a_late_event_inside_it_is_found()
+    {
+        var tenant = PartitionedFixtureBase.NewTenant();
+        await _fixture.Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
+
+        var detector = newDetector();
+
+        await _fixture.AppendNEventsAsync(tenant, 5);
+        await detector.MarkHighWaterForTenantAsync(tenant, 5, CancellationToken.None);
+
+        await _fixture.AppendNEventsAsync(tenant, 5);
+
+        // Take seq 6 out, to put it back once the range is skipped
+        var schema = _fixture.SchemaName;
+        var hold = $"hold_6007_{Guid.NewGuid():N}";
+        await executeAsync($"create table {schema}.{hold} as select * from {schema}.mt_events where tenant_id = '{tenant}' and seq_id = 6");
+        await deleteEventAsync(tenant, 6);
+
+        try
+        {
+            (await detectAsync(detector, tenant)).CurrentMark.ShouldBe(5);
+
+            var threshold = _fixture.Store.Options.Projections.StaleSequenceThreshold;
+            await Task.Delay(threshold.Add(1500.Milliseconds()), TestContext.Current.CancellationToken);
+
+            var skipped = await detectAsync(detector, tenant);
+            skipped.CurrentMark.ShouldBe(10);
+            await detector.MarkHighWaterForTenantAsync(tenant, skipped.CurrentMark, CancellationToken.None);
+
+            (await scalarAsync(
+                    $"select starting_sequence || ':' || reason || ':' || array_to_string(gaps, ',') from {schema}.mt_high_water_skips where tenant_id = '{tenant}' and ending_sequence = 10"))
+                .ShouldBe("5:Proven:6,6");
+
+            await executeAsync($"insert into {schema}.mt_events select * from {schema}.{hold}");
+            await detector.LateEvents.ProbeAsync(CancellationToken.None);
+
+            (await scalarAsync(
+                    $"select skip_ending_sequence || ':' || skip_reason from {schema}.mt_high_water_late_events where tenant_id = '{tenant}' and seq_id = 6"))
+                .ShouldBe("10:Proven");
+        }
+        finally
+        {
+            await executeAsync($"drop table if exists {schema}.{hold}");
+        }
+    }
+
+    private async Task executeAsync(string sql)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await conn.CreateCommand(sql).ExecuteNonQueryAsync();
+    }
+
+    private async Task<string?> scalarAsync(string sql)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        return (string?)await conn.CreateCommand(sql).ExecuteScalarAsync();
+    }
+
     private async Task deleteEventAsync(string tenant, long seqId)
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
