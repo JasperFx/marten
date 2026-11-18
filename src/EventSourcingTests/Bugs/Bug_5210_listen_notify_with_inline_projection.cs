@@ -140,5 +140,10 @@ public class Bug_5210_listen_notify_with_inline_projection: BugIntegrationContex
         var wait = listener.WaitAsync(cts.Token);
         var channel = await notificationReceived.Task.WaitAsync(cts.Token);
         channel.ShouldBe(PostgresqlListenWakeup.DefaultChannel);
+
+        // #6022: the Notification event fires from inside WaitAsync, before WaitAsync is done with the
+        // connection. Disposing the listener before WaitAsync returns failed now and then with "The
+        // connection is already in state 'Waiting'", so let it finish first.
+        await wait;
     }
 }
