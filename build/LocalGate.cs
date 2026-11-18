@@ -43,7 +43,8 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 //
 // What a unit's own database cannot isolate is a name a suite reaches PAST its lane for: a whole
 // database with a fixed name on the server, or the default database itself. Those are the tracks
-// below. A track is exclusive, so the gate never runs two units that share fixed names at once.
+// below. A track is exclusive, so the gate never runs two units that share fixed names at once, and it is
+// also a Postgres advisory lock on the gate's server, so a gate from another checkout waits for it too (#6069).
 partial class Build
 {
     /// <summary>
@@ -98,6 +99,9 @@ partial class Build
     readonly string GateTimescaleDatabase;
 
     // ─── Tracks ────────────────────────────────────────────────────────
+
+    /// <summary>The running gate's tracks as Postgres advisory locks, held across processes (#6069).</summary>
+    GateTrackLocks _trackLocks;
 
     /// <summary>
     /// Whole databases named tenant1..tenant6 and database1 on the server: CoreTests
@@ -214,6 +218,8 @@ partial class Build
                 connectionBudget = workersTheServerHolds(checkPostgres(gateBaseConnectionString, "the gate database"));
 
             var ledgers = new ConcurrentDictionary<string, TestLedger>(StringComparer.Ordinal);
+            using var trackLocks = new GateTrackLocks(gateBaseConnectionString);
+            _trackLocks = trackLocks;
             var gate = declareGate(suites, ledgers);
             gate.WorkerBudget = gateWorkerBudget(gate.WorkerBudget, connectionBudget);
 
@@ -320,7 +326,13 @@ partial class Build
             Solution = RootDirectory / "src" / "Marten.slnx",
             SkipBuild = GateSkipBuild,
             DurationsPath = RootDirectory / ".bobcat" / "gate-durations.json",
-            Log = message => Log.Information("{Message:l}", message),
+            Log = message =>
+            {
+                Log.Information("{Message:l}", message);
+
+                // #6069: a finished unit hands its tracks to the next gate waiting on them
+                _trackLocks?.ReleaseIfFinished(message);
+            },
 
             // One solution build covers both target frameworks. The gate's default build passes
             // -f per framework, which fails the netstandard2.0 source generator projects.
@@ -373,6 +385,9 @@ partial class Build
     /// </summary>
     IWorkerFactory workerFactoryFor(GateSuite suite, GateUnit unit)
     {
+        // #6069: the unit's tracks across processes too, before it touches the databases they name
+        _trackLocks?.Acquire(unit.Name, suite.Tracks);
+
         var shared = gateSerializerFor(unit.Framework) is { } serializer
             ? new Dictionary<string, string> { ["DEFAULT_SERIALIZER"] = serializer }
             : null;
