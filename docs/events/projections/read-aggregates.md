@@ -176,6 +176,10 @@ workflow, Marten is optimizing the `FetchLatest` if the lifecycle is:
    applies with any additional events appended to that session to give you the exact version of the `Invoice` after
    the new events are applied
 
+For `Live` and `Async`, this only applies to the first `FetchLatest` after `FetchForWriting()`, because applying the
+new events can change that `Invoice` in place. Any later `FetchLatest` in the same session loads the `Invoice` from the
+database, so until you call `SaveChangesAsync()`, it won't include the events you just appended.
+
 In all cases, the `FetchForWriting` + `FetchLatest` combination is working together to get you
 the correct information in the most efficient way possible by eliminating extra trips to the
 database.
