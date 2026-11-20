@@ -19,6 +19,15 @@
 You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
 On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605.
 
+### JasperFx 3.9.0: names no longer depend on the machine's culture <Badge type="warning" text="behavior change" />
+
+Marten's default event type names, the aggregate type names on `mt_streams`, DCB tag table suffixes, duplicated-field
+column names and computed index names are now lowercased the same way in every culture. If you ran Marten on a
+Turkish or Azerbaijani machine with an `I` in one of those type or member names, map the old event type names with
+an alias before upgrading ([details](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-9-0)).
+Separately, `Evolve()` methods may now use bare `case Foo:` labels, and the source generator bundled in the Marten
+package picks them up.
+
 ### Runtime-async on `net11.0` <Badge type="warning" text="behavior change" />
 
 The `net11.0` build of Marten is compiled with the C# compiler's runtime-async feature, so its async methods run as
