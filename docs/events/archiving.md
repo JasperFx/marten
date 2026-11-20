@@ -11,6 +11,10 @@ Archiving marks or moves events, it does not remove them, and the data is still 
 erase a person's data, for example for a GDPR request, see [Personal data and crypto-shredding with Tayra](/events/protection#personal-data-and-crypto-shredding-with-tayra).
 :::
 
+::: tip
+To compare archiving with stream compacting, see [Shrinking mt_events](/events/shrinking).
+:::
+
 ::: warning
 You can obviously use pure SQL to modify the events persisted by Marten. While that might be valuable in some cases,
 we urge you to be cautious about doing so.
@@ -71,7 +75,7 @@ var events = await theSession.Events
     .Where(x => x.IsArchived)
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L232-L239' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_archived_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L237-L244' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_archived_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also query for all events both archived and not archived with `MaybeArchived()`
@@ -83,7 +87,7 @@ like so:
 var events = await theSession.Events.QueryAllRawEvents()
     .Where(x => x.MaybeArchived()).ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L265-L270' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_maybe_archived_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L270-L275' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_maybe_archived_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Appending to an Archived Stream
@@ -128,7 +132,7 @@ await session.SaveChangesAsync();
 session.Events.Append(streamId, new LedgerOpened("appended after un-archiving"));
 await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Archiving/unarchiving_streams.cs#L847-L864' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_unarchive_stream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Archiving/unarchiving_streams.cs#L850-L867' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_unarchive_stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `UnArchiveStream()` has a `Guid` overload and a `string` overload, matching your `StreamIdentity`. Calling the
