@@ -5,7 +5,9 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -81,10 +83,20 @@ public partial class DocumentStore
     /// </remarks>
     private bool eventsAreConjoined => Options.Events.TenancyStyle == TenancyStyle.Conjoined;
 
-    private static readonly JsonSerializerOptions ExplorerJson = new()
+    // #6107: the explorer reads events and writes aggregate state with the store's own serializer and its
+    // settings (custom converters, AllowOutOfOrderMetadataProperties for polymorphic types in jsonb, casing),
+    // as the event store itself does, rather than with a static JsonSerializerOptions of its own.
+    private JsonElement toStoreJson(object value)
     {
-        PropertyNamingPolicy = null
-    };
+        using var document = JsonDocument.Parse(Options.Serializer().ToJson(value));
+        return document.RootElement.Clone();
+    }
+
+    private object? fromStoreJson(JsonElement json, Type type)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json.GetRawText()), writable: false);
+        return Options.Serializer().FromJson(type, stream);
+    }
 
     /// <inheritdoc />
     /// <remarks>
@@ -538,7 +550,7 @@ public partial class DocumentStore
         var (state, _) = await replayAggregatorAsync(aggregateType, startingState: null, events, ct).ConfigureAwait(false);
         if (state == null) return null;
 
-        var stateJson = JsonSerializer.SerializeToElement(state, aggregateType, ExplorerJson);
+        var stateJson = toStoreJson(state);
         return new DcbProjectedState(projectionName, events[^1].Sequence, stateJson, events.Count);
     }
 
@@ -591,7 +603,7 @@ public partial class DocumentStore
             return new AggregateAtVersion(aggregateType.FullNameInCode(), default, version, 0);
         }
 
-        var stateJson = JsonSerializer.SerializeToElement(aggregate, aggregateType, ExplorerJson);
+        var stateJson = toStoreJson(aggregate);
         return new AggregateAtVersion(aggregateType.FullNameInCode(), stateJson, version, version);
     }
 
@@ -906,20 +918,20 @@ public partial class DocumentStore
         CancellationToken ct)
     {
         var aggregateType = findProjectionAggregateType(projectionName);
-        var startObj = startingState?.Deserialize(aggregateType, ExplorerJson);
+        var startObj = startingState.HasValue ? fromStoreJson(startingState.Value, aggregateType) : null;
 
         var rawSteps = await runProjectionStepsAsync(aggregateType, startObj, events, ct).ConfigureAwait(false);
 
         var stepRecords = new List<ProjectionStepResultRaw>(rawSteps.Count);
         foreach (var s in rawSteps)
         {
-            JsonElement? beforeJson = s.Before == null ? null : JsonSerializer.SerializeToElement(s.Before, aggregateType, ExplorerJson);
-            JsonElement? afterJson = s.After == null ? null : JsonSerializer.SerializeToElement(s.After, aggregateType, ExplorerJson);
+            JsonElement? beforeJson = s.Before == null ? null : toStoreJson(s.Before);
+            JsonElement? afterJson = s.After == null ? null : toStoreJson(s.After);
             stepRecords.Add(new ProjectionStepResultRaw(s.Event, beforeJson, afterJson, s.Elapsed, s.Error?.Message));
         }
 
         var finalObj = rawSteps.LastOrDefault(x => x.Error == null)?.After ?? rawSteps.LastOrDefault()?.After;
-        JsonElement? finalJson = finalObj == null ? null : JsonSerializer.SerializeToElement(finalObj, aggregateType, ExplorerJson);
+        JsonElement? finalJson = finalObj == null ? null : toStoreJson(finalObj);
 
         return new ProjectionTimelineRaw(stepRecords, finalJson);
     }
@@ -967,7 +979,7 @@ public partial class DocumentStore
         await using var session = openExplorerSession();
 
         JsonElement? serialize(object? state) =>
-            state is null ? null : JsonSerializer.SerializeToElement(state, state.GetType(), ExplorerJson);
+            state is null ? null : toStoreJson(state);
 
         EventRecord toRecord(IEvent e) =>
             recordByEvent.TryGetValue(e, out var record) ? record : buildRecordFromEvent(e);
@@ -1022,7 +1034,7 @@ public partial class DocumentStore
             ? e.StreamId.ToString()
             : e.StreamKey ?? string.Empty;
 
-        var data = JsonSerializer.SerializeToElement(e.Data, e.Data.GetType(), ExplorerJson);
+        var data = toStoreJson(e.Data);
 
         return new EventRecord(e.Id, e.Sequence, e.Version, streamId, e.EventTypeName, data, null,
             e.Timestamp, e.TenantId, null);
@@ -1143,17 +1155,16 @@ public partial class DocumentStore
             ?? throw new InvalidOperationException(
                 $"Event type '{record.EventTypeName}' is not registered. Add it via StoreOptions.Events.AddEventType.");
 
-        var dataObj = record.Data.Deserialize(mapping.DocumentType, ExplorerJson)
+        var dataObj = fromStoreJson(record.Data, mapping.DocumentType)
             ?? throw new InvalidOperationException(
                 $"Failed to deserialize event of type '{record.EventTypeName}' from supplied JSON.");
         return dataObj;
     }
 
-    private static object? cloneViaJson(object? value, Type type)
+    private object? cloneViaJson(object? value, Type type)
     {
         if (value is null) return null;
-        var json = JsonSerializer.SerializeToElement(value, type, ExplorerJson);
-        return json.Deserialize(type, ExplorerJson);
+        return fromStoreJson(toStoreJson(value), type);
     }
 
     private async Task<object?> invokeAggregateStreamAsync(
