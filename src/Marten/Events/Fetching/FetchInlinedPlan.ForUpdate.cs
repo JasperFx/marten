@@ -5,6 +5,7 @@ using System.Linq;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -12,6 +13,7 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
+using Marten.Storage;
 using Marten.Services.BatchQuerying;
 using Npgsql;
 using Weasel.Postgresql;
@@ -94,8 +96,8 @@ internal partial class FetchInlinedPlan<TDoc, TId>
                     .ConfigureAwait(false);
             }
 
-            return await buildStreamAsync(session, id, read, storage, storage, baseline, cancellation)
-                .ConfigureAwait(false);
+            // After the reader is closed: a missing document may start from the cold part of the stream
+            return await buildStreamAsync(session, id, read, storage, cancellation).ConfigureAwait(false);
         }
         catch (CachedSnapshotUnusableException)
         {
@@ -129,11 +131,14 @@ internal partial class FetchInlinedPlan<TDoc, TId>
     /// </remarks>
     private sealed class CachedSnapshotUnusableException: MartenException;
 
-    /// <summary>What one read brought back: the stream version and the stored document, if any.</summary>
-    private readonly record struct InlineRead(long Version, TDoc? Document);
-
+    /// <param name="conditionalLoad">
+    ///     #6086: a batched fetch with a cached aggregate. It can't redo itself, so its snapshot statement is in the
+    ///     batch, and only returns the snapshot when the stream is not at the cached version (see
+    ///     <see cref="QueryHandler" />).
+    /// </param>
     private async Task<InlineRead> readStoredAsync(DocumentSessionBase session, TId id, CancellationToken cancellation,
-        DbDataReader reader, LoadByIdHandler<TDoc, TId> handler, AggregateWriteBaseline<TDoc> cacheAttempt = default)
+        DbDataReader reader, LoadByIdHandler<TDoc, TId> handler, AggregateWriteBaseline<TDoc> cacheAttempt = default,
+        long? expectedStartingVersion = null, bool conditionalLoad = false)
     {
         long version = 0;
         try
@@ -143,8 +148,24 @@ internal partial class FetchInlinedPlan<TDoc, TId>
                 version = await reader.GetFieldValueAsync<long>(0, cancellation).ConfigureAwait(false);
             }
 
+            if (expectedStartingVersion.HasValue && expectedStartingVersion.Value != version)
+            {
+                throw new ConcurrencyException(
+                    $"Expected the existing version to be {expectedStartingVersion.Value}, but was {version}",
+                    typeof(TDoc), id);
+            }
+
             TDoc? document;
-            if (cacheAttempt.HasAggregate)
+            if (cacheAttempt.HasAggregate && cacheAttempt.Version != version && conditionalLoad)
+            {
+                // The snapshot statement found the stream off the cached version too, and loaded the snapshot.
+                // The cached aggregate was claimed, so it is gone from the cache either way; the result still
+                // goes back after the commit.
+                cacheAttempt = cacheAttempt.WithoutAggregate();
+                await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+                document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+            }
+            else if (cacheAttempt.HasAggregate)
             {
                 if (cacheAttempt.Version != version)
                 {
@@ -160,6 +181,12 @@ internal partial class FetchInlinedPlan<TDoc, TId>
                 }
 
                 document = cacheAttempt.Aggregate;
+
+                // The batched fetch's snapshot statement, which is empty here, and is this fetch's last result
+                if (conditionalLoad)
+                {
+                    await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+                }
             }
             else
             {
@@ -167,7 +194,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
                 document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
             }
 
-            return new InlineRead(version, document);
+            return new InlineRead(version, document, cacheAttempt);
         }
         catch (CachedSnapshotUnusableException)
         {
@@ -190,16 +217,21 @@ internal partial class FetchInlinedPlan<TDoc, TId>
     }
 
     /// <summary>
+    ///     What one read brought back: the stream version, the stored (or cached) document, and the cache baseline
+    ///     as the read left it.
+    /// </summary>
+    private readonly record struct InlineRead(long Version, TDoc? Document, AggregateWriteBaseline<TDoc> CacheAttempt);
+
+    /// <summary>
     ///     Runs after the reader is closed, because a document the application moved out with the stream's events
     ///     starts from the cold part, and the cold store may read through the same session.
     /// </summary>
-    /// <param name="cacheStorage">Set on the paths that write the aggregate back to the write cache.</param>
     private async Task<IEventStream<TDoc>> buildStreamAsync(DocumentSessionBase session, TId id, InlineRead read,
-        IDocumentStorage<TDoc, TId> storage, IDocumentStorage<TDoc, TId>? cacheStorage,
-        AggregateWriteBaseline<TDoc> cacheAttempt, CancellationToken cancellation)
+        IDocumentStorage<TDoc, TId> storage, CancellationToken cancellation)
     {
         var version = read.Version;
         var document = read.Document;
+        var cacheAttempt = read.CacheAttempt;
         if (document == null && version > 0)
         {
             document = await startFromColdAsync(session, storage, id, cancellation).ConfigureAwait(false);
@@ -225,17 +257,16 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         // write-back is advanced to whatever instance that projection stored. Relabelling the fetched
         // instance with the committed version, as Marten used to, was false whenever Apply returns a
         // new instance or UseIdentityMapForAggregates is off.
-        if (_cache != null && document != null && version > 0 && cacheStorage != null)
+        if (_cache != null && document != null && version > 0)
         {
             session.AggregateWriteCache.Register(cacheAttempt, document, version);
-            advanceAfterCommit(session, cacheStorage, cacheKeyFor(session, id), id);
+            advanceAfterCommit(session, storage, cacheKeyFor(session, id), id);
         }
 
         return version == 0
             ? _identityStrategy.StartStream(document, session, id, cancellation)
             : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
     }
-
 
     /// <summary>
     ///     After a commit this session owns: if it appended to this stream, write back the instance the
@@ -293,48 +324,85 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         var storage = findDocumentStorage(session);
 
         var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
-        return new QueryHandler(this, id, storage, handler, forUpdate);
+        return new QueryHandler(this, id, handler, storage, forUpdate, null);
     }
 
+    /// <summary>
+    ///     A <c>FetchForWriting</c> inside a batch: the batched <c>FetchForWriting</c> and
+    ///     <c>FetchForExclusiveWriting</c>, either of them with an expected version, and every stream of
+    ///     <c>FetchManyForWriting</c>. The single <c>FetchForWriting(id, expectedVersion)</c> runs it on its own.
+    /// </summary>
+    /// <remarks>
+    ///     #6086: with the aggregate write cache, the baseline is taken when the batch is built. A batch can't redo
+    ///     one fetch, so the snapshot statement stays in it, with a condition that leaves the snapshot out when the
+    ///     stream is at the cached version:
+    ///     <code>
+    ///     select version from mt_streams where id = :id [for update];
+    ///     select [snapshot] where id = :id and not exists (select 1 from mt_streams as s where s.id = :id and s.version = :cached)
+    ///     </code>
+    ///     The version statement decides. In the one case the two can disagree, a stream deleted and written again
+    ///     up to the cached version in between, the fetch finds no snapshot, as an uncached fetch racing that delete
+    ///     could.
+    /// </remarks>
     internal class QueryHandler: IFinishesAfterTheReader<IEventStream<TDoc>>, IExclusiveFetchHandler
     {
         private readonly FetchInlinedPlan<TDoc, TId> _parent;
         private readonly TId _id;
-        private readonly IDocumentStorage<TDoc, TId> _storage;
         private readonly LoadByIdHandler<TDoc, TId> _handler;
+        private readonly IDocumentStorage<TDoc, TId> _storage;
         private readonly bool _forUpdate;
+        private readonly long? _expectedStartingVersion;
+        private AggregateWriteBaseline<TDoc> _baseline;
         private InlineRead _read;
 
-        public QueryHandler(FetchInlinedPlan<TDoc, TId> parent, TId id, IDocumentStorage<TDoc, TId> storage,
-            LoadByIdHandler<TDoc, TId> handler, bool forUpdate)
+        public QueryHandler(FetchInlinedPlan<TDoc, TId> parent, TId id, LoadByIdHandler<TDoc, TId> handler,
+            IDocumentStorage<TDoc, TId> storage, bool forUpdate, long? expectedStartingVersion)
         {
             _parent = parent;
             _id = id;
-            _storage = storage;
             _handler = handler;
+            _storage = storage;
             _forUpdate = forUpdate;
+            _expectedStartingVersion = expectedStartingVersion;
         }
 
         public object? ExclusiveStreamId => _forUpdate ? _id : null;
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
+            var documentSession = (DocumentSessionBase)session;
+            if (_parent._cache != null)
+            {
+                _baseline = documentSession.AggregateWriteCache.TakeBaseline<TDoc>(_parent._cache,
+                    _parent.cacheKeyFor(documentSession, _id));
+            }
+
             _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, _forUpdate);
 
             builder.StartNewCommand();
 
             _handler.ConfigureCommand(builder, session);
+
+            if (_baseline.HasAggregate)
+            {
+                var streamTenant = _parent._events.TenancyStyle == TenancyStyle.Conjoined && !_parent.IsGlobal
+                    ? builder.TenantId
+                    : null;
+
+                builder.Append(" and not ");
+                CachedAggregateSql.WriteStreamAtVersion(builder, _parent._events, _id, _baseline.Version, streamTenant);
+            }
         }
 
         public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
-            _read = await _parent.readStoredAsync((DocumentSessionBase)session, _id, token, reader, _handler)
-                .ConfigureAwait(false);
+            _read = await _parent.readStoredAsync((DocumentSessionBase)session, _id, token, reader, _handler,
+                _baseline, _expectedStartingVersion, true).ConfigureAwait(false);
         }
 
         public Task<IEventStream<TDoc>> FinishAsync(IStorageSession session, CancellationToken token)
         {
-            return _parent.buildStreamAsync((DocumentSessionBase)session, _id, _read, _storage, null, default, token);
+            return _parent.buildStreamAsync((DocumentSessionBase)session, _id, _read, _storage, token);
         }
 
         public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)

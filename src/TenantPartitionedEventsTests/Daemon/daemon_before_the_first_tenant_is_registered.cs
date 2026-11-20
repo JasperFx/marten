@@ -141,6 +141,13 @@ public class coordinator_before_the_first_tenant_is_registered
         else
         {
             await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), TestContext.Current.CancellationToken);
+
+            // The projected document's table too, which still leaves the tenant lookup table missing. Otherwise the
+            // node's first projected write and this store's first load below both create that table, and two stores
+            // creating the same table at the same moment can fail one of them with 23505 on pg_type
+            await store.Storage.Database.EnsureStorageExistsAsync(typeof(TripDistance),
+                TestContext.Current.CancellationToken);
+            (await tenantLookupTableExistsAsync(schema)).ShouldBeFalse();
         }
 
         using var node = await new HostBuilder()
@@ -184,6 +191,14 @@ public class coordinator_before_the_first_tenant_is_registered
         {
             await node.StopAsync(TestContext.Current.CancellationToken);
         }
+    }
+
+    private static async Task<bool> tenantLookupTableExistsAsync(string schema)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync(TestContext.Current.CancellationToken);
+        await using var cmd = conn.CreateCommand($"select to_regclass('{schema}.mt_tenant_partitions') is not null");
+        return (bool)(await cmd.ExecuteScalarAsync(TestContext.Current.CancellationToken))!;
     }
 
     private static IReadOnlyList<string> RunningAgents(IProjectionDaemon daemon) =>

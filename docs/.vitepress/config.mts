@@ -273,6 +273,7 @@ const config: UserConfig<DefaultTheme.Config> = {
               link: '/events/multitenancy'
             },
             { text: 'Stream Compacting', link: '/events/compacting' },
+            { text: 'Rewriting Stored Events', link: '/events/rewriting' },
             { text: 'Cold Event Storage', link: '/events/cold-storage' },
             {
               text: 'Removing Protected Information',

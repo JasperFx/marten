@@ -16,7 +16,13 @@ public class compliance_suite_inventory
     public void every_event_store_compliance_suite_is_enrolled_or_excused()
     {
         ComplianceSuiteInventory.AssertEnrolled(typeof(compliance_suite_inventory).Assembly,
-            new MartenComplianceFixture(), new Dictionary<Type, string>());
+            new MartenComplianceFixture(), new Dictionary<Type, string>
+            {
+                [typeof(BackfillCompliance<,,>)] =
+                    "Marten does not run projection backfills yet (marten#5632): a version-bumped single-stream "
+                    + "projection writes a new table, so Marten has to keep the old one for a projection that "
+                    + "declares a backfill first. SupportsBackfills stays false until then"
+            });
     }
 
     [Fact]

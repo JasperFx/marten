@@ -176,9 +176,15 @@ internal static class PerTenantPartitionedCleanup
         // database entirely under multi-database tenancy.
         if (options.TenantPartitions?.Partitions.PartitionsFor(database) is not { } registry) return suffixes;
 
-        foreach (var tenantId in tenantIds)
+        var departing = tenantIds.ToHashSet(StringComparer.Ordinal);
+        foreach (var tenantId in departing)
         {
-            if (registry.TryGetValue(tenantId, out var suffix))
+            if (!registry.TryGetValue(tenantId, out var suffix)) continue;
+
+            // Tenants sharing one partition suffix ("bucketing") share its sequence too. Leave it for the
+            // tenants that stay in the bucket.
+            var stillUsed = registry.Any(pair => !departing.Contains(pair.Key) && pair.Value == suffix);
+            if (!stillUsed)
             {
                 suffixes[tenantId] = suffix;
             }
@@ -212,6 +218,8 @@ internal static class PerTenantPartitionedCleanup
         var eventsSchema = options.Events.DatabaseSchemaName;
 
         await DeleteProjectionFloorsAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
+        await DeleteEventRangeMarksAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
+        await DeleteHighWaterSkipsAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
 
         var progressionRows = await CollectMatchingProgressionRowsAsync(
             eventsSchema, database, tenantIds, token).ConfigureAwait(false);
@@ -257,6 +265,30 @@ internal static class PerTenantPartitionedCleanup
     /// progression rows these are not leftovers of the partition drop, so they are deleted whether or not
     /// anything else was found. A floor table the schema has not been migrated to yet has nothing to delete.
     /// </summary>
+    /// <summary>
+    /// #6007: a removed tenant's recorded high water skips and late events go with it, for the same reason as its
+    /// floors: a re-added tenant restarts its sequence at 1, and its new events would be read as filling the old
+    /// skipped ranges.
+    /// </summary>
+    private static async Task DeleteHighWaterSkipsAsync(string eventsSchema, IMartenDatabase database,
+        IReadOnlyCollection<string> tenantIds, CancellationToken token)
+    {
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            var command = conn.CreateCommand(
+                $"DELETE FROM \"{eventsSchema}\".\"{Events.Schema.EventProgressionSkippingTable.Name}\" WHERE tenant_id = ANY(:tenants);" +
+                $"DELETE FROM \"{eventsSchema}\".\"{Events.Schema.LateEventsTable.Name}\" WHERE tenant_id = ANY(:tenants);");
+            command.Parameters.AddWithValue("tenants", tenantIds.ToArray());
+            await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            // Nothing was ever skipped in a database without the tables.
+        }
+    }
+
     private static async Task DeleteProjectionFloorsAsync(string eventsSchema, IMartenDatabase database,
         IReadOnlyCollection<string> tenantIds, CancellationToken token)
     {
@@ -272,6 +304,33 @@ internal static class PerTenantPartitionedCleanup
         catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
         {
             // Nothing was ever pinned in a database without the table.
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// jasperfx#1215 / #1222: a removed tenant's event-range marks go with it, for the same reason as its floors. A
+    /// re-added tenant restarts its sequence at 1, so a cursor left behind would make a new rewrite of that tenant
+    /// start after events that were never rewritten.
+    /// </summary>
+    private static async Task DeleteEventRangeMarksAsync(string eventsSchema, IMartenDatabase database,
+        IReadOnlyCollection<string> tenantIds, CancellationToken token)
+    {
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            var command = conn.CreateCommand(
+                $"DELETE FROM \"{eventsSchema}\".\"{Events.Schema.EventRangeMarkTable.Name}\" WHERE tenant_id = ANY(:tenants)");
+            command.Parameters.AddWithValue("tenants", tenantIds.ToArray());
+            await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.UndefinedTable)
+        {
+            // Nothing was ever marked in a database without the table.
         }
         finally
         {

@@ -192,24 +192,50 @@ namespace Marten.Events.Schema;
             // fixes the same latent non-idempotency the #4614 partitioned function
             // carried (it emitted `{intType} DEFAULT NULL`); existing partitioned
             // DBs converge cleanly because pg had already stored the canonical form.
+            // #6051: a stream created here, by an append to a new id, has to claim its identity in
+            // mt_streams_identity the way StartStream's dedicated insert does, or its id can be reused once it is
+            // archived. A plain insert, so an id that was claimed already is refused (23505 on mt_streams_identity,
+            // which QuickAppendEventsOperationBase reports as ExistingStreamIdCollisionException).
+            var identityClaim = "";
+            if (_events.EnableStrictStreamIdentityEnforcement)
+            {
+                identityClaim = tenancyStyle == TenancyStyle.Conjoined
+                    ? $@"
+		insert into {databaseSchema}.{StreamIdentityEnforcementTable.TableName} (tenant_id, id) values (tenantid, stream);"
+                    : $@"
+		insert into {databaseSchema}.{StreamIdentityEnforcementTable.TableName} (id) values (stream);";
+            }
+
             var expectedVersionParamType = _events.EnableBigIntEvents ? "bigint" : "integer";
             var expectedVersionParameter =
                 $", expected_version {expectedVersionParamType} DEFAULT NULL::{expectedVersionParamType}";
-            var occVersionSelect = _events.UseExclusiveLockOnConcurrentAppends
-                ? $"select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere} for update;"
-                : $"select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere};";
+            // #6066: the stream row is locked when its version is read, before any event is inserted, on
+            // every append. Without it, each appender's event INSERT took a FOR KEY SHARE lock on the row
+            // through the mt_events foreign key and only then asked for the row lock in the trailing UPDATE.
+            // Two appenders to one stream could each hold the shared lock and wait for the other to release
+            // it, and a FetchForExclusiveWriting queued on the row for FOR UPDATE became part of the same
+            // cycle, so PostgreSQL broke the deadlock by failing one of them (40P01). Taking the lock first
+            // makes appenders and exclusive fetches wait their turn on one lock, and an appender that waited
+            // reads the version its predecessor committed.
+            //
+            // FOR NO KEY UPDATE is the lock the trailing UPDATE takes anyway, and it does not block the
+            // FOR KEY SHARE that inserting events into this stream needs. UseExclusiveLockOnConcurrentAppends
+            // keeps its stronger FOR UPDATE.
+            var streamLock = _events.UseExclusiveLockOnConcurrentAppends ? "for update" : "for no key update";
+            var versionSelect =
+                $"select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere} {streamLock};";
             var expectedVersionCheck = $@"
     if expected_version IS NOT NULL then
         -- COALESCE turns the NULL we get for a brand-new stream into 0, so a
         -- FetchForWriting against a non-existent stream (which sets
         -- ExpectedVersionOnServer = 0) and a StartStream(id, version: 0) both
         -- land on the new-stream branch instead of mis-firing the guard.
-        {occVersionSelect}
+        {versionSelect}
         if COALESCE(event_version, 0) != expected_version then
             RAISE EXCEPTION 'Stream version mismatch on ''%'': expected %, actual %', stream, expected_version, COALESCE(event_version, 0) USING ERRCODE = 'MT003';
         end if;
     else
-        select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere};
+        {versionSelect}
     end if;
 ";
 
@@ -235,7 +261,7 @@ BEGIN{sequenceResolveUpFront}{expectedVersionCheck}
 		-- is a second heap tuple + WAL record per stream creation for no observable gain
 		-- -- nothing outside this transaction can see the intermediate 0. The trailing
 		-- UPDATE below is skipped for this branch via is_new_stream.
-		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, COALESCE(array_length(event_ids, 1), 0), now(), tenantid);
+		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, COALESCE(array_length(event_ids, 1), 0), now(), tenantid);{identityClaim}
     else
         if stream_is_archived then
             RAISE EXCEPTION 'Attempted to append event to archived stream with Id ''%''.', stream USING ERRCODE = 'MT001';

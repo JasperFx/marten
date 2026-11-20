@@ -339,7 +339,7 @@ public class document_store_diagnostics_tests: HostedStoreContext
         // A read-only console question about a tenant that does not exist must not bring that tenant into
         // being, so diagnostics goes through TryFindDatabase and answers with an empty page.
         var schema = $"{SchemaName}_unknown_tenant";
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        await using (var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString))
         {
             await conn.OpenAsync();
             await conn.DropSchemaAsync(schema);
@@ -524,12 +524,19 @@ public class document_store_diagnostics_tests: HostedStoreContext
         // only the metadata filters QueryDocumentsAsync will accept for the type in front of it.
         var host = await BuildHost("metadata", opts =>
         {
+            // Set both ways: these columns are on for every document by default since 10.0 (#5812)
             opts.Schema.For<DiagWidget>().Metadata(m =>
             {
                 m.CorrelationId.Enabled = true;
+                m.CausationId.Enabled = false;
                 m.LastModifiedBy.Enabled = true;
             });
-            opts.Schema.For<User>().MultiTenanted().SoftDeleted();
+            opts.Schema.For<User>().MultiTenanted().SoftDeleted().Metadata(m =>
+            {
+                m.CorrelationId.Enabled = false;
+                m.CausationId.Enabled = false;
+                m.LastModifiedBy.Enabled = false;
+            });
         });
 
         var usage = await GetUsageAsync(host);

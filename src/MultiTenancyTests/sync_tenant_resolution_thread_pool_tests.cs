@@ -166,12 +166,28 @@ public class sync_tenant_resolution_thread_pool_tests
         }
     }
 
+    /// <summary>
+    ///     Runs the burst and answers how long the thread pool went without running a 10 ms heartbeat, counted on a
+    ///     dedicated (non-pool) thread's clock.
+    /// </summary>
+    /// <remarks>
+    ///     Measured against wall-clock time alone, the stall also counted time the whole process was not scheduled,
+    ///     and a busy machine (the local gate runs other suites beside this one) took a clean run past 500 ms while
+    ///     the pool was never starved. A dedicated thread is delayed by the machine as much as the pool heartbeat is,
+    ///     and not at all by pool starvation, so the stall is the number of its ticks that land between two pool ticks.
+    /// </remarks>
     private async Task<TimeSpan> measureBurstAsync(string[] tenantIds, Action<string> open)
     {
         using var stop = new CancellationTokenSource();
-        var heartbeat = Task.Run(() => measureWorstHeartbeatDelayAsync(stop.Token));
+        var clock = Stopwatch.StartNew();
 
-        // Let the heartbeat settle into its loop before the callers arrive
+        var poolTicks = new ConcurrentQueue<TimeSpan>();
+        var dedicatedTicks = new ConcurrentQueue<TimeSpan>();
+        var heartbeat = Task.Run(() => poolHeartbeatAsync(clock, poolTicks, stop.Token));
+        var dedicated = new Thread(() => dedicatedHeartbeat(clock, dedicatedTicks, stop.Token)) { IsBackground = true };
+        dedicated.Start();
+
+        // Let the heartbeats settle into their loops before the callers arrive
         await Task.Delay(100);
 
         var failures = new ConcurrentBag<Exception>();
@@ -193,35 +209,56 @@ public class sync_tenant_resolution_thread_pool_tests
         var burst = stopwatch.Elapsed;
 
         stop.Cancel();
-        var worst = await heartbeat;
+        await heartbeat;
+        dedicated.Join();
+
+        var pool = poolTicks.ToArray();
+        var reference = dedicatedTicks.ToArray();
+        var worstWallClock = TimeSpan.Zero;
+        var worstTicks = 0;
+        for (var i = 1; i < pool.Length; i++)
+        {
+            var gap = pool[i] - pool[i - 1];
+            if (gap > worstWallClock) worstWallClock = gap;
+
+            var from = pool[i - 1];
+            var to = pool[i];
+            var ticks = reference.Count(x => x > from && x < to);
+            if (ticks > worstTicks) worstTicks = ticks;
+        }
+
+        var stall = HeartbeatInterval * worstTicks;
 
         _output.WriteLine(
             $"{tenantIds.Length} callers on {Environment.ProcessorCount} processors: burst took {burst.TotalMilliseconds:N0} ms, " +
-            $"worst heartbeat delay {worst.TotalMilliseconds:N0} ms");
+            $"worst pool heartbeat gap {worstWallClock.TotalMilliseconds:N0} ms wall clock, {stall.TotalMilliseconds:N0} ms on a dedicated thread's clock");
 
         failures.ShouldBeEmpty(string.Join(Environment.NewLine, failures.Select(x => x.ToString())));
 
-        return worst;
+        return stall;
     }
 
-    private static async Task<TimeSpan> measureWorstHeartbeatDelayAsync(CancellationToken token)
-    {
-        var worst = TimeSpan.Zero;
-        var interval = TimeSpan.FromMilliseconds(10);
-        var clock = Stopwatch.StartNew();
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromMilliseconds(10);
 
+    private static async Task poolHeartbeatAsync(Stopwatch clock, ConcurrentQueue<TimeSpan> ticks,
+        CancellationToken token)
+    {
         while (!token.IsCancellationRequested)
         {
-            var before = clock.Elapsed;
-            await Task.Delay(interval, CancellationToken.None);
-            var late = clock.Elapsed - before - interval;
-            if (late > worst)
-            {
-                worst = late;
-            }
+            ticks.Enqueue(clock.Elapsed);
+            await Task.Delay(HeartbeatInterval, CancellationToken.None);
         }
 
-        return worst;
+        ticks.Enqueue(clock.Elapsed);
+    }
+
+    private static void dedicatedHeartbeat(Stopwatch clock, ConcurrentQueue<TimeSpan> ticks, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            ticks.Enqueue(clock.Elapsed);
+            Thread.Sleep(HeartbeatInterval);
+        }
     }
 }
 
@@ -256,11 +293,10 @@ public class sync_master_table_tenant_resolution
             await MasterTableRows.InsertAsync(schema, ["warm", "sync1", "off1"]);
             await MasterTableRows.DisableAsync(schema, "off1");
 
-            // Before anything asynchronous has run, Weasel declines and the lookup falls back
-            tenancy.TryResolveTenant("sync1", out _).ShouldBeFalse();
+            // #6058: before anything asynchronous has run, the control table is provisioned synchronously
+            // (weasel#850), so even the first lookup is synchronous
             store.Options.Tenancy.GetTenant("warm").TenantId.ShouldBe("warm");
 
-            // The fallback provisioned the control table, so from here every lookup is synchronous
             tenancy.TryResolveTenant("missing", out var unknown).ShouldBeTrue();
             unknown.Database.ShouldBeNull();
 
@@ -282,6 +318,135 @@ public class sync_master_table_tenant_resolution
         {
             await MasterTableRows.DropSchemaAsync(schema);
         }
+    }
+
+    // #6058, the cold-process half of #5985 (weasel#850). Red before MasterTableTenancy overrode
+    // TryProvisionControlTableSynchronously: a process whose first touch is synchronous declined every uncached
+    // tenant until something asynchronous had provisioned the control table, and blocked a thread on the
+    // asynchronous lookup for each of them
+    [Fact]
+    public async Task a_cold_process_resolves_its_first_tenant_synchronously()
+    {
+        var schema = "mt_cold_" + Guid.NewGuid().ToString("N")[..10];
+
+        StoreOptions configure(StoreOptions opts)
+        {
+            opts.DisableNpgsqlLogging = true;
+            opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = schema;
+            });
+            return opts;
+        }
+
+        try
+        {
+            // An earlier process built the control table and recorded the tenants
+            await using (var earlier = DocumentStore.For(opts => configure(opts)))
+            {
+                await ((Marten.Storage.MasterTableTenancy)earlier.Options.Tenancy).TenantDatabase
+                    .ApplyAllConfiguredChangesToDatabaseAsync();
+            }
+
+            await MasterTableRows.InsertAsync(schema, ["cold1", "cold2"]);
+
+            // A fresh store is a cold process: nothing asynchronous has run in it
+            await using var store = DocumentStore.For(opts => configure(opts));
+            var tenancy = (Marten.Storage.MasterTableTenancy)store.Options.Tenancy;
+
+            tenancy.TryResolveTenant("cold1", out var cold1).ShouldBeTrue();
+            cold1.Database.ShouldNotBeNull();
+
+            using (var session = store.LightweightSession("cold2"))
+            {
+                session.TenantId.ShouldBe("cold2");
+            }
+
+            tenancy.FindCachedDatabase("cold2").ShouldNotBeNull();
+            Should.Throw<UnknownTenantIdException>(() => store.Options.Tenancy.GetTenant("cold_missing"));
+        }
+        finally
+        {
+            await MasterTableRows.DropSchemaAsync(schema);
+        }
+    }
+
+    [Fact]
+    public async Task a_cold_process_creates_a_missing_control_table_synchronously()
+    {
+        var schema = "mt_cold_" + Guid.NewGuid().ToString("N")[..10];
+
+        await using var store = DocumentStore.For(opts =>
+        {
+            opts.DisableNpgsqlLogging = true;
+            opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = schema;
+            });
+        });
+
+        var tenancy = (Marten.Storage.MasterTableTenancy)store.Options.Tenancy;
+
+        try
+        {
+            // No control table at all yet: the synchronous lookup creates it, then reads it
+            tenancy.TryResolveTenant("nobody", out var nobody).ShouldBeTrue();
+            nobody.Database.ShouldBeNull();
+
+            // The same table the asynchronous migration builds: nothing is left for it to do
+            await tenancy.TenantDatabase.AssertDatabaseMatchesConfigurationAsync();
+
+            await MasterTableRows.InsertAsync(schema, ["created1"]);
+            store.Options.Tenancy.GetTenant("created1").TenantId.ShouldBe("created1");
+        }
+        finally
+        {
+            await MasterTableRows.DropSchemaAsync(schema);
+        }
+    }
+
+    [Fact]
+    public async Task a_cold_process_does_not_create_the_control_table_when_auto_create_is_off()
+    {
+        var schema = "mt_cold_" + Guid.NewGuid().ToString("N")[..10];
+
+        await using var store = DocumentStore.For(opts =>
+        {
+            opts.DisableNpgsqlLogging = true;
+            opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = schema;
+                x.AutoCreate = AutoCreate.None;
+            });
+        });
+
+        var tenancy = (Marten.Storage.MasterTableTenancy)store.Options.Tenancy;
+
+        try
+        {
+            // The operator owns the schema, so nothing is created, and the read fails as the asynchronous one does
+            Should.Throw<PostgresException>(() => tenancy.TryResolveTenant("nobody", out _))
+                .SqlState.ShouldBe(PostgresErrorCodes.UndefinedTable);
+
+            (await controlTableExistsAsync(schema)).ShouldBeFalse();
+        }
+        finally
+        {
+            await MasterTableRows.DropSchemaAsync(schema);
+        }
+    }
+
+    private static async Task<bool> controlTableExistsAsync(string schema)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "select to_regclass(@name) is not null";
+        cmd.Parameters.AddWithValue("name", schema + ".mt_tenant_databases");
+        return (bool)(await cmd.ExecuteScalarAsync())!;
     }
 
     [Fact]
@@ -374,7 +539,7 @@ internal static class SingleServerDatabases
 {
     public static async Task CreateAsync(string[] databaseNames)
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         foreach (var databaseName in databaseNames)
@@ -387,7 +552,7 @@ internal static class SingleServerDatabases
 
     public static async Task DropAsync(string[] databaseNames)
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         foreach (var databaseName in databaseNames)

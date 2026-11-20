@@ -287,7 +287,7 @@ internal sealed class ScratchShards: IAsyncDisposable
         var prefix = "m5986_" + Guid.NewGuid().ToString("N")[..8];
         var names = Enumerable.Range(0, count).Select(i => $"{prefix}_{(char)('a' + i)}").ToArray();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         foreach (var name in names)
@@ -406,7 +406,7 @@ internal sealed class ScratchShards: IAsyncDisposable
     {
         NpgsqlConnection.ClearAllPools();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         foreach (var name in _databaseNames)

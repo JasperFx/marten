@@ -62,6 +62,7 @@ partial class Build : NukeBuild
         .DependsOn(TestStress)
         .DependsOn(TestCompiledQueries)
         .DependsOn(TestSourceGenerator)
+        .DependsOn(TestAotRuntimeJit)
         .DependsOn(TestAotRuntime);
 
     Target TestExtensions => _ => _
@@ -321,6 +322,28 @@ partial class Build : NukeBuild
                     "The Marten AOT runtime smoke failed. A document read path needs runtime code generation again — see the output above for which one.");
             }
         });
+
+    /// <summary>
+    /// The same runtime smoke as <see cref="TestAotRuntime" />, run under the JIT (#6064). The native
+    /// binary takes the refusal path on some checks (an unregistered enum scalar projection, an
+    /// anonymous projection) that a JIT process answers instead, so a wrong answer on that path was
+    /// only ever seen by somebody running the project by hand. LocalGate runs this too.
+    /// </summary>
+    Target TestAotRuntimeJit => _ => _
+        .ProceedAfterFailure()
+        .Executes(() => runAotRuntimeSmokeUnderJit(Configuration, Environment.GetEnvironmentVariable("marten_testing_database")));
+
+    const string AotRuntimeSmokeProject = "src/Marten.AotRuntimeSmoke/Marten.AotRuntimeSmoke.csproj";
+
+    void runAotRuntimeSmokeUnderJit(string configuration, string connectionString, bool noBuild = false)
+    {
+        var arguments = $"run --project {AotRuntimeSmokeProject} -c {configuration} -f net10.0" + (noBuild ? " --no-build" : "");
+        DotNet($"{arguments:nq}",
+            workingDirectory: RootDirectory,
+            environmentVariables: connectionString is null
+                ? null
+                : new Dictionary<string, string>(EnvironmentInfo.Variables) { ["marten_testing_database"] = connectionString });
+    }
 
     /// <summary>
     /// Primary/standby read routing (~2 tests). Needs the streaming-replication pair from

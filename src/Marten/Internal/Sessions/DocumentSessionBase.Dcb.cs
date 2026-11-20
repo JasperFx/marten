@@ -24,12 +24,21 @@ public abstract partial class DocumentSessionBase
     private List<(string TagTable, string TagValue)>? _dcbVersionBumps;
     private HashSet<(string TagTable, string TagValue)>? _dcbVersionBumpKeys;
 
-    internal void CaptureDcbBoundary(IReadOnlyList<DcbTagVersionEntry> rows)
+    // #6035: the boundaries whose events the save has to count again, because a tag they read had no row.
+    // Usually empty.
+    private List<DcbBoundaryRead>? _capturedDcbReads;
+
+    internal void CaptureDcbBoundary(IReadOnlyList<DcbTagVersionEntry> rows, DcbBoundaryRead? read = null)
     {
         _capturedDcbRows ??= new List<DcbTagVersionEntry>(rows.Count);
         for (var i = 0; i < rows.Count; i++)
         {
             _capturedDcbRows.Add(rows[i]);
+        }
+
+        if (read != null)
+        {
+            (_capturedDcbReads ??= []).Add(read);
         }
     }
 
@@ -68,8 +77,10 @@ public abstract partial class DocumentSessionBase
             // The assertion sorts and de-duplicates the rows itself -- see #5280 -- and takes over
             // the bumps so all of the rows are locked in one order.
             QueueOperation(new DcbTagVersionAssertion(Options.EventGraph, asserted,
-                hasBumps ? bumps!.ToArray() : []));
+                hasBumps ? bumps!.ToArray() : [],
+                _capturedDcbReads is { Count: > 0 } ? _capturedDcbReads.ToArray() : null));
             _capturedDcbRows!.Clear();
+            _capturedDcbReads?.Clear();
         }
         else if (hasBumps)
         {
@@ -103,6 +114,7 @@ public abstract partial class DocumentSessionBase
     internal void ForgetPendingDcbBoundaryAssertions()
     {
         _capturedDcbRows?.Clear();
+        _capturedDcbReads?.Clear();
         forgetDcbVersionBumps();
     }
 }

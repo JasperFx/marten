@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Tags;
+using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
@@ -33,6 +34,56 @@ internal readonly record struct DcbTagVersionEntry(
     long LastSeenSequence);
 
 /// <summary>
+/// #6035: what a boundary read when at least one of its tags had no <c>mt_dcb_tag_version</c> row (or a row
+/// still at 0), which the save has to look at again: a row can't say whether those events are still there.
+/// </summary>
+/// <remarks>
+/// A tag can have events and no row: events appended before the table existed, tags added with
+/// <c>AssignTagWhere</c> before #6078, or per-event-type versions a store recorded only after it changed
+/// <see cref="DcbConflictScope"/>. A tombstone of such a stream has no row to move and may not create one,
+/// because it is erasing the value, so nothing would tell a boundary that read those events. The save counts
+/// them again instead. See <see cref="For"/>.
+/// </remarks>
+/// <param name="Query">The boundary's query.</param>
+/// <param name="TenantId">The tenant the boundary read.</param>
+/// <param name="LastSeenSequence">How far the read went.</param>
+/// <param name="EventCount">How many events it read.</param>
+/// <param name="EventTypeNames">The aggregate's event type filter the read applied, if any.</param>
+internal sealed record DcbBoundaryRead(
+    EventTagQuery Query,
+    string TenantId,
+    long LastSeenSequence,
+    int EventCount,
+    string[]? EventTypeNames)
+{
+    /// <summary>
+    /// Non-null when the boundary read events and one of its tags captured 0. Asks nothing of a boundary
+    /// whose tags all had rows, which is the steady state, or of one that read nothing, a first use of the
+    /// tag.
+    /// </summary>
+    public static DcbBoundaryRead? For(IReadOnlyList<DcbTagVersionEntry> entries, string tenantId,
+        int eventCount, string[]? eventTypeNames)
+    {
+        if (eventCount == 0 || entries.Count == 0) return null;
+
+        var anyZero = false;
+        for (var i = 0; i < entries.Count; i++)
+        {
+            if (entries[i].CapturedVersion == 0)
+            {
+                anyZero = true;
+                break;
+            }
+        }
+
+        if (!anyZero) return null;
+
+        var entry = entries[0];
+        return new DcbBoundaryRead(entry.Query, tenantId, entry.LastSeenSequence, eventCount, eventTypeNames);
+    }
+}
+
+/// <summary>
 /// Storage operation that enforces the DCB tag boundary against the
 /// <c>mt_dcb_tag_version</c> rows captured at fetch time, and applies the producer-side
 /// bumps of the tags the save's own events carry. Replaces the racy SELECT-EXISTS over
@@ -45,7 +96,7 @@ internal readonly record struct DcbTagVersionEntry(
 /// by an appended event moves a version, so a boundary conflicts with a later save exactly when
 /// that save appended an event carrying a tag the boundary read -- the DCB append condition.
 /// Bumping every row it read made two boundaries over one tag value conflict even when neither
-/// appended anything the other reads. A no-op <c>DO UPDATE</c> still takes the row lock, so
+/// appended anything the other reads. A no-op update still takes the row lock, so
 /// concurrent boundary saves over one row still serialize: the second waits, then compares
 /// against the committed row.
 ///
@@ -54,38 +105,59 @@ internal readonly record struct DcbTagVersionEntry(
 /// bumps row w can then deadlock against a save that checks w and bumps c.
 ///
 /// #5280: one save carries ONE of these, covering every boundary the session read. A row named
-/// by two boundaries — the same query fetched twice, or two overlapping queries — appears once,
-/// held to the oldest version the session captured for it.
+/// by two boundaries — the same query fetched twice, or two overlapping queries — appears once.
+///
+/// #6035: every value a bump gives a row comes from <c>mt_dcb_tag_version_sequence</c>, so a row never
+/// holds the same value twice, even a row a tombstone deleted and an append created again. The one other
+/// value a row can hold is 0, written by a check that found no row: 0 is what a missing row captures as,
+/// and both mean nothing carrying the tag was appended since. So only a save that saw no row may create
+/// one; a capture of any other value that finds the row gone has lost.
 /// </remarks>
 internal class DcbTagVersionAssertion: IStorageOperation
 {
+    /// <summary>
+    /// #6035: asserted when one session read a row twice and saw it move. Neither read can still be valid,
+    /// no row holds this value, and the entry cannot create a row either: it loses outright.
+    /// </summary>
+    internal const long NeverMatches = -1;
+
     private readonly EventGraph _events;
     private readonly IReadOnlyList<Row> _orderedRows;
+    private readonly IReadOnlyList<DcbBoundaryRead> _reads;
 
     private readonly record struct Row(string TagTable, string TagValue, DcbTagVersionEntry? Captured, bool Bump);
 
     public DcbTagVersionAssertion(
         EventGraph events,
         IReadOnlyList<DcbTagVersionEntry> capturedEntries,
-        IReadOnlyList<(string TagTable, string TagValue)> bumps)
+        IReadOnlyList<(string TagTable, string TagValue)> bumps,
+        IReadOnlyList<DcbBoundaryRead>? reads = null)
     {
         _events = events;
+        _reads = reads ?? [];
 
-        // Oldest capture first within a (tag_table, tag_value) run, so collapsing the run keeps the
-        // strictest check of the row: every read the session made has to still be valid, not just
-        // the most recent one.
-        var captured = new DcbTagVersionEntry[capturedEntries.Count];
-        for (var i = 0; i < capturedEntries.Count; i++) captured[i] = capturedEntries[i];
-        Array.Sort(captured, static (a, b) =>
+        var rows = new Dictionary<(string, string), Row>(capturedEntries.Count + bumps.Count);
+        for (var i = 0; i < capturedEntries.Count; i++)
         {
-            var byKey = compareKeys(a.TagTable, a.TagValue, b.TagTable, b.TagValue);
-            return byKey != 0 ? byKey : a.CapturedVersion.CompareTo(b.CapturedVersion);
-        });
+            var entry = capturedEntries[i];
+            var key = (entry.TagTable, entry.TagValue);
+            if (!rows.TryGetValue(key, out var existing))
+            {
+                rows[key] = new Row(entry.TagTable, entry.TagValue, entry, false);
+                continue;
+            }
 
-        var rows = new Dictionary<(string, string), Row>(captured.Length + bumps.Count);
-        foreach (var entry in captured)
-        {
-            rows.TryAdd((entry.TagTable, entry.TagValue), new Row(entry.TagTable, entry.TagValue, entry, false));
+            // #6035: two reads that saw different values mean the row moved between them, so the older read
+            // is already stale, and every read the session made has to still be valid. Asserting the lower
+            // value used to do that, until a tombstone could delete a row: a read of 7 and a later read of "no
+            // row" would have asserted the 0, created the row and won.
+            if (existing.Captured!.Value.CapturedVersion != entry.CapturedVersion)
+            {
+                rows[key] = existing with
+                {
+                    Captured = existing.Captured.Value with { CapturedVersion = NeverMatches }
+                };
+            }
         }
 
         foreach (var (tagTable, tagValue) in bumps)
@@ -113,7 +185,8 @@ internal class DcbTagVersionAssertion: IStorageOperation
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        var schema = _events.DatabaseSchemaName;
+        var table = $"{_events.DatabaseSchemaName}.{DcbTagVersionTable.TableName}";
+        var nextVersion = DcbTagVersionTable.NextVersionSql(_events);
         var tenantId = session.TenantId;
 
         for (var i = 0; i < _orderedRows.Count; i++)
@@ -125,43 +198,69 @@ internal class DcbTagVersionAssertion: IStorageOperation
             if (i > 0) builder.StartNewCommand();
 
             var row = _orderedRows[i];
+            var captured = row.Captured?.CapturedVersion;
 
-            // What the row holds once this save commits, and what a missing row is created with.
-            // Version 0 means "no event carrying this tag has been appended", whether or not the
-            // row exists, so a check that creates the row creates it at the version it captured.
-            var captured = row.Captured?.CapturedVersion ?? 0;
-            var increment = row.Bump ? 1 : 0;
+            if (captured is { } version and not 0)
+            {
+                // #6035: a boundary that saw a row. Only that row, still at that value, will do: a missing row
+                // was deleted by a tombstone since, and creating it again would match a stale read. The
+                // UPDATE takes the row lock even when it leaves the version alone, waits out a concurrent
+                // holder, and evaluates the WHERE against the committed row.
+                builder.Append("update ");
+                builder.Append(table);
+                builder.Append(row.Bump ? $" set version = {nextVersion}" : " set version = version");
+                builder.Append(" where tag_table = ");
+                builder.AppendParameter(row.TagTable);
+                builder.Append(" and tag_value = ");
+                builder.AppendParameter(row.TagValue);
+                builder.Append(" and tenant_id = ");
+                builder.AppendParameter(tenantId);
+                builder.Append(" and version = ");
+                builder.AppendParameter(version);
+                builder.Append(" returning 1");
+                continue;
+            }
 
-            // INSERT … ON CONFLICT DO UPDATE WHERE handles both cases:
+            // A bump, or a boundary that saw no row (captured 0). INSERT … ON CONFLICT DO UPDATE handles both:
             //   - row missing → INSERT succeeds. Concurrent first-time creators serialize on the
             //     unique-PK insert, and the loser then takes the ON CONFLICT branch.
             //   - row exists → ON CONFLICT branch. It locks the row even when the update changes
             //     nothing, waits out a concurrent holder, and evaluates the WHERE against the
-            //     committed row -- so a save that observed a stale version returns no row.
+            //     committed row -- so a save that observed "no row" and finds one returns no row.
+            //
+            // A check that creates the row creates it at 0, not from the sequence, so a second check-only
+            // boundary over the same key, which also captured 0, still matches it: only an appended event
+            // moves a version.
             builder.Append("insert into ");
-            builder.Append(schema);
-            builder.Append(".mt_dcb_tag_version (tag_table, tag_value, tenant_id, version) values (");
+            builder.Append(table);
+            builder.Append(" (tag_table, tag_value, tenant_id, version) values (");
             builder.AppendParameter(row.TagTable);
             builder.Append(", ");
             builder.AppendParameter(row.TagValue);
             builder.Append(", ");
             builder.AppendParameter(tenantId);
-            builder.Append(", ");
-            builder.AppendParameter(captured + increment);
+            builder.Append(row.Bump ? $", {nextVersion}" : ", 0");
+
             // ON CONFLICT DO UPDATE references the existing row via the
             // unqualified table name (`mt_dcb_tag_version.version`) — Postgres
-            // does not accept the schema prefix in this clause.
+            // does not accept the schema prefix in this clause. `excluded.version` is the value the insert
+            // drew, so a bump draws one value either way.
             builder.Append(row.Bump
-                ? ") on conflict (tag_table, tag_value, tenant_id) do update set version = mt_dcb_tag_version.version + 1"
+                ? ") on conflict (tag_table, tag_value, tenant_id) do update set version = excluded.version"
                 : ") on conflict (tag_table, tag_value, tenant_id) do update set version = mt_dcb_tag_version.version");
 
             if (row.Captured.HasValue)
             {
-                builder.Append(" where mt_dcb_tag_version.version = ");
-                builder.AppendParameter(captured);
+                builder.Append(" where mt_dcb_tag_version.version = 0");
             }
 
             builder.Append(" returning 1");
+        }
+
+        foreach (var read in _reads)
+        {
+            builder.StartNewCommand();
+            DcbBoundaryEventsSql.WriteCount(builder, _events, read);
         }
     }
 
@@ -194,9 +293,29 @@ internal class DcbTagVersionAssertion: IStorageOperation
             }
         }
 
+        DcbBoundaryRead? staleRead = null;
+        foreach (var read in _reads)
+        {
+            await reader.NextResultAsync(token).ConfigureAwait(false);
+            var remaining = await reader.ReadAsync(token).ConfigureAwait(false)
+                ? await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false)
+                : 0;
+
+            // Fewer, not different: the read can have kept fewer events than the query matches, if an
+            // event of a type this application no longer knows was dropped as it was read.
+            if (remaining < read.EventCount)
+            {
+                staleRead ??= read;
+            }
+        }
+
         if (conflicted.HasValue)
         {
             exceptions.Add(new DcbConcurrencyException(conflicted.Value.Query, conflicted.Value.LastSeenSequence));
+        }
+        else if (staleRead != null)
+        {
+            exceptions.Add(new DcbConcurrencyException(staleRead.Query, staleRead.LastSeenSequence));
         }
     }
 

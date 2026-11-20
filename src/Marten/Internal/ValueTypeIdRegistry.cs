@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal.ClosedShape;
 using Marten.Internal.Sessions;
@@ -78,7 +79,8 @@ internal static class ValueTypeIdRegistry
         s_providers[(typeof(TDoc), typeof(TWrapper))] = new Func<DocumentMapping, ValueTypeInfo,
             DocumentProvider<TDoc>>((mapping, vt) =>
             ClosedShapeRegistration.BuildProviderFor<TDoc, TWrapper>(mapping,
-                new ValueTypeIdentification<TDoc, TWrapper, TInner>(mapping.IdMember!, vt, mapping.DocumentType)));
+                new ValueTypeIdentification<TDoc, TWrapper, TInner>(mapping.IdMember!, vt, mapping.DocumentType,
+                    SequentialGuid.PostgresOrder)));
     }
 
     public static QuerySession.ILoader? TryLoader(Type wrapper)

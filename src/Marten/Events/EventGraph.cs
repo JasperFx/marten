@@ -299,7 +299,11 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool UseAdvisoryLockTransaction { get; set; }
 
     public bool EnableAdvancedAsyncTracking { get; set; }
-    public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
+    /// <summary>
+    /// Events marked as skipped (<c>mt_events.is_skipped</c>) are left out of projections and subscriptions.
+    /// Defaults to <c>true</c> since 10.0 (#5812). The column is always created either way.
+    /// </summary>
+    public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; } = true;
 
     /// <summary>
     /// When enabled, the daemon writes heartbeat, agent_status, pause_reason, running_on_node and the
@@ -330,7 +334,19 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public Action<IReadOnlyList<IEvent>>? AppendObserver { get; set; }
 
 
-    public bool UseArchivedStreamPartitioning { get; set; }
+    private bool? _useArchivedStreamPartitioning;
+
+    /// <summary>
+    /// Partition mt_events and mt_streams (and the other event tables) by <c>is_archived</c>. Defaults to
+    /// <c>true</c> since 10.0 (#5812), except under <see cref="UseTenantPartitionedEvents"/>, where it is off
+    /// unless you set it yourself (and then <c>StoreOptions</c> validation refuses the combination).
+    /// </summary>
+    public bool UseArchivedStreamPartitioning
+    {
+        get => _useArchivedStreamPartitioning ?? !UseTenantPartitionedEvents;
+        set => _useArchivedStreamPartitioning = value;
+    }
+
     public bool UseListenNotifyForEventAppends { get; set; }
 
     /// <summary>
@@ -375,16 +391,10 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public DcbConflictScope DcbConflictScope { get; set; } = DcbConflictScope.TagValueAndEventType;
 
     /// <summary>
-    /// When enabled, adds FOR UPDATE to the stream version SELECT inside
-    /// mt_quick_append_events for OCC (optimistic concurrency) appends.
-    /// This prevents a READ COMMITTED race where two concurrent transactions
-    /// both pass the version check before either commits, both call nextval(),
-    /// and the loser fails with a 23505 duplicate key violation — leaving a
-    /// permanent gap in mt_events_sequence that stalls QueryForNonStaleData.
-    /// With this option the losing transaction blocks at the SELECT until the
-    /// winner commits, reads the updated version, and raises MT003 before any
-    /// nextval() call. Non-OCC appends are unaffected.
-    /// Defaults to false to preserve existing throughput characteristics.
+    /// Takes FOR UPDATE instead of FOR NO KEY UPDATE on the stream's mt_streams row when
+    /// mt_quick_append_events reads the stream version. Since #6066 the function locks that row
+    /// before inserting any events either way, so concurrent appends to one stream already wait
+    /// their turn and an optimistic loser raises MT003 before any nextval() call. Defaults to false.
     /// </summary>
     public bool UseExclusiveLockOnConcurrentAppends { get; set; }
 
@@ -395,11 +405,17 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <see cref="ExistingStreamIdCollisionException"/> to fire on
     /// <c>StartStream</c> when the same identity has already been used — even after
     /// the original stream was archived under <see cref="UseArchivedStreamPartitioning"/>.
-    /// Defaults to false. See https://martendb.io/events/archiving for the
-    /// recommended use cases (typically only needed when stream identities are
-    /// produced outside Marten — e.g. user-supplied string keys).
+    /// Defaults to <c>true</c> since 10.0 (#5812), along with
+    /// <see cref="UseArchivedStreamPartitioning"/>, except under <see cref="UseTenantPartitionedEvents"/>,
+    /// where it is off unless you set it yourself. See https://martendb.io/events/archiving.
     /// </summary>
-    public bool EnableStrictStreamIdentityEnforcement { get; set; } = false;
+    public bool EnableStrictStreamIdentityEnforcement
+    {
+        get => _enableStrictStreamIdentityEnforcement ?? !UseTenantPartitionedEvents;
+        set => _enableStrictStreamIdentityEnforcement = value;
+    }
+
+    private bool? _enableStrictStreamIdentityEnforcement;
 
     /// <summary>
     /// Per-tenant partitioning master flag (CritterStack #209 / Marten #4596).
@@ -450,7 +466,11 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     public bool EnableBigIntEvents { get; set; } = false;
 
-    public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
+    /// <summary>
+    /// Run the side effects (<c>RaiseSideEffects()</c>) of aggregation projections in the Inline lifecycle too.
+    /// Defaults to <c>true</c> since 10.0 (#5812).
+    /// </summary>
+    public bool EnableSideEffectsOnInlineProjections { get; set; } = true;
 
     /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
@@ -706,6 +726,8 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                             if (Interlocked.CompareExchange(ref bootstrapped, 1, 0) != 0) return;
                             using var cmd = connection.CreateCommand();
                             cmd.CommandText = "CREATE EXTENSION IF NOT EXISTS hstore;";
+                            // marten#6060: an extension install is provisioning, not a query
+                            cmd.WithProvisioningTimeout(Options.Advanced.Migrator.ProvisioningCommandTimeout);
                             cmd.ExecuteNonQuery();
                             connection.ReloadTypes();
                         },
@@ -714,6 +736,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                             if (Interlocked.CompareExchange(ref bootstrapped, 1, 0) != 0) return;
                             await using var cmd = connection.CreateCommand();
                             cmd.CommandText = "CREATE EXTENSION IF NOT EXISTS hstore;";
+                            cmd.WithProvisioningTimeout(Options.Advanced.Migrator.ProvisioningCommandTimeout);
                             await cmd.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
                             await connection.ReloadTypesAsync(CancellationToken.None).ConfigureAwait(false);
                         });

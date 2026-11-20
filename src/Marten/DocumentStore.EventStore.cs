@@ -638,14 +638,28 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     [UnconditionalSuppressMessage("AOT", "IL3050",
         Justification = "Uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
     private IEnumerable<ISqlFragment> buildEventLoaderFilters(EventFilterable filterable)
+        => buildEventLoaderFilters(filterable.IncludedEventTypes, filterable.StreamType,
+            filterable.IncludeArchivedEvents,
+            filterable is IAggregateProjection aggregateProjection ? [aggregateProjection.AggregateType] : []);
+
+    /// <summary>
+    ///     The daemon loader's filters, from their parts. The per-identity rebuild loader (marten#6071) builds the
+    ///     same filters from an <see cref="IdentityRebuildEventRequest" />, which carries no projection.
+    /// </summary>
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "Uses Type.MakeGenericType for Compacted<T>, as the daemon loader always has. AOT consumers supply source-generator-backed serializer impls per the AOT publishing guide.")]
+    [UnconditionalSuppressMessage("Trimming", "IL2055",
+        Justification = "Compacted<T> over a registered aggregate type, as the daemon loader always has.")]
+    internal IEnumerable<ISqlFragment> buildEventLoaderFilters(IReadOnlyCollection<Type> includedEventTypes,
+        Type? streamType, bool includeArchivedEvents, IReadOnlyCollection<Type> aggregateTypes)
     {
-        if (filterable.IncludedEventTypes.Any() && !filterable.IncludedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
+        if (includedEventTypes.Any() && !includedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
         {
             // We want to explicitly add in the archived event
-            var allTypes = filterable.IncludedEventTypes.Concat([typeof(Archived)]).ToArray();
-            if (filterable is IAggregateProjection aggregateProjection)
+            var allTypes = includedEventTypes.Concat([typeof(Archived)]).ToArray();
+            foreach (var aggregateType in aggregateTypes)
             {
-                var compactedType = typeof(Compacted<>).MakeGenericType(aggregateProjection.AggregateType);
+                var compactedType = typeof(Compacted<>).MakeGenericType(aggregateType);
                 allTypes = allTypes.Concat([compactedType])
                     .ToArray();
             }
@@ -655,12 +669,12 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
         }
 
-        if (filterable.StreamType != null)
+        if (streamType != null)
         {
-            yield return new AggregateTypeFilter(filterable.StreamType, Options.EventGraph);
+            yield return new AggregateTypeFilter(streamType, Options.EventGraph);
         }
 
-        if (!filterable.IncludeArchivedEvents)
+        if (!includeArchivedEvents)
         {
             yield return IsNotArchivedFilter.Instance;
         }

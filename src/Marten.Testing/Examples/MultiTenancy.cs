@@ -82,6 +82,7 @@ public class MultiTenancy
         using (var query = store.QuerySession("tenant1"))
         {
             (await query.Query<User>()
+                .OrderBy(x => x.UserName)
                 .Select(x => x.UserName)
                 .ToListAsync())
                 .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
@@ -92,9 +93,10 @@ public class MultiTenancy
         using (var query = store.QuerySession("tenant2"))
         {
             (await query.Query<User>()
+                .OrderBy(x => x.UserName)
                 .Select(x => x.UserName)
                 .ToListAsync())
-                .ShouldHaveTheSameElementsAs("Jill", "Frank");
+                .ShouldHaveTheSameElementsAs("Frank", "Jill");
         }
     }
 
@@ -175,6 +177,7 @@ public class MultiTenancy
         using (var query = store.QuerySession("tenant1"))
         {
             (await query.Query<User>()
+                .OrderBy(x => x.UserName)
                 .Select(x => x.UserName)
                 .ToListAsync())
                 .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
@@ -185,9 +188,10 @@ public class MultiTenancy
         using (var query = store.QuerySession("tenant2"))
         {
             (await query.Query<User>()
+                .OrderBy(x => x.UserName)
                 .Select(x => x.UserName)
                 .ToListAsync())
-                .ShouldHaveTheSameElementsAs("Jill", "Frank");
+                .ShouldHaveTheSameElementsAs("Frank", "Jill");
         }
     }
 

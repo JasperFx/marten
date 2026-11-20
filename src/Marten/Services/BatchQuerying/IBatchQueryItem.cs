@@ -17,4 +17,9 @@ internal interface IBatchQueryItem
     ///     Runs after the batch's reader is closed. See <see cref="IFinishesAfterTheReader{T}" />.
     /// </summary>
     Task FinishAsync(IMartenSession session, CancellationToken token);
+
+    /// <summary>
+    ///     Finish this item with the batch's failure, unless it already has a result.
+    /// </summary>
+    void Fail(System.Exception exception, CancellationToken token);
 }

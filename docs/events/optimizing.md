@@ -26,8 +26,8 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection("some connection string");
 
-    // Turn on the PostgreSQL table partitioning for
-    // hot/cold storage on archived events
+    // PostgreSQL table partitioning for hot/cold storage
+    // on archived events. On by default since Marten 10
     opts.Events.UseArchivedStreamPartitioning = true;
 
     // Use the *much* faster workflow for appending events
@@ -202,6 +202,32 @@ state that is durable only if that commit happens to succeed. Deferring the writ
 removes the hazard rather than mitigating it: a rolled-back commit simply leaves no entry, and the next
 fetch reloads from the database.
 
+### Live aggregates <Badge type="tip" text="10.0" />
+
+An aggregate with no stored snapshot, built Live on every fetch, can be enrolled the same way:
+
+```csharp
+// No Snapshot<Order>() registration: Order is built Live
+opts.Events.CacheAggregatesForWriting<Order>();
+```
+
+A hit reads the stream version and only the events after the cached version, and folds them onto the cached
+aggregate, instead of reading and folding the whole stream. That is the case of a chain of commands over one
+stream, each in its own session: every hop after the first reads only what the hop before it appended. The
+aggregate goes into the cache after a successful commit, at the version it was fetched at, so the next fetch
+reads that session's own events as part of its delta. An archived stream is never served from the cache.
+
+Before Marten 10, enrolling a Live aggregate was accepted and did nothing.
+
+### Which fetches use it <Badge type="tip" text="10.0" />
+
+Every fetch for writing of an enrolled type uses the cache: `FetchForWriting(id)`, `FetchForExclusiveWriting(id)`,
+`FetchForWriting(id, expectedVersion)`, the same calls through a batch query, and `FetchManyForWriting`.
+Wolverine's aggregate handler workflow calls the expected-version overload when the command carries a version.
+The expected version is checked against the stream's version in the database, not the cached aggregate's.
+
+Before Marten 10 only `FetchForWriting(id)` and `FetchForExclusiveWriting(id)` used it.
+
 ### What the cache actually removes under Inline
 
 Unlike Async there is no delta query to shrink here, so the entire value of the cache under Inline is the
@@ -356,8 +382,9 @@ for how it behaves and how to choose a value.
 ## Distributed Async Projections with Wolverine
 
 By default, async projection and subscription processing is coordinated across your application cluster using
-Marten's built-in "Hot/Cold" leader election. An alternative is to use Wolverine's more sophisticated agent
-distribution to spread projection work across all nodes in your application cluster:
+Marten's built-in "Hot/Cold" leader election. That is failover only: the first node to start usually runs all of the
+projection work, and another node takes over only when it dies. If you run more than one node, we recommend
+Wolverine's agent distribution, which spreads projection work across all nodes in your application cluster:
 
 ```cs
 builder.Services.AddMarten(opts =>
@@ -372,7 +399,8 @@ builder.Services.AddMarten(opts =>
 
 This eliminates single-node bottlenecks in multi-instance deployments by distributing projection shards
 across available nodes rather than centralizing all processing on the elected leader. See the
-[Wolverine integration documentation](https://wolverinefx.net/guide/durability/marten/event-sourcing.html)
-for more details.
+[Wolverine distribution documentation](https://wolverinefx.net/guide/durability/marten/distribution.html)
+for more details. [CritterWatch](https://critterwatch.jasperfx.net) adds monitoring and management of the
+projections and subscriptions across the fleet, but the distribution works without it.
 
 For more on this topic, see [Wolverine-managed distribution](https://jeremydmiller.com/2025/06/02/making-event-sourcing-with-marten-go-faster/).

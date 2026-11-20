@@ -44,6 +44,14 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
             return true;
         }
 
+        // #6051: an append that creates its stream claims the id in mt_streams_identity, and an id claimed
+        // already is refused there whatever the action was. That is a reused stream identity, as it is for Start.
+        if (pg is { SqlState: PostgresErrorCodes.UniqueViolation, TableName: StreamIdentityEnforcementTable.TableName })
+        {
+            transformed = new ExistingStreamIdCollisionException((object)Stream.Key ?? Stream.Id, Stream.AggregateType);
+            return true;
+        }
+
         // Two Starts can both pass the function's MT003 check before either commits; the loser's
         // mt_streams insert then raises 23505 instead, and must surface exactly as MT003 would.
         if (pg is { SqlState: OptimisticVersionMismatchSqlState } || IsLostStartRace(pg))
@@ -93,11 +101,8 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
 
     private bool IsLostStartRace(PostgresException? pg)
         => Stream.ActionType == StreamActionType.Start
-           && pg is
-           {
-               SqlState: PostgresErrorCodes.UniqueViolation,
-               TableName: StreamsTable.TableName or StreamIdentityEnforcementTable.TableName
-           };
+           && pg is { SqlState: PostgresErrorCodes.UniqueViolation }
+           && StreamsTable.IsStreamCollisionTable(pg.TableName);
 
     // 9.0 (#4385): per-batch column-array rentals from ArrayPool<T>.Shared, returned in
     // Dispose() once the whole unit of work is finished. NOT in PostprocessAsync: the resilience
@@ -407,7 +412,15 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         var events = Stream.Events;
         var count = events.Count;
         var headers = rentColumn<byte[]>(count);
-        for (int i = 0; i < count; i++) headers[i] = SerializeToUtf8(session.Serializer, events[i].Headers);
+        // An event without headers is stored as SQL NULL, as the rich append path and the bulk appender
+        // store it. Serializing the null would store the jsonb literal `null`, which every read then hands
+        // to the serializer as a Dictionary<string, object> -- a type a source-generated resolver for an
+        // AOT app has no reason to know about.
+        for (int i = 0; i < count; i++)
+        {
+            var eventHeaders = events[i].Headers;
+            headers[i] = eventHeaders is null ? null! : SerializeToUtf8(session.Serializer, eventHeaders);
+        }
 
         var param = builder.AppendParameter<IList<byte[]>>(headers);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;

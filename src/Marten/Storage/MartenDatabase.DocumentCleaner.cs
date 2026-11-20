@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten.Events;
+using Marten.Events.Operations;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -59,6 +61,8 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         // skip everything appended in between. CompletelyRemoveAllAsync still drops the table.
         var tables = (await conn.ExistingTablesAsync("mt_%", schemas, ct: ct).ConfigureAwait(false))
             .Where(x => !x.Name.EqualsIgnoreCase(ProjectionFloorTable.Name))
+            // jasperfx#1215 / #1222: the same goes for the ceilings and cursors of rewrites and backfills
+            .Where(x => !x.Name.EqualsIgnoreCase(EventRangeMarkTable.Name))
             .ToList();
 
         if (!tables.Any())
@@ -196,14 +200,32 @@ IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_streams' AND table_schema = '{Options.Events.DatabaseSchemaName}')
 THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.mt_streams CASCADE; END IF;
 IF EXISTS(SELECT * FROM information_schema.tables
+WHERE table_name = '{StreamIdentityEnforcementTable.TableName}' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN TRUNCATE TABLE {Options.Events.DatabaseSchemaName}.{StreamIdentityEnforcementTable.TableName}; END IF;
+IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = 'mt_event_progression' AND table_schema = '{Options.Events.DatabaseSchemaName}')
 THEN delete from {Options.Events.DatabaseSchemaName}.mt_event_progression; END IF;
+IF EXISTS(SELECT * FROM information_schema.tables
+WHERE table_name = '{EventProgressionSkippingTable.Name}' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN delete from {Options.Events.DatabaseSchemaName}.{EventProgressionSkippingTable.Name}; END IF;
+IF EXISTS(SELECT * FROM information_schema.tables
+WHERE table_name = '{LateEventsTable.Name}' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN delete from {Options.Events.DatabaseSchemaName}.{LateEventsTable.Name}; END IF;
 END; $$;
 ";
     }
 
+    /// <summary>
+    ///     The same delete as <c>IEventStoreOperations.TombstoneStream</c>, run outside a session: the stream's tag
+    ///     rows, events, stream row and identity row, and (#6078) its DCB tag versions, which move, and are deleted
+    ///     where no other stream carries the tag. See <see cref="DeleteStreamOperation" />.
+    /// </summary>
+    /// <remarks>
+    ///     Under conjoined tenancy with no tenant, the stream is deleted in every tenant that has one with this id,
+    ///     one tenant at a time in one transaction, as the delete always reached all of them.
+    /// </remarks>
     private async Task DeleteSingleEventStreamAsync<T>(T streamId, string? tenantId = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default) where T : notnull
     {
         if (typeof(T) != Options.EventGraph.GetStreamIdType())
         {
@@ -211,38 +233,44 @@ END; $$;
                 $"{nameof(streamId)} should  be of type {Options.EventGraph.GetStreamIdType()}", nameof(streamId));
         }
 
+        await EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
+
         await using var conn = CreateConnection();
-        var streamsWhere = "id = :id";
-        var eventsWhere = "stream_id = :id";
-
-        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
-        {
-            var tenantPart = " AND tenant_id = :tenantId";
-            streamsWhere += tenantPart;
-            eventsWhere += tenantPart;
-        }
-
-        // The stream's DCB tag rows go first: each mt_event_tag_* table has a foreign key to mt_events that
-        // does not cascade. Under conjoined tenancy the tag rows are matched on (seq_id, tenant_id), because
-        // seq_id alone is not an event under per-tenant sequences (#5234).
-        var schema = Options.Events.DatabaseSchemaName;
-        var tagKey = Options.Events.TenancyStyle == TenancyStyle.Conjoined ? "seq_id, tenant_id" : "seq_id";
-        var tagDeletes = Options.EventGraph.DcbStorageMode == DcbStorageMode.HStore
-            ? ""
-            : string.Concat(Options.EventGraph.TagTypes.Select(tagType =>
-                $"delete from {schema}.mt_event_tag_{tagType.TableSuffix} where ({tagKey}) in (select {tagKey} from {schema}.mt_events where {eventsWhere});"));
-
-        var cmd = conn.CreateCommand(
-            $"{tagDeletes}delete from {schema}.mt_events where {eventsWhere};delete from {schema}.mt_streams where {streamsWhere}");
-        cmd.AddNamedParameter("id", streamId);
-
-        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
-        {
-            cmd.AddNamedParameter("tenantId", tenantId);
-        }
-
         await conn.OpenAsync(ct).ConfigureAwait(false);
+        await using var tx = await conn.BeginTransactionAsync(ct).ConfigureAwait(false);
 
-        await cmd.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        var tenants = new List<string>();
+        if (Options.Events.TenancyStyle != TenancyStyle.Conjoined)
+        {
+            tenants.Add(tenantId ?? JasperFx.StorageConstants.DefaultTenantId);
+        }
+        else if (tenantId.IsNotEmpty())
+        {
+            tenants.Add(tenantId);
+        }
+        else
+        {
+            var find = conn.CreateCommand(
+                $"select distinct tenant_id from {Options.Events.DatabaseSchemaName}.{StreamsTable.TableName} where id = :id order by tenant_id", tx);
+            find.AddNamedParameter("id", streamId);
+            await using var reader = await find.ExecuteReaderAsync(ct).ConfigureAwait(false);
+            while (await reader.ReadAsync(ct).ConfigureAwait(false))
+            {
+                tenants.Add(await reader.GetFieldValueAsync<string>(0, ct).ConfigureAwait(false));
+            }
+        }
+
+        foreach (var tenant in tenants)
+        {
+            var builder = new BatchBuilder { TenantId = tenant };
+            new DeleteStreamOperation(Options.EventGraph, streamId, tenant).ConfigureCommand(builder, tenant);
+
+            await using var batch = builder.Compile();
+            batch.Connection = conn;
+            batch.Transaction = tx;
+            await batch.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
+
+        await tx.CommitAsync(ct).ConfigureAwait(false);
     }
 }

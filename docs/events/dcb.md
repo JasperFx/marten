@@ -391,9 +391,11 @@ The consistency check only detects events appended **after the read that carry a
 Marten 9.4 added a new schema object — `mt_dcb_tag_version` — to fix [#4591](https://github.com/JasperFx/marten/issues/4591). Deployments with `AutoCreate.None` must run `db-patch` / `db-apply` before deploying 9.4. See [Migration Guide → 9.4 schema migration](/migration-guide#required-schema-migration-dcb-tag-version-side-table).
 :::
 
-Internally, `FetchForWritingByTags` records the captured version of every tag value referenced by the query in a side table (`mt_dcb_tag_version`, one row per `(tag_table, tag_value, tenant_id)`). A version only moves when an event carrying that tag value is appended: every save that appends a tagged event — boundary or otherwise — bumps the row of each tag value its events carry. That's what keeps a plain `session.Events.Append(streamId, taggedEvent)` from silently committing past an in-flight boundary fetch held by another session.
+Internally, `FetchForWritingByTags` records the captured version of every tag value referenced by the query in a side table (`mt_dcb_tag_version`, one row per `(tag_table, tag_value, tenant_id)`). A version moves when an event carrying that tag value is appended, or deleted by `TombstoneStream`: every save that appends a tagged event — boundary or otherwise — moves the row of each tag value its events carry, and a tombstone moves the rows of the tag values its deleted events carried, so a boundary that read them conflicts. Archiving or un-archiving a stream moves the rows of its tag values too, because a tag read leaves archived events out, and so does `AssignTagWhere` for the tag it assigns. Those three create a row for a tag that has none. `DeleteSingleEventStreamAsync` does what a tombstone does. That's what keeps a plain `session.Events.Append(streamId, taggedEvent)` from silently committing past an in-flight boundary fetch held by another session.
 
-At `SaveChangesAsync` time a boundary save emits an `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured RETURNING 1` for each captured row. For a row the save's own events do not carry, the update leaves the version as it is: the statement exists to **lock** the row and **compare** it. The row-level lock plus the captured-version predicate is the serialization point. Two concurrent boundary saves over the same tag value take turns; the second waits for the first to commit and then compares against the committed row, so it fails with `DcbConcurrencyException` only if the first appended an event carrying that tag value. This works at PostgreSQL's default `READ COMMITTED` isolation; no `SERIALIZABLE`, no advisory locks.
+Every new version comes from one sequence per schema, `mt_dcb_tag_version_sequence`, so a value never repeats, even on a row that was deleted and created again. That is what lets a tombstone delete rows (see [what a tombstone erases](#what-a-tombstone-erases)). The version is not a count of commits. The sequence starts above anything a Marten 9 row could have counted up to, and rows written before keep their values until the next append moves them.
+
+At `SaveChangesAsync` time a boundary save emits one statement per captured row that locks the row and checks it still holds the captured version (`… WHERE version = $captured RETURNING 1`). A boundary that saw no row may create it; one that saw a row and finds it gone has lost. For a row the save's own events do not carry, the update leaves the version as it is: the statement exists to **lock** the row and **compare** it. The row-level lock plus the captured-version predicate is the serialization point. Two concurrent boundary saves over the same tag value take turns; the second waits for the first to commit and then compares against the committed row, so it fails with `DcbConcurrencyException` only if the first appended an event carrying that tag value. This works at PostgreSQL's default `READ COMMITTED` isolation; no `SERIALIZABLE`, no advisory locks.
 
 The rows a save checks and the rows its events bump are locked together, in one sorted order, so two saves that each check a tag value the other one appends to cannot deadlock: one of them commits, and the other fails with `DcbConcurrencyException`.
 
@@ -401,11 +403,42 @@ The rows a save checks and the rows its events bump are locked together, in one 
 Before 9.60 the check also bumped every row it read. Two boundaries reading the same tag value therefore always conflicted, even when neither appended anything the other reads, and two saves that each read a tag the other appended to could deadlock instead of failing cleanly ([#5887](https://github.com/JasperFx/marten/issues/5887)). If you relied on a boundary save invalidating every concurrent boundary over the same tag value, append an event carrying that tag value.
 :::
 
-A save asserts each row once, however many boundaries named it. Fetching one query twice on a session, or fetching two queries that overlap on a tag value, is not a conflict with itself — the oldest captured version of the row is the one enforced, so every read the session made still has to be valid.
+A save asserts each row once, however many boundaries named it. Fetching one query twice on a session, or fetching two queries that overlap on a tag value, is not a conflict with itself as long as both reads saw the same version. If the row moved between the two reads, the older read is already stale, and the save throws `DcbConcurrencyException`.
 
 A boundary that decides there is **nothing to append** is not a save at all as far as the side table is concerned. The check guards an append, so a session that fetches a boundary and then calls `SaveChangesAsync()` without appending anything leaves `mt_dcb_tag_version` exactly as it found it, and never throws `DcbConcurrencyException` — even if another session moved the boundary in the meantime. Two sessions can reach the same "nothing to do" conclusion about one boundary and both commit, and a no-op decision never invalidates a concurrent session that does have events to append. The boundary is released by that commit: to act on it afterwards, fetch it again.
 
-The side table grows with **distinct boundary-tag values**, not with event volume, and is never deleted automatically — the same `StudentId` or `CourseId` reuses its row across every save. Avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
+The side table grows with **distinct boundary-tag values**, not with event volume — the same `StudentId` or `CourseId` reuses its row across every save. Only `TombstoneStream` and `DeleteSingleEventStreamAsync` delete rows, as described below. Avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
+
+### What a tombstone erases
+
+A tag can be personal data, and `mt_dcb_tag_version` holds the value as text. So `TombstoneStream` deletes the row of every tag on the stream that no other stream in the tenant carries, in the same transaction as the events. Once a tombstone commits, nothing in `mt_event_tag_*` or `mt_dcb_tag_version` holds a value only that stream carried.
+
+- **A tag another stream carries keeps its row.** Its version moves instead. An archived stream counts as carrying its tags, because its events are still stored.
+- **The per-event-type versions go by the same rule**, whatever `DcbConflictScope` is set to.
+- **A tombstone never creates a row.** A tag can have events and no row, for example events written before Marten 9.4, or tags added with `AssignTagWhere` before Marten 10.
+- **A boundary still can't save through it.** A boundary that captured a version finds the row moved or gone. A boundary that read events under a tag with no row has nothing to lose against, so its save counts the events it read again, and throws `DcbConcurrencyException` if some are gone. That costs one more statement, only on such a save.
+- **A concurrent append isn't lost.** The tombstone takes the rows in a statement of its own before it checks for other streams, so it sees an append that held the row, or the append creates the row again with a new version.
+
+What it doesn't do:
+
+- **Compaction doesn't erase.** It deletes events without touching `mt_dcb_tag_version`, so a tag that only compacted events carried keeps its row, and a later tombstone can't find it.
+- **Archiving isn't erasure.** The events stay, and so do the rows. Their versions move.
+- **It doesn't look outside the tag tables.** A value copied into a projected document is yours to remove.
+- **Rows left by older versions stay.** Marten 9 and the 10.0 alphas never deleted rows. To find the rows of a tag type `x` that no event carries:
+
+```sql
+-- DcbStorageMode.TagTables (under conjoined tenancy add: and t.tenant_id = v.tenant_id)
+select v.* from my_schema.mt_dcb_tag_version v
+where split_part(v.tag_table, ':', 1) = 'x'
+  and not exists (select 1 from my_schema.mt_event_tag_x t where t.value::text = v.tag_value);
+
+-- DcbStorageMode.HStore (under conjoined tenancy add: and e.tenant_id = v.tenant_id)
+select v.* from my_schema.mt_dcb_tag_version v
+where not exists (select 1 from my_schema.mt_events e
+                  where e.tags @> hstore(split_part(v.tag_table, ':', 1), v.tag_value));
+```
+
+Deleting those rows is safe once every node runs Marten 10: a boundary that captured one of them gets a `DcbConcurrencyException` and retries. During a rolling upgrade, a node still on an older version counts up from the current value and can create a row at 1, so finish the rollout first.
 
 ### Scoping conflicts by event type
 
@@ -679,7 +712,7 @@ Two bugs made one or the other mode far slower on a large store. Benchmarks on a
 
 ### Consistency Check <Badge type="tip" text="9.4" />
 
-At `SaveChangesAsync` time, Marten emits one `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured` per distinct `(tag_table, tag_value)` row the boundary read against the `mt_dcb_tag_version` side table, together with the bumps of the tag values the save's own events carry, all in one deterministic sort order. The row-level write lock plus the version predicate is the serialization point: concurrent saves over the same row take turns, and a save fails with `DcbConcurrencyException` when an event carrying one of its tag values was committed after its read. This works at PostgreSQL's default `READ COMMITTED` isolation — no advisory locks, no `SERIALIZABLE` transactions. See [how the boundary check serializes](#how-the-boundary-check-serializes-) for the detail.
+At `SaveChangesAsync` time, Marten emits one statement checking `version = $captured` per distinct `(tag_table, tag_value)` row the boundary read against the `mt_dcb_tag_version` side table, together with the bumps of the tag values the save's own events carry, all in one deterministic sort order. The row-level write lock plus the version predicate is the serialization point: concurrent saves over the same row take turns, and a save fails with `DcbConcurrencyException` when an event carrying one of its tag values was committed after its read. This works at PostgreSQL's default `READ COMMITTED` isolation — no advisory locks, no `SERIALIZABLE` transactions. See [how the boundary check serializes](#how-the-boundary-check-serializes-) for the detail.
 
 The check shape no longer depends on `DcbStorageMode`. Both `TagTables` and `HStore` share the same side-table mechanism for the consistency check; the storage mode only affects how tags are physically read at fetch time and written at append time.
 

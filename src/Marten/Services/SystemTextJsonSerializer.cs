@@ -59,6 +59,14 @@ public class SystemTextJsonSerializer: ISerializer
         _clean.EnableDynamicTypes();
         _withTypes.EnableDynamicTypes();
 
+        // #5812: on by default since 10.0, so polymorphic JSON reads when "$type" is not the first property
+        // (PostgreSQL's jsonb does not keep property order). Set it back with Configure() or
+        // StoreOptions.RestoreV9Defaults().
+        _optionsDeserialize.AllowOutOfOrderMetadataProperties =
+            _options.AllowOutOfOrderMetadataProperties =
+                _clean.AllowOutOfOrderMetadataProperties =
+                    _withTypes.AllowOutOfOrderMetadataProperties = true;
+
         syncDocumentDeserializeOptions();
     }
 

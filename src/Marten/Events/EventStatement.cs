@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Events.Projections;
 using Marten.Events.Archiving;
+using Marten.Internal.Sessions;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
 using Weasel.Postgresql;
@@ -30,6 +31,11 @@ internal class EventStatement: SelectorStatement
     public DateTimeOffset? Timestamp { get; set; }
 
     public string TenantId { get; set; } = ALL_TENANTS;
+
+    /// <summary>
+    ///     The reading session's tenant scope (QueryAcrossAllDatabasesAsync), which takes over from <see cref="TenantId" />
+    /// </summary>
+    public SessionTenantScope? TenantScope { get; set; }
 
     // Every caller sets exactly one of these two, and a set value is a stream -- Guid.Empty and "" included.
     // They used to double as "no stream predicate" (Guid.Empty, or an empty key), so FetchStreamAsync(Guid.Empty)
@@ -113,9 +119,20 @@ internal class EventStatement: SelectorStatement
             yield return new WhereFragment("d.timestamp <= ?", Timestamp);
         }
 
-        if (_storage.TenancyStyle == TenancyStyle.Conjoined && TenantId != ALL_TENANTS)
+        if (_storage.TenancyStyle == TenancyStyle.Conjoined)
         {
-            yield return new WhereFragment("d.tenant_id = ?", TenantId);
+            // QueryAcrossAllDatabasesAsync: every tenant, or the listed tenants, instead of the session's own
+            if (TenantScope != null)
+            {
+                if (TenantScope.TenantIds != null)
+                {
+                    yield return new WhereFragment("d.tenant_id = ANY(?)", [TenantScope.TenantIds]);
+                }
+            }
+            else if (TenantId != ALL_TENANTS)
+            {
+                yield return new WhereFragment("d.tenant_id = ?", TenantId);
+            }
         }
 
         if (StreamId.HasValue)

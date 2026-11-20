@@ -6,14 +6,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Protected;
 using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Protected;
+using Marten.Events.Rewriting;
 using Marten.Events.TestSupport;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -292,6 +295,152 @@ public class AdvancedOperations
         return highest;
     }
 
+    /// <summary>
+    ///     Run one query against every database the store knows about and flatten the results. Multi-database
+    ///     tenancies (sharded, database per tenant, master table) have no session that spans databases, so this
+    ///     opens a query session per database with bounded parallelism.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The query reads every tenant. For conjoined (multi-tenanted) documents and events, each session
+    ///         reads every tenant's rows in its database wherever an ordinary session would read only its own
+    ///         tenant: LINQ queries, compiled queries, <c>LoadAsync()</c> / <c>LoadManyAsync()</c> and
+    ///         <c>FetchStreamAsync()</c>. An <c>AnyTenant()</c> or <c>TenantIsOneOf(...)</c> in the query still
+    ///         applies as written.
+    ///     </para>
+    ///     <para>
+    ///         Results are grouped per database: each database's items stay together, in the order
+    ///         <see cref="IDocumentStore.Storage" /> listed the databases for this call. That order is not
+    ///         guaranteed to be the same from one call to the next.
+    ///     </para>
+    /// </remarks>
+    /// <param name="query">The query to run in each database</param>
+    /// <param name="maxParallelism">
+    ///     How many databases are queried concurrently. Each slot holds one connection to a different database.
+    /// </param>
+    /// <param name="token"></param>
+    public Task<IReadOnlyList<T>> QueryAcrossAllDatabasesAsync<T>(
+        Func<IQuerySession, CancellationToken, Task<IReadOnlyList<T>>> query,
+        int maxParallelism = 8,
+        CancellationToken token = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        return QueryAcrossAllDatabasesAsync<T>((session, _, ct) => query(session, ct), maxParallelism, token);
+    }
+
+    /// <summary>
+    ///     Like <see cref="QueryAcrossAllDatabasesAsync{T}(Func{IQuerySession,CancellationToken,Task{IReadOnlyList{T}}},int,CancellationToken)" />,
+    ///     but also hands the <see cref="IMartenDatabase" /> to the query, for work that lives beside the
+    ///     documents rather than in them, such as the async daemon progression. The same remarks about tenants
+    ///     and the order of the results apply.
+    /// </summary>
+    public async Task<IReadOnlyList<T>> QueryAcrossAllDatabasesAsync<T>(
+        Func<IQuerySession, IMartenDatabase, CancellationToken, Task<IReadOnlyList<T>>> query,
+        int maxParallelism = 8,
+        CancellationToken token = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxParallelism, 1);
+
+        var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);
+        assertHasDatabases(databases);
+
+        return await queryDatabasesAsync(databases.Select(x => (x, SessionTenantScope.AllTenants)).ToArray(),
+            query, maxParallelism, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Run one query for the given tenants only. Only the databases that hold those tenants are visited, and
+    ///     each session reads only those tenants' rows of conjoined documents and events, as if the query said
+    ///     <c>TenantIsOneOf(tenantIds)</c>. Otherwise the same as
+    ///     <see cref="QueryAcrossAllDatabasesAsync{T}(Func{IQuerySession,CancellationToken,Task{IReadOnlyList{T}}},int,CancellationToken)" />.
+    /// </summary>
+    /// <param name="query">The query to run in each database</param>
+    /// <param name="maxParallelism">
+    ///     How many databases are queried concurrently. Each slot holds one connection to a different database.
+    /// </param>
+    /// <param name="token"></param>
+    /// <param name="tenantIds">The tenants to read. No tenant ids is an empty result.</param>
+    /// <exception cref="UnknownTenantIdException">A tenant id the store does not know</exception>
+    public Task<IReadOnlyList<T>> QueryAcrossAllDatabasesAsync<T>(
+        Func<IQuerySession, CancellationToken, Task<IReadOnlyList<T>>> query,
+        int maxParallelism,
+        CancellationToken token,
+        params string[] tenantIds)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        return QueryAcrossAllDatabasesAsync<T>((session, _, ct) => query(session, ct), maxParallelism, token,
+            tenantIds);
+    }
+
+    /// <summary>
+    ///     Like <see cref="QueryAcrossAllDatabasesAsync{T}(Func{IQuerySession,CancellationToken,Task{IReadOnlyList{T}}},int,CancellationToken,string[])" />,
+    ///     but also hands the <see cref="IMartenDatabase" /> to the query.
+    /// </summary>
+    /// <exception cref="UnknownTenantIdException">A tenant id the store does not know</exception>
+    public async Task<IReadOnlyList<T>> QueryAcrossAllDatabasesAsync<T>(
+        Func<IQuerySession, IMartenDatabase, CancellationToken, Task<IReadOnlyList<T>>> query,
+        int maxParallelism,
+        CancellationToken token,
+        params string[] tenantIds)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(tenantIds);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxParallelism, 1);
+
+        var corrected = tenantIds.Select(x => _store.Options.TenantIdStyle.MaybeCorrectTenantId(x)).Distinct()
+            .ToArray();
+        if (corrected.Length == 0) return [];
+
+        // Prefer the store's own database objects; a sharded store can hand back a fresh one for a tenant
+        var databases = (await _store.Storage.AllDatabases().ConfigureAwait(false))
+            .ToDictionary(x => x.Identifier);
+
+        // TryFindDatabase is the read-only lookup: it never assigns or creates a tenant
+        var tenantsByDatabase = new Dictionary<string, (IMartenDatabase Database, List<string> TenantIds)>();
+        foreach (var tenantId in corrected)
+        {
+            var found = await _store.Tenancy.TryFindDatabase(tenantId).ConfigureAwait(false)
+                        ?? throw new UnknownTenantIdException(tenantId);
+
+            if (!tenantsByDatabase.TryGetValue(found.Identifier, out var group))
+            {
+                group = (databases.GetValueOrDefault(found.Identifier) ?? found, new List<string>());
+                tenantsByDatabase[found.Identifier] = group;
+            }
+
+            group.TenantIds.Add(tenantId);
+        }
+
+        return await queryDatabasesAsync(
+            tenantsByDatabase.Values.Select(x => (x.Database, SessionTenantScope.For(x.TenantIds.ToArray())))
+                .ToArray(), query, maxParallelism, token).ConfigureAwait(false);
+    }
+
+    private async Task<IReadOnlyList<T>> queryDatabasesAsync<T>(
+        (IMartenDatabase Database, SessionTenantScope Scope)[] targets,
+        Func<IQuerySession, IMartenDatabase, CancellationToken, Task<IReadOnlyList<T>>> query,
+        int maxParallelism,
+        CancellationToken token)
+    {
+        var perDatabase = new IReadOnlyList<T>[targets.Length];
+        await Parallel.ForEachAsync(
+                Enumerable.Range(0, targets.Length),
+                new ParallelOptions { MaxDegreeOfParallelism = maxParallelism, CancellationToken = token },
+                async (index, ct) =>
+                {
+                    var (database, scope) = targets[index];
+                    var options = SessionOptions.ForDatabase(database);
+                    options.TenantScope = scope;
+
+                    await using var session = _store.QuerySession(options);
+                    perDatabase[index] = await query(session, database, ct).ConfigureAwait(false);
+                })
+            .ConfigureAwait(false);
+
+        return perDatabase.SelectMany(x => x).ToList();
+    }
+
     private static void assertHasDatabases(IReadOnlyList<IMartenDatabase> databases)
     {
         if (databases.Count == 0)
@@ -333,88 +482,127 @@ public class AdvancedOperations
     }
 
     /// <summary>
-    ///     Convenience method to rebuild the projected document of type T for a single stream
-    ///     identified by id
-    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
+    ///     Rebuild the projected document of type <typeparamref name="T" /> for the single stream identified by
+    ///     <paramref name="id" />, and commit it. The repair for one stream whose read model is wrong, where a full
+    ///     <c>RebuildProjectionAsync</c> would replay every stream the projection owns.
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="token"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public async Task RebuildSingleStreamAsync<T>(string id, CancellationToken token = default) where T : class
-    {
-        await using var session = _store.LightweightSession();
-        var document = await session.Events.AggregateStreamAsync<T>(id, token: token).ConfigureAwait(false);
-        session.Store(document!);
-        await session.SaveChangesAsync(token).ConfigureAwait(false);
-    }
+    /// <remarks>
+    ///     <para>
+    ///         <b>Three paths, in this order (marten#6071).</b> When <typeparamref name="T" /> is written by an
+    ///         asynchronous single-stream projection:
+    ///     </para>
+    ///     <list type="number">
+    ///         <item>
+    ///             A daemon of this store in this process is running the projection's shard: the rebuild goes
+    ///             through it (<c>IProjectionDaemon.RebuildIdentityAsync</c>) and is bound to the shard's next
+    ///             batch, which re-folds the stream and commits it with the shard's progression, so it cannot race
+    ///             the shard. This returns when that batch commits.
+    ///         </item>
+    ///         <item>
+    ///             Otherwise, when the shard's progression row was written within the last 30 seconds by a running
+    ///             agent, the rebuild is refused with <see cref="IdentityRebuildRefusedException" />
+    ///             (<see cref="IdentityRebuildRefusal.ShardLiveOnAnotherNode" />). Another node is advancing the
+    ///             shard; rebuild through the daemon there.
+    ///         </item>
+    ///         <item>
+    ///             Otherwise the stream is live-aggregated and stored here, outside any daemon. <b>That is only safe
+    ///             when no daemon is running the projection.</b> Without extended progression tracking an idle shard
+    ///             stops rewriting its row, so a daemon on another node that has had nothing to do for 30 seconds
+    ///             looks stopped and the write is not refused.
+    ///         </item>
+    ///     </list>
+    ///     <para>
+    ///         An inline or live projection, or a type no projection writes, always takes the third path.
+    ///     </para>
+    ///     <para>
+    ///         A stream that folds to nothing deletes the document, which is what a full rebuild leaves for that
+    ///         stream. This used to throw from <c>Store(null)</c>.
+    ///     </para>
+    /// </remarks>
+    /// <exception cref="IdentityRebuildRefusedException">
+    ///     The projection's shard is running on another node, or the daemon running it here refused (it has never
+    ///     committed, or it is being rebuilt).
+    /// </exception>
+    public Task RebuildSingleStreamAsync<T>(string id, CancellationToken token = default) where T : class
+        => rebuildSingleStreamAsync<T>(id, () => _store.LightweightSession(),
+            (session, ct) => session.Events.AggregateStreamAsync<T>(id, token: ct), token);
+
+    /// <inheritdoc cref="RebuildSingleStreamAsync{T}(string, CancellationToken)" />
+    public Task RebuildSingleStreamAsync<T>(Guid id, CancellationToken token = default) where T : class
+        => rebuildSingleStreamAsync<T>(id,
+            () => _store.LightweightSession(new SessionOptions { ConcurrencyChecks = ConcurrencyChecks.Disabled }),
+            (session, ct) => session.Events.AggregateStreamAsync<T>(id, token: ct), token);
 
     /// <summary>
-    ///     Convenience method to rebuild the projected document of type T for a single stream
-    ///     identified by id
-    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="token"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public async Task RebuildSingleStreamAsync<T>(Guid id, CancellationToken token = default) where T : class
-    {
-        await using var session = _store.LightweightSession(new SessionOptions{ConcurrencyChecks = ConcurrencyChecks.Disabled});
-        var document = await session.Events.AggregateStreamAsync<T>(id, token: token).ConfigureAwait(false);
-        session.Store(document!);
-        await session.SaveChangesAsync(token).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(string, CancellationToken)"/>.
-    ///     Convenience method to rebuild the projected document of type T for a single stream
-    ///     identified by <paramref name="streamKey"/> under the supplied <paramref name="tenantId"/>.
+    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(string, CancellationToken)"/>, for the
+    ///     stream identified by <paramref name="streamKey"/> under the supplied <paramref name="tenantId"/>.
     ///     Required when <see cref="Marten.Events.IEventStoreOptions.TenancyStyle"/> is
     ///     <see cref="Marten.Storage.TenancyStyle.Conjoined"/> or when running under sharded
     ///     multi-tenancy — the event load and the upsert both have to be scoped to the
     ///     tenant or you get a default-tenant lookup miss / write.
-    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
     ///     #4668 — new overload, not a default parameter, so existing call sites bind unchanged.
     /// </summary>
+    /// <remarks>See <see cref="RebuildSingleStreamAsync{T}(string, CancellationToken)" /> for the three paths.</remarks>
     /// <param name="streamKey">The string-keyed stream id.</param>
     /// <param name="tenantId">Tenant id to scope the rebuild session and the projected-document upsert to.</param>
     /// <param name="token"></param>
     /// <typeparam name="T"></typeparam>
-    public async Task RebuildSingleStreamAsync<T>(string streamKey, string tenantId, CancellationToken token = default) where T : class
-    {
-        await using var session = _store.LightweightSession(tenantId);
-        var document = await session.Events.AggregateStreamAsync<T>(streamKey, token: token).ConfigureAwait(false);
-        session.Store(document!);
-        await session.SaveChangesAsync(token).ConfigureAwait(false);
-    }
+    public Task RebuildSingleStreamAsync<T>(string streamKey, string tenantId, CancellationToken token = default) where T : class
+        => rebuildSingleStreamAsync<T>(streamKey, () => _store.LightweightSession(tenantId),
+            (session, ct) => session.Events.AggregateStreamAsync<T>(streamKey, token: ct), token);
 
     /// <summary>
-    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(Guid, CancellationToken)"/>.
-    ///     Convenience method to rebuild the projected document of type T for a single stream
-    ///     identified by <paramref name="streamId"/> under the supplied <paramref name="tenantId"/>.
+    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(Guid, CancellationToken)"/>, for the
+    ///     stream identified by <paramref name="streamId"/> under the supplied <paramref name="tenantId"/>.
     ///     Required when <see cref="Marten.Events.IEventStoreOptions.TenancyStyle"/> is
     ///     <see cref="Marten.Storage.TenancyStyle.Conjoined"/> or when running under sharded
     ///     multi-tenancy — the event load and the upsert both have to be scoped to the
     ///     tenant or you get a default-tenant lookup miss / write.
-    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
     ///     #4668 — new overload, not a default parameter, so existing call sites bind unchanged.
     /// </summary>
+    /// <remarks>See <see cref="RebuildSingleStreamAsync{T}(string, CancellationToken)" /> for the three paths.</remarks>
     /// <param name="streamId">The Guid-keyed stream id.</param>
     /// <param name="tenantId">Tenant id to scope the rebuild session and the projected-document upsert to.</param>
     /// <param name="token"></param>
     /// <typeparam name="T"></typeparam>
-    public async Task RebuildSingleStreamAsync<T>(Guid streamId, string tenantId, CancellationToken token = default) where T : class
-    {
+    public Task RebuildSingleStreamAsync<T>(Guid streamId, string tenantId, CancellationToken token = default) where T : class
         // Mirror the Guid-overload's ConcurrencyChecks.Disabled posture so behavior matches
         // the existing non-tenanted Guid path beyond the tenant scope.
-        await using var session = _store.LightweightSession(new SessionOptions
+        => rebuildSingleStreamAsync<T>(streamId,
+            () => _store.LightweightSession(new SessionOptions
+            {
+                ConcurrencyChecks = ConcurrencyChecks.Disabled,
+                TenantId = tenantId
+            }),
+            (session, ct) => session.Events.AggregateStreamAsync<T>(streamId, token: ct), token);
+
+    private async Task rebuildSingleStreamAsync<T>(object streamId, Func<IDocumentSession> openSession,
+        Func<IDocumentSession, CancellationToken, Task<T?>> aggregate, CancellationToken token) where T : class
+    {
+        await using var session = openSession();
+
+        if (_store.AsyncSingleStreamProjectionFor(typeof(T)) is { } projection
+            && await _store.TryRebuildIdentityThroughDaemonAsync(projection, session.Database, session.TenantId,
+                streamId, token).ConfigureAwait(false))
         {
-            ConcurrencyChecks = ConcurrencyChecks.Disabled,
-            TenantId = tenantId
-        });
-        var document = await session.Events.AggregateStreamAsync<T>(streamId, token: token).ConfigureAwait(false);
-        session.Store(document!);
+            return;
+        }
+
+        var document = await aggregate(session, token).ConfigureAwait(false);
+
+        if (document is null)
+        {
+            // Deleted rather than skipped: a full rebuild clears the rows and replays, so a stream that folds to
+            // nothing leaves no document. Skipping would keep whatever the earlier, wrong run wrote, which is what
+            // this is being called to repair. Deleted by the stream's identity, which is the aggregate's.
+            var idType = _store.Options.Storage.FindMapping(typeof(T)).IdType;
+            session.Delete<T>(DocumentStore.DocumentIdentityFor(idType, streamId));
+        }
+        else
+        {
+            session.Store(document);
+        }
+
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
@@ -658,6 +846,11 @@ public class AdvancedOperations
                 }
             }
         }
+
+        // Concurrent onboarding of the same tenant waits here for the first caller rather than racing its
+        // CREATE ... IF NOT EXISTS into a 23505 (#4596). Held across the partitions and the sequences below.
+        await using var provisioning = await TenantProvisioningLock
+            .AcquireAsync(database, _store.Options.DatabaseSchemaName, token).ConfigureAwait(false);
 
         var statuses = await _store.Options.TenantPartitions.Partitions.AddPartitionToAllTables(
             logger,
@@ -977,5 +1170,18 @@ public class AdvancedOperations
         var masking = new EventDataMasking(_store);
         configure(masking);
         return masking.ApplyAsync(token);
+    }
+
+    /// <summary>
+    ///     Rewrite stored events the way an append would store them today: under their current type name,
+    ///     binary or JSON as now configured, through the configured serializer, and optionally transformed.
+    ///     Runs page by page in short statements, skips rows that would not change, and can be resumed.
+    /// </summary>
+    public Task<StoredEventRewriteResult> RewriteStoredEventsAsync(Action<StoredEventRewrite> configure,
+        CancellationToken token = default)
+    {
+        var rewrite = new StoredEventRewrite();
+        configure(rewrite);
+        return new StoredEventRewriter(_store, rewrite).ExecuteAsync(token);
     }
 }

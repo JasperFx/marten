@@ -60,6 +60,7 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
         var statement = new EventStatement(selector, _store.Events)
         {
             TenantId = _tenant.TenantId,
+            TenantScope = SessionTenantScope.For(_session),
             Filters = [new WhereFragment("d.stream_id = ANY(?)", (object)keys)]
         };
         IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
@@ -109,6 +110,7 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             Version = version,
             Timestamp = timestamp,
             TenantId = _tenant.TenantId,
+            TenantScope = SessionTenantScope.For(_session),
             FromVersion = fromVersion
         };
 

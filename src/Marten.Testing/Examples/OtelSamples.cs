@@ -45,8 +45,9 @@ public class OtelSamples
         {
             opts.Connection("some connection string");
 
-            // Track the number of events being appended to the system
-            opts.OpenTelemetry.TrackEventCounters();
+            // Track the number of events being appended to the system.
+            // On by default since Marten 10, set to false to opt out
+            opts.OpenTelemetry.EnableEventCounters = true;
         });
 
         #endregion

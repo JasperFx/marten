@@ -37,6 +37,16 @@ internal class HighWaterDetector: IHighWaterDetector
     private readonly EventGraph _graph;
     private readonly ProjectionOptions _settings;
 
+    // #6007: re-probes recorded skips for events that commit late, on the poll
+    private readonly LateEventRecovery _lateEvents;
+
+    // #6007: a per-tenant skip decided in trySkipStaleTenantGapAsync is persisted by the coordinator through
+    // MarkHighWaterForTenantAsync, which is where the skip gets recorded, so it is never recorded for a mark
+    // that did not move
+    private readonly ConcurrentDictionary<string, PendingTenantSkip> _pendingTenantSkips = new();
+
+    private sealed record PendingTenantSkip(long Starting, long Ending, HighWaterSkipReason Reason);
+
     // #4867: per-tenant stale clocks for the vectorized high-water path. When a tenant's mark is
     // blocked by a gap immediately above it (an allocated-but-uncommitted — or rolled-back — seq_id),
     // this records WHEN the detector first observed that tenant stuck at that mark, so the gap can be
@@ -133,12 +143,15 @@ internal class HighWaterDetector: IHighWaterDetector
         _logger = logger;
         _highWaterStatisticsDetector = new HighWaterStatisticsDetector(graph);
         _settings = graph.Options.Projections;
+        _lateEvents = new LateEventRecovery(runner, graph, logger);
 
         DatabaseIdentity = runner.Identifier;
         DatabaseUri = runner.Describe().DatabaseUri();
     }
 
     public Uri DatabaseUri { get; }
+
+    internal LateEventRecovery LateEvents => _lateEvents;
 
     /// <summary>
     /// #4596 Phase 2c — the SINGLE SWITCH that opts the running daemon into
@@ -254,10 +267,53 @@ internal class HighWaterDetector: IHighWaterDetector
                 }
             }
 
+            // #6007: record the advance as a skip, so an event still in flight inside it is found when it commits
+            if (skipped > 0 && _graph.EnableAdvancedAsyncTracking)
+            {
+                var record = conn.CreateCommand(recordSkipSql(tenantId != null))
+                    .With("ending", ceiling)
+                    .With("starting", current)
+                    .With("skip_tenant", tenantId ?? EventProgressionSkippingTable.GlobalTenant)
+                    .With("reason", nameof(HighWaterSkipReason.Manual));
+
+                await using (record)
+                {
+                    await record.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+                }
+            }
+
             await tx.CommitAsync(token).ConfigureAwait(false);
             return new HighWaterMarkAdvance(DatabaseIdentity, tenantId, HighWaterAdvanceOutcome.Advanced, current,
                 ceiling, skipped);
         }
+    }
+
+    /// <summary>
+    ///     #6007: the sequence numbers in (:starting, :ending] with no committed event, as inclusive bounds in pairs
+    ///     (first1, last1, first2, last2, ...). <paramref name="tenantParameter" /> limits it to one tenant's events,
+    ///     for a per-tenant mark.
+    /// </summary>
+    internal static string GapsSql(string schema, string? tenantParameter)
+    {
+        var tenant = tenantParameter == null ? "" : $" and e.tenant_id = :{tenantParameter}";
+        return $@"(select coalesce(array_agg(p.v order by g.lo, p.k), '{{}}'::bigint[])
+ from (select w.prev + 1 as lo, w.seq_id - 1 as hi
+       from (select s.seq_id, coalesce(lag(s.seq_id) over (order by s.seq_id), :starting::bigint) as prev
+             from (select e.seq_id from {schema}.mt_events e
+                   where e.seq_id > :starting::bigint and e.seq_id <= :ending::bigint{tenant}
+                   union all select :ending::bigint + 1) s) w
+       where w.seq_id - w.prev > 1) g
+ cross join lateral (values (g.lo, 0), (g.hi, 1)) as p(v, k))";
+    }
+
+    // #6007: one row of mt_high_water_skips with its reason and gaps, for a skip that did not go through
+    // mt_mark_progression_with_skip. Parameters: ending, starting, skip_tenant, reason.
+    private string recordSkipSql(bool perTenant)
+    {
+        var schema = _graph.DatabaseSchemaName;
+        return $@"insert into {schema}.{EventProgressionSkippingTable.Name} (ending_sequence, tenant_id, starting_sequence, reason, gaps)
+values (:ending, :skip_tenant, :starting, :reason, {GapsSql(schema, perTenant ? "skip_tenant" : null)})
+on conflict on constraint {EventProgressionSkippingTable.PrimaryKeyConstraint} do nothing";
     }
 
     private static string highWaterMarkName(string? tenantId)
@@ -414,8 +470,10 @@ internal class HighWaterDetector: IHighWaterDetector
                 new GapLivenessProbe(_graph, observed.Since, observed.Xmax, observed.AllocationFence,
                     daemonAdvisoryLockIds()), token)
             .ConfigureAwait(false);
+        var reason = HighWaterSkipReason.Proven;
         if (liveness.IndicatesLiveReserver)
         {
+            reason = HighWaterSkipReason.LiveTransaction;
             // #5109: the STALE THRESHOLD deliberately stays on the in-memory clock above, so a fresh
             // detector always gives a just-appeared gap a full settle window before considering a skip.
             // The CAP is the opposite: it exists to bound the stall itself, so it measures from the
@@ -450,7 +508,7 @@ internal class HighWaterDetector: IHighWaterDetector
             }
 
             _logger.LogWarning(
-                "Daemon high water detection is skipping the sequence gap above {Mark} DESPITE evidence of a live transaction ({Liveness}) because the gap has been stuck for {Age}, past the configured SkipStaleGapsDespiteLiveTransactionsAfter cap of {Cap}. Events committed later inside the skipped range will NOT be projected",
+                "Daemon high water detection is skipping the sequence gap above {Mark} DESPITE evidence of a live transaction ({Liveness}) because the gap has been stuck for {Age}, past the configured SkipStaleGapsDespiteLiveTransactionsAfter cap of {Cap}. Async projections and subscriptions will miss events committed later inside the skipped range; Marten records them in mt_high_water_late_events, and async single stream projections rebuild their streams",
                 observed.Mark, liveness, stuckAge, cap);
         }
 
@@ -486,7 +544,7 @@ internal class HighWaterDetector: IHighWaterDetector
         statistics.SafeStartMark = target;
         statistics.CurrentMark = target;
         _stuckGap = null;
-        await persistDetectedMarkAsync(statistics, DetectionType.SafeZoneSkipping, token).ConfigureAwait(false);
+        await persistDetectedMarkAsync(statistics, DetectionType.SafeZoneSkipping, token, reason).ConfigureAwait(false);
 
         return statistics;
     }
@@ -615,6 +673,8 @@ internal class HighWaterDetector: IHighWaterDetector
             await persistStuckGapAsync(polled.Mark, token).ConfigureAwait(false);
         }
 
+        await _lateEvents.ProbeIfDueAsync(token).ConfigureAwait(false);
+
         return statistics;
     }
 
@@ -644,6 +704,10 @@ internal class HighWaterDetector: IHighWaterDetector
         }
 
         var stats = await loadPerTenantStatistics(tenantIds, token).ConfigureAwait(false);
+
+        // #6007: the store-global Detect() is not polled under per-tenant partitioning (#4913)
+        await _lateEvents.ProbeIfDueAsync(token).ConfigureAwait(false);
+
         return new HighWaterVector(stats);
     }
 
@@ -872,9 +936,11 @@ select coalesce(
         // #5125: the daemon's own advisory-lock sessions ARE still ruled out. That exclusion is
         // structural rather than fence-derived — those connections exist only to hold the leadership
         // lock and never append — so it holds on this path too, where no fence can ever exist.
+        var reason = HighWaterSkipReason.WallClock;
         if (_settings.UseTransactionEvidenceForGapSkipping
             && _tenantStaleSince.TryGetValue(statistics.TenantId!, out var observation))
         {
+            reason = HighWaterSkipReason.Proven;
             var age = statistics.Timestamp.Subtract(observation.Since);
             var liveness = await _runner
                 .Query(
@@ -883,6 +949,7 @@ select coalesce(
                 .ConfigureAwait(false);
             if (liveness.IndicatesLiveReserver)
             {
+                reason = HighWaterSkipReason.LiveTransaction;
                 var cap = _settings.SkipStaleGapsDespiteLiveTransactionsAfter;
                 if (cap == null || age < cap.Value)
                 {
@@ -915,6 +982,7 @@ select coalesce(
         statistics.CurrentMark = statistics.SafeStartMark = safeSequence;
         statistics.IncludesSkipping = true;
         _tenantStaleSince.TryRemove(statistics.TenantId!, out _);
+        _pendingTenantSkips[statistics.TenantId!] = new PendingTenantSkip(statistics.LastMark, safeSequence, reason);
     }
 
     private async Task calculateHighWaterMark(HighWaterStatistics statistics, DetectionType detectionType,
@@ -940,7 +1008,7 @@ select coalesce(
     }
 
     private async Task persistDetectedMarkAsync(HighWaterStatistics statistics, DetectionType detectionType,
-        CancellationToken token)
+        CancellationToken token, HighWaterSkipReason reason = HighWaterSkipReason.WallClock)
     {
         if (!statistics.HasChanged)
         {
@@ -954,7 +1022,7 @@ select coalesce(
         {
             if (_graph.EnableAdvancedAsyncTracking)
             {
-                var actual = await TryMarkHighWaterSkippingAsync(currentMark, statistics.LastMark, token).ConfigureAwait(false);
+                var actual = await TryMarkHighWaterSkippingAsync(currentMark, statistics.LastMark, token, reason).ConfigureAwait(false);
                 if (actual == currentMark)
                 {
                     statistics.IncludesSkipping = true;
@@ -1031,9 +1099,30 @@ select coalesce(
     // survives a daemon restart. Under per-tenant event partitioning the store-global mt_events_sequence
     // is never advanced and a single HighWaterMark row cannot represent multiple tenants. Invoked by
     // JasperFx's TenantedHighWaterCoordinator on each vectorized per-tenant poll.
-    public Task MarkHighWaterForTenantAsync(string tenantId, long sequence, CancellationToken token)
+    public async Task MarkHighWaterForTenantAsync(string tenantId, long sequence, CancellationToken token)
     {
-        return _runner.Query(new MarkTenantHighWaterQueryHandler(_graph, tenantId, sequence), token);
+        // #6007: the mark that carries a skip records the skip with it
+        if (_pendingTenantSkips.TryGetValue(tenantId, out var skip) && sequence >= skip.Ending)
+        {
+            _pendingTenantSkips.TryRemove(tenantId, out _);
+
+            if (_graph.EnableAdvancedAsyncTracking)
+            {
+                await using var cmd = new NpgsqlCommand(
+                        $"select {_graph.DatabaseSchemaName}.mt_mark_event_progression(:name, :seq);{recordSkipSql(true)};")
+                    .With("name", HighWaterShardIdentity.PerTenant(tenantId))
+                    .With("seq", sequence)
+                    .With("ending", skip.Ending)
+                    .With("starting", skip.Starting)
+                    .With("skip_tenant", tenantId)
+                    .With("reason", skip.Reason.ToString());
+
+                await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
+                return;
+            }
+        }
+
+        await _runner.Query(new MarkTenantHighWaterQueryHandler(_graph, tenantId, sequence), token).ConfigureAwait(false);
     }
 
     public class MarkTenantHighWaterQueryHandler: ISingleQueryHandler<bool>
@@ -1088,24 +1177,38 @@ select coalesce(
     }
 
     public Task<long> TryMarkHighWaterSkippingAsync(long endingMark, long currentMark, CancellationToken token)
+        => TryMarkHighWaterSkippingAsync(endingMark, currentMark, token, HighWaterSkipReason.WallClock);
+
+    internal Task<long> TryMarkHighWaterSkippingAsync(long endingMark, long currentMark, CancellationToken token,
+        HighWaterSkipReason reason)
     {
         if (endingMark <= currentMark)
             throw new ArgumentOutOfRangeException(nameof(endingMark),
                 "Ending sequence should be greater than the current mark");
 
-        return _runner.Query(new TryMarkHighWaterSkippingHandler(_graph, endingMark, currentMark), token);
+        return _runner.Query(new TryMarkHighWaterSkippingHandler(_graph, endingMark, currentMark, reason), token);
     }
 
     public class TryMarkHighWaterSkippingHandler: ISingleQueryHandler<long>
     {
         private readonly NpgsqlCommand _command;
 
-        public TryMarkHighWaterSkippingHandler(EventGraph graph, long endingMark, long currentMark)
+        internal TryMarkHighWaterSkippingHandler(EventGraph graph, long endingMark, long currentMark,
+            HighWaterSkipReason reason)
         {
+            // #6007: the second statement records why the range was skipped and which sequence numbers in it had
+            // no committed event, which is what the late event probe checks. It runs in the same implicit
+            // transaction as the mark, and before any shard can be told about the new mark. It only touches the row
+            // the first statement wrote: a lost race leaves no row with this starting sequence and no gaps.
             _command = new NpgsqlCommand(
-                    $"select {graph.DatabaseSchemaName}.mt_mark_progression_with_skip('{HighWaterShardIdentity.StoreGlobal}', :ending, :starting);")
+                    $@"select {graph.DatabaseSchemaName}.mt_mark_progression_with_skip('{HighWaterShardIdentity.StoreGlobal}', :ending, :starting);
+update {graph.DatabaseSchemaName}.{EventProgressionSkippingTable.Name}
+   set reason = :reason, gaps = {GapsSql(graph.DatabaseSchemaName, null)}
+ where ending_sequence = :ending and tenant_id = '{EventProgressionSkippingTable.GlobalTenant}'
+   and starting_sequence = :starting and gaps is null;")
                 .With("ending", endingMark)
                 .With("starting", currentMark)
+                .With("reason", reason.ToString())
                 ;
 
         }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx;
 using Marten.Storage;
 using Npgsql;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Schema;
@@ -15,6 +16,20 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
     private readonly Dictionary<string, TenantDatabaseCreationExpressions> _configurationPerTenant = new();
     private string _maintenanceDbConnectionString;
     private NpgsqlDataSource _maintenanceDataSource;
+
+    // marten#6060: CREATE DATABASE and DROP DATABASE run under this, not under the store's command timeout
+    private TimeSpan _provisioningCommandTimeout = TimeSpan.FromMinutes(2);
+
+    public IDatabaseCreationExpressions ProvisioningCommandTimeout(TimeSpan timeout)
+    {
+        if (timeout < TimeSpan.Zero && timeout != Timeout.InfiniteTimeSpan)
+        {
+            throw new ArgumentOutOfRangeException(nameof(timeout), "The provisioning command timeout cannot be negative.");
+        }
+
+        _provisioningCommandTimeout = timeout;
+        return this;
+    }
 
     public IDatabaseCreationExpressions MaintenanceDatabase(string maintenanceDbConnectionString)
     {
@@ -168,8 +183,9 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
         await connection.OpenAsync(ct).ConfigureAwait(false);
         try
         {
-            await connection.CreateCommand($"CREATE DATABASE \"{catalog}\" WITH" + config)
-                .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            await using var create = connection.CreateCommand($"CREATE DATABASE \"{catalog}\" WITH" + config)
+                .WithProvisioningTimeout(_provisioningCommandTimeout);
+            await create.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
             config.OnDbCreated?.Invoke(connection);
         }
         finally
@@ -192,7 +208,8 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
 
         await using var conn = createMaintenanceConnection(maintenanceDb);
         await conn.OpenAsync(ct).ConfigureAwait(false);
-        await conn.CreateCommand(cmdText).ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        await using var drop = conn.CreateCommand(cmdText).WithProvisioningTimeout(_provisioningCommandTimeout);
+        await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         await conn.CloseAsync().ConfigureAwait(false);
     }
 

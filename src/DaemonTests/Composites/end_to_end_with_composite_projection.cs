@@ -111,10 +111,24 @@ public class end_to_end_with_composite_projection : DaemonContext
             days.Any(x => x.Id == day).ShouldBeTrue();
         }
 
-        // Verify the custom IProjection was executed within the composite
+        // Verify the custom IProjection was executed within the composite. TripMetricsProjection stores a
+        // whole document per event under the stream id, so an ended trip's row is the TripEnded one. #6061:
+        // asserting that *some* row has TotalStarted > 0 failed whenever every random trip ended (1 in 1024).
         var tripMetrics = await theSession.Query<TripMetrics>().ToListAsync(TestContext.Current.CancellationToken);
-        tripMetrics.Count.ShouldBeGreaterThan(0);
-        tripMetrics.Any(m => m.TotalStarted > 0).ShouldBeTrue();
+        tripMetrics.Count.ShouldBe(Streams.Count);
+
+        var ended = Streams.Where(x => x.Events.OfType<TripEnded>().Any()).Select(x => x.StreamId).ToHashSet();
+        foreach (var metrics in tripMetrics)
+        {
+            if (ended.Contains(metrics.Id))
+            {
+                metrics.TotalEnded.ShouldBe(1);
+            }
+            else
+            {
+                metrics.TotalStarted.ShouldBe(1);
+            }
+        }
 
 
         // Persist all of the progressions of the constituent parts

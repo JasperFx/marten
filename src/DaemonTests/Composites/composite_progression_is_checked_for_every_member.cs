@@ -5,6 +5,7 @@ using DaemonTests.Aggregations;
 using DaemonTests.Internals;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Shouldly;
 using Xunit;
@@ -41,10 +42,16 @@ public class composite_progression_is_checked_for_every_member: DaemonContext
         {
             opts.DotNetLogger = theLogger;
 
+            // DayProjection sets its own BatchSize for other tests. A composite member's shard settings are
+            // ignored, and since JasperFx 3.6.0 the composite warns about that, which is a different warning
+            // from the progression problems this test is about.
+            var day = new DayProjection();
+            day.Options.BatchSize = new AsyncOptions().BatchSize;
+
             opts.Projections.CompositeProjectionFor("Trips", x =>
             {
                 x.Add<TestingSupport.TripProjection>();
-                x.Add<DayProjection>();
+                x.Add(day);
                 x.Add(new TripMetricsProjection());
             });
         }, true);

@@ -31,9 +31,12 @@ namespace EventSourcingTests.Bugs;
 /// <c>pk_mt_events_stream_and_version</c> and the whole transaction rolls back. With no events there is no
 /// INSERT to collide, so nothing stops the trailing blind <c>UPDATE</c> — which under READ COMMITTED waits
 /// on the winner's row lock, then re-checks its WHERE clause against the winner's committed row and
-/// applies the stale value anyway. <see cref="a_concurrent_single_event_append_still_collides_and_rolls_back"/>
-/// is that control, so this file records WHY the empty case was the exposed one rather than only that it
-/// was.
+/// applies the stale value anyway. That was why the empty case was the exposed one.
+/// </para>
+/// <para>
+/// Since #6066 the function locks the stream row when it reads the version, so a concurrent caller waits
+/// there and reads the winner's committed version, with or without events.
+/// <see cref="a_concurrent_single_event_append_waits_and_lands_after_the_first"/> pins that.
 /// </para>
 /// </remarks>
 public class Bug_5539_quick_append_with_zero_events : OneOffConfigurationsContext
@@ -46,6 +49,13 @@ public class Bug_5539_quick_append_with_zero_events : OneOffConfigurationsContex
         {
             opts.Events.AppendMode = EventAppendMode.Quick;
             opts.Events.AddEventType(typeof(Ping));
+
+            // quickAppendCommand() calls mt_quick_append_events directly with the signature that has no
+            // metadata arrays, so keep the event metadata off (it is on by default since 10.0)
+            opts.Events.MetadataConfig.CausationIdEnabled = false;
+            opts.Events.MetadataConfig.CorrelationIdEnabled = false;
+            opts.Events.MetadataConfig.HeadersEnabled = false;
+            opts.Events.MetadataConfig.UserNameEnabled = false;
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -123,7 +133,7 @@ public class Bug_5539_quick_append_with_zero_events : OneOffConfigurationsContex
     }
 
     [Fact]
-    public async Task a_concurrent_single_event_append_still_collides_and_rolls_back()
+    public async Task a_concurrent_single_event_append_waits_and_lands_after_the_first()
     {
         await configureAsync();
 
@@ -158,22 +168,21 @@ public class Bug_5539_quick_append_with_zero_events : OneOffConfigurationsContex
         });
 
         // The same discipline the zero-event test needs, and for the same reason: committing A without
-        // waiting lets B's read see the POST-commit version, append cleanly at 6, and the collision this
-        // test exists to demonstrate never happens. (It failed exactly that way when first written.) Here
-        // B always blocks rather than completing -- its INSERT of version 4 waits on A's uncommitted tuple
-        // for that primary key, which is the mechanism under test.
+        // waiting lets B's read see the POST-commit version and the wait this test is about never happens.
+        // Since #6066 B blocks at the function's first statement, the version read, which locks the stream
+        // row A holds. Before #6066 it read version 3 unlocked, inserted version 4 on top of A's uncommitted
+        // tuple for that primary key, and failed with a unique violation once A committed.
         var reached = await waitUntilBlockedOrDoneAsync(backendB, bTask);
-        reached.ShouldBeTrue("Writer B never blocked on the conflicting primary key, so the collision this test needs was never established");
+        reached.ShouldBeTrue("Writer B never blocked on writer A, so the interleaving this test needs was never established");
 
         await txA.CommitAsync();
 
-        // The loser's INSERT lands on the version A already wrote, so the primary key rejects it and
-        // nothing of B's survives -- which is exactly why a non-empty append never had the #5539 hazard.
-        var ex = await Should.ThrowAsync<PostgresException>(async () => await bTask);
-        ex.SqlState.ShouldBe(PostgresErrorCodes.UniqueViolation);
-        await txB.RollbackAsync();
+        // B read the version A committed, so its event goes in after A's
+        var versions = await bTask;
+        versions[0].ShouldBe(6);
+        await txB.CommitAsync();
 
-        (await readVersionsAsync(streamId)).ShouldBe((5, 5));
+        (await readVersionsAsync(streamId)).ShouldBe((6, 6));
     }
 
     private NpgsqlCommand quickAppendCommand(

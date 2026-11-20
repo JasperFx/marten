@@ -477,4 +477,34 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable,
     /// <returns></returns>
     ValueTask<IProjectionDaemon> BuildProjectionDaemonAsync(string? tenantIdOrDatabaseIdentifier = null,
         ILogger? logger = null);
+
+    /// <summary>
+    ///     #6004: wait until the asynchronous projections in <paramref name="projections" /> have processed
+    ///     <paramref name="position" />, so you can read your own writes. Take the position from the session's
+    ///     <c>LastAppendedPosition</c> after <c>SaveChangesAsync</c>, and pass the projection classes or the
+    ///     documents they write.
+    /// </summary>
+    /// <remarks>
+    ///     Polls <c>mt_event_progression</c>, so it works on any node. Waits for your events only, not for other
+    ///     writers' events after them. Never throws on timeout: check <see cref="ProjectionWaitResult.Reached" />,
+    ///     and when it is false, <see cref="ProjectionWaitResult.Shards" /> says how far each shard got. A paused or
+    ///     rebuilding projection returns at once with that status.
+    /// </remarks>
+    /// <param name="position">The position to wait for, normally <c>session.LastAppendedPosition</c>.</param>
+    /// <param name="projections">The projection classes, or the documents they write.</param>
+    /// <param name="timeout">How long to wait.</param>
+    /// <param name="token">Cancelling this throws <see cref="OperationCanceledException" />.</param>
+    Task<ProjectionWaitResult> WaitForProjectionsAsync(EventStorePosition position, IReadOnlyList<Type> projections,
+        TimeSpan timeout, CancellationToken token = default)
+        => throw new NotSupportedException(
+            $"{GetType().FullName} does not implement {nameof(IDocumentStore)}.{nameof(WaitForProjectionsAsync)}.");
+
+    /// <summary>
+    ///     #6004: <see cref="WaitForProjectionsAsync(EventStorePosition, IReadOnlyList{Type}, TimeSpan, CancellationToken)" />
+    ///     by projection or subscription name.
+    /// </summary>
+    Task<ProjectionWaitResult> WaitForProjectionsAsync(EventStorePosition position,
+        IReadOnlyList<string> projectionNames, TimeSpan timeout, CancellationToken token = default)
+        => throw new NotSupportedException(
+            $"{GetType().FullName} does not implement {nameof(IDocumentStore)}.{nameof(WaitForProjectionsAsync)}.");
 }

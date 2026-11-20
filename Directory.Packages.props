@@ -894,15 +894,34 @@
          span members, which the bdata write and read paths now use (marten#5731). jasperfx#1186, UnArchiveStream on
          the shared IEventStoreOperations, which Marten's own interface no longer redeclares. jasperfx#1192 is a
          JasperFx codegen fix for non-string [FromKeyedServices] keys with no Marten change. -->
-    <PackageVersion Include="JasperFx" Version="3.3.0" />
-    <PackageVersion Include="JasperFx.Events" Version="3.3.0" />
+    <!-- JasperFx 3.6.0 (from 3.5.0): jasperfx#1201/#1216, the per-identity rebuild Marten adopts in #6071
+         (SupportsIdentityRebuild, LoadEventsForIdentityRebuildAsync, IProjectionStorage.HardDeleteById,
+         IdentityRebuildGuard, IdentityRebuildCompliance). IStorageOperations.LastAppendedPosition replaces
+         LastAppendedSequence (an obsolete forwarder now). SequentialGuid, which Marten's Guid ids use, and
+         CombGuidIdGeneration is obsolete. -->
+    <!-- JasperFx 3.7.0 (from 3.6.0): jasperfx#1215/#1222, the event-range marks (mt_event_range_marks) and the
+         stored-event rewrite seam (IEventStore.RewriteStoredEventsAsync over Marten's rewriter), enrolled as
+         EventRangeMarkCompliance and EventRewriteCompliance. The backfill seam waits for marten#5632.
+         jasperfx#1227, IdentityRebuildCompliance gives its conjoined facts their own schema and asks the fixture
+         whether a soft-deleted document loads. -->
+    <!-- JasperFx 3.7.1 (from 3.7.0): jasperfx#1232, IdentityRebuildCompliance counts a document that loads as null as
+         not live, so MartenComplianceFixture answers LoadExcludesSoftDeletedDocuments = false and drops its soft-delete
+         load filter. jasperfx#1231, stopping an agent waits for its in-flight page load (CatchUpAsync no longer fails
+         with "The channel has been closed"). jasperfx#1233, a rebuild reads the running agents under the registry lock,
+         so it no longer misses a start that was still registering (23505 on the progression row); that start throws
+         ShardStartException(Rebuilding) instead. Marten had no workaround for either race. -->
+    <!-- JasperFx 3.8.0 (from 3.7.1): jasperfx#1242 fixes jasperfx#1241, the source-generated Evolve dispatcher now
+         applies conventional Apply methods inherited from a base class. The generator is bundled into Marten.nupkg
+         (see below), so Marten 10.0.0-alpha.5 carries the fixed generator. -->
+    <PackageVersion Include="JasperFx" Version="3.8.0" />
+    <PackageVersion Include="JasperFx.Events" Version="3.8.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.3.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.8.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -921,11 +940,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.3.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.8.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.3.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.8.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -1228,9 +1247,43 @@
              resolve. NOT ADOPTED yet; it is the rest of marten#5985 on master.
            * weasel#842 (weasel#839): SingleServerDatabaseCollection.FindOrCreateDatabaseSynchronously.
              NOT ADOPTED yet; also marten#5985. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.4" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.4" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.4" />
+    <!-- Weasel 10.0.0-alpha.6 (from alpha.4, through alpha.5). JasperFx floor still 3.0.0. All additive.
+           * weasel#849 (#855): protected HiloSequenceBase.InstallCount and TrySetCurrentHi(raw, installCountBefore),
+             so an install from outside an advance can take the overlap rule weasel#840 gives an advance. NOT ADOPTED
+             yet; HiLoSequence.SetFloor still installs through TrySetCurrentHi(raw), as given.
+           * weasel#850 (#856): protected virtual MasterTableTenancyBase.TryProvisionControlTableSynchronously, which
+             declines by default. NOT ADOPTED yet; overriding it in MasterTableTenancy lets TryResolveTenant answer in
+             a cold process before any asynchronous call has provisioned the control table (marten#5985 follow-up).
+           * weasel#851 (#854): EventTypeAllowList.UpcastSourceAliases keeps a source alias that is also a declared
+             alias. Marten's daemon does not page through EventTypeAllowList, so nothing changes here.
+           * Weasel.Sqlite only: weasel#857 (Microsoft.Data.Sqlite 10.0.15), #861 (collations), #863 (JSON column
+             reads). Marten does not reference Weasel.Sqlite. -->
+    <!-- Weasel 10.0.0-alpha.12:
+           * weasel#891: a referenced table's shared partition keeps its bound wide when a value leaves it.
+           * weasel#892: a removed value is dropped from the in-memory partition map too.
+           * weasel#895: a self-referencing partitioned table's partition is emptied before it is detached, which
+             PostgreSQL 17 requires, so RemoveMartenManagedTenantsAsync and DeleteAllTenantDataAsync work for a
+             managed-partitioned document with a foreign key to its own type (#6096).
+           * weasel#896: a value re-added under a different suffix goes back into the bucket that still covers it.
+         Weasel 10.0.0-alpha.11:
+           * weasel#890 (PR #893): ManagedListPartitions removes a tenant's partitions referencing tables first, so
+             RemoveMartenManagedTenantsAsync and DeleteAllTenantDataAsync no longer fail on a foreign key between two
+             managed-partitioned documents (#6092).
+           * weasel#883/#886: a primary key change leaves the foreign keys another delta rewrites to that delta.
+           * weasel#888: PostgresqlMigrator.RunsInOneTransaction is public.
+         Weasel 10.0.0-alpha.10 (from alpha.6, through alpha.7, alpha.8 and alpha.9).
+           * weasel#882/#884: a partitioning rebuild locks the table inside an explicit transaction, and a migration
+             with a rebuild runs in begin/commit with a rollback on failure, so a row committed during the copy aside
+             is no longer lost (Marten's archived-stream partitioning migration).
+           * weasel#875: ProvisioningCommandTimeout for CREATE/DROP DATABASE and extension installs, used by
+             SingleServerMultiTenancy (its base class) and, through WithProvisioningTimeout, DatabaseGenerator (#6060).
+           * weasel#871: a partitioning rebuild makes no index or primary key changes against the old table, so a
+             partitioned mt_events can go back to unpartitioned (blue_green_side_effect_gate no longer works around it).
+           * Sequential Guid ids through JasperFx's SequentialGuid, with IGuidGenerator overloads. Marten's closed-shape
+             registrations pass SequentialGuid.PostgresOrder explicitly. -->
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.12" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.12" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.12" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

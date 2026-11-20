@@ -147,12 +147,16 @@ public class inline_single_stream_projection_per_tenant
         // events tables which need per-tenant attach). Pin the no-partitioning
         // shape so a future change that auto-partitions doc tables is reviewed
         // intentionally.
+        // The table is created lazily by the first session that touches TripCount, which is another test
+        // in this class only when xUnit happens to run one first
+        await _fixture.Store.Storage.Database.EnsureStorageExistsAsync(typeof(TripCount), TestContext.Current.CancellationToken);
+
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync(TestContext.Current.CancellationToken);
 
         var tripCountTable = new Table(new PostgresqlObjectName(_fixture.SchemaName, "mt_doc_p2c_trip_count"));
         var live = await tripCountTable.FetchExistingAsync(conn, TestContext.Current.CancellationToken);
-        live.ShouldNotBeNull("p2c_trip_count document table must exist after fixture init");
+        live.ShouldNotBeNull("p2c_trip_count document table must exist once its storage is ensured");
 
         live.Partitioning.ShouldBeNull(
             "Projected document tables must NOT be partitioned by default — only mt_events / mt_streams are partitioned under UseTenantPartitionedEvents. " +

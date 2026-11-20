@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
@@ -30,7 +31,15 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 var starting = stream.Aggregate;
                 var appendedEvents = stream.Events;
 
-                return await _aggregator.BuildAsync(appendedEvents, session, starting, id, _storage, cancellation).ConfigureAwait(false);
+                var aggregate = await _aggregator.BuildAsync(appendedEvents, session, starting, id, _storage, cancellation).ConfigureAwait(false);
+
+                var foldedOntoFetchedInstance = starting != null && appendedEvents.Count > 0;
+                if (foldedOntoFetchedInstance)
+                {
+                    session.EjectAggregateFromIdentityMap<IEventStream<TDoc>, TId>(id);
+                }
+
+                return aggregate;
             }
         }
 
@@ -40,40 +49,45 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
             .ConfigureAwait(false);
 
-        _initialSql ??=
-            $"select {selector.SelectFields().Select(x => "d." + x).Join(", ")} from {_events.DatabaseSchemaName}.mt_events as d";
+        ensureInitialSql(selector);
 
-        var builder = new BatchBuilder{TenantId = session.TenantId};
+        return await withSnapshotRaceRedos(session, id, async detect =>
+        {
+            var builder = new BatchBuilder{TenantId = session.TenantId};
+            var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
+            writeLatestReads(builder, session, id, loadHandler);
 
-        // #5604. The two reads below have exactly the race FetchForWriting was fixed for: the snapshot
-        // document and then the events after it, each taking its own snapshot under READ COMMITTED, with
-        // the delta query re-reading a.mt_version. A daemon snapshot write landing in between makes the
-        // events read exclude the very events the document read never saw, so FetchLatest answers null
-        // for a live stream or silently stale state.
-        var sharedSnapshot = beginSharedSnapshot(builder, session);
+            var batch = builder.Compile();
+            (TDoc? Document, IReadOnlyList<IEvent> Events) read;
+            await using (var reader =
+                         await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false))
+            {
+                read = await readLatest(session, id, cancellation, loadHandler, reader, selector, detect)
+                    .ConfigureAwait(false);
+            }
 
-        var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
-        loadHandler.ConfigureCommand(builder, session);
+            // After the reader is closed: a missing document may start from the cold part of the stream
+            return await foldLatestAsync(session, id, read.Document, read.Events, cancellation).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     The events, then the snapshot document, in that order. See <see cref="writeEventFetchStatement" />.
+    /// </summary>
+    private void writeLatestReads(ICommandBuilder builder, IStorageSession session, TId id,
+        LoadByIdHandler<TDoc, TId> loadHandler)
+    {
+        writeEventFetchStatement(id, builder);
 
         builder.StartNewCommand();
 
-        writeEventFetchStatement(id, builder);
-
-        endSharedSnapshot(builder, sharedSnapshot);
-
-        var batch = builder.Compile();
-        AsyncRead read;
-        await using (var reader =
-                     await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false))
-        {
-            read = await readLatest(session, cancellation, loadHandler, reader, selector).ConfigureAwait(false);
-        }
-
-        return await foldLatestAsync(session, id, read, cancellation).ConfigureAwait(false);
+        loadHandler.ConfigureCommand(builder, session);
     }
 
     public async ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
+        session.TryGetAggregateFromIdentityMap<IEventStream<TDoc>, TId>(id, out var streamFoldedByRead);
+
         var snapshot = await FetchForReading(session, id, cancellation).ConfigureAwait(false);
 
         var pendingEvents = FetchPlanHelper.FindPendingEvents<TId>(session, id);
@@ -87,8 +101,11 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             session.AggregateWriteCache.Discard(cacheKeyFor(session, id));
         }
 
-        snapshot = await _aggregator.BuildAsync(pendingEvents, session, snapshot, id, _storage, cancellation)
-            .ConfigureAwait(false);
+        if (!ReferenceEquals(pendingEvents, streamFoldedByRead?.Events))
+        {
+            snapshot = await _aggregator.BuildAsync(pendingEvents, session, snapshot, id, _storage, cancellation)
+                .ConfigureAwait(false);
+        }
 
         // Store the updated document so it persists when the session commits
         if (snapshot != null)
@@ -107,34 +124,37 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
             .ConfigureAwait(false);
 
-        _initialSql ??=
-            $"select {selector.SelectFields().Select(x => "d." + x).Join(", ")} from {_events.DatabaseSchemaName}.mt_events as d";
+        ensureInitialSql(selector);
 
+        // A race is detected before anything is written to the destination, so a redo starts clean
+        return await withSnapshotRaceRedos(session, id,
+                detect => streamForReading(session, id, destination, selector, detect, cancellation))
+            .ConfigureAwait(false);
+    }
+
+    private async Task<bool> streamForReading(DocumentSessionBase session, TId id, Stream destination,
+        IEventStorage selector, bool detectSnapshotRace, CancellationToken cancellation)
+    {
         var builder = new BatchBuilder { TenantId = session.TenantId };
-
-        // #5604, as in FetchForReading above -- the streaming variant reads the same two things in the
-        // same order and had the same race.
-        var sharedSnapshot = beginSharedSnapshot(builder, session);
-
-        var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
-        loadHandler.ConfigureCommand(builder, session);
-
-        builder.StartNewCommand();
-
-        writeEventFetchStatement(id, builder);
-
-        endSharedSnapshot(builder, sharedSnapshot);
+        writeLatestReads(builder, session, id, new LoadByIdHandler<TDoc, TId>(_storage, id));
 
         var batch = builder.Compile();
         MemoryStream? rawJsonBuffer = null;
         IReadOnlyList<IEvent> events;
         await using (var reader = await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false))
         {
-            // First result set: buffer raw JSONB (don't deserialize yet)
+            // First result set: the newer events
+            var delta = await readDeltaAsync(reader, selector, cancellation).ConfigureAwait(false);
+
+            // Second result set: buffer raw JSONB (don't deserialize yet)
+            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             bool hasDocument = await reader.ReadAsync(cancellation).ConfigureAwait(false);
+            long? snapshotVersion = null;
 
             if (hasDocument)
             {
+                snapshotVersion = await readSnapshotVersionAsync(reader, cancellation).ConfigureAwait(false);
+
                 var ordinal = reader.GetOrdinal("data");
                 if (!await reader.IsDBNullAsync(ordinal, cancellation).ConfigureAwait(false))
                 {
@@ -144,12 +164,10 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 }
             }
 
-            // Second result set: check for newer events
-            await reader.NextResultAsync(cancellation).ConfigureAwait(false);
-            events = await new ListQueryHandler<IEvent>(null, selector)
-                .HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+            events = eventsAfterSnapshot(id, rawJsonBuffer != null, snapshotVersion, delta, detectSnapshotRace);
         }
 
+        // A document the application moved out with the stream's events starts from the cold part
         TDoc? document = null;
         if (rawJsonBuffer == null)
         {
@@ -190,23 +208,46 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         return true;
     }
 
-    private async Task<AsyncRead> readLatest(DocumentSessionBase session, CancellationToken cancellation,
-        LoadByIdHandler<TDoc, TId> loadHandler, DbDataReader reader, IEventStorage selector)
+    /// <summary>
+    ///     The snapshot row's <c>mt_version</c>, for the streaming path, which reads the row raw rather than
+    ///     through the selector that would record it in the session.
+    /// </summary>
+    private static async Task<long?> readSnapshotVersionAsync(DbDataReader reader, CancellationToken cancellation)
     {
-        // Fetch the existing aggregate -- if any!
-        var document = await loadHandler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        for (var i = 0; i < reader.FieldCount; i++)
+        {
+            if (reader.GetName(i) != "mt_version") continue;
 
-        // Read in any events from after the current state of the aggregate
-        await reader.NextResultAsync(cancellation).ConfigureAwait(false);
-        var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-        return new AsyncRead(0, document, events);
+            return await reader.IsDBNullAsync(i, cancellation).ConfigureAwait(false)
+                ? null
+                : await reader.GetFieldValueAsync<long>(i, cancellation).ConfigureAwait(false);
+        }
+
+        return null;
     }
 
-    private async Task<TDoc?> foldLatestAsync(DocumentSessionBase session, TId id, AsyncRead read,
-        CancellationToken cancellation)
+    private async Task<(TDoc? Document, IReadOnlyList<IEvent> Events)> readLatest(DocumentSessionBase session, TId id,
+        CancellationToken cancellation, LoadByIdHandler<TDoc, TId> loadHandler, DbDataReader reader,
+        IEventStorage selector, bool detectSnapshotRace)
     {
-        var (document, events, _) = await startAsync(session, id, read.Document, read.Events, cancellation)
-            .ConfigureAwait(false);
+        // The events after the snapshot, then the snapshot itself -- if any!
+        var delta = await readDeltaAsync(reader, selector, cancellation).ConfigureAwait(false);
+
+        await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+        var document = await loadHandler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+
+        var events = eventsAfterSnapshot(id, document != null, snapshotVersionFor(session, id), delta, detectSnapshotRace);
+        return (document, events);
+    }
+
+    /// <summary>
+    ///     Folds what <see cref="readLatest" /> read, starting a missing document from the cold part of the stream.
+    ///     Runs after the reader is closed, because the cold event store may read through the same session.
+    /// </summary>
+    private async Task<TDoc?> foldLatestAsync(DocumentSessionBase session, TId id, TDoc? document,
+        IReadOnlyList<IEvent> events, CancellationToken cancellation)
+    {
+        (document, events, _) = await startAsync(session, id, document, events, cancellation).ConfigureAwait(false);
 
         if (events.Any())
         {
@@ -229,62 +270,41 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             ensureInitialSql(session.EventStorage());
         }
 
-        return new QueryHandler(this, id, canShareOneSnapshot(session));
+        return new QueryHandler(this, id);
     }
 
-    public class QueryHandler: IFinishesAfterTheReader<TDoc?>, IOpensItsOwnTransaction
+    public class QueryHandler: IFinishesAfterTheReader<TDoc?>
     {
         private readonly FetchAsyncPlan<TDoc, TId> _parent;
         private readonly TId _id;
-        private readonly bool _sharedSnapshot;
         private readonly LoadByIdHandler<TDoc,TId> _loadHandler;
-        private AsyncRead _read;
+        private (TDoc? Document, IReadOnlyList<IEvent> Events) _read;
 
-        /// <summary>
-        ///     #5604: a batched <c>FetchLatest</c> brackets its two reads for the same reason the direct
-        ///     call does, so it takes on the same two batch rules — it has to be the batch's first
-        ///     operation, and it cannot share a batch with an exclusive fetch whose row lock its
-        ///     <c>end</c> would release. False inside a caller-owned transaction, where #5611 suppresses
-        ///     the bracket and so leaves nothing for either rule to protect.
-        /// </summary>
-        public bool OpensItsOwnTransaction => _sharedSnapshot;
-
-        public string CallName => "FetchLatest";
-
-        public QueryHandler(FetchAsyncPlan<TDoc, TId> parent, TId id, bool sharedSnapshot)
+        public QueryHandler(FetchAsyncPlan<TDoc, TId> parent, TId id)
         {
             _parent = parent;
             _id = id;
-            _sharedSnapshot = sharedSnapshot;
 
             _loadHandler = new LoadByIdHandler<TDoc, TId>(parent._storage, id);
         }
 
         public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
-            // Asked again here rather than reusing _sharedSnapshot -- see ForUpdateQueryHandler for why.
-            var sharedSnapshot = beginSharedSnapshot(builder, (QuerySession)session);
-
-            _loadHandler.ConfigureCommand(builder, session);
-
-            builder.StartNewCommand();
-
-            _parent.writeEventFetchStatement(_id, builder);
-
-            endSharedSnapshot(builder, sharedSnapshot);
+            _parent.writeLatestReads(builder, session, _id, _loadHandler);
         }
 
         public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
             var documentSessionBase = (DocumentSessionBase)session;
             var eventStorage = documentSessionBase.EventStorage();
-            _read = await _parent.readLatest(documentSessionBase, token, _loadHandler, reader, eventStorage)
+            // Detection ON: a batch cannot redo itself. See ForUpdateQueryHandler.
+            _read = await _parent.readLatest(documentSessionBase, _id, token, _loadHandler, reader, eventStorage, true)
                 .ConfigureAwait(false);
         }
 
         public Task<TDoc?> FinishAsync(IStorageSession session, CancellationToken token)
         {
-            return _parent.foldLatestAsync((DocumentSessionBase)session, _id, _read, token);
+            return _parent.foldLatestAsync((DocumentSessionBase)session, _id, _read.Document, _read.Events, token);
         }
 
         public async Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)

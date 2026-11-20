@@ -18,6 +18,8 @@ using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
 using System.Diagnostics.CodeAnalysis;
+using JasperFx.Events.Fetching;
+using Marten.Storage;
 
 namespace Marten.Events.Fetching;
 
@@ -26,6 +28,7 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
     private readonly IAggregator<TDoc, TId, IQuerySession> _aggregator;
     private readonly EventGraph _events;
     private readonly bool _readsCold;
+    private readonly IAggregateWriteCache? _cache;
     private readonly IIdentitySetter<TDoc, TId> _documentStorage;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
     private readonly OpenTelemetryOptions _telemetry;
@@ -61,6 +64,13 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
             // The goofy identity forwarding thing is to deal with custom value types. Of course.
             _aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
                           ?? typeof(IdentityForwardingAggregator<,,,>).CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _documentStorage, typeof(TDoc), idType, simpleType, typeof(IQuerySession));
+        }
+
+        // #5225: CacheAggregatesForWriting<T>() for a Live aggregate. Resolved once per plan, and only for an
+        // enrolled type, so a store that never opted in builds no cache key on any fetch. See FetchAsyncPlan.
+        if (events.AggregateWriteCaching.IsEnabled(typeof(TDoc)))
+        {
+            _cache = events.AggregateWriteCaching.ResolveCache(typeof(TDoc));
         }
     }
 
@@ -123,10 +133,7 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
         {
             var tenantId = ColdStreamReader.TenantFor(session, IsGlobal);
             var streamKey = streamKeyOf(id);
-            if (session is DocumentSessionBase documentSession)
-            {
-                documentSession.RememberColdVersion(tenantId, streamKey, read.ColdVersion);
-            }
+            rememberColdVersion(session, id, read.ColdVersion);
 
             events = await ColdStreamReader.PrependColdAsync(session, streamKey, tenantId,
                 read.ColdVersion, read.WarmEvents, default, token).ConfigureAwait(false);
@@ -135,31 +142,16 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
         return events;
     }
 
-    private async Task<IEventStream<TDoc>> buildStreamAsync(DocumentSessionBase session, TId id, LiveRead read,
-        CancellationToken cancellation)
+    /// <summary>
+    ///     Remembers the cold boundary this fetch saw, so the commit fails if the stream goes cold past it in between.
+    /// </summary>
+    private void rememberColdVersion(QuerySession session, TId id, long coldVersion)
     {
-        var events = await eventsToFoldAsync(session, id, read, cancellation).ConfigureAwait(false);
-
-        // Only the writing fetches count replayed events, as before cold storage; FetchLatest never did
-        _telemetry.RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.LivePlan);
-
-        var document = await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
-        if (document != null)
+        if (_readsCold && session is DocumentSessionBase documentSession)
         {
-            _documentStorage.SetIdentity(document, id);
+            documentSession.RememberColdVersion(ColdStreamReader.TenantFor(session, IsGlobal), streamKeyOf(id),
+                coldVersion);
         }
-
-        var stream = read.Version == 0
-            ? _identityStrategy.StartStream(document, session, id, cancellation)
-            : _identityStrategy.AppendToStream(document, session, id, read.Version, cancellation);
-
-        // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
-        if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
-        {
-            session.StoreDocumentInItemMap(id, stream);
-        }
-
-        return stream;
     }
 
     private static Exception? asStreamLocked(Exception e, TId id)
@@ -175,5 +167,18 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     The cache key for a stream. The database and the tenant are always part of it, because getting either
+    ///     wrong would hand one tenant's aggregate to another. The same key as <see cref="FetchAsyncPlan{TDoc,TId}" />.
+    /// </summary>
+    private AggregateCacheKey cacheKeyFor(DocumentSessionBase session, TId id)
+    {
+        return new AggregateCacheKey(
+            typeof(TDoc),
+            session.Database.Identifier,
+            IsGlobal ? AggregateCacheKey.GlobalTenant : session.TenantId,
+            id);
     }
 }

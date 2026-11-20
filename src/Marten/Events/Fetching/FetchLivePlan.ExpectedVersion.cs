@@ -1,135 +1,41 @@
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx;
 using JasperFx.Events;
-using Marten.Exceptions;
-using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
-using Marten.Services;
-using Npgsql;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Fetching;
 
 internal partial class FetchLivePlan<TDoc, TId>
 {
+    /// <remarks>
+    ///     #6086: the same reads as the batched fetch, so the aggregate write cache is used here too. The expected
+    ///     version is checked against the stream's version as the database reports it, whatever the cache holds.
+    /// </remarks>
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id,
         long expectedStartingVersion,
         CancellationToken cancellation = default)
     {
+        await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
 
-        var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
-            .ConfigureAwait(false);
-
+        var handler = new ForWritingQueryHandler(this, id, false, expectedStartingVersion);
         var builder = new BatchBuilder{TenantId = session.TenantId};
-        _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, false);
-
-        builder.StartNewCommand();
-        configureColdBoundary(builder, id);
-
-        var handler = _identityStrategy.BuildEventQueryHandler(IsGlobal, id, selector);
         handler.ConfigureCommand(builder, session);
 
-        LiveRead read;
         await using (var reader =
                      await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false))
         {
-            read = await readExpectedAsync(reader, session, id, handler, cancellation).ConfigureAwait(false);
+            await handler.ReadAsync(reader, session, cancellation).ConfigureAwait(false);
         }
 
-        return await buildStreamAsync(session, id, expectedStartingVersion, read, cancellation).ConfigureAwait(false);
-    }
-
-    private async Task<LiveRead> readExpectedAsync(DbDataReader reader, IStorageSession session, TId id,
-        IQueryHandler<IReadOnlyList<IEvent>> handler, CancellationToken cancellation)
-    {
-        try
-        {
-            return await readAsync(reader, session, handler, true, cancellation).ConfigureAwait(false);
-        }
-        catch (Exception e) when (asStreamLocked(e, id) is { } locked)
-        {
-            throw locked;
-        }
-    }
-
-    private async Task<IEventStream<TDoc>> buildStreamAsync(DocumentSessionBase session, TId id, long expectedStartingVersion,
-        LiveRead read, CancellationToken cancellation)
-    {
-        if (expectedStartingVersion != read.Version)
-        {
-            throw new ConcurrencyException(
-                $"Expected the existing version to be {expectedStartingVersion}, but was {read.Version}",
-                typeof(TDoc), id);
-        }
-
-        try
-        {
-            return await buildStreamAsync(session, id, read, cancellation).ConfigureAwait(false);
-        }
-        catch (Exception e) when (asStreamLocked(e, id) is { } locked)
-        {
-            throw locked;
-        }
+        // The cold part of the stream is read after the reader is closed
+        return await handler.FinishAsync(session, cancellation).ConfigureAwait(false);
     }
 
     public IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id, long expectedStartingVersion)
     {
         session.AssertIsDocumentSession();
-        return new ExpectedVersionQueryHandler(this, id, expectedStartingVersion);
+        return new ForWritingQueryHandler(this, id, false, expectedStartingVersion);
     }
-
-    public class ExpectedVersionQueryHandler: IFinishesAfterTheReader<IEventStream<TDoc>>
-    {
-        private readonly FetchLivePlan<TDoc, TId> _parent;
-        private readonly TId _id;
-        private readonly long _expectedStartingVersion;
-        private readonly IQueryHandler<IReadOnlyList<IEvent>> _handler;
-        private LiveRead _read;
-
-        public ExpectedVersionQueryHandler(FetchLivePlan<TDoc, TId> parent, TId id, long expectedStartingVersion)
-        {
-            _parent = parent;
-            _id = id;
-            _expectedStartingVersion = expectedStartingVersion;
-            _handler = _parent._identityStrategy.BuildEventQueryHandler(parent.IsGlobal, _id);
-        }
-
-        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
-        {
-            _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, false);
-
-            builder.StartNewCommand();
-            _parent.configureColdBoundary(builder, _id);
-
-            _handler.ConfigureCommand(builder, session);
-        }
-
-        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
-        {
-            _read = await _parent.readExpectedAsync(reader, session, _id, _handler, token).ConfigureAwait(false);
-        }
-
-        public Task<IEventStream<TDoc>> FinishAsync(IStorageSession session, CancellationToken token)
-        {
-            return _parent.buildStreamAsync((DocumentSessionBase)session, _id, _expectedStartingVersion, _read, token);
-        }
-
-        public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
-        {
-            await ReadAsync(reader, session, token).ConfigureAwait(false);
-            return await FinishAsync(session, token).ConfigureAwait(false);
-        }
-
-        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
-        {
-            throw new NotSupportedException();
-        }
-    }
-
 }

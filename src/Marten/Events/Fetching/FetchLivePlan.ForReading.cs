@@ -25,7 +25,23 @@ internal partial class FetchLivePlan<TDoc, TId>
                 var starting = stream.Aggregate;
                 var appendedEvents = stream.Events;
 
-                return await _aggregator.BuildAsync(appendedEvents, session, starting, id, _documentStorage, cancellation).ConfigureAwait(false);
+                // #5225: the fold below can land on the very instance FetchForWriting registered for write-back,
+                // which would then hold events its registered version says it does not, and the next fetch
+                // would fold them a second time
+                if (_cache != null && appendedEvents.Count > 0)
+                {
+                    session.AggregateWriteCache.Discard(cacheKeyFor(session, id));
+                }
+
+                var aggregate = await _aggregator.BuildAsync(appendedEvents, session, starting, id, _documentStorage, cancellation).ConfigureAwait(false);
+
+                var foldedOntoFetchedInstance = starting != null && appendedEvents.Count > 0;
+                if (foldedOntoFetchedInstance)
+                {
+                    session.EjectAggregateFromIdentityMap<IEventStream<TDoc>, TId>(id);
+                }
+
+                return aggregate;
             }
         }
 
@@ -56,11 +72,19 @@ internal partial class FetchLivePlan<TDoc, TId>
 
     public async ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
+        session.TryGetAggregateFromIdentityMap<IEventStream<TDoc>, TId>(id, out var streamFoldedByRead);
+
         var snapshot = await FetchForReading(session, id, cancellation).ConfigureAwait(false);
 
         var pendingEvents = FetchPlanHelper.FindPendingEvents<TId>(session, id);
-        if (pendingEvents is { Count: > 0 })
+        if (pendingEvents is { Count: > 0 } && !ReferenceEquals(pendingEvents, streamFoldedByRead?.Events))
         {
+            // #5225: as above, the snapshot can be the instance registered for write-back
+            if (_cache != null)
+            {
+                session.AggregateWriteCache.Discard(cacheKeyFor(session, id));
+            }
+
             snapshot = await _aggregator.BuildAsync(pendingEvents, session, snapshot, id, _documentStorage, cancellation)
                 .ConfigureAwait(false);
         }

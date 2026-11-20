@@ -118,8 +118,12 @@ nothing threw. Look for those with `Compacted<T>` events whose `Snapshot` is nul
 or from wherever your archiver copied them to.
 :::
 
-Stream compacting will not have any adverse impact on running asynchronous projections and even carrying out a compacting operation while an 
-asynchronous projection happens to be working on exactly that stream will not cause any discrepancies with the daemon as it runs.
+Compacting deletes events, so Marten refuses to compact a stream while any asynchronous projection or subscription has not
+processed its events yet. `CompactStreamAsync()` throws an `InvalidOperationException` naming the projections and subscriptions
+that are behind, and nothing is compacted; compact again once they caught up. A projection or subscription that has never run
+counts as behind. The one exception is a single stream projection of the type you are compacting to, which reads the `Compacted<T>`
+snapshot instead of the deleted events. Before this check, a multi-stream projection or a subscription (Wolverine's event forwarding
+included) that was behind never saw the compacted events at all ([#6050](https://github.com/JasperFx/marten/issues/6050)).
 
 You can compact a single stream repeatedly over time. For example, you may choose to compact a stream any time every time it becomes over 
 a 1,000 events long. In that case, Marten is completely replacing the `Compacted<T>` with the new snapshot version. The old `Compacted<T>` event

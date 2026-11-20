@@ -17,16 +17,20 @@ public partial class QuerySession
         CancellationToken token = default) where TDoc : notnull
     {
         var source = _store.GetCompiledQuerySourceFor(query, this);
+
+        // Like QueryAsync(compiled query): the first read of a type nothing has touched yet creates its table
+        await Database.EnsureStorageExistsAsync(typeof(TDoc), token).ConfigureAwait(false);
         var handler = (IQueryHandler<TOut>)source.Build(query, this);
         return await StreamJson(handler, destination, token).ConfigureAwait(false) > 0;
     }
 
-    public Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
+    public async Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
         CancellationToken token = default) where TDoc : notnull
     {
         var source = _store.GetCompiledQuerySourceFor(query, this);
+        await Database.EnsureStorageExistsAsync(typeof(TDoc), token).ConfigureAwait(false);
         var handler = (IQueryHandler<TOut>)source.Build(query, this);
-        return StreamJson(handler, destination, token);
+        return await StreamJson(handler, destination, token).ConfigureAwait(false);
     }
 
     public async Task<string?> ToJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,

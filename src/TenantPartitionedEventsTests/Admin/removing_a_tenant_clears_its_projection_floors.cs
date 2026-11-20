@@ -5,6 +5,7 @@ using JasperFx.Events;
 using Marten;
 using Shouldly;
 using TenantPartitionedEventsTests.Fixtures;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace TenantPartitionedEventsTests.Admin;
@@ -81,5 +82,55 @@ public class removing_a_tenant_clears_its_projection_floors: PartitionedStoreCon
         await Store.Advanced.RemoveMartenManagedTenantsAsync([doomed.ToString("N")], CancellationToken.None);
 
         await ShouldHaveOnlyTheSurvivorsAsync(doomed.ToString(), kept.ToString());
+    }
+
+    // #6007: a re-added tenant restarts its sequence at 1, so its recorded high water skips and late events have
+    // to go with it too, or its new events would be read as filling the old skipped ranges
+    [Fact]
+    public async Task RemoveMartenManagedTenantsAsync_removes_the_tenants_high_water_skips_and_late_events()
+    {
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "skip_rem", "skip_rem_kept");
+
+        var schema = Store.Options.Events.DatabaseSchemaName;
+        await using (var conn = new Npgsql.NpgsqlConnection(Marten.Testing.Harness.ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.CreateCommand($@"
+insert into {schema}.mt_high_water_skips (ending_sequence, tenant_id, starting_sequence, gaps) values
+  (10, 'skip_rem', 5, '{{6,6}}'), (10, 'skip_rem_kept', 5, '{{6,6}}');
+insert into {schema}.mt_high_water_late_events (seq_id, tenant_id, stream_id, event_type, skip_starting_sequence, skip_ending_sequence) values
+  (6, 'skip_rem', 'a', 'x', 5, 10), (6, 'skip_rem_kept', 'b', 'x', 5, 10);").ExecuteNonQueryAsync();
+        }
+
+        await Store.Advanced.RemoveMartenManagedTenantsAsync(["skip_rem"], CancellationToken.None);
+
+        await using (var conn = new Npgsql.NpgsqlConnection(Marten.Testing.Harness.ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            (await conn.CreateCommand(
+                    $"select string_agg(tenant_id, ',') from {schema}.mt_high_water_skips").ExecuteScalarAsync())
+                .ShouldBe("skip_rem_kept");
+            (await conn.CreateCommand(
+                    $"select string_agg(tenant_id, ',') from {schema}.mt_high_water_late_events").ExecuteScalarAsync())
+                .ShouldBe("skip_rem_kept");
+        }
+    }
+
+    // jasperfx#1215 / #1222: a cursor left behind by the tenant's previous incarnation would make a new rewrite of it
+    // start after events that were never rewritten
+    [Fact]
+    public async Task RemoveMartenManagedTenantsAsync_removes_the_tenants_event_range_marks()
+    {
+        await Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "mark_rem", "mark_rem_kept");
+        const string key = "rewrite:tenant-removal:cursor";
+        await Database.SetEventRangeMarkAsync(key, "mark_rem", 100);
+        await Database.SetEventRangeMarkAsync(key, "mark_rem_kept", 200);
+        await Database.SetEventRangeMarkAsync(key, null, 300);
+
+        await Store.Advanced.RemoveMartenManagedTenantsAsync(["mark_rem"], CancellationToken.None);
+
+        (await Database.FetchEventRangeMarkAsync(key, "mark_rem")).ShouldBeNull();
+        (await Database.FetchEventRangeMarkAsync(key, "mark_rem_kept")).ShouldBe(200);
+        (await Database.FetchEventRangeMarkAsync(key, null)).ShouldBe(300);
     }
 }

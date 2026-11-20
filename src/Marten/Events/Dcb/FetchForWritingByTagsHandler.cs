@@ -29,6 +29,8 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
     // assertion expects. See #4591.
     private List<(string TagTable, string TagValue)>? _versionTargets;
 
+    private string[]? _eventTypeNames;
+
     public FetchForWritingByTagsHandler(DocumentStore store, EventTagQuery query)
     {
         _store = store;
@@ -39,9 +41,7 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
     {
         var storage = (EventDocumentStorage)((DocumentSessionBase)session).EventStorage();
         var selectFields = storage.SelectFields();
-        var conditions = _query.Conditions;
         var schema = _store.Events.DatabaseSchemaName;
-        var isHStore = _store.Events.DcbStorageMode == DcbStorageMode.HStore;
 
         // #5300: the version capture goes FIRST, ahead of the events SELECT.
         // The two are separate statements, and at READ COMMITTED each statement
@@ -69,36 +69,10 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         builder.Append(schema);
         builder.Append(".mt_events e");
 
-        builder.Append(" where ");
-        if (isHStore)
-        {
-            HStoreDcbQueryFragment.AppendOrPredicate(builder, _store.Events, conditions, "e");
-        }
-        else
-        {
-            // #5897: one index probe per condition, combined on seq_id -- see TagTablesDcbQueryFragment
-            TagTablesDcbQueryFragment.AppendSeqIdPredicate(builder, _store.Events, conditions, "e", session.TenantId);
-        }
-
-        // Filter by tenant_id for conjoined tenancy
-        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
-        {
-            builder.Append(" and e.tenant_id = ");
-            builder.AppendParameter(session.TenantId);
-        }
-
-        // #5677: archived events are excluded, as in every other event query
-        builder.Append(" and e.is_archived = false");
-
-        // If the aggregator has event type filtering, apply it to limit the returned events
-        var eventTypeNames = resolveAggregatorEventTypeNames();
-        if (eventTypeNames != null)
-        {
-            builder.Append(" and e.type = ANY(");
-            var parameter = builder.AppendParameter(eventTypeNames);
-            parameter.NpgsqlDbType = NpgsqlDbType.Varchar | NpgsqlDbType.Array;
-            builder.Append(")");
-        }
+        // #6035: the save may count these events again (DcbBoundaryRead), and it has to count exactly the
+        // events read here, so both go through one where clause.
+        _eventTypeNames = resolveAggregatorEventTypeNames();
+        DcbBoundaryEventsSql.WriteWhere(builder, _store.Events, _query, session.TenantId, _eventTypeNames);
 
         builder.Append(" order by e.seq_id");
     }
@@ -240,7 +214,11 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         // assertion so one row is never asserted twice. See
         // DocumentSessionBase.QueuePendingDcbBoundaryAssertions, which drains this at
         // ProcessEventsAsync time, ahead of the producer-side bumps.
-        docSession.CaptureDcbBoundary(capturedVersions);
+        //
+        // #6035: a boundary that read events under a tag with no row also hands over what it read, for the
+        // save to count again.
+        docSession.CaptureDcbBoundary(capturedVersions,
+            DcbBoundaryRead.For(capturedVersions, session.TenantId, events.Count, _eventTypeNames));
 
         // jasperfx#1044: the shared boundary appends through the operations it is handed, which stamp the
         // tenant of the session this fetch ran on (a ForTenant session's own). Marten's former copy put a
@@ -290,5 +268,58 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
     public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
     {
         throw new NotSupportedException();
+    }
+}
+
+/// <summary>
+/// The events a <c>FetchForWritingByTags</c> boundary reads, as SQL: the fetch selects them, and #6035's
+/// <see cref="DcbBoundaryRead"/> counts them again at save time. One where clause for both, so the count can
+/// never cover a different set of events from the read.
+/// </summary>
+internal static class DcbBoundaryEventsSql
+{
+    public static void WriteWhere(ICommandBuilder builder, EventGraph events, EventTagQuery query, string tenantId,
+        string[]? eventTypeNames)
+    {
+        builder.Append(" where ");
+        if (events.DcbStorageMode == DcbStorageMode.HStore)
+        {
+            HStoreDcbQueryFragment.AppendOrPredicate(builder, events, query.Conditions, "e");
+        }
+        else
+        {
+            // #5897: one index probe per condition, combined on seq_id -- see TagTablesDcbQueryFragment
+            TagTablesDcbQueryFragment.AppendSeqIdPredicate(builder, events, query.Conditions, "e", tenantId);
+        }
+
+        // Filter by tenant_id for conjoined tenancy
+        if (events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            builder.Append(" and e.tenant_id = ");
+            builder.AppendParameter(tenantId);
+        }
+
+        // #5677: archived events are excluded, as in every other event query
+        builder.Append(" and e.is_archived = false");
+
+        // If the aggregator has event type filtering, apply it to limit the returned events
+        if (eventTypeNames != null)
+        {
+            builder.Append(" and e.type = ANY(");
+            var parameter = builder.AppendParameter(eventTypeNames);
+            parameter.NpgsqlDbType = NpgsqlDbType.Varchar | NpgsqlDbType.Array;
+            builder.Append(")");
+        }
+    }
+
+    /// <summary>How many of the events a boundary read are still there.</summary>
+    public static void WriteCount(ICommandBuilder builder, EventGraph events, DcbBoundaryRead read)
+    {
+        builder.Append("select count(*) from ");
+        builder.Append(events.DatabaseSchemaName);
+        builder.Append(".mt_events e");
+        WriteWhere(builder, events, read.Query, read.TenantId, read.EventTypeNames);
+        builder.Append(" and e.seq_id <= ");
+        builder.AppendParameter(read.LastSeenSequence);
     }
 }

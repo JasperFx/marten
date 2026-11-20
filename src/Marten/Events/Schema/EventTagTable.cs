@@ -1,8 +1,12 @@
 using System;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Events.Tags;
 using Marten.Events.Archiving;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
@@ -10,9 +14,12 @@ namespace Marten.Events.Schema;
 
 internal class EventTagTable: Table
 {
+    private readonly bool _archivedPartitioning;
+
     public EventTagTable(EventGraph events, ITagTypeRegistration registration)
         : base(new PostgresqlObjectName(events.DatabaseSchemaName, $"mt_event_tag_{registration.TableSuffix}"))
     {
+        _archivedPartitioning = events.UseArchivedStreamPartitioning;
         var pgType = PostgresqlTypeFor(registration.SimpleType);
         var isConjoined = events.TenancyStyle == TenancyStyle.Conjoined;
 
@@ -60,6 +67,19 @@ internal class EventTagTable: Table
         {
             Columns = ["seq_id"]
         });
+    }
+
+    public override async Task<ISchemaObjectDelta> CreateDeltaAsync(DbDataReader reader, CancellationToken ct = default)
+    {
+        var delta = await base.CreateDeltaAsync(reader, ct).ConfigureAwait(false);
+
+        // #6081: a tag table from before archived stream partitioning needs its rows' is_archived from mt_events
+        if (_archivedPartitioning && delta is TableDelta tableDelta && EventTagTableArchivingUpgrade.Applies(tableDelta.Actual))
+        {
+            return new EventTagTableArchivingUpgrade(this, tableDelta.Actual!, Identifier.Schema);
+        }
+
+        return delta;
     }
 
     private static string PostgresqlTypeFor(Type simpleType)

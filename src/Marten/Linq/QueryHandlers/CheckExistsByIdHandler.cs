@@ -49,7 +49,7 @@ internal class CheckExistsByIdHandler<T, TId>: IQueryHandler<bool> where T : not
                 .Append(sql, _id);
         }
 
-        storage.AddTenancyFilter(sql, session.TenantId);
+        storage.AddTenancyFilter(sql, session);
         sql.Append(")");
     }
 

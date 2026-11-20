@@ -1,25 +1,20 @@
-using System;
-using System.Data.Common;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events;
-using Marten.Exceptions;
-using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
-using Marten.Services;
-using Marten.Services.BatchQuerying;
-using Npgsql;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Fetching;
 
 internal partial class FetchAsyncPlan<TDoc, TId>
 {
+    /// <remarks>
+    ///     #6086: the same reads as the batched fetch, so the aggregate write cache is used here too, and redone
+    ///     like the plain fetch when the snapshot went backwards between the reads. The expected version is
+    ///     checked against the version the database says the aggregate reached, whatever the cache holds.
+    /// </remarks>
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, long expectedStartingVersion,
         CancellationToken cancellation = default)
     {
@@ -31,36 +26,21 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
         ensureInitialSql(selector);
 
-        var builder = new BatchBuilder{TenantId = session.TenantId};
-
-        // #5604: the same bracket the non-version overload has always had. Without it the three reads
-        // below each take their own snapshot, and a daemon snapshot write landing between the second
-        // and the third returns a null or stale aggregate for a stream that is perfectly healthy.
-        var sharedSnapshot = beginSharedSnapshot(builder, session);
-
-        _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, false);
-
-        builder.StartNewCommand();
-
-        var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
-        loadHandler.ConfigureCommand(builder, session);
-
-        builder.StartNewCommand();
-
-        writeEventFetchStatement(id, builder);
-
-        endSharedSnapshot(builder, sharedSnapshot);
-
-        var batch = builder.Compile();
-        AsyncRead read;
-        await using (var reader =
-                     await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false))
+        return await withSnapshotRaceRedos(session, id, async detect =>
         {
-            read = await readForWritingAsync(session, id, cancellation, reader, loadHandler, selector,
-                expectedStartingVersion).ConfigureAwait(false);
-        }
+            var handler = new ForWritingQueryHandler(this, id, false, expectedStartingVersion, detect);
+            var builder = new BatchBuilder{TenantId = session.TenantId};
+            handler.ConfigureCommand(builder, session);
 
-        return await buildStreamAsync(session, id, read, default, false, false, cancellation).ConfigureAwait(false);
+            await using (var reader =
+                         await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false))
+            {
+                await handler.ReadAsync(reader, session, cancellation).ConfigureAwait(false);
+            }
+
+            // A missing document may start from the cold part of the stream, which is read after the reader is closed
+            return await handler.FinishAsync(session, cancellation).ConfigureAwait(false);
+        }).ConfigureAwait(false);
     }
 
     public IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id, long expectedStartingVersion)
@@ -70,85 +50,9 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         {
             ensureInitialSql(dsb.EventStorage());
         }
-        return new ExpectedVersionQueryHandler(this, id, expectedStartingVersion, canShareOneSnapshot(dsb));
-    }
 
-    public class ExpectedVersionQueryHandler: IFinishesAfterTheReader<IEventStream<TDoc>>, IOpensItsOwnTransaction
-    {
-        private AsyncRead _read;
-        private readonly FetchAsyncPlan<TDoc, TId> _parent;
-        private readonly TId _id;
-        private readonly long _expectedStartingVersion;
-        private readonly bool _sharedSnapshot;
-        private readonly LoadByIdHandler<TDoc,TId> _loadHandler;
-
-        /// <summary>
-        ///     Unlike its non-exclusive sibling this handler has no for-update mode, so it brackets its
-        ///     reads whenever it is allowed to at all. #5604 gave it the bracket, and the marker is what
-        ///     makes a batch enforce the two rules that come with one — it has to be the batch's first
-        ///     operation, and it cannot share a batch with an exclusive fetch whose row lock its <c>end</c>
-        ///     would release. Without the marker a batched expected-version fetch would fail at
-        ///     <c>Execute()</c> with the bare <c>25001</c> that #5535 was filed to eliminate.
-        ///     <para>
-        ///     #5611 made it conditional rather than constant: on a session already inside a caller-owned
-        ///     transaction there is no bracket, and so nothing for either rule to protect.
-        ///     </para>
-        /// </summary>
-        public bool OpensItsOwnTransaction => _sharedSnapshot;
-
-        public string CallName => "FetchForWriting";
-
-        public ExpectedVersionQueryHandler(FetchAsyncPlan<TDoc,TId> parent, TId id, long expectedStartingVersion,
-            bool sharedSnapshot)
-        {
-            _parent = parent;
-            _id = id;
-            _expectedStartingVersion = expectedStartingVersion;
-            _sharedSnapshot = sharedSnapshot;
-
-            _loadHandler = new LoadByIdHandler<TDoc, TId>(_parent._storage, id);
-        }
-
-        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
-        {
-            // Asked again here rather than reusing _sharedSnapshot -- see ForUpdateQueryHandler for why.
-            var sharedSnapshot = beginSharedSnapshot(builder, (QuerySession)session);
-
-            _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, false);
-
-            builder.StartNewCommand();
-
-            _loadHandler.ConfigureCommand(builder, session);
-
-            builder.StartNewCommand();
-
-            _parent.writeEventFetchStatement(_id, builder);
-
-            endSharedSnapshot(builder, sharedSnapshot);
-        }
-
-        public async Task ReadAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
-        {
-            var documentSessionBase = (DocumentSessionBase)session;
-            _read = await _parent.readForWritingAsync(documentSessionBase, _id, token, reader, _loadHandler,
-                documentSessionBase.EventStorage(), _expectedStartingVersion).ConfigureAwait(false);
-        }
-
-        public Task<IEventStream<TDoc>> FinishAsync(IStorageSession session, CancellationToken token)
-        {
-            return _parent.buildStreamAsync((DocumentSessionBase)session, _id, _read, default, false, false, token);
-        }
-
-        public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
-        {
-            await ReadAsync(reader, session, token).ConfigureAwait(false);
-            return await FinishAsync(session, token).ConfigureAwait(false);
-        }
-
-        public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
-        {
-            throw new NotSupportedException();
-        }
-
+        // Detection ON: a batch cannot redo itself, so a snapshot that went backwards is refused with
+        // SnapshotRaceException rather than answered wrongly. See BuildQueryHandler(session, id, forUpdate).
+        return new ForWritingQueryHandler(this, id, false, expectedStartingVersion, true);
     }
 }

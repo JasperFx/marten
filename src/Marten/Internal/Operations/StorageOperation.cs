@@ -22,7 +22,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IStor
     protected readonly TId _id;
     private readonly string _tableName;
     private readonly Dictionary<TId, Guid> _versions;
-    protected Guid _version = CombGuidIdGeneration.NewGuid();
+    protected Guid _version = SequentialGuid.NextPostgresOrder();
 
     public StorageOperation(T document, TId id, Dictionary<TId, Guid> versions, DocumentMapping mapping)
     {

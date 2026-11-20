@@ -18,7 +18,7 @@ but will no longer be applied:
 Definitely check out [Rebuilding a Single Stream](/events/projections/rebuilding.html#rebuilding-a-single-stream) for part of the recipe for "healing" a system from bad events.
 :::
 
-To get started, you will first have to enable potential event skipping like this:
+Skipping is on by default since Marten 10. Before that it was opt in, and this is the setting:
 
 <!-- snippet: sample_enabling_event_skipping -->
 <a id='snippet-sample_enabling_event_skipping'></a>
@@ -28,20 +28,17 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-    // This is false by default for backwards compatibility,
-    // turning this on will add an extra column and filtering during
-    // various event store operations
+    // On by default since Marten 10. Set it to false to stop
+    // filtering skipped events out of projections, subscriptions
+    // and aggregation
     opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = true;
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventSkipping.cs#L14-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_event_skipping' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-That flag just enables the ability to mark events as _skipped_. As you'd imagine, that 
-flag alters Marten behavior by:
-
-1. Adds a new field called `is_skipped` to your `mt_events` table
-2. Adds an additional filter on `is_skipped = FALSE` on many event store operations detailed above
+The `is_skipped` column on `mt_events` is always there in Marten 10. The flag adds the `is_skipped = FALSE` filter to
+the event store operations listed above. Set it to `false` (or call `opts.RestoreV9Defaults()`) to leave that filter off.
 
 To mark events as skipped, you can either use raw SQL against your `mt_events` table, or
 this helper API:

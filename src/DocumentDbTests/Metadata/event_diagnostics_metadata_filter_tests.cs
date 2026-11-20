@@ -234,9 +234,10 @@ public class event_diagnostics_metadata_filter_tests
                     opts.DatabaseSchemaName = schema;
                     opts.Events.StreamIdentity = StreamIdentity.AsString;
 
-                    if (enableCorr) opts.Events.MetadataConfig.CorrelationIdEnabled = true;
-                    if (enableCaus) opts.Events.MetadataConfig.CausationIdEnabled = true;
-                    if (enableUser) opts.Events.MetadataConfig.UserNameEnabled = true;
+                    // Set both ways: event metadata is on by default since 10.0 (#5812)
+                    opts.Events.MetadataConfig.CorrelationIdEnabled = enableCorr;
+                    opts.Events.MetadataConfig.CausationIdEnabled = enableCaus;
+                    opts.Events.MetadataConfig.UserNameEnabled = enableUser;
 
                     opts.Events.AddEventType<EventMetaPayload>();
                 });

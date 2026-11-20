@@ -58,6 +58,10 @@ public partial class EventGraph: IFeatureSchema
             yield return new Extension("hstore");
         }
 
+        // #5812: must come before any event table, so a migration that rebuilds mt_events cannot take an owned
+        // mt_events_sequence down with it
+        yield return new EventSequenceOwnershipRelease(DatabaseSchemaName);
+
         yield return new StreamsTable(this);
 
         if (EnableStrictStreamIdentityEnforcement)
@@ -72,10 +76,9 @@ public partial class EventGraph: IFeatureSchema
 
         #region sample_using-sequence
 
-        var sequence = new Sequence(new PostgresqlObjectName(DatabaseSchemaName, "mt_events_sequence"))
-        {
-            Owner = eventsTable.Identifier, OwnerColumn = "seq_id"
-        };
+        // Deliberately not OWNED BY mt_events.seq_id (#5812): a rebuild of mt_events would drop it.
+        // See EventSequenceOwnershipRelease.
+        var sequence = new Sequence(new PostgresqlObjectName(DatabaseSchemaName, "mt_events_sequence"));
 
         #endregion
 
@@ -96,6 +99,10 @@ public partial class EventGraph: IFeatureSchema
 
         // jasperfx#809 (#5740): persisted projection start floors, which outlive rebuild teardown
         yield return new ProjectionFloorTable(this);
+
+        // jasperfx#1215 / #1222: the ceilings and cursors of stored-event rewrites and backfills, which outlive
+        // rebuild teardown and data resets like the floors
+        yield return new EventRangeMarkTable(this);
 
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
 
@@ -125,6 +132,9 @@ public partial class EventGraph: IFeatureSchema
         // table and function, not whether they exist, so a store with it off cannot drop them from a
         // schema another store has it on for.
         yield return new EventProgressionSkippingTable(this);
+
+        // #6007: the ledger of events that committed inside a skipped range
+        yield return new LateEventsTable(this);
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_progression_with_skip",
             "varchar, bigint, bigint");
 
@@ -144,6 +154,10 @@ public partial class EventGraph: IFeatureSchema
         if (TagTypes.Count > 0)
         {
             yield return new DcbTagVersionTable(this);
+
+            // #6035: every value that table holds comes from here, so a row deleted by a tombstone and
+            // created again can never match a capture of the old one.
+            yield return DcbTagVersionTable.BuildSequence(this);
         }
     }
 }

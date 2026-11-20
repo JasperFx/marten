@@ -94,7 +94,7 @@ public partial class EventGraph
                     TenantId = x.TenantId,
                     StreamId = Tombstone.StreamId,
                     StreamKey = Tombstone.StreamKey,
-                    Id = CombGuidIdGeneration.NewGuid(),
+                    Id = SequentialGuid.NextPostgresOrder(),
                     EventTypeName = mapping.EventTypeName,
                     DotNetTypeName = mapping.DotNetTypeName
                 })

@@ -3,9 +3,8 @@
 See [Marten Metadata](/documents/metadata) for more information and examples
 about capturing metadata as part of `IDocumentSession` unit of work operations.
 
-The metadata tracking for events can be extended in Marten by opting into extra fields
-for causation, correlation, user names, and key/value headers with this syntax as part of configuring
-Marten:
+Marten tracks causation, correlation, user names, and key/value headers on events. All four are on by default since
+Marten 10; in Marten 9 and earlier each one had to be turned on. These are the settings:
 
 <!-- snippet: sample_configureeventmetadata -->
 <a id='snippet-sample_configureeventmetadata'></a>
@@ -25,8 +24,8 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L118-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-By default, Marten runs "lean" by omitting the extra metadata storage on events shown above. Causation, correlation, user name (last modified by), and header fields must be individually enabled. 
-The database table columns for this data will not be created unless you opt-in.
+Set any of them to `false` to stop writing and reading that field, or call `opts.RestoreV9Defaults()` to turn all
+four off. The `mt_events` columns behind them are always created in Marten 10, whatever these settings are.
 
 When appending events, Marten will automatically tag events with the data from these properties
 on the `IDocumentSession` when capturing the new events:

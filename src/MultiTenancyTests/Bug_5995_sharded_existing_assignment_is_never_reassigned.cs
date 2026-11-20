@@ -33,7 +33,7 @@ public class Bug5995ShardFixture: IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         foreach (var name in new[] { ShardA, ShardB })
@@ -48,7 +48,7 @@ public class Bug5995ShardFixture: IAsyncLifetime
     {
         NpgsqlConnection.ClearAllPools();
 
-        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
         foreach (var name in new[] { ShardA, ShardB })
