@@ -176,9 +176,15 @@ internal static class PerTenantPartitionedCleanup
         // database entirely under multi-database tenancy.
         if (options.TenantPartitions?.Partitions.PartitionsFor(database) is not { } registry) return suffixes;
 
-        foreach (var tenantId in tenantIds)
+        var departing = tenantIds.ToHashSet(StringComparer.Ordinal);
+        foreach (var tenantId in departing)
         {
-            if (registry.TryGetValue(tenantId, out var suffix))
+            if (!registry.TryGetValue(tenantId, out var suffix)) continue;
+
+            // Tenants sharing one partition suffix ("bucketing") share its sequence too. Leave it for the
+            // tenants that stay in the bucket.
+            var stillUsed = registry.Any(pair => !departing.Contains(pair.Key) && pair.Value == suffix);
+            if (!stillUsed)
             {
                 suffixes[tenantId] = suffix;
             }
