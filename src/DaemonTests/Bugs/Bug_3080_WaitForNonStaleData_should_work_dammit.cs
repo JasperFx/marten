@@ -123,7 +123,9 @@ public partial class Bug_3080_WaitForNonStaleData_should_work_dammit
                     await tenantConn.DropSchemaAsync("wait");
                     await tenantConn.CloseAsync();
 
-                    return;
+                    // Not return: a later tenant's database may have been dropped by another suite on this
+                    // server (SingleServerMultiTenancyTests drops tenant1-3), and still needs creating.
+                    continue;
                 }
 
                 await new DatabaseSpecification().BuildDatabase(connection, tenantId);
