@@ -79,16 +79,17 @@ public class using_static_database_multitenancy: IAsyncLifetime
 
         description.MainDatabase.ShouldBeNull();
 
+        // DatabaseName is the database on the server, which carries the 9.0 prefix (#6109)
         description.Databases.Select(x => x.DatabaseName).OrderBy(x => x)
-            .ShouldBe(["database1", "tenant3", "tenant4"]);
+            .ShouldBe(new[] { "database1", "tenant3", "tenant4" }.Select(ConnectionSource.DatabaseName));
 
-        description.Databases.Single(x => x.DatabaseName == "database1")
+        description.Databases.Single(x => x.DatabaseName == ConnectionSource.DatabaseName("database1"))
             .TenantIds.ShouldBe(["tenant1", "tenant2"]);
 
-        description.Databases.Single(x => x.DatabaseName == "tenant3")
+        description.Databases.Single(x => x.DatabaseName == ConnectionSource.DatabaseName("tenant3"))
             .TenantIds.ShouldBe(["tenant3"]);
 
-        description.Databases.Single(x => x.DatabaseName == "tenant4")
+        description.Databases.Single(x => x.DatabaseName == ConnectionSource.DatabaseName("tenant4"))
             .TenantIds.ShouldBe(["tenant4"]);
 
     }
@@ -113,9 +114,9 @@ public class using_static_database_multitenancy: IAsyncLifetime
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync(TestContext.Current.CancellationToken);
 
-        (await conn.DatabaseExists("database1", TestContext.Current.CancellationToken)).ShouldBeTrue();
-        (await conn.DatabaseExists("tenant3", TestContext.Current.CancellationToken)).ShouldBeTrue();
-        (await conn.DatabaseExists("tenant4", TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await conn.DatabaseExists(ConnectionSource.DatabaseName("database1"), TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await conn.DatabaseExists(ConnectionSource.DatabaseName("tenant3"), TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await conn.DatabaseExists(ConnectionSource.DatabaseName("tenant4"), TestContext.Current.CancellationToken)).ShouldBeTrue();
     }
 
     [Fact]
@@ -141,7 +142,7 @@ public class using_static_database_multitenancy: IAsyncLifetime
         await using var session =
             await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" }, TestContext.Current.CancellationToken);
 
-        session.Connection.Database.ShouldBe("database1");
+        session.Connection.Database.ShouldBe(ConnectionSource.DatabaseName("database1"));
     }
 
     [Fact]

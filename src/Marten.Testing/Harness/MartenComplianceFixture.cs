@@ -218,15 +218,10 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             await conn.OpenAsync().ConfigureAwait(false);
             foreach (var databaseName in _tenantDatabases.Values.Distinct())
             {
-                if (!await conn.DatabaseExists(databaseName).ConfigureAwait(false))
-                {
-                    await new DatabaseSpecification().BuildDatabase(conn, databaseName).ConfigureAwait(false);
-                }
-
-                connectionStrings[databaseName] = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
-                {
-                    Database = databaseName
-                }.ConnectionString;
+                // The suite's name stays the database identifier; the database on the server carries
+                // the 9.0 prefix (#6109).
+                connectionStrings[databaseName] =
+                    await TenantDatabases.CreateIfNotExistsAsync(conn, databaseName).ConfigureAwait(false);
             }
         }
 

@@ -100,7 +100,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
     [Fact]
     public async Task enable_an_extension_with_multitenancy_no_tenants_upfront_does_not_register_extension()
     {
-        const string tenantId = "unknownTenantSchemaObject";
+        const string tenantId = ConnectionSource.DatabasePrefix + "unknownTenantSchemaObject"; // #6109: names its database
         await DropDatabaseIfExists(tenantId);
 
         StoreOptions(opts =>
@@ -133,7 +133,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
     [Fact]
     public async Task enable_an_extension_with_multitenancy_with_tenants_upfront_through_manual_apply()
     {
-        const string tenantId = "unknownTenantSchemaObjectManual";
+        const string tenantId = ConnectionSource.DatabasePrefix + "unknownTenantSchemaObjectManual"; // #6109: names its database
         await DropDatabaseIfExists(tenantId);
 
         StoreOptions(opts =>
@@ -164,7 +164,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
     [Fact]
     public async Task enable_an_extension_with_multitenancy_with_tenants_upfront_through_config()
     {
-        const string tenantId = "knownTenantSchemaObject";
+        const string tenantId = ConnectionSource.DatabasePrefix + "knownTenantSchemaObject"; // #6109: names its database
         await DropDatabaseIfExists(tenantId);
 
         StoreOptions(opts =>

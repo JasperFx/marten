@@ -284,7 +284,7 @@ internal sealed class ScratchShards: IAsyncDisposable
     public static async Task<ScratchShards> CreateAsync(int count, bool controlMultiplexing = false,
         bool shardMultiplexing = false)
     {
-        var prefix = "m5986_" + Guid.NewGuid().ToString("N")[..8];
+        var prefix = ConnectionSource.DatabaseName("m5986_" + Guid.NewGuid().ToString("N")[..8]);
         var names = Enumerable.Range(0, count).Select(i => $"{prefix}_{(char)('a' + i)}").ToArray();
 
         await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);

@@ -34,8 +34,9 @@ namespace MultiTenancyTests;
 [Collection("multi-tenancy")]
 public class single_server_explorer_does_not_provision: IAsyncLifetime
 {
-    private const string NeverSeen = "explorer_never_seen_db";
-    private const string Known = "explorer_known_db";
+    // #6109: single server tenancy names each tenant's database after it, so the id carries the 9.0 prefix
+    private const string NeverSeen = ConnectionSource.DatabasePrefix + "explorer_never_seen_db";
+    private const string Known = ConnectionSource.DatabasePrefix + "explorer_known_db";
 
     private IDocumentStore _store = null!;
 

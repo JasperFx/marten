@@ -45,7 +45,8 @@ public class using_bucketed_database_sharding_and_document_partitioning: IAsyncL
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
-        _dbNames = Enumerable.Range(1, 6).Select(i => $"marten_shard_{i:00}").ToArray();
+        // #6109: whole databases on the shared test server, so they carry the 9.0 prefix
+        _dbNames = Enumerable.Range(1, 6).Select(i => ConnectionSource.DatabaseName($"marten_shard_{i:00}")).ToArray();
         _connectionStrings = new(StringComparer.OrdinalIgnoreCase);
 
         foreach (var name in _dbNames)

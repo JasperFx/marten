@@ -149,7 +149,7 @@ Test targets run through [Bobcat](https://github.com/JasperFx/bobcat)'s supervis
 - `--disable-test-retry` turns every retry off. Measure a suite's real stability with this on.
 - **Worker processes, a database each.** A target may pass `workers: N`: the suite is split across N
   test hosts, partitioned by test CLASS, and each lane gets its own database
-  (`marten_testing_w0..N-1`, created on demand, handed over through `marten_testing_database`).
+  (`marten9_testing_w0..N-1`, created on demand, handed over through `marten_testing_database`).
   The count is clamped to `ProcessorCount / 2` on the machine running; `--test-workers N`
   overrides both the target's count and the clamp (`--test-workers 1` is the sequential baseline).
   Before raising a suite's count, read the bug shapes in Bobcat's `docs/parallel-ready-suites.md`:
@@ -184,7 +184,9 @@ share a test project, so DaemonTests and DaemonTests.ManualOnly take 4.x through
 - The rendered specifications print at exit. In CI, set `BOBCAT_SPEC_CONSOLE_FILE=<path>` to get them as a
   file; since Bobcat 1.0.0-rc.1 (bobcat#717) a redirected stdout gets them too, instead of nothing.
 
-Default test connection: `Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres` (`build/build.cs:28`). Override with `marten_testing_database` env var.
+Default test connection: `Host=localhost;Port=5432;Database=marten9_testing;Username=postgres;password=postgres` (`build/build.cs:29`, created on demand). Override with `marten_testing_database` env var.
+
+**9.0's databases carry the `marten9_` prefix (#6109).** The 9.0 and master suites share one Postgres server, and Marten 10 leaves partitioned event tables Marten 9 can't migrate (0A000). So 9.0's base database is `marten9_testing`, its lanes are `marten9_testing_*`, and every whole database a test creates by a fixed name goes through `ConnectionSource.DatabaseName(name)` / `ConnectionSource.ConnectionStringForDatabase(name)` / `TenantDatabases.CreateIfNotExistsAsync` (or `ConnectionSource.DatabasePrefix + "name"` where a constant is needed, e.g. single server tenant ids). Never write a literal database name in a 9.0 test.
 
 ### Local gate: the whole matrix before a push
 
@@ -210,14 +212,14 @@ runs even when another fails. The target fails when any unit failed or could not
   (`configureSupervisor` in `build/SupervisedTests.cs`): retries only for `[Trait("Retry", "N")]`, in a
   fresh process, the stall report, the heartbeat, and the same worker counts (EventSourcing and Linq
   at 4). `--disable-test-retry` and `--test-workers` apply as they do there.
-- **A database per lane.** Each unit runs on its own databases, `marten_testing_<project>_<tfm>_w{n}`,
+- **A database per lane.** Each unit runs on its own databases, `marten9_testing_<project>_<tfm>_w{n}`,
   handed over through `marten_testing_database`, so two suites never share a schema.
 - **Tracks for fixed names.** Some suites create whole databases with fixed names on the server, or
   reach for the default database directly. Those suites hold an exclusive track while they run, so the
-  gate never runs two of them that share a name at once: `tenant-databases` (tenant1..tenant6 and
-  database1: Core, Daemon, MultiTenancy, Stress), `shard-databases` (marten_shard_*: MultiTenancy,
-  TenantPartitionedEvents) and `default-database` (EventSourcingTests' `testing_projections`
-  hard-codes `localhost:5432/marten_testing`; Stress).
+  gate never runs two of them that share a name at once: `tenant-databases` (marten9_tenant1..6 and
+  marten9_database1: Core, Daemon, MultiTenancy, Stress), `shard-databases` (marten9_marten_shard_*:
+  MultiTenancy, TenantPartitionedEvents) and `default-database` (EventSourcingTests' fixed explorer and
+  compliance tenant databases; Stress).
 - **The worker budget** is half the cores, lowered to what the server's free connections hold at about
   40 per worker. A stock Postgres allows 100 connections, which gives a budget of 2.
   `docker-compose.yml` sets `max_connections=500`, so recreate an older container once

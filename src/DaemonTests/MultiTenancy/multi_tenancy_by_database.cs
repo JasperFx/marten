@@ -26,6 +26,12 @@ namespace DaemonTests.MultiTenancy;
 
 public class multi_tenancy_by_database: IAsyncLifetime
 {
+    // #6109: these names are whole databases on the shared test server, so they carry the 9.0 prefix
+    private const string Tenant1 = ConnectionSource.DatabasePrefix + "tenant1";
+    private const string Tenant3 = ConnectionSource.DatabasePrefix + "tenant3";
+    private const string Tenant4 = ConnectionSource.DatabasePrefix + "tenant4";
+    private const string Database1 = ConnectionSource.DatabasePrefix + "database1";
+
     private readonly ITestOutputHelper _output;
     private IHost _host;
     private IDocumentStore theStore;
@@ -40,6 +46,9 @@ public class multi_tenancy_by_database: IAsyncLifetime
 
     private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
     {
+        // #6109: the database on the shared test server carries the 9.0 prefix
+        databaseName = ConnectionSource.DatabaseName(databaseName);
+
         var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
         var exists = await conn.DatabaseExists(databaseName);
@@ -62,9 +71,9 @@ public class multi_tenancy_by_database: IAsyncLifetime
         await using var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString);
         await conn.OpenAsync();
 
-        var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
-        var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
-        var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+        var db1ConnectionString = await CreateDatabaseIfNotExists(conn, Database1);
+        var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, Tenant3);
+        var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, Tenant4);
 
 
         _host = await Host.CreateDefaultBuilder()
@@ -81,8 +90,8 @@ public class multi_tenancy_by_database: IAsyncLifetime
                         .MultiTenantedWithSingleServer(
                             ConnectionSource.ConnectionString,
                             t =>
-                                t.WithTenants("tenant1").InDatabaseNamed("database1")
-                                    .WithTenants("tenant3", "tenant4") // own database
+                                t.WithTenants(Tenant1).InDatabaseNamed(Database1)
+                                    .WithTenants(Tenant3, Tenant4) // own database
                         );
 
 
@@ -122,24 +131,24 @@ public class multi_tenancy_by_database: IAsyncLifetime
     [Fact]
     public async Task build_daemon_for_database()
     {
-        using var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync("tenant1");
+        using var daemon = (ProjectionDaemon)await theStore.BuildProjectionDaemonAsync(Tenant1);
 
-        daemon.Database.Identifier.ShouldBe("database1");
+        daemon.Database.Identifier.ShouldBe(Database1);
 
         await using var conn = daemon.Database.As<IMartenDatabase>().CreateConnection();
-        conn.Database.ShouldBe("database1");
+        conn.Database.ShouldBe(Database1);
     }
 
 
     [Fact]
     public async Task build_daemon_for_database_async()
     {
-        using var daemon = (ProjectionDaemon)(await theStore.BuildProjectionDaemonAsync("tenant1"));
+        using var daemon = (ProjectionDaemon)(await theStore.BuildProjectionDaemonAsync(Tenant1));
 
-        daemon.Database.Identifier.ShouldBe("database1");
+        daemon.Database.Identifier.ShouldBe(Database1);
 
         await using var conn = daemon.Database.As<IMartenDatabase>().CreateConnection();
-        conn.Database.ShouldBe("database1");
+        conn.Database.ShouldBe(Database1);
     }
 
     [Fact]
@@ -147,21 +156,21 @@ public class multi_tenancy_by_database: IAsyncLifetime
     {
         var id = Guid.NewGuid();
 
-        await using var session1 = theStore.LightweightSession("tenant1");
+        await using var session1 = theStore.LightweightSession(Tenant1);
         session1.Events.Append(id, new MTAEvent(), new MTBEvent(), new MTBEvent());
         await session1.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await using var session3 = theStore.LightweightSession("tenant3");
+        await using var session3 = theStore.LightweightSession(Tenant3);
         session3.Events.Append(id, new MTAEvent(), new MTAEvent(), new MTBEvent(), new MTBEvent());
         await session3.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await using var session4 = theStore.LightweightSession("tenant4");
+        await using var session4 = theStore.LightweightSession(Tenant4);
         session4.Events.Append(id, new MTAEvent(), new MTBEvent(), new MTBEvent(), new MTBEvent());
         await session4.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        await (await theStore.Storage.FindOrCreateDatabase("tenant1")).Tracker.WaitForShardState("AllGood:All", 3);
-        await (await theStore.Storage.FindOrCreateDatabase("tenant3")).Tracker.WaitForShardState("AllGood:All", 4);
-        await (await theStore.Storage.FindOrCreateDatabase("tenant4")).Tracker.WaitForShardState("AllGood:All", 4);
+        await (await theStore.Storage.FindOrCreateDatabase(Tenant1)).Tracker.WaitForShardState("AllGood:All", 3);
+        await (await theStore.Storage.FindOrCreateDatabase(Tenant3)).Tracker.WaitForShardState("AllGood:All", 4);
+        await (await theStore.Storage.FindOrCreateDatabase(Tenant4)).Tracker.WaitForShardState("AllGood:All", 4);
 
         (await session1.LoadAsync<MyAggregate>(id, TestContext.Current.CancellationToken)).ShouldBe(new MyAggregate { Id = id, ACount = 1, BCount = 2 });
         (await session3.LoadAsync<MyAggregate>(id, TestContext.Current.CancellationToken)).ShouldBe(new MyAggregate { Id = id, ACount = 2, BCount = 2 });

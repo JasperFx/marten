@@ -130,7 +130,7 @@ public class sync_tenant_resolution_thread_pool_tests
     public async Task a_burst_of_sync_session_opens_for_uncached_single_server_tenants_does_not_starve_the_thread_pool()
     {
         var callers = Math.Max(ThreadPool.ThreadCount, Environment.ProcessorCount) * 4 + 16;
-        var prefix = "ss_starve_" + Guid.NewGuid().ToString("N")[..8] + "_";
+        var prefix = ConnectionSource.DatabaseName("ss_starve_" + Guid.NewGuid().ToString("N")[..8] + "_");
         var databaseNames = Enumerable.Range(0, callers).Select(i => prefix + i).ToArray();
 
         await SingleServerDatabases.CreateAsync(databaseNames);

@@ -52,7 +52,7 @@ on:
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  pg_db: marten_testing
+  pg_db: marten9_testing
   pg_user: postgres
   CONFIGURATION: Release
   # DISABLE_TEST_PARALLELIZATION was removed here (#5529): NOTHING in the repository read it. It appeared
@@ -333,7 +333,7 @@ jobs:
           - 5432:5432
         env:
           POSTGRES_HOST_AUTH_METHOD: trust
-          POSTGRES_DB: marten_testing
+          POSTGRES_DB: marten9_testing
           NAMEDATALEN: 150
         options: >-
           --health-cmd pg_isready
@@ -466,7 +466,7 @@ jobs:
           - 5432:5432
         env:
           POSTGRES_HOST_AUTH_METHOD: trust
-          POSTGRES_DB: marten_testing
+          POSTGRES_DB: marten9_testing
           NAMEDATALEN: 150
         options: >-
           --health-cmd pg_isready

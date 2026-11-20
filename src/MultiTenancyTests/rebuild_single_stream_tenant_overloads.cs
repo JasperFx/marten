@@ -46,6 +46,12 @@ namespace MultiTenancyTests;
 /// </summary>
 public class rebuild_single_stream_tenant_overloads
 {
+    // #6109: these names are whole databases on the shared test server, so they carry the 9.0 prefix
+    private const string GuidTenantA = ConnectionSource.DatabasePrefix + "rebuild4668_g_tenantA";
+    private const string GuidTenantB = ConnectionSource.DatabasePrefix + "rebuild4668_g_tenantB";
+    private const string StringTenantA = ConnectionSource.DatabasePrefix + "rebuild4668_s_tenantA";
+    private const string StringTenantB = ConnectionSource.DatabasePrefix + "rebuild4668_s_tenantB";
+
     // ---- Conjoined tenancy ------------------------------------------------
 
     [Fact]
@@ -179,7 +185,7 @@ public class rebuild_single_stream_tenant_overloads
                 {
                     opts.MultiTenantedWithSingleServer(
                         ConnectionSource.ConnectionString,
-                        t => t.WithTenants("rebuild4668_g_tenantA", "rebuild4668_g_tenantB"));
+                        t => t.WithTenants(GuidTenantA, GuidTenantB));
 
                     opts.DatabaseSchemaName = "rebuild_4668_perdb_guid";
                 }).ApplyAllDatabaseChangesOnStartup();
@@ -193,14 +199,14 @@ public class rebuild_single_stream_tenant_overloads
         var streamA = Guid.NewGuid();
         var streamB = Guid.NewGuid();
 
-        await using (var session = store.LightweightSession("rebuild4668_g_tenantA"))
+        await using (var session = store.LightweightSession(GuidTenantA))
         {
             session.Events.StartStream<Bug4668Aggregate>(streamA,
                 new AEvent_4668(), new AEvent_4668());
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using (var session = store.LightweightSession("rebuild4668_g_tenantB"))
+        await using (var session = store.LightweightSession(GuidTenantB))
         {
             session.Events.StartStream<Bug4668Aggregate>(streamB,
                 new BEvent_4668(), new BEvent_4668(), new BEvent_4668());
@@ -208,9 +214,9 @@ public class rebuild_single_stream_tenant_overloads
         }
 
         await store.Advanced.RebuildSingleStreamAsync<Bug4668Aggregate>(
-            streamA, "rebuild4668_g_tenantA", TestContext.Current.CancellationToken);
+            streamA, GuidTenantA, TestContext.Current.CancellationToken);
 
-        await using (var query = store.QuerySession("rebuild4668_g_tenantA"))
+        await using (var query = store.QuerySession(GuidTenantA))
         {
             var doc = await query.LoadAsync<Bug4668Aggregate>(streamA, TestContext.Current.CancellationToken);
             doc.ShouldNotBeNull("rebuild must persist into tenant A's database");
@@ -218,9 +224,9 @@ public class rebuild_single_stream_tenant_overloads
         }
 
         await store.Advanced.RebuildSingleStreamAsync<Bug4668Aggregate>(
-            streamB, "rebuild4668_g_tenantB", TestContext.Current.CancellationToken);
+            streamB, GuidTenantB, TestContext.Current.CancellationToken);
 
-        await using (var query = store.QuerySession("rebuild4668_g_tenantB"))
+        await using (var query = store.QuerySession(GuidTenantB))
         {
             var doc = await query.LoadAsync<Bug4668Aggregate>(streamB, TestContext.Current.CancellationToken);
             doc.ShouldNotBeNull("rebuild must persist into tenant B's database");
@@ -240,7 +246,7 @@ public class rebuild_single_stream_tenant_overloads
                 {
                     opts.MultiTenantedWithSingleServer(
                         ConnectionSource.ConnectionString,
-                        t => t.WithTenants("rebuild4668_s_tenantA", "rebuild4668_s_tenantB"));
+                        t => t.WithTenants(StringTenantA, StringTenantB));
 
                     opts.Events.StreamIdentity = StreamIdentity.AsString;
                     opts.DatabaseSchemaName = "rebuild_4668_perdb_str";
@@ -253,14 +259,14 @@ public class rebuild_single_stream_tenant_overloads
         var keyA = "stream-A-" + Guid.NewGuid();
         var keyB = "stream-B-" + Guid.NewGuid();
 
-        await using (var session = store.LightweightSession("rebuild4668_s_tenantA"))
+        await using (var session = store.LightweightSession(StringTenantA))
         {
             session.Events.StartStream<Bug4668KeyedAggregate>(keyA,
                 new AEvent_4668(), new AEvent_4668(), new AEvent_4668());
             await session.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        await using (var session = store.LightweightSession("rebuild4668_s_tenantB"))
+        await using (var session = store.LightweightSession(StringTenantB))
         {
             session.Events.StartStream<Bug4668KeyedAggregate>(keyB,
                 new BEvent_4668(), new BEvent_4668());
@@ -268,9 +274,9 @@ public class rebuild_single_stream_tenant_overloads
         }
 
         await store.Advanced.RebuildSingleStreamAsync<Bug4668KeyedAggregate>(
-            keyA, "rebuild4668_s_tenantA", TestContext.Current.CancellationToken);
+            keyA, StringTenantA, TestContext.Current.CancellationToken);
 
-        await using (var query = store.QuerySession("rebuild4668_s_tenantA"))
+        await using (var query = store.QuerySession(StringTenantA))
         {
             var doc = await query.LoadAsync<Bug4668KeyedAggregate>(keyA, TestContext.Current.CancellationToken);
             doc.ShouldNotBeNull("rebuild must persist into tenant A's database");
@@ -278,9 +284,9 @@ public class rebuild_single_stream_tenant_overloads
         }
 
         await store.Advanced.RebuildSingleStreamAsync<Bug4668KeyedAggregate>(
-            keyB, "rebuild4668_s_tenantB", TestContext.Current.CancellationToken);
+            keyB, StringTenantB, TestContext.Current.CancellationToken);
 
-        await using (var query = store.QuerySession("rebuild4668_s_tenantB"))
+        await using (var query = store.QuerySession(StringTenantB))
         {
             var doc = await query.LoadAsync<Bug4668KeyedAggregate>(keyB, TestContext.Current.CancellationToken);
             doc.ShouldNotBeNull("rebuild must persist into tenant B's database");

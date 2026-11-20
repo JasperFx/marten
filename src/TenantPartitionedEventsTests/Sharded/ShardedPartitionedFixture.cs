@@ -47,17 +47,8 @@ public sealed class ShardedPartitionedFixture : IAsyncLifetime
 
         foreach (var name in DbNames)
         {
-            var exists = await conn.DatabaseExists(name);
-            if (!exists)
-            {
-                await new DatabaseSpecification().BuildDatabase(conn, name);
-            }
-
-            var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
-            {
-                Database = name
-            };
-            ConnectionStrings[name] = builder.ConnectionString;
+            // The name stays the shard's database id; the database on the server carries the 9.0 prefix (#6109)
+            ConnectionStrings[name] = await TenantDatabases.CreateIfNotExistsAsync(conn, name);
         }
 
         // Clean up master database schemas

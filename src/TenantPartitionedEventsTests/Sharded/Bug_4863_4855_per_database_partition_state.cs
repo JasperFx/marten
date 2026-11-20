@@ -54,15 +54,8 @@ public sealed class PerDbPartitionStateFixture: IAsyncLifetime
         ConnectionStrings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in new[] { ShardA, ShardB })
         {
-            if (!await conn.DatabaseExists(name))
-            {
-                await new DatabaseSpecification().BuildDatabase(conn, name);
-            }
-
-            ConnectionStrings[name] = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
-            {
-                Database = name
-            }.ConnectionString;
+            // The name stays the shard's database id; the database on the server carries the 9.0 prefix (#6109)
+            ConnectionStrings[name] = await TenantDatabases.CreateIfNotExistsAsync(conn, name);
         }
     }
 

@@ -24,7 +24,7 @@ namespace MultiTenancyTests;
 /// </summary>
 public class Bug5995ShardFixture: IAsyncLifetime
 {
-    private readonly string _prefix = "m5995_" + Guid.NewGuid().ToString("N")[..10];
+    private readonly string _prefix = ConnectionSource.DatabaseName("m5995_" + Guid.NewGuid().ToString("N")[..10]);
 
     public string ShardA => _prefix + "_a";
     public string ShardB => _prefix + "_b";

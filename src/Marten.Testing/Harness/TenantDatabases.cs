@@ -12,6 +12,11 @@ namespace Marten.Testing.Harness
     /// reused across runs (creation is expensive); callers are responsible for
     /// resetting schemas or data inside them.
     /// </summary>
+    /// <remarks>
+    /// The database on the server is <see cref="ConnectionSource.DatabaseName"/> of the name the test passes
+    /// (#6109), so the 9.0 and master suites never share one. Keep the unprefixed name as the test's tenant id
+    /// or database identifier.
+    /// </remarks>
     public static class TenantDatabases
     {
         /// <summary>
@@ -21,6 +26,7 @@ namespace Marten.Testing.Harness
         /// </summary>
         public static async Task<string> CreateIfNotExistsAsync(NpgsqlConnection conn, string databaseName)
         {
+            databaseName = ConnectionSource.DatabaseName(databaseName);
             if (!await conn.DatabaseExists(databaseName))
             {
                 try
@@ -44,10 +50,7 @@ namespace Marten.Testing.Harness
         /// </summary>
         public static string ConnectionStringFor(string databaseName)
         {
-            return new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
-            {
-                Database = databaseName
-            }.ConnectionString;
+            return ConnectionSource.ConnectionStringForDatabase(databaseName);
         }
     }
 }
