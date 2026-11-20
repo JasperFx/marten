@@ -35,6 +35,17 @@ public class ConnectionSource
     public static readonly string AdminConnectionString =
         new NpgsqlConnectionStringBuilder(ConnectionString) { CommandTimeout = 60 }.ConnectionString;
 
+    /// <summary>
+    ///     <see cref="ConnectionString" /> with a 60 second command timeout, for the stores the shared compliance
+    ///     suites build (#6101). Their facts check behaviour, not speed: they race sessions that queue on one
+    ///     lock (ten DCB allocators on one tag), and they rebuild and clean schema between facts. On a busy box
+    ///     those statements take longer than 5 seconds, and Npgsql reports a command timeout as
+    ///     "Exception while reading from stream" with an inner <see cref="TimeoutException" />, which reads like
+    ///     a broken connection rather than a slow one.
+    /// </summary>
+    public static readonly string ComplianceConnectionString =
+        new NpgsqlConnectionStringBuilder(ConnectionString) { CommandTimeout = 60 }.ConnectionString;
+
     static ConnectionSource()
     {
         if (ConnectionString.IsEmpty())

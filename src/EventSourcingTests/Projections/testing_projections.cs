@@ -226,6 +226,11 @@ public class testing_projections
                         opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
                     })
 
+                    // Build the schema before anything else touches it. Otherwise the daemon starting up and
+                    // the first SaveChangesAsync below both apply it, and on a busy database one of them can
+                    // give up waiting for the other
+                    .ApplyAllDatabaseChangesOnStartup()
+
                     // Using Solo in tests will help it start up a little quicker
                     .AddAsyncDaemon(DaemonMode.Solo);
             }).StartAsync();
@@ -289,6 +294,11 @@ public class testing_projections
 
                         opts.Events.TimeProvider = eventsTimeProvider;
                     })
+
+                    // Build the schema before anything else touches it. Otherwise the daemon starting up and
+                    // the first SaveChangesAsync below both apply it, and on a busy database one of them can
+                    // give up waiting for the other
+                    .ApplyAllDatabaseChangesOnStartup()
 
                     // Using Solo in tests will help it start up a little quicker
                     .AddAsyncDaemon(DaemonMode.Solo);

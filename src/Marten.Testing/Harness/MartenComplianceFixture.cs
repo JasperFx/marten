@@ -213,15 +213,21 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         _shardAssignments.Clear();
 
         var connectionStrings = new Dictionary<string, string>();
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        // #6023: creating a database takes longer than the short test timeout on a busy server
+        await using (var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString))
         {
             await conn.OpenAsync().ConfigureAwait(false);
             foreach (var databaseName in _tenantDatabases.Values.Distinct())
             {
                 // The suite's name stays the database identifier; the database on the server carries
                 // the 9.0 prefix (#6109).
-                connectionStrings[databaseName] =
-                    await TenantDatabases.CreateIfNotExistsAsync(conn, databaseName).ConfigureAwait(false);
+                await TenantDatabases.CreateIfNotExistsAsync(conn, databaseName).ConfigureAwait(false);
+
+                // #6101: see ConnectionSource.ComplianceConnectionString
+                connectionStrings[databaseName] = new NpgsqlConnectionStringBuilder(ConnectionSource.ComplianceConnectionString)
+                {
+                    Database = ConnectionSource.DatabaseName(databaseName)
+                }.ConnectionString;
             }
         }
 
@@ -232,7 +238,7 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             // conjoined or the tenants in one shard cannot be told apart at all.
             options.MultiTenantedWithShardedDatabases(x =>
             {
-                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.ConnectionString = ConnectionSource.ComplianceConnectionString;
                 x.SchemaName = "compliance_shards";
                 foreach (var (databaseName, connectionString) in connectionStrings)
                 {
@@ -259,12 +265,13 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
 
     private static string connectionStringFor(ComplianceStoreConfig config)
     {
+        // #6101: see ConnectionSource.ComplianceConnectionString
         if (!config.MaxPoolSize.HasValue)
         {
-            return ConnectionSource.ConnectionString;
+            return ConnectionSource.ComplianceConnectionString;
         }
 
-        return new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+        return new NpgsqlConnectionStringBuilder(ConnectionSource.ComplianceConnectionString)
         {
             MaxPoolSize = config.MaxPoolSize.Value
         }.ConnectionString;
