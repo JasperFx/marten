@@ -19,7 +19,9 @@ Read [What does not read the cold part](#what-does-not-read-the-cold-part) befor
 
 ## Configuration
 
-Implement `IColdEventStore` and register it. Cold event storage requires string stream identity:
+Implement `IColdEventStore` and register it. Cold event storage requires string stream identity, and can't
+be combined with event tags ([Dynamic Consistency Boundary](/events/dcb)). Both are refused when the store
+starts:
 
 ```cs
 using Marten.Events.Cold;
@@ -52,8 +54,24 @@ part.
 query. It returns each event with its stream key; streams may interleave, but each stream's events come
 oldest first, the same as from `ReadAsync`.
 
-With a cold event store configured, `mt_streams` gets a nullable `cold_version` column through the normal
-schema migration. Stores without one see no schema change.
+With a cold event store configured, `mt_streams` gets a nullable `cold_version` column, and an index on it
+that only holds the cold streams, through the normal schema migration. Stores without one see no schema
+change. `FetchStreamStateAsync` and `QueryStreamStates()` return it as `StreamState.ColdVersion`, null for a
+stream without a cold part, and `QueryStreamStates()` can filter on it:
+
+```cs
+var coldStreams = await session.Events.QueryStreamStates()
+    .Where(x => x.ColdVersion != null)
+    .ToListAsync();
+```
+
+### Why event tags are refused
+
+Moving a stream cold deletes its events from `mt_events`, and a tag query or a DCB consistency check only
+reads `mt_events`. A rule that spans a cold stream, a quota or a uniqueness check, would pass when it should
+fail, and once the events are gone Marten can't tell that the cold stream would have matched. So a store with
+a cold event store refuses to start when a tag type is registered. It also doesn't register a projection's
+strong-typed identity as a tag type on its own, as it otherwise does.
 
 ## Moving a stream's events
 
@@ -66,9 +84,9 @@ session.Events.MarkStreamCold(streamKey, 5);
 await session.SaveChangesAsync();
 ```
 
-`MarkStreamCold` deletes the stream's events through that version from `mt_events` (and their tag rows),
-and records the version in `mt_streams.cold_version`. It fails the unit of work if the stream does not exist
-or has not reached that version. `mt_streams.version` is left alone, so optimistic concurrency keeps working
+`MarkStreamCold` deletes the stream's events through that version from `mt_events`, and records the version
+in `mt_streams.cold_version`. It fails the unit of work if the stream does not exist, is archived, or has not
+reached that version. `mt_streams.version` is left alone, so optimistic concurrency keeps working
 as before.
 
 ### Moving many streams at once
@@ -129,9 +147,15 @@ the ones that were refused. A projection or subscription that is registered but 
 
 ## Reading
 
-- `FetchForWriting`, `FetchForExclusiveWriting`, `FetchLatest` (also in a batch) and `AggregateStreamAsync`
-  fold the cold events first and then the events in `mt_events`, for live aggregations. A stream with only
-  cold events comes back whole, at its current version, so appending to it is ordinary code. For inline and
+- `FetchForWriting`, `FetchForExclusiveWriting`, `FetchManyForWriting`, `FetchLatest` (also in a batch) and
+  `AggregateStreamAsync` fold the cold events first and then the events in `mt_events`, for live
+  aggregations. A stream with only cold events comes back whole, at its current version, so appending to it is
+  ordinary code. The same goes for the fetches by [natural key](/events/natural-keys).
+- An aggregate kept in the
+  [aggregate write cache](/events/optimizing#caching-aggregate-snapshots-for-fetchforwriting) is only folded
+  onto when the stream's cold part ends at or below the cached version. When another node moved the stream
+  cold past it, the events in between are no longer in `mt_events`, so the fetch reads the whole stream again,
+  cold part first. For inline and
   async aggregations the fetches read the stored document, and start from the cold part when you moved it out
   with the events: see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream).
 - Cold events are deserialized exactly like events from `mt_events`: the same event type resolution
@@ -209,8 +233,16 @@ something wrong, Marten refuses instead:
 | Inline and async aggregations (snapshots), and `FetchForWriting`, `FetchForExclusiveWriting` and `FetchLatest` on them | Correct, also when you moved the stored document out together with the events: the projection and the fetches start from the cold part, see [Single-stream projections of a cold stream](#single-stream-projections-of-a-cold-stream). A projection that [ignores cold streams](#projections-that-ignore-cold-streams) never starts from the cold part: a missing document starts again from the warm events, and a fetch sees no document. |
 | Rebuilding a projection | Refused with `ColdStreamReplayException` while any stream in that database (or, for a per-tenant rebuild, that tenant) is cold, before anything is torn down. Allowed for a projection that [ignores cold streams](#projections-that-ignore-cold-streams); it then replays `mt_events` only. |
 | A projection registered after streams went cold | Its first start from the beginning is refused the same way: the shard is paused with `ColdStreamReplayException`. A projection that starts from the present or from a later sequence is not affected. |
-| `CompactStreamAsync` | Refused with `InvalidStreamOperationException`: its `Compacted<T>` snapshot would leave the cold part out, and every later fold jumps to it. |
+| `CompactStreamAsync` | Refused with `InvalidStreamOperationException`: its `Compacted<T>` snapshot would leave the cold part out, and every later fold jumps to it. The other order works: compact a stream first, and then move it cold through the compacted version. The `Compacted<T>` event goes to cold storage with the rest, and the fold starts from it. |
 | `FetchStreamAsync`, `QueryAllRawEvents()` | Return the events in `mt_events` only. Use `FetchStreamWithColdAsync` or `FetchStreamsWithColdAsync` for the whole stream. |
+| `FetchForWriting` and `FetchLatest` by [natural key](/events/natural-keys) | Correct, the same as by stream key. The natural key lookup stays in PostgreSQL, so a cold stream is found by its natural key as before. |
+| Rebuilding one stream with `RebuildSingleStreamAsync` | Without a daemon running the projection, correct: it folds the stream with `AggregateStreamAsync`. Through a daemon (the projection's shard runs in this process) it is refused with `IdentityRebuildRefusedException`, because the daemon re-folds `mt_events` only. Stop the shard and call it again, or let the projection ignore cold streams. |
+| Late-event recovery | Its rebuild of the stream is refused the same way. The recovery logs it and leaves the stream alone; rebuild the document yourself as above. |
+| `ArchiveStream`, or an `Archived` event | Refused with `InvalidStreamOperationException`: a fetch of an archived stream reads none of its events in `mt_events`, and would fold the cold part alone. `MarkStreamCold` refuses an archived stream likewise. |
+| Event tags and Dynamic Consistency Boundary | Refused at startup, see [Why event tags are refused](#why-event-tags-are-refused). |
+| [Masking protected information](/events/protection) | Masks the events in `mt_events` only. Personal data in cold events is the application's to mask or remove, in its own storage. |
+| [Rewriting stored events](/events/rewriting) | Rewrites the events in `mt_events` only. Cold events keep the shape they had when they were moved, and are upcast when they are read. |
+| `QueryAcrossAllDatabasesAsync` | Runs your query in each database; a query on raw events sees `mt_events` only, as above. |
 
 The check for rebuilds and new projections is one `exists` query on `mt_streams` per database (or tenant)
 when a projection replays from the beginning; stores without a cold event store skip it.

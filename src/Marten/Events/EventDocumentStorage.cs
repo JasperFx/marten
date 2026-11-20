@@ -293,6 +293,12 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
             state.CompactedVersion = reader.GetFieldValue<long>(6);
         }
 
+        // jasperfx#1211: the cold boundary, selected only with a cold event store
+        if (Events.ColdEventStore != null && !reader.IsDBNull(7))
+        {
+            state.ColdVersion = reader.GetFieldValue<long>(7);
+        }
+
         return state;
     }
 
@@ -328,6 +334,12 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         if (!await reader.IsDBNullAsync(6, token).ConfigureAwait(false))
         {
             state.CompactedVersion = await reader.GetFieldValueAsync<long>(6, token).ConfigureAwait(false);
+        }
+
+        // jasperfx#1211: the cold boundary, selected only with a cold event store
+        if (Events.ColdEventStore != null && !await reader.IsDBNullAsync(7, token).ConfigureAwait(false))
+        {
+            state.ColdVersion = await reader.GetFieldValueAsync<long>(7, token).ConfigureAwait(false);
         }
 
         return state;

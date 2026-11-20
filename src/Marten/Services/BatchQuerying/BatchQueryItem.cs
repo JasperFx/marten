@@ -26,11 +26,15 @@ internal class BatchQueryItem<T>: IBatchQueryItem
 
     public IQueryHandler Handler => _handler;
 
+    // Read, and waiting for FinishAsync. Set only for a handler that finishes after the reader.
+    private bool _waitingToFinish;
+
     public async Task ReadAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         if (_handler is IFinishesAfterTheReader<T> finishesLater)
         {
             await finishesLater.ReadAsync(reader, session, token).ConfigureAwait(false);
+            _waitingToFinish = true;
             return;
         }
 
@@ -40,10 +44,11 @@ internal class BatchQueryItem<T>: IBatchQueryItem
 
     public async Task FinishAsync(IMartenSession session, CancellationToken token)
     {
-        if (_handler is IFinishesAfterTheReader<T> finishesLater)
-        {
-            Completion.SetResult(await finishesLater.FinishAsync(session, token).ConfigureAwait(false));
-        }
+        // Once, and only after a successful read: the batch also finishes what it read when a later item fails
+        if (!_waitingToFinish || _handler is not IFinishesAfterTheReader<T> finishesLater) return;
+        _waitingToFinish = false;
+
+        Completion.SetResult(await finishesLater.FinishAsync(session, token).ConfigureAwait(false));
     }
 
     public void Fail(Exception exception, CancellationToken token)

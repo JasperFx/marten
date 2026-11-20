@@ -242,12 +242,11 @@ internal class StreamStateQueryProvider: IQueryProvider, IDocumentQueryExecutor
 
     private void writeSelectSql(ICommandBuilder builder, StreamStateQueryPlan plan)
     {
-        // The first seven columns and their order are owned by StreamStateSql/ISelector<StreamState> — the
+        // The leading columns and their order are owned by StreamStateSql/ISelector<StreamState> — the
         // same row shape the fetch path reads, so the two surfaces cannot drift apart. tenant_id rides after
         // them (jasperfx#1079) and is read by StreamStateListQueryHandler alone, leaving the shared selector
         // untouched. Every mt_streams table has the column: a single-tenanted store writes its default tenant.
-        builder.Append(
-            $"select id, version, type, timestamp, created, is_archived, {StreamsTable.CompactedVersionColumn}, tenant_id ");
+        builder.Append($"select {Marten.EventStorage.StreamStateSql.Columns(_store.Events)}, tenant_id ");
         writeFromAndWhere(builder, plan);
         writeOrderingAndPaging(builder, plan);
     }
@@ -648,6 +647,11 @@ internal class StreamStateQueryTranslator
         nameof(StreamState.Created) => "created",
         nameof(StreamState.IsArchived) => "is_archived",
         nameof(StreamState.CompactedVersion) => StreamsTable.CompactedVersionColumn,
+
+        // jasperfx#1211: null on every row without a cold store, where the column doesn't exist
+        nameof(StreamState.ColdVersion) => _events.ColdEventStore == null
+            ? "null::bigint"
+            : StreamsTable.ColdVersionColumn,
         nameof(StreamState.TenantId) => "tenant_id",
         nameof(StreamState.AggregateType) => throw new NotSupportedException(
             "StreamState.AggregateType only supports equality comparison against a Type value in QueryStreamStates()."),
@@ -683,7 +687,8 @@ internal class StreamStateQueryTranslator
 internal class StreamStateListQueryHandler: IQueryHandler<IReadOnlyList<StreamState>>
 {
     /// <summary>Where <c>tenant_id</c> sits in the queryable's select list, after the selector's seven.</summary>
-    internal const int TenantIdOrdinal = 7;
+    internal static int TenantIdOrdinal(Marten.Events.EventGraph events) =>
+        Marten.EventStorage.StreamStateSql.ColumnCount(events);
 
     private readonly Action<ICommandBuilder> _configure;
 
@@ -705,7 +710,8 @@ internal class StreamStateListQueryHandler: IQueryHandler<IReadOnlyList<StreamSt
             var state = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
 
             // jasperfx#1079: the tenant column the queryable selects after the shared seven.
-            state.TenantId = await reader.GetFieldValueAsync<string>(TenantIdOrdinal, token).ConfigureAwait(false);
+            state.TenantId = await reader.GetFieldValueAsync<string>(
+                TenantIdOrdinal(((IMartenSession)session).Options.EventGraph), token).ConfigureAwait(false);
             states.Add(state);
         }
 

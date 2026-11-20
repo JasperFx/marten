@@ -48,6 +48,9 @@ internal class StreamsTable: Table
     /// </summary>
     public const string ColdVersionColumn = "cold_version";
 
+    /// <summary>The partial index on <see cref="ColdVersionColumn" />, over the cold streams only.</summary>
+    public const string ColdVersionIndexName = "idx_mt_streams_cold_version";
+
     public StreamsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, TableName))
     {
         foreach (var index in events.IgnoredIndexes)
@@ -94,6 +97,15 @@ internal class StreamsTable: Table
         if (events.ColdEventStore != null)
         {
             AddColumn<long>(ColdVersionColumn).AllowNulls();
+
+            // The replay guard asks whether any stream is cold on every rebuild from the start, and the cache and
+            // fetch checks look for cold streams too. Only cold streams are indexed, so a store with none pays
+            // nothing for it.
+            Indexes.Add(new IndexDefinition(ColdVersionIndexName)
+            {
+                Columns = [ColdVersionColumn],
+                Predicate = $"{ColdVersionColumn} is not null"
+            });
         }
 
         var archiving = AddColumn<IsArchivedColumn>();

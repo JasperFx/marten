@@ -1044,6 +1044,10 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     {
         if (!AutoDiscoverTagTypes || CreateTagTypeMethod == null) return;
 
+        // Cold event storage refuses event tags (see StoreOptions.Validate), so a strong-typed identity is not
+        // registered as a tag type behind the application's back
+        if (ColdEventStore != null) return;
+
         foreach (var projection in Options.Projections.All.OfType<IAggregateProjection>())
         {
             var identityType = projection.IdentityType;

@@ -18,8 +18,6 @@ using Xunit;
 
 namespace EventSourcingTests.Cold;
 
-public record CartOwner(string Value);
-
 public class marking_many_streams_cold: OneOffConfigurationsContext
 {
     private readonly InMemoryColdEventStore _cold = new();
@@ -142,38 +140,6 @@ public class marking_many_streams_cold: OneOffConfigurationsContext
 
         (await warmVersions(processed)).ShouldBe([1L, 2L]);
         (await warmVersions(notYetProcessed)).ShouldBe([1L, 2L]);
-    }
-
-    [Fact]
-    public async Task the_tag_rows_of_the_cold_events_go_with_them()
-    {
-        configure(opts => opts.Events.RegisterTagType<CartOwner>("cart_owner"));
-
-        var keys = new List<string>();
-        await using (var session = theStore.LightweightSession())
-        {
-            foreach (var _ in Enumerable.Range(0, 2))
-            {
-                var key = Guid.NewGuid().ToString();
-                keys.Add(key);
-                var events = Enumerable.Range(1, 3).Select(i =>
-                {
-                    var e = session.Events.BuildEvent(new ItemAdded($"item {i}"));
-                    e.WithTag(new CartOwner(key));
-                    return e;
-                }).ToArray();
-                session.Events.StartStream<Cart>(key, events);
-            }
-
-            await session.SaveChangesAsync();
-        }
-
-        await markCold((keys[0], 2), (keys[1], 3));
-
-        await using var query = theStore.QuerySession();
-        var tagRows = await query.AdvancedSql.QueryAsync<string>(
-            $"select value from {SchemaName}.mt_event_tag_cart_owner order by value", TestContext.Current.CancellationToken);
-        tagRows.ShouldBe([keys[0]]);
     }
 
     [Fact]

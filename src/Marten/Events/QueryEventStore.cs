@@ -131,6 +131,40 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
         }
 
+        var (events, _) = await readWithColdAsync(streamKey, handler, new StreamWindow(version, fromVersion, timestamp),
+            token).ConfigureAwait(false);
+        return events;
+    }
+
+    /// <summary>
+    ///     The whole stream for a fold that has to include the cold part, and the stream's cold version, which a fetch
+    ///     for writing remembers for the commit-time check. Without a cold store, the same as <c>FetchStreamAsync</c>.
+    /// </summary>
+    internal async Task<(IReadOnlyList<IEvent> Events, long ColdVersion)> FetchStreamToFoldAsync(string streamKey,
+        CancellationToken token)
+    {
+        if (_store.Events.ColdEventStore == null)
+        {
+            return (await FetchStreamAsync(streamKey, token: token).ConfigureAwait(false), 0);
+        }
+
+        var selector = _store.Events.EnsureAsStringStorage(_session);
+        await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        var statement = new EventStatement(selector, _store.Events)
+        {
+            TenantId = _tenant.TenantId,
+            TenantScope = SessionTenantScope.For(_session),
+            StreamKey = streamKey
+        };
+
+        return await readWithColdAsync(streamKey, new ListQueryHandler<IEvent>(statement, selector), default, token)
+            .ConfigureAwait(false);
+    }
+
+    private async Task<(IReadOnlyList<IEvent> Events, long ColdVersion)> readWithColdAsync(string streamKey,
+        IQueryHandler<IReadOnlyList<IEvent>> handler, StreamWindow window, CancellationToken token)
+    {
         var builder = new BatchBuilder { TenantId = _tenant.TenantId };
         ColdStreamReader.WriteBoundaryQuery(_store.Events, builder, streamKey, _tenant.TenantId);
         builder.StartNewCommand();
@@ -145,8 +179,9 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             warm = await handler.HandleAsync(reader, _session, token).ConfigureAwait(false);
         }
 
-        return await ColdStreamReader.PrependColdAsync(_session, streamKey, _tenant.TenantId, coldVersion, warm,
-            new StreamWindow(version, fromVersion, timestamp), token).ConfigureAwait(false);
+        var events = await ColdStreamReader.PrependColdAsync(_session, streamKey, _tenant.TenantId, coldVersion, warm,
+            window, token).ConfigureAwait(false);
+        return (events, coldVersion);
     }
 
     public async Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
@@ -673,7 +708,8 @@ internal partial class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             LastTimestamp = martenState.LastTimestamp,
             Created = martenState.Created,
             IsArchived = martenState.IsArchived,
-            CompactedVersion = martenState.CompactedVersion
+            CompactedVersion = martenState.CompactedVersion,
+            ColdVersion = martenState.ColdVersion
         };
     }
 

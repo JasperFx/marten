@@ -14,7 +14,8 @@ internal interface IBatchQueryItem
     Task ReadAsync(DbDataReader reader, IMartenSession session, CancellationToken token);
 
     /// <summary>
-    ///     Runs after the batch's reader is closed. See <see cref="IFinishesAfterTheReader{T}" />.
+    ///     Runs after the batch's reader is closed. See <see cref="IFinishesAfterTheReader{T}" />. Does nothing for an
+    ///     item that was not read, or was finished already.
     /// </summary>
     Task FinishAsync(IMartenSession session, CancellationToken token);
 

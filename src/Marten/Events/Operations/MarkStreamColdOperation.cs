@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
+using Marten.Events.Daemon;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -80,16 +81,8 @@ internal class MarkStreamColdOperation: IStorageOperation
         }
     }
 
-    internal string[] ProgressionRowsToCheck()
-    {
-        var perTenant = _events.UseTenantPartitionedEvents;
-        return _events.Options.Projections.AllShards()
-            .Select(x => perTenant
-                ? ShardName.Compose(x.Name.Name, x.Name.ShardKey, _tenantId, x.Name.Version).Identity
-                : x.Name.Identity)
-            .Distinct()
-            .ToArray();
-    }
+    // The same rows as compaction's lag guard checks
+    internal string[] ProgressionRowsToCheck() => AsyncShardProgressRows.For(_events, _tenantId);
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
@@ -127,17 +120,25 @@ internal class MarkStreamColdOperation: IStorageOperation
         parameters.Add((ProgressionRowsToCheck(), NpgsqlDbType.Array | NpgsqlDbType.Varchar));
         sql.Append($"left join {_events.ProgressionTable.QualifiedName} p on p.name = n.name where coalesce(p.last_seq_id, 0) < (select seq from target)), ");
 
-        var tagTables = _events.DcbStorageMode == DcbStorageMode.HStore
-            ? (IReadOnlyList<JasperFx.Events.Tags.ITagTypeRegistration>)Array.Empty<JasperFx.Events.Tags.ITagTypeRegistration>()
-            : _events.TagTypes;
-
-        for (var i = 0; i < tagTables.Count; i++)
+        // A cold store refuses tag types at startup, so there are no tag rows to delete today. The deletes are
+        // still built the way compaction and the tombstone build them (#6049), so a tagged event can never be
+        // left with tag rows its foreign key refuses to outlive.
+        if (EventTagRowDeletes.TablesFor(_events).Count > 0)
         {
-            sql.Append($"tag{i} as (delete from {schema}.mt_event_tag_{tagTables[i].TableSuffix} t where {allowed}");
-            tenant("t");
-            sql.Append($" and t.seq_id in (select e.seq_id from {schema}.mt_events e join batch b on ");
-            coldEvents("e");
-            sql.Append(")), ");
+            EventTagRowDeletes.AppendCtes(_events,
+                text => sql.Append(text),
+                column =>
+                {
+                    sql.Append($"{allowed} and {column} in (select e.seq_id from {schema}.mt_events e join batch b on ");
+                    coldEvents("e");
+                    sql.Append(')');
+                },
+                () =>
+                {
+                    sql.Append('?');
+                    parameters.Add((_tenantId, NpgsqlDbType.Varchar));
+                });
+            sql.Append(", ");
         }
 
         sql.Append($"cold_events as (delete from {schema}.mt_events e using batch b where {allowed} and ");
@@ -146,7 +147,7 @@ internal class MarkStreamColdOperation: IStorageOperation
 
         sql.Append($"marked as (update {schema}.{StreamsTable.TableName} s set {StreamsTable.ColdVersionColumn} = greatest(coalesce(s.{StreamsTable.ColdVersionColumn}, 0), b.through) from batch b where {allowed} and s.id = b.id");
         tenant("s");
-        sql.Append(" and s.version >= b.through returning s.id) ");
+        sql.Append(" and s.version >= b.through and s.is_archived = false returning s.id) ");
 
         sql.Append("select (select shards from lagging), ");
         sql.Append("(select array_agg(b.id || ' through ' || b.through order by b.id) from batch b where not exists (select 1 from marked m where m.id = b.id))");
@@ -184,7 +185,7 @@ internal class MarkStreamColdOperation: IStorageOperation
         {
             var missing = await reader.GetFieldValueAsync<string[]>(1, token).ConfigureAwait(false);
             exceptions.Add(new InvalidOperationException(
-                $"Cannot mark {describeBatch()} for tenant '{_tenantId}': these streams do not exist for the tenant, or have not reached that version: {string.Join(", ", missing)}."));
+                $"Cannot mark {describeBatch()} for tenant '{_tenantId}': these streams do not exist for the tenant, are archived, or have not reached that version: {string.Join(", ", missing)}."));
         }
     }
 

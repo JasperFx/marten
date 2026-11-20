@@ -1370,6 +1370,18 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
                 "StreamIdentity.AsString with Events.UseColdEventStore().");
         }
 
+        // Moving a stream cold deletes its events' tag rows, so a tag query, AggregateByTagsAsync or a DCB
+        // consistency check would no longer see the cold events and would pass when it should fail. Once the rows
+        // are gone Marten can't tell that a cold stream would have matched, so the combination is refused.
+        if (EventGraph.ColdEventStore != null && EventGraph.TagTypes.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Cold event storage can't be combined with event tags (Dynamic Consistency Boundary). Moving a " +
+                "stream cold deletes its events' tag rows, so tag queries and DCB consistency checks would no " +
+                "longer see the cold events. Remove Events.UseColdEventStore() or the registered tag types: " +
+                string.Join(", ", EventGraph.TagTypes.Select(x => x.TagType.Name)) + ".");
+        }
+
         // #4596 Session 1: per-tenant event partitioning re-uses Marten's existing
         // ManagedListPartitions machinery via the `mt_tenant_partitions` lookup
         // table. The EventsTable / StreamsTable schema needs the same

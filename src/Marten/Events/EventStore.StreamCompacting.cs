@@ -12,6 +12,7 @@ using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Protected;
+using Marten.Events.Daemon;
 using Marten.Events.Operations;
 using Marten.Exceptions;
 using Marten.Events.Protected;
@@ -157,11 +158,11 @@ internal sealed class MartenStreamCompacting: StreamCompactingExecution<Document
     ///     of <typeparamref name="T" /> itself is exempt: it fast-forwards over the snapshot.
     /// </summary>
     /// <remarks>
-    ///     The same rule as <c>MarkStreamCold</c>'s lag guard: a shard is behind unless its
-    ///     <c>mt_event_progression</c> row has reached the last event's sequence, and a shard with no row (one
-    ///     that never ran) is behind. A shard's row is the one for this session's tenant (<c>{shard}:{tenant}</c>)
-    ///     when the daemon keeps per-tenant progress, else the store-global one. Read before anything is queued: a
-    ///     shard only moves forward, so one that has caught up here is still caught up at commit.
+    ///     The same rule as <c>MarkStreamCold</c>'s lag guard, through the same rows
+    ///     (<see cref="AsyncShardProgressRows" />): a shard is behind unless its <c>mt_event_progression</c> row
+    ///     has reached the last event's sequence, and a shard with no row (one that never ran) is behind. Read
+    ///     before anything is queued: a shard only moves forward, so one that has caught up here is still caught
+    ///     up at commit.
     /// </remarks>
     private static async Task ensureNoAsyncShardIsBehindAsync<T>(DocumentSessionBase session, IEvent last,
         CancellationToken token) where T : class
@@ -174,23 +175,15 @@ internal sealed class MartenStreamCompacting: StreamCompactingExecution<Document
             .Select(x => x.Name)
             .ToHashSet(StringComparer.Ordinal);
 
-        var tenantId = session.TenantId;
-        var shards = options.Projections.AllShards()
-            .Where(x => !exempt.Contains(x.Name.Name))
-            .Select(x => (Global: x.Name.Identity,
-                Tenant: ShardName.Compose(x.Name.Name, x.Name.ShardKey, tenantId, x.Name.Version).Identity))
-            .Distinct()
-            .ToArray();
-
-        if (shards.Length == 0)
+        var rows = AsyncShardProgressRows.For(options.EventGraph, session.TenantId, exempt);
+        if (rows.Length == 0)
         {
             return;
         }
 
-        var names = shards.SelectMany(x => new[] { x.Global, x.Tenant }).Distinct().ToArray();
         var cmd = new NpgsqlCommand(
             $"select name, last_seq_id from {options.EventGraph.ProgressionTable} where name = any(@names)");
-        cmd.Parameters.AddWithValue("names", names);
+        cmd.Parameters.AddWithValue("names", rows);
 
         var progress = new Dictionary<string, long>(StringComparer.Ordinal);
         await using (var reader = await ((IMartenSession)session).ExecuteReaderAsync(cmd, token).ConfigureAwait(false))
@@ -202,9 +195,8 @@ internal sealed class MartenStreamCompacting: StreamCompactingExecution<Document
             }
         }
 
-        var behind = shards
-            .Select(x => (Name: progress.ContainsKey(x.Tenant) ? x.Tenant : x.Global,
-                Seq: progress.TryGetValue(x.Tenant, out var t) ? t : progress.GetValueOrDefault(x.Global)))
+        var behind = rows
+            .Select(x => (Name: x, Seq: progress.GetValueOrDefault(x)))
             .Where(x => x.Seq < last.Sequence)
             .Select(x => $"{x.Name} (at {x.Seq})")
             .ToArray();

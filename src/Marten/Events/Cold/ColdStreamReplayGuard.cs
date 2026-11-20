@@ -36,6 +36,26 @@ internal static class ColdStreamReplayGuard
         }
     }
 
+    /// <summary>
+    ///     The cold version of one stream, read on its own connection, or null when it has no cold part.
+    /// </summary>
+    public static async Task<long?> ColdVersionOfAsync(EventGraph events, MartenDatabase database, string streamKey,
+        string tenantId, CancellationToken token)
+    {
+        var conjoined = events.TenancyStyle == TenancyStyle.Conjoined;
+        var sql =
+            $"select {StreamsTable.ColdVersionColumn} from {events.DatabaseSchemaName}.{StreamsTable.TableName} where id = :id" +
+            (conjoined ? $" and {StorageConstants.TenantIdColumn} = :tenant" : "");
+
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+
+        var command = conn.CreateCommand(sql).With("id", streamKey, NpgsqlDbType.Varchar);
+        if (conjoined) command.With("tenant", tenantId, NpgsqlDbType.Varchar);
+
+        return await command.ExecuteScalarAsync(token).ConfigureAwait(false) is long coldVersion ? coldVersion : null;
+    }
+
     private static async Task<bool> hasColdStreamsAsync(EventGraph events, MartenDatabase database, string? tenantId,
         CancellationToken token)
     {

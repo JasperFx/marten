@@ -127,8 +127,22 @@ internal partial class BatchedQuery: IBatchedQuery
         }
         catch (Exception e)
         {
+            // Items already read keep their results. One that finishes after the reader (a fold that may read the
+            // cold part of a stream) is finished now that the reader is closed, unless that fails too.
+            foreach (var item in _items)
+            {
+                try
+                {
+                    await item.FinishAsync(Parent, token).ConfigureAwait(false);
+                }
+                catch (Exception finishing)
+                {
+                    item.Fail(finishing, token);
+                }
+            }
+
             // #6034: every item Execute() did not get to read has to finish too, or awaiting it after a
-            // caught failure hangs forever. Items already read keep their results.
+            // caught failure hangs forever.
             foreach (var item in _items)
             {
                 item.Fail(e, token);

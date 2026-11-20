@@ -14,5 +14,16 @@ namespace Marten.EventStorage;
 internal static class StreamStateSql
 {
     public static string Build(EventGraph graph) =>
-        $"select id, version, type, timestamp, created, is_archived, compacted_version from {graph.DatabaseSchemaName}.mt_streams";
+        $"select {Columns(graph)} from {graph.DatabaseSchemaName}.mt_streams";
+
+    /// <summary>
+    /// The columns <see cref="EventDocumentStorage"/>'s selector reads, in order. <c>cold_version</c> only
+    /// exists with a cold event store, and is only selected then (jasperfx#1211).
+    /// </summary>
+    public static string Columns(EventGraph graph) => graph.ColdEventStore == null
+        ? "id, version, type, timestamp, created, is_archived, compacted_version"
+        : "id, version, type, timestamp, created, is_archived, compacted_version, cold_version";
+
+    /// <summary>The number of columns in <see cref="Columns"/>.</summary>
+    public static int ColumnCount(EventGraph graph) => graph.ColdEventStore == null ? 7 : 8;
 }

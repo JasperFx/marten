@@ -62,11 +62,21 @@ internal class ArchiveStreamOperation: IStorageOperation, IExceptionTransform
 
     public string? TenantId { get; set; }
 
+    /// <summary>
+    ///     With a cold event store, archiving a stream with a cold part is refused: a Live fetch reads the stream's
+    ///     unarchived events only, so it would fold the cold part and nothing else.
+    /// </summary>
+    private bool refusesColdStreams => _archived && _events.ColdEventStore != null;
+
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var tenantId = TenantId ?? session.TenantId;
 
-        if (_events.TenancyStyle == TenancyStyle.Conjoined)
+        if (refusesColdStreams)
+        {
+            writeArchiveUnlessCold(builder, tenantId);
+        }
+        else if (_events.TenancyStyle == TenancyStyle.Conjoined)
         {
             var parameters = builder.AppendWithParameters($"select {_events.DatabaseSchemaName}.{functionName}(?, ?)");
             parameters[0].Value = _streamId;
@@ -123,11 +133,51 @@ internal class ArchiveStreamOperation: IStorageOperation, IExceptionTransform
     }
 
 
+    /// <summary>
+    ///     <code>
+    ///     with cold as (select s.cold_version from mt_streams s where s.id = :id [and s.tenant_id = :tenant] for update),
+    ///          archived as (select mt_archive_stream(:id[, :tenant]) where not exists (select 1 from cold where cold_version is not null))
+    ///     select (select cold_version from cold), (select count(*) from archived)
+    ///     </code>
+    ///     The row lock makes the check exact against a concurrent <c>MarkStreamCold</c>, which updates the same row.
+    /// </summary>
+    private void writeArchiveUnlessCold(ICommandBuilder builder, string tenantId)
+    {
+        var conjoined = _events.TenancyStyle == TenancyStyle.Conjoined;
+        var schema = _events.DatabaseSchemaName;
+
+        var sql = new StringBuilder();
+        sql.Append($"with cold as (select s.{Schema.StreamsTable.ColdVersionColumn} as cold_version from {schema}.{Schema.StreamsTable.TableName} s where s.id = ?");
+        if (conjoined) sql.Append(" and s.tenant_id = ?");
+        sql.Append($" for update), archived as (select {schema}.{functionName}(?{(conjoined ? ", ?" : "")}) where not exists (select 1 from cold where cold_version is not null)) ");
+        sql.Append("select (select cold_version from cold), (select count(*) from archived)");
+
+        var parameters = builder.AppendWithParameters(sql.ToString());
+        var index = 0;
+        for (var i = 0; i < 2; i++)
+        {
+            parameters[index].Value = _streamId;
+            parameters[index++].NpgsqlDbType = _events.StreamIdDbType;
+            if (!conjoined) continue;
+
+            parameters[index].Value = tenantId;
+            parameters[index++].NpgsqlDbType = NpgsqlDbType.Varchar;
+        }
+    }
+
     public Type DocumentType => typeof(IEvent);
 
-    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
-        return Task.CompletedTask;
+        if (!refusesColdStreams) return;
+
+        if (await reader.ReadAsync(token).ConfigureAwait(false) &&
+            !await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
+        {
+            var coldVersion = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            exceptions.Add(new InvalidStreamOperationException(
+                $"Stream '{_streamId}' cannot be archived: its events through version {coldVersion} are in cold storage, and a fetch of an archived stream would fold the cold part alone. Nothing was archived."));
+        }
     }
 
     public OperationRole Role()
