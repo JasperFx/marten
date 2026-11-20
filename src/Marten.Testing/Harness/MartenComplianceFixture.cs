@@ -210,7 +210,8 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
         _shardAssignments.Clear();
 
         var connectionStrings = new Dictionary<string, string>();
-        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        // #6023: creating a database takes longer than the short test timeout on a busy server
+        await using (var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString))
         {
             await conn.OpenAsync().ConfigureAwait(false);
             foreach (var databaseName in _tenantDatabases.Values.Distinct())
@@ -220,7 +221,7 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
                     await new DatabaseSpecification().BuildDatabase(conn, databaseName).ConfigureAwait(false);
                 }
 
-                connectionStrings[databaseName] = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+                connectionStrings[databaseName] = new NpgsqlConnectionStringBuilder(ConnectionSource.ComplianceConnectionString)
                 {
                     Database = databaseName
                 }.ConnectionString;
@@ -234,7 +235,7 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             // conjoined or the tenants in one shard cannot be told apart at all.
             options.MultiTenantedWithShardedDatabases(x =>
             {
-                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.ConnectionString = ConnectionSource.ComplianceConnectionString;
                 x.SchemaName = "compliance_shards";
                 foreach (var (databaseName, connectionString) in connectionStrings)
                 {
@@ -263,10 +264,10 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     {
         if (!config.MaxPoolSize.HasValue)
         {
-            return ConnectionSource.ConnectionString;
+            return ConnectionSource.ComplianceConnectionString;
         }
 
-        return new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
+        return new NpgsqlConnectionStringBuilder(ConnectionSource.ComplianceConnectionString)
         {
             MaxPoolSize = config.MaxPoolSize.Value
         }.ConnectionString;
