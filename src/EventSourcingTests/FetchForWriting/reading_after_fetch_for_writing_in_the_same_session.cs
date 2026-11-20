@@ -2,7 +2,9 @@ using System;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Projections;
+using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -47,6 +49,22 @@ public static class ReadingAfterFetchForWritingCases
         { ProjectionLifecycle.Inline, false },
         { ProjectionLifecycle.Async, false },
     };
+
+    public static TheoryData<ProjectionLifecycle, bool, DocumentTracking> AllWithTracking
+    {
+        get
+        {
+            var data = new TheoryData<ProjectionLifecycle, bool, DocumentTracking>();
+            foreach (var lifecycle in new[] { ProjectionLifecycle.Live, ProjectionLifecycle.Inline, ProjectionLifecycle.Async })
+            foreach (var useIdentityMap in new[] { true, false })
+            foreach (var tracking in new[] { DocumentTracking.None, DocumentTracking.IdentityOnly, DocumentTracking.DirtyTracking })
+            {
+                data.Add(lifecycle, useIdentityMap, tracking);
+            }
+
+            return data;
+        }
+    }
 }
 
 public class reading_after_fetch_for_writing_a_mutable_aggregate()
@@ -172,6 +190,25 @@ public abstract class reading_after_fetch_for_writing_in_the_same_session<T>(Fun
         session.Events.Append(streamId, new CounterBumped());
 
         countOf((await session.Events.ProjectLatest<T>(streamId))!).ShouldBe(3);
+    }
+
+    // #6106: on an IdentitySession with UseIdentityMapForAggregates off, FetchForWriting put the Inline snapshot
+    // in the session's identity map, the commit's projection wrote the new snapshot without touching that entry,
+    // and every FetchLatest after the commit answered the snapshot from before it.
+    [Theory]
+    [MemberData(nameof(ReadingAfterFetchForWritingCases.AllWithTracking), MemberType = typeof(ReadingAfterFetchForWritingCases))]
+    public async Task fetch_latest_after_the_commit_returns_the_committed_aggregate(ProjectionLifecycle lifecycle,
+        bool useIdentityMap, DocumentTracking tracking)
+    {
+        var streamId = await startCountedOnce(lifecycle, useIdentityMap);
+
+        await using var session = theStore.OpenSession(new SessionOptions { Tracking = tracking });
+        var stream = await session.Events.FetchForWriting<T>(streamId);
+        stream.AppendOne(new CounterBumped());
+        await session.SaveChangesAsync();
+
+        countOf((await session.Events.FetchLatest<T>(streamId))!).ShouldBe(2);
+        countOf((await session.Events.FetchLatest<T>(streamId))!).ShouldBe(2);
     }
 
     private async Task<Guid> startCountedOnce(ProjectionLifecycle lifecycle, bool useIdentityMap)
