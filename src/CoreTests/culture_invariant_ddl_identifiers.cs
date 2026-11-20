@@ -100,4 +100,23 @@ public class culture_invariant_ddl_identifiers
 
         names.ShouldBe(["mt_upsert_invoices_invoiceissued"]);
     }
+
+    /// <summary>
+    /// The upsert function's argument and column for a duplicated field were lowered with the current culture,
+    /// while the column itself is written invariantly, so a column name with an uppercase <c>I</c> did not match.
+    /// </summary>
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("tr-TR")]
+    public void a_duplicated_field_upsert_argument_is_the_same_whatever_the_current_culture(string culture)
+    {
+        var options = new StoreOptions();
+        var mapping = options.Storage.MappingFor(typeof(Target));
+        var field = mapping.DuplicateField([typeof(Target).GetProperty(nameof(Target.Flag))!], columnName: "IsFlagged");
+
+        var argument = underCulture(culture, () => field.UpsertArgument);
+
+        argument.Column.ShouldBe("isflagged");
+        argument.Arg.ShouldBe("arg_isflagged");
+    }
 }

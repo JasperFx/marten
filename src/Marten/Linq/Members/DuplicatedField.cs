@@ -139,8 +139,8 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
 
     internal virtual UpsertArgument UpsertArgument => new()
     {
-        Arg = "arg_" + ColumnName.ToLower(),
-        Column = ColumnName.ToLower(),
+        Arg = "arg_" + ColumnName.ToLowerInvariant(),
+        Column = ColumnName.ToLowerInvariant(),
         PostgresType = PgType,
         Members = Members,
         DbType = DbType
