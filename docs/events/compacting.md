@@ -125,6 +125,12 @@ counts as behind. The one exception is a single stream projection of the type yo
 snapshot instead of the deleted events. Before this check, a multi-stream projection or a subscription (Wolverine's event forwarding
 included) that was behind never saw the compacted events at all ([#6050](https://github.com/JasperFx/marten/issues/6050)).
 
+Being past an event isn't always proof of having seen it. When the async daemon's high water mark skips a sequence range, an
+event can still commit late inside that range, after every projection moved past it. The daemon's late event recovery checks
+a skipped range for such events for `LateEventDetectionWindow` (one hour by default) after the skip. Until it's done, Marten also refuses
+to compact a stream whose events sit in the gaps of that range, and the exception names the skip, its range, and when recovery
+will close it ([#6114](https://github.com/JasperFx/marten/issues/6114)). This needs `EnableAdvancedAsyncTracking`, which is on by default.
+
 You can compact a single stream repeatedly over time. For example, you may choose to compact a stream any time every time it becomes over 
 a 1,000 events long. In that case, Marten is completely replacing the `Compacted<T>` with the new snapshot version. The old `Compacted<T>` event
 is not itself archived.
