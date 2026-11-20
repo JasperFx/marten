@@ -233,7 +233,8 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
     protected override async Task BuildStoreAsync(DocumentComplianceConfig config)
     {
         var options = new StoreOptions();
-        options.Connection(ConnectionSource.ConnectionString);
+        // #6101: see ConnectionSource.ComplianceConnectionString
+        options.Connection(ConnectionSource.ComplianceConnectionString);
         options.AutoCreateSchemaObjects = AutoCreate.All;
         options.DisableNpgsqlLogging = true;
         options.NameDataLength = 100;
