@@ -79,11 +79,6 @@ public partial class DocumentStore
     /// </remarks>
     private bool eventsAreConjoined => Options.Events.TenancyStyle == TenancyStyle.Conjoined;
 
-    private static readonly JsonSerializerOptions ExplorerJson = new()
-    {
-        PropertyNamingPolicy = null
-    };
-
     /// <inheritdoc />
     /// <remarks>
     /// Returns the most recently updated streams across every tenant, ordered by the
@@ -540,7 +535,8 @@ public partial class DocumentStore
         var (state, _) = await replayAggregatorAsync(aggregateType, startingState: null, events, ct).ConfigureAwait(false);
         if (state == null) return null;
 
-        var stateJson = JsonSerializer.SerializeToElement(state, aggregateType, ExplorerJson);
+        // #6107: the store's own serializer, so the state reads the way the store writes documents
+        var stateJson = toJsonElement(Options.Serializer().ToJson(state));
         return new DcbProjectedState(projectionName, events[^1].Sequence, stateJson, events.Count);
     }
 
@@ -597,7 +593,8 @@ public partial class DocumentStore
             return new AggregateAtVersion(aggregateType.FullNameInCode(), default, version, 0);
         }
 
-        var stateJson = JsonSerializer.SerializeToElement(aggregate, aggregateType, ExplorerJson);
+        // #6107: the store's own serializer, so the state reads the way the store writes documents
+        var stateJson = toJsonElement(Options.Serializer().ToJson(aggregate));
         return new AggregateAtVersion(aggregateType.FullNameInCode(), stateJson, version, version);
     }
 
@@ -1006,7 +1003,9 @@ public partial class DocumentStore
             ?? throw new InvalidOperationException(
                 $"Event type '{record.EventTypeName}' is not registered. Add it via StoreOptions.Events.AddEventType.");
 
-        var dataObj = record.Data.Deserialize(mapping.DocumentType, ExplorerJson)
+        // #6107: read with the store's own serializer and its settings (custom converters,
+        // AllowOutOfOrderMetadataProperties for polymorphic types in jsonb, ...), as the event store itself does
+        var dataObj = Options.Serializer().FromJson(mapping.DocumentType, utf8(record.Data.GetRawText()))
             ?? throw new InvalidOperationException(
                 $"Failed to deserialize event of type '{record.EventTypeName}' from supplied JSON.");
         return dataObj;
