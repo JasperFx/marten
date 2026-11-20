@@ -950,7 +950,12 @@ public partial class DocumentStore
             return null;
         }
 
-        return Options.EventGraph.BuildEvent(data).WithRecordMetadata(record, Options.EventGraph.StreamIdentity);
+        var @event = Options.EventGraph.BuildEvent(data).WithRecordMetadata(record, Options.EventGraph.StreamIdentity);
+
+        // marten#6003: WithRecordMetadata leaves the record's DCB tags behind, and a projection grouped by tag needs them
+        Marten.Events.Daemon.Internals.EventTagHydrator.AddRecordTags(Options.EventGraph, @event, record.Tags);
+
+        return @event;
     }
 
     private async Task<(object? state, long count)> replayAggregatorAsync(

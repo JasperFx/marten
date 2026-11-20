@@ -170,6 +170,7 @@ public partial class MartenDatabase : IEventDatabase
                 command.Parameters.Add(new NpgsqlParameter("failure_event_type", NpgsqlDbType.Varchar));
             var failureTenantId =
                 command.Parameters.Add(new NpgsqlParameter("failure_tenant_id", NpgsqlDbType.Varchar));
+            var parkedCount = command.Parameters.Add(new NpgsqlParameter("parked_count", NpgsqlDbType.Integer));
 
             // The writer already hands these over sorted, but a direct caller need not, and the ordering
             // is what keeps two racing writers from deadlocking against each other.
@@ -187,6 +188,9 @@ public partial class MartenDatabase : IEventDatabase
                 failureSequence.Value = (object?)failure?.Event?.Sequence ?? DBNull.Value;
                 failureEventType.Value = (object?)failure?.Event?.EventTypeName ?? DBNull.Value;
                 failureTenantId.Value = (object?)failure?.Event?.TenantId ?? DBNull.Value;
+                // marten#6003: null is "not known in this publication" (a start, a pause), not "not parking", so it
+                // keeps the last count rather than erasing it
+                parkedCount.Value = (object?)state.ParkedCount ?? DBNull.Value;
 
                 // One ExecuteNonQueryAsync per shard, deliberately: each is its own implicit transaction,
                 // so this loop never holds more than a single row lock at a time.
@@ -210,12 +214,14 @@ public partial class MartenDatabase : IEventDatabase
                 failure_category = case when :touch_failure then :failure_category else p.failure_category end,
                 failure_event_sequence = case when :touch_failure then :failure_sequence else p.failure_event_sequence end,
                 failure_event_type = case when :touch_failure then :failure_event_type else p.failure_event_type end,
-                failure_event_tenant_id = case when :touch_failure then :failure_tenant_id else p.failure_event_tenant_id end
+                failure_event_tenant_id = case when :touch_failure then :failure_tenant_id else p.failure_event_tenant_id end,
+                parked_count = coalesce(:parked_count, p.parked_count)
             where p.name = :name
               and (p.heartbeat is distinct from :heartbeat
                 or p.agent_status is distinct from :agent_status
                 or p.pause_reason is distinct from :pause_reason
                 or p.running_on_node is distinct from :running_on_node
+                or (:parked_count is not null and p.parked_count is distinct from :parked_count)
                 or (:touch_failure
                     and (p.failure_category is distinct from :failure_category
                       or p.failure_event_sequence is distinct from :failure_sequence

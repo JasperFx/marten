@@ -129,6 +129,13 @@ internal class ShardStateSelector: ISelector<ShardState>
             nextIndex++;
 
             state.Failure = buildFailure(category, failureSequence, failureEventType, failureTenantId, state);
+
+            // marten#6003: the parked count the heartbeat wrote, null when the shard doesn't park
+            if (!await reader.IsDBNullAsync(nextIndex, token).ConfigureAwait(false))
+            {
+                state.ParkedCount = await reader.GetFieldValueAsync<int>(nextIndex, token).ConfigureAwait(false);
+            }
+            nextIndex++;
         }
 
         return state;

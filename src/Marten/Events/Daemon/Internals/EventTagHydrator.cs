@@ -99,6 +99,39 @@ internal static class EventTagHydrator
         }
     }
 
+    /// <summary>
+    /// marten#6003: put the tags a wire <c>EventRecord</c> carries onto the event built from it, so stepping a
+    /// projection that groups by tag (<c>IdentityFromTag&lt;TTag&gt;()</c>) from records sees them. A key is a registered
+    /// tag type's table suffix, as the hstore tag column stores it, or the tag type's name or full name. A key or value
+    /// Marten can't read is left off.
+    /// </summary>
+    public static void AddRecordTags(EventGraph events, IEvent @event, IReadOnlyDictionary<string, string>? tags)
+    {
+        if (tags is not { Count: > 0 } || events.TagTypes.Count == 0) return;
+
+        foreach (var (key, text) in tags)
+        {
+            if (text == null) continue;
+
+            var registration = events.TagTypes.FirstOrDefault(x => x.TableSuffix == key)
+                               ?? events.TagTypes.FirstOrDefault(x =>
+                                   x.TagType.Name == key || x.TagType.FullName == key);
+            if (registration == null) continue;
+
+            object value;
+            try
+            {
+                value = parse(text, registration.SimpleType);
+            }
+            catch (FormatException)
+            {
+                continue;
+            }
+
+            addTag(@event, registration, value);
+        }
+    }
+
     private static void addTag(IEvent @event, ITagTypeRegistration registration, object value)
     {
         var tag = wrap(registration, value);

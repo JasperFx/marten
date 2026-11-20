@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
+using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
@@ -773,6 +774,62 @@ public class parking_failing_identities: OneOffConfigurationsContext
 
         (await database.FetchParkedCountsAsync(null, TestContext.Current.CancellationToken)).ShouldHaveSingleItem()
             .ShouldBe(new ParkedShardCount("IndexedAccount", 1, "All", StorageConstants.DefaultTenantId, 1));
+    }
+
+    // ---- the stepper reads tags from wire records ----
+
+    [Fact]
+    public async Task stepping_a_tag_grouped_projection_from_event_records_finds_its_identity()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.AddEventType<AccountPosted>();
+            opts.Events.RegisterTagType<AccountTag>("account");
+            opts.Projections.Add(new TaggedAccountProjection(), ProjectionLifecycle.Async);
+        });
+
+        var account = Guid.NewGuid();
+        var other = Guid.NewGuid();
+
+        EventRecord record(long sequence, Guid tagged) => new(Guid.NewGuid(), sequence, 1,
+            Guid.NewGuid().ToString(), "account_posted",
+            System.Text.Json.JsonSerializer.SerializeToElement(new { Account = tagged }), null,
+            DateTimeOffset.UtcNow, null, new Dictionary<string, string> { ["account"] = tagged.ToString() });
+
+        var timeline = await ((IEventStore)theStore).RunMultiStreamProjectionForIdentityAsync("TaggedAccount", account,
+            [record(1, account), record(2, other), record(3, account)], null, TestContext.Current.CancellationToken);
+
+        // Only the account's own events, which the slicer could only give it through their tags
+        timeline.Steps.Select(x => x.Event.Sequence).ShouldBe([1L, 3L]);
+        timeline.FinalState.ShouldNotBeNull().GetProperty("Postings").GetInt32().ShouldBe(2);
+    }
+
+    // ---- parked_count in extended progression ----
+
+    [Fact]
+    public async Task the_parked_count_is_written_with_the_heartbeat_and_read_back()
+    {
+        var (daemon, _) = await aParkedAccountAsync();
+        using var _d = daemon;
+
+        // Running again, so the shard's heartbeat writes its parked set's size
+        await daemon.StartAllAsync();
+
+        var database = (IEventDatabase)theStore.Storage.Database;
+        ShardState? shard = null;
+        var deadline = DateTimeOffset.UtcNow.Add(Generous);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            shard = (await database.AllProjectionProgress(TestContext.Current.CancellationToken))
+                .SingleOrDefault(x => x.ShardName == "IndexedAccount:All");
+            if (shard?.ParkedCount == 1) break;
+            await Task.Delay(250, TestContext.Current.CancellationToken);
+        }
+
+        shard.ShouldNotBeNull().ParkedCount.ShouldBe(1);
+        (await countAsync("mt_event_progression", "name = 'IndexedAccount:All' and parked_count = 1")).ShouldBe(1);
+
+        await daemon.StopAllAsync();
     }
 
     // ---- startup logging ----

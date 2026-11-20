@@ -44,8 +44,9 @@ makes it the default for async projections. `opts.Projections.Errors.ApplyErrors
   the part most likely to surprise you, so check the log line Marten writes for each async projection at startup.
 - Rebuilds still pause on an error, and never park.
 
-The schema gains `mt_parked_identities` (always created) and one `mt_slice_index_*` table for each projection version
-that calls `UseSliceIndex()`. Under `AutoCreate.None`, apply the migration before deploying. `opts.RestoreV9Defaults()`
+The schema gains `mt_parked_identities` (always created), a nullable `parked_count` column on `mt_event_progression`
+(written with the extended progression heartbeat), and one `mt_slice_index_*` table for each projection version that
+calls `UseSliceIndex()`. Under `AutoCreate.None`, apply the migration before deploying. `opts.RestoreV9Defaults()`
 puts skipping back, but doesn't remove the table. See [parking a failing identity](/events/projections/async-daemon#parking-a-failing-identity).
 
 ### Runtime-async on `net11.0` <Badge type="warning" text="behavior change" />
