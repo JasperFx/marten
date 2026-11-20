@@ -12,6 +12,7 @@ using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Protected;
+using Marten.Events.Daemon.HighWater;
 using Marten.Events.Operations;
 using Marten.Events.Protected;
 using Marten.Internal;
@@ -127,7 +128,7 @@ internal sealed class MartenStreamCompacting: StreamCompactingExecution<Document
         // the Compacted<T>, and the rest are deleted. A stream that folds to nothing is left alone anyway.
         if (aggregate != null && events.Count > 0)
         {
-            await ensureNoAsyncShardIsBehindAsync<T>(session, events[^1], token).ConfigureAwait(false);
+            await ensureNoAsyncShardIsBehindAsync<T>(session, events, token).ConfigureAwait(false);
         }
 
         return aggregate;
@@ -146,11 +147,18 @@ internal sealed class MartenStreamCompacting: StreamCompactingExecution<Document
     ///     that never ran) is behind. A shard's row is the one for this session's tenant (<c>{shard}:{tenant}</c>)
     ///     when the daemon keeps per-tenant progress, else the store-global one. Read before anything is queued: a
     ///     shard only moves forward, so one that has caught up here is still caught up at commit.
+    ///     <para>
+    ///         #6114: a shard past the events has not necessarily processed them. After a high water skip, an event
+    ///         that committed late inside the skipped range sits below every shard's progress unseen, until late
+    ///         event recovery records it. So compaction also waits while an open skip has a recorded gap holding one
+    ///         of the events (<see cref="OpenHighWaterSkips" />, which the cold move of #5710 calls too).
+    ///     </para>
     /// </remarks>
-    private static async Task ensureNoAsyncShardIsBehindAsync<T>(DocumentSessionBase session, IEvent last,
-        CancellationToken token) where T : class
+    private static async Task ensureNoAsyncShardIsBehindAsync<T>(DocumentSessionBase session,
+        IReadOnlyList<IEvent> events, CancellationToken token) where T : class
     {
         var options = ((IMartenSession)session).Options;
+        var last = events[^1];
 
         var exempt = options.Projections.All
             .Where(x => x is IAggregateProjection { Scope: AggregationScope.SingleStream } aggregate &&
@@ -200,6 +208,18 @@ internal sealed class MartenStreamCompacting: StreamCompactingExecution<Document
                 $"(sequence {last.Sequence}) yet: these async projections or subscriptions have not processed its " +
                 $"events: {string.Join(", ", behind)}. Compacting deletes them, so those would never see them. " +
                 "Nothing was compacted; try again once they caught up.");
+        }
+
+        var skips = await OpenHighWaterSkips.FindCoveringAsync(session, events.Select(x => x.Sequence).ToArray(),
+            tenantId, token).ConfigureAwait(false);
+
+        if (skips.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Cannot compact stream '{(object?)last.StreamKey ?? last.StreamId}' through version {last.Version} " +
+                $"(sequence {last.Sequence}) yet: {OpenHighWaterSkips.Describe(skips, options.EventGraph)} " +
+                "Compacting deletes those events, so recovery could never record them and multi-stream projections " +
+                "and subscriptions would never see them. Nothing was compacted; try again after that.");
         }
     }
 
