@@ -538,7 +538,7 @@ If you want to use NGram search on non-English text, Marten provides a mechanism
 var store = DocumentStore.For(_ =>
 {
    _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-   _.DatabaseSchemaName = "ngram_test";
+   _.DatabaseSchemaName = "ngram_test_unaccent";
    _.Schema.For<User>().NgramIndex(x => x.UserName);
    _.Advanced.UseNGramSearchWithUnaccent = true;
 });
