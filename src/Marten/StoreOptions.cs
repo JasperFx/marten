@@ -1197,6 +1197,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///       </item>
     ///       <item><see cref="EventGraph.EnableSideEffectsOnInlineProjections"/> &rarr; <c>false</c></item>
     ///       <item>
+    ///         <c>Projections.Errors.ApplyErrors</c> and <c>Projections.Errors.SerializationErrors</c> &rarr;
+    ///         <c>Skip</c> (marten#6003). Marten 10 parks a failing identity, and pauses the shard where it can't park.
+    ///       </item>
+    ///       <item>
     ///         <see cref="EventGraph.UseArchivedStreamPartitioning"/> and
     ///         <see cref="EventGraph.EnableStrictStreamIdentityEnforcement"/> &rarr; <c>false</c>
     ///       </item>
@@ -1222,6 +1226,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
         OpenTelemetry.EnableEventCounters = false;
         OpenTelemetry.EnableFetchForWritingMetrics = false;
+
+        // marten#6003: skip a failing event (and dead-letter it) instead of parking its identity or pausing
+        Projections.Errors.SkipApplyErrors = true;
+        Projections.Errors.SkipSerializationErrors = true;
 
         if (_serializer != null)
         {

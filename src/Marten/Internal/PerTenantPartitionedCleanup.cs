@@ -221,6 +221,13 @@ internal static class PerTenantPartitionedCleanup
         await DeleteEventRangeMarksAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
         await DeleteHighWaterSkipsAsync(eventsSchema, database, tenantIds, token).ConfigureAwait(false);
 
+        // marten#6003: a removed tenant's parked identities and slice index rows go with it, for the same reason as
+        // its floors and marks
+        if (database is MartenDatabase martenDatabase)
+        {
+            await martenDatabase.DeleteParkedAndSliceIndexRowsForTenantsAsync(tenantIds, token).ConfigureAwait(false);
+        }
+
         var progressionRows = await CollectMatchingProgressionRowsAsync(
             eventsSchema, database, tenantIds, token).ConfigureAwait(false);
 

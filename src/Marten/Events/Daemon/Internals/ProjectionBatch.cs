@@ -7,6 +7,8 @@ using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using Marten.Events.Daemon.Parking;
+using Marten.Events.Operations;
 using Marten.Events.Daemon.Progress;
 using Marten.Internal.Sessions;
 using Marten.Services;
@@ -42,6 +44,28 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
         }
     }
 
+    // marten#6003: the parked row and the slice index rows ride the batch, so they commit with its progression
+
+    public void ParkIdentity(ParkedIdentity parked)
+    {
+        ArgumentNullException.ThrowIfNull(parked);
+        _batch.Queue.Post(new ParkIdentityOperation(((IMartenSession)_session).Options.EventGraph, parked));
+    }
+
+    public void UnparkIdentity(ParkedIdentityKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        _batch.Queue.Post(new UnparkIdentityOperation(((IMartenSession)_session).Options.EventGraph, key));
+    }
+
+    public void AppendSliceIndex(SliceIndexRows rows)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+        if (rows.Entries.Count == 0) return;
+
+        _batch.Queue.Post(new AppendSliceIndexOperation(((IMartenSession)_session).Options.EventGraph, rows));
+    }
+
     public async Task ExecuteAsync(CancellationToken token)
     {
         await _batch.WaitForCompletion().ConfigureAwait(false);
@@ -63,6 +87,15 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
     public void QuickAppendEvents(StreamAction action)
     {
         var op = _eventStorage.QuickAppendEvents(action);
+
+        // marten#6003: the quick append writes every registered tag type's column, and reads them from the event
+        // graph, which QuickEventAppender sets and this path didn't. With any DCB tag type registered, a side
+        // effect that appended events from an async projection failed the batch with a NullReferenceException.
+        if (op is QuickAppendEventsOperationBase quickAppend)
+        {
+            quickAppend.Events ??= ((IMartenSession)_session).Options.EventGraph;
+        }
+
         _batch.Queue.Post(op);
     }
 

@@ -7,6 +7,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
 using Marten.Events.Aggregation;
@@ -40,6 +41,13 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         _options = options;
 
         ActivitySource = MartenTracing.ActivitySource;
+
+        // marten#6003 (10.0): a failing identity of an async projection parks instead of being skipped. Where it
+        // can't park -- a multi-stream projection whose identities can only be found by scanning, an event or
+        // flat-table projection, a composite -- the shard pauses instead. StoreOptions.RestoreV9Defaults() puts
+        // skip back. JasperFx's own default stays skip, so this is Marten's choice, not the library's.
+        Errors.ApplyErrors = ProjectionErrorAction.Park;
+        Errors.SerializationErrors = ProjectionErrorAction.Park;
     }
 
     /// <summary>

@@ -911,6 +911,22 @@ public partial class DocumentStore
             .ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    /// <remarks>marten#6003: the single-identity stepper, with a starting state, over the shared step-through.</remarks>
+    async Task<ProjectionTimelineRaw> IEventStore.RunMultiStreamProjectionForIdentityAsync(
+        string projectionName,
+        object identity,
+        IReadOnlyList<EventRecord> events,
+        JsonElement? startingState,
+        CancellationToken ct)
+    {
+        await using var session = openExplorerSession();
+
+        return await stepThrough()
+            .RunMultiStreamProjectionForIdentityAsync(projectionName, identity, events, startingState, session, ct)
+            .ConfigureAwait(false);
+    }
+
     private static JsonElement toJsonElement(string json)
     {
         using var document = JsonDocument.Parse(json);

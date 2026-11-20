@@ -98,24 +98,23 @@ public class Bug_5502_per_statement_progression_check: OneOffConfigurationsConte
     }
 
     [Fact]
-    public async Task the_first_operations_cumulative_check_is_unreliable_and_the_pass_covers_it()
+    public async Task a_stale_first_operation_throws_even_when_a_later_one_affects_a_row()
     {
         await seedProgressionAt(12, "seven", "eight");
 
         // "seven" is stale and FIRST. Its own statement affects no rows, but by the time its callback
-        // reads the cumulative RecordsAffected, "eight" has already contributed a row -- so the
-        // index-0 check that has always existed passes right over it.
+        // runs "eight" has already contributed a row to the reader's cumulative RecordsAffected. The
+        // index-0 check used to pass right over it and the batch committed (marten#6003 found it as a
+        // per-identity rebuild whose HardDeleteById hid a stale progression). It reads the statement's
+        // own count now, so the batch fails and nothing in it commits.
         queueUpdate("seven", 5, 50);
         queueUpdate("eight", 12, 50);
 
-        await Should.NotThrowAsync(() => theSession.SaveChangesAsync(TestContext.Current.CancellationToken));
-
-        theLogger.Warnings.ShouldHaveSingleItem()
-            .Exception.ShouldBeOfType<ProgressionProgressOutOfOrderException>()
-            .ProjectionName.ShouldBe(new ShardName("seven").Identity);
+        await Should.ThrowAsync<ProgressionProgressOutOfOrderException>(() =>
+            theSession.SaveChangesAsync(TestContext.Current.CancellationToken));
 
         (await progressionFor("seven")).ShouldBe(12);
-        (await progressionFor("eight")).ShouldBe(50);
+        (await progressionFor("eight")).ShouldBe(12);
     }
 
     [Fact]

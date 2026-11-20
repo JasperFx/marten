@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
@@ -35,6 +36,39 @@ public class RestoreV9DefaultsTests
         opts.RestoreV9Defaults();
 
         opts.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void async_projection_errors_park_by_default()
+    {
+        // marten#6003: park a failing identity, and pause where it can't park
+        var errors = new StoreOptions().Projections.Errors;
+
+        errors.ApplyErrors.ShouldBe(ProjectionErrorAction.Park);
+        errors.SerializationErrors.ShouldBe(ProjectionErrorAction.Park);
+        errors.SkipUnknownEvents.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void restores_skipping_async_projection_errors_to_the_v9_value()
+    {
+        var opts = new StoreOptions();
+
+        opts.RestoreV9Defaults();
+
+        opts.Projections.Errors.ApplyErrors.ShouldBe(ProjectionErrorAction.Skip);
+        opts.Projections.Errors.SerializationErrors.ShouldBe(ProjectionErrorAction.Skip);
+        opts.Projections.Errors.SkipApplyErrors.ShouldBeTrue();
+        opts.Projections.Errors.SkipSerializationErrors.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void rebuild_errors_still_pause_by_default()
+    {
+        var errors = new StoreOptions().Projections.RebuildErrors;
+
+        errors.ApplyErrors.ShouldBe(ProjectionErrorAction.Pause);
+        errors.SerializationErrors.ShouldBe(ProjectionErrorAction.Pause);
     }
 
     [Fact]

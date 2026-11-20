@@ -30,6 +30,24 @@ by the next schema migration, and the data in the old ones is not copied over, s
 Separately, `Evolve()` methods may now use bare `case Foo:` labels, and the source generator bundled in the Marten
 package picks them up.
 
+### Async projections park a failing identity instead of skipping the event {#async-projections-park-a-failing-identity} <Badge type="warning" text="behavior change" />
+
+Marten 10 takes JasperFx 3.10's parking ([details](https://shared-libs.jasperfx.net/events/parked-identities)) and
+makes it the default for async projections. `opts.Projections.Errors.ApplyErrors` and `SerializationErrors` are now
+`ProjectionErrorAction.Park`; in Marten 9 both errors were skipped and dead-lettered.
+
+- A single-stream projection, and a multi-stream projection grouped with `IdentityFromStream<TEvent>()` or
+  `IdentityFromTag<TTag>()` or kept with `UseSliceIndex()`, parks the identity that failed. Its document stays at the
+  last good state, its later events are held back, and everything else keeps going.
+- Any other projection **pauses** instead of skipping: a multi-stream projection grouped with `Identity()`,
+  `Identities()` or custom grouping, an event projection, a flat table projection and a composite projection. This is
+  the part most likely to surprise you, so check the log line Marten writes for each async projection at startup.
+- Rebuilds still pause on an error, and never park.
+
+The schema gains `mt_parked_identities` (always created) and one `mt_slice_index_*` table for each projection version
+that calls `UseSliceIndex()`. Under `AutoCreate.None`, apply the migration before deploying. `opts.RestoreV9Defaults()`
+puts skipping back, but doesn't remove the table. See [parking a failing identity](/events/projections/async-daemon#parking-a-failing-identity).
+
 ### Runtime-async on `net11.0` <Badge type="warning" text="behavior change" />
 
 The `net11.0` build of Marten is compiled with the C# compiler's runtime-async feature, so its async methods run as
@@ -655,6 +673,7 @@ single-server tenancy (`ProvisioningCommandTimeout`), on `CreateDatabasesForTena
 | [Skipped events are filtered](#event-skipping-is-on-by-default) (`EnableEventSkippingInProjectionsOrSubscriptions`) | `opts.RestoreV9Defaults()`, or `opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = false` |
 | [Event counters and `FetchForWriting` metrics](#metrics-are-on-by-default) are exported | `opts.RestoreV9Defaults()`, or `opts.OpenTelemetry.EnableEventCounters = false` and `opts.OpenTelemetry.EnableFetchForWritingMetrics = false` |
 | [System.Text.Json `AllowOutOfOrderMetadataProperties`](#allow-out-of-order-metadata-properties) is on | `opts.RestoreV9Defaults()`, or `o.AllowOutOfOrderMetadataProperties = false` in the `configure` callback of `UseSystemTextJsonForSerialization()` |
+| [Async projection errors park the failing identity](#async-projections-park-a-failing-identity), and pause where they can't park (`Projections.Errors.ApplyErrors` and `SerializationErrors` are `Park`; [JasperFx docs](https://shared-libs.jasperfx.net/events/parked-identities)); new `mt_parked_identities` table | `opts.RestoreV9Defaults()`, or set both to `ProjectionErrorAction.Skip` |
 | [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created-) | none; schema change, see below |
 | [New `mt_event_range_marks` table](#new-mt-event-range-marks-table) for stored-event rewrites | none; schema change, see below |
 
@@ -1243,6 +1262,7 @@ Marten 10 follows the same rule: every changed default can be put back with one 
 | `Events.EnableEventSkippingInProjectionsOrSubscriptions` | `false` | [Marking Events as Skipped](events/skipping.md) |
 | `OpenTelemetry.EnableEventCounters` and `OpenTelemetry.EnableFetchForWritingMetrics` | `false` | [Open Telemetry](otel.md) |
 | System.Text.Json `AllowOutOfOrderMetadataProperties` | `false` | [JSON Serialization](configuration/json.md) |
+| `Projections.Errors.ApplyErrors` and `Projections.Errors.SerializationErrors` | `Skip` | [Async Projection Daemon](events/projections/async-daemon.md#parking-a-failing-identity) |
 
 The side-effect gate is a per-projection setting in JasperFx, so `RestoreV9Defaults()` turns it off for every
 projection registered when the store is built, overriding a projection's own value. The document metadata and

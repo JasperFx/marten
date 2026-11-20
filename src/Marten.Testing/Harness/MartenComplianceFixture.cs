@@ -352,6 +352,11 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             int intId => session.LoadAsync<T>(intId, token),
             long longId => session.LoadAsync<T>(longId, token),
             string stringId => session.LoadAsync<T>(stringId, token),
+
+            // marten#6003: a strong-typed identifier, which Marten's object overload unwraps
+            _ when JasperFx.Core.Reflection.StrongTypedIdResolver.TryResolve(id.GetType(), out _,
+                    JasperFx.Core.Reflection.StrongTypedIdStyle.AnyType)
+                => session.LoadAsync<T>(id, token),
             _ => throw new ArgumentOutOfRangeException(nameof(id),
                 $"Marten cannot load documents by an identity of type {id.GetType().FullName}")
         };
@@ -869,6 +874,38 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     ///     marten#6071: the registrar's <c>SoftDeleted&lt;TDoc&gt;()</c> is <c>Schema.For&lt;TDoc&gt;().SoftDeleted()</c>.
     /// </summary>
     public override bool SupportsSoftDeletedProjectionDocuments => true;
+
+    /// <summary>
+    ///     marten#6003: the parked table (<c>mt_parked_identities</c>) and its batch operations, the parked-identity
+    ///     reads on <c>MartenDatabase</c>, and every identity source a multi-stream projection can park through: stream,
+    ///     DCB tag, slice index and scan.
+    /// </summary>
+    public override bool SupportsParkedIdentities => true;
+
+    /// <summary>
+    ///     marten#6003: an event body is made unreadable by replacing its stored JSON with a string, which no event
+    ///     type deserializes from. The daemon's loader and the per-identity loader both read it through the event
+    ///     storage, which reports the row's stream and tenant with the failure.
+    /// </summary>
+    public override bool SupportsUnreadableEvents => true;
+
+    public override async Task MakeEventUnreadableAsync(long sequence)
+    {
+        await using var conn = _store.Storage.Database.CreateConnection();
+        await conn.OpenAsync().ConfigureAwait(false);
+        try
+        {
+            await using var command = conn.CreateCommand();
+            command.CommandText =
+                $"update {_store.Options.Events.DatabaseSchemaName}.mt_events set data = '\"unreadable\"'::jsonb where seq_id = :seq";
+            command.Parameters.AddWithValue("seq", sequence);
+            await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
 
     /// <summary>
     ///     marten#5847 (Marten 10): Marten throws the exception types lifted into JasperFx.Events

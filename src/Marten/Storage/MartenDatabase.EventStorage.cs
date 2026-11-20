@@ -887,6 +887,9 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             session.QueueOperation(new DeleteProjectionProgress(Options.EventGraph, shardIdentity));
 
             await session.SaveChangesAsync(token).ConfigureAwait(false);
+
+            // marten#6003: the ejected version's parked identities and slice index rows go with it
+            await DeleteParkedAndSliceIndexRowsForShardAsync(shardIdentity, token).ConfigureAwait(false);
         }
         catch (Exception e) when (isMissingEventStorage(e))
         {

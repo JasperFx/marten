@@ -22,6 +22,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
 using Marten.Events.Projections;
+using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.OpenTelemetry;
@@ -256,6 +257,13 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             }
         }
 
+        // marten#6003: an identity parked above the new floor parks again when the shard gets there, and the slice
+        // index rows above it are written again. The parks below the floor stay: those identities are still frozen.
+        foreach (var name in names)
+        {
+            queueParkedRewind(session, name, sequenceFloor ?? 0);
+        }
+
         if (tenantShard != null)
         {
             // Only this tenant's dead letters for this shard: every tenant draws its own sequence, so the
@@ -301,6 +309,12 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
                 // #4981: keep last_updated in step with the rewound progress on the update branch
                 $"insert into {Options.EventGraph.ProgressionTable} (name, last_seq_id) values (?, ?) on conflict (name) do update set last_seq_id = ?, last_updated = transaction_timestamp()",
                 shardName, sequenceFloor, sequenceFloor);
+
+            // marten#6003: as RewindSubscriptionProgressAsync
+            if (ShardName.TryParse(shardName, out var parsed) && parsed != null)
+            {
+                queueParkedRewind(session, parsed, sequenceFloor);
+            }
         }
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
@@ -437,6 +451,21 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             session.QueueOperation(new DeleteProjectionProgress(Events, tenantShardName.Identity));
         }
 
+        // marten#6003: the tenant's parked identities and slice index rows for this projection, as the store-global
+        // teardown clears them for every tenant
+        foreach (var leaf in progressed)
+        {
+            session.QueueSqlCommand(
+                $"delete from {Events.DatabaseSchemaName}.{ParkedIdentitiesTable.Name} where projection_name = ? and tenant_id = ?",
+                leaf.Name, tenantId);
+
+            if (sliceIndexTableFor(leaf.Name, leaf.Version) is { } sliceIndex)
+            {
+                session.QueueSqlCommand($"delete from {Events.DatabaseSchemaName}.{sliceIndex} where tenant_id = ?",
+                    tenantId);
+            }
+        }
+
         // Note: DeadLetterEvent intentionally NOT wiped here. The store-global
         // teardown wipes them blanket-style, but jasperfx#407 Phase 2b's
         // per-tenant rebuild is single-tenant-scoped — the dead-letter table is
@@ -445,6 +474,44 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         // rebuild and self-correct.
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    // marten#6003: the slice index table of a registered projection version that keeps one, or null
+    private string? sliceIndexTableFor(string projectionName, uint version)
+    {
+        var name = SliceIndexTable.NameFor(projectionName, version);
+        return Options.EventGraph.SliceIndexTables().Any(x => x.Identifier.Name == name) ? name : null;
+    }
+
+    // marten#6003: a rewind of one shard to a floor. A park whose failing event is above the floor goes, because the
+    // shard parks it again when it gets there; the slice index rows above the floor go, because they are written again.
+    private void queueParkedRewind(IDocumentSession session, ShardName name, long floor)
+    {
+        var schema = Events.DatabaseSchemaName;
+        if (name.TenantId == null)
+        {
+            session.QueueSqlCommand(
+                $"delete from {schema}.{ParkedIdentitiesTable.Name} where projection_name = ? and projection_version = ? and shard_key = ? and first_failing_seq > ?",
+                name.Name, (int)name.Version, name.ShardKey, floor);
+        }
+        else
+        {
+            session.QueueSqlCommand(
+                $"delete from {schema}.{ParkedIdentitiesTable.Name} where projection_name = ? and projection_version = ? and shard_key = ? and tenant_id = ? and first_failing_seq > ?",
+                name.Name, (int)name.Version, name.ShardKey, name.TenantId, floor);
+        }
+
+        if (sliceIndexTableFor(name.Name, name.Version) is not { } sliceIndex) return;
+
+        if (name.TenantId == null)
+        {
+            session.QueueSqlCommand($"delete from {schema}.{sliceIndex} where seq_id > ?", floor);
+        }
+        else
+        {
+            session.QueueSqlCommand($"delete from {schema}.{sliceIndex} where tenant_id = ? and seq_id > ?",
+                name.TenantId, floor);
+        }
     }
 
     private void teardownProjectionStorageForTenant(IProjectionSource<IDocumentOperations, IQuerySession> source,
@@ -470,6 +537,17 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
         // Rewind previous DeadLetterEvents because you're going to replay them all anyway
         session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == source.Name);
+
+        // marten#6003: a rebuild re-folds every identity, so nothing stays parked, and it writes the slice index
+        // again from its start
+        session.QueueSqlCommand(
+            $"delete from {Events.DatabaseSchemaName}.{ParkedIdentitiesTable.Name} where projection_name = ?",
+            source.Name);
+
+        if (sliceIndexTableFor(source.Name, source.Version) is { } sliceIndex)
+        {
+            session.QueueSqlCommand($"delete from {Events.DatabaseSchemaName}.{sliceIndex}");
+        }
 
         // #4788: a [NaturalKey] aggregate maintains its mt_natural_key_X lookup table via the
         // auto-registered NaturalKeyProjection on the inline-append path. Teardown of the parent
@@ -587,7 +665,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
         var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters,
-            filtering.IncludeArchivedEvents);
+            filtering.IncludeArchivedEvents) { IncludeEventTags = filtering.IncludeEventTags };
         return new ResilientEventLoader(DaemonLoaderPipeline, inner, database);
     }
 
@@ -609,7 +687,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
         var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters,
-            filtering.IncludeArchivedEvents, shardName);
+            filtering.IncludeArchivedEvents, shardName) { IncludeEventTags = filtering.IncludeEventTags };
         return new ResilientEventLoader(DaemonLoaderPipeline, inner, database);
     }
 
@@ -750,18 +828,9 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         // right "shard halts on error" vs "view related dead letters" affordance.
         // Normal-run + rebuild-mode are mirrored as separate descriptors because
         // they carry independent ErrorHandlingOptions on the store.
-        usage.ProjectionErrors = new ProjectionErrorHandlingDescriptor
-        {
-            SkipApplyErrors = Options.Projections.Errors.SkipApplyErrors,
-            SkipUnknownEvents = Options.Projections.Errors.SkipUnknownEvents,
-            SkipSerializationErrors = Options.Projections.Errors.SkipSerializationErrors
-        };
-        usage.ProjectionRebuildErrors = new ProjectionErrorHandlingDescriptor
-        {
-            SkipApplyErrors = Options.Projections.RebuildErrors.SkipApplyErrors,
-            SkipUnknownEvents = Options.Projections.RebuildErrors.SkipUnknownEvents,
-            SkipSerializationErrors = Options.Projections.RebuildErrors.SkipSerializationErrors
-        };
+        // marten#6003: the descriptors carry the error actions (Pause, Skip or Park) and the parking cap too
+        usage.ProjectionErrors = ProjectionErrorHandlingDescriptor.For(Options.Projections.Errors);
+        usage.ProjectionRebuildErrors = ProjectionErrorHandlingDescriptor.For(Options.Projections.RebuildErrors);
 
         // jasperfx#434 / marten#4710: surface the effective rebuild cap so monitoring tools
         // (CritterWatch#309's rebuild dispatcher) can size their orchestration off the wire.
