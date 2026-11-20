@@ -21,7 +21,32 @@ namespace MultiHostTests
         private IDocumentSession _session;
         // Thread-safe and null-tolerant, the same as OneOffConfigurationsContext. See #5976
         protected readonly DisposableTracker _disposables = new();
-        private readonly string ConnectionString = "Host=localhost:5440,localhost:5441;Database=marten_testing;Username=user;password=password;Command Timeout=5";
+        // #6109: the pair is shared with master's MultiHostTests, so 9.0 keeps to its own database on it
+        private static readonly string ConnectionString =
+            $"Host=localhost:5440,localhost:5441;Database={ConnectionSource.DefaultDatabase};Username=user;password=password;Command Timeout=5";
+
+        private static readonly Lazy<bool> DatabaseCreated = new(createDatabaseOnThePrimary);
+
+        /// <summary>
+        ///     The compose file creates marten_testing on the primary, not 9.0's database. Create it there once;
+        ///     the standby gets it through replication.
+        /// </summary>
+        private static bool createDatabaseOnThePrimary()
+        {
+            using var conn = new NpgsqlConnection(
+                "Host=localhost;Port=5440;Database=postgres;Username=user;password=password;Command Timeout=60;Pooling=false");
+            conn.Open();
+
+            using var check = new NpgsqlCommand("select 1 from pg_database where datname = @name", conn);
+            check.Parameters.AddWithValue("name", ConnectionSource.DefaultDatabase);
+            if (check.ExecuteScalar() is null)
+            {
+                using var create = new NpgsqlCommand($"create database \"{ConnectionSource.DefaultDatabase}\"", conn);
+                create.ExecuteNonQuery();
+            }
+
+            return true;
+        }
 
         public string SchemaName => _schemaName;
 
@@ -40,6 +65,8 @@ namespace MultiHostTests
 
         protected DocumentStore StoreOptions(Action<StoreOptions> configure, bool cleanAll = true)
         {
+            _ = DatabaseCreated.Value;
+
             var options = new StoreOptions();
             var host = new NpgsqlDataSourceBuilder(ConnectionString).BuildMultiHost();
             options.Connection(host);

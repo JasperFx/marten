@@ -26,10 +26,10 @@ partial class Build : NukeBuild
     [Parameter] readonly bool DisableTestParallelization = true;
     [Parameter]readonly string Framework;
     [Parameter] readonly string Profile;
-    [Parameter] readonly string ConnectionString ="Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
+    [Parameter] readonly string ConnectionString ="Host=localhost;Port=5432;Database=marten9_testing;Username=postgres;password=postgres";
     [Parameter] readonly string Project;
 
-    // Everything that runs against the ordinary marten_testing database. CI does not use this
+    // Everything that runs against the ordinary marten9_testing database. CI does not use this
     // target — .github/workflows/tests.yml gives each project its own job — but a local
     // `./build.sh test` should still mean "run the suite", so anything added below belongs here.
     // TestMultiHost is deliberately absent: it needs the replication pair from
@@ -524,6 +524,9 @@ partial class Build : NukeBuild
         while (attempt < 10)
             try
             {
+                // 9.0's marten9_testing is not the database docker-compose creates (#6109)
+                ensureDatabaseExists(ConnectionString);
+
                 await using var conn = new Npgsql.NpgsqlConnection(ConnectionString + ";Pooling=false");
                 await conn.OpenAsync();
 

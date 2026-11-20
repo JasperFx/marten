@@ -114,7 +114,8 @@ public partial class Bug_3080_WaitForNonStaleData_should_work_dammit
             // (Re)-create tenant databases
             foreach (var tenantId in tenantIds)
             {
-                var exists = await connection.DatabaseExists(tenantId);
+                // #6109: the database on the shared test server carries the 9.0 prefix
+                var exists = await connection.DatabaseExists(ConnectionSource.DatabaseName(tenantId));
                 if (exists)
                 {
                     using var tenantConn =
@@ -126,7 +127,7 @@ public partial class Bug_3080_WaitForNonStaleData_should_work_dammit
                     return;
                 }
 
-                await new DatabaseSpecification().BuildDatabase(connection, tenantId);
+                await new DatabaseSpecification().BuildDatabase(connection, ConnectionSource.DatabaseName(tenantId));
             }
         }
 
@@ -134,7 +135,7 @@ public partial class Bug_3080_WaitForNonStaleData_should_work_dammit
         {
             var builder = new NpgsqlConnectionStringBuilder(masterConnectionString)
             {
-                Database = databaseName,
+                Database = ConnectionSource.DatabaseName(databaseName),
                 PersistSecurityInfo = true
             };
 

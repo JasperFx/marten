@@ -35,11 +35,13 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 //      opt-in [Trait("Retry", "N")] policy, the stall report, lane balancing from the ledger.
 //   4. Report one line per unit, then the full run report of every unit that was not clean.
 //
-// Databases. Every suite defaults to `marten_testing` on 5432 and hard-codes its schema names, so two
+// Databases. Every suite defaults to `marten9_testing` on 5432 and hard-codes its schema names, so two
 // units on one database collide however their classes are split. Each unit therefore gets its own
 // databases through `marten_testing_database` (which ConnectionSource reads), one per lane:
-// `marten_testing_<project>_<tfm>_w{n}` — never the `marten_testing_w{n}` a CI target's lanes use,
-// and never anything another repository's lanes (Weasel's) are named.
+// `marten9_testing_<project>_<tfm>_w{n}` — never the `marten9_testing_w{n}` a CI target's lanes use,
+// and never anything another repository's lanes (Weasel's) are named. The `marten9_` prefix keeps 9.0
+// off every database master's (10.0) suites make on the same server (#6109); the suites' own fixed-name
+// databases carry it too (ConnectionSource.DatabaseName).
 //
 // What a unit's own database cannot isolate is a name a suite reaches PAST its lane for: a whole
 // database with a fixed name on the server, or the default database itself. Those are the tracks
@@ -48,7 +50,7 @@ partial class Build
 {
     /// <summary>
     /// LocalGate: the Postgres server (and base database) every unit's lane databases are created on.
-    /// Defaults to <c>marten_testing_database</c>, else the ordinary localhost:5432/marten_testing.
+    /// Defaults to <c>marten_testing_database</c>, else the ordinary localhost:5432/marten9_testing.
     /// Point it at a Postgres 15 container for the PG15 leg (see CLAUDE.md).
     /// </summary>
     [Parameter("LocalGate: connection string of the Postgres server the units' databases are created on")]
@@ -92,19 +94,19 @@ partial class Build
     // ─── Tracks ────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Whole databases named tenant1..tenant6 and database1 on the server: CoreTests
+    /// Whole databases named marten9_tenant1..marten9_tenant6 and marten9_database1 on the server: CoreTests
     /// (jasper_fx_mechanics), DaemonTests (multi_tenancy_by_database, dynamic_spin_up_of_dynamic_tenants),
     /// MultiTenancyTests throughout, and StressTests.
     /// </summary>
     const string TenantDatabasesTrack = "tenant-databases";
 
-    /// <summary>Whole databases named marten_shard_*: MultiTenancyTests and TenantPartitionedEventsTests.</summary>
+    /// <summary>Whole databases named marten9_marten_shard_*: MultiTenancyTests and TenantPartitionedEventsTests.</summary>
     const string ShardDatabasesTrack = "shard-databases";
 
     /// <summary>
-    /// The default database itself, reached past the lane: EventSourcingTests' testing_projections
-    /// hard-codes localhost:5432/marten_testing. Every other unit is relocated, so this only keeps two
-    /// frameworks of EventSourcingTests apart, and StressTests away from it.
+    /// Keeps two frameworks of EventSourcingTests apart, and StressTests away from them: the explorer and
+    /// compliance suites create whole tenant databases by fixed names (explorer_5383_*, compliance_*).
+    /// testing_projections used to hard-code the default database itself; it reads ConnectionSource now.
     /// </summary>
     const string DefaultDatabaseTrack = "default-database";
 
@@ -117,7 +119,7 @@ partial class Build
     static readonly (string Host, int Port)[] MultiHostPair = [("localhost", 5440), ("localhost", 5441)];
 
     const string DefaultTimescaleConnectionString =
-        "Host=localhost;Port=5433;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5";
+        "Host=localhost;Port=5433;Database=marten9_testing;Username=postgres;password=postgres;Command Timeout=5";
 
     /// <summary>One logical suite of tests.yml, as the gate runs it.</summary>
     /// <param name="Name">The short name the matrix uses (and <c>--gate-only</c> takes).</param>
@@ -343,9 +345,9 @@ partial class Build
 
     /// <summary>
     /// <c>{base database}_{project}_{tfm}_w{lane}</c>, lower-cased — e.g.
-    /// <c>marten_testing_eventsourcingtests_net10_0_w3</c>. The unit's name keeps two frameworks of
+    /// <c>marten9_testing_eventsourcingtests_net10_0_w3</c>. The unit's name keeps two frameworks of
     /// one project apart; the base database's name keeps a gate's lanes off a CI target's
-    /// (<c>marten_testing_w{n}</c>).
+    /// (<c>marten9_testing_w{n}</c>).
     /// </summary>
     static string gateLaneConnectionString(string server, GateUnit unit, int lane)
     {
@@ -452,6 +454,10 @@ partial class Build
     {
         try
         {
+            // The base database the lanes are named after: 9.0's marten9_testing is not one docker-compose
+            // creates (#6109)
+            ensureDatabaseExists(connectionString);
+
             using var conn = openUnpooled(connectionString);
             using var cmd = conn.CreateCommand();
             cmd.CommandText = "select current_setting('server_version'), current_setting('max_connections')::int, " +
@@ -494,7 +500,7 @@ partial class Build
         {
             track.Check($"MultiHostTests' {(port == 5440 ? "primary" : "standby")} at {host}:{port} accepts its login", () =>
             {
-                var connectionString = $"Host={host};Port={port};Database=marten_testing;Username=user;password=password";
+                var connectionString = $"Host={host};Port={port};Database=postgres;Username=user;password=password";
                 try
                 {
                     using var conn = openUnpooled(connectionString);

@@ -99,6 +99,9 @@ public class database_per_tenant_projection_tests: IAsyncLifetime
 
     private static async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
     {
+        // #6109: the database on the shared test server carries the 9.0 prefix
+        databaseName = ConnectionSource.DatabaseName(databaseName);
+
         var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
         if (!await conn.DatabaseExists(databaseName))

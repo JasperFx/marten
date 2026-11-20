@@ -20,8 +20,9 @@ namespace MultiTenancyTests;
 [Collection("multi-tenancy")]
 public class find_database_for_tenant
 {
-    private const string Known = "find_db_known";
-    private const string NeverSeen = "find_db_never_seen";
+    // #6109: single server tenancy names each tenant's database after it, so the id carries the 9.0 prefix
+    private const string Known = ConnectionSource.DatabasePrefix + "find_db_known";
+    private const string NeverSeen = ConnectionSource.DatabasePrefix + "find_db_never_seen";
 
     [Fact]
     public async Task single_server_resolves_a_known_tenant_to_its_own_database()

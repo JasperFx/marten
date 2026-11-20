@@ -339,11 +339,14 @@ public class document_store_diagnostics_tests: HostedStoreContext
         // A read-only console question about a tenant that does not exist must not bring that tenant into
         // being, so diagnostics goes through TryFindDatabase and answers with an empty page.
         var schema = $"{SchemaName}_unknown_tenant";
+
+        // #6109: had the bug come back, this tenant id would name a database on the shared server
+        const string probe = ConnectionSource.DatabasePrefix + "diag_unknown_tenant_probe";
         await using (var conn = new NpgsqlConnection(ConnectionSource.AdminConnectionString))
         {
             await conn.OpenAsync();
             await conn.DropSchemaAsync(schema);
-            await conn.RunSqlAsync("drop database if exists diag_unknown_tenant_probe with (force)");
+            await conn.RunSqlAsync($"drop database if exists {probe} with (force)");
         }
 
         using var host = await StartHostAsync(opts =>
@@ -362,14 +365,14 @@ public class document_store_diagnostics_tests: HostedStoreContext
         // mistake the operator should see. That matches findExplorerDatabaseAsync on the event-store side.
         // An unknown TYPE still reads as empty -- that one the contract does specify.
         await Should.ThrowAsync<UnknownTenantIdException>(() => diagnostics.QueryDocumentsAsync(typeName,
-            new DocumentQueryOptions(1, 10) { TenantId = "diag_unknown_tenant_probe" }));
+            new DocumentQueryOptions(1, 10) { TenantId = probe }));
 
         await Should.ThrowAsync<UnknownTenantIdException>(() => diagnostics.LoadDocumentAsync(
-            typeName, Guid.NewGuid().ToString(), "diag_unknown_tenant_probe"));
+            typeName, Guid.NewGuid().ToString(), probe));
 
         await using var check = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await check.OpenAsync();
-        (await check.DatabaseExists("diag_unknown_tenant_probe")).ShouldBeFalse();
+        (await check.DatabaseExists(probe)).ShouldBeFalse();
     }
 
     [Fact]

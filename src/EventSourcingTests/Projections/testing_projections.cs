@@ -8,6 +8,7 @@ using JasperFx.Events.Daemon;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Time.Testing;
@@ -84,8 +85,7 @@ public class testing_projections
     {
         using var store = DocumentStore.For(opts =>
         {
-            opts.Connection(
-                "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+            opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "incidents";
         });
 
@@ -120,8 +120,7 @@ public class testing_projections
     {
         using var store = DocumentStore.For(opts =>
         {
-            opts.Connection(
-                "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+            opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "incidents";
 
             // Notice that the "snapshot" is running inline
@@ -164,8 +163,7 @@ public class testing_projections
         // yet.
         using var store = DocumentStore.For(opts =>
         {
-            opts.Connection(
-                "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+            opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "incidents";
 
             // Notice that the "snapshot" is running inline
@@ -221,13 +219,17 @@ public class testing_projections
             {
                 services.AddMarten(opts =>
                     {
-                        opts.Connection(
-                            "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+                        opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "incidents";
 
                         // Notice that the "snapshot" is running inline
                         opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
                     })
+
+                    // Build the schema before anything else touches it. Otherwise the daemon starting up and
+                    // the first SaveChangesAsync below both apply it, and on a busy database one of them can
+                    // give up waiting for the other
+                    .ApplyAllDatabaseChangesOnStartup()
 
                     // Using Solo in tests will help it start up a little quicker
                     .AddAsyncDaemon(DaemonMode.Solo);
@@ -284,8 +286,7 @@ public class testing_projections
             {
                 services.AddMarten(opts =>
                     {
-                        opts.Connection(
-                            "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5");
+                        opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "incidents";
 
                         // Notice that the "snapshot" is running inline
@@ -293,6 +294,11 @@ public class testing_projections
 
                         opts.Events.TimeProvider = eventsTimeProvider;
                     })
+
+                    // Build the schema before anything else touches it. Otherwise the daemon starting up and
+                    // the first SaveChangesAsync below both apply it, and on a busy database one of them can
+                    // give up waiting for the other
+                    .ApplyAllDatabaseChangesOnStartup()
 
                     // Using Solo in tests will help it start up a little quicker
                     .AddAsyncDaemon(DaemonMode.Solo);

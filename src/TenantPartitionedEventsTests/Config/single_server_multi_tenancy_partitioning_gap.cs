@@ -26,7 +26,7 @@ public class single_server_multi_tenancy_partitioning_gap
         var opts = new StoreOptions();
         opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString, tenancy =>
         {
-            tenancy.WithTenants("t1", "t2").InDatabaseNamed("tp_gap_ss_" + Guid.NewGuid().ToString("N")[..8]);
+            tenancy.WithTenants("t1", "t2").InDatabaseNamed(ConnectionSource.DatabaseName("tp_gap_ss_" + Guid.NewGuid().ToString("N")[..8]));
         });
         opts.Events.TenancyStyle = TenancyStyle.Conjoined;
         opts.Events.UseTenantPartitionedEvents = true;
@@ -45,7 +45,7 @@ public class single_server_multi_tenancy_partitioning_gap
         {
             opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString, tenancy =>
             {
-                tenancy.WithTenants("t1", "t2").InDatabaseNamed("tp_gap_ss_" + Guid.NewGuid().ToString("N")[..8]);
+                tenancy.WithTenants("t1", "t2").InDatabaseNamed(ConnectionSource.DatabaseName("tp_gap_ss_" + Guid.NewGuid().ToString("N")[..8]));
             });
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Events.UseTenantPartitionedEvents = true;

@@ -248,7 +248,7 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         await using var session =
             await theStore.LightweightSerializableSessionAsync(new SessionOptions { TenantId = "tenant1" }, TestContext.Current.CancellationToken);
 
-        session.Connection.Database.ShouldBe("tenant1");
+        session.Connection.Database.ShouldBe(ConnectionSource.DatabaseName("tenant1"));
     }
 
     [Fact]
@@ -378,7 +378,7 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         await tenancy.BuildDatabases();
 
         var tenant = tenancy.GetTenant("tenant1");
-        tenant.Database.CreateConnection().Database.ShouldBe("tenant1");
+        tenant.Database.CreateConnection().Database.ShouldBe(ConnectionSource.DatabaseName("tenant1"));
     }
 
     [Fact]
@@ -390,7 +390,7 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         await tenancy.BuildDatabases();
 
         var tenant = await tenancy.GetTenantAsync("tenant1");
-        tenant.Database.CreateConnection().Database.ShouldBe("tenant1");
+        tenant.Database.CreateConnection().Database.ShouldBe(ConnectionSource.DatabaseName("tenant1"));
     }
 
     [Fact]
@@ -432,7 +432,7 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
         await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
 
         var tenant = tenancy.GetTenant("tenant2");
-        tenant.Database.CreateConnection().Database.ShouldBe("tenant2");
+        tenant.Database.CreateConnection().Database.ShouldBe(ConnectionSource.DatabaseName("tenant2"));
     }
 
     [Fact]
@@ -447,6 +447,6 @@ public class using_master_table_multi_tenancy_with_datasource: IAsyncLifetime
 
         var tenant = await tenancy.GetTenantAsync("tenant2");
 
-        tenant.Database.CreateConnection().Database.ShouldBe("tenant2");
+        tenant.Database.CreateConnection().Database.ShouldBe(ConnectionSource.DatabaseName("tenant2"));
     }
 }

@@ -42,7 +42,7 @@ public class Bug_5881_begin_transaction_cancellation_leak: IAsyncLifetime
 {
     private const string Tenant = "tenant_5881";
 
-    private readonly string _database = $"marten_5881_{Guid.NewGuid().ToString("N")[..8]}";
+    private readonly string _database = ConnectionSource.DatabaseName($"marten_5881_{Guid.NewGuid().ToString("N")[..8]}");
     private readonly string _admin;
 
     public Bug_5881_begin_transaction_cancellation_leak()

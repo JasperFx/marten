@@ -119,6 +119,9 @@ partial class Build
         Log.Information("=== {Project} ({Framework}): supervised run, {Workers} worker(s){Retry} ===",
             projectName, framework, workers, DisableTestRetry ? ", retries OFF" : "");
 
+        // A single worker runs in the base database itself
+        if (workers <= 1) ensureDatabaseExists(baseTestConnectionString);
+
         var factory = new MtpWorkerFactory(executable)
         {
             EnvironmentFor = workers > 1 ? laneEnvironment(workers) : null
@@ -244,8 +247,13 @@ partial class Build
     /// src/Marten.Testing/Harness/ConnectionSource.cs, so a lane differs from a sequential run in
     /// its database name and nothing else.
     /// </summary>
+    /// <remarks>
+    /// 9.0's base database is <c>marten9_testing</c>, not master's <c>marten_testing</c> (#6109): the two branches
+    /// share one Postgres server, and every lane database is named after the base, so 9.0's lanes never open a
+    /// database master's suites made. <see cref="ensureDatabaseExists"/> creates it, since docker-compose doesn't.
+    /// </remarks>
     const string DefaultTestConnectionString =
-        "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres;Command Timeout=5";
+        "Host=localhost;Port=5432;Database=marten9_testing;Username=postgres;password=postgres;Command Timeout=5";
 
     static string baseTestConnectionString =>
         Environment.GetEnvironmentVariable("marten_testing_database") is { Length: > 0 } configured
@@ -301,28 +309,37 @@ partial class Build
 
     static void createLaneDatabases(string adminConnectionString, IEnumerable<string> lanes)
     {
-        // CREATE DATABASE cannot run inside a transaction or on a multiplexed connection, hence a
-        // dedicated unpooled admin connection to the base database.
-        var admin = new NpgsqlConnectionStringBuilder(adminConnectionString) { Pooling = false };
+        foreach (var lane in lanes) createDatabaseIfMissing(adminConnectionString, new NpgsqlConnectionStringBuilder(lane).Database!);
+    }
+
+    /// <summary>
+    /// Creates the database <paramref name="connectionString"/> names when the server lacks it. The suites' base
+    /// database is one of these: 9.0's <c>marten9_testing</c> is not the one docker-compose creates (#6109).
+    /// </summary>
+    static void ensureDatabaseExists(string connectionString)
+    {
+        lock (LaneDatabaseLock) createDatabaseIfMissing(connectionString, new NpgsqlConnectionStringBuilder(connectionString).Database!);
+    }
+
+    static void createDatabaseIfMissing(string serverConnectionString, string database)
+    {
+        // CREATE DATABASE cannot run inside a transaction or on a multiplexed connection, hence a dedicated
+        // unpooled admin connection, and to the maintenance database: the base database may not exist yet.
+        var admin = new NpgsqlConnectionStringBuilder(serverConnectionString) { Pooling = false, Database = "postgres" };
         using var conn = new NpgsqlConnection(admin.ConnectionString);
         conn.Open();
 
-        foreach (var lane in lanes)
-        {
-            var database = new NpgsqlConnectionStringBuilder(lane).Database!;
+        using var check = conn.CreateCommand();
+        check.CommandText = "select 1 from pg_database where datname = @name";
+        check.Parameters.AddWithValue("name", database);
+        if (check.ExecuteScalar() is not null) return;
 
-            using var check = conn.CreateCommand();
-            check.CommandText = "select 1 from pg_database where datname = @name";
-            check.Parameters.AddWithValue("name", database);
-            if (check.ExecuteScalar() is not null) continue;
-
-            Log.Information("Provisioning per-lane database {Database}", database);
-            using var create = conn.CreateCommand();
-            // An identifier, not a value, so it cannot be parameterized; it is generated above from
-            // the configured database name, never user input.
-            create.CommandText = $"CREATE DATABASE \"{database}\"";
-            create.ExecuteNonQuery();
-        }
+        Log.Information("Provisioning database {Database}", database);
+        using var create = conn.CreateCommand();
+        // An identifier, not a value, so it cannot be parameterized; it comes from the configured database
+        // name, never user input.
+        create.CommandText = $"CREATE DATABASE \"{database}\"";
+        create.ExecuteNonQuery();
     }
 
     // ─── Bobcat's run report ───────────────────────────────────────────

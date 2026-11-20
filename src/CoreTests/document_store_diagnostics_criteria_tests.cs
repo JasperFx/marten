@@ -153,8 +153,8 @@ public class document_store_diagnostics_criteria_tests
     [Fact]
     public async Task where_reads_only_the_named_tenants_own_database()
     {
-        const string tenantA = "diag869_tenant_a";
-        const string tenantB = "diag869_tenant_b";
+        const string tenantA = ConnectionSource.DatabasePrefix + "diag869_tenant_a"; // #6109: names its database
+        const string tenantB = ConnectionSource.DatabasePrefix + "diag869_tenant_b"; // #6109: names its database
 
         await using var store = await storeFor("diag869_per_db", opts =>
         {

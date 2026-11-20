@@ -54,13 +54,14 @@ public class explorer_database_scoped_reads_5383 : IAsyncLifetime
             await conn.OpenAsync();
             foreach (var db in TenantDatabases)
             {
-                if (!await conn.DatabaseExists(db))
+                // #6109: the database on the shared test server carries the 9.0 prefix
+                var physical = ConnectionSource.DatabaseName(db);
+                if (!await conn.DatabaseExists(physical))
                 {
-                    await new DatabaseSpecification().BuildDatabase(conn, db);
+                    await new DatabaseSpecification().BuildDatabase(conn, physical);
                 }
 
-                var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString) { Database = db };
-                _connectionStrings[db] = builder.ConnectionString;
+                _connectionStrings[db] = ConnectionSource.ConnectionStringForDatabase(db);
             }
         }
 

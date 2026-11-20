@@ -26,6 +26,9 @@ public class jasper_fx_mechanics
 {
     private async Task<string> CreateDatabaseIfNotExists(NpgsqlConnection conn, string databaseName)
     {
+        // #6109: the database on the shared test server carries the 9.0 prefix
+        databaseName = ConnectionSource.DatabaseName(databaseName);
+
         var builder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
         var exists = await conn.DatabaseExists(databaseName);
