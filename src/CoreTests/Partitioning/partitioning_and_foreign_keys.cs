@@ -168,4 +168,75 @@ public class partitioning_and_foreign_keys : OneOffConfigurationsContext
 
         await assertOnlyBlueIsLeftAsync();
     }
+
+    // marten#6096: a document with a foreign key to its own type, partitioned per tenant by Marten management.
+    // PostgreSQL 17 refuses to detach such a partition while its rows reference each other (weasel#895).
+    private void configureManagedPartitionsWithSelfReference(StoreOptions opts)
+    {
+        opts.Policies.AllDocumentsAreMultiTenanted();
+        opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement(SchemaName);
+
+        opts.Schema.For<TenantTreeNode>().ForeignKey<TenantTreeNode>(x => x.ParentId);
+    }
+
+    private async Task storeTreeAsync(string tenantId)
+    {
+        var root = new TenantTreeNode { Id = Guid.NewGuid(), Name = tenantId };
+        var child = new TenantTreeNode { Id = Guid.NewGuid(), Name = tenantId + "-child", ParentId = root.Id };
+
+        await using var session = theStore.LightweightSession(tenantId);
+        session.Store(root);
+        await session.SaveChangesAsync();
+
+        session.Store(child);
+        await session.SaveChangesAsync();
+    }
+
+    private async Task assertOnlyBlueTreeIsLeftAsync()
+    {
+        var table = await theStore.Storage.Database.ExistingTableFor(typeof(TenantTreeNode));
+        table.Partitioning.ShouldBeOfType<ListPartitioning>().Partitions.Select(x => x.Suffix).ShouldBe(["blue"]);
+
+        await using var blue = theStore.QuerySession("blue");
+        (await blue.Query<TenantTreeNode>().CountAsync()).ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task remove_managed_tenant_with_a_self_referencing_partitioned_document()
+    {
+        StoreOptions(configureManagedPartitionsWithSelfReference);
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "red", "blue");
+
+        await storeTreeAsync("red");
+        await storeTreeAsync("blue");
+
+        await theStore.Advanced.RemoveMartenManagedTenantsAsync(["red"], CancellationToken.None);
+
+        await assertOnlyBlueTreeIsLeftAsync();
+    }
+
+    [Fact]
+    public async Task delete_all_tenant_data_with_a_self_referencing_managed_partitioned_document()
+    {
+        StoreOptions(configureManagedPartitionsWithSelfReference);
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "red", "blue");
+
+        await storeTreeAsync("red");
+        await storeTreeAsync("blue");
+
+        await theStore.Advanced.DeleteAllTenantDataAsync("red", CancellationToken.None);
+
+        await assertOnlyBlueTreeIsLeftAsync();
+    }
+}
+
+public class TenantTreeNode
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public Guid? ParentId { get; set; }
 }

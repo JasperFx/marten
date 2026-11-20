@@ -1258,7 +1258,14 @@
              alias. Marten's daemon does not page through EventTypeAllowList, so nothing changes here.
            * Weasel.Sqlite only: weasel#857 (Microsoft.Data.Sqlite 10.0.15), #861 (collations), #863 (JSON column
              reads). Marten does not reference Weasel.Sqlite. -->
-    <!-- Weasel 10.0.0-alpha.11:
+    <!-- Weasel 10.0.0-alpha.12:
+           * weasel#891: a referenced table's shared partition keeps its bound wide when a value leaves it.
+           * weasel#892: a removed value is dropped from the in-memory partition map too.
+           * weasel#895: a self-referencing partitioned table's partition is emptied before it is detached, which
+             PostgreSQL 17 requires, so RemoveMartenManagedTenantsAsync and DeleteAllTenantDataAsync work for a
+             managed-partitioned document with a foreign key to its own type (#6096).
+           * weasel#896: a value re-added under a different suffix goes back into the bucket that still covers it.
+         Weasel 10.0.0-alpha.11:
            * weasel#890 (PR #893): ManagedListPartitions removes a tenant's partitions referencing tables first, so
              RemoveMartenManagedTenantsAsync and DeleteAllTenantDataAsync no longer fail on a foreign key between two
              managed-partitioned documents (#6092).
@@ -1274,9 +1281,9 @@
              partitioned mt_events can go back to unpartitioned (blue_green_side_effect_gate no longer works around it).
            * Sequential Guid ids through JasperFx's SequentialGuid, with IGuidGenerator overloads. Marten's closed-shape
              registrations pass SequentialGuid.PostgresOrder explicitly. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.11" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.11" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.11" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.12" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.12" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.12" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

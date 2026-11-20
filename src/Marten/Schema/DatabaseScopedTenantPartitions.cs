@@ -265,7 +265,10 @@ public class DatabaseScopedTenantPartitions: ManagedListPartitions, IListPartiti
         {
             var statuses = await base.AddPartitionToAllTables(logger, database, values, token).ConfigureAwait(false);
 
-            var swept = await sweepTablesDiscoveredInDatabaseAsync(logger, database, values, statuses, token)
+            // Weasel can record a value under a different suffix than the one requested (weasel#896)
+            var recorded = await recordedSuffixesAsync(database, values, token).ConfigureAwait(false);
+
+            var swept = await sweepTablesDiscoveredInDatabaseAsync(logger, database, recorded, statuses, token)
                 .ConfigureAwait(false);
 
             return swept.Count == 0 ? statuses : statuses.Concat(swept).ToArray();
@@ -294,13 +297,31 @@ public class DatabaseScopedTenantPartitions: ManagedListPartitions, IListPartiti
         {
             await base.AddPartitionToAllTables(database, value, suffix, token).ConfigureAwait(false);
 
-            await sweepTablesDiscoveredInDatabaseAsync(NullLogger.Instance, database, values, [], token)
+            var recorded = await recordedSuffixesAsync(database, values, token).ConfigureAwait(false);
+
+            await sweepTablesDiscoveredInDatabaseAsync(NullLogger.Instance, database, recorded, [], token)
                 .ConfigureAwait(false);
         }
         finally
         {
             TenantPartitionDatabaseScope.Current = prior;
         }
+    }
+
+    /// <summary>
+    /// weasel#896: a value that an existing partition's bound still covers goes back into that partition's
+    /// bucket, and is recorded in the registry under the bucket's suffix rather than the requested one. Re-read
+    /// this database's registry so its view holds what Weasel wrote, and return the suffix each of the requested
+    /// values ended up with.
+    /// </summary>
+    private async Task<Dictionary<string, string>> recordedSuffixesAsync(PostgresqlDatabase database,
+        IReadOnlyDictionary<string, string> requested, CancellationToken token)
+    {
+        await hydrateWithFreshConnectionAsync(database, token, force: true).ConfigureAwait(false);
+
+        var view = PartitionsFor(database);
+        return requested.ToDictionary(pair => pair.Key,
+            pair => view.TryGetValue(pair.Key, out var recorded) ? recorded : pair.Value);
     }
 
     /// <summary>
@@ -508,6 +529,7 @@ public class DatabaseScopedTenantPartitions: ManagedListPartitions, IListPartiti
     /// Database-scoped counterpart of the base by-value drop. Resolves the partition suffix from
     /// THIS database's registry — the base implementation resolves from the store-wide snapshot,
     /// which under sharded tenancy may have been hydrated from a different database entirely.
+    /// A value that shares its partition with other values only leaves that partition; the others keep it.
     /// </summary>
     public new async Task DropPartitionFromAllTablesForValue(PostgresqlDatabase database, ILogger logger,
         string value, CancellationToken token)
@@ -517,12 +539,48 @@ public class DatabaseScopedTenantPartitions: ManagedListPartitions, IListPartiti
         if (_databases.TryFind(database.Identifier, out var set) && set.Hydrated
             && set.Values.TryGetValue(value, out var suffix))
         {
-            await DropPartitionFromAllTables(database, logger, [suffix], token).ConfigureAwait(false);
+            // Compared as partition table names, the way Weasel buckets them
+            var partitionSuffix = partitionTableSuffix(suffix);
+            var sharesItsPartition = set.Values.Any(pair =>
+                pair.Key != value && partitionTableSuffix(pair.Value) == partitionSuffix);
+
+            if (!sharesItsPartition)
+            {
+                await DropPartitionFromAllTables(database, logger, [suffix], token).ConfigureAwait(false);
+                return;
+            }
+
+            // Other tenants share this partition ("bucketing"). Dropping by suffix would drop their rows and
+            // registry entries too, so let Weasel take just this value out of the bucket (weasel#391/#891). The
+            // base method works from the store-wide map, so load that from this database's registry first.
+            await dropValueFromSharedPartitionAsync(database, logger, value, token).ConfigureAwait(false);
             return;
         }
 
         throw new ArgumentOutOfRangeException(nameof(value),
             $"Could not find a partition with the value '{value}' in database '{database.Identifier}'");
+    }
+
+    private static string partitionTableSuffix(string suffix) => new ListPartition(suffix).Suffix;
+
+    private async Task dropValueFromSharedPartitionAsync(PostgresqlDatabase database, ILogger logger, string value,
+        CancellationToken token)
+    {
+        base.ForceReload();
+
+        var prior = TenantPartitionDatabaseScope.Current;
+        TenantPartitionDatabaseScope.Current = database;
+        try
+        {
+            await base.InitializeAsync(database, token).ConfigureAwait(false);
+            await base.DropPartitionFromAllTablesForValue(database, logger, value, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            TenantPartitionDatabaseScope.Current = prior;
+        }
+
+        await hydrateWithFreshConnectionAsync(database, token, force: true).ConfigureAwait(false);
     }
 
     /// <summary>
