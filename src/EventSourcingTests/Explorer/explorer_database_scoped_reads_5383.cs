@@ -64,6 +64,18 @@ public class explorer_database_scoped_reads_5383 : IAsyncLifetime
             }
         }
 
+        // These databases outlive the run and are shared by every branch that runs this test, so start from an
+        // empty schema: Marten 9 and Marten 10 build different event tables (10 partitions them), and migrating
+        // the one the other left behind fails. That also clears the streams every test appends again.
+        foreach (var connectionString in _connectionStrings.Values)
+        {
+            await using var conn = new NpgsqlConnection(connectionString);
+            await conn.OpenAsync();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = "drop schema if exists explorer_5383 cascade";
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         _store = DocumentStore.For(opts =>
         {
             opts.MultiTenantedDatabases(x =>
@@ -78,16 +90,6 @@ public class explorer_database_scoped_reads_5383 : IAsyncLifetime
         });
 
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-
-        // Nothing clears these databases between runs and every test appends the same stream keys.
-        foreach (var connectionString in _connectionStrings.Values)
-        {
-            await using var conn = new NpgsqlConnection(connectionString);
-            await conn.OpenAsync();
-            await using var cmd = conn.CreateCommand();
-            cmd.CommandText = "truncate table explorer_5383.mt_events, explorer_5383.mt_streams";
-            await cmd.ExecuteNonQueryAsync();
-        }
     }
 
     public ValueTask DisposeAsync()
