@@ -156,6 +156,15 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
             // Put it in the identity map -- if necessary
             _storage.Store(_session, snapshot);
         }
+        else if (_session.TrackingMode != DocumentTracking.None)
+        {
+            // #6106: an identity-map or dirty-tracked session can still hold this aggregate from before the
+            // commit, because FetchForWriting loads it through the session's own storage. Left there, every
+            // later read in this session answers the snapshot this projection just replaced, so eject it and
+            // let the next read go to the database. The daemon's sessions never track documents, so this
+            // doesn't touch session state from its parallel workers (#4667).
+            _storage.Eject(_session, snapshot);
+        }
 
         var upsert = _storage.UpsertProjected(snapshot, tenantId);
         _session.QueueOperation(upsert);
