@@ -1,3 +1,4 @@
+using JasperFx.Events.Daemon;
 using Marten;
 using Marten.Events.Projections;
 using Shouldly;
@@ -11,8 +12,12 @@ public class error_handling_defaults
     public void default_policies()
     {
         var options = new ProjectionOptions(new StoreOptions());
-        options.Errors.SkipApplyErrors.ShouldBeTrue();
-        options.Errors.SkipSerializationErrors.ShouldBeTrue();
+
+        // marten#6003 (10.0): a failing identity parks, and the shard pauses where it can't park
+        options.Errors.ApplyErrors.ShouldBe(ProjectionErrorAction.Park);
+        options.Errors.SerializationErrors.ShouldBe(ProjectionErrorAction.Park);
+        options.Errors.SkipApplyErrors.ShouldBeFalse();
+        options.Errors.SkipSerializationErrors.ShouldBeFalse();
         options.Errors.SkipUnknownEvents.ShouldBeTrue();
 
         options.RebuildErrors.SkipApplyErrors.ShouldBeFalse();

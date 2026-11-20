@@ -23,6 +23,7 @@ using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -454,7 +455,14 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         catch (Exception e)
         {
             var sequence = await readSequenceAsync(reader, token).ConfigureAwait(false);
-            throw new EventDeserializationFailureException(sequence, mapping, e);
+
+            // marten#6003: the row's stream and tenant, read before anything else could fail, so the daemon can park
+            // the stream of a single-stream projection
+            var (streamId, streamKey, tenantId) = await readStreamAndTenantAsync(reader, token).ConfigureAwait(false);
+            throw new EventDeserializationFailureException(sequence, mapping, e)
+            {
+                StreamId = streamId, StreamKey = streamKey, TenantId = tenantId
+            };
         }
 
         await ApplyReaderDataToEventAsync(reader, @event, token).ConfigureAwait(false);
@@ -483,6 +491,43 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         {
             return UnknownEventTypeException.UnknownSequence;
         }
+    }
+
+    // marten#6003: best effort, like readSequenceAsync. This runs on a failure path.
+    private async Task<(Guid? StreamId, string? StreamKey, string? TenantId)> readStreamAndTenantAsync(
+        DbDataReader reader, CancellationToken token)
+    {
+        Guid? streamId = null;
+        string? streamKey = null;
+        string? tenantId = null;
+
+        try
+        {
+            var streamIndex = Array.IndexOf(_fields, "stream_id");
+            if (streamIndex >= 0 && !await reader.IsDBNullAsync(streamIndex, token).ConfigureAwait(false))
+            {
+                if (Events.StreamIdentity == StreamIdentity.AsGuid)
+                {
+                    streamId = await reader.GetFieldValueAsync<Guid>(streamIndex, token).ConfigureAwait(false);
+                }
+                else
+                {
+                    streamKey = await reader.GetFieldValueAsync<string>(streamIndex, token).ConfigureAwait(false);
+                }
+            }
+
+            var tenantIndex = Array.IndexOf(_fields, TenantIdColumn.Name);
+            if (tenantIndex >= 0 && !await reader.IsDBNullAsync(tenantIndex, token).ConfigureAwait(false))
+            {
+                tenantId = await reader.GetFieldValueAsync<string>(tenantIndex, token).ConfigureAwait(false);
+            }
+        }
+        catch
+        {
+            // Leave whatever could not be read unknown, rather than replace the real failure
+        }
+
+        return (streamId, streamKey, tenantId);
     }
 
     private static async Task<long> readSequenceAsync(DbDataReader reader, CancellationToken token)

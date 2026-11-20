@@ -41,7 +41,7 @@ internal class ProjectionProgressStatement: Statement
         // #5048 / jasperfx#565: the failure_* columns trail the existing extended block so the ordinals
         // ShardStateSelector walks stay stable.
         const string extendedColumns =
-            "heartbeat, agent_status, pause_reason, running_on_node, failure_category, failure_event_sequence, failure_event_type, failure_event_tenant_id";
+            "heartbeat, agent_status, pause_reason, running_on_node, failure_category, failure_event_sequence, failure_event_type, failure_event_tenant_id, parked_count";
 
         // #5541 / jasperfx#924: last_updated rides in the FIXED head of every variant, immediately after
         // last_seq_id, rather than trailing one of the optional blocks. It is the only column here that is

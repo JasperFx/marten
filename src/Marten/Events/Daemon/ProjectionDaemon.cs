@@ -22,6 +22,7 @@ public partial class ProjectionDaemon: JasperFxAsyncDaemon<IDocumentOperations, 
     {
         _store = store;
         store.TrackDaemon(this);
+        store.LogProjectionParkingOnce(loggerFactory.CreateLogger<ProjectionDaemon>());
     }
 
     public ProjectionDaemon(DocumentStore store, MartenDatabase database, ILogger logger,
@@ -30,6 +31,7 @@ public partial class ProjectionDaemon: JasperFxAsyncDaemon<IDocumentOperations, 
     {
         _store = store;
         store.TrackDaemon(this);
+        store.LogProjectionParkingOnce(logger);
     }
 
     /// <summary>

@@ -121,6 +121,18 @@ public class OperationPage
                     if (i == 0 && operation is AssertsOnCallback)
                     {
                         (windowStart, windowEnd) = (i, i);
+
+                        // marten#6003: the reader's RecordsAffected is cumulative, so a row-affecting statement
+                        // between this one and the first result set (a per-identity rebuild's HardDeleteById, a
+                        // parked row's delete) hid a stale progression update and let the batch commit. By now
+                        // the reader is past this statement, so its own count is filled in: use it when it is.
+                        if (operation is IAssertsRecordsAffected asserts &&
+                            ownRecordsAffected(i) is var own and >= 0 &&
+                            asserts.DetectRecordsAffectedProblem(own) is { } problem)
+                        {
+                            throw problem;
+                        }
+
                         await operation.PostprocessAsync(reader, exceptions, token).ConfigureAwait(false);
                     }
 
@@ -250,6 +262,15 @@ public class OperationPage
         }
 
         return -1;
+    }
+
+    // The rows operation i's own statement affected, or -1 when Npgsql hasn't reported it (yet)
+    private int ownRecordsAffected(int i)
+    {
+        if (_compiled == null || i >= _lastStatements.Count) return -1;
+
+        var statement = _lastStatements[i];
+        return statement < _compiled.BatchCommands.Count ? _compiled.BatchCommands[statement].RecordsAffected : -1;
     }
 
     private const string AttributedKey = "Marten.OperationPage.Attributed";

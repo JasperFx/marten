@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using JasperFx.Events.Tags;
 using Marten.Events.Archiving;
 using Marten.Events.Projections;
@@ -48,6 +49,23 @@ public partial class EventGraph: IFeatureSchema
     {
         // Nothing
     }
+
+    /// <summary>
+    /// marten#6003: the registered multi-stream projections that keep a slice index, with the table each one writes.
+    /// </summary>
+    internal IEnumerable<(IAggregateProjection Projection, SliceIndexTable Table)> SliceIndexedProjections()
+    {
+        foreach (var source in Options.Projections.All)
+        {
+            if (source is IAggregateProjection { Scope: AggregationScope.MultiStream } aggregate &&
+                source.Options.SliceIndex != null)
+            {
+                yield return (aggregate, new SliceIndexTable(this, source.Name, source.Version, aggregate.IdentityType));
+            }
+        }
+    }
+
+    internal IEnumerable<SliceIndexTable> SliceIndexTables() => SliceIndexedProjections().Select(x => x.Table);
 
     private IEnumerable<ISchemaObject> createAllSchemaObjects()
     {
@@ -103,6 +121,16 @@ public partial class EventGraph: IFeatureSchema
         // jasperfx#1215 / #1222: the ceilings and cursors of stored-event rewrites and backfills, which outlive
         // rebuild teardown and data resets like the floors
         yield return new EventRangeMarkTable(this);
+
+        // marten#6003: the parked identities of async projections. Always created (#5309), so two stores over one
+        // schema never disagree about it
+        yield return new ParkedIdentitiesTable(this);
+
+        // marten#6003: one slice index per multi-stream projection version that opts in with UseSliceIndex()
+        foreach (var table in SliceIndexTables())
+        {
+            yield return table;
+        }
 
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");
 

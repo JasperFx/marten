@@ -606,15 +606,48 @@ using var host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/ErrorHandling.cs#L13-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_error_policies' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-| Option                    | Description                                                                                                                      | Continuous Default | Rebuild Default |
-|---------------------------|----------------------------------------------------------------------------------------------------------------------------------|--------------------|-----------------|
-| `SkipApplyErrors`         | Should errors that occur in projection code (i.e., not Marten or PostgreSQL related errors) be skipped during Daemon processing? | True               | False           |
-| `SkipSerializationErrors` | Should errors from serialization or upcasters be ignored and that event skipped during processing?                               | True               | False           |
-| `SkipUnknownEvents`       | Should unknown event types be skipped by the daemon?                                                                             | True               | False           |
+| Option                | Description                                                                                                            | Continuous Default | Rebuild Default |
+|-----------------------|------------------------------------------------------------------------------------------------------------------------|--------------------|-----------------|
+| `ApplyErrors`         | What happens when projection code (not Marten or PostgreSQL) throws on an event: `Park`, `Pause` or `Skip`             | `Park`             | `Pause`         |
+| `SerializationErrors` | What happens when an event can't be deserialized or upcast: `Park`, `Pause` or `Skip`                                  | `Park`             | `Pause`         |
+| `SkipUnknownEvents`   | Should unknown event types be skipped by the daemon?                                                                   | True               | False           |
 
-In all cases, if a serialization, apply, or unknown error is encountered and Marten is not configured to skip that type of 
-error, the individual projection will be paused. In the case of projection rebuilds, this will immediately stop the rebuild
-operation. By default, all of these errors are skipped during continuous processing and enforced during rebuilds.
+`SkipApplyErrors` and `SkipSerializationErrors` still work: `true` means `Skip` and `false` means `Pause`.
+
+`Skip` writes a `DeadLetterEvent` for the event and moves on. `Pause` stops that one projection. During a rebuild, any
+error that isn't skipped stops the rebuild. `Park` is new in Marten 10 and is described in the next section.
+
+### Parking a failing identity {#parking-a-failing-identity} <Badge type="tip" text="10.0" />
+
+By default in Marten 10, when an async aggregation projection throws on an event, the daemon parks that one identity
+(one aggregate document) instead of skipping the event or pausing the whole projection. The parked identity's document
+stays at its last good state, its later events are held back, and every other document keeps moving. You can see what's
+parked in the `mt_parked_identities` table, and replay or discard a parked identity once you've fixed the problem:
+
+```cs
+var daemon = await store.BuildProjectionDaemonAsync();
+
+// After deploying the fix
+await daemon.ReplayParkedIdentityAsync("Trip", tenantId: null, tripId, token);
+
+// Or accept the loss: the events that still fail are dead-lettered, the rest are applied
+await daemon.DiscardParkedIdentityAsync("Trip", tenantId: null, tripId, token);
+```
+
+The same thing works from the command line with `dotnet run -- projections parked`.
+
+A single-stream projection can always park. A multi-stream projection parks only when Marten can find one identity's
+events again: group it with `IdentityFromStream<TEvent>()` or `IdentityFromTag<TTag>()`, or turn on its slice index with
+`Options.UseSliceIndex()`, which keeps one `mt_slice_index_*` table per projection version. Anything else, including
+event projections, flat table projections and composite projections, pauses instead. When the daemon starts, Marten logs
+how each async projection finds one identity's events and whether it parks.
+
+The rules, the guard rails, replaying and discarding, rebuilding one identity of a multi-stream projection and the
+command line are all described in the JasperFx documentation for
+[parking a failing projection identity](https://shared-libs.jasperfx.net/events/parked-identities).
+
+To go back to skipping errors the way Marten 9 did, call `opts.RestoreV9Defaults()`, or set
+`opts.Projections.Errors.ApplyErrors` and `opts.Projections.Errors.SerializationErrors` to `ProjectionErrorAction.Skip`.
 
 ::: tip
 Skipping unknown event types is important for "blue/green" deployment of system changes where a new application version

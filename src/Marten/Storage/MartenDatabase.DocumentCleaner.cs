@@ -211,6 +211,14 @@ THEN delete from {Options.Events.DatabaseSchemaName}.{EventProgressionSkippingTa
 IF EXISTS(SELECT * FROM information_schema.tables
 WHERE table_name = '{LateEventsTable.Name}' AND table_schema = '{Options.Events.DatabaseSchemaName}')
 THEN delete from {Options.Events.DatabaseSchemaName}.{LateEventsTable.Name}; END IF;
+IF EXISTS(SELECT * FROM information_schema.tables
+WHERE table_name = '{ParkedIdentitiesTable.Name}' AND table_schema = '{Options.Events.DatabaseSchemaName}')
+THEN delete from {Options.Events.DatabaseSchemaName}.{ParkedIdentitiesTable.Name}; END IF;
+END; $$;
+DO $$ DECLARE r record; BEGIN
+FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = '{Options.Events.DatabaseSchemaName}' AND tablename LIKE 'mt\_slice\_index\_%' LOOP
+EXECUTE format('delete from %I.%I', '{Options.Events.DatabaseSchemaName}', r.tablename);
+END LOOP;
 END; $$;
 ";
     }

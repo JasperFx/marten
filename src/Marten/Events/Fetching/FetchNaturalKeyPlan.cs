@@ -421,6 +421,13 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         {
             document = await AggregateFromEventsAsync(session, streamId, cancellation).ConfigureAwait(false);
         }
+        else if (Lifecycle == ProjectionLifecycle.Async)
+        {
+            // marten#6003: an async snapshot can be behind its stream (daemon lag, or a parked identity), so fold the
+            // events after it as FetchForWriting by stream identity does. Loading the stored document alone returned a
+            // stale aggregate under the stream's current version.
+            document = await session.Events.FetchLatest<TDoc>(streamId, cancellation).ConfigureAwait(false);
+        }
         else
         {
             document = await LoadDocumentById(session, streamId, cancellation).ConfigureAwait(false);
@@ -487,6 +494,13 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         if (Lifecycle == ProjectionLifecycle.Live)
         {
             document = await AggregateFromEventsAsync(session, streamKey, cancellation).ConfigureAwait(false);
+        }
+        else if (Lifecycle == ProjectionLifecycle.Async)
+        {
+            // marten#6003: an async snapshot can be behind its stream (daemon lag, or a parked identity), so fold the
+            // events after it as FetchForWriting by stream identity does. Loading the stored document alone returned a
+            // stale aggregate under the stream's current version.
+            document = await session.Events.FetchLatest<TDoc>(streamKey, cancellation).ConfigureAwait(false);
         }
         else
         {
@@ -555,6 +569,12 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
             return await AggregateFromEventsAsync(session, streamId, cancellation).ConfigureAwait(false);
         }
 
+        // marten#6003: fold past a stored async snapshot that is behind its stream, as FetchLatest by stream does
+        if (Lifecycle == ProjectionLifecycle.Async)
+        {
+            return await session.Events.FetchLatest<TDoc>(streamId, cancellation).ConfigureAwait(false);
+        }
+
         var storage = _options.ResolveCorrectedDocumentStorage<TDoc, Guid>(session.TrackingMode);
         var builder = new BatchBuilder { TenantId = session.TenantId };
         builder.Append(";");
@@ -572,6 +592,12 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         if (Lifecycle == ProjectionLifecycle.Live)
         {
             return await AggregateFromEventsAsync(session, streamKey, cancellation).ConfigureAwait(false);
+        }
+
+        // marten#6003: fold past a stored async snapshot that is behind its stream, as FetchLatest by stream does
+        if (Lifecycle == ProjectionLifecycle.Async)
+        {
+            return await session.Events.FetchLatest<TDoc>(streamKey, cancellation).ConfigureAwait(false);
         }
 
         var storage = _options.ResolveCorrectedDocumentStorage<TDoc, string>(session.TrackingMode);

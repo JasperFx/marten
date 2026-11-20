@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,9 @@ using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Tags;
 using Marten.Events.Archiving;
+using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Linq.Selectors;
@@ -59,31 +62,117 @@ internal sealed class IdentityRebuildEventLoader
         _database = database;
     }
 
-    public async Task<IReadOnlyList<IEvent>> LoadAsync(IdentityRebuildEventRequest request, CancellationToken token)
+    public Task<IReadOnlyList<IEvent>> LoadAsync(IdentityRebuildEventRequest request, CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var events = _store.Options.EventGraph;
-        var streamId = StreamIdFor(request.StreamIdentity, events.StreamIdentity);
-        var limit = Math.Max(request.Limit, 1);
+        var streamId = StreamIdFor(request.StreamIdentity, _store.Options.EventGraph.StreamIdentity);
+        return loadAsync(new Spec(IdentityEventSource.Stream, request.TenantId, request.AfterSequence,
+            request.Ceiling, request.Limit, request.SkipSerializationErrors, false)
+        {
+            StreamId = streamId,
+            Filters = filtersFor(request).ToArray(),
+            IncludeArchivedEvents = request.IncludeArchivedEvents
+        }, token);
+    }
+
+    /// <summary>
+    ///     marten#6003: one identity's events from <see cref="IdentityEventLoadRequest.Source" />, the store side of
+    ///     <c>IEventStore.LoadEventsForIdentityAsync</c>.
+    /// </summary>
+    public Task<IReadOnlyList<IEvent>> LoadAsync(IdentityEventLoadRequest request, CancellationToken token)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var spec = new Spec(request.Source, request.TenantId, request.AfterSequence, request.Ceiling, request.Limit,
+            request.SkipSerializationErrors, request.IncludeTags || request.Source == IdentityEventSource.Tag)
+        {
+            Filters = _store.buildEventLoaderFilters(request.EventTypes, null, request.IncludeArchivedEvents, [])
+                .ToArray(),
+            IncludeArchivedEvents = request.IncludeArchivedEvents
+        };
+
+        switch (request.Source)
+        {
+            case IdentityEventSource.Stream:
+                spec = spec with
+                {
+                    StreamId = StreamIdFor(request.Identity ?? throw identityRequired(request),
+                        _store.Options.EventGraph.StreamIdentity)
+                };
+                break;
+
+            case IdentityEventSource.Tag:
+                var registration = _store.Options.EventGraph.FindTagType(request.TagType ??
+                                                                         throw new ArgumentException(
+                                                                             "A tag source needs the tag type",
+                                                                             nameof(request)))
+                                   ?? throw new InvalidOperationException(
+                                       $"Tag type '{request.TagType.FullNameInCode()}' is not registered. Call RegisterTagType<{request.TagType.Name}>() first.");
+
+                spec = spec with
+                {
+                    Tag = registration,
+                    IdentityValue = request.IdentityValue ?? throw identityRequired(request)
+                };
+                break;
+
+            case IdentityEventSource.SliceIndex:
+                spec = spec with
+                {
+                    SliceIndexTable = SliceIndexTable.NameFor(
+                        request.ProjectionName ?? throw new ArgumentException(
+                            "A slice index source needs the projection name", nameof(request)),
+                        request.ProjectionVersion),
+                    IdentityValue = request.IdentityValue ?? throw identityRequired(request)
+                };
+                break;
+        }
+
+        return loadAsync(spec, token);
+    }
+
+    private static ArgumentException identityRequired(IdentityEventLoadRequest request)
+        => new($"Reading one identity's events from the {request.Source} source needs the identity", nameof(request));
+
+    // What to read, whatever asked for it
+    private sealed record Spec(
+        IdentityEventSource Source,
+        string? TenantId,
+        long AfterSequence,
+        long Ceiling,
+        int Limit,
+        bool SkipSerializationErrors,
+        bool IncludeTags)
+    {
+        public ISqlFragment[] Filters { get; init; } = [];
+        public bool IncludeArchivedEvents { get; init; }
+        public object? StreamId { get; init; }
+        public ITagTypeRegistration? Tag { get; init; }
+        public string? SliceIndexTable { get; init; }
+        public object? IdentityValue { get; init; }
+    }
+
+    private async Task<IReadOnlyList<IEvent>> loadAsync(Spec spec, CancellationToken token)
+    {
+        var limit = Math.Max(spec.Limit, 1);
         var errors = _store.Options.Projections.Errors;
 
         var storage = (IEventStorage)_store.Options.Providers.StorageFor<IEvent>().QueryOnly;
         var aggregateIndex = storage.SelectFields().Length;
         var sequenceIndex = Array.IndexOf(storage.SelectFields(), "seq_id");
-        var filters = filtersFor(request).ToArray();
 
         var options = SessionOptions.ForDatabase(_database);
         options.ReadFromPrimary = true;
         await using var session = (QuerySession)_store.QuerySession(options);
 
         var loaded = new List<IEvent>();
-        var floor = request.AfterSequence;
+        var floor = spec.AfterSequence;
 
         while (loaded.Count < limit)
         {
             var wanted = limit - loaded.Count;
-            var command = buildCommand(storage, filters, request, streamId, floor, wanted);
+            var command = buildCommand(storage, spec, floor, wanted);
 
             var rows = 0;
             await using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
@@ -110,36 +199,44 @@ internal sealed class IdentityRebuildEventLoader
                     {
                         floor = await reader.GetFieldValueAsync<long>(sequenceIndex, token).ConfigureAwait(false);
                     }
-                    catch (EventDeserializationFailureException e) when (errors.SkipSerializationErrors)
+                    // marten#6003 (decision 12): the request's own choice, never the store's continuous options, so a
+                    // replay can't silently skip the unreadable event it was asked to repair
+                    catch (EventDeserializationFailureException e) when (spec.SkipSerializationErrors)
                     {
                         floor = e.Sequence;
                     }
                 }
             }
 
-            // Fewer rows than asked for means the stream has nothing more in the range
+            // Fewer rows than asked for means the source has nothing more in the range
             if (rows < wanted) break;
+        }
+
+        if (spec.IncludeTags)
+        {
+            await EventTagHydrator.HydrateAsync(_store.Options.EventGraph, session, loaded, token)
+                .ConfigureAwait(false);
         }
 
         return loaded;
     }
 
-    private Npgsql.NpgsqlCommand buildCommand(IEventStorage storage, ISqlFragment[] filters,
-        IdentityRebuildEventRequest request, object streamId, long floor, int limit)
+    private Npgsql.NpgsqlCommand buildCommand(IEventStorage storage, Spec spec, long floor, int limit)
     {
         var events = _store.Options.Events;
         var schemaName = events.DatabaseSchemaName;
+        var conjoined = events.TenancyStyle == TenancyStyle.Conjoined;
 
         var builder = new CommandBuilder();
         builder.Append($"select {storage.SelectFields().Select(x => "d." + x).Join(", ")}, s.type as stream_type");
         builder.Append($" from {schemaName}.mt_events as d inner join {schemaName}.mt_streams as s on d.stream_id = s.id");
 
-        if (events.TenancyStyle == TenancyStyle.Conjoined)
+        if (conjoined)
         {
             builder.Append(" and d.tenant_id = s.tenant_id");
         }
 
-        if (events.UseArchivedStreamPartitioning && !request.IncludeArchivedEvents)
+        if (events.UseArchivedStreamPartitioning && !spec.IncludeArchivedEvents)
         {
             // #4745: prune the archived mt_streams partition, as the daemon loader does
             builder.Append($" and s.{IsArchivedColumn.ColumnName} = FALSE");
@@ -148,25 +245,51 @@ internal sealed class IdentityRebuildEventLoader
         builder.Append(" where d.seq_id > ");
         builder.AppendParameter(floor, NpgsqlDbType.Bigint);
         builder.Append(" and d.seq_id <= ");
-        builder.AppendParameter(request.Ceiling, NpgsqlDbType.Bigint);
+        builder.AppendParameter(spec.Ceiling, NpgsqlDbType.Bigint);
 
-        builder.Append(" and d.stream_id = ");
-        if (streamId is Guid guid)
+        switch (spec.Source)
         {
-            builder.AppendParameter(guid, NpgsqlDbType.Uuid);
-        }
-        else
-        {
-            builder.AppendParameter((string)streamId, NpgsqlDbType.Varchar);
+            case IdentityEventSource.Stream:
+                builder.Append(" and d.stream_id = ");
+                if (spec.StreamId is Guid guid)
+                {
+                    builder.AppendParameter(guid, NpgsqlDbType.Uuid);
+                }
+                else
+                {
+                    builder.AppendParameter((string)spec.StreamId!, NpgsqlDbType.Varchar);
+                }
+
+                appendTenant(builder, spec, conjoined);
+                break;
+
+            case IdentityEventSource.Tag:
+                appendTag(builder, spec, conjoined);
+                appendTenant(builder, spec, conjoined);
+                break;
+
+            case IdentityEventSource.SliceIndex:
+                // The events the index lists for the identity, whatever tenant the event itself is in. Under per-tenant
+                // event partitioning a sequence is only unique within its tenant, so the slice's tenant it is.
+                builder.Append($" and d.seq_id in (select i.seq_id from {schemaName}.{spec.SliceIndexTable} as i where i.tenant_id = ");
+                builder.AppendParameter(spec.TenantId!, NpgsqlDbType.Varchar);
+                builder.Append(" and i.identity = ");
+                appendIdentityValue(builder, spec.IdentityValue!);
+                builder.Append(')');
+
+                if (events.UseTenantPartitionedEvents)
+                {
+                    appendTenant(builder, spec, conjoined);
+                }
+
+                break;
+
+            case IdentityEventSource.Scan:
+                appendTenant(builder, spec, conjoined);
+                break;
         }
 
-        if (events.TenancyStyle == TenancyStyle.Conjoined)
-        {
-            builder.Append(" and d.tenant_id = ");
-            builder.AppendParameter(request.TenantId, NpgsqlDbType.Varchar);
-        }
-
-        foreach (var filter in filters)
+        foreach (var filter in spec.Filters)
         {
             builder.Append(" and ");
             filter.Apply(builder);
@@ -176,6 +299,65 @@ internal sealed class IdentityRebuildEventLoader
         builder.Append(limit);
 
         return builder.Compile();
+    }
+
+    private static void appendTenant(CommandBuilder builder, Spec spec, bool conjoined)
+    {
+        if (!conjoined || spec.TenantId == null) return;
+
+        builder.Append(" and d.tenant_id = ");
+        builder.AppendParameter(spec.TenantId, NpgsqlDbType.Varchar);
+    }
+
+    // The events carrying a tag of the type with the identity's value, through the tag table or the tag column
+    private void appendTag(CommandBuilder builder, Spec spec, bool conjoined)
+    {
+        var events = _store.Options.EventGraph;
+        var registration = spec.Tag!;
+
+        if (events.DcbStorageMode == DcbStorageMode.HStore)
+        {
+            builder.Append(" and d.tags @> hstore(");
+            builder.AppendParameter(registration.TableSuffix, NpgsqlDbType.Text);
+            builder.Append(", ");
+            builder.AppendParameter(Convert.ToString(spec.IdentityValue, CultureInfo.InvariantCulture)!,
+                NpgsqlDbType.Text);
+            builder.Append(')');
+            return;
+        }
+
+        builder.Append(
+            $" and d.seq_id in (select t.seq_id from {events.DatabaseSchemaName}.mt_event_tag_{registration.TableSuffix} as t where t.value = ");
+        appendIdentityValue(builder, spec.IdentityValue!);
+        if (conjoined && spec.TenantId != null)
+        {
+            builder.Append(" and t.tenant_id = ");
+            builder.AppendParameter(spec.TenantId, NpgsqlDbType.Varchar);
+        }
+
+        builder.Append(')');
+    }
+
+    private static void appendIdentityValue(CommandBuilder builder, object value)
+    {
+        switch (value)
+        {
+            case Guid guid:
+                builder.AppendParameter(guid, NpgsqlDbType.Uuid);
+                break;
+            case int number:
+                builder.AppendParameter(number, NpgsqlDbType.Integer);
+                break;
+            case long number:
+                builder.AppendParameter(number, NpgsqlDbType.Bigint);
+                break;
+            case short number:
+                builder.AppendParameter(number, NpgsqlDbType.Smallint);
+                break;
+            default:
+                builder.AppendParameter(Convert.ToString(value, CultureInfo.InvariantCulture)!, NpgsqlDbType.Varchar);
+                break;
+        }
     }
 
     private IEnumerable<ISqlFragment> filtersFor(IdentityRebuildEventRequest request)

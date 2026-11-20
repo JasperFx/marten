@@ -98,6 +98,10 @@ internal class EventProgressionTable: Table
         AddColumn("failure_event_type", "varchar(500)").AllowNulls();
         AddColumn("failure_event_tenant_id", "varchar(500)").AllowNulls();
 
+        // marten#6003: how many identities the shard holds parked, written with the heartbeat so a monitor can read it
+        // for a node that is down. Null when the shard doesn't park. Always created, like the columns above (#5309).
+        AddColumn("parked_count", "integer").AllowNulls();
+
         PrimaryKeyName = "pk_mt_event_progression";
     }
 }
