@@ -25,6 +25,8 @@ Marten's default event type names, the aggregate type names on `mt_streams`, DCB
 column names and computed index names are now lowercased the same way in every culture. If you ran Marten on a
 Turkish or Azerbaijani machine with an `I` in one of those type or member names, map the old event type names with
 an alias before upgrading ([details](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-9-0)).
+Duplicated-field columns, tag tables and indexes created under the old names are created again under the new names
+by the next schema migration, and the data in the old ones is not copied over, so rebuild or copy that data.
 Separately, `Evolve()` methods may now use bare `case Foo:` labels, and the source generator bundled in the Marten
 package picks them up.
 
