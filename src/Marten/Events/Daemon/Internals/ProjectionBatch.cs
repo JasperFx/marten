@@ -8,6 +8,7 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon.Progress;
+using Marten.Events.Operations;
 using Marten.Internal.Sessions;
 using Marten.Services;
 
@@ -63,6 +64,15 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
     public void QuickAppendEvents(StreamAction action)
     {
         var op = _eventStorage.QuickAppendEvents(action);
+
+        // marten#6121: the quick append writes every registered tag type's column, and reads them from the event
+        // graph, which QuickEventAppender sets and this path didn't. With any DCB tag type registered, a side
+        // effect that appended events from an async projection failed the batch with a NullReferenceException.
+        if (op is QuickAppendEventsOperationBase quickAppend)
+        {
+            quickAppend.Events ??= ((IMartenSession)_session).Options.EventGraph;
+        }
+
         _batch.Queue.Post(op);
     }
 
