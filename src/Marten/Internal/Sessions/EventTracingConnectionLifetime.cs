@@ -228,7 +228,7 @@ internal class EventTracingConnectionLifetime:
                     default:
                         if (op.Role() != OperationRole.Events)
                         {
-                            _databaseActivity?.AddEvent(new ActivityEvent("marten." + op.Role().ToString().ToLower(),
+                            _databaseActivity?.AddEvent(new ActivityEvent("marten." + op.Role().ToString().ToLowerInvariant(),
                                 tags: new ActivityTagsCollection { { "Type", op.DocumentType?.Name } }));
                         }
 
