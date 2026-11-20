@@ -365,6 +365,8 @@ data set is in your Marten database. To that end, you have a pair of complementa
 * [Event Archiving](/events/archiving)
 * [Stream Compacting](/events/compacting)
 
+[Shrinking mt_events](/events/shrinking) compares the two and says when to use which.
+
 ## Bounding Memory in the Async Daemon <Badge type="tip" text="9.58" />
 
 With [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning), the async daemon runs one

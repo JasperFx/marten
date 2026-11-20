@@ -99,7 +99,7 @@ public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOpera
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventStore.StreamCompacting.cs#L243-L276' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ieventsarchiver' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventStore.StreamCompacting.cs#L296-L329' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ieventsarchiver' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, Marten is *not* archiving events in this operation.
@@ -143,4 +143,5 @@ This isn't an insurmountable problem, but it's definitely not convenient. I thin
 event in the projection for T2 if both T1 and T2 are separate views of the same stream type. 
 
 Lastly, stream compacting is a complement to the [event stream archiving](/events/archiving) functionality, and not a replacement. 
-You may want to use both together.
+You may want to use both together. See [Shrinking mt_events](/events/shrinking) for how the two compare, and why you compact a stream before
+archiving it.
