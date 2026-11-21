@@ -67,5 +67,23 @@ public class DefaultQueryFixture: TargetSchemaFixture, IAsyncLifetime
     public DocumentStore FSharpFriendlyStoreWithDuplicatedField { get; set; }
 
     public DocumentStore Store { get; set; }
+
+    private readonly object _camelCasingLock = new();
+    private Task<DocumentStore> _camelCasingStore;
+
+    /// <summary>
+    /// The camel-cased System.Text.Json store, provisioned once on first use. Every row of
+    /// child_collection_queries.run_query_with_camel_casing used to drop and rebuild this schema and bulk insert
+    /// the documents again, which took 4-5 seconds a row and ran into the 5 second command timeout on a busy box.
+    /// The rows only query, so one copy serves them all.
+    /// </summary>
+    public Task<DocumentStore> CamelCasingStoreAsync()
+    {
+        lock (_camelCasingLock)
+        {
+            return _camelCasingStore ??= ProvisionStoreAsync("linq_with_camel_casing",
+                opts => opts.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
+        }
+    }
 }
 
