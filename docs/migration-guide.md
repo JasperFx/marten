@@ -25,6 +25,11 @@ Npgsql 11 needs `Microsoft.Extensions.DependencyInjection.Abstractions` and `Mic
 EF Core 11 needs `net11.0`, so on `net10.0` `Marten.EntityFrameworkCore` stays on EF Core 10 and Npgsql's EF Core 10
 provider, which runs on Npgsql 11.
 
+`Marten.Newtonsoft` now reads fractional numbers as `decimal` (`FloatParseHandling.Decimal`) on both frameworks,
+because on .NET 11 a `decimal` read through a `double` came back corrupted (`123.45m` as `123.45000000000000284...m`).
+Declared `double` members are unaffected, but an `object` or `dynamic` member holding a fractional number now
+materializes as `decimal` instead of `double` ([#5876](https://github.com/JasperFx/marten/issues/5876)).
+
 ### Npgsql 11 <Badge type="warning" text="breaking" /> {#npgsql-11-in-10-0-0}
 
 Marten 10 depends on Npgsql 11 on both `net10.0` and `net11.0`, through Weasel 10. Read the
@@ -52,6 +57,20 @@ by the next schema migration, and the data in the old ones is not copied over, s
 Separately, `Evolve()` methods may now use bare `case Foo:` labels, and the source generator bundled in the Marten
 package picks them up.
 
+### JasperFx 3.12: natural keys are checked at startup, and a failed composite rebuild throws <Badge type="warning" text="behavior change" />
+
+Marten 10.0.0-rc.1 is built on JasperFx 3.12.1. Between 3.10 and 3.12.1, these change what you see
+([details](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-12-1)):
+
+- **A natural key must be an `int`, `long` or `string`, or a strong-typed identifier wrapping one of those.** A
+  `[NaturalKey]` of any other type, a `Guid` for example, used to be accepted and then fail on the first append. It now
+  throws `InvalidProjectionException` at startup, naming the aggregate, the member and its type.
+- **A composite projection rebuild that fails now throws** the shard's own failure, as a single-stream rebuild always
+  has. It used to return normally with the shard paused or stopped, so the rebuild looked finished when it wasn't. A
+  composite rebuild that runs out of time between pages throws `OperationCanceledException`.
+- **The async daemon builds a batch again after a transient failure** (JasperFx 3.11). See
+  [the async daemon retries a transient batch failure](#the-async-daemon-retries-a-transient-batch-failure).
+
 ### Async projections park a failing identity instead of skipping the event <Badge type="warning" text="behavior change" /> {#async-projections-park-a-failing-identity}
 
 Marten 10 takes JasperFx 3.10's parking ([details](https://shared-libs.jasperfx.net/events/parked-identities)) and
@@ -70,6 +89,20 @@ The schema gains `mt_parked_identities` (always created), a nullable `parked_cou
 (written with the extended progression heartbeat), and one `mt_slice_index_*` table for each projection version that
 calls `UseSliceIndex()`. Under `AutoCreate.None`, apply the migration before deploying. `opts.RestoreV9Defaults()`
 puts skipping back, but doesn't remove the table. See [parking a failing identity](/events/projections/async-daemon#parking-a-failing-identity).
+
+Three things to know when you run with parking:
+
+- **Watch for parked identities.** `AddMartenParkedIdentitiesHealthCheck()` (in `Marten.AspNetCore`) reports Degraded
+  while anything is parked, with the first parked identities of each projection, and Unhealthy while a shard is paused
+  because it hit the parking cap. See the [Parked Identities HealthCheck](/events/projections/healthchecks#parked-identities-healthcheck).
+- **The command line.** `dotnet run -- projections parked` lists, replays and discards parked identities. When the
+  aggregate has a natural key, the list shows it in a "Natural Key" column, and the health check shows it next to the
+  stream id. `--identity` still takes the stream id.
+- **A shard that fails before its first commit now has a progression row.** In Marten 9 such a shard had no
+  `mt_event_progression` row, so its failure was written nowhere. Marten 10 creates the row at the position the shard
+  starts from (normally 0) to hold the failure, and the shard's first commit replaces it
+  ([#6127](https://github.com/JasperFx/marten/issues/6127)). Tools that read `mt_event_progression` may now see a row
+  at 0 with a failure for a projection that never committed.
 
 ### Runtime-async on `net11.0` <Badge type="warning" text="behavior change" />
 
@@ -200,7 +233,7 @@ A custom `ISessionFactory` that returned `LightweightSession(IsolationLevel.Seri
 #### Sessions are still `IDisposable`, but prefer `await using`
 
 Sessions keep `Dispose()`, so `using var session = store.LightweightSession();` still compiles and works. With
-[row level security](/documents/multi-tenancy#row-level-security-) on, a synchronous `Dispose()` makes one synchronous
+[row level security](/documents/multi-tenancy#row-level-security) on, a synchronous `Dispose()` makes one synchronous
 database call: it resets the tenant setting on a connection the session opened, before releasing that connection to
 the pool. This is the only synchronous database call left in Marten 10. It is there so a stale tenant cannot outlive
 the session on a pooled connection when the connection string sets `No Reset On Close=true`. If the reset fails,
@@ -296,6 +329,26 @@ assemblies compiled against Marten 9 must be recompiled.
   are deleted.
 - The `IReadOnlyEventStoreOptions` properties lost their setters (`AppendMode`, `UseArchivedStreamPartitioning`,
   `UseTenantPartitionedEvents`, `MessageOutbox` and so on). Set them on `StoreOptions.Events` as before.
+
+The event operations, the event registry and masking now come from `JasperFx.Events` too, which brings these small
+behavior changes ([#5864](https://github.com/JasperFx/marten/pull/5864)):
+
+- `StartStream(events)` and `StartStream<T>(events)` with no key on a string-identified store now generate a key
+  (`Guid.NewGuid().ToString()`), where they used to refuse.
+- The string `Append(key, expectedVersion, ...)` refuses an expected version below the number of events, as the Guid
+  overload already did.
+- `EventGraph.AggregateTypeFor()` throws on an unknown alias. The legacy `Archived` and `Tombstone` event type names
+  are matched exactly, so a type such as `MyApp.ArchivedOrder` no longer resolves to `Archived`.
+- `EventGraph.UseBinarySerializer<T>()` (the class member) returns the `EventRegistry`.
+  `IEventStoreOptions.UseBinarySerializer()` still returns the options.
+- Masking refuses `ForTenant(null)`, `ForTenant("")` and `IncludeStream(Guid.Empty)`, masks an event selected twice
+  only once, and a `Func<T, T>` rule against a base type now matches.
+- A DCB boundary appends through the session that fetched it, so its events get that session's tenant. The tenant used
+  to be left null.
+- `AddSubscriptionWithServices()` registers JasperFx's `ScopedSubscriptionServiceWrapper<T, ...>`, and the container
+  scope now spans the whole page, the commit included.
+- The step-through and the explorer write state JSON with the store's serializer (its casing and converters), not
+  System.Text.Json's PascalCase defaults.
 
 ### `Store()` checks a numerically revisioned document's revision <Badge type="warning" text="breaking" />
 
@@ -564,6 +617,8 @@ every table this policy partitions. To keep the old primary key, pass it:
 opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(
     x => x.ByExternallyManagedListPartitions(),
     PrimaryKeyTenancyOrdering.Id_Then_TenantId);
+```
+
 ### Declaring the same computed index twice throws <Badge type="warning" text="behavior change" />
 
 Two `Index()` calls on one document type that resolve to the same index name, for example the same member twice,
@@ -592,6 +647,11 @@ they caught up. A single stream projection of the compacted type is not checked,
 snapshot. In 9.x those events were deleted anyway, and a multi-stream projection or a subscription that was behind
 never saw them ([#6050](https://github.com/JasperFx/marten/issues/6050), [compacting](/events/compacting)).
 
+With `EnableAdvancedAsyncTracking` on, it also throws while an open `mt_high_water_skips` row records a sequence gap
+that covers events it would delete, because a late event of that stream may still commit
+([#6114](https://github.com/JasperFx/marten/issues/6114)). The skip stays open until
+`opts.Projections.LateEventDetectionWindow` (one hour by default) has passed.
+
 ### Quick appends lock the stream row before writing events <Badge type="warning" text="schema change" />
 
 The `mt_quick_append_events` function now locks the stream's `mt_streams` row (`for no key update`) when it reads the
@@ -604,6 +664,11 @@ expected version that waited throws the usual concurrency exception without draw
 The function changes, so schema migration replaces it: `AutoCreate.CreateOrUpdate` and `All` do that on their own, and
 a `db-patch` contains one `CREATE OR REPLACE FUNCTION` for it. `UseExclusiveLockOnConcurrentAppends` still works and
 takes `for update` instead, but there is little reason left to turn it on ([appending](/events/appending)).
+
+A save that appends to more than one stream now locks those streams' `mt_streams` rows first, in stream id order, so two
+sessions appending to the same streams in a different order wait for each other instead of deadlocking
+([#6083](https://github.com/JasperFx/marten/issues/6083)). `FetchForExclusiveWriting()` of several streams in one
+session still takes its locks in the order you call it, so call it in a stable order.
 
 ### A snapshot without its stream throws `SnapshotWithoutStreamException` <Badge type="warning" text="behavior change" />
 
@@ -636,6 +701,42 @@ has followed since #5799. Before, an append that committed between the version r
 into the aggregate while the stream reported the older version, so the save failed against an append the aggregate
 already contained ([#6079](https://github.com/JasperFx/marten/pull/6079), [#5225](https://github.com/JasperFx/marten/issues/5225)).
 
+### The aggregate write cache covers `Live` aggregates and every fetch for writing <Badge type="tip" text="new" />
+
+`opts.Events.CacheAggregatesForWriting<T>()` on a `Live` aggregate now caches it. Marten 9 accepted that call and did
+nothing. An enrolled type is now cached for `FetchForWriting(id, expectedVersion)`, batched `FetchForWriting()` and
+`FetchForExclusiveWriting()`, and `FetchManyForWriting()` as well, and an aggregate only goes into the cache after a
+commit the session owns, so a session in an external transaction or an ambient `TransactionScope` never adds to it
+([#5225](https://github.com/JasperFx/marten/issues/5225), [#6086](https://github.com/JasperFx/marten/issues/6086)). See
+[Caching Aggregate Snapshots for FetchForWriting](/events/optimizing#caching-aggregate-snapshots-for-fetchforwriting).
+
+### A second `FetchLatest()` after `FetchForWriting()` reads the database <Badge type="warning" text="behavior change" />
+
+For `Live` and `Async` aggregates, the first `FetchLatest()` after `FetchForWriting()` in a session still applies the
+events you appended to the fetched aggregate. A second `FetchLatest()` for the same stream before
+`SaveChangesAsync()` now loads the aggregate from the database, without your uncommitted events. Before, it applied the
+same events again, which double-counted them on a mutable aggregate
+([#6105](https://github.com/JasperFx/marten/pull/6105),
+[FetchLatest](/events/projections/read-aggregates)).
+
+### Natural-key fetches fold forward and work inside a transaction <Badge type="warning" text="behavior change" />
+
+- `FetchForWriting()` and `FetchLatest()` by natural key on an `Async` aggregate now fold the events after the stored
+  snapshot, as the fetch by stream id does. Before, they returned the stored document, which can lag behind, under
+  the stream's current version ([#6121](https://github.com/JasperFx/marten/pull/6121)).
+- `FetchForExclusiveWriting<T>(naturalKey)`, and a natural-key fetch in a batch on a session with an open transaction,
+  failed with `A command is already in progress`. They work now
+  ([#6133](https://github.com/JasperFx/marten/issues/6133)).
+- A `Live` aggregate fetched by natural key now has its identity set, batched or not.
+
+### EF Core-backed aggregates are fetched by folding the stream <Badge type="warning" text="behavior change" />
+
+With `Marten.EntityFrameworkCore`, `FetchLatest()` and `FetchForWriting()` of an aggregate that an inline
+`EfCoreSingleStreamProjection` stores in your `DbContext` used to read `mt_doc_<type>` and return `null`. They now fold
+the stream, which reads the whole stream each time. Folding no longer leaves the `DbContext` enlisted in the session,
+so a later `SaveChangesAsync()` doesn't write what the fold added (that caused duplicate rows or a `23505`)
+([#6033](https://github.com/JasperFx/marten/issues/6033)).
+
 ### `RebuildSingleStreamAsync()` goes through the daemon, and refuses when another node runs the projection <Badge type="warning" text="behavior change" />
 
 For a document written by an asynchronous single-stream projection, every `Advanced.RebuildSingleStreamAsync()`
@@ -666,10 +767,14 @@ They are not version 7 Guids and not COMB Guids. Don't read a timestamp out of a
 (`CombGuidIdGeneration.GetTimestamp()` does not read the new ones). Use the document's `mt_last_modified` or the
 event's `Timestamp` instead.
 
-### Read-your-writes: `LastAppendedPosition`
+### Read-your-writes: `LastAppendedPosition` and `WaitForProjectionsAsync()` <Badge type="tip" text="new" />
 
-The session's position after `SaveChangesAsync()` is `session.LastAppendedPosition` (JasperFx 3.6.0).
-`LastAppendedSequence`, its name in JasperFx 3.5.0, is an obsolete alias that returns the same value. See
+After `SaveChangesAsync()`, `session.LastAppendedPosition` says where that commit's events are (database, tenant and
+sequence), and `store.WaitForProjectionsAsync(position, projections, timeout)` waits for the named asynchronous
+projections to get that far. It returns a `ProjectionWaitResult` instead of throwing on a timeout. Use it in place of
+`QueryForNonStaleData` when you only need to read back your own write. The two `WaitForProjectionsAsync()` overloads
+(projection types or projection names) are default members on `IDocumentStore` that throw `NotSupportedException`,
+so a custom `IDocumentStore` still compiles. `LastAppendedSequence` is an obsolete alias of `LastAppendedPosition`. See
 [reading your own writes](/events/projections/async-daemon#reading-your-own-writes).
 
 ### Database provisioning has its own command timeout <Badge type="tip" text="new" />
@@ -681,12 +786,27 @@ single-server tenancy (`ProvisioningCommandTimeout`), on `CreateDatabasesForTena
 (`ProvisioningCommandTimeout(TimeSpan)`), and for extension installs on `opts.Advanced.Migrator`. See
 [provisioning timeouts](/configuration/multitenancy#provisioning-command-timeout).
 
+### The async daemon retries a transient batch failure <Badge type="warning" text="behavior change" /> {#the-async-daemon-retries-a-transient-batch-failure}
+
+When building an async projection batch fails for a transient reason (a dropped connection, a deadlock, a command
+timeout, an exhausted connection pool), the daemon now builds the batch again from the same events, up to 3 more
+times with an exponential backoff from 250 ms, under every error policy (`Park`, `Pause` and `Skip`). When that gives up,
+the shard pauses with `ShardFailure.IsTransient = true`, so Wolverine or CritterWatch can restart it. In Marten 9 the
+error policy alone decided what happened to such a failure, and `Skip` retried the batch without limit. A failure in
+your own projection code is not transient and still goes straight to the error policy.
+
+The pipeline is per store and can be replaced with `opts.ConfigureDaemonPolly(...)`. Start the builder with
+`AddMartenDaemonBatchDefaults()` (public on `Marten.MartenResiliencePipelineBuilderExtensions`) to keep the default
+and add to it, or pass `_ => { }` to pause on the first transient failure. `ConfigurePolly()` and
+`ConfigureWritePolly()` are unchanged. See
+[the async daemon builds a failed batch again](/configuration/retries#the-async-daemon-builds-a-failed-batch-again).
+
 ### Default changes in 10.0 and how to restore Marten 9 behavior
 
 | Change | Restore Marten 9 behavior |
 | --- | --- |
 | [`EnableExtendedProgressionTracking`](#enableextendedprogressiontracking-is-on-by-default) is on | `opts.RestoreV9Defaults()`, or `opts.Events.EnableExtendedProgressionTracking = false` |
-| [DCB conflicts scoped by event type](#dcb-conflicts-are-scoped-by-event-type-by-default-) (`DcbConflictScope.TagValueAndEventType`) | `opts.RestoreV9Defaults()`, or `opts.Events.DcbConflictScope = DcbConflictScope.TagValue` |
+| [DCB conflicts scoped by event type](#dcb-conflicts-are-scoped-by-event-type-by-default) (`DcbConflictScope.TagValueAndEventType`) | `opts.RestoreV9Defaults()`, or `opts.Events.DcbConflictScope = DcbConflictScope.TagValue` |
 | [Side-effect gate](/events/projections/rebuilding#suppressing-side-effects-during-the-blue-green-warm-up) (`GateSideEffectsBehindPriorVersion`, jasperfx#1075) is on | `opts.RestoreV9Defaults()`, or `GateSideEffectsBehindPriorVersion = false` on the projection |
 | [**Side effects run on inline projections**](#side-effects-run-on-inline-projections) (`EnableSideEffectsOnInlineProjections`) | `opts.RestoreV9Defaults()`, or `opts.Events.EnableSideEffectsOnInlineProjections = false` |
 | [Archived-stream partitioning and strict stream identity](#archived-stream-partitioning-is-on-by-default) are on (`UseArchivedStreamPartitioning`, `EnableStrictStreamIdentityEnforcement`); schema change | `opts.RestoreV9Defaults()`, or set both to `false` on `opts.Events` |
@@ -697,8 +817,8 @@ single-server tenancy (`ProvisioningCommandTimeout`), on `CreateDatabasesForTena
 | [Event counters and `FetchForWriting` metrics](#metrics-are-on-by-default) are exported | `opts.RestoreV9Defaults()`, or `opts.OpenTelemetry.EnableEventCounters = false` and `opts.OpenTelemetry.EnableFetchForWritingMetrics = false` |
 | [System.Text.Json `AllowOutOfOrderMetadataProperties`](#allow-out-of-order-metadata-properties) is on | `opts.RestoreV9Defaults()`, or `o.AllowOutOfOrderMetadataProperties = false` in the `configure` callback of `UseSystemTextJsonForSerialization()` |
 | [Async projection errors park the failing identity](#async-projections-park-a-failing-identity), and pause where they can't park (`Projections.Errors.ApplyErrors` and `SerializationErrors` are `Park`; [JasperFx docs](https://shared-libs.jasperfx.net/events/parked-identities)); new `mt_parked_identities` table | `opts.RestoreV9Defaults()`, or set both to `ProjectionErrorAction.Skip` |
-| [The async daemon builds a batch again after a transient failure](/configuration/retries#the-async-daemon-builds-a-failed-batch-again) (a timeout, a dropped connection, an exhausted pool), up to 3 times under every error policy, then pauses the shard with `IsTransient = true` ([JasperFx 3.11.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-11-0)) | none |
-| [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created-) | none; schema change, see below |
+| [The async daemon builds a batch again after a transient failure](/configuration/retries#the-async-daemon-builds-a-failed-batch-again) (a timeout, a dropped connection, an exhausted pool), up to 3 times under every error policy, then pauses the shard with `IsTransient = true` ([JasperFx 3.11.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-11-0)) | none; `opts.ConfigureDaemonPolly(_ => { })` turns the retries off ([details](#the-async-daemon-retries-a-transient-batch-failure)) |
+| [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created) | none; schema change, see below |
 | [New `mt_event_range_marks` table](#new-mt-event-range-marks-table) for stored-event rewrites | none; schema change, see below |
 
 `opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0
@@ -709,7 +829,35 @@ governors (`MaxConcurrentEventLoadsPerDatabase` and `MaxConcurrentBatchWritesPer
 [details](/events/projections/async-daemon#daemon-connection-governors)) and `StreamOne<T>` emitting an `ETag`
 (opt out with `EmitETag = false`; [details](/documents/aspnetcore)).
 
-### Event-store objects that used to depend on configuration are always created <Badge type="warning" text="schema change" />
+#### Restoring V9 defaults {#restoring-v9-defaults}
+
+Every `StoreOptions` default changed in 10.0 can be put back with one call, `opts.RestoreV9Defaults()`, the way
+Marten 9 had [`RestoreV8Defaults()`](#restoring-v8-defaults). It does not call `RestoreV8Defaults()`.
+`RestoreV9Defaults()` puts these `StoreOptions` settings back to their Marten 9 values:
+
+| Setting | Marten 9 value | Docs |
+| --- | --- | --- |
+| `Events.EnableExtendedProgressionTracking` | `false` | [Async Projection Daemon](/events/projections/async-daemon) |
+| `Events.DcbConflictScope` | `TagValue` | [Dynamic Consistency Boundaries](/events/dcb#scoping-conflicts-by-event-type) |
+| `GateSideEffectsBehindPriorVersion` on every registered projection | `false` | [Rebuilding](/events/projections/rebuilding) |
+| `Events.EnableSideEffectsOnInlineProjections` | `false` | [Side Effects](/events/projections/side-effects#side-effects-in-inline-projections) |
+| `Events.UseArchivedStreamPartitioning` and `Events.EnableStrictStreamIdentityEnforcement` | `false` | [Archiving](/events/archiving#hot-cold-storage-partitioning) |
+| Document metadata `CausationId`, `CorrelationId`, `Headers` and `LastModifiedBy` | off | [Marten Metadata](/documents/metadata) |
+| `StartIndexesByTenantId` on conjoined documents | `false` | [Multi-Tenancy](/documents/multi-tenancy#make-all-documents-start-their-index-by-tenant-id) |
+| `Events.MetadataConfig` causation id, correlation id, headers and user name | `false` | [Event Metadata](/events/metadata) |
+| `Events.EnableEventSkippingInProjectionsOrSubscriptions` | `false` | [Marking Events as Skipped](/events/skipping) |
+| `OpenTelemetry.EnableEventCounters` and `OpenTelemetry.EnableFetchForWritingMetrics` | `false` | [Open Telemetry](/otel) |
+| System.Text.Json `AllowOutOfOrderMetadataProperties` | `false` | [JSON Serialization](/configuration/json) |
+| `Projections.Errors.ApplyErrors` and `Projections.Errors.SerializationErrors` | `Skip` | [Async Projection Daemon](/events/projections/async-daemon#parking-a-failing-identity) |
+
+The side-effect gate is a per-projection setting in JasperFx, so `RestoreV9Defaults()` turns it off for every
+projection registered when the store is built, overriding a projection's own value. The document metadata and
+`StartIndexesByTenantId` defaults are decided when each document mapping is built, so a policy, attribute or
+`Schema.For<T>()` setting wins wherever it is. The serializer setting is applied to the serializer Marten builds and to
+one you pass in, whichever comes first, and a `configure` callback given to `UseSystemTextJsonForSerialization()` still
+wins. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
+
+### Event-store objects that used to depend on configuration are always created <Badge type="warning" text="schema change" /> {#event-store-objects-that-used-to-depend-on-configuration-are-always-created}
 
 Two stores, or two applications, sharing one schema with different settings used to drop each other's
 event-store objects when either applied its schema (#5309). The cheap ones are now part of the schema
@@ -753,6 +901,16 @@ the migration before deploying, because tagged appends fail without the sequence
 - Finish a rolling upgrade before relying on this: a node still on Marten 9 counts up from the current value and doesn't
   delete rows.
 
+With `DcbStorageMode.HStore`, `mt_quick_append_events` gains a `tag_hstores hstore[]` parameter and writes
+`mt_events.tags` in its own insert instead of a follow-up update per tagged event, which scanned `mt_events`
+([#5896](https://github.com/JasperFx/marten/issues/5896)). The function is dropped and recreated by the next schema
+migration, with the same `AutoCreate.None` and rolling-upgrade caveat as the metadata parameters
+([above](#all-event-metadata-is-on-by-default)). Under the default tag tables, a tag query that matches two values of
+one tag type no longer returns, and folds, the same event twice, so a boundary aggregate over such a query can change
+value ([#5897](https://github.com/JasperFx/marten/issues/5897)). And with `DcbStorageMode.HStore`, a data source passed to
+`opts.Connection(NpgsqlDataSource)` is no longer replaced by one built from the connection string
+([#5898](https://github.com/JasperFx/marten/issues/5898)).
+
 ### `mt_high_water_skips` has a tenant column, and late events are recovered <Badge type="warning" text="schema change" /> {#late-events-are-recovered}
 
 `mt_high_water_skips` gets new columns: `tenant_id`, which is now part of its primary key, `reason`, `gaps` and
@@ -770,8 +928,9 @@ and headers ([#6012](https://github.com/JasperFx/marten/pull/6012)). In 9.x it l
 documenting itself as enabling all optional metadata. A store that calls `EnableAll()` now writes the session's
 `LastModifiedBy` to `mt_events.user_name` on every appended event, and reads it back as `IEvent.UserName`.
 
-There's no schema change: the `user_name` column is always created in 10.0 (see above). Events are never
-rewritten, so if your `LastModifiedBy` holds a person's name or login and you have data-retention rules, decide
+The `user_name` column is always created in 10.0 (see above), but under the `Quick` append modes turning the user name
+on changes the parameters of `mt_quick_append_events`, so the next schema migration replaces that function (see
+[All event metadata is on by default](#all-event-metadata-is-on-by-default)). Events are never rewritten, so if your `LastModifiedBy` holds a person's name or login and you have data-retention rules, decide
 before upgrading whether you want it stored. To keep the 9.x behavior, turn it off after `EnableAll()`:
 
 ```cs
@@ -848,7 +1007,7 @@ copy already installed is left in place and can be dropped by hand. The `warning
 `critical_behind_threshold` columns are never written; drop them only as a deliberate migration step
 (`alter table ... drop column` takes an ACCESS EXCLUSIVE lock on a hot table).
 
-### DCB conflicts are scoped by event type by default <Badge type="warning" text="rolling upgrade" />
+### DCB conflicts are scoped by event type by default <Badge type="warning" text="rolling upgrade" /> {#dcb-conflicts-are-scoped-by-event-type-by-default}
 
 `opts.Events.DcbConflictScope` now defaults to `DcbConflictScope.TagValueAndEventType`
 ([#5887](https://github.com/JasperFx/marten/issues/5887)). A `FetchForWritingByTags` query condition that names
@@ -983,8 +1142,13 @@ opts.Policies.ForAllDocuments(x => x.StartIndexesByTenantId = false);
 
 `opts.Events.MetadataConfig` now has `CausationIdEnabled`, `CorrelationIdEnabled`, `HeadersEnabled` and
 `UserNameEnabled` all `true` ([Event Metadata](/events/metadata)). Every appended event stores the session's
-causation id, correlation id, headers and `LastModifiedBy`, and `IEvent` reads them back. There's no schema change: the
-columns are always created in 10.0 (see above). As with [`EnableAll()`](#metadataconfig-enableall-also-enables-the-user-name),
+causation id, correlation id, headers and `LastModifiedBy`, and `IEvent` reads them back. The columns are always
+created in 10.0 (see above), but `mt_quick_append_events` takes one array parameter for each metadata column that is
+turned on (`causation_ids`, `correlation_ids`, `headers`, `user_names`). Under the `Quick` append modes, including the
+default `QuickWithServerTimestamps`, the first schema migration drops and recreates that function with the new
+parameters. Under `AutoCreate.None`, apply the migration before deploying. After that migration, a Marten 9 node
+still appending to the same event store calls the old signature and fails. For a rolling upgrade, keep the Marten 9
+metadata settings on Marten 10 (below, or `opts.RestoreV9Defaults()`) until no Marten 9 node is left. As with [`EnableAll()`](#metadataconfig-enableall-also-enables-the-user-name),
 events are never rewritten, so decide whether you want a user name in `mt_events` before upgrading. To keep the 9.x
 behavior:
 
@@ -1266,34 +1430,6 @@ Marten's automatic schema migration handles all of these. None need manual SQL.
   ALTER TABLE my_schema.mt_streams DROP COLUMN snapshot;
   ALTER TABLE my_schema.mt_streams DROP COLUMN snapshot_version;
   ```
-
-#### Restoring V9 defaults {#restoring-v9-defaults}
-
-Marten 10 follows the same rule: every changed default can be put back with one call,
-`opts.RestoreV9Defaults()`. It does not call `RestoreV8Defaults()`. `RestoreV9Defaults()` puts these
-`StoreOptions` settings back to their Marten 9 values:
-
-| Setting | Marten 9 value | Docs |
-| --- | --- | --- |
-| `Events.EnableExtendedProgressionTracking` | `false` | [Async Projection Daemon](events/projections/async-daemon.md) |
-| `Events.DcbConflictScope` | `TagValue` | [Dynamic Consistency Boundaries](events/dcb.md#scoping-conflicts-by-event-type) |
-| `GateSideEffectsBehindPriorVersion` on every registered projection | `false` | [Rebuilding](events/projections/rebuilding.md) |
-| `Events.EnableSideEffectsOnInlineProjections` | `false` | [Side Effects](events/projections/side-effects.md#side-effects-in-inline-projections) |
-| `Events.UseArchivedStreamPartitioning` and `Events.EnableStrictStreamIdentityEnforcement` | `false` | [Archiving](events/archiving.md#hot-cold-storage-partitioning) |
-| Document metadata `CausationId`, `CorrelationId`, `Headers` and `LastModifiedBy` | off | [Marten Metadata](documents/metadata.md) |
-| `StartIndexesByTenantId` on conjoined documents | `false` | [Multi-Tenancy](documents/multi-tenancy.md#make-all-documents-start-their-index-by-tenant-id) |
-| `Events.MetadataConfig` causation id, correlation id, headers and user name | `false` | [Event Metadata](events/metadata.md) |
-| `Events.EnableEventSkippingInProjectionsOrSubscriptions` | `false` | [Marking Events as Skipped](events/skipping.md) |
-| `OpenTelemetry.EnableEventCounters` and `OpenTelemetry.EnableFetchForWritingMetrics` | `false` | [Open Telemetry](otel.md) |
-| System.Text.Json `AllowOutOfOrderMetadataProperties` | `false` | [JSON Serialization](configuration/json.md) |
-| `Projections.Errors.ApplyErrors` and `Projections.Errors.SerializationErrors` | `Skip` | [Async Projection Daemon](events/projections/async-daemon.md#parking-a-failing-identity) |
-
-The side-effect gate is a per-projection setting in JasperFx, so `RestoreV9Defaults()` turns it off for every
-projection registered when the store is built, overriding a projection's own value. The document metadata and
-`StartIndexesByTenantId` defaults are decided when each document mapping is built, so a policy, attribute or
-`Schema.For<T>()` setting wins wherever it is. The serializer setting is applied to the serializer Marten builds and to
-one you pass in, whichever comes first, and a `configure` callback given to `UseSystemTextJsonForSerialization()` still
-wins. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
 
 ### Breaking changes {#breaking-changes-in-9-0-0}
 
@@ -1990,7 +2126,7 @@ V5 was a much smaller release for Marten than V4, and should require much less e
 - The [Marten integration with .Net bootstrapping](/getting-started) now has the ability to split the Marten configuration for testing overrides or modular configuration
 - `IInitialData` services are executed within IHost bootstrapping. See [Initial Baseline Data](/documents/initial-data).
 - New facility to [apply all detected database changes on application startup](/schema/migrations.html#apply-all-outstanding-changes-upfront).
-- Ability to [register multiple Marten document stores in one .Net IHost](/configuration/hostbuilder.html#working-with-multiple-marten-databases)
+- Ability to [register multiple Marten document stores in one .Net IHost](/configuration/hostbuilder.html#ancillary-marten-stores)
 - The "pre-built code generation" feature had a new, easier to use option in V5 (retired in 9.0 — see [Runtime code generation removed](#runtime-code-generation-removed))
 - New ["Optimized Artifact Workflow"](/configuration/optimized_artifact_workflow) option
 - Some administrative or diagnostic methods that were previously on `IDocumentStore.Advanced` migrated to database specific access [as shown here](/configuration/multitenancy.html#administering-multiple-databases).
