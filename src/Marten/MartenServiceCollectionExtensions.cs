@@ -121,7 +121,7 @@ public static class MartenServiceCollectionExtensions
     /// <remarks>
     ///     <para>
     ///         You need to configure connection settings through DI, e.g. by calling `UseNpgsqlDataSource`
-    ///         and configuring `NpqsqlDataSource` with `AddNpgsqlDataSource` from `Npgsql.DependencyInjection`
+    ///         and configuring `NpgsqlDataSource` with Npgsql's `AddNpgsqlDataSource`
     ///     </para>
     ///     <para>
     ///         To name the Event Model these projections contribute to, set

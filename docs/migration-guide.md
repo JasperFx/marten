@@ -13,11 +13,33 @@
 | --- | --- | --- |
 | `JasperFx`, `JasperFx.Events` | 2.x | 3.x |
 | `Weasel.Postgresql`, `Weasel.Storage` | 9.x | 10.x |
-| `Npgsql` (and its plugin packages) | 9.x | 10.x |
-| `Npgsql.EntityFrameworkCore.PostgreSQL` (for `Marten.EntityFrameworkCore`) | 9.0.x / 10.0.x per TFM | 10.0.x |
+| `Npgsql` (and its plugin packages) | 9.x | 11.x, on both `net10.0` and `net11.0` |
+| `Npgsql.EntityFrameworkCore.PostgreSQL` (for `Marten.EntityFrameworkCore`) | 9.0.x / 10.0.x per TFM | 10.0.x on `net10.0`, 11.0.x on `net11.0` |
 
 You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
-On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605.
+Marten 10.0.0-rc.1 is built on Weasel 10.0.0-rc.1; Weasel's own changes are in its
+[migration guide](https://weasel.jasperfx.net/migration-guide-10). On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605. On `net10.0`,
+Npgsql 11 needs `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging.Abstractions`
+11.0.0, so raise those two if you reference them directly.
+
+EF Core 11 needs `net11.0`, so on `net10.0` `Marten.EntityFrameworkCore` stays on EF Core 10 and Npgsql's EF Core 10
+provider, which runs on Npgsql 11.
+
+### Npgsql 11 <Badge type="warning" text="breaking" /> {#npgsql-11-in-10-0-0}
+
+Marten 10 depends on Npgsql 11 on both `net10.0` and `net11.0`, through Weasel 10. Read the
+[Npgsql 11 release notes](https://www.npgsql.org/doc/release-notes/11.0.html) for the whole list. The parts most
+Marten users will hit:
+
+- **Multiplexing is gone.** Remove `Multiplexing` and `Write Coalescing Buffer Threshold Bytes` from your connection
+  strings, even if multiplexing was turned off, and any assignment to those `NpgsqlConnectionStringBuilder`
+  properties. Marten and Weasel no longer have any code for multiplexing. Connection pooling is unchanged.
+- **`Npgsql.DependencyInjection` was merged into `Npgsql`.** Remove the package reference. `AddNpgsqlDataSource()`
+  and `UseNpgsqlDataSource()` work as before.
+- **The pool metric name can change.** If a connection string sets `Application Name` and the data source has no
+  explicit name, Npgsql 11 tags its pool metrics with the application name rather than the connection string. With
+  sharded tenancy, `ShardedTenancyOptions.ApplicationName` puts the same application name on every shard's
+  connection string, so the shard pools now share one `db.client.connection.pool.name`.
 
 ### JasperFx 3.9.0: names no longer depend on the machine's culture <Badge type="warning" text="behavior change" />
 
