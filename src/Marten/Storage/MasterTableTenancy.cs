@@ -204,8 +204,7 @@ public class MasterTableTenancy: MasterTableTenancyBase<MartenDatabase, NpgsqlDa
         // thread on the asynchronous lookup starved the pool on a burst of first sessions for new tenants: the
         // lookup needed a free pool thread to finish, and every caller was holding one. Weasel declines -- and
         // this falls back to the asynchronous lookup, as before -- when it cannot read without waiting on async
-        // work: nothing has provisioned the control table in this process yet, or the control database is
-        // multiplexed, which Npgsql only supports asynchronously
+        // work: nothing has provisioned the control table in this process yet
         if (!TryResolveTenant(tenantId, out var resolution))
         {
             resolution = ResolveTenantAsync(tenantId, CancellationToken.None).AsTask().GetAwaiter().GetResult();

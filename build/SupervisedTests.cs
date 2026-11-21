@@ -305,8 +305,8 @@ partial class Build
 
     static void createLaneDatabases(string adminConnectionString, IEnumerable<string> lanes)
     {
-        // CREATE DATABASE cannot run inside a transaction or on a multiplexed connection, hence a
-        // dedicated unpooled admin connection to the base database.
+        // CREATE DATABASE cannot run inside a transaction, hence a dedicated unpooled admin
+        // connection to the base database.
         var admin = new NpgsqlConnectionStringBuilder(adminConnectionString) { Pooling = false };
         using var conn = new NpgsqlConnection(admin.ConnectionString);
         conn.Open();
