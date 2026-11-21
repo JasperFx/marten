@@ -144,11 +144,7 @@ public class parked_identities_health_check
 
         try
         {
-            // A good batch first, so the shard has its progression row: the extended progression columns are
-            // written onto that row (marten#6127)
-            await weighAsync(store, Guid.NewGuid(), false);
-            await store.WaitForNonStaleProjectionDataAsync(30.Seconds());
-
+            // The shard's very first batch pauses, before it has committed anything (marten#6127)
             await using (var session = store.LightweightSession())
             {
                 session.Events.StartStream<ParkedHealthWeighIn>(Guid.NewGuid(), new ParkedHealthWeighed(true));
