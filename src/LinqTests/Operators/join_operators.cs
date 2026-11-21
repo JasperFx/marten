@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
@@ -9,6 +10,12 @@ using Shouldly;
 namespace LinqTests.Operators;
 
 public record JoinedRow(string Customer, string Status, decimal? Amount);
+
+public class JoinDocWithTuple
+{
+    public Guid Id { get; set; }
+    public (string Name, int Count) Pair { get; set; }
+}
 
 // #5910: Queryable.Join, LeftJoin and RightJoin are rewritten into the GroupJoin() + SelectMany()
 // (+ DefaultIfEmpty()) form before the query is parsed, so each one is checked twice: the rows match
@@ -443,6 +450,66 @@ public class join_operators: OneOffConfigurationsContext
     }
 
     #endregion
+    #region Tuple results (#6137)
+
+    // #6137: a join whose result is a ValueTuple is built from its two sides, each read with the store's
+    // serializer, because System.Text.Json ignores a tuple's Item1/Item2 fields and handed back default. These
+    // run on every framework; the .NET 11 overloads below return the same ValueTuple<TOuter, TInner>. An
+    // expression tree can't hold a tuple literal, so the result selector is written with the constructor.
+
+    [Fact]
+    public async Task tuple_result_selector_returns_both_documents()
+    {
+        await SetupData();
+
+        var results = await _session.Query<JoinCustomer>()
+            .Join(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, o) => new ValueTuple<JoinCustomer, JoinOrder>(c, o))
+            .ToListAsync();
+
+        results.Select(x => (x.Item1.Name, x.Item2.Amount)).OrderBy(x => x.Amount)
+            .ShouldBe([("Alice", 100m), ("Alice", 200m), ("Bob", 300m)]);
+    }
+
+    [Fact]
+    public async Task tuple_of_members_returns_both_values()
+    {
+        await SetupData();
+
+        var results = await _session.Query<JoinCustomer>()
+            .Join(_session.Query<JoinOrder>(), c => c.Id, o => o.CustomerId, (c, o) => new ValueTuple<string, decimal>(c.Name, o.Amount))
+            .ToListAsync();
+
+        results.OrderBy(x => x.Item2).ShouldBe([("Alice", 100m), ("Alice", 200m), ("Bob", 300m)]);
+    }
+
+    [Fact]
+    public async Task a_document_holding_a_tuple_serializes_as_the_serializer_writes_it()
+    {
+        // The fix is in the join path, not a ValueTuple converter in the serializer, so a document with a tuple
+        // member is stored exactly as the configured serializer writes it: { "Item1": ..., "Item2": ... } under
+        // Newtonsoft.Json, and an empty object under System.Text.Json, which skips fields.
+        var store = StoreOptions(opts => opts.Schema.For<JoinDocWithTuple>());
+
+        var doc = new JoinDocWithTuple { Id = Guid.NewGuid(), Pair = ("Alice", 3) };
+
+        await using (var session = store.LightweightSession())
+        {
+            session.Store(doc);
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = store.QuerySession();
+        var stored = await query.Json.FindByIdAsync<JoinDocWithTuple>(doc.Id);
+
+        var expected = store.Options.Serializer().ToJson(doc);
+        JsonNode.DeepEquals(JsonNode.Parse(stored!), JsonNode.Parse(expected)).ShouldBeTrue($"stored {stored}, serializer writes {expected}");
+
+        var loaded = await query.LoadAsync<JoinDocWithTuple>(doc.Id);
+        loaded!.Pair.ShouldBe(store.Options.Serializer().FromJson<JoinDocWithTuple>(new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(expected))).Pair);
+    }
+
+    #endregion
+
 #if NET11_0_OR_GREATER
     #region .NET 11 tuple overloads
 
@@ -501,6 +568,19 @@ public class join_operators: OneOffConfigurationsContext
         results.Single(x => x.Inner.Status == "Orphaned").Outer.ShouldBeNull();
         results.Where(x => x.Outer != null).Select(x => x.Outer!.Name).OrderBy(x => x)
             .ShouldBe(["Alice", "Alice", "Bob"]);
+    }
+
+    [Fact]
+    public async Task tuple_left_join_with_no_match_at_all_has_every_inner_null()
+    {
+        await SetupData();
+
+        var results = await _session.Query<JoinCustomer>()
+            .LeftJoin(_session.Query<JoinOrder>().Where(o => o.Status == "Cancelled"), c => c.Id, o => o.CustomerId)
+            .ToListAsync();
+
+        results.Select(x => x.Outer.Name).OrderBy(x => x).ShouldBe(["Alice", "Bob", "Charlie"]);
+        results.ShouldAllBe(x => x.Inner == null);
     }
 
     [Fact]
