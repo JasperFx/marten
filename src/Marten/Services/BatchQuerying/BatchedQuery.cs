@@ -170,7 +170,22 @@ internal partial class BatchedQuery: IBatchedQuery
             throw locked;
         }
 
-        await using var reader = opened;
+        await using (var reader = opened)
+        {
+            await readItemsAsync(reader, token).ConfigureAwait(false);
+        }
+
+        // marten#6133: an item that needs commands of its own (a natural-key fetch loading the stream it resolved)
+        // finishes now, with the batch's reader closed. Inside a transaction the session has one connection, and a
+        // second command while the reader was open failed the whole batch.
+        for (var i = 0; i < _items.Count; i++)
+        {
+            await _items[i].CompleteAsync(token).ConfigureAwait(false);
+        }
+    }
+
+    private async Task readItemsAsync(DbDataReader reader, CancellationToken token)
+    {
         await _items[0].ReadAsync(reader, Parent, token).ConfigureAwait(false);
 
         // 9.0 (#4375): indexed loop avoids the Skip+ToArray buffer allocation per batch query.

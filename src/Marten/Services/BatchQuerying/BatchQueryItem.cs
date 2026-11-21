@@ -26,9 +26,29 @@ internal class BatchQueryItem<T>: IBatchQueryItem
 
     public IQueryHandler Handler => _handler;
 
+    // marten#6133: what finishes a follow-up handler's item once the batch's reader is closed
+    private Func<CancellationToken, Task<T>>? _followUp;
+
     public async Task ReadAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
+        if (_handler is IBatchFollowUpHandler<T> followUp)
+        {
+            _followUp = await followUp.ReadForFollowUpAsync(reader, session, token).ConfigureAwait(false);
+            return;
+        }
+
         var result = await _handler.HandleAsync(reader, session, token).ConfigureAwait(false);
+        Completion.SetResult(result);
+    }
+
+    public async Task CompleteAsync(CancellationToken token)
+    {
+        if (_followUp == null) return;
+
+        var followUp = _followUp;
+        _followUp = null;
+
+        var result = await followUp(token).ConfigureAwait(false);
         Completion.SetResult(result);
     }
 
