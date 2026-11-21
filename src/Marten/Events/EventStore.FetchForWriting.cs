@@ -423,7 +423,7 @@ public interface IAggregateFetchPlan<TDoc, in TId> where TDoc : notnull
 
     /// <summary>
     ///     Fetch the projected aggregate including any uncommitted events in the session.
-    ///     For inline projections, the updated document is also stored in the session.
+    ///     Nothing is stored in the session.
     /// </summary>
     ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation);
 
