@@ -1,5 +1,58 @@
 # Migration Guide
 
+## What's new in Marten 10 {#whats-new-in-marten-10}
+
+Marten 10 is the .NET 11 release of the Critter Stack. Most of the work went into sharing more of Marten's machinery
+with Polecat and Fisher through JasperFx 3 and Weasel 10, keeping the async daemon running when one aggregate goes bad,
+and LINQ correctness. The breaking changes and changed defaults are in Key Changes in 10.0.0 below; this is the short
+list of what you get.
+
+### Platform
+
+- `net10.0` and `net11.0` (no more `net9.0`), on Npgsql 11, JasperFx 3 and Weasel 10.
+- On `net11.0`, Marten is compiled with runtime-async, and C# 15 union types can be document members and events.
+
+### Event store and projections
+
+- An async projection [parks a failing identity](/events/projections/async-daemon#parking-a-failing-identity) and
+  keeps going for everything else, instead of skipping the event. Parked identities show up in a
+  [health check](/events/projections/healthchecks#parked-identities-healthcheck) and in `projections parked`, which can
+  replay or discard them.
+- [Multi-stream projections grouped by DCB tags](/events/projections/grouping-by-tags) with `IdentityFromTag<TTag>()`,
+  and one identity of a multi-stream projection can be rebuilt on its own.
+- [Read your own writes](/events/projections/async-daemon#reading-your-own-writes):
+  `session.LastAppendedPosition` and `store.WaitForProjectionsAsync()`.
+- [Events that commit late](/events/projections/async-daemon#events-that-commit-late), behind a high water mark the
+  daemon already passed, are found and their streams rebuilt.
+- The async daemon builds a batch again after a transient failure, through a pipeline you can replace with
+  `ConfigureDaemonPolly()`.
+- [`RewriteStoredEventsAsync()`](/events/rewriting) rewrites stored events the way an append would store them today,
+  and can resume after a crash.
+- [`UnArchiveStream()`](/events/archiving#un-archiving-a-stream) reverses `ArchiveStream()`.
+- [Shrinking mt_events](/events/shrinking) compares archiving and stream compaction.
+- DCB conflicts are scoped by event type, as the DCB specification does.
+- The aggregate write cache covers `Live` aggregates and every fetch for writing, and batched fetches of `Async`
+  aggregates no longer have ordering rules.
+
+### Documents and LINQ
+
+- [`Join()`, `LeftJoin()` and `RightJoin()`](/documents/querying/linq/group-join#join-leftjoin-rightjoin-and-fulljoin)
+  translate to SQL joins.
+- A long list of LINQ correctness fixes around `Take()`/`Skip()`, `SelectMany()`, `OrderBy()`, computed `Select()`
+  projections and array indexes. Several return different results than Marten 9 did; they are all listed below.
+- `store.Advanced.QueryAcrossAllDatabasesAsync()` runs one query against every database, and every tenant, of a
+  multi-database tenancy ([details](/configuration/multitenancy#querying-across-all-databases)).
+- `opts.Storage.PartitionPerTenant(table)` partitions your own tables by tenant, the same way Marten-managed tenant
+  partitioning does for document tables ([details](/documents/multi-tenancy#partitioning-your-own-tables-by-tenant)).
+- New Guid ids sort the way PostgreSQL compares a `uuid`, so inserts go to the end of the index.
+
+### Operations
+
+- `opts.Projections.IgnoreAdvisoryLockHoldersForGapDetection(lockKey)` keeps another process's advisory lock from
+  holding up the high water mark ([details](/events/projections/async-daemon#sequence-gaps-and-the-high-water-mark)).
+- Creating and dropping tenant databases runs under its own, longer command timeout.
+- `opts.RestoreV9Defaults()` puts every changed `StoreOptions` default back in one call.
+
 ## Key Changes in 10.0.0
 
 ### Platform and packages {#platform-and-packages-in-10-0-0}
