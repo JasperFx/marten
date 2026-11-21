@@ -84,8 +84,8 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     # 20 minutes is a deliberate signal, not a budget to grow. Now that each project has its own
-    # runner, a job that needs longer is a project that needs splitting (by namespace, the way
-    # Wolverine shards its heavy suites) rather than a bigger number here.
+    # runner, a job that needs longer is a project that needs splitting (a matrix entry per shard,
+    # with `shard` and `shard_count`, as EventSourcing has) rather than a bigger number here.
     timeout-minutes: 20
 
     strategy:
@@ -94,9 +94,15 @@ jobs:
         include:
           # ─── The core suites, on both supported combinations ───────────────
           #
-          # The old net9.0/PG15/Newtonsoft and net10.0/PGlatest/System.Text.Json workflows (net9.0 is dropped; both legs now run on net10.0)
-          # every one of these already ran under. That coverage is preserved exactly; it is only
-          # the packaging that changed.
+          # Two legs per suite, each one the oldest or the newest of everything at once:
+          #
+          #   net10.0 + PostgreSQL 15     + Newtonsoft.Json      (the oldest supported combination)
+          #   net11.0 + PostgreSQL latest + System.Text.Json     (the newest)
+          #
+          # This is the same split the old NET9/PG15/Newtonsoft and NET10/PGlatest/STJ workflows
+          # made, moved up one framework when Marten 10 dropped net9.0. Every framework Marten
+          # targets runs every core suite, without paying for the full framework x database x
+          # serializer cross product.
 
           - name: BaseLib (net10, PG15, Newtonsoft)
             target: TestBaseLib
@@ -104,10 +110,10 @@ jobs:
             framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
-          - name: BaseLib (net10, PGlatest, STJ)
+          - name: BaseLib (net11, PGlatest, STJ)
             target: TestBaseLib
             project: src/Marten.Testing/Marten.Testing.csproj
-            framework: net10.0
+            framework: net11.0
             serializer: SystemTextJson
             pg_image: postgres:latest
 
@@ -117,10 +123,10 @@ jobs:
             framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
-          - name: Core (net10, PGlatest, STJ)
+          - name: Core (net11, PGlatest, STJ)
             target: TestCore
             project: src/CoreTests/CoreTests.csproj
-            framework: net10.0
+            framework: net11.0
             serializer: SystemTextJson
             pg_image: postgres:latest
 
@@ -130,25 +136,48 @@ jobs:
             framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
-          - name: DocumentDb (net10, PGlatest, STJ)
+          - name: DocumentDb (net11, PGlatest, STJ)
             target: TestDocumentDb
             project: src/DocumentDbTests/DocumentDbTests.csproj
-            framework: net10.0
+            framework: net11.0
             serializer: SystemTextJson
             pg_image: postgres:latest
 
-          - name: EventSourcing (net10, PG15, Newtonsoft)
+          # Two shards per leg, split by a stable hash of the test class (--test-shard,
+          # build/SupervisedTests.cs). On 2026-11-21 the net10/PG15/Newtonsoft leg ran 3,986 tests,
+          # every one green, and was cancelled at the 20 minute cap after 17m40s of test time.
+          - name: EventSourcing (net10, PG15, Newtonsoft) 1/2
             target: TestEventSourcing
             project: src/EventSourcingTests/EventSourcingTests.csproj
             framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
-          - name: EventSourcing (net10, PGlatest, STJ)
+            shard: 1
+            shard_count: 2
+          - name: EventSourcing (net10, PG15, Newtonsoft) 2/2
             target: TestEventSourcing
             project: src/EventSourcingTests/EventSourcingTests.csproj
             framework: net10.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+            shard: 2
+            shard_count: 2
+          - name: EventSourcing (net11, PGlatest, STJ) 1/2
+            target: TestEventSourcing
+            project: src/EventSourcingTests/EventSourcingTests.csproj
+            framework: net11.0
             serializer: SystemTextJson
             pg_image: postgres:latest
+            shard: 1
+            shard_count: 2
+          - name: EventSourcing (net11, PGlatest, STJ) 2/2
+            target: TestEventSourcing
+            project: src/EventSourcingTests/EventSourcingTests.csproj
+            framework: net11.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+            shard: 2
+            shard_count: 2
 
           - name: Linq (net10, PG15, Newtonsoft)
             target: TestLinq
@@ -156,10 +185,10 @@ jobs:
             framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
-          - name: Linq (net10, PGlatest, STJ)
+          - name: Linq (net11, PGlatest, STJ)
             target: TestLinq
             project: src/LinqTests/LinqTests.csproj
-            framework: net10.0
+            framework: net11.0
             serializer: SystemTextJson
             pg_image: postgres:latest
 
@@ -169,10 +198,10 @@ jobs:
             framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
-          - name: Patching (net10, PGlatest, STJ)
+          - name: Patching (net11, PGlatest, STJ)
             target: TestPatching
             project: src/PatchingTests/PatchingTests.csproj
-            framework: net10.0
+            framework: net11.0
             serializer: SystemTextJson
             pg_image: postgres:latest
 
@@ -182,10 +211,10 @@ jobs:
             framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
-          - name: ModularConfig (net10, PGlatest, STJ)
+          - name: ModularConfig (net11, PGlatest, STJ)
             target: TestModularConfig
             project: src/ModularConfigTests/ModularConfigTests.csproj
-            framework: net10.0
+            framework: net11.0
             serializer: SystemTextJson
             pg_image: postgres:latest
 
@@ -195,10 +224,11 @@ jobs:
           # timing-sensitive suite in the repo was the one project with no retry story at all.
           # Supervised at ONE worker. JasperFx/bobcat#562 measured two lanes green locally (374/374
           # twice, 5m10s against 7m09s, retries off); raising it is a separate call, made on CI evidence.
-          - name: Daemon (net10, PGlatest, STJ)
+          # On the newest combination, like the PGlatest/STJ legs above.
+          - name: Daemon (net11, PGlatest, STJ)
             target: TestDaemon
             project: src/DaemonTests/DaemonTests.csproj
-            framework: net10.0
+            framework: net11.0
             serializer: SystemTextJson
             pg_image: postgres:latest
 
@@ -423,7 +453,7 @@ jobs:
         shell: bash
 
       - name: test
-        run: ./build.sh ${{ matrix.target }}
+        run: ./build.sh ${{ matrix.target }} ${{ matrix.shard_count && format('--test-shard {0} --test-shard-count {1}', matrix.shard, matrix.shard_count) || '' }}
         shell: bash
 
       # if: always() — the ledger for a job that FAILED is the one worth having, and it also

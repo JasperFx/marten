@@ -163,7 +163,7 @@ and see that, `UseAdvisoryLockTransaction = false` is the workaround, since a se
 holds no transaction to be seen.
 :::
 
-## Sequence Gaps and the High Water Mark <Badge type="tip" text="9.23" />
+## Sequence Gaps and the High Water Mark <Badge type="tip" text="9.23" /> {#sequence-gaps-and-the-high-water-mark}
 
 The high water mark is the point below which the daemon knows every event is committed and safely
 ordered. It advances contiguously, so it stops under any hole in the event sequence.
