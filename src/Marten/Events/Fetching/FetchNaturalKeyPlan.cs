@@ -478,14 +478,10 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         return document;
     }
 
+    // marten#6133: the live fold by natural key gets the stream's identity, as the fold by stream identity does.
+    // Folding the events alone left a live aggregate's Id unset.
     private async Task<TDoc?> AggregateFromEventsAsync(DocumentSessionBase session, Guid streamId, CancellationToken cancellation)
-    {
-        var events = await session.Events.FetchStreamAsync(streamId, token: cancellation).ConfigureAwait(false);
-        if (events.Count == 0) return default;
-
-        var aggregator = _options.Projections.AggregatorFor<TDoc>();
-        return await aggregator.BuildAsync(events, session, default, cancellation).ConfigureAwait(false);
-    }
+        => await session.Events.AggregateStreamAsync<TDoc>(streamId, token: cancellation).ConfigureAwait(false);
 
     private async Task<IEventStream<TDoc>> FetchByStreamKey(DocumentSessionBase session,
         string streamKey, long version, CancellationToken cancellation)
@@ -552,14 +548,10 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         return document;
     }
 
+    // marten#6133: the live fold by natural key gets the stream's identity, as the fold by stream identity does.
+    // Folding the events alone left a live aggregate's Id unset.
     private async Task<TDoc?> AggregateFromEventsAsync(DocumentSessionBase session, string streamKey, CancellationToken cancellation)
-    {
-        var events = await session.Events.FetchStreamAsync(streamKey, token: cancellation).ConfigureAwait(false);
-        if (events.Count == 0) return default;
-
-        var aggregator = _options.Projections.AggregatorFor<TDoc>();
-        return await aggregator.BuildAsync(events, session, default, cancellation).ConfigureAwait(false);
-    }
+        => await session.Events.AggregateStreamAsync<TDoc>(streamKey, token: cancellation).ConfigureAwait(false);
 
     internal async Task<TDoc?> FetchDocByGuid(DocumentSessionBase session, Guid streamId,
         CancellationToken cancellation)
@@ -611,7 +603,11 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         return await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
     }
 
-    internal class NaturalKeyQueryHandler: IQueryHandler<IEventStream<TDoc>>, IExclusiveFetchHandler
+    // marten#6133: both batch handlers resolve the key in the batch, then load the stream it found with commands of
+    // their own. The batch runs those once its reader is closed (IBatchFollowUpHandler): inside a transaction, which
+    // every exclusive fetch opens, the session has one connection and a second command on it failed the batch.
+    internal class NaturalKeyQueryHandler: IQueryHandler<IEventStream<TDoc>>, IExclusiveFetchHandler,
+        IBatchFollowUpHandler<IEventStream<TDoc>>
     {
         private readonly FetchNaturalKeyPlan<TDoc, TNaturalKey> _parent;
         private readonly TNaturalKey _id;
@@ -640,6 +636,13 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session,
             CancellationToken token)
         {
+            var followUp = await ReadForFollowUpAsync(reader, session, token).ConfigureAwait(false);
+            return await followUp(token).ConfigureAwait(false);
+        }
+
+        public async Task<Func<CancellationToken, Task<IEventStream<TDoc>>>> ReadForFollowUpAsync(
+            DbDataReader reader, IStorageSession session, CancellationToken token)
+        {
             var documentSession = (DocumentSessionBase)session;
 
             if (!await reader.ReadAsync(token).ConfigureAwait(false))
@@ -651,7 +654,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
                         typeof(TDoc), _id);
                 }
 
-                return _parent.CreateNewStream<TDoc>(documentSession, token);
+                return t => Task.FromResult(_parent.CreateNewStream<TDoc>(documentSession, t));
             }
 
             var version = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
@@ -663,24 +666,14 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
                     typeof(TDoc), _id);
             }
 
-            // Extract stream identity from reader before it's closed by batch framework
-            var streamIdentity = _parent._events.StreamIdentity == StreamIdentity.AsGuid
-                ? await reader.GetFieldValueAsync<Guid>(1, token).ConfigureAwait(false)
-                : (object)await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
-
-            // Close the reader result set before opening second reader
-            while (await reader.ReadAsync(token).ConfigureAwait(false)) { }
-
             if (_parent._events.StreamIdentity == StreamIdentity.AsGuid)
             {
-                return await _parent.FetchByStreamId(documentSession, (Guid)streamIdentity, version, token)
-                    .ConfigureAwait(false);
+                var streamId = await reader.GetFieldValueAsync<Guid>(1, token).ConfigureAwait(false);
+                return t => _parent.FetchByStreamId(documentSession, streamId, version, t);
             }
-            else
-            {
-                return await _parent.FetchByStreamKey(documentSession, (string)streamIdentity, version, token)
-                    .ConfigureAwait(false);
-            }
+
+            var streamKey = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
+            return t => _parent.FetchByStreamKey(documentSession, streamKey, version, t);
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
@@ -689,7 +682,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         }
     }
 
-    internal class NaturalKeyReadQueryHandler: IQueryHandler<TDoc?>
+    internal class NaturalKeyReadQueryHandler: IQueryHandler<TDoc?>, IBatchFollowUpHandler<TDoc?>
     {
         private readonly FetchNaturalKeyPlan<TDoc, TNaturalKey> _parent;
         private readonly TNaturalKey _id;
@@ -709,30 +702,28 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         public async Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session,
             CancellationToken token)
         {
+            var followUp = await ReadForFollowUpAsync(reader, session, token).ConfigureAwait(false);
+            return await followUp(token).ConfigureAwait(false);
+        }
+
+        public async Task<Func<CancellationToken, Task<TDoc?>>> ReadForFollowUpAsync(DbDataReader reader,
+            IStorageSession session, CancellationToken token)
+        {
             var documentSession = (DocumentSessionBase)session;
 
             if (!await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                return default;
+                return _ => Task.FromResult<TDoc?>(default);
             }
-
-            // Extract stream identity before closing reader
-            var streamIdentity = _parent._events.StreamIdentity == StreamIdentity.AsGuid
-                ? await reader.GetFieldValueAsync<Guid>(1, token).ConfigureAwait(false)
-                : (object)await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
-
-            while (await reader.ReadAsync(token).ConfigureAwait(false)) { }
 
             if (_parent._events.StreamIdentity == StreamIdentity.AsGuid)
             {
-                return await _parent.FetchDocByGuid(documentSession, (Guid)streamIdentity, token)
-                    .ConfigureAwait(false);
+                var streamId = await reader.GetFieldValueAsync<Guid>(1, token).ConfigureAwait(false);
+                return t => _parent.FetchDocByGuid(documentSession, streamId, t);
             }
-            else
-            {
-                return await _parent.FetchDocByString(documentSession, (string)streamIdentity, token)
-                    .ConfigureAwait(false);
-            }
+
+            var streamKey = await reader.GetFieldValueAsync<string>(1, token).ConfigureAwait(false);
+            return t => _parent.FetchDocByString(documentSession, streamKey, t);
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
