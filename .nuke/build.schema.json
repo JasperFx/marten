@@ -225,6 +225,22 @@
           "type": "string",
           "description": "Path to a solution file that is automatically loaded"
         },
+        "TestShard": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "This run's shard of the suite, 1-based; needs --test-shard-count",
+          "format": "int32"
+        },
+        "TestShardCount": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "How many shards the suite is split into; needs --test-shard",
+          "format": "int32"
+        },
         "TestWorkers": {
           "type": [
             "integer",

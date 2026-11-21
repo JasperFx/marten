@@ -84,8 +84,8 @@ jobs:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     # 20 minutes is a deliberate signal, not a budget to grow. Now that each project has its own
-    # runner, a job that needs longer is a project that needs splitting (by namespace, the way
-    # Wolverine shards its heavy suites) rather than a bigger number here.
+    # runner, a job that needs longer is a project that needs splitting (a matrix entry per shard,
+    # with `shard` and `shard_count`, as EventSourcing has) rather than a bigger number here.
     timeout-minutes: 20
 
     strategy:
@@ -143,18 +143,41 @@ jobs:
             serializer: SystemTextJson
             pg_image: postgres:latest
 
-          - name: EventSourcing (net10, PG15, Newtonsoft)
+          # Two shards per leg, split by a stable hash of the test class (--test-shard,
+          # build/SupervisedTests.cs). On 2026-11-21 the net10/PG15/Newtonsoft leg ran 3,986 tests,
+          # every one green, and was cancelled at the 20 minute cap after 17m40s of test time.
+          - name: EventSourcing (net10, PG15, Newtonsoft) 1/2
             target: TestEventSourcing
             project: src/EventSourcingTests/EventSourcingTests.csproj
             framework: net10.0
             serializer: Newtonsoft
             pg_image: postgres:15-alpine
-          - name: EventSourcing (net11, PGlatest, STJ)
+            shard: 1
+            shard_count: 2
+          - name: EventSourcing (net10, PG15, Newtonsoft) 2/2
+            target: TestEventSourcing
+            project: src/EventSourcingTests/EventSourcingTests.csproj
+            framework: net10.0
+            serializer: Newtonsoft
+            pg_image: postgres:15-alpine
+            shard: 2
+            shard_count: 2
+          - name: EventSourcing (net11, PGlatest, STJ) 1/2
             target: TestEventSourcing
             project: src/EventSourcingTests/EventSourcingTests.csproj
             framework: net11.0
             serializer: SystemTextJson
             pg_image: postgres:latest
+            shard: 1
+            shard_count: 2
+          - name: EventSourcing (net11, PGlatest, STJ) 2/2
+            target: TestEventSourcing
+            project: src/EventSourcingTests/EventSourcingTests.csproj
+            framework: net11.0
+            serializer: SystemTextJson
+            pg_image: postgres:latest
+            shard: 2
+            shard_count: 2
 
           - name: Linq (net10, PG15, Newtonsoft)
             target: TestLinq
@@ -430,7 +453,7 @@ jobs:
         shell: bash
 
       - name: test
-        run: ./build.sh ${{ matrix.target }}
+        run: ./build.sh ${{ matrix.target }} ${{ matrix.shard_count && format('--test-shard {0} --test-shard-count {1}', matrix.shard, matrix.shard_count) || '' }}
         shell: bash
 
       # if: always() — the ledger for a job that FAILED is the one worth having, and it also

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using Bobcat.Ledger;
 using Bobcat.Resilience;
 using Bobcat.Supervisor;
@@ -54,6 +56,66 @@ partial class Build
     /// clamp. For measuring; the committed per-target counts are the tuned values.
     /// </summary>
     [Parameter] readonly int? TestWorkers;
+
+    /// <summary>
+    /// Which slice of the suite this run owns (<c>--test-shard 2 --test-shard-count 2</c>), 1-based.
+    /// tests.yml splits a suite across runners this way when one job would pass the 20 minute cap:
+    /// EventSourcingTests' net10.0/PG15/Newtonsoft leg reached 3,986 tests and was cancelled at the
+    /// cap with every test green. Unset, the run owns the whole suite.
+    /// </summary>
+    /// <remarks>
+    /// A test CLASS goes to <c>hash(class) mod count</c>, with a hash that is the same in every
+    /// process (SHA-256 of the name, never <c>string.GetHashCode</c>, which .NET randomizes per
+    /// process), so every class lands in exactly one shard without the shards having to agree on a
+    /// ledger. Classes are never split, because xUnit's fixture and static-state contract is per
+    /// class. The same scheme as Polecat's build.
+    /// </remarks>
+    [Parameter("This run's shard of the suite, 1-based; needs --test-shard-count")]
+    readonly int? TestShard;
+
+    [Parameter("How many shards the suite is split into; needs --test-shard")]
+    readonly int? TestShardCount;
+
+    bool IsSharded => TestShardCount is > 1;
+
+    /// <summary>
+    /// Added to the duration ledger's file name when sharded, so sibling shards of one run don't
+    /// overwrite each other's ledger when the roll-up gathers them. <see cref="loadTestLedger"/>
+    /// merges every shard's file back together.
+    /// </summary>
+    string ShardSuffix => IsSharded ? $".shard{TestShard}of{TestShardCount}" : "";
+
+    /// <summary>The shard a test class belongs to, 1-based. Stable across processes and machines.</summary>
+    static int shardOf(string testClass, int count)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(testClass));
+        return (int)(BitConverter.ToUInt32(hash, 0) % (uint)count) + 1;
+    }
+
+    /// <summary>
+    /// The class a discovered test is declared on: MTP's location when the worker reported one, else
+    /// the display name less its arguments and method (xUnit's default display name is
+    /// <c>Namespace.Class.Method(args)</c>).
+    /// </summary>
+    static string testClassOf(WorkerTest test)
+    {
+        if (!string.IsNullOrEmpty(test.TestClass)) return test.TestClass;
+
+        var name = test.DisplayName;
+        var paren = name.IndexOf('(');
+        if (paren >= 0) name = name[..paren];
+        var dot = name.LastIndexOf('.');
+        return dot > 0 ? name[..dot] : name;
+    }
+
+    void validateShard()
+    {
+        if (TestShard is null && TestShardCount is null) return;
+        if (TestShard is not { } shard || TestShardCount is not { } count)
+            throw new ArgumentException("--test-shard and --test-shard-count go together.");
+        if (count < 1 || shard < 1 || shard > count)
+            throw new ArgumentException($"--test-shard {shard} is outside 1..{count}.");
+    }
 
     /// <summary>
     /// Turns off retries entirely (<c>--disable-test-retry</c>), including those a test opted into
@@ -116,8 +178,9 @@ partial class Build
         var projectName = Path.GetFileNameWithoutExtension(projectPath);
         var executable = testHostFor(projectPath, framework);
 
-        Log.Information("=== {Project} ({Framework}): supervised run, {Workers} worker(s){Retry} ===",
-            projectName, framework, workers, DisableTestRetry ? ", retries OFF" : "");
+        Log.Information("=== {Project} ({Framework}{Shard}): supervised run, {Workers} worker(s){Retry} ===",
+            projectName, framework, IsSharded ? $", shard {TestShard} of {TestShardCount}" : "", workers,
+            DisableTestRetry ? ", retries OFF" : "");
 
         var factory = new MtpWorkerFactory(executable)
         {
@@ -178,6 +241,17 @@ partial class Build
         // display name (bobcat#730). No ledger, or no match, degrades to balancing by test count,
         // and the run report's first lines say how many durations matched.
         supervisor.KnownTestDurations = ledger.KnownDurations();
+
+        validateShard();
+        if (IsSharded)
+        {
+            var shard = TestShard!.Value;
+            var count = TestShardCount!.Value;
+            supervisor.TestFilter = test => shardOf(testClassOf(test), count) == shard;
+
+            // A shard that keeps nothing is a broken split, not a pass
+            supervisor.FailWhenNoTests = true;
+        }
     }
 
     /// <summary>

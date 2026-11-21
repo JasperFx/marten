@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Bobcat.Ledger;
 using Bobcat.Supervisor;
 using Nuke.Common;
@@ -48,7 +49,21 @@ partial class Build
         {
             // Load keeps the retention written in the file; merging into an empty ledger moves an
             // older artifact onto Bobcat's default (bobcat#724).
-            return TestLedger.Empty().Merge(TestLedger.Load(path));
+            var ledger = TestLedger.Empty().Merge(TestLedger.Load(path));
+
+            // A sharded suite's previous run left one file per shard, each that shard's slice folded
+            // into the ledger before it. Merge dedupes by run id, so all of them together are the
+            // whole previous run.
+            if (Directory.Exists(directory))
+            {
+                foreach (var shardFile in Directory.GetFiles(directory,
+                             $"{projectName}.{framework}.shard*.json").Order(StringComparer.Ordinal))
+                {
+                    ledger = ledger.Merge(TestLedger.Load(shardFile));
+                }
+            }
+
+            return ledger;
         }
         catch (Exception e)
         {
@@ -82,7 +97,7 @@ partial class Build
                 .Record(SupervisorLedger.From(results, runId, now))
                 .PruneTestsNotSeenSince(now - LedgerForgetsAfter);
 
-            var artifact = LedgerDirectory / "durations" / testLedgerFileName(projectName, framework);
+            var artifact = LedgerDirectory / "durations" / (Path.GetFileNameWithoutExtension(testLedgerFileName(projectName, framework)) + ShardSuffix + ".json");
             artifact.Parent.CreateDirectory();
             updated.Save(artifact);
 
