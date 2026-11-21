@@ -13,6 +13,8 @@ using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Npgsql;
+using Polly;
+using Polly.Retry;
 using Shouldly;
 using Xunit;
 
@@ -23,7 +25,7 @@ namespace DaemonTests.Resiliency;
 /// is built again through Marten's daemon batch pipeline under every error policy, and the shard pauses with
 /// <see cref="ShardFailure.IsTransient" /> true only once that pipeline gives up. The pipeline is Marten's own
 /// (<see cref="ResilientPipelineBuilderExtensions.AddMartenDaemonBatchDefaults" />), not the session pipeline, which
-/// does not retry timeouts.
+/// does not retry timeouts, and <see cref="StoreOptions.ConfigureDaemonPolly" /> replaces it per store.
 /// </summary>
 public class transient_batch_build_failures: OneOffConfigurationsContext
 {
@@ -135,6 +137,74 @@ public class transient_batch_build_failures: OneOffConfigurationsContext
         FlakyBatchFaults.Attempts(theStream).ShouldBe(AllAttempts);
 
         // Not the event's fault, so neither parked nor dead-lettered
+        (await parkedAsync()).ShouldBe(0);
+        (await deadLettersAsync()).ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task a_pipeline_set_with_ConfigureDaemonPolly_is_the_one_the_daemon_uses()
+    {
+        await arrangeAsync(ProjectionErrorAction.Park, opts =>
+        {
+            opts.Projections.Snapshot<FlakyBatchAggregate>(SnapshotLifecycle.Async);
+
+            #region sample_configure_daemon_polly
+
+            // More patience for a load spike than the default 3 retries
+            opts.ConfigureDaemonPolly(builder =>
+            {
+                builder.AddRetry(new RetryStrategyOptions
+                {
+                    MaxRetryAttempts = 5,
+                    BackoffType = DelayBackoffType.Exponential,
+                    Delay = TimeSpan.FromMilliseconds(100)
+                });
+            });
+
+            #endregion
+        });
+
+        // More failures than the default pipeline would sit through
+        FlakyBatchFaults.Fail(theStream, 5);
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        var paused = new ShardActionWatcher(daemon.Tracker, "FlakyBatchAggregate:All", ShardAction.Paused, Generous);
+        await daemon.StartAllAsync();
+
+        await theStore.Storage.Database.WaitForNonStaleProjectionDataAsync(Generous);
+
+        FlakyBatchFaults.Attempts(theStream).ShouldBe(6);
+
+        await using var query = theStore.QuerySession();
+        (await query.LoadAsync<FlakyBatchAggregate>(theStream)).ShouldNotBeNull().Applied.ShouldBe(1);
+        paused.Task.IsCompleted.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task an_empty_daemon_pipeline_pauses_as_transient_on_the_first_failure()
+    {
+        await arrangeAsync(ProjectionErrorAction.Park, opts =>
+        {
+            opts.Projections.Snapshot<FlakyBatchAggregate>(SnapshotLifecycle.Async);
+
+            #region sample_configure_daemon_polly_without_retries
+
+            // Pause the shard on the first transient failure, with no retries
+            opts.ConfigureDaemonPolly(_ => { });
+
+            #endregion
+        });
+
+        FlakyBatchFaults.Fail(theStream, int.MaxValue);
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        var paused = new ShardActionWatcher(daemon.Tracker, "FlakyBatchAggregate:All", ShardAction.Paused, Generous);
+        await daemon.StartAllAsync();
+
+        var state = await paused.Task;
+
+        state.Failure.ShouldNotBeNull().IsTransient.ShouldBeTrue();
+        FlakyBatchFaults.Attempts(theStream).ShouldBe(1);
         (await parkedAsync()).ShouldBe(0);
         (await deadLettersAsync()).ShouldBe(0);
     }

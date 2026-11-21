@@ -172,8 +172,42 @@ return builder
 
 `DaemonBatchRetryAttempts` is 3. Each command inside the batch still goes through the read pipeline above, so this
 one is kept small on purpose. When it gives up, the shard pauses and its `ShardFailure.IsTransient` is true, so
-Wolverine or CritterWatch can restart it later. A failure that isn't transient goes straight to the error policy. This
-pipeline isn't configurable, and `ConfigurePolly` doesn't change it.
+Wolverine or CritterWatch can restart it later. A failure that isn't transient, including any failure in your
+projection's own code, goes straight to the error policy.
+
+To change it, replace the store's daemon pipeline with `ConfigureDaemonPolly()`, new in Marten 10:
+
+<!-- snippet: sample_configure_daemon_polly -->
+<a id='snippet-sample_configure_daemon_polly'></a>
+```cs
+// More patience for a load spike than the default 3 retries
+opts.ConfigureDaemonPolly(builder =>
+{
+    builder.AddRetry(new RetryStrategyOptions
+    {
+        MaxRetryAttempts = 5,
+        BackoffType = DelayBackoffType.Exponential,
+        Delay = TimeSpan.FromMilliseconds(100)
+    });
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/transient_batch_build_failures.cs#L151-L164' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_daemon_polly' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The daemon only hands this pipeline a failure it already judged transient, so a plain `AddRetry()` is enough. An empty
+pipeline turns the retries off, and the shard pauses on the first transient failure:
+
+<!-- snippet: sample_configure_daemon_polly_without_retries -->
+<a id='snippet-sample_configure_daemon_polly_without_retries'></a>
+```cs
+// Pause the shard on the first transient failure, with no retries
+opts.ConfigureDaemonPolly(_ => { });
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/transient_batch_build_failures.cs#L190-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_daemon_polly_without_retries' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`ConfigurePolly` doesn't change the daemon's pipeline, and `ConfigureDaemonPolly` doesn't change the pipeline each
+command runs through. A retry on both multiplies.
 
 ## Replacing or extending the policies
 
