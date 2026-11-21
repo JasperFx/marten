@@ -8,9 +8,11 @@ internal class DateTimeUsageExceptionTransform: IExceptionTransform
 {
     public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
+        // Npgsql 11 can put " (resolved)" between the type and "is not supported", so match the two halves
         if (original is InvalidCastException ice &&
-            ice.Message.Contains(
-                "Reading as 'System.IO.TextReader' is not supported for fields having DataTypeName 'timestamp without time zone"))
+            ice.Message.Contains("Reading as 'System.IO.TextReader'", StringComparison.Ordinal) &&
+            ice.Message.Contains("is not supported for fields having DataTypeName 'timestamp without time zone",
+                StringComparison.Ordinal))
         {
             transformed = new InvalidDateTimeUsageException(
                 "DateTime types are no longer usable with Npgsql for this use case. If using a DateTime member for optimized querying, consider using a computed index instead. Or switch this member to DateTimeOffset or use NodaTime. See https://www.npgsql.org/efcore/release-notes/6.0.html",
@@ -43,8 +45,11 @@ internal class UtcDateTimeUsageExceptionTransform: IExceptionTransform
 {
     public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
-        if ((original is InvalidCastException or ArgumentException) &&
-            original.Message.Contains("Cannot write DateTime with Kind=UTC to PostgreSQL"))
+        // Npgsql 10 throws "Cannot write DateTime with Kind=UTC to PostgreSQL type 'timestamp without time zone'..."
+        // directly. Npgsql 11 throws an InvalidCastException ("Could not bind parameter ...") whose inner
+        // ArgumentException says "Cannot write DateTime with Kind=UTC. Consider using timestamptz instead..."
+        if (isUtcDateTimeWrite(original) ||
+            (original is InvalidCastException && original.InnerException is { } inner && isUtcDateTimeWrite(inner)))
         {
             transformed = new InvalidUtcDateTimeUsageException(original);
             return true;
@@ -53,4 +58,8 @@ internal class UtcDateTimeUsageExceptionTransform: IExceptionTransform
         transformed = null;
         return false;
     }
+
+    private static bool isUtcDateTimeWrite(Exception e) =>
+        e is InvalidCastException or ArgumentException &&
+        e.Message.Contains("Cannot write DateTime with Kind=UTC", StringComparison.Ordinal);
 }

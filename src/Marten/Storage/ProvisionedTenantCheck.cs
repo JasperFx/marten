@@ -56,8 +56,7 @@ internal static class ProvisionedTenantCheck
     /// leave behind. On true, this database's in-memory partition view is updated the way the repair updates it.
     /// </summary>
     /// <remarks>
-    /// Synchronous I/O on <paramref name="database"/>, two single-statement round trips. The caller must have ruled
-    /// out a multiplexed data source, on which Npgsql refuses synchronous I/O.
+    /// Synchronous I/O on <paramref name="database"/>, two single-statement round trips.
     /// </remarks>
     public static bool IsProvisioned(StoreOptions options, MartenDatabase database, string tenantId)
     {

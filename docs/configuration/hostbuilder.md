@@ -149,7 +149,7 @@ You can also use the [NpgsqlDataSource](https://www.npgsql.org/doc/basic-usage.h
 
 > The data source represents your PostgreSQL database and can hand out connections to it or support direct execution of SQL against it. The data source encapsulates the various Npgsql configuration needed to connect to PostgreSQL, as well the connection pooling which makes Npgsql efficient.
 
-You can use the `AddNpgsqlDataSource` method from [Npgsql.DependencyInjection package](https://www.nuget.org/packages/Npgsql.DependencyInjection) to perform a setup by calling the `UseNpgsqlDataSourceMethod`:
+You can register the data source with Npgsql's `AddNpgsqlDataSource()` method, then tell Marten to use it by calling `UseNpgsqlDataSource()`. Since Npgsql 11, `AddNpgsqlDataSource()` is part of the `Npgsql` package itself; the separate `Npgsql.DependencyInjection` package is gone:
 
 <!-- snippet: sample_using_usenpgsqldatasource -->
 <a id='snippet-sample_using_usenpgsqldatasource'></a>

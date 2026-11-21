@@ -159,39 +159,6 @@ public class sharded_sync_tenant_resolution_tests
         }
     }
 
-    [Theory]
-    [InlineData(true, true)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public async Task sync_resolution_works_when_the_control_or_shard_databases_are_multiplexed(
-        bool controlMultiplexing, bool shardMultiplexing)
-    {
-        await using var shards = await ScratchShards.CreateAsync(2, controlMultiplexing, shardMultiplexing);
-
-        try
-        {
-            var dbId = await shards.ProvisionAsync([Damaged, Healthy]);
-            await damageAsync(shards, dbId[Damaged], "dropped document partition");
-
-            await using var store = shards.BuildStore();
-            await shards.RunOneOffWorkAsync(store);
-
-            // Npgsql refuses synchronous I/O on a multiplexed data source, so whichever lookup would need it keeps
-            // the asynchronous path instead of throwing NotSupportedException
-            store.Options.Tenancy.GetTenant(Healthy).Database.Identifier.ShouldBe(dbId[Healthy]);
-            store.Options.Tenancy.GetTenant(Damaged).Database.Identifier.ShouldBe(dbId[Damaged]);
-
-            await assertRepairedAsync(shards, dbId[Damaged], "dropped document partition");
-
-            // And an unknown-to-this-store tenant is still assigned
-            store.Options.Tenancy.GetTenant("brand_new").TenantId.ShouldBe("brand_new");
-        }
-        finally
-        {
-            await shards.DropMasterSchemaAsync();
-        }
-    }
-
     private static async Task damageAsync(ScratchShards shards, string dbId, string damage)
     {
         var sql = damage switch
@@ -264,25 +231,21 @@ public class sharded_sync_tenant_resolution_tests
 internal sealed class ScratchShards: IAsyncDisposable
 {
     private readonly string[] _databaseNames;
-    private readonly bool _controlMultiplexing;
 
-    private ScratchShards(string masterSchema, string[] databaseNames, bool controlMultiplexing,
-        bool shardMultiplexing)
+    private ScratchShards(string masterSchema, string[] databaseNames)
     {
         MasterSchema = masterSchema;
         _databaseNames = databaseNames;
-        _controlMultiplexing = controlMultiplexing;
 
         ConnectionStrings = databaseNames.ToDictionary(x => x, x => new NpgsqlConnectionStringBuilder(
-            ConnectionSource.ConnectionString) { Database = x, Multiplexing = shardMultiplexing }.ConnectionString);
+            ConnectionSource.ConnectionString) { Database = x }.ConnectionString);
     }
 
     public string MasterSchema { get; }
 
     public IReadOnlyDictionary<string, string> ConnectionStrings { get; }
 
-    public static async Task<ScratchShards> CreateAsync(int count, bool controlMultiplexing = false,
-        bool shardMultiplexing = false)
+    public static async Task<ScratchShards> CreateAsync(int count)
     {
         var prefix = "m5986_" + Guid.NewGuid().ToString("N")[..8];
         var names = Enumerable.Range(0, count).Select(i => $"{prefix}_{(char)('a' + i)}").ToArray();
@@ -296,7 +259,7 @@ internal sealed class ScratchShards: IAsyncDisposable
             await conn.CreateCommand($"create database {name} template template0").ExecuteNonQueryAsync();
         }
 
-        return new ScratchShards(prefix + "_pool", names, controlMultiplexing, shardMultiplexing);
+        return new ScratchShards(prefix + "_pool", names);
     }
 
     public DocumentStore BuildStore()
@@ -306,10 +269,7 @@ internal sealed class ScratchShards: IAsyncDisposable
             opts.DisableNpgsqlLogging = true;
             opts.MultiTenantedWithShardedDatabases(x =>
             {
-                x.ConnectionString = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
-                {
-                    Multiplexing = _controlMultiplexing
-                }.ConnectionString;
+                x.ConnectionString = ConnectionSource.ConnectionString;
                 x.SchemaName = MasterSchema;
 
                 foreach (var (dbId, connectionString) in ConnectionStrings)
@@ -359,7 +319,7 @@ internal sealed class ScratchShards: IAsyncDisposable
     /// </summary>
     public async Task<string> PartitionStateAsync(string dbId, string tenantId)
     {
-        await using var conn = new NpgsqlConnection(plain(dbId));
+        await using var conn = new NpgsqlConnection(ConnectionStrings[dbId]);
         await conn.OpenAsync();
 
         await using var reader = await conn
@@ -373,7 +333,7 @@ internal sealed class ScratchShards: IAsyncDisposable
 
     public async Task<string?> RegistryRowVersionAsync(string dbId, string tenantId)
     {
-        await using var conn = new NpgsqlConnection(plain(dbId));
+        await using var conn = new NpgsqlConnection(ConnectionStrings[dbId]);
         await conn.OpenAsync();
         return await conn
             .CreateCommand("select xmin::text from tenants.mt_tenant_partitions where partition_value = :id")
@@ -383,14 +343,14 @@ internal sealed class ScratchShards: IAsyncDisposable
 
     public async Task ExecuteAsync(string dbId, string sql)
     {
-        await using var conn = new NpgsqlConnection(plain(dbId));
+        await using var conn = new NpgsqlConnection(ConnectionStrings[dbId]);
         await conn.OpenAsync();
         await conn.CreateCommand(sql).ExecuteNonQueryAsync();
     }
 
     public async Task<string?> ScalarAsync(string dbId, string sql)
     {
-        await using var conn = new NpgsqlConnection(plain(dbId));
+        await using var conn = new NpgsqlConnection(ConnectionStrings[dbId]);
         await conn.OpenAsync();
         return await conn.CreateCommand(sql).ExecuteScalarAsync() as string;
     }
@@ -414,8 +374,4 @@ internal sealed class ScratchShards: IAsyncDisposable
             await conn.CreateCommand($"drop database if exists {name} with (force)").ExecuteNonQueryAsync();
         }
     }
-
-    // The test's own reads and writes never multiplex, whatever the store does
-    private string plain(string dbId)
-        => new NpgsqlConnectionStringBuilder(ConnectionStrings[dbId]) { Multiplexing = false }.ConnectionString;
 }

@@ -1146,8 +1146,7 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
     /// <item>a tenant with no active assignment: a new tenant goes through the user's asynchronous
     /// <see cref="ITenantAssignmentStrategy.AssignTenantToDatabaseAsync"/>, and a disabled one is refused there;</item>
     /// <item>an assignment to a shard this store has not cached yet;</item>
-    /// <item>a tenant whose registry row, partitions or event sequence are not all in place, which gets the repair;</item>
-    /// <item>a control or shard database with <c>Multiplexing=true</c>, on which Npgsql refuses synchronous I/O.</item>
+    /// <item>a tenant whose registry row, partitions or event sequence are not all in place, which gets the repair.</item>
     /// </list>
     /// The cache is updated before the repair, and the repair runs only on first sight per process, exactly as on
     /// the asynchronous path.
@@ -1184,15 +1183,14 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
     /// <summary>
     /// Whether <see cref="findOrAssignTenantDatabaseAsync"/>'s one-off work, the pool schema check and the seeding,
-    /// is already behind this store, and the control database allows synchronous I/O.
+    /// is already behind this store.
     /// </summary>
     private bool canResolveSynchronously()
     {
         var autoCreate = _configuration.AutoCreate ?? _options.AutoCreateSchemaObjects;
         if (!_hasAppliedChanges && autoCreate != AutoCreate.None) return false;
-        if (!_hasSeeded && _configuration.SeedDatabases.Count > 0) return false;
 
-        return !isMultiplexing(_dataSource.Value);
+        return _hasSeeded || _configuration.SeedDatabases.Count == 0;
     }
 
     private string? findDatabaseForTenantSynchronously(string tenantId)
@@ -1208,8 +1206,6 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
     /// </summary>
     private bool isProvisionedSynchronously(MartenDatabase database, string tenantId)
     {
-        if (isMultiplexing(database.DataSource)) return false;
-
         try
         {
             return ProvisionedTenantCheck.IsProvisioned(_options, database, tenantId);
@@ -1221,10 +1217,6 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
             return false;
         }
     }
-
-    // Npgsql refuses synchronous I/O when multiplexing is on
-    private static bool isMultiplexing(NpgsqlDataSource dataSource)
-        => new NpgsqlConnectionStringBuilder(dataSource.ConnectionString).Multiplexing;
 
     private async Task createPartitionsForTenant(MartenDatabase database, string tenantId, CancellationToken ct)
     {

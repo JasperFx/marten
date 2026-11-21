@@ -264,8 +264,7 @@ public class sync_tenant_resolution_thread_pool_tests
 
 /// <summary>
 ///     #5985: the synchronous master-table lookup (Weasel's <c>TryResolveTenant</c>, weasel#838) refuses and caches
-///     exactly as the asynchronous one does, and a multiplexed control database, which Npgsql refuses synchronous
-///     I/O on, keeps the asynchronous lookup instead of failing with <see cref="NotSupportedException" />.
+///     exactly as the asynchronous one does.
 /// </summary>
 [Collection(TenantResolutionThreadPoolCollection.Name)]
 public class sync_master_table_tenant_resolution
@@ -447,50 +446,6 @@ public class sync_master_table_tenant_resolution
         cmd.CommandText = "select to_regclass(@name) is not null";
         cmd.Parameters.AddWithValue("name", schema + ".mt_tenant_databases");
         return (bool)(await cmd.ExecuteScalarAsync())!;
-    }
-
-    [Fact]
-    public async Task sync_session_for_an_uncached_tenant_works_when_the_control_database_is_multiplexed()
-    {
-        var schema = "mt_mux_" + Guid.NewGuid().ToString("N")[..10];
-        var multiplexed = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
-        {
-            Multiplexing = true
-        }.ConnectionString;
-
-        await using var store = DocumentStore.For(opts =>
-        {
-            opts.DisableNpgsqlLogging = true;
-            opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
-            {
-                x.ConnectionString = multiplexed;
-                x.SchemaName = schema;
-            });
-        });
-
-        try
-        {
-            await ((Marten.Storage.MasterTableTenancy)store.Options.Tenancy).TenantDatabase
-                .ApplyAllConfiguredChangesToDatabaseAsync();
-            await MasterTableRows.InsertAsync(schema, ["mux1", "mux2", "mux3"]);
-
-            // Synchronous, on a tenant nothing has resolved yet, before anything asynchronous has run
-            using (var session = store.LightweightSession("mux1"))
-            {
-                session.TenantId.ShouldBe("mux1");
-            }
-
-            // And after the control table is provisioned, when the synchronous lookup would otherwise be taken
-            await store.Options.Tenancy.GetTenantAsync("mux2");
-            store.Options.Tenancy.GetTenant("mux3").TenantId.ShouldBe("mux3");
-
-            // An unknown tenant is still refused the same way
-            Should.Throw<UnknownTenantIdException>(() => store.Options.Tenancy.GetTenant("mux_missing"));
-        }
-        finally
-        {
-            await MasterTableRows.DropSchemaAsync(schema);
-        }
     }
 }
 

@@ -179,26 +179,6 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
         (await theTenancy.FindOrCreateDatabase("database1")).ShouldBeSameAs(tenant1.Database);
     }
 
-    // #5985: Npgsql refuses synchronous I/O under multiplexing, so a multiplexed master connection keeps the
-    // asynchronous path rather than failing with NotSupportedException
-    [Fact]
-    public async Task build_tenant_synchronously_when_the_master_connection_is_multiplexed()
-    {
-        var multiplexed = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString)
-        {
-            Multiplexing = true
-        }.ConnectionString;
-
-        var tenancy = new SingleServerMultiTenancy(dataSourceFactory, multiplexed, new StoreOptions());
-
-        (await DatabaseExists("tenant3")).ShouldBeFalse();
-        var tenant = tenancy.GetTenant("tenant3");
-        (await DatabaseExists("tenant3")).ShouldBeTrue();
-
-        tenant.Database.ShouldBeSameAs(await tenancy.FindOrCreateDatabase("tenant3"));
-        await tenancy.DisposeAsync();
-    }
-
     [Fact]
     public async Task build_tenant_where_database_is_already_built_async()
     {

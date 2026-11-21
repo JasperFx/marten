@@ -149,8 +149,7 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
     ///     #5985: <see cref="GetTenantAsync" /> step for step, with Weasel's
     ///     <see cref="SingleServerDatabaseCollection{T}.FindOrCreateDatabaseSynchronously" /> in place of the
     ///     asynchronous <c>FindOrCreateDatabase</c>. It looks the database up and creates it when it is missing over
-    ///     a synchronously opened connection, into the same cache, and falls back to blocking on the asynchronous
-    ///     path by itself only when the master connection string turns on <c>Multiplexing</c>.
+    ///     a synchronously opened connection, into the same cache.
     /// </summary>
     private Tenant getTenantSynchronously(string tenantId)
     {
