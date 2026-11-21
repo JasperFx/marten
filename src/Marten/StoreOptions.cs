@@ -358,6 +358,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///         own code. By default the batch is built again up to 3 times with a short exponential backoff (250ms,
     ///         doubling, with jitter), and then the shard pauses with <c>ShardFailure.IsTransient</c> true. An empty
     ///         pipeline, <c>ConfigureDaemonPolly(_ =&gt; { })</c>, pauses the shard on the first transient failure.
+    ///         To keep the default and add to it, call
+    ///         <see cref="MartenResiliencePipelineBuilderExtensions.AddMartenDaemonBatchDefaults" /> on the builder.
     ///     </para>
     ///     <para>
     ///         Building a batch again is safe in a way that replaying a session command is not: nothing has been
@@ -465,7 +467,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///         Deliberately not <see cref="ResiliencePipeline" />: every command in the build already runs through
     ///         that pipeline inside its session, and the two would nest (#5587, and see
     ///         <c>DocumentStore.DaemonLoaderPipeline</c>). The default is its own, small policy
-    ///         (<see cref="ResilientPipelineBuilderExtensions.AddMartenDaemonBatchDefaults" />): three retries with a
+    ///         (<see cref="MartenResiliencePipelineBuilderExtensions.AddMartenDaemonBatchDefaults" />): three retries with a
     ///         short exponential backoff, and it retries timeouts, which the session pipeline does not.
     ///     </para>
     /// </remarks>
