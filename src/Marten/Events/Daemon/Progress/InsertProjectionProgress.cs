@@ -34,6 +34,18 @@ internal class InsertProjectionProgress: IStorageOperation, AssertsOnCallback, N
         // column on this table. No code change needed here — Identity does
         // the right thing for both today's tenant-less and tomorrow's
         // tenant-bearing shards.
+        //
+        // marten#6127: a shard that failed before its first commit has a row at 0 that only carries the failure
+        // (MartenDatabase.WriteExtendedProgressionAsync). It has no progress in it, so the first commit deletes it
+        // and inserts as usual. A row past 0 is left alone, and the insert fails on it exactly as it always has
+        // when a second daemon committed first. Both statements run in the batch's transaction.
+        var deletion = builder.AppendWithParameters(
+            $"delete from {_events.ProgressionTable} where name = ? and last_seq_id = 0");
+        deletion[0].Value = _progress.ShardName.Identity;
+        deletion[0].NpgsqlDbType = NpgsqlDbType.Varchar;
+
+        builder.StartNewCommand();
+
         var parameters =
             builder.AppendWithParameters($"insert into {_events.ProgressionTable} (name, last_seq_id) values (?, ?)");
 
