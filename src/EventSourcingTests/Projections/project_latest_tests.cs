@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
@@ -214,6 +215,63 @@ public class project_latest_tests : OneOffConfigurationsContext
             report.SectionCount.ShouldBe(3); // Revenue + Costs + Outlook
             report.IsPublished.ShouldBeTrue();
         }
+    }
+
+    [Theory]
+    [InlineData(EventAppendMode.Rich, true)]
+    [InlineData(EventAppendMode.Rich, false)]
+    [InlineData(EventAppendMode.Quick, true)]
+    [InlineData(EventAppendMode.Quick, false)]
+    [InlineData(EventAppendMode.QuickWithServerTimestamps, true)]
+    [InlineData(EventAppendMode.QuickWithServerTimestamps, false)]
+    public async Task async_projection_snapshot_matches_the_stored_events_after_the_daemon_catches_up(
+        EventAppendMode appendMode, bool streamAlreadyHasSnapshot)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.AppendMode = appendMode;
+            opts.Projections.Add<ReportProjection>(ProjectionLifecycle.Async);
+        });
+
+        var streamId = Guid.NewGuid();
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        if (streamAlreadyHasSnapshot)
+        {
+            await using var session = theStore.LightweightSession();
+            session.Events.StartStream<Report>(streamId, new ReportCreated("Q1 Report"), new SectionAdded("Revenue"));
+            await session.SaveChangesAsync();
+
+            await daemon.WaitForNonStaleData(15.Seconds());
+        }
+
+        await using (var session = theStore.LightweightSession())
+        {
+            if (streamAlreadyHasSnapshot)
+            {
+                var stream = await session.Events.FetchForWriting<Report>(streamId);
+                stream.AppendOne(new SectionAdded("Costs"));
+            }
+            else
+            {
+                session.Events.StartStream<Report>(streamId, new ReportCreated("Q1 Report"), new SectionAdded("Revenue"));
+            }
+
+            await session.Events.ProjectLatest<Report>(streamId);
+            await session.SaveChangesAsync();
+        }
+
+        await daemon.WaitForNonStaleData(15.Seconds());
+
+        await using var query = theStore.QuerySession();
+        var snapshot = await query.LoadAsync<Report>(streamId);
+        var fromStoredEvents = await query.Events.AggregateStreamAsync<Report>(streamId);
+
+        snapshot.ShouldNotBeNull();
+        fromStoredEvents.ShouldNotBeNull();
+        snapshot.SectionCount.ShouldBe(fromStoredEvents.SectionCount);
     }
 
     [Fact]

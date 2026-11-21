@@ -55,8 +55,10 @@ ValueTask<T?> ProjectLatest<T>(string id, CancellationToken cancellation = defau
 
 ### Async Projections
 
-Loads the stored document, applies pending events, and **stores the updated document in the
-session** so it will be persisted on the next `SaveChangesAsync()`.
+1. Loads the stored document, and any committed events the async daemon has not applied to it yet
+2. Applies the pending events on top
+3. Returns the result. Nothing is stored in the session: the async daemon updates the stored
+   document from the committed events, as it would without the call
 
 ## Example
 
@@ -93,7 +95,8 @@ var report = await session.Events.ProjectLatest<Report>(streamId);
 // report.SectionCount == 2
 // report.IsPublished == false
 
-// Save happens later — the inline document is already queued for storage
+// Save happens later. ProjectLatest stored nothing, so an Inline or Async
+// projection writes the document from the committed events as usual
 await session.SaveChangesAsync();
 ```
 
@@ -107,4 +110,4 @@ identically to `FetchLatest` — it returns the current committed state.
 - **Natural key projections**: `ProjectLatest` with a natural key ID falls back to `FetchLatest`
   because the natural key mapping may not exist yet for uncommitted streams.
 - **Read-only sessions**: `ProjectLatest` is only available on `IDocumentSession.Events`
-  (not `IQuerySession.Events`) because it may store the updated document for inline projections.
+  (not `IQuerySession.Events`) because only a document session has pending events to project.
