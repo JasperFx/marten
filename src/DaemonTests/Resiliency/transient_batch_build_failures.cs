@@ -24,7 +24,7 @@ namespace DaemonTests.Resiliency;
 /// jasperfx#1256. A batch whose build fails transiently -- here, what Npgsql throws for an exhausted connection pool --
 /// is built again through Marten's daemon batch pipeline under every error policy, and the shard pauses with
 /// <see cref="ShardFailure.IsTransient" /> true only once that pipeline gives up. The pipeline is Marten's own
-/// (<see cref="ResilientPipelineBuilderExtensions.AddMartenDaemonBatchDefaults" />), not the session pipeline, which
+/// (<see cref="MartenResiliencePipelineBuilderExtensions.AddMartenDaemonBatchDefaults" />), not the session pipeline, which
 /// does not retry timeouts, and <see cref="StoreOptions.ConfigureDaemonPolly" /> replaces it per store.
 /// </summary>
 public class transient_batch_build_failures: OneOffConfigurationsContext
@@ -32,7 +32,7 @@ public class transient_batch_build_failures: OneOffConfigurationsContext
     private static readonly TimeSpan Generous = TimeSpan.FromSeconds(60);
 
     // The first build, and every retry the pipeline allows
-    private const int AllAttempts = 1 + ResilientPipelineBuilderExtensions.DaemonBatchRetryAttempts;
+    private const int AllAttempts = 1 + MartenResiliencePipelineBuilderExtensions.DaemonBatchRetryAttempts;
 
     private static Exception poolTimeout() =>
         new NpgsqlException("The connection pool has been exhausted", new TimeoutException());

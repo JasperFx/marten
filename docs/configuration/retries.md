@@ -23,7 +23,7 @@ return builder
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L22-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L21-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The general idea is to have _some_ level of retry with an exponential backoff on typical transient errors encountered
@@ -73,7 +73,7 @@ return builder
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L135-L150' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_write_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L91-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_write_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `SaveChangesAsync()` is retried when, and only when:
@@ -167,11 +167,11 @@ return builder
         UseJitter = true
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L105-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_daemon_batch_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenResiliencePipelineBuilderExtensions.cs#L44-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_daemon_batch_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-`DaemonBatchRetryAttempts` is 3. Each command inside the batch still goes through the read pipeline above, so this
-one is kept small on purpose. When it gives up, the shard pauses and its `ShardFailure.IsTransient` is true, so
+`DaemonBatchRetryAttempts` is 3, so a batch is built at most 4 times. Each command inside the batch still goes through
+the read pipeline above, so this one is kept small on purpose. When it gives up, the shard pauses and its `ShardFailure.IsTransient` is true, so
 Wolverine or CritterWatch can restart it later. A failure that isn't transient, including any failure in your
 projection's own code, goes straight to the error policy.
 
@@ -204,6 +204,26 @@ pipeline turns the retries off, and the shard pauses on the first transient fail
 opts.ConfigureDaemonPolly(_ => { });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/transient_batch_build_failures.cs#L190-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_daemon_polly_without_retries' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+To keep the default and add to it, start the builder with `AddMartenDaemonBatchDefaults()`. Polly runs the strategies
+in the order you add them, so a strategy added before it wraps Marten's retries and one added after it runs inside
+each attempt. This one waits out a longer outage:
+
+<!-- snippet: sample_configure_daemon_polly_from_the_default -->
+<a id='snippet-sample_configure_daemon_polly_from_the_default'></a>
+```cs
+// Keep Marten's default retries, and when they run out, wait 5 seconds
+// and run them once more before the shard pauses
+opts.ConfigureDaemonPolly(builder => builder
+    .AddRetry(new RetryStrategyOptions
+    {
+        MaxRetryAttempts = 1,
+        Delay = TimeSpan.FromSeconds(5)
+    })
+    .AddMartenDaemonBatchDefaults());
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/daemon_batch_pipeline_defaults.cs#L71-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_daemon_polly_from_the_default' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `ConfigurePolly` doesn't change the daemon's pipeline, and `ConfigureDaemonPolly` doesn't change the pipeline each
