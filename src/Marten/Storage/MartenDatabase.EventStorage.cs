@@ -91,8 +91,9 @@ public partial class MartenDatabase : IEventDatabase
     ///     Persist the extended progression telemetry (heartbeat / agent_status / pause_reason /
     ///     running_on_node, plus the #5048 classified failure columns) the async daemon publishes for a
     ///     shard. Driven by the JasperFx.Events <c>ExtendedProgressionWriter</c> observer on status
-    ///     transitions and throttled heartbeats (CritterWatch #750). Update-only, so it never rolls back
-    ///     committed <c>last_seq_id</c>.
+    ///     transitions and throttled heartbeats (CritterWatch #750). It never moves a committed
+    ///     <c>last_seq_id</c>; the one row it creates is a failure's, for a shard that has not committed yet
+    ///     (marten#6127).
     /// </summary>
     public Task WriteExtendedProgressionAsync(ShardState state, CancellationToken token = default)
     {
@@ -108,9 +109,20 @@ public partial class MartenDatabase : IEventDatabase
     ///     Deliberately plain UPDATE statements instead of a database function, so no schema object is
     ///     added and deployments running <c>AutoCreate.None</c> pick it up without a migration. Semantics
     ///     match the <c>mt_mark_event_progression_extended</c> function this replaced (the function is
-    ///     no longer created; a copy left by an older version is harmless): update-only telemetry decoration of
-    ///     existing progression rows — never INSERT, never touch <c>last_seq_id</c> / <c>last_updated</c>,
-    ///     shards without a progression row yet are skipped silently.
+    ///     no longer created; a copy left by an older version is harmless): telemetry decoration of
+    ///     existing progression rows that never touches <c>last_seq_id</c> / <c>last_updated</c>, and a
+    ///     state for a shard without a progression row yet is skipped silently, with one exception below.
+    ///     <para>
+    ///     marten#6127: a state that carries a <see cref="ShardState.Failure" /> creates the row when there
+    ///     isn't one. A shard that pauses on its first batch has never committed, so until this its failure
+    ///     (a <c>ParkedLimitReached</c> pause included) was written nowhere, and nothing reading the database
+    ///     could see it. The row goes in at the shard's sequence, which for a shard that never committed is
+    ///     the floor it started from, so it does not change where the shard starts next time. A shard whose
+    ///     floor is above 0 already has its row (the daemon seeds it before starting the shard), so the row
+    ///     created here is in practice always at 0, and the shard's first commit replaces it
+    ///     (<c>InsertProjectionProgress</c>). An existing row only gets the telemetry, never a new
+    ///     <c>last_seq_id</c>.
+    ///     </para>
     ///     <para>
     ///     #5167: this used to be ONE <c>UPDATE … FROM unnest(…)</c> covering the whole batch, and that
     ///     is a lock convoy. A multi-row statement takes a row lock on EVERY shard in the batch and holds
@@ -156,50 +168,120 @@ public partial class MartenDatabase : IEventDatabase
         {
             await conn.OpenAsync(token).ConfigureAwait(false);
 
-            using var command = conn.CreateCommand(extendedProgressionSql());
+            using var update = conn.CreateCommand(extendedProgressionSql());
+            var updateParameters = new ExtendedProgressionParameters(update);
 
-            var name = command.Parameters.Add(new NpgsqlParameter("name", NpgsqlDbType.Varchar));
-            var heartbeat = command.Parameters.Add(new NpgsqlParameter("heartbeat", NpgsqlDbType.TimestampTz));
-            var status = command.Parameters.Add(new NpgsqlParameter("agent_status", NpgsqlDbType.Varchar));
-            var reason = command.Parameters.Add(new NpgsqlParameter("pause_reason", NpgsqlDbType.Text));
-            var node = command.Parameters.Add(new NpgsqlParameter("running_on_node", NpgsqlDbType.Integer));
-            var touchFailure = command.Parameters.Add(new NpgsqlParameter("touch_failure", NpgsqlDbType.Boolean));
-            var failureCategory = command.Parameters.Add(new NpgsqlParameter("failure_category", NpgsqlDbType.Varchar));
-            var failureSequence = command.Parameters.Add(new NpgsqlParameter("failure_sequence", NpgsqlDbType.Bigint));
-            var failureEventType =
-                command.Parameters.Add(new NpgsqlParameter("failure_event_type", NpgsqlDbType.Varchar));
-            var failureTenantId =
-                command.Parameters.Add(new NpgsqlParameter("failure_tenant_id", NpgsqlDbType.Varchar));
-            var parkedCount = command.Parameters.Add(new NpgsqlParameter("parked_count", NpgsqlDbType.Integer));
+            // marten#6127: only built when a batch carries a failure, which is rare
+            NpgsqlCommand? upsert = null;
+            ExtendedProgressionParameters? upsertParameters = null;
 
-            // The writer already hands these over sorted, but a direct caller need not, and the ordering
-            // is what keeps two racing writers from deadlocking against each other.
-            foreach (var state in states.OrderBy(x => x.ShardName, StringComparer.Ordinal))
+            try
             {
-                var failure = state.Failure;
+                // The writer already hands these over sorted, but a direct caller need not, and the ordering
+                // is what keeps two racing writers from deadlocking against each other.
+                foreach (var state in states.OrderBy(x => x.ShardName, StringComparer.Ordinal))
+                {
+                    if (state.Failure == null)
+                    {
+                        updateParameters.Apply(state);
 
-                name.Value = state.ShardName;
-                heartbeat.Value = (object?)state.LastHeartbeat ?? DBNull.Value;
-                status.Value = (object?)state.AgentStatus ?? DBNull.Value;
-                reason.Value = (object?)state.PauseReason ?? DBNull.Value;
-                node.Value = (object?)state.RunningOnNode ?? DBNull.Value;
-                touchFailure.Value = failure != null || state.Action == ShardAction.Started;
-                failureCategory.Value = (object?)failure?.Category.ToString() ?? DBNull.Value;
-                failureSequence.Value = (object?)failure?.Event?.Sequence ?? DBNull.Value;
-                failureEventType.Value = (object?)failure?.Event?.EventTypeName ?? DBNull.Value;
-                failureTenantId.Value = (object?)failure?.Event?.TenantId ?? DBNull.Value;
-                // marten#6003: null is "not known in this publication" (a start, a pause), not "not parking", so it
-                // keeps the last count rather than erasing it
-                parkedCount.Value = (object?)state.ParkedCount ?? DBNull.Value;
+                        // One ExecuteNonQueryAsync per shard, deliberately: each is its own implicit transaction,
+                        // so this loop never holds more than a single row lock at a time.
+                        await update.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+                        continue;
+                    }
 
-                // One ExecuteNonQueryAsync per shard, deliberately: each is its own implicit transaction,
-                // so this loop never holds more than a single row lock at a time.
-                await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+                    // marten#6127: a failure must land even when the shard has never committed, so it creates the
+                    // row at the position the shard started from if there isn't one. Still one row, one statement.
+                    upsert ??= conn.CreateCommand(extendedProgressionUpsertSql());
+                    upsertParameters ??= new ExtendedProgressionParameters(upsert, withStartPosition: true);
+                    upsertParameters.Apply(state);
+                    await upsert.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                if (upsert != null)
+                {
+                    await upsert.DisposeAsync().ConfigureAwait(false);
+                }
             }
         }
         finally
         {
             await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
+    // The parameters both extended progression statements bind, by name
+    private sealed class ExtendedProgressionParameters
+    {
+        private readonly NpgsqlParameter _name;
+        private readonly NpgsqlParameter _heartbeat;
+        private readonly NpgsqlParameter _status;
+        private readonly NpgsqlParameter _reason;
+        private readonly NpgsqlParameter _node;
+        private readonly NpgsqlParameter? _touchFailure;
+        private readonly NpgsqlParameter _failureCategory;
+        private readonly NpgsqlParameter _failureSequence;
+        private readonly NpgsqlParameter _failureEventType;
+        private readonly NpgsqlParameter _failureTenantId;
+        private readonly NpgsqlParameter _parkedCount;
+        private readonly NpgsqlParameter? _startPosition;
+
+        public ExtendedProgressionParameters(NpgsqlCommand command, bool withStartPosition = false)
+        {
+            _name = command.Parameters.Add(new NpgsqlParameter("name", NpgsqlDbType.Varchar));
+            _heartbeat = command.Parameters.Add(new NpgsqlParameter("heartbeat", NpgsqlDbType.TimestampTz));
+            _status = command.Parameters.Add(new NpgsqlParameter("agent_status", NpgsqlDbType.Varchar));
+            _reason = command.Parameters.Add(new NpgsqlParameter("pause_reason", NpgsqlDbType.Text));
+            _node = command.Parameters.Add(new NpgsqlParameter("running_on_node", NpgsqlDbType.Integer));
+            _failureCategory = command.Parameters.Add(new NpgsqlParameter("failure_category", NpgsqlDbType.Varchar));
+            _failureSequence = command.Parameters.Add(new NpgsqlParameter("failure_sequence", NpgsqlDbType.Bigint));
+            _failureEventType = command.Parameters.Add(new NpgsqlParameter("failure_event_type", NpgsqlDbType.Varchar));
+            _failureTenantId = command.Parameters.Add(new NpgsqlParameter("failure_tenant_id", NpgsqlDbType.Varchar));
+            _parkedCount = command.Parameters.Add(new NpgsqlParameter("parked_count", NpgsqlDbType.Integer));
+
+            // The upsert always writes the failure it was handed, so it has no use for touch_failure
+            if (withStartPosition)
+            {
+                _startPosition = command.Parameters.Add(new NpgsqlParameter("start_position", NpgsqlDbType.Bigint));
+            }
+            else
+            {
+                _touchFailure = command.Parameters.Add(new NpgsqlParameter("touch_failure", NpgsqlDbType.Boolean));
+            }
+        }
+
+        public void Apply(ShardState state)
+        {
+            var failure = state.Failure;
+
+            _name.Value = state.ShardName;
+            _heartbeat.Value = (object?)state.LastHeartbeat ?? DBNull.Value;
+            _status.Value = (object?)state.AgentStatus ?? DBNull.Value;
+            _reason.Value = (object?)state.PauseReason ?? DBNull.Value;
+            _node.Value = (object?)state.RunningOnNode ?? DBNull.Value;
+            if (_touchFailure != null)
+            {
+                _touchFailure.Value = failure != null || state.Action == ShardAction.Started;
+            }
+            _failureCategory.Value = (object?)failure?.Category.ToString() ?? DBNull.Value;
+            _failureSequence.Value = (object?)failure?.Event?.Sequence ?? DBNull.Value;
+            _failureEventType.Value = (object?)failure?.Event?.EventTypeName ?? DBNull.Value;
+            _failureTenantId.Value = (object?)failure?.Event?.TenantId ?? DBNull.Value;
+            // marten#6003: null is "not known in this publication" (a start, a pause), not "not parking", so it
+            // keeps the last count rather than erasing it
+            _parkedCount.Value = (object?)state.ParkedCount ?? DBNull.Value;
+
+            if (_startPosition != null)
+            {
+                // marten#6127: a shard that never committed publishes the floor it started from as its sequence
+                // (SubscriptionAgent sets LastCommitted to the start floor), so this is where it starts again.
+                // A shard started at a floor above 0 already has its row (the daemon seeds it before the start),
+                // so in practice this only inserts 0 for a shard that really starts at 0.
+                _startPosition.Value = Math.Max(state.Sequence, 0);
+            }
         }
     }
 
@@ -227,6 +309,40 @@ public partial class MartenDatabase : IEventDatabase
                       or p.failure_event_sequence is distinct from :failure_sequence
                       or p.failure_event_type is distinct from :failure_event_type
                       or p.failure_event_tenant_id is distinct from :failure_tenant_id)))
+            """;
+    }
+
+    // marten#6127: the write for a state that carries a failure. The update branch is the statement above with the
+    // failure always written; the insert branch creates the row of a shard that has not committed yet, at its start
+    // position. last_seq_id is only ever set by the insert, never by the update, so a committed position is never
+    // moved. The first commit of a shard that starts at 0 replaces a row at 0 (InsertProjectionProgress).
+    private string extendedProgressionUpsertSql()
+    {
+        return $"""
+            insert into {Options.EventGraph.DatabaseSchemaName}.mt_event_progression as p
+                (name, last_seq_id, heartbeat, agent_status, pause_reason, running_on_node, failure_category,
+                 failure_event_sequence, failure_event_type, failure_event_tenant_id, parked_count)
+            values (:name, :start_position, :heartbeat, :agent_status, :pause_reason, :running_on_node, :failure_category,
+                    :failure_sequence, :failure_event_type, :failure_tenant_id, :parked_count)
+            on conflict (name) do update
+            set heartbeat = excluded.heartbeat,
+                agent_status = excluded.agent_status,
+                pause_reason = excluded.pause_reason,
+                running_on_node = excluded.running_on_node,
+                failure_category = excluded.failure_category,
+                failure_event_sequence = excluded.failure_event_sequence,
+                failure_event_type = excluded.failure_event_type,
+                failure_event_tenant_id = excluded.failure_event_tenant_id,
+                parked_count = coalesce(excluded.parked_count, p.parked_count)
+            where p.heartbeat is distinct from excluded.heartbeat
+               or p.agent_status is distinct from excluded.agent_status
+               or p.pause_reason is distinct from excluded.pause_reason
+               or p.running_on_node is distinct from excluded.running_on_node
+               or (excluded.parked_count is not null and p.parked_count is distinct from excluded.parked_count)
+               or p.failure_category is distinct from excluded.failure_category
+               or p.failure_event_sequence is distinct from excluded.failure_event_sequence
+               or p.failure_event_type is distinct from excluded.failure_event_type
+               or p.failure_event_tenant_id is distinct from excluded.failure_event_tenant_id
             """;
     }
 
