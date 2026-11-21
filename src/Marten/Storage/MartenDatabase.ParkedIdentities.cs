@@ -7,8 +7,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Projections.Composite;
+using Marten.Events.Archiving;
 using Marten.Events.Schema;
 using Npgsql;
 using NpgsqlTypes;
@@ -63,7 +66,125 @@ public partial class MartenDatabase
                               (where.Count > 0 ? " where " + string.Join(" and ", where) : "") +
                               " order by parked_at, first_failing_seq limit :limit";
 
-        return await readParkedAsync(command, token).ConfigureAwait(false);
+        var parked = await readParkedAsync(command, token).ConfigureAwait(false);
+        return await withNaturalKeysAsync(parked, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// marten#6132: fill <see cref="ParkedIdentity.NaturalKey" /> for every parked slice of a single stream projection
+    /// whose aggregate has a natural key, with one query per natural key table. A stream that never got a key, or a
+    /// projection whose aggregate has none, keeps a null.
+    /// </summary>
+    private async Task<IReadOnlyList<ParkedIdentity>> withNaturalKeysAsync(IReadOnlyList<ParkedIdentity> parked,
+        CancellationToken token)
+    {
+        if (parked.Count == 0) return parked;
+
+        var keyed = naturalKeyedProjections();
+        if (keyed.Count == 0) return parked;
+
+        var events = Options.EventGraph;
+        var isGuid = events.StreamIdentity == StreamIdentity.AsGuid;
+        var isConjoined = events.TenancyStyle == TenancyStyle.Conjoined;
+
+        // A single stream projection's identity is its stream's, unwrapped
+        var identityType = isGuid ? "guid" : "string";
+        string? tableFor(ParkedIdentity row)
+            => row.IdentityType == identityType && keyed.TryGetValue((row.ProjectionName, row.ProjectionVersion), out var table)
+                ? table
+                : null;
+
+        // One query per table: two projections of one aggregate type share it
+        var lookups = parked
+            .Select(x => (Row: x, Table: tableFor(x)))
+            .Where(x => x.Table != null)
+            .GroupBy(x => x.Table!, x => x.Row)
+            .ToList();
+
+        if (lookups.Count == 0) return parked;
+
+        var streamColumn = isGuid ? "stream_id" : "stream_key";
+        var keys = new Dictionary<(string TenantId, string Identity), string>();
+
+        await executeParkedAsync(async conn =>
+        {
+            foreach (var lookup in lookups)
+            {
+                await using var command = conn.CreateCommand();
+
+                // Keys are per tenant under conjoined tenancy. The live row sorts ahead of an archived copy of it.
+                command.CommandText =
+                    $"select natural_key_value::varchar, {streamColumn}::varchar{(isConjoined ? ", tenant_id" : "")} " +
+                    $"from {lookup.Key} where {streamColumn} = any(:ids)" +
+                    (isConjoined ? " and tenant_id = any(:tenants)" : "") +
+                    $" order by {IsArchivedColumn.ColumnName}";
+
+                if (isGuid)
+                {
+                    command.Parameters.AddWithValue("ids", NpgsqlDbType.Array | NpgsqlDbType.Uuid,
+                        lookup.Select(x => Guid.Parse(x.IdentityText)).Distinct().ToArray());
+                }
+                else
+                {
+                    command.Parameters.AddWithValue("ids", NpgsqlDbType.Array | NpgsqlDbType.Varchar,
+                        lookup.Select(x => x.IdentityText).Distinct().ToArray());
+                }
+
+                if (isConjoined)
+                {
+                    command.Parameters.AddWithValue("tenants", NpgsqlDbType.Array | NpgsqlDbType.Varchar,
+                        lookup.Select(x => x.TenantId).Distinct().ToArray());
+                }
+
+                await using var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false);
+                while (await reader.ReadAsync(token).ConfigureAwait(false))
+                {
+                    var tenantId = isConjoined ? reader.GetString(2) : "";
+                    keys.TryAdd((tenantId, normalizeIdentity(reader.GetString(1), isGuid)), reader.GetString(0));
+                }
+            }
+        }, token).ConfigureAwait(false);
+
+        if (keys.Count == 0) return parked;
+
+        return parked.Select(x =>
+            tableFor(x) != null &&
+            keys.TryGetValue((isConjoined ? x.TenantId : "", normalizeIdentity(x.IdentityText, isGuid)), out var naturalKey)
+                ? x with { NaturalKey = naturalKey }
+                : x).ToList();
+    }
+
+    private static string normalizeIdentity(string text, bool isGuid)
+        => isGuid && Guid.TryParse(text, out var id) ? id.ToString("D") : text;
+
+    /// <summary>
+    /// marten#6132: the qualified natural key table of every single stream projection (composite members included)
+    /// whose aggregate has a natural key, by the projection name and version its parked rows carry.
+    /// </summary>
+    private Dictionary<(string Name, uint Version), string> naturalKeyedProjections()
+    {
+        var keyed = new Dictionary<(string Name, uint Version), string>();
+
+        void add(IEnumerable<IProjectionSource<IDocumentOperations, IQuerySession>> sources)
+        {
+            foreach (var source in sources)
+            {
+                if (source is CompositeProjection<IDocumentOperations, IQuerySession> composite)
+                {
+                    add(composite.AllProjections());
+                }
+
+                if (source is IAggregateProjection { Scope: AggregationScope.SingleStream } aggregate &&
+                    aggregate.NaturalKeyDefinition is { } naturalKey)
+                {
+                    keyed.TryAdd((source.Name, source.Version),
+                        NaturalKeyTable.TableNameFor(Options.EventGraph, naturalKey).QualifiedName);
+                }
+            }
+        }
+
+        add(Options.Projections.All);
+        return keyed;
     }
 
     /// <inheritdoc />

@@ -205,16 +205,36 @@ rest of the projection keeps going, so neither check above notices. `AddMartenPa
 ```cs
 services.AddHealthChecks().AddMartenParkedIdentitiesHealthCheck();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/parked_identities_health_check.cs#L84-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_the_parked_identities_health_check' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/parked_identities_health_check.cs#L109-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_the_parked_identities_health_check' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Map it with `app.MapHealthChecks("/health")` like the others. It reports:
 
 * **Degraded** while any identity is parked in any of the store's databases, naming each projection and tenant with its
-  count. A parked document is stuck at its last good state until someone replays or discards it, but everything else is
-  still moving.
+  count, then the first 10 parked identities of each projection. A parked document is stuck at its last good state until
+  someone replays or discards it, but everything else is still moving.
 * **Unhealthy** while a shard is paused at the parking cap (`ShardFailureCategory.ParkedLimitReached`), which means the
   whole projection has stopped. Fix the projection, replay or discard what's parked, then restart the shard.
+
+Each listed identity is the stream id, followed by the aggregate's [natural key](/events/natural-keys) in parentheses
+when it has one. A projection with more than 10 parked ends its list with "and N more". A Degraded description reads
+something like this:
+
+```txt
+2 projection identities are parked: Ledger (tenant *DEFAULT*): 2. Parked identities: Ledger:
+13f89f60-b7e7-412e-8899-d86babf2ca23 (L-100), 561a1a40-89d4-48fc-b5f3-cc2d0a6f33a3
+```
+
+The same lists are in the result's `Data`, keyed by projection name:
+
+<!-- snippet: sample_parked_identities_in_the_health_check_data -->
+<a id='snippet-sample_parked_identities_in_the_health_check_data'></a>
+```cs
+// The first ten parked identities of each projection, as "id (natural key)" when there's a key
+var listed = (string[])degraded.Data["ParkedHealthScale"];
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/parked_identities_health_check.cs#L198-L203' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_parked_identities_in_the_health_check_data' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The check reads the database, so it gives the same answer on every node, whichever one runs the shard. The parking cap
 is read from the extended progression columns, which are on by default in Marten 10.

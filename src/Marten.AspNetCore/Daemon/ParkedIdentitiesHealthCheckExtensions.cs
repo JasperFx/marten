@@ -61,6 +61,12 @@ public static class ParkedIdentitiesHealthCheckExtensions
     /// </summary>
     public sealed class ParkedIdentitiesHealthCheck: IHealthCheck
     {
+        /// <summary>
+        ///     How many parked identities of each projection the check lists by name (marten#6132). The counts still
+        ///     cover all of them.
+        /// </summary>
+        public const int IdentitiesListedPerProjection = 10;
+
         private readonly IDocumentStore _store;
 
         /// <summary>Construct the check over a store.</summary>
@@ -79,6 +85,10 @@ public static class ParkedIdentitiesHealthCheckExtensions
                 var parked = new List<string>();
                 var total = 0;
 
+                // marten#6132: the first few parked identities of each projection, by id and natural key
+                var totals = new Dictionary<string, int>();
+                var identities = new Dictionary<string, List<string>>();
+
                 foreach (var database in await _store.Storage.AllDatabases().ConfigureAwait(false))
                 {
                     var progress = await database.AllProjectionProgress(cancellationToken).ConfigureAwait(false);
@@ -86,11 +96,32 @@ public static class ParkedIdentitiesHealthCheckExtensions
                         .Where(x => x.Failure?.Category == ShardFailureCategory.ParkedLimitReached)
                         .Select(x => x.ShardName));
 
-                    foreach (var count in await ((IEventDatabase)database)
-                                 .FetchParkedCountsAsync(null, cancellationToken).ConfigureAwait(false))
+                    var eventDatabase = (IEventDatabase)database;
+                    var counts = await eventDatabase.FetchParkedCountsAsync(null, cancellationToken)
+                        .ConfigureAwait(false);
+                    foreach (var count in counts)
                     {
                         total += count.Count;
                         parked.Add($"{count.ProjectionName} (tenant {count.TenantId}): {count.Count}");
+                        totals[count.ProjectionName] = totals.GetValueOrDefault(count.ProjectionName) + count.Count;
+                    }
+
+                    foreach (var projectionName in counts.Select(x => x.ProjectionName).Distinct())
+                    {
+                        if (!identities.TryGetValue(projectionName, out var listed))
+                        {
+                            identities[projectionName] = listed = new List<string>();
+                        }
+
+                        if (listed.Count >= IdentitiesListedPerProjection) continue;
+
+                        var rows = await eventDatabase.FetchParkedIdentitiesAsync(new ParkedIdentityQuery
+                        {
+                            ProjectionName = projectionName,
+                            Limit = IdentitiesListedPerProjection - listed.Count
+                        }, cancellationToken).ConfigureAwait(false);
+
+                        listed.AddRange(rows.Select(describe));
                     }
                 }
 
@@ -100,15 +131,31 @@ public static class ParkedIdentitiesHealthCheckExtensions
                         $"Paused at the parking cap: {string.Join(", ", atCap)}. Fix the projection, replay or discard what's parked, then restart the shard.");
                 }
 
-                return total == 0
-                    ? HealthCheckResult.Healthy("No projection identities are parked.")
-                    : HealthCheckResult.Degraded(
-                        $"{total} projection {(total == 1 ? "identity is" : "identities are")} parked: {string.Join(", ", parked)}");
+                if (total == 0) return HealthCheckResult.Healthy("No projection identities are parked.");
+
+                var listing = identities
+                    .Where(x => x.Value.Count > 0)
+                    .Select(x =>
+                    {
+                        var more = totals[x.Key] - x.Value.Count;
+                        return $"{x.Key}: {string.Join(", ", x.Value)}{(more > 0 ? $" and {more} more" : "")}";
+                    });
+
+                return HealthCheckResult.Degraded(
+                    $"{total} projection {(total == 1 ? "identity is" : "identities are")} parked: {string.Join(", ", parked)}. " +
+                    $"Parked identities: {string.Join("; ", listing)}",
+                    data: identities
+                        .Where(x => x.Value.Count > 0)
+                        .ToDictionary(x => x.Key, x => (object)x.Value.ToArray()));
             }
             catch (Exception e)
             {
                 return HealthCheckResult.Unhealthy($"Unhealthy: {e.Message}", e);
             }
         }
+
+        // "id (natural key)" when the stream has a natural key, otherwise just the id
+        private static string describe(ParkedIdentity parked)
+            => parked.NaturalKey == null ? parked.IdentityText : $"{parked.IdentityText} ({parked.NaturalKey})";
     }
 }
