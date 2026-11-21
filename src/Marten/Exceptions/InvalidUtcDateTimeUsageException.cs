@@ -8,9 +8,11 @@ internal class DateTimeUsageExceptionTransform: IExceptionTransform
 {
     public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
+        // Npgsql 11 can put " (resolved)" between the type and "is not supported", so match the two halves
         if (original is InvalidCastException ice &&
-            ice.Message.Contains(
-                "Reading as 'System.IO.TextReader' is not supported for fields having DataTypeName 'timestamp without time zone"))
+            ice.Message.Contains("Reading as 'System.IO.TextReader'", StringComparison.Ordinal) &&
+            ice.Message.Contains("is not supported for fields having DataTypeName 'timestamp without time zone",
+                StringComparison.Ordinal))
         {
             transformed = new InvalidDateTimeUsageException(
                 "DateTime types are no longer usable with Npgsql for this use case. If using a DateTime member for optimized querying, consider using a computed index instead. Or switch this member to DateTimeOffset or use NodaTime. See https://www.npgsql.org/efcore/release-notes/6.0.html",
