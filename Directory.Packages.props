@@ -921,15 +921,19 @@
     <!-- JasperFx 3.10.0 (from 3.9.0): marten#6003, parking the failing slice (jasperfx#1251 / #1252). Marten implements the
          store side (mt_parked_identities, the slice index tables, the identity sources, tag hydration in the daemon
          loader) and enrolls ParkedIdentityCompliance and MultiStreamParkedIdentityCompliance (wave 19). -->
-    <PackageVersion Include="JasperFx" Version="3.10.0" />
-    <PackageVersion Include="JasperFx.Events" Version="3.10.0" />
+    <!-- JasperFx 3.11.0 (from 3.10.0): jasperfx#1256, IEventStore.ResiliencePipeline; Marten returns its own daemon batch
+         pipeline (DocumentStore.DaemonBatchPipeline), not the session pipeline, so a batch that fails transiently is
+         built again under every error policy. jasperfx#1254, WithRecordMetadata(..., tagTypes), which the step-through
+         now uses instead of Marten's own copy. jasperfx#1255 and #1258 need no Marten change. -->
+    <PackageVersion Include="JasperFx" Version="3.11.0" />
+    <PackageVersion Include="JasperFx.Events" Version="3.11.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.10.0" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.11.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -948,11 +952,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.10.0">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.11.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.10.0" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.11.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
@@ -1266,7 +1270,9 @@
              alias. Marten's daemon does not page through EventTypeAllowList, so nothing changes here.
            * Weasel.Sqlite only: weasel#857 (Microsoft.Data.Sqlite 10.0.15), #861 (collations), #863 (JSON column
              reads). Marten does not reference Weasel.Sqlite. -->
-    <!-- Weasel 10.0.0-alpha.12:
+    <!-- Weasel 10.0.0-alpha.13: JasperFx 3.11.0. weasel#900 is SQL Server only. weasel#901 changes EventLoaderBase, which
+         Marten's EventLoader does not derive from, so nothing changes here.
+         Weasel 10.0.0-alpha.12:
            * weasel#891: a referenced table's shared partition keeps its bound wide when a value leaves it.
            * weasel#892: a removed value is dropped from the in-memory partition map too.
            * weasel#895: a self-referencing partitioned table's partition is emptied before it is detached, which
@@ -1289,9 +1295,9 @@
              partitioned mt_events can go back to unpartitioned (blue_green_side_effect_gate no longer works around it).
            * Sequential Guid ids through JasperFx's SequentialGuid, with IGuidGenerator overloads. Marten's closed-shape
              registrations pass SequentialGuid.PostgresOrder explicitly. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.12" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.12" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.12" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.13" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.13" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.13" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->

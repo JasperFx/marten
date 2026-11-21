@@ -950,12 +950,9 @@ public partial class DocumentStore
             return null;
         }
 
-        var @event = Options.EventGraph.BuildEvent(data).WithRecordMetadata(record, Options.EventGraph.StreamIdentity);
-
-        // marten#6003: WithRecordMetadata leaves the record's DCB tags behind, and a projection grouped by tag needs them
-        Marten.Events.Daemon.Internals.EventTagHydrator.AddRecordTags(Options.EventGraph, @event, record.Tags);
-
-        return @event;
+        // jasperfx#1254: the record's DCB tags go back onto the event too, so a projection grouped by tag groups it
+        return Options.EventGraph.BuildEvent(data)
+            .WithRecordMetadata(record, Options.EventGraph.StreamIdentity, Options.EventGraph.TagTypes);
     }
 
     private async Task<(object? state, long count)> replayAggregatorAsync(

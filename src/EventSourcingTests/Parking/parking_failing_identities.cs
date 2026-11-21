@@ -804,6 +804,51 @@ public class parking_failing_identities: OneOffConfigurationsContext
         timeline.FinalState.ShouldNotBeNull().GetProperty("Postings").GetInt32().ShouldBe(2);
     }
 
+    // jasperfx#1254: the record's tags go back onto the event through JasperFx's WithRecordMetadata, which reads a
+    // key as the tag type's CLR name or its table suffix, and refuses a value it can't read
+    private static EventRecord taggedRecord(long sequence, Guid account, string key, string value) => new(
+        Guid.NewGuid(), sequence, 1, Guid.NewGuid().ToString(), "account_posted",
+        System.Text.Json.JsonSerializer.SerializeToElement(new { Account = account }), null,
+        DateTimeOffset.UtcNow, null, new Dictionary<string, string> { [key] = value });
+
+    private void taggedAccountStore() => StoreOptions(opts =>
+    {
+        opts.Events.AddEventType<AccountPosted>();
+        opts.Events.RegisterTagType<AccountTag>("account");
+        opts.Projections.Add(new TaggedAccountProjection(), ProjectionLifecycle.Async);
+    });
+
+    [Fact]
+    public async Task stepping_from_event_records_reads_a_tag_keyed_by_the_tag_types_name()
+    {
+        taggedAccountStore();
+
+        var account = Guid.NewGuid();
+        var other = Guid.NewGuid();
+
+        var timeline = await ((IEventStore)theStore).RunMultiStreamProjectionForIdentityAsync("TaggedAccount", account,
+            [
+                taggedRecord(1, account, nameof(AccountTag), account.ToString()),
+                taggedRecord(2, other, nameof(AccountTag), other.ToString())
+            ], null, TestContext.Current.CancellationToken);
+
+        timeline.Steps.Select(x => x.Event.Sequence).ShouldBe([1L]);
+    }
+
+    [Fact]
+    public async Task stepping_from_an_event_record_whose_tag_value_will_not_parse_fails_naming_the_tag()
+    {
+        taggedAccountStore();
+
+        var account = Guid.NewGuid();
+
+        var ex = await Should.ThrowAsync<ArgumentException>(() =>
+            ((IEventStore)theStore).RunMultiStreamProjectionForIdentityAsync("TaggedAccount", account,
+                [taggedRecord(1, account, "account", "not-a-guid")], null, TestContext.Current.CancellationToken));
+
+        ex.Message.ShouldContain("'account' = 'not-a-guid'");
+    }
+
     // ---- parked_count in extended progression ----
 
     [Fact]

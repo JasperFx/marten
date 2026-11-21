@@ -660,6 +660,25 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     /// </remarks>
     internal static ResiliencePipeline DaemonLoaderPipeline => ResiliencePipeline.Empty;
 
+    /// <summary>
+    ///     jasperfx#1256. The pipeline the async daemon builds a projection batch through, so a batch whose build
+    ///     failed transiently (a dropped connection, a deadlock, a command timeout, an exhausted pool) is built again
+    ///     under every error policy before the shard pauses with <c>ShardFailure.IsTransient</c> true.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Deliberately not <c>Options.ResiliencePipeline</c>, for the reason <see cref="DaemonLoaderPipeline" />
+    ///         is empty: every command in the build already runs through that pipeline inside its session, and the
+    ///         two would nest (#5587). This one is its own, small policy
+    ///         (<see cref="ResilientPipelineBuilderExtensions.AddMartenDaemonBatchDefaults" />): three retries with a
+    ///         short exponential backoff, and it retries timeouts, which the session pipeline does not.
+    ///     </para>
+    /// </remarks>
+    internal static ResiliencePipeline DaemonBatchPipeline { get; } =
+        new ResiliencePipelineBuilder().AddMartenDaemonBatchDefaults().Build();
+
+    ResiliencePipeline IEventStore<IDocumentOperations, IQuerySession>.ResiliencePipeline => DaemonBatchPipeline;
+
     IEventLoader IEventStore<IDocumentOperations, IQuerySession>.BuildEventLoader(IEventDatabase database,
         ILogger loggerFactory, EventFilterable filtering, AsyncOptions shardOptions)
     {
