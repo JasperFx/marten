@@ -35,8 +35,6 @@ public class Bug_2198_querying_against_UTC_DateTime_with_Npgsql : BugIntegration
     [Fact]
     public async Task can_index_against_datetime_offset()
     {
-        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-
         StoreOptions(_ =>
         {
             _.Schema.For<Target>().Index(x => x.DateOffset);

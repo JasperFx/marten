@@ -43,8 +43,11 @@ internal class UtcDateTimeUsageExceptionTransform: IExceptionTransform
 {
     public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
-        if ((original is InvalidCastException or ArgumentException) &&
-            original.Message.Contains("Cannot write DateTime with Kind=UTC to PostgreSQL"))
+        // Npgsql 10 throws "Cannot write DateTime with Kind=UTC to PostgreSQL type 'timestamp without time zone'..."
+        // directly. Npgsql 11 throws an InvalidCastException ("Could not bind parameter ...") whose inner
+        // ArgumentException says "Cannot write DateTime with Kind=UTC. Consider using timestamptz instead..."
+        if (isUtcDateTimeWrite(original) ||
+            (original is InvalidCastException && original.InnerException is { } inner && isUtcDateTimeWrite(inner)))
         {
             transformed = new InvalidUtcDateTimeUsageException(original);
             return true;
@@ -53,4 +56,8 @@ internal class UtcDateTimeUsageExceptionTransform: IExceptionTransform
         transformed = null;
         return false;
     }
+
+    private static bool isUtcDateTimeWrite(Exception e) =>
+        e is InvalidCastException or ArgumentException &&
+        e.Message.Contains("Cannot write DateTime with Kind=UTC", StringComparison.Ordinal);
 }
