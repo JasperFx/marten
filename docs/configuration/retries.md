@@ -23,7 +23,7 @@ return builder
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L21-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L22-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The general idea is to have _some_ level of retry with an exponential backoff on typical transient errors encountered
@@ -73,7 +73,7 @@ return builder
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L91-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_write_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L135-L150' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_write_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `SaveChangesAsync()` is retried when, and only when:
@@ -141,6 +141,39 @@ So the retry has to happen somewhere that can do something different. In order o
 Do not reach for `ConfigurePolly` to put timeout retries back. It governs reads only, so it cannot restore the
 commit behavior anyway, and the table above is why it would not pay on reads either.
 :::
+
+## The async daemon builds a failed batch again
+
+The async daemon is the one place where Marten does retry a timeout. When building a projection batch fails for a
+transient reason (a dropped connection, a deadlock, a command timeout, an exhausted connection pool), the daemon
+throws that batch away and builds it again from the same events with new sessions, which is the "retry the whole unit
+of work" shape from the list above. It does that under every projection error policy (`Park`, `Pause` and `Skip`),
+through its own small pipeline:
+
+<!-- snippet: sample_default_daemon_batch_polly_setup -->
+<a id='snippet-sample_default_daemon_batch_polly_setup'></a>
+```cs
+// Marten's policy for building an async projection batch again after a transient failure:
+// a dropped connection, a deadlock, a command timeout or an exhausted connection pool
+return builder
+    .AddRetry(new RetryStrategyOptions
+    {
+        ShouldHandle = args => new ValueTask<bool>(
+            args.Outcome.Exception is { } e && TransientFailures.IsTransient(e) &&
+            !ProjectionExceptions.IsSystemicDatabaseFailure(e)),
+        MaxRetryAttempts = DaemonBatchRetryAttempts,
+        Delay = TimeSpan.FromMilliseconds(250),
+        BackoffType = DelayBackoffType.Exponential,
+        UseJitter = true
+    });
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L105-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_daemon_batch_polly_setup' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`DaemonBatchRetryAttempts` is 3. Each command inside the batch still goes through the read pipeline above, so this
+one is kept small on purpose. When it gives up, the shard pauses and its `ShardFailure.IsTransient` is true, so
+Wolverine or CritterWatch can restart it later. A failure that isn't transient goes straight to the error policy. This
+pipeline isn't configurable, and `ConfigurePolly` doesn't change it.
 
 ## Replacing or extending the policies
 

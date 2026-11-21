@@ -6,6 +6,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
 using Npgsql;
@@ -81,6 +82,49 @@ internal static class ResilientPipelineBuilderExtensions
 
         return false;
     }
+
+    /// <summary>
+    ///     jasperfx#1256: the retry policy the async daemon builds a projection batch through when building it
+    ///     failed transiently. See <c>DocumentStore.DaemonBatchPipeline</c>.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The daemon only hands this pipeline a failure JasperFx already judged transient and not systemic, and it
+    ///         builds the whole batch again on a retry. Unlike <see cref="AddMartenDefaults" />, timeouts are retried:
+    ///         a command timeout or an exhausted connection pool under a load spike is the case this is for, and a
+    ///         timed-out batch build otherwise pauses the shard.
+    ///     </para>
+    ///     <para>
+    ///         Every command in the batch build already runs through the session's own pipeline, which retries the
+    ///         non-timeout failures, so the count here stays small to keep the two from multiplying into a long stall
+    ///         (#5587).
+    ///     </para>
+    /// </remarks>
+    public static ResiliencePipelineBuilder AddMartenDaemonBatchDefaults(this ResiliencePipelineBuilder builder)
+    {
+        #region sample_default_daemon_batch_polly_setup
+
+        // Marten's policy for building an async projection batch again after a transient failure:
+        // a dropped connection, a deadlock, a command timeout or an exhausted connection pool
+        return builder
+            .AddRetry(new RetryStrategyOptions
+            {
+                ShouldHandle = args => new ValueTask<bool>(
+                    args.Outcome.Exception is { } e && TransientFailures.IsTransient(e) &&
+                    !ProjectionExceptions.IsSystemicDatabaseFailure(e)),
+                MaxRetryAttempts = DaemonBatchRetryAttempts,
+                Delay = TimeSpan.FromMilliseconds(250),
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true
+            });
+
+        #endregion
+    }
+
+    /// <summary>
+    ///     How many times <see cref="AddMartenDaemonBatchDefaults" /> builds a batch again before the shard pauses.
+    /// </summary>
+    internal const int DaemonBatchRetryAttempts = 3;
 
     /// <summary>
     ///     The retry policy for committing a unit of work. See <see cref="WriteRetryClassifier" /> for why this
