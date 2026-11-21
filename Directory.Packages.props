@@ -967,13 +967,15 @@
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
     <PackageVersion Include="Marten" Version="8.2.1" />
     <PackageVersion Include="MemoryPack" Version="1.21.4" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0-1.26328.17" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageVersion Include="Meziantou.Analyzer" Version="2.0.257" />
     <PackageVersion Include="Microsoft.AspNetCore.OData" Version="8.2.5" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <!-- Npgsql 11's net10.0 build depends on these two at 11.0.0, so they are 11.0.0 on both frameworks (NU1605
+         otherwise). The rest of Microsoft.Extensions.* stays on 10.0.0 for net10.0. -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.3.0" />
@@ -988,11 +990,12 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="NodaTime.Serialization.JsonNet" Version="3.1.0" />
     <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.1.2" />
-    <PackageVersion Include="Npgsql" Version="10.0.3" />
-    <PackageVersion Include="Npgsql.DependencyInjection" Version="10.0.3" />
-    <PackageVersion Include="Npgsql.Json.NET" Version="10.0.3" />
-    <PackageVersion Include="Npgsql.NetTopologySuite" Version="10.0.3" />
-    <PackageVersion Include="Npgsql.NodaTime" Version="10.0.3" />
+    <!-- #5884: Npgsql 11 on net10.0 and net11.0 (Weasel 10.0.0-rc.1 depends on it, weasel#812). Npgsql 11
+         removed multiplexing and merged Npgsql.DependencyInjection into Npgsql, so that package is gone. -->
+    <PackageVersion Include="Npgsql" Version="11.0.0" />
+    <PackageVersion Include="Npgsql.Json.NET" Version="11.0.0" />
+    <PackageVersion Include="Npgsql.NetTopologySuite" Version="11.0.0" />
+    <PackageVersion Include="Npgsql.NodaTime" Version="11.0.0" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="Nuke.Common" Version="10.1.0" />
     <!-- Patched floors for vulnerable packages Nuke.Common 10.1.0 brings into build/build.csproj
@@ -1275,7 +1278,10 @@
              alias. Marten's daemon does not page through EventTypeAllowList, so nothing changes here.
            * Weasel.Sqlite only: weasel#857 (Microsoft.Data.Sqlite 10.0.15), #861 (collations), #863 (JSON column
              reads). Marten does not reference Weasel.Sqlite. -->
-    <!-- Weasel 10.0.0-alpha.13: JasperFx 3.11.0. weasel#900 is SQL Server only. weasel#901 changes EventLoaderBase, which
+    <!-- Weasel 10.0.0-rc.1 (#6138): Npgsql 11.0.0 on both frameworks with multiplexing gone (weasel#812), JasperFx
+         3.12.1, and Weasel's own advisory lock connection in place of DistributedLock.Postgres (weasel#908), which
+         read the NpgsqlConnectionStringBuilder.Multiplexing that Npgsql 11 removed.
+         Weasel 10.0.0-alpha.13: JasperFx 3.11.0. weasel#900 is SQL Server only. weasel#901 changes EventLoaderBase, which
          Marten's EventLoader does not derive from, so nothing changes here.
          Weasel 10.0.0-alpha.12:
            * weasel#891: a referenced table's shared partition keeps its bound wide when a value leaves it.
@@ -1300,20 +1306,27 @@
              partitioned mt_events can go back to unpartitioned (blue_green_side_effect_gate no longer works around it).
            * Sequential Guid ids through JasperFx's SequentialGuid, with IGuidGenerator overloads. Marten's closed-shape
              registrations pass SequentialGuid.PostgresOrder explicitly. -->
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-alpha.13" />
-    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-alpha.13" />
-    <PackageVersion Include="Weasel.Storage" Version="10.0.0-alpha.13" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="10.0.0-rc.1" />
+    <PackageVersion Include="Weasel.Postgresql" Version="10.0.0-rc.1" />
+    <PackageVersion Include="Weasel.Storage" Version="10.0.0-rc.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <!-- The whole test suite is on xunit v3. VSTest stays the execution mode, so the
          Nuke targets and the GitHub workflows are unaffected. -->
     <PackageVersion Include="xunit.v3" Version="4.0.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
   </ItemGroup>
-  <!-- EF Core packages - requires net9.0+ due to Npgsql 9.x compatibility -->
+  <!-- EF Core stays split by framework: EF Core 11 and Npgsql's EF Core 11 provider need net11.0. On net10.0,
+       Npgsql.EntityFrameworkCore.PostgreSQL 10.x asks for Npgsql >= 10.0.0 with no upper bound, so it runs on
+       Npgsql 11 (weasel#812). Weasel.EntityFrameworkCore 10.0.0-rc.1 depends on EF Core Relational 11.0.0 on net11.0. -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
+    <PackageVersion Update="Microsoft.EntityFrameworkCore" Version="11.0.0" />
+    <PackageVersion Update="Microsoft.EntityFrameworkCore.Relational" Version="11.0.0" />
+    <PackageVersion Update="Npgsql.EntityFrameworkCore.PostgreSQL" Version="11.0.0" />
   </ItemGroup>
   <!-- Framework-specific package versions -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0' Or '$(TargetFramework)' == 'net11.0'">
@@ -1324,9 +1337,7 @@
        11.0.0 (GA; 11.0.0-rc.3.26522.148 before JasperFx 3.12.0), so every Microsoft.Extensions.* package this repository pins is raised to
        the same train on net11.0, or the restore fails with NU1605 (shape from weasel#790). -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
-    <PackageVersion Update="Microsoft.Extensions.DependencyInjection.Abstractions" Version="11.0.0" />
     <PackageVersion Update="Microsoft.Extensions.Logging" Version="11.0.0" />
-    <PackageVersion Update="Microsoft.Extensions.Logging.Abstractions" Version="11.0.0" />
     <PackageVersion Update="Microsoft.Extensions.Logging.Console" Version="11.0.0" />
     <PackageVersion Update="Microsoft.Extensions.Hosting" Version="11.0.0" />
     <PackageVersion Update="Microsoft.Extensions.Diagnostics.HealthChecks" Version="11.0.0" />

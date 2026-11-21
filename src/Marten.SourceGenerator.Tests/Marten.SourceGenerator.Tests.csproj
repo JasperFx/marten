@@ -17,6 +17,9 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+        <!-- Microsoft.CodeAnalysis.CSharp 5.9.0 asks for the 5.9.0-1.26328.17 prerelease of the analyzers; the
+             direct reference takes the 5.9.0 release instead, as the generator projects do (#6138). -->
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
         <PackageReference Include="xunit.v3" />
         <PackageReference Include="xunit.runner.visualstudio">
             <PrivateAssets>all</PrivateAssets>
