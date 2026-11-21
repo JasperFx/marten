@@ -194,3 +194,30 @@ This health check does **not** force the high-water mark forward — it is detec
 `autoRestart: true` may additionally ask the local coordinator to restart the high-water poll
 loop, which also never advances the mark.
 :::
+
+## Parked Identities HealthCheck <Badge type="tip" text="10.0" /> {#parked-identities-healthcheck}
+
+When an async projection [parks a failing identity](/events/projections/async-daemon#parking-a-failing-identity), the
+rest of the projection keeps going, so neither check above notices. `AddMartenParkedIdentitiesHealthCheck()` does:
+
+<!-- snippet: sample_registering_the_parked_identities_health_check -->
+<a id='snippet-sample_registering_the_parked_identities_health_check'></a>
+```cs
+services.AddHealthChecks().AddMartenParkedIdentitiesHealthCheck();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/parked_identities_health_check.cs#L84-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_the_parked_identities_health_check' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Map it with `app.MapHealthChecks("/health")` like the others. It reports:
+
+* **Degraded** while any identity is parked in any of the store's databases, naming each projection and tenant with its
+  count. A parked document is stuck at its last good state until someone replays or discards it, but everything else is
+  still moving.
+* **Unhealthy** while a shard is paused at the parking cap (`ShardFailureCategory.ParkedLimitReached`), which means the
+  whole projection has stopped. Fix the projection, replay or discard what's parked, then restart the shard.
+
+The check reads the database, so it gives the same answer on every node, whichever one runs the shard. The parking cap
+is read from the extended progression columns, which are on by default in Marten 10.
+
+For a store registered with `AddMartenStore<TStore>()`, use `AddMartenParkedIdentitiesHealthCheck<TStore>()`. That check
+is named `ParkedIdentitiesHealthCheck:<store type>`.

@@ -240,6 +240,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                     { text: 'Live Aggregations', link: '/events/projections/live-aggregates' },
                     { text: 'Single Stream Projections and Snapshots', link: '/events/projections/single-stream-projections' },
                     { text: 'Multi Stream Projections', link: '/events/projections/multi-stream-projections' },
+                    { text: 'Grouping by Tags', link: '/events/projections/grouping-by-tags' },
                     { text: 'Reading Aggregates', link: '/events/projections/read-aggregates' },
                     { text: 'Using Event Metadata', link: '/events/projections/using-metadata' },
                     { text: 'Side Effects', link: '/events/projections/side-effects'},

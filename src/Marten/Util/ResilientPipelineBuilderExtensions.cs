@@ -85,7 +85,7 @@ internal static class ResilientPipelineBuilderExtensions
 
     /// <summary>
     ///     jasperfx#1256: the retry policy the async daemon builds a projection batch through when building it
-    ///     failed transiently. See <c>DocumentStore.DaemonBatchPipeline</c>.
+    ///     failed transiently, unless it is replaced with <see cref="StoreOptions.ConfigureDaemonPolly" />.
     /// </summary>
     /// <remarks>
     ///     <para>

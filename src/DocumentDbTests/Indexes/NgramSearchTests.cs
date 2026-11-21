@@ -13,6 +13,9 @@ namespace DocumentDbTests.Indexes;
 
 public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsContext
 {
+    // Each test that maps User differently uses a schema of its own. The gate runs these tests side by side, and two
+    // tests migrating one mt_doc_ngramsearchtests_user table to different indexes at once broke each other.
+    // test_ngram_search_returns_data is the one that stays on the default (public) schema.
 
     public sealed class Address
     {
@@ -125,6 +128,7 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
+            _.DatabaseSchemaName = "ngram_test_nested_prop";
             // This creates
             _.Schema.For<User>().NgramIndex(x => x.Address.Line1);
         });
@@ -164,7 +168,7 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
          var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-            _.DatabaseSchemaName = "ngram_test";
+            _.DatabaseSchemaName = "ngram_test_unaccent";
             _.Schema.For<User>().NgramIndex(x => x.UserName);
             _.Advanced.UseNGramSearchWithUnaccent = true;
         });
@@ -258,7 +262,7 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-            _.DatabaseSchemaName = "ngram_test";
+            _.DatabaseSchemaName = "ngram_test_doc_target";
 
             // This creates an ngram index for efficient sub string based matching
             _.Schema.For<User>().NgramIndex(x => x.UserName.ToLower());
@@ -283,7 +287,7 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-            _.DatabaseSchemaName = "ngram_test";
+            _.DatabaseSchemaName = "ngram_test_computed_prop";
 
             // This creates an ngram index for efficient sub string based matching
             _.Schema.For<User>().NgramIndex(x => x.UserName.ToLower());
@@ -308,7 +312,7 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-            _.DatabaseSchemaName = "ngram_test";
+            _.DatabaseSchemaName = "ngram_test_non_string_prop";
 
             // This creates an ngram index for efficient sub string based matching
             _.Schema.For<User>().NgramIndex(x => x.UserName.ToLower());

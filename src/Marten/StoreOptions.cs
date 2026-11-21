@@ -292,6 +292,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         // Default Polly setup
         ResiliencePipeline = new ResiliencePipelineBuilder().AddMartenDefaults().Build();
         WriteResiliencePipeline = new ResiliencePipelineBuilder().AddMartenWriteDefaults().Build();
+        DaemonResiliencePipeline = new ResiliencePipelineBuilder().AddMartenDaemonBatchDefaults().Build();
 
         // Add logging into our NpgsqlDataSource
         NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(connectionString =>
@@ -345,6 +346,34 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         configure(builder);
 
         WriteResiliencePipeline = builder.Build();
+    }
+
+    /// <summary>
+    ///     Replace the pipeline the async daemon builds each projection batch through (jasperfx#1256).
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The daemon only hands this pipeline a failure JasperFx judged transient, like a connection pool
+    ///         timeout, a command timeout, a deadlock or a dropped connection, and never one from your projection's
+    ///         own code. By default the batch is built again up to 3 times with a short exponential backoff (250ms,
+    ///         doubling, with jitter), and then the shard pauses with <c>ShardFailure.IsTransient</c> true. An empty
+    ///         pipeline, <c>ConfigureDaemonPolly(_ =&gt; { })</c>, pauses the shard on the first transient failure.
+    ///     </para>
+    ///     <para>
+    ///         Building a batch again is safe in a way that replaying a session command is not: nothing has been
+    ///         written when the build fails, and the batch is sliced again from the same events. This pipeline does
+    ///         not replace <see cref="ConfigurePolly" />, which still covers each command the build runs. A retry
+    ///         on both multiplies.
+    ///     </para>
+    /// </remarks>
+    public void ConfigureDaemonPolly(Action<ResiliencePipelineBuilder> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+
+        var builder = new ResiliencePipelineBuilder();
+        configure(builder);
+
+        DaemonResiliencePipeline = builder.Build();
     }
 
     /// <summary>
@@ -424,6 +453,23 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///     <see cref="WriteRetryClassifier" /> for the rationale and the SQLSTATE allowlist.
     /// </summary>
     internal ResiliencePipeline WriteResiliencePipeline { get; set; }
+
+    /// <summary>
+    ///     jasperfx#1256. The pipeline the async daemon builds a projection batch through, so a batch whose build
+    ///     failed transiently (a dropped connection, a deadlock, a command timeout, an exhausted pool) is built again
+    ///     under every error policy before the shard pauses with <c>ShardFailure.IsTransient</c> true. Set with
+    ///     <see cref="ConfigureDaemonPolly" />.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Deliberately not <see cref="ResiliencePipeline" />: every command in the build already runs through
+    ///         that pipeline inside its session, and the two would nest (#5587, and see
+    ///         <c>DocumentStore.DaemonLoaderPipeline</c>). The default is its own, small policy
+    ///         (<see cref="ResilientPipelineBuilderExtensions.AddMartenDaemonBatchDefaults" />): three retries with a
+    ///         short exponential backoff, and it retries timeouts, which the session pipeline does not.
+    ///     </para>
+    /// </remarks>
+    internal ResiliencePipeline DaemonResiliencePipeline { get; set; }
 
     /// <summary>
     ///     How long <c>ApplyAllDatabaseChangesOnStartup()</c> waits for the advisory lock named by
