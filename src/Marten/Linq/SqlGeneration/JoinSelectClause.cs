@@ -84,14 +84,22 @@ internal class JoinSelectClause<T>: ISelectClause, IScalarSelectClause where T :
 
     public ISelector BuildSelector(IStorageSession session)
     {
-        return new JoinDataSelector(session.Serializer);
+        return selectorFor(session.Serializer);
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement) where TResult : notnull
     {
-        var selector = new JoinDataSelector(session.Serializer);
+        var selector = selectorFor(session.Serializer);
         return LinqQueryParser.BuildHandler<T, TResult>(selector, topStatement);
+    }
+
+    // #6137: a (TOuter, TInner) tuple is built from its two sides rather than deserialized as a tuple
+    private static ISelector<T> selectorFor(IStorageSerializer serializer)
+    {
+        return TupleJoinDataSelector.Applies(typeof(T))
+            ? TupleJoinDataSelector.For<T>(serializer)
+            : new JoinDataSelector(serializer);
     }
 
     // The "data" column is null only for a bare scalar projection whose value is null

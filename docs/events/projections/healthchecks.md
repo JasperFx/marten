@@ -210,10 +210,10 @@ services.AddHealthChecks().AddMartenParkedIdentitiesHealthCheck();
 
 Map it with `app.MapHealthChecks("/health")` like the others. It reports:
 
-* **Degraded** while any identity is parked in any of the store's databases, naming each projection and tenant with its
+- **Degraded** while any identity is parked in any of the store's databases, naming each projection and tenant with its
   count, then the first 10 parked identities of each projection. A parked document is stuck at its last good state until
   someone replays or discards it, but everything else is still moving.
-* **Unhealthy** while a shard is paused at the parking cap (`ShardFailureCategory.ParkedLimitReached`), which means the
+- **Unhealthy** while a shard is paused at the parking cap (`ShardFailureCategory.ParkedLimitReached`), which means the
   whole projection has stopped. Fix the projection, replay or discard what's parked, then restart the shard.
 
 Each listed identity is the stream id, followed by the aggregate's [natural key](/events/natural-keys) in parentheses
