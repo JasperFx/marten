@@ -2,7 +2,6 @@
 // DocumentDbTests files declare ICompiledQuery types whose runtime dispatch
 // needs the registry populated. See #4405 for the implicit-opt-in contract.
 //
-// Note: this is a separate file from AssemblyInfo.cs because the csproj's
-// <Compile Remove="AssemblyInfo.cs" /> excludes that file from compilation,
-// for reasons unrelated to this change.
+// Note: this is a separate file from AssemblyInfo.cs because the build's Init
+// target (SetupTestParallelization in build/build.cs) rewrites AssemblyInfo.cs.
 [assembly: JasperFx.JasperFxAssembly]

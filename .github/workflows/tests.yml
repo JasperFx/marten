@@ -58,9 +58,11 @@ env:
   # DISABLE_TEST_PARALLELIZATION was removed here (#5529): NOTHING in the repository read it. It appeared
   # only in comments, so setting it did nothing and reading it as a control cost real debugging time --
   # it was used to "rule out" in-process parallelism as the cause of five CoreTests failures, which it
-  # could not, because parallelism was already off for an unrelated reason. Parallelisation is actually
-  # disabled by [assembly: CollectionBehavior(DisableTestParallelization = true)] in
-  # src/CoreTests/AssemblyInfo.cs and src/Marten.Testing/AssemblyInfo.cs. Change it there.
+  # could not. Parallelisation is set by [assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]
+  # in each suite's AssemblyInfo.cs. Change it there. Until #6139, six csproj files (CoreTests, DocumentDbTests,
+  # EventSourcingTests, ValueTypeTests, Marten.Testing, Marten.AspNetCore.Testing) had
+  # <Compile Remove="AssemblyInfo.cs" />, so the attribute was never compiled into those suites and xUnit ran
+  # their test collections side by side.
   NUKE_TELEMETRY_OPTOUT: true
 
 # actions: read lets a test job download the previous master run's duration ledger (below).

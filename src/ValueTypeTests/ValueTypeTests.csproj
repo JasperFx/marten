@@ -38,7 +38,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="AssemblyInfo.cs" />
       <Compile Remove="Internal\Generated\DocumentStorage\TeamProvider700129768.cs" />
       <Compile Remove="Internal\Generated\DocumentStorage\Team3Provider396017422.cs" />
       <Compile Remove="Internal\Generated\DocumentStorage\Team2Provider1170066519.cs" />

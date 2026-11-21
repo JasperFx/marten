@@ -135,7 +135,6 @@
         <Compile Include="..\Marten.Testing\SchemaMigrationExtensions.cs">
             <Link>SchemaMigrationExtensions.cs</Link>
         </Compile>
-        <Compile Remove="AssemblyInfo.cs" />
     </ItemGroup>
 
     <PropertyGroup>

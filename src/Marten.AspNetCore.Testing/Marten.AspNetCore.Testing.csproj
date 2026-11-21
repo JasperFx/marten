@@ -23,10 +23,6 @@
         <ProjectReference Include="..\IssueService\IssueService.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Remove="AssemblyInfo.cs" />
-    </ItemGroup>
-
     <Import Project="../Tests.props" />
 
 </Project>
