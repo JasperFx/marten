@@ -30,7 +30,7 @@ by the next schema migration, and the data in the old ones is not copied over, s
 Separately, `Evolve()` methods may now use bare `case Foo:` labels, and the source generator bundled in the Marten
 package picks them up.
 
-### Async projections park a failing identity instead of skipping the event {#async-projections-park-a-failing-identity} <Badge type="warning" text="behavior change" />
+### Async projections park a failing identity instead of skipping the event <Badge type="warning" text="behavior change" /> {#async-projections-park-a-failing-identity}
 
 Marten 10 takes JasperFx 3.10's parking ([details](https://shared-libs.jasperfx.net/events/parked-identities)) and
 makes it the default for async projections. `opts.Projections.Errors.ApplyErrors` and `SerializationErrors` are now
@@ -706,7 +706,7 @@ when skipping is enabled, and metadata is only written and selected when its fla
 Deliberately still conditional, because they are expensive or change the table's shape: tenant partitioning of
 `mt_events`, table fillfactor, and the DCB `hstore` tags column and its GIN index.
 
-### New `mt_event_range_marks` table {#new-mt-event-range-marks-table} <Badge type="warning" text="schema change" />
+### New `mt_event_range_marks` table <Badge type="warning" text="schema change" /> {#new-mt-event-range-marks-table}
 
 The event store schema has a new table, `mt_event_range_marks`. It holds where a stored-event rewrite stops and how
 far it got, so a rewrite run as a Wolverine job can resume after a crash without rewriting an event twice. It's always
@@ -731,7 +731,7 @@ the migration before deploying, because tagged appends fail without the sequence
 - Finish a rolling upgrade before relying on this: a node still on Marten 9 counts up from the current value and doesn't
   delete rows.
 
-### `mt_high_water_skips` has a tenant column, and late events are recovered {#late-events-are-recovered} <Badge type="warning" text="schema change" />
+### `mt_high_water_skips` has a tenant column, and late events are recovered <Badge type="warning" text="schema change" /> {#late-events-are-recovered}
 
 `mt_high_water_skips` gets new columns: `tenant_id`, which is now part of its primary key, `reason`, `gaps` and
 `closed_at`. There is a new table, `mt_high_water_late_events`. The `mt_mark_progression_with_skip` function changes
@@ -741,7 +741,7 @@ The daemon now checks skipped sequence ranges for events that commit late, recor
 in async single-stream projections ([details](/events/projections/async-daemon#events-that-commit-late)).
 `opts.Events.EnableAdvancedAsyncTracking = false` turns that off. The schema change stays either way.
 
-### `MetadataConfig.EnableAll()` also enables the user name {#metadataconfig-enableall-also-enables-the-user-name} <Badge type="warning" text="behavior change" />
+### `MetadataConfig.EnableAll()` also enables the user name <Badge type="warning" text="behavior change" /> {#metadataconfig-enableall-also-enables-the-user-name}
 
 `opts.Events.MetadataConfig.EnableAll()` now turns on `UserNameEnabled` along with the causation id, correlation id
 and headers ([#6012](https://github.com/JasperFx/marten/pull/6012)). In 9.x it left the user name off, despite
@@ -855,7 +855,7 @@ To keep the Marten 9 behavior:
 opts.Events.DcbConflictScope = DcbConflictScope.TagValue;
 ```
 
-### Side effects run on inline projections {#side-effects-run-on-inline-projections} <Badge type="danger" text="behavior change" />
+### Side effects run on inline projections <Badge type="danger" text="behavior change" /> {#side-effects-run-on-inline-projections}
 
 ::: danger Inline projections now run their side effects
 **`opts.Events.EnableSideEffectsOnInlineProjections` now defaults to `true`. If any of your aggregation projections
@@ -873,7 +873,7 @@ registered with `ProjectionLifecycle.Inline`. Projections running `Async` are un
 opts.Events.EnableSideEffectsOnInlineProjections = false;
 ```
 
-### Archived-stream partitioning is on by default {#archived-stream-partitioning-is-on-by-default} <Badge type="warning" text="schema change" />
+### Archived-stream partitioning is on by default <Badge type="warning" text="schema change" /> {#archived-stream-partitioning-is-on-by-default}
 
 `opts.Events.UseArchivedStreamPartitioning` and `opts.Events.EnableStrictStreamIdentityEnforcement` now default to
 `true` ([Hot/Cold Storage Partitioning](/events/archiving#hot-cold-storage-partitioning)). `mt_events`, `mt_streams` and
@@ -909,7 +909,7 @@ Decide this before the first schema migration under Marten 10 if you can. Taking
 partitioned back to unpartitioned works, but Weasel has to rebuild `mt_events` and `mt_streams` to do it, copying
 every row ([weasel#871](https://github.com/JasperFx/weasel/issues/871)).
 
-### Document metadata is on by default {#document-metadata-is-on-by-default} <Badge type="warning" text="schema change" />
+### Document metadata is on by default <Badge type="warning" text="schema change" /> {#document-metadata-is-on-by-default}
 
 Every document type now has the `correlation_id`, `causation_id`, `headers` and `last_modified_by` metadata columns, and
 every write stores the session's `CorrelationId`, `CausationId`, headers and `LastModifiedBy` in them
@@ -936,7 +936,7 @@ opts.Policies.ForAllDocuments(x =>
 `RestoreV9Defaults()` decides this when each document mapping is built, so a policy, attribute or
 `Schema.For<T>().Metadata(...)` that turns one of the columns back on still does, wherever it is in your configuration.
 
-### Computed indexes on conjoined documents start with `tenant_id` {#conjoined-indexes-start-with-tenant-id} <Badge type="warning" text="schema change" />
+### Computed indexes on conjoined documents start with `tenant_id` <Badge type="warning" text="schema change" /> {#conjoined-indexes-start-with-tenant-id}
 
 `StartIndexesByTenantId` now defaults to `true` for conjoined (multi-tenanted) documents
 ([details](/documents/multi-tenancy#make-all-documents-start-their-index-by-tenant-id)). Every computed index on such a

@@ -248,7 +248,7 @@ These methods are stricter about the tenant than the `Advanced` methods:
   error, because it would otherwise advance every tenant's events.
 * With partitioning, a null tenant selects every tenant's mark. `expectedCurrentMark` then needs a named tenant.
 
-### Events that commit late {#events-that-commit-late} <Badge type="tip" text="10.0" />
+### Events that commit late <Badge type="tip" text="10.0" /> {#events-that-commit-late}
 
 Every skip is recorded in `mt_high_water_skips`, with the reason for it and the sequence numbers inside the
 skipped range that had no committed event yet. For an hour after a skip, the daemon checks those sequence
@@ -617,7 +617,7 @@ using var host = await Host.CreateDefaultBuilder()
 `Skip` writes a `DeadLetterEvent` for the event and moves on. `Pause` stops that one projection. During a rebuild, any
 error that isn't skipped stops the rebuild. `Park` is new in Marten 10 and is described in the next section.
 
-### Parking a failing identity {#parking-a-failing-identity} <Badge type="tip" text="10.0" />
+### Parking a failing identity <Badge type="tip" text="10.0" /> {#parking-a-failing-identity}
 
 By default in Marten 10, when an async aggregation projection throws on an event, the daemon parks that one identity
 (one aggregate document) instead of skipping the event or pausing the whole projection. The parked identity's document
@@ -634,10 +634,11 @@ await daemon.ReplayParkedIdentityAsync("Trip", tenantId: null, tripId, token);
 await daemon.DiscardParkedIdentityAsync("Trip", tenantId: null, tripId, token);
 ```
 
-The same thing works from the command line with `dotnet run -- projections parked`.
+The same thing works from the command line with `dotnet run -- projections parked`. To see parked identities in your
+health checks, see [the parked identities health check](/events/projections/healthchecks#parked-identities-healthcheck).
 
 A single-stream projection can always park. A multi-stream projection parks only when Marten can find one identity's
-events again: group it with `IdentityFromStream<TEvent>()` or `IdentityFromTag<TTag>()`, or turn on its slice index with
+events again: group it with `IdentityFromStream<TEvent>()` or [`IdentityFromTag<TTag>()`](/events/projections/grouping-by-tags), or turn on its slice index with
 `Options.UseSliceIndex()`, which keeps one `mt_slice_index_*` table per projection version. Anything else, including
 event projections, flat table projections and composite projections, pauses instead. When the daemon starts, Marten logs
 how each async projection finds one identity's events and whether it parks.
@@ -1297,7 +1298,7 @@ var header = position.ToString();
 
 var back = EventStorePosition.Parse(header);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/read_your_writes.cs#L310-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_store_position_as_header' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/read_your_writes.cs#L313-L322' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_store_position_as_header' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Migrating a Projection from Inline to Async <Badge type="tip" text="7.35" />

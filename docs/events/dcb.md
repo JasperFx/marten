@@ -202,6 +202,11 @@ opts.Events.TagEventsBy(data => data switch
 Return an empty sequence to leave an event untagged. The rule receives the event body: the stream is
 assigned after the event is built, so it is not available here.
 
+## Projections Grouped by Tags
+
+A multi-stream projection can group its events by a tag type with `IdentityFromTag<TTag>()`. See
+[Grouping Multi-Stream Projections by Tags](/events/projections/grouping-by-tags).
+
 ## Querying Events by Tags
 
 Use `EventTagQuery` to build a query, then execute it with `QueryByTagsAsync`:
@@ -468,7 +473,7 @@ var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(quer
 // ...so a reminder for the same loan appended in the meantime by another session
 // no longer fails this save with a DcbConcurrencyException
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_conflict_scope_by_event_type.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_conflict_scope' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_conflict_scope_by_event_type.cs#L88-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_conflict_scope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `DcbConflictScope` has three settings:

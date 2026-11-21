@@ -18,6 +18,7 @@ For simple event to aggregate groupings, you can use the:
 - `Identity<TEvent>(Func<TEvent, TId> func)` method to assign an incoming event to a single aggregate by the aggregate id. Do note that this method works
   with common base classes or common interfaces so you don't have to specify this for every single event type
 - `Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)` method to assign an incoming event to multiple aggregates
+- `IdentityFromTag<TTag>()` to group events by a stored [DCB tag](/events/dcb). We recommend it over `Identity()` delegates where it fits, because Marten can then rebuild, park and replay one identity at a time. See [Grouping by Tags](/events/projections/grouping-by-tags)
 - For grouping rules that fall outside the simpler `Identity()` or `Identities()` methods, supply a custom `IAggregateGrouper` that will sort events into aggregate groups of events by aggregate id
 - For advanced usages, supply a custom `IEventSlicer` that let's you write your own mechanism to divide an incoming segment of events to aggregated view documents
 
