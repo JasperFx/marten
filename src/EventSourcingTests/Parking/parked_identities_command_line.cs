@@ -31,15 +31,23 @@ public class parked_identities_command_line: OneOffConfigurationsContext
 
     private readonly List<Guid> _poisoned = new();
 
+    // marten#6132: also fold the ledgers into NaturalKeyLedger, whose aggregate has a natural key
+    private bool _withNaturalKeys;
+
     public parked_identities_command_line()
     {
         StoreOptions(configure);
     }
 
-    private static void configure(StoreOptions opts)
+    private void configure(StoreOptions opts)
     {
         opts.Projections.Errors.ApplyErrors = ProjectionErrorAction.Park;
         opts.Projections.Snapshot<GuidLedger>(SnapshotLifecycle.Async);
+
+        if (_withNaturalKeys)
+        {
+            opts.Projections.Snapshot<NaturalKeyLedger>(SnapshotLifecycle.Async);
+        }
     }
 
     public override async ValueTask DisposeAsync()
@@ -152,6 +160,29 @@ public class parked_identities_command_line: OneOffConfigurationsContext
         (exitCode, output) = await runAsync("projections", "parked", "--projection", nameof(GuidLedger));
         exitCode.ShouldBe(0);
         output.ShouldContain(stream.ToString("D"));
+    }
+
+    [Fact]
+    public async Task listing_shows_the_natural_key_when_the_aggregate_has_one()
+    {
+        _withNaturalKeys = true;
+        StoreOptions(configure);
+
+        // The same ledger parks in GuidLedger, which has no natural key, and in NaturalKeyLedger, which has one
+        var (stream, daemon) = await aParkedLedgerAsync();
+        await daemon.StopAllAsync();
+        daemon.Dispose();
+
+        var (exitCode, output) = await runAsync("projections", "parked");
+        exitCode.ShouldBe(0, output);
+        output.ShouldContain("Natural Key");
+
+        var lines = output.Split('\n').Where(x => x.Contains(stream.ToString("D"))).ToList();
+        lines.Count.ShouldBe(2, output);
+
+        // NaturalKeyLedger's row shows the key the ledger was opened with, GuidLedger's row leaves it blank
+        lines.Single(x => x.Contains(nameof(NaturalKeyLedger))).ShouldContain("A-1");
+        lines.Single(x => x.Contains($" {nameof(GuidLedger)} ")).ShouldNotContain("A-1");
     }
 
     [Fact]
