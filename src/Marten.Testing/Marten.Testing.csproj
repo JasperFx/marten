@@ -47,10 +47,6 @@
         <Folder Include="Properties" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Remove="AssemblyInfo.cs" />
-    </ItemGroup>
-
     <PropertyGroup>
         <NoWarn>xUnit1013</NoWarn>
     </PropertyGroup>

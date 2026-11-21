@@ -3,6 +3,8 @@
   "language": "en",
   "words": [
     "jasperfx",
+    "metadataconfig",
+    "enableall",
     "HMAC",
     "batchable",
     "TimescaleDB",

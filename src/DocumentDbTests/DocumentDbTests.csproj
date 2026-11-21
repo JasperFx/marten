@@ -160,7 +160,6 @@
         <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyIssueWithUsersAndParamCompiledQuerySource813614947.cs" />
         <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyFunnyTargetQueryCompiledQuerySource1643467126.cs" />
         <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyCompiledNestedQueryCompiledQuerySource970855369.cs" />
-        <Compile Remove="AssemblyInfo.cs" />
         <Compile Remove="Internal\Generated\DocumentStorage\RevisionedDocProvider1212098993.cs" />
     </ItemGroup>
 
