@@ -637,6 +637,29 @@ await daemon.DiscardParkedIdentityAsync("Trip", tenantId: null, tripId, token);
 The same thing works from the command line with `dotnet run -- projections parked`. To see parked identities in your
 health checks, see [the parked identities health check](/events/projections/healthchecks#parked-identities-healthcheck).
 
+If the projection's aggregate has a [natural key](/events/natural-keys), the parked list shows it next to the stream id,
+so you can find the aggregate by the key people actually know it by. `projections parked` has a "Natural Key" column,
+and `ParkedIdentity.NaturalKey` is filled in when you read the list yourself:
+
+<!-- snippet: sample_reading_the_natural_key_of_a_parked_identity -->
+<a id='snippet-sample_reading_the_natural_key_of_a_parked_identity'></a>
+```cs
+var database = (IEventDatabase)theStore.Storage.Database;
+var withKeys = await database.FetchParkedIdentitiesAsync(
+    new ParkedIdentityQuery { ProjectionName = nameof(NaturalKeyLedger) },
+    TestContext.Current.CancellationToken);
+
+// The natural key the ledger was opened with, or null for a stream that never got one
+withKeys.Single(x => x.IdentityText == keyed.ToString("D")).NaturalKey.ShouldBe("L-100");
+withKeys.Single(x => x.IdentityText == neverKeyed.ToString("D")).NaturalKey.ShouldBeNull();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Parking/natural_keys_on_the_parked_identity_list.cs#L123-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reading_the_natural_key_of_a_parked_identity' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The key is read from the aggregate's natural key table when the list is read; it isn't stored on the parked row. It's
+blank (or null) when the aggregate has no natural key or the stream never got one. A replay or a discard still takes the
+stream id.
+
 A single-stream projection can always park. A multi-stream projection parks only when Marten can find one identity's
 events again: group it with `IdentityFromStream<TEvent>()` or [`IdentityFromTag<TTag>()`](/events/projections/grouping-by-tags), or turn on its slice index with
 `Options.UseSliceIndex()`, which keeps one `mt_slice_index_*` table per projection version. Anything else, including

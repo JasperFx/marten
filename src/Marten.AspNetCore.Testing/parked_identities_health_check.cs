@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events;
@@ -27,6 +28,30 @@ public class ParkedHealthWeighIn
     public void Apply(ParkedHealthWeighed e)
     {
         if (e.Poison) throw new InvalidOperationException("Can't weigh this one");
+        Count++;
+    }
+}
+
+public record ParkedHealthOpened(string Code);
+
+public record ParkedHealthRead(bool Poison);
+
+/// <summary>marten#6132: the same weigh-ins, on an aggregate with a natural key.</summary>
+public class ParkedHealthScale
+{
+    public Guid Id { get; set; }
+
+    [NaturalKey]
+    public string Code { get; set; } = null!;
+
+    public int Count { get; set; }
+
+    [NaturalKeySource]
+    public void Apply(ParkedHealthOpened e) => Code = e.Code;
+
+    public void Apply(ParkedHealthRead e)
+    {
+        if (e.Poison) throw new InvalidOperationException("Can't read this one");
         Count++;
     }
 }
@@ -114,6 +139,79 @@ public class parked_identities_health_check
                 .ShouldBe(ParkedReplayOutcome.Discarded);
 
             (await probeAsync(host, "ParkedIdentitiesHealthCheck")).Status.ShouldBe(HealthStatus.Healthy);
+        }
+        finally
+        {
+            await daemon.StopAllAsync();
+        }
+    }
+
+    [Fact]
+    public async Task the_detail_lists_the_first_parked_identities_with_their_natural_keys()
+    {
+        using var host = buildHost(services =>
+        {
+            services.AddMarten(opts =>
+            {
+                configure(opts, "parked_health_keys");
+                opts.Projections.Snapshot<ParkedHealthScale>(SnapshotLifecycle.Async);
+            });
+
+            services.AddHealthChecks().AddMartenParkedIdentitiesHealthCheck();
+        });
+
+        var store = await resetAsync(host.Services.GetRequiredService<IDocumentStore>());
+
+        // Eleven scales with a natural key that fail, one past the ten the check lists by name
+        var scales = Enumerable.Range(1, 11).Select(_ => Guid.NewGuid()).ToArray();
+        await using (var session = store.LightweightSession())
+        {
+            for (var i = 0; i < scales.Length; i++)
+            {
+                session.Events.StartStream<ParkedHealthScale>(scales[i], new ParkedHealthOpened($"SCALE-{i + 1}"),
+                    new ParkedHealthRead(true));
+            }
+
+            await session.SaveChangesAsync(Token);
+        }
+
+        // And one weigh-in without a natural key
+        var weighIn = Guid.NewGuid();
+        await weighAsync(store, weighIn, true);
+
+        using var daemon = await store.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        try
+        {
+            await store.WaitForNonStaleProjectionDataAsync(30.Seconds());
+
+            var degraded = await probeAsync(host, "ParkedIdentitiesHealthCheck");
+            degraded.Status.ShouldBe(HealthStatus.Degraded);
+
+            // The counts are the same as ever
+            var description = degraded.Description.ShouldNotBeNull();
+            description.ShouldContain("12 projection identities are parked");
+            description.ShouldContain("ParkedHealthScale (tenant *DEFAULT*): 11");
+            description.ShouldContain("ParkedHealthWeighIn (tenant *DEFAULT*): 1");
+
+            #region sample_parked_identities_in_the_health_check_data
+
+            // The first ten parked identities of each projection, as "id (natural key)" when there's a key
+            var listed = (string[])degraded.Data["ParkedHealthScale"];
+
+            #endregion
+
+            listed.Length.ShouldBe(10);
+            listed.ShouldAllBe(x => scales.Any(s => x.StartsWith(s.ToString("D") + " (SCALE-")));
+
+            var first = listed[0];
+            description.ShouldContain($"ParkedHealthScale: {first}, ");
+            description.ShouldContain(" and 1 more");
+
+            degraded.Data["ParkedHealthWeighIn"].ShouldBeOfType<string[]>().ShouldHaveSingleItem()
+                .ShouldBe(weighIn.ToString("D"));
+            description.ShouldContain($"ParkedHealthWeighIn: {weighIn:D}");
         }
         finally
         {
