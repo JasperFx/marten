@@ -23,8 +23,8 @@ public class pausing_and_resuming_the_daemon: HostedStoreContext
                 opts.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async);
 
                 // weasel#869: Weasel cannot read back the indexes of a partitioned table in a schema whose name
-                // contains "using" ("pausing_and_resuming_the_daemon" does). Archived-stream partitioning is on
-                // by default since 10.0, so keep mt_events unpartitioned here until that is fixed.
+                // contains "using" ("pausing_and_resuming_the_daemon" does), so keep mt_events unpartitioned
+                // here even if the default changes, until that is fixed.
                 opts.Events.UseArchivedStreamPartitioning = false;
             },
             DaemonMode.Solo);

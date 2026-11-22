@@ -13,7 +13,7 @@ namespace Marten.Events.Schema;
 /// <summary>
 ///     #5812. Marten 9 and earlier created <c>mt_events_sequence</c> as <c>OWNED BY mt_events.seq_id</c>. When the
 ///     shape of <c>mt_events</c> changes in a way PostgreSQL cannot alter in place, most notably turning on
-///     <c>UseArchivedStreamPartitioning</c> (the 10.0 default) for an existing event store, Weasel rebuilds the
+///     <c>UseArchivedStreamPartitioning</c> for an existing event store, Weasel rebuilds the
 ///     table with <c>DROP TABLE ... CASCADE</c>, which drops an owned sequence along with it. The rebuilt table then
 ///     has no sequence to append with, and recreating one would restart the numbering under the existing events.
 /// </summary>

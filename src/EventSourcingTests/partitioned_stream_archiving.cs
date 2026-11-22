@@ -163,7 +163,7 @@ public class partitioned_stream_archiving: OneOffConfigurationsContext
     [Fact]
     public async Task a_reused_stream_id_still_reports_an_archive_collision()
     {
-        // Strict stream identity (on by default since 10.0, #5812) would refuse the reuse this test needs
+        // Strict stream identity (on along with UseArchivedStreamPartitioning unless set) would refuse the reuse this test needs
         configure(false, false, strictIdentity: false);
         var id = Guid.NewGuid();
         startStream(theSession, id);

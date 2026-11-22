@@ -10,9 +10,10 @@ using Weasel.Postgresql.Tables;
 namespace Marten.Events.Schema;
 
 /// <summary>
-///     #6081: the migration of a DCB tag table created without archived stream partitioning (Marten 9's default)
-///     to one with it (Marten 10's default). The table gains <c>is_archived</c>, is partitioned by it, and its
-///     foreign key to <c>mt_events</c> moves to <c>(seq_id, is_archived)</c>.
+///     #6081: the migration of a DCB tag table created without archived stream partitioning (the default) to one
+///     with it, when <c>UseArchivedStreamPartitioning</c> is turned on for an existing store. The table gains
+///     <c>is_archived</c>, is partitioned by it, and its foreign key to <c>mt_events</c> moves to
+///     <c>(seq_id, is_archived)</c>.
 /// </summary>
 /// <remarks>
 ///     <para>

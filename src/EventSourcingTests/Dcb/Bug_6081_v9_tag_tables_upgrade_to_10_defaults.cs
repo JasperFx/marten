@@ -20,8 +20,8 @@ public record Bug6081Enrolled(string Student);
 
 /// <summary>
 ///     #6081: a store built with Marten 9's defaults (no archived stream partitioning) and DCB tag tables has to
-///     migrate to Marten 10's defaults, where mt_events is partitioned by is_archived and each tag table's foreign
-///     key is on (seq_id, is_archived). The tagged events have to survive the migration.
+///     migrate when archived stream partitioning is turned on, so mt_events is partitioned by is_archived and each
+///     tag table's foreign key is on (seq_id, is_archived). The tagged events have to survive the migration.
 /// </summary>
 public class Bug_6081_v9_tag_tables_upgrade_to_10_defaults: OneOffConfigurationsContext
 {
@@ -72,10 +72,11 @@ public class Bug_6081_v9_tag_tables_upgrade_to_10_defaults: OneOffConfigurations
 
         v9.Dispose();
 
-        // Marten 10's defaults, from a store that shares no state with the first
+        // Marten 10 with archived stream partitioning turned on, from a store that shares no state with the first
         var v10 = SeparateStore(opts =>
         {
             opts.AutoCreateSchemaObjects = AutoCreate.All;
+            opts.Events.UseArchivedStreamPartitioning = true;
             configure(opts, tenancy);
         });
         v10.Options.Events.UseArchivedStreamPartitioning.ShouldBeTrue();

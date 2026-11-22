@@ -176,9 +176,10 @@ public class blue_green_side_effect_gate : IAsyncLifetime
                    opts.Projections.Add(new GateTripProjection { Version = 2 }, ProjectionLifecycle.Async);
                    opts.Events.MessageOutbox = blueOutbox;
 
-                   // Blue keeps the 10.0 defaults, so mt_events is partitioned on is_archived (#5812). Green's
-                   // RestoreV9Defaults() turns that off, and Weasel rebuilds the table unpartitioned with its rows
-                   // (weasel#871, Weasel 10.0.0-alpha.8).
+                   // Blue partitions mt_events on is_archived. Green leaves archived-stream partitioning off (the
+                   // default, and the 9.x value RestoreV9Defaults() keeps), so Weasel rebuilds the table
+                   // unpartitioned with its rows (weasel#871, Weasel 10.0.0-alpha.8).
+                   opts.Events.UseArchivedStreamPartitioning = true;
                }))
         {
             await AppendSingleEventStreams(blue, N);

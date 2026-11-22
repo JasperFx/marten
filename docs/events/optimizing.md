@@ -26,8 +26,8 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection("some connection string");
 
-    // PostgreSQL table partitioning for hot/cold storage
-    // on archived events. On by default since Marten 10
+    // Turn on the PostgreSQL table partitioning for
+    // hot/cold storage on archived events
     opts.Events.UseArchivedStreamPartitioning = true;
 
     // Use the *much* faster workflow for appending events
@@ -49,7 +49,9 @@ builder.Services.AddMarten(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L32-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The archived stream option is further described in the section on [Hot/Cold Storage Partitioning](/events/archiving.html#hot-cold-storage-partitioning).
+The archived stream option is off by default. It is further described, along with what it costs, in the section on
+[Hot/Cold Storage Partitioning](/events/archiving.html#hot-cold-storage-partitioning). Turn it on when your system
+archives whole streams.
 
 ::: tip
 For large multi-tenanted event stores, you can also physically isolate each tenant's events and give the async daemon a

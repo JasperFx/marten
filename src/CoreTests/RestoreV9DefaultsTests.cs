@@ -447,18 +447,41 @@ public class RestoreV9DefaultsTests
         opts.Events.EnableSideEffectsOnInlineProjections.ShouldBeFalse();
     }
 
-    // #5812 item 9: archived-stream partitioning and strict stream identity enforcement
+    // #5812 item 9, reversed before 10.0 GA: archived-stream partitioning stays opt-in as in 9.x, and strict stream
+    // identity enforcement follows it unless set explicitly
     [Fact]
-    public void archived_stream_partitioning_and_strict_identity_are_on_by_default()
+    public void archived_stream_partitioning_and_strict_identity_are_off_by_default()
     {
         var events = new StoreOptions().Events;
 
-        events.UseArchivedStreamPartitioning.ShouldBeTrue();
+        events.UseArchivedStreamPartitioning.ShouldBeFalse();
+        events.EnableStrictStreamIdentityEnforcement.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void strict_identity_follows_archived_stream_partitioning()
+    {
+        var events = new StoreOptions().Events;
+        events.UseArchivedStreamPartitioning = true;
+
         events.EnableStrictStreamIdentityEnforcement.ShouldBeTrue();
     }
 
     [Fact]
-    public void restores_archived_stream_partitioning_and_strict_identity_to_the_v9_values()
+    public void restores_strict_identity_to_the_v9_value()
+    {
+        // 9.x did not turn strict identity on along with archived-stream partitioning
+        var opts = new StoreOptions();
+
+        opts.RestoreV9Defaults();
+        opts.Events.UseArchivedStreamPartitioning = true;
+
+        opts.Events.UseArchivedStreamPartitioning.ShouldBeTrue();
+        opts.Events.EnableStrictStreamIdentityEnforcement.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void restoring_v9_defaults_leaves_archived_stream_partitioning_off()
     {
         var opts = new StoreOptions();
 
@@ -469,7 +492,7 @@ public class RestoreV9DefaultsTests
     }
 
     [Fact]
-    public void tenant_partitioned_events_switch_archived_partitioning_and_strict_identity_off()
+    public void tenant_partitioned_events_leave_archived_partitioning_and_strict_identity_off()
     {
         var opts = new StoreOptions();
         opts.Events.TenancyStyle = TenancyStyle.Conjoined;
@@ -479,7 +502,7 @@ public class RestoreV9DefaultsTests
         opts.Events.UseArchivedStreamPartitioning.ShouldBeFalse();
         opts.Events.EnableStrictStreamIdentityEnforcement.ShouldBeFalse();
 
-        // and validation no longer refuses the combination
+        // and validation accepts per-tenant partitioning alone
         opts.Validate();
     }
 

@@ -22,10 +22,10 @@ we urge you to be cautious about doing so.
 
 The impact of archiving an event stream is:
 
-* With the table partitioning model for "hot/cold" storage described below (the default since Marten 10), the stream and
-  event rows are moved to the archived partition tables for streams and events
-* Without partitioning (the default before Marten 10, and under per-tenant event partitioning), the relevant stream and
-  event rows are marked with an `is_archived = TRUE`
+* With the table partitioning model for "hot/cold" storage described below (opt in), the stream and event rows are
+  moved to the archived partition tables for streams and events
+* Without partitioning (the default, and under per-tenant event partitioning), the relevant stream and event rows are
+  marked with an `is_archived = TRUE`
 * The [async daemon](/events/projections/async-daemon) subsystem process that processes projections and subscriptions in a background process automatically ignores
   archived events -- but that can be modified on a per projection/subscription basis
 * Archived events are excluded by default from any event data queries through the LINQ support in Marten
@@ -104,8 +104,8 @@ To reopen an archived stream, un-archive it first. See [Un-archiving a Stream](#
 Note that `StartStream` against an archived stream's id is a **different** failure. The id is still in use, so it is an
 identity collision (`ExistingStreamIdCollisionException`), not an archived-stream error. Under
 `UseArchivedStreamPartitioning` the archived row lives in a different partition, and it is
-`EnableStrictStreamIdentityEnforcement` (also on by default since Marten 10) that still refuses the reuse; turn it off
-and the reuse is silently allowed. See
+`EnableStrictStreamIdentityEnforcement` (on along with partitioning unless you turn it off) that still refuses the
+reuse; turn it off and the reuse is silently allowed. See
 [Strict Stream Identity After Archive](/events/archiving.html#strict-stream-identity-after-archive) below.
 
 ## Un-archiving a Stream
@@ -171,14 +171,20 @@ Some details worth knowing:
 
 ## Hot/Cold Storage Partitioning <Badge type="tip" text="7.25" />
 
-Marten uses PostgreSQL native table partitioning on the event and event stream data to keep the "hot" (active) and
-"cold" (archived) events in separate partition tables. This is on by default since Marten 10, and was opt in before.
-It keeps the active `mt_streams` and `mt_events` tables smaller, which pretty well always results in better
-performance over time if you archive streams. If you never archive anything, it costs very little.
+Marten can use PostgreSQL native table partitioning on the event and event stream data to keep the "hot" (active) and
+"cold" (archived) events in separate partition tables. This is off by default. With it on, archiving a stream moves its
+rows out of the active `mt_streams` and `mt_events` partitions, so the tables and indexes that your appends, reads and
+the async daemon work against only hold the streams still in use.
 
-It is off under [per-tenant event partitioning](/events/multitenancy.html#per-tenant-event-partitioning), which
-partitions the same tables by tenant instead. To turn it off yourself, set the flag to `false` or call
-`opts.RestoreV9Defaults()`:
+::: tip Turn it on if your system archives whole streams
+We strongly recommend turning this on when your system archives whole streams that are rarely read afterward: closed
+accounts, completed orders, finished workflows. The active partitions then stay the size of your live data instead of
+growing with your whole history, which is the point of archiving those streams. If your system rarely or never
+archives a stream, leave it off. You would pay its cost on every write and get nothing back.
+:::
+
+It cannot be combined with [per-tenant event partitioning](/events/multitenancy.html#per-tenant-event-partitioning),
+which partitions the same tables by tenant instead. To turn it on:
 
 <!-- snippet: sample_turn_on_stream_archival_partitioning -->
 <a id='snippet-sample_turn_on_stream_archival_partitioning'></a>
@@ -188,27 +194,49 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection("some connection string");
 
-    // PostgreSQL table partitioning for hot/cold storage
-    // on archived events. On by default since Marten 10
+    // Turn on the PostgreSQL table partitioning for
+    // hot/cold storage on archived events
     opts.Events.UseArchivedStreamPartitioning = true;
 });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L14-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_stream_archival_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-::: warning
-If you are turning this option on (or off) for an existing system, including by upgrading to Marten 10 with the default,
-you may want to run the database schema migration script
-by hand rather than trying to let Marten do it automatically. The data migration from non-partitioned to partitioned
-will probably require system downtime because it actually has to copy the old table data, drop the old table, create the new 
-table, copy all the existing data from the temp table to the new partitioned table, and finally drop the temporary table.
+::: warning Turning it on is a schema change
+If you are turning this option on (or off) for an existing system, you may want to run the database schema migration
+script by hand rather than trying to let Marten do it automatically. PostgreSQL cannot partition a table in place, so
+the migration rebuilds `mt_events` and `mt_streams` (and the DCB tag tables, if you have any): it copies the old table
+data, drops the old table, creates the new partitioned table, copies all the existing data back from the temporary
+table, and finally drops the temporary table. That takes time and locks proportional to the size of your event store,
+and will probably require system downtime. Turning it off again rebuilds the same tables the other way.
 :::
+
+### What it costs
+
+Partitioning is not free. Every write to `mt_events` and `mt_streams` is routed to a partition, the primary keys
+include `is_archived`, and [strict stream identity](/events/archiving.html#strict-stream-identity-after-archive), which comes on with
+partitioning, adds one more insert for every new stream.
+
+These numbers come from the CritterStackScalability RC performance rig: an Apple M5 Max running PostgreSQL, the same
+Marten 10 build with partitioning on and off, medians of 3 interleaved rounds. They are measurements from that rig,
+not guarantees, and your own hardware and workload will give different numbers.
+
+| Workload | Partitioning off | Partitioning on | Difference |
+| --- | --- | --- | --- |
+| `BulkInsertEventsAsync()` (`COPY`), 10M events over 1M streams | 217.5k events/s | 85.7k events/s | about 2.5x slower |
+| Plain append (quick append) | 4,707 ops/s | 4,425 ops/s | about 6% slower |
+| `FetchForWriting()` and append | 4,542 ops/s | 4,336 ops/s | about 5% slower |
+| Start a new stream | 4,957 ops/s | 4,705 ops/s | about 5% slower |
+| Appends with the async daemon running | 4,903 ops/s | 4,470 ops/s | about 9% slower |
+
+The bulk loading cost matters most for imports and migrations into a new event store. The 5 to 9% on everyday appends
+is what a system pays all the time, in exchange for active tables that stay small as streams are archived.
 
 ### Strict Stream Identity After Archive <Badge type="tip" text="8.x" />
 
 ::: tip
-This setting is on by default since Marten 10, along with
-`UseArchivedStreamPartitioning`, and off under per-tenant event partitioning. It matters most when stream identity is
+Unless you set it yourself, this setting follows `UseArchivedStreamPartitioning`: it is on when partitioning is on, and
+off when partitioning is off or under per-tenant event partitioning. It matters most when stream identity is
 generated **outside** of Marten — most commonly when the user is providing string keys themselves (order numbers,
 external reference ids, etc.). With Marten-generated `Guid` ids, accidental reuse is vanishingly unlikely, so
 turning it off to save the extra insert per new stream is reasonable.
@@ -229,8 +257,8 @@ still fires, so reuse throws `ExistingStreamIdCollisionException`. Without
 extra configuration, the partitioning mode is therefore **less strict** about
 identity reuse than the non-partitioned mode.
 
-The `EnableStrictStreamIdentityEnforcement` flag gives you the strict behavior under both modes. These are the
-Marten 10 defaults, written out:
+The `EnableStrictStreamIdentityEnforcement` flag gives you the strict behavior under both modes. This is what you get
+when you turn partitioning on, written out:
 
 ```cs
 var builder = Host.CreateApplicationBuilder();

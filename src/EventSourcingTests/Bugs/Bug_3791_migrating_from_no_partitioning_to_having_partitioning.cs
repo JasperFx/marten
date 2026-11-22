@@ -20,7 +20,7 @@ public class Bug_3791_migrating_from_no_partitioning_to_having_partitioning : Bu
     {
         StoreOptions(o =>
         {
-            // The Marten 9 shape. Archived-stream partitioning is the default since 10.0 (#5812).
+            // No archived-stream partitioning, the default
             o.Events.UseArchivedStreamPartitioning = false;
             o.Events.EnableStrictStreamIdentityEnforcement = false;
             o.DisableNpgsqlLogging = true;
@@ -56,7 +56,7 @@ public class Bug_3791_migrating_from_no_partitioning_to_having_partitioning : Bu
     [Fact]
     public async Task an_existing_event_store_keeps_its_events_and_keeps_appending_after_the_migration()
     {
-        // #5812: the upgrade path to the 10.0 default. A Marten 9 shaped event store with events in it...
+        // #5812: turning archived-stream partitioning on for an existing event store with events in it...
         StoreOptions(o =>
         {
             o.Events.UseArchivedStreamPartitioning = false;
@@ -74,8 +74,12 @@ public class Bug_3791_migrating_from_no_partitioning_to_having_partitioning : Bu
             await session.SaveChangesAsync();
         }
 
-        // ...then the same schema under the 10.0 defaults
-        using var store2 = SeparateStore(o => o.DatabaseSchemaName = "bug_3791_upgrade");
+        // ...then the same schema with archived-stream partitioning turned on
+        using var store2 = SeparateStore(o =>
+        {
+            o.DatabaseSchemaName = "bug_3791_upgrade";
+            o.Events.UseArchivedStreamPartitioning = true;
+        });
         await store2.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         await using (var session = store2.LightweightSession())
@@ -94,7 +98,8 @@ public class Bug_3791_migrating_from_no_partitioning_to_having_partitioning : Bu
     }
 
     /// <summary>
-    /// #5812 item 9: the upgrade an existing Marten 9 store gets from the 10.0 default. Polecat lost every event
+    /// #5812 item 9: the migration an existing store gets when archived-stream partitioning is turned on for it
+    /// (Marten 9 shaped, or Marten 10 with the default left off). Polecat lost every event
     /// when it switched archived-stream partitioning on for an existing store under AutoCreate.All, and threw under
     /// CreateOrUpdate, so this proves both modes, through an explicit migration and through the implicit one the
     /// first session triggers, keep every event, stream and archived flag.
@@ -140,11 +145,12 @@ public class Bug_3791_migrating_from_no_partitioning_to_having_partitioning : Bu
         before.Events.ShouldBe(45);
         before.Streams.ShouldBe(22);
 
-        // The same database under the 10.0 defaults
+        // The same database with archived-stream partitioning turned on
         using var store2 = SeparateStore(o =>
         {
             o.DatabaseSchemaName = schema;
             o.AutoCreateSchemaObjects = autoCreate;
+            o.Events.UseArchivedStreamPartitioning = true;
         });
 
         if (explicitMigration)

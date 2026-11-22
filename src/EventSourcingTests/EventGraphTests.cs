@@ -89,10 +89,39 @@ public class EventGraphTests
     }
 
     [Fact]
-    public void archive_partitioning_is_on_by_default()
+    public void archive_partitioning_is_off_by_default()
     {
-        // Since 10.0 (#5812)
-        theGraph.UseArchivedStreamPartitioning.ShouldBeTrue();
+        // Opt-in, as in Marten 9. It was on by default in the 10.0 alphas (#5812)
+        theGraph.UseArchivedStreamPartitioning.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void strict_stream_identity_is_off_by_default()
+    {
+        theGraph.EnableStrictStreamIdentityEnforcement.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void strict_stream_identity_follows_archived_stream_partitioning()
+    {
+        theGraph.UseArchivedStreamPartitioning = true;
+
+        theGraph.EnableStrictStreamIdentityEnforcement.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void an_explicit_strict_stream_identity_setting_wins_over_archived_stream_partitioning()
+    {
+        theGraph.UseArchivedStreamPartitioning = true;
+        theGraph.EnableStrictStreamIdentityEnforcement = false;
+
+        theGraph.EnableStrictStreamIdentityEnforcement.ShouldBeFalse();
+
+        var other = new StoreOptions().EventGraph;
+        other.EnableStrictStreamIdentityEnforcement = true;
+
+        other.UseArchivedStreamPartitioning.ShouldBeFalse();
+        other.EnableStrictStreamIdentityEnforcement.ShouldBeTrue();
     }
 
     [Fact]

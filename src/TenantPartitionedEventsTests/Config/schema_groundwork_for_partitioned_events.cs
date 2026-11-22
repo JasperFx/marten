@@ -162,8 +162,7 @@ public class schema_groundwork_for_partitioned_events
         var eventsTable = schemaObjects.OfType<Table>()
             .Single(t => t.Identifier.Name == "mt_events");
 
-        // Only the archived-stream partitioning, the 10.0 default (#5812), not tenant_id
-        eventsTable.Partitioning.ShouldBeOfType<ListPartitioning>().Columns.ShouldBe(["is_archived"]);
+        eventsTable.Partitioning.ShouldBeNull();
     }
 
     [Fact]

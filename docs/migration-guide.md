@@ -30,6 +30,8 @@ list of what you get.
   and can resume after a crash.
 - [`UnArchiveStream()`](/events/archiving#un-archiving-a-stream) reverses `ArchiveStream()`.
 - [Shrinking mt_events](/events/shrinking) compares archiving and stream compaction.
+- [Hot/cold partitioning of archived streams](#archived-stream-partitioning-is-opt-in) stays opt-in, and its cost on
+  appends and bulk loading is now measured. Turn it on if your system archives whole streams.
 - DCB conflicts are scoped by event type, as the DCB specification does.
 - The aggregate write cache covers `Live` aggregates and every fetch for writing, and batched fetches of `Async`
   aggregates no longer have ordering rules.
@@ -862,7 +864,7 @@ and add to it, or pass `_ => { }` to pause on the first transient failure. `Conf
 | [DCB conflicts scoped by event type](#dcb-conflicts-are-scoped-by-event-type-by-default) (`DcbConflictScope.TagValueAndEventType`) | `opts.RestoreV9Defaults()`, or `opts.Events.DcbConflictScope = DcbConflictScope.TagValue` |
 | [Side-effect gate](/events/projections/rebuilding#suppressing-side-effects-during-the-blue-green-warm-up) (`GateSideEffectsBehindPriorVersion`, jasperfx#1075) is on | `opts.RestoreV9Defaults()`, or `GateSideEffectsBehindPriorVersion = false` on the projection |
 | [**Side effects run on inline projections**](#side-effects-run-on-inline-projections) (`EnableSideEffectsOnInlineProjections`) | `opts.RestoreV9Defaults()`, or `opts.Events.EnableSideEffectsOnInlineProjections = false` |
-| [Archived-stream partitioning and strict stream identity](#archived-stream-partitioning-is-on-by-default) are on (`UseArchivedStreamPartitioning`, `EnableStrictStreamIdentityEnforcement`); schema change | `opts.RestoreV9Defaults()`, or set both to `false` on `opts.Events` |
+| [Strict stream identity follows archived-stream partitioning](#archived-stream-partitioning-is-opt-in): `EnableStrictStreamIdentityEnforcement` is on whenever you turn `UseArchivedStreamPartitioning` on (partitioning itself stays off by default); schema change for a store that uses partitioning | `opts.RestoreV9Defaults()`, or `opts.Events.EnableStrictStreamIdentityEnforcement = false` |
 | [Document metadata columns](#document-metadata-is-on-by-default) `correlation_id`, `causation_id`, `headers`, `last_modified_by` are on; schema change | `opts.RestoreV9Defaults()`, or `opts.Policies.ForAllDocuments(x => x.Metadata.CausationId.Enabled = false)` and the same for the other three |
 | [Computed indexes on conjoined documents start with `tenant_id`](#conjoined-indexes-start-with-tenant-id) (`StartIndexesByTenantId`); schema change | `opts.RestoreV9Defaults()`, or `opts.Policies.ForAllDocuments(x => x.StartIndexesByTenantId = false)` |
 | [All event metadata](#all-event-metadata-is-on-by-default) (causation id, correlation id, headers, user name) is on | `opts.RestoreV9Defaults()`, or set the `opts.Events.MetadataConfig.*Enabled` flags to `false` |
@@ -894,7 +896,7 @@ Marten 9 had [`RestoreV8Defaults()`](#restoring-v8-defaults). It does not call `
 | `Events.DcbConflictScope` | `TagValue` | [Dynamic Consistency Boundaries](/events/dcb#scoping-conflicts-by-event-type) |
 | `GateSideEffectsBehindPriorVersion` on every registered projection | `false` | [Rebuilding](/events/projections/rebuilding) |
 | `Events.EnableSideEffectsOnInlineProjections` | `false` | [Side Effects](/events/projections/side-effects#side-effects-in-inline-projections) |
-| `Events.UseArchivedStreamPartitioning` and `Events.EnableStrictStreamIdentityEnforcement` | `false` | [Archiving](/events/archiving#hot-cold-storage-partitioning) |
+| `Events.EnableStrictStreamIdentityEnforcement` | `false`, even with `UseArchivedStreamPartitioning` on | [Archiving](/events/archiving#strict-stream-identity-after-archive) |
 | Document metadata `CausationId`, `CorrelationId`, `Headers` and `LastModifiedBy` | off | [Marten Metadata](/documents/metadata) |
 | `StartIndexesByTenantId` on conjoined documents | `false` | [Multi-Tenancy](/documents/multi-tenancy#make-all-documents-start-their-index-by-tenant-id) |
 | `Events.MetadataConfig` causation id, correlation id, headers and user name | `false` | [Event Metadata](/events/metadata) |
@@ -1107,41 +1109,71 @@ registered with `ProjectionLifecycle.Inline`. Projections running `Async` are un
 opts.Events.EnableSideEffectsOnInlineProjections = false;
 ```
 
-### Archived-stream partitioning is on by default <Badge type="warning" text="schema change" /> {#archived-stream-partitioning-is-on-by-default}
+### Archived-stream partitioning stays opt-in {#archived-stream-partitioning-is-opt-in}
 
-`opts.Events.UseArchivedStreamPartitioning` and `opts.Events.EnableStrictStreamIdentityEnforcement` now default to
-`true` ([Hot/Cold Storage Partitioning](/events/archiving#hot-cold-storage-partitioning)). `mt_events`, `mt_streams` and
-the other event tables are list-partitioned by `is_archived`, so archiving a stream moves its rows to the archived
-partitions, and a new `mt_streams_identity` table keeps a stream id from being reused after its stream is archived.
+`opts.Events.UseArchivedStreamPartitioning` is off by default, as it was in Marten 9
+([Hot/Cold Storage Partitioning](/events/archiving#hot-cold-storage-partitioning)). The 10.0 alphas turned it on by
+default. That was reversed before 10.0.0-rc.1 because partitioning costs something on every write, which only pays off
+for a system that archives streams.
 
-::: warning The first schema migration rebuilds mt_events and mt_streams
-On an existing event store, the first schema apply after upgrading turns `mt_events` and `mt_streams` into partitioned
-tables. PostgreSQL cannot partition a table in place, so the migration copies each table to a temporary one, drops it,
-creates the partitioned table and copies the rows back. That takes time and locks proportional to the size of your
-event store. Generate the migration script and run it in a maintenance window, or keep the 9.x shape by turning the
-setting off (below) and decide later.
-:::
-
-The same migration also releases `mt_events_sequence` from its `OWNED BY mt_events.seq_id` link
-(`ALTER SEQUENCE ... OWNED BY NONE`), so rebuilding `mt_events` can no longer drop the sequence along with it. Marten
-10 creates the sequence without an owner.
-
-Both settings are off under [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning)
-(`UseTenantPartitionedEvents`), which partitions the same tables by tenant. Marten 9 refused that combination at
-startup; Marten 10 only refuses it when you set `UseArchivedStreamPartitioning = true` yourself.
-
-Strict stream identity adds one small insert per new stream. The migration that creates `mt_streams_identity` fills it
-from `mt_streams`, archived streams included, so streams that existed before the upgrade are covered too
-([#6051](https://github.com/JasperFx/marten/issues/6051)). To keep the 9.x behavior:
+**If your system archives whole streams that are rarely read afterward (closed accounts, completed orders, finished
+workflows), we strongly recommend turning it on.** `mt_events`, `mt_streams` and the other event tables are then
+list-partitioned by `is_archived`, archiving a stream moves its rows to the archived partitions, and the active
+partitions stay the size of your live data:
 
 ```cs
-opts.Events.UseArchivedStreamPartitioning = false;
+opts.Events.UseArchivedStreamPartitioning = true;
+```
+
+::: warning Turning it on rebuilds mt_events and mt_streams
+On an existing event store, the first schema apply after turning partitioning on turns `mt_events` and `mt_streams`
+(and any DCB tag tables) into partitioned tables. PostgreSQL cannot partition a table in place, so the migration copies
+each table to a temporary one, drops it, creates the partitioned table and copies the rows back. That takes time and
+locks proportional to the size of your event store. Generate the migration script and run it in a maintenance window.
+:::
+
+What it costs, measured on the CritterStackScalability RC rig (an Apple M5 Max running PostgreSQL, the same Marten 10
+build with partitioning on and off, medians of 3 interleaved rounds). These are measurements from that rig, not
+guarantees:
+
+- `BulkInsertEventsAsync()` (`COPY`), 10M events over 1M streams: 85.7k events/s with partitioning against 217.5k
+  without, about 2.5x slower.
+- Quick appends, about 4 to 6% slower: a plain append 4,425 against 4,707 ops/s, `FetchForWriting()` and append 4,336
+  against 4,542, starting a stream 4,705 against 4,957.
+- Appends with the async daemon running, about 9% slower: 4,470 against 4,903 ops/s.
+
+[What it costs](/events/archiving#what-it-costs) has the same numbers as a table.
+
+**Strict stream identity now follows partitioning.** `opts.Events.EnableStrictStreamIdentityEnforcement` is on
+whenever `UseArchivedStreamPartitioning` is, unless you set it yourself. In Marten 9 it stayed off until you turned it
+on. Under partitioning, an archived stream's row moves to another partition, so without it a new stream can be started
+with an archived stream's id. It writes each new stream's id into a `mt_streams_identity` table, which adds one small
+insert per new stream. Without partitioning, the primary key of `mt_streams` already refuses a reused id, so it stays
+off.
+
+If you already run Marten 9 with `UseArchivedStreamPartitioning = true`, the first schema apply under Marten 10 adds
+`mt_streams_identity` and fills it from `mt_streams`, archived streams included
+([#6051](https://github.com/JasperFx/marten/issues/6051)), and starting a stream with an archived stream's id now throws
+`ExistingStreamIdCollisionException`. To keep the 9.x behavior, call `opts.RestoreV9Defaults()` or:
+
+```cs
 opts.Events.EnableStrictStreamIdentityEnforcement = false;
 ```
 
-Decide this before the first schema migration under Marten 10 if you can. Taking an event store that has already been
-partitioned back to unpartitioned works, but Weasel has to rebuild `mt_events` and `mt_streams` to do it, copying
-every row ([weasel#871](https://github.com/JasperFx/weasel/issues/871)).
+::: warning If you ran a 10.0 alpha with the default
+A database created or migrated by a Marten 10.0 alpha with the default settings already has partitioned event tables.
+Set `opts.Events.UseArchivedStreamPartitioning = true` to keep them. Otherwise the next schema migration takes
+`mt_events` and `mt_streams` back to unpartitioned tables, which Weasel does by rebuilding them and copying every row
+([weasel#871](https://github.com/JasperFx/weasel/issues/871)).
+:::
+
+The first schema apply under Marten 10 also releases `mt_events_sequence` from its `OWNED BY mt_events.seq_id` link
+(`ALTER SEQUENCE ... OWNED BY NONE`), whether or not you use partitioning, so rebuilding `mt_events` can no longer drop
+the sequence along with it. Marten 10 creates the sequence without an owner.
+
+Archived-stream partitioning still cannot be combined with
+[per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning) (`UseTenantPartitionedEvents`),
+which partitions the same tables by tenant, and strict stream identity stays off under it unless you set it.
 
 ### Document metadata is on by default <Badge type="warning" text="schema change" /> {#document-metadata-is-on-by-default}
 
@@ -1169,6 +1201,13 @@ opts.Policies.ForAllDocuments(x =>
 
 `RestoreV9Defaults()` decides this when each document mapping is built, so a policy, attribute or
 `Schema.For<T>().Metadata(...)` that turns one of the columns back on still does, wherever it is in your configuration.
+
+The columns cost something on every document write. On the CritterStackScalability RC rig (the same rig as the
+[archived-stream partitioning numbers](#archived-stream-partitioning-is-opt-in), medians of 3 rounds, all with
+partitioning off), a projection rebuild that writes documents, the trip single-stream projection over 1M streams, ran
+about 5% slower with document metadata on than with it off. With the default on, the rebuild was within about 9% of
+Marten 9.58. Turning the four columns off, or calling `RestoreV9Defaults()`, brings it back to Marten 9 speed. These
+are measurements from that rig, not guarantees.
 
 ### Computed indexes on conjoined documents start with `tenant_id` <Badge type="warning" text="schema change" /> {#conjoined-indexes-start-with-tenant-id}
 
