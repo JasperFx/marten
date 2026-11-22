@@ -1133,8 +1133,9 @@ locks proportional to the size of your event store. Generate the migration scrip
 :::
 
 What it costs, measured on the CritterStackScalability RC rig (an Apple M5 Max running PostgreSQL, the same Marten 10
-build with partitioning on and off, medians of 3 interleaved rounds). These are measurements from that rig, not
-guarantees:
+build with partitioning on and off, medians of 3 interleaved rounds). Strict stream identity was on and off with
+partitioning, as it now follows it, so the cost includes its insert for each new stream. These are measurements from
+that rig, not guarantees:
 
 - `BulkInsertEventsAsync()` (`COPY`), 10M events over 1M streams: 85.7k events/s with partitioning against 217.5k
   without, about 2.5x slower.
@@ -1203,11 +1204,12 @@ opts.Policies.ForAllDocuments(x =>
 `Schema.For<T>().Metadata(...)` that turns one of the columns back on still does, wherever it is in your configuration.
 
 The columns cost something on every document write. On the CritterStackScalability RC rig (the same rig as the
-[archived-stream partitioning numbers](#archived-stream-partitioning-is-opt-in), medians of 3 rounds, all with
-partitioning off), a projection rebuild that writes documents, the trip single-stream projection over 1M streams, ran
-about 5% slower with document metadata on than with it off. With the default on, the rebuild was within about 9% of
-Marten 9.58. Turning the four columns off, or calling `RestoreV9Defaults()`, brings it back to Marten 9 speed. These
-are measurements from that rig, not guarantees.
+[archived-stream partitioning numbers](#archived-stream-partitioning-is-opt-in), all with partitioning off), a
+projection rebuild that writes documents, the trip single-stream projection, ran about 9% slower than Marten 9.58 with
+the 10.0 defaults, document metadata included (1M streams, median of 3 rounds). In a 500k-stream run with the four
+document metadata columns turned off, the gap to 9.58 was about 5%, and with `RestoreV9Defaults()` the rebuild matched
+9.58. So document metadata accounts for roughly half of that gap, and the other 10.0 defaults for the rest. These are
+measurements from that rig, not guarantees.
 
 ### Computed indexes on conjoined documents start with `tenant_id` <Badge type="warning" text="schema change" /> {#conjoined-indexes-start-with-tenant-id}
 

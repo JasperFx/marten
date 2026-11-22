@@ -218,8 +218,9 @@ include `is_archived`, and [strict stream identity](/events/archiving.html#stric
 partitioning, adds one more insert for every new stream.
 
 These numbers come from the CritterStackScalability RC performance rig: an Apple M5 Max running PostgreSQL, the same
-Marten 10 build with partitioning on and off, medians of 3 interleaved rounds. They are measurements from that rig,
-not guarantees, and your own hardware and workload will give different numbers.
+Marten 10 build with partitioning on and off, medians of 3 interleaved rounds. Strict stream identity was on and off
+with partitioning, as it now follows it, so the numbers include its insert for each new stream. They are measurements
+from that rig, not guarantees, and your own hardware and workload will give different numbers.
 
 | Workload | Partitioning off | Partitioning on | Difference |
 | --- | --- | --- | --- |
