@@ -200,6 +200,11 @@ The bulk append API supports all combinations of:
 | Archived stream partitioning | On, Off |
 | Metadata columns | Correlation ID, Causation ID, Headers, User Name (any combination) |
 
+Bulk appending is where [archived stream partitioning](/events/archiving#hot-cold-storage-partitioning), off by
+default, costs the most. On the CritterStackScalability RC rig, `BulkInsertEventsAsync()` loaded 10M events over 1M
+streams at 217.5k events/s with partitioning off and 85.7k events/s with it on, about 2.5x slower. See
+[What it costs](/events/archiving#what-it-costs) for how that was measured and the cost on everyday appends.
+
 ## Streaming Import of an Existing Event Log
 
 `BulkInsertEventsAsync` materializes every event of the import in memory, which is fine for seeding but

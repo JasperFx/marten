@@ -63,8 +63,7 @@ public interface IReadOnlyEventStoreOptions
 
     /// <summary>
     /// Partition the event tables by <c>is_archived</c> with PostgreSQL list partitioning, so archived streams
-    /// and their events stay out of the active partition. Default is true since 10.0, except under
-    /// UseTenantPartitionedEvents, where it is off
+    /// and their events stay out of the active partition. Defaults to false
     /// </summary>
     bool UseArchivedStreamPartitioning { get; }
 
@@ -75,8 +74,8 @@ public interface IReadOnlyEventStoreOptions
     /// time and a unique violation there is translated into
     /// <see cref="ExistingStreamIdCollisionException"/>. This catches reuse of
     /// an identity even after the original stream was archived under
-    /// <see cref="UseArchivedStreamPartitioning"/>. Defaults to true since 10.0, except under
-    /// UseTenantPartitionedEvents, where it is off.
+    /// <see cref="UseArchivedStreamPartitioning"/>. Unless set explicitly, it follows
+    /// <see cref="UseArchivedStreamPartitioning"/>: on when partitioning is on, off otherwise.
     /// </summary>
     bool EnableStrictStreamIdentityEnforcement { get; }
 

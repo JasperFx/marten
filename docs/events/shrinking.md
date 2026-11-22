@@ -69,16 +69,16 @@ only has the events after the snapshot to work with.
 
 ## Archived Stream Partitioning
 
-`UseArchivedStreamPartitioning` is on by default since Marten 10. With it, `mt_events` and `mt_streams` are each split
-into an active partition and an archived one, and archiving a stream moves its rows from one to the other. The active
+`UseArchivedStreamPartitioning` is off by default. With it on, `mt_events` and `mt_streams` are each split into an
+active partition and an archived one, and archiving a stream moves its rows from one to the other. The active
 partitions and their indexes stay small, and the daemon and the normal reads only scan them. That is where archiving's
-performance benefit comes from.
+performance benefit comes from, so if you archive whole streams to keep `mt_events` small, turn it on.
 
-Without partitioning, which is the Marten 9 default and what you get under
+Without partitioning, the default and what you get under
 [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning), archiving only sets `is_archived`
-on the rows. `mt_events` stays the same size, and the reads filter archived rows out. See
-[Hot/Cold Storage Partitioning](/events/archiving#hot-cold-storage-partitioning) for the setting and for migrating an
-existing database.
+on the rows. `mt_events` stays the same size, and the reads filter archived rows out. Partitioning has a cost on every
+write, measured in [Hot/Cold Storage Partitioning](/events/archiving#what-it-costs), which also covers the setting and
+migrating an existing database.
 
 Compaction reads the stream the way `FetchStreamAsync()` does, so it doesn't see archived events, with or without
 partitioning. Compacting an archived stream does nothing. To use both on one stream, compact first and archive

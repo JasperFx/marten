@@ -22,8 +22,8 @@ internal class StreamsTable: Table
 
     /// <summary>
     ///     #5812: whether a unique violation on <paramref name="tableName"/> is a stream id collision. PostgreSQL
-    ///     names the partition the row went to, not the parent, so under <c>UseArchivedStreamPartitioning</c> (the
-    ///     10.0 default) a duplicate start reports <c>mt_streams_default</c>; <c>mt_streams_identity</c> is the strict
+    ///     names the partition the row went to, not the parent, so under <c>UseArchivedStreamPartitioning</c> a
+    ///     duplicate start reports <c>mt_streams_default</c>; <c>mt_streams_identity</c> is the strict
     ///     identity table.
     /// </summary>
     internal static bool IsStreamCollisionTable(string? tableName)

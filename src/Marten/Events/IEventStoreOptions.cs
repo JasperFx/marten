@@ -121,8 +121,8 @@ namespace Marten.Events
 
         /// <summary>
         /// Partition the event tables by <c>is_archived</c> with PostgreSQL list partitioning, so archived streams
-        /// and their events stay out of the active partition. Default is true since 10.0, except under
-        /// UseTenantPartitionedEvents, where it is off. Changing it on an existing store rebuilds mt_events and mt_streams
+        /// and their events stay out of the active partition. Defaults to false. Turning it on for an existing store
+        /// rebuilds mt_events and mt_streams. It cannot be combined with UseTenantPartitionedEvents
         /// </summary>
         public bool UseArchivedStreamPartitioning { get; set; }
 
@@ -133,8 +133,8 @@ namespace Marten.Events
         /// table at append time and translates a unique violation there into
         /// <see cref="ExistingStreamIdCollisionException"/>. This catches reuse
         /// of an identity even after the original stream was archived under
-        /// <see cref="UseArchivedStreamPartitioning"/>. Defaults to true since 10.0, except under
-    /// UseTenantPartitionedEvents, where it is off.
+        /// <see cref="UseArchivedStreamPartitioning"/>. Unless set explicitly, it follows
+        /// <see cref="UseArchivedStreamPartitioning"/>: on when partitioning is on, off otherwise.
         /// </summary>
         public bool EnableStrictStreamIdentityEnforcement { get; set; }
 

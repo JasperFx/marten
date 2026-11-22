@@ -334,18 +334,14 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public Action<IReadOnlyList<IEvent>>? AppendObserver { get; set; }
 
 
-    private bool? _useArchivedStreamPartitioning;
-
     /// <summary>
-    /// Partition mt_events and mt_streams (and the other event tables) by <c>is_archived</c>. Defaults to
-    /// <c>true</c> since 10.0 (#5812), except under <see cref="UseTenantPartitionedEvents"/>, where it is off
-    /// unless you set it yourself (and then <c>StoreOptions</c> validation refuses the combination).
+    /// Partition mt_events and mt_streams (and the other event tables) by <c>is_archived</c>, so archived streams
+    /// and their events move out of the active partition. Defaults to <c>false</c>. Turning it on rebuilds
+    /// mt_events and mt_streams as partitioned tables on the next migration. It cannot be combined with
+    /// <see cref="UseTenantPartitionedEvents"/> (<c>StoreOptions</c> validation refuses the combination).
+    /// See https://martendb.io/events/archiving for the cost and when it is worth it.
     /// </summary>
-    public bool UseArchivedStreamPartitioning
-    {
-        get => _useArchivedStreamPartitioning ?? !UseTenantPartitionedEvents;
-        set => _useArchivedStreamPartitioning = value;
-    }
+    public bool UseArchivedStreamPartitioning { get; set; }
 
     public bool UseListenNotifyForEventAppends { get; set; }
 
@@ -405,13 +401,14 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <see cref="ExistingStreamIdCollisionException"/> to fire on
     /// <c>StartStream</c> when the same identity has already been used — even after
     /// the original stream was archived under <see cref="UseArchivedStreamPartitioning"/>.
-    /// Defaults to <c>true</c> since 10.0 (#5812), along with
-    /// <see cref="UseArchivedStreamPartitioning"/>, except under <see cref="UseTenantPartitionedEvents"/>,
-    /// where it is off unless you set it yourself. See https://martendb.io/events/archiving.
+    /// Unless you set it yourself, it follows <see cref="UseArchivedStreamPartitioning"/>: on when archived-stream
+    /// partitioning is on, off otherwise (and off under <see cref="UseTenantPartitionedEvents"/>). Without
+    /// partitioning, the primary key of mt_streams already refuses a reused stream identity, archived or not.
+    /// See https://martendb.io/events/archiving.
     /// </summary>
     public bool EnableStrictStreamIdentityEnforcement
     {
-        get => _enableStrictStreamIdentityEnforcement ?? !UseTenantPartitionedEvents;
+        get => _enableStrictStreamIdentityEnforcement ?? (UseArchivedStreamPartitioning && !UseTenantPartitionedEvents);
         set => _enableStrictStreamIdentityEnforcement = value;
     }
 

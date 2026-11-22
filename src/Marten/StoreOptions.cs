@@ -1249,8 +1249,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///         <c>Skip</c> (marten#6003). Marten 10 parks a failing identity, and pauses the shard where it can't park.
     ///       </item>
     ///       <item>
-    ///         <see cref="EventGraph.UseArchivedStreamPartitioning"/> and
-    ///         <see cref="EventGraph.EnableStrictStreamIdentityEnforcement"/> &rarr; <c>false</c>
+    ///         <see cref="EventGraph.EnableStrictStreamIdentityEnforcement"/> &rarr; <c>false</c>. In Marten 10 it
+    ///         follows <see cref="EventGraph.UseArchivedStreamPartitioning"/> unless you set it; in 9.x it was off
+    ///         until you turned it on yourself, even with partitioning on. <see cref="EventGraph.UseArchivedStreamPartitioning"/>
+    ///         itself is off by default in both, so there is nothing to restore for it.
     ///       </item>
     ///     </list>
     ///     </para>
@@ -1263,7 +1265,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         Events.DcbConflictScope = DcbConflictScope.TagValue;
         Events.EnableEventSkippingInProjectionsOrSubscriptions = false;
         Events.EnableSideEffectsOnInlineProjections = false;
-        Events.UseArchivedStreamPartitioning = false;
+        // 9.x: strict identity did not follow UseArchivedStreamPartitioning
         Events.EnableStrictStreamIdentityEnforcement = false;
 
         var metadata = Events.MetadataConfig;
@@ -1406,8 +1408,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         // tables. Sub-partitioning (archive within tenant, or tenant within archive)
         // is a future deliverable — reject the combination at config time rather than
         // emitting a half-coherent schema.
-        // #5812: archived-stream partitioning is on by default since 10.0 and switches itself off under
-        // UseTenantPartitionedEvents, so this only fires when both were asked for explicitly.
         if (Events.UseTenantPartitionedEvents && Events.UseArchivedStreamPartitioning)
         {
             throw new InvalidOperationException(
@@ -1415,8 +1415,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
                 "Events.UseArchivedStreamPartitioning. Sub-partitioning mt_events / mt_streams " +
                 "by both tenant_id and is_archived is a planned follow-up (see " +
                 "https://github.com/JasperFx/marten/issues/4596). Archived-stream partitioning is " +
-                "already off by default under UseTenantPartitionedEvents; remove the explicit " +
-                "Events.UseArchivedStreamPartitioning = true.");
+                "off by default; remove the explicit Events.UseArchivedStreamPartitioning = true.");
         }
 
         // #4596 Session 1: per-tenant event partitioning re-uses Marten's existing

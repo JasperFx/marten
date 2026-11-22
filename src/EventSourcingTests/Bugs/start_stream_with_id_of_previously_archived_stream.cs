@@ -111,7 +111,7 @@ public class start_stream_with_id_of_previously_archived_stream: OneOffConfigura
         {
             opts.Events.UseArchivedStreamPartitioning = true;
 
-            // On by default since 10.0 (#5812), and it is what refuses the reuse this test pins
+            // On along with UseArchivedStreamPartitioning unless set, and it is what refuses the reuse this test pins
             opts.Events.EnableStrictStreamIdentityEnforcement = false;
         });
 
@@ -161,7 +161,7 @@ public class start_stream_with_id_of_previously_archived_stream: OneOffConfigura
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.UseArchivedStreamPartitioning = true;
 
-            // On by default since 10.0 (#5812), and it is what refuses the reuse this test pins
+            // On along with UseArchivedStreamPartitioning unless set, and it is what refuses the reuse this test pins
             opts.Events.EnableStrictStreamIdentityEnforcement = false;
         });
 

@@ -90,7 +90,7 @@ internal class TenantDataCleaner
             deleteTenantedDataIfExists(new DbObjectName(eventsSchema, "mt_events"));
             deleteTenantedDataIfExists(new DbObjectName(eventsSchema, "mt_streams"));
 
-            // #5812: strict stream identity enforcement is on by default since 10.0
+            // #5812: present whenever strict stream identity enforcement is on (it follows UseArchivedStreamPartitioning)
             deleteTenantedDataIfExists(new DbObjectName(eventsSchema, StreamIdentityEnforcementTable.TableName));
         }
 
