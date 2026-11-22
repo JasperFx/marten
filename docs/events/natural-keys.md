@@ -539,6 +539,28 @@ distinct type. When the `DocumentStore` is built, Marten checks that each mapped
 
 Any issues will result in Marten raising an `InvalidProjectionException` with details about what went wrong.
 
+### Composite Projections
+
+An aggregate in a [composite projection](/events/projections/composite) can't own a natural key. Building the
+`DocumentStore` throws an `InvalidProjectionException` if one does. A member of a composite projection can still
+be fetched by a mapped key, as long as the key's owner is registered outside the composite:
+
+<!-- snippet: sample_mapped_natural_key_in_a_composite_projection -->
+<a id='snippet-sample_mapped_natural_key_in_a_composite_projection'></a>
+```cs
+// The owner of the order number key is registered on its own...
+opts.Projections.Snapshot<OrderAggregate>(SnapshotLifecycle.Inline);
+
+// ...so a member of a composite projection can be fetched by that key through a mapped key
+opts.Projections.CompositeProjectionFor("Summaries", c =>
+{
+    c.Snapshot<OrderSummary>();
+    c.Snapshot<SimpleAggregate>();
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_store_shapes.cs#L60-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mapped_natural_key_in_a_composite_projection' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Mutability
 
 Natural keys can change over the lifetime of a stream. When an event mapped with `[NaturalKeySource]` is appended, Marten updates the lookup table with the new value. The old key value is replaced, so lookups using the previous key will no longer resolve to that stream.
