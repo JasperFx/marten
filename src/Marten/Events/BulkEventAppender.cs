@@ -77,6 +77,15 @@ internal class BulkEventAppender
         // Step 3: COPY streams
         await copyStreams(conn, schema, streams, batchSize, cancellation).ConfigureAwait(false);
 
+        // Step 3b (#6142): claim each new stream's identity, as a session-started stream does
+        if (_events.EnableStrictStreamIdentityEnforcement)
+        {
+            await copyStreamIdentities(conn, schema, streams,
+                    s => s.TenantId ?? StorageConstants.DefaultTenantId, s => s.Id, s => s.Key, batchSize,
+                    cancellation)
+                .ConfigureAwait(false);
+        }
+
         // Step 4: COPY events
         await copyEvents(conn, schema, streams, batchSize, cancellation).ConfigureAwait(false);
 
@@ -115,6 +124,14 @@ internal class BulkEventAppender
         // mt_streams first — it is the foreign-key target for mt_events. Bounded: one row per stream.
         await copyStreamHeaders(conn, schema, tenantId, streamHeaders, batchSize, cancellation)
             .ConfigureAwait(false);
+
+        // #6142: archived streams claim their identity too; that is what keeps the id from being started again
+        if (_events.EnableStrictStreamIdentityEnforcement)
+        {
+            await copyStreamIdentities(conn, schema, streamHeaders, _ => tenantId, h => h.Id, h => h.Key,
+                    batchSize, cancellation)
+                .ConfigureAwait(false);
+        }
 
         var columns = buildEventColumns();
         var copySql = $"COPY {schema}.mt_events({string.Join(", ", columns.Select(c => $"\"{c}\""))}) FROM STDIN BINARY";
@@ -499,6 +516,87 @@ internal class BulkEventAppender
 
                 await writer!.StartRowAsync(cancellation).ConfigureAwait(false);
                 await writeStreamRow(writer, stream, cancellation).ConfigureAwait(false);
+                batch++;
+            }
+
+            if (writer != null)
+            {
+                await writer.CompleteAsync(cancellation).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            if (writer != null)
+            {
+                await writer.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// #6142: under <see cref="EventGraph.EnableStrictStreamIdentityEnforcement"/> every new stream claims its id
+    /// in <c>mt_streams_identity</c>, which is what refuses starting that id again once the stream is archived.
+    /// Session-started streams claim it in the append itself; the bulk paths COPY the claims here, after
+    /// <c>mt_streams</c>. Every bulk-imported stream is a new one, so this is a plain COPY: an id that was
+    /// claimed already fails the import with a unique violation on <c>mt_streams_identity</c>, and the whole
+    /// import rolls back.
+    /// </summary>
+    private async Task copyStreamIdentities<T>(
+        NpgsqlConnection conn,
+        string schema,
+        IReadOnlyList<T> streams,
+        Func<T, string> tenantIdOf,
+        Func<T, Guid> idOf,
+        Func<T, string?> keyOf,
+        int batchSize,
+        CancellationToken cancellation)
+    {
+        if (streams.Count == 0)
+        {
+            return;
+        }
+
+        var conjoined = _events.TenancyStyle == TenancyStyle.Conjoined;
+        var columns = conjoined ? "tenant_id, id" : "id";
+        var copySql =
+            $"COPY {schema}.{StreamIdentityEnforcementTable.TableName}({columns}) FROM STDIN BINARY";
+
+        var batch = 0;
+        NpgsqlBinaryImporter? writer = null;
+
+        try
+        {
+            foreach (var stream in streams)
+            {
+                if (batch % batchSize == 0)
+                {
+                    if (writer != null)
+                    {
+                        await writer.CompleteAsync(cancellation).ConfigureAwait(false);
+                        await writer.DisposeAsync().ConfigureAwait(false);
+                    }
+
+                    writer = await conn.BeginBinaryImportAsync(copySql, cancellation).ConfigureAwait(false);
+                }
+
+                await writer!.StartRowAsync(cancellation).ConfigureAwait(false);
+
+                if (conjoined)
+                {
+                    await writer.WriteAsync(tenantIdOf(stream), NpgsqlDbType.Varchar, cancellation)
+                        .ConfigureAwait(false);
+                }
+
+                if (_events.StreamIdentity == StreamIdentity.AsGuid)
+                {
+                    await writer.WriteAsync(idOf(stream), NpgsqlDbType.Uuid, cancellation).ConfigureAwait(false);
+                }
+                else
+                {
+                    await writer.WriteAsync(keyOf(stream)!, NpgsqlDbType.Varchar, cancellation)
+                        .ConfigureAwait(false);
+                }
+
                 batch++;
             }
 
