@@ -179,6 +179,14 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return plan.FetchForWriting(_session, id, false, cancellation);
     }
 
+    public Task<IEventStream<T>> FetchForWriting<T, TId>(TId id, long expectedVersion,
+        CancellationToken cancellation = default)
+        where T : class where TId : notnull
+    {
+        var plan = FindFetchPlan<T, TId>();
+        return plan.FetchForWriting(_session, id, expectedVersion, cancellation);
+    }
+
     public Task<IEventStream<T>> FetchForExclusiveWriting<T, TId>(TId id, CancellationToken cancellation = default)
         where T : class where TId : notnull
     {
@@ -272,6 +280,15 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
     private IAggregateFetchPlan<TDoc, TId> determineFetchPlan<TDoc, TId>(StoreOptions options) where TDoc : class where TId : notnull
     {
+        // Every fetch API comes through here, session and batch alike. A null key can never match a
+        // stream, and the caller already knows when it has one, so TKey? is refused rather than quietly
+        // treated as TKey. The notnull constraint only warns for Nullable<T>.
+        if (Nullable.GetUnderlyingType(typeof(TId)) is { } underlying)
+        {
+            throw new ArgumentException(
+                $"{typeof(TDoc).FullNameInCode()} cannot be fetched by {typeof(TId).FullNameInCode()}. Fetch by {underlying.FullNameInCode()} instead, and handle a null value before fetching.");
+        }
+
         // For natural key types, try natural key planners first before attempting the cast to
         // IEventIdentityStrategy<TId>. #5344: a natural key is usually a wrapper (neither Guid nor
         // string), but it can also be a primitive `string` on a Guid-identity store — in which case
@@ -367,17 +384,19 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
         if (options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
         {
-            return projection.NaturalKeyDefinition?.OuterType == typeof(TId);
+            return NaturalKeyFetchPlanner.FindNaturalKey(projection, typeof(TId)) != null;
         }
 
-        return FindNaturalKeyProperty<TDoc>()?.PropertyType == typeof(TId);
+        // The aggregate may declare its key as TKey?, which is the TKey key
+        return FindNaturalKeyProperty<TDoc>() is { } property &&
+               NaturalKeyDefinition.KeyTypeOf(property.PropertyType) == typeof(TId);
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2072",
         Justification = "Aggregate types reaching the fetch planners are preserved at the projection-registration boundary.")]
     private static PropertyInfo? FindNaturalKeyProperty<TDoc>() =>
         typeof(TDoc).GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .FirstOrDefault(p => p.GetCustomAttribute<NaturalKeyAttribute>() != null);
+            .FirstOrDefault(p => p.GetCustomAttribute<NaturalKeyAttribute>() is { SourceProjection: null });
 
     /// <summary>
     /// Auto-discovers a natural key from [NaturalKey] attribute on the aggregate type
@@ -397,7 +416,9 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
         var naturalKeyProp = FindNaturalKeyProperty<TDoc>();
 
-        if (naturalKeyProp == null || naturalKeyProp.PropertyType != typeof(TId))
+        // A TKey? property is the TKey key
+        if (naturalKeyProp == null ||
+            NaturalKeyDefinition.KeyTypeOf(naturalKeyProp.PropertyType) != typeof(TId))
         {
             return false;
         }

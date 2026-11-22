@@ -54,7 +54,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TI
 
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Inline;
 
-    private static IDocumentStorage<TDoc, TId> findDocumentStorage(QuerySession session)
+    internal static IDocumentStorage<TDoc, TId> findDocumentStorage(QuerySession session)
     {
         IDocumentStorage<TDoc, TId>? storage = null;
         if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)

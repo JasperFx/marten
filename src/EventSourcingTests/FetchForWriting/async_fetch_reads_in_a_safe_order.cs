@@ -264,6 +264,11 @@ public abstract class async_fetch_reads_in_a_safe_order: OneOffConfigurationsCon
     /// </summary>
     private async Task<Found?> fetchWhileAsync(Fetch fetch, object id, Func<Task> interfere)
     {
+        if (!_shape.Subject.Supports(fetch))
+        {
+            Assert.Skip($"{fetch} has no form for this subject");
+        }
+
         var ct = TestContext.Current.CancellationToken;
 
         NpgsqlConnection? conn = null;
@@ -394,7 +399,9 @@ public abstract class async_fetch_reads_in_a_safe_order: OneOffConfigurationsCon
     }
 
     // A stream that does not exist yet when the fetch reads its version, and is started and projected before
-    // the snapshot read. Its snapshot is real, so the fetch answers with it.
+    // the snapshot read. Its snapshot is real, so a fetch by stream id answers with it. A fetch by natural key
+    // answers as of its version read, where no stream had the key yet: nothing is found, and a fetch at an
+    // expected version sees version 0.
 
     [Theory]
     [MemberData(nameof(AllFetches))]
@@ -407,15 +414,31 @@ public abstract class async_fetch_reads_in_a_safe_order: OneOffConfigurationsCon
             await catchTheDaemonUpAsync();
         }
 
-        shouldBeTheWholeStream(await fetchWhileAsync(fetch, id, async () =>
+        Func<Task> startIt = async () =>
         {
             await appendAsync(_shape.Tenant, id, true, 'A', 'B', 'C');
             await catchTheDaemonUpAsync();
-        }));
+        };
+
+        if (!_shape.Subject.ByNaturalKey)
+        {
+            shouldBeTheWholeStream(await fetchWhileAsync(fetch, id, startIt));
+            return;
+        }
+
+        if (fetch is Fetch.ForWritingAtVersion or Fetch.BatchedForWritingAtVersion)
+        {
+            var ex = await Should.ThrowAsync<ConcurrencyException>(() => fetchWhileAsync(fetch, id, startIt));
+            ex.Message.ShouldContain("but was 0");
+            return;
+        }
+
+        (await fetchWhileAsync(fetch, id, startIt)).ShouldBeNull();
     }
 
-    // A snapshot whose stream is gone, as DeleteAllEventDataAsync leaves it: every fetch refuses it, batched
-    // or not, rather than answer with the snapshot or with a new, empty aggregate.
+    // A snapshot whose stream is gone, as DeleteAllEventDataAsync leaves it: every fetch by stream id refuses
+    // it, batched or not, rather than answer with the snapshot or with a new, empty aggregate. A fetch by
+    // natural key finds nothing, because the key's lookup row went with the stream.
 
     private async Task deleteTheStreamAsync(object id)
     {
@@ -434,6 +457,22 @@ public abstract class async_fetch_reads_in_a_safe_order: OneOffConfigurationsCon
     {
         var id = await aStreamWithACurrentSnapshotAsync();
         await deleteTheStreamAsync(id);
+
+        if (_shape.Subject.ByNaturalKey)
+        {
+            if (!_shape.Subject.Supports(fetch)) Assert.Skip($"{fetch} has no form for this subject");
+
+            await using var s = session();
+            var fetchIt = () => _shape.Subject.FetchAsync(theStore, s, fetch, id, 3, TestContext.Current.CancellationToken);
+            if (fetch is Fetch.ForWritingAtVersion or Fetch.BatchedForWritingAtVersion)
+            {
+                (await Should.ThrowAsync<ConcurrencyException>(fetchIt)).Message.ShouldContain("but was 0");
+                return;
+            }
+
+            (await fetchIt()).ShouldBeNull();
+            return;
+        }
 
         var ex = await Should.ThrowAsync<SnapshotWithoutStreamException>(() => fetchWhileAsync(fetch, id, () => Task.CompletedTask));
         ex.Id.ShouldBe(id);
@@ -455,6 +494,12 @@ public sealed record StoreShape(
 public abstract class FetchSubject
 {
     public abstract string SnapshotTable { get; }
+
+    /// <summary>Whether the fetch goes by natural key, which resolves the stream inside each statement.</summary>
+    public virtual bool ByNaturalKey => false;
+
+    public virtual bool Supports(async_fetch_reads_in_a_safe_order.Fetch fetch) => true;
+
     public abstract object NewId();
     public abstract object Event(char letter);
     public abstract void Start(IDocumentSession session, object id, object[] events);

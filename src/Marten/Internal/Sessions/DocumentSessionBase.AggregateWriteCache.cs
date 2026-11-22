@@ -5,6 +5,7 @@ using System.Linq;
 using JasperFx.Events;
 using JasperFx.Events.Fetching;
 
+using Marten.Events.Fetching;
 using Marten.Services;
 
 namespace Marten.Internal.Sessions;
@@ -23,7 +24,8 @@ public abstract partial class DocumentSessionBase
     ///     A <see cref="NestedTenantSession" /> shares its parent's, because it shares the parent's unit of
     ///     work and commit. The keys carry the tenant.
     /// </remarks>
-    internal virtual AggregateWriteCacheSession AggregateWriteCache => _aggregateWriteCache ??= new();
+    internal virtual AggregateWriteCacheSession AggregateWriteCache =>
+        _aggregateWriteCache ??= new MartenAggregateWriteCacheSession(Options.EventGraph);
 
     /// <summary>
     ///     For a fetch whose aggregate the commit itself moves on, which is the Inline lifecycle: run against

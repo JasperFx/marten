@@ -67,6 +67,10 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
                         {
                             queueClaim(operations, stream.Id, stream.Key, stream.TenantId, innerValue);
                         }
+                        else
+                        {
+                            queueRetirementOfAllKeys(operations, stream.Id, stream.Key, stream.TenantId);
+                        }
                     }
                 }
             }
@@ -112,6 +116,10 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
                     if (innerValue != null)
                     {
                         queueUpsertSql(operations, @event.StreamId, @event.StreamKey, @event.TenantId, innerValue);
+                    }
+                    else
+                    {
+                        queueRetirementOfAllKeys(operations, @event.StreamId, @event.StreamKey, @event.TenantId);
                     }
                 }
             }
@@ -172,6 +180,29 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
             operations.QueueSqlCommand(
                 $"DELETE FROM {_tableName} WHERE {streamCol} = ? AND natural_key_value <> ?",
                 streamIdValue, innerValue);
+        }
+    }
+
+    /// <summary>
+    /// A key source that yields null for an event it is mapped to says the stream no longer has a key
+    /// (a nullable key set back to null), so every row pointing at the stream is retired and it can no
+    /// longer be fetched by its old key. On a stream that never had a key -- its first event carrying no
+    /// key yet -- there is nothing to retire.
+    /// </summary>
+    private void queueRetirementOfAllKeys(IDocumentOperations operations, Guid streamId, string? streamKey,
+        string tenantId)
+    {
+        var streamCol = _isGuid ? "stream_id" : "stream_key";
+        object streamIdValue = _isGuid ? (object)streamId : streamKey!;
+
+        if (_isConjoined)
+        {
+            operations.QueueSqlCommand($"DELETE FROM {_tableName} WHERE tenant_id = ? AND {streamCol} = ?",
+                tenantId, streamIdValue);
+        }
+        else
+        {
+            operations.QueueSqlCommand($"DELETE FROM {_tableName} WHERE {streamCol} = ?", streamIdValue);
         }
     }
 

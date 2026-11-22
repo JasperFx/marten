@@ -139,6 +139,35 @@ public interface IBatchEvents
     Task<T?> FetchLatest<T>(string id) where T : class;
 
     /// <summary>
+    ///     Fetch the projected aggregate T by an identity of type <typeparamref name="TId" /> with built in
+    ///     optimistic concurrency checks: a natural key, a strong-typed identifier, or the stream id itself. A
+    ///     natural key is resolved within the batch, in the same round trip.
+    /// </summary>
+    Task<IEventStream<T>> FetchForWriting<T, TId>(TId id) where T : class where TId : notnull;
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by an identity of type <typeparamref name="TId" /> and expected,
+    ///     current version of the aggregate: a natural key, a strong-typed identifier, or the stream id itself.
+    ///     Will fail immediately with ConcurrencyException if the expectedVersion is stale. Builds in optimistic
+    ///     concurrency for later
+    /// </summary>
+    Task<IEventStream<T>> FetchForWriting<T, TId>(TId id, long expectedVersion)
+        where T : class where TId : notnull;
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by an identity of type <typeparamref name="TId" /> for exclusive
+    ///     writing: a natural key, a strong-typed identifier, or the stream id itself.
+    /// </summary>
+    Task<IEventStream<T>> FetchForExclusiveWriting<T, TId>(TId id) where T : class where TId : notnull;
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by an identity of type <typeparamref name="TId" />: a natural key, a
+    ///     strong-typed identifier, or the stream id itself. This API functions regardless of the projection
+    ///     lifecycle, and should be thought of as a lightweight, read-only version of FetchForWriting
+    /// </summary>
+    Task<T?> FetchLatest<T, TId>(TId id) where T : class where TId : notnull;
+
+    /// <summary>
     ///     Check whether any events exist that match the given tag query, without loading the events.
     ///     This is a lightweight existence check useful for DCB guard clauses.
     /// </summary>

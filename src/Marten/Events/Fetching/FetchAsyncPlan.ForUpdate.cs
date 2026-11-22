@@ -12,6 +12,7 @@ using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Sessions;
+using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Services.BatchQuerying;
@@ -99,9 +100,11 @@ internal partial class FetchAsyncPlan<TDoc, TId>
     ///     so a redo goes back to the row regardless, and whatever is in the session's identity map for this id
     ///     is the caller's own document rather than anything this fetch put there.
     /// </remarks>
-    private void forgetSnapshot(DocumentSessionBase session, TId id)
+    private void forgetSnapshot(DocumentSessionBase session, TId id) => forgetSnapshot(_storage, session, id);
+
+    internal static void forgetSnapshot(IDocumentStorage<TDoc, TId> storage, DocumentSessionBase session, TId id)
     {
-        if (_storage is IValueTypeRevisions<TId> wrapped)
+        if (storage is IValueTypeRevisions<TId> wrapped)
         {
             wrapped.ClearRevision(session, id);
         }
