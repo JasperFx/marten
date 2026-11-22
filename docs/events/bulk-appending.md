@@ -19,8 +19,11 @@ The bulk append API:
 
 1. Pre-allocates event sequence numbers from the `mt_events_sequence`
 2. Uses `NpgsqlBinaryImporter` to COPY stream records into `mt_streams`
-3. Uses `NpgsqlBinaryImporter` to COPY event records into `mt_events`
-4. Updates the high water mark in `mt_event_progression` so the async daemon knows where to start
+3. With [strict stream identity](/events/archiving.html#strict-stream-identity-after-archive) on, uses COPY to
+   write each stream's id into `mt_streams_identity`, the same row starting the stream in a session writes. An id
+   that is already taken, including an archived stream's, fails the whole import
+4. Uses `NpgsqlBinaryImporter` to COPY event records into `mt_events`
+5. Updates the high water mark in `mt_event_progression` so the async daemon knows where to start
 
 This approach is significantly faster than the normal append path because it avoids per-row function
 calls, version checking, and individual INSERT statements.
