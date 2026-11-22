@@ -191,7 +191,7 @@ public record Shipment: TrackedShipment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/project_latest_for_commit_tests.cs#L23-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_project_latest_for_commit_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/project_latest_for_commit_tests.cs#L28-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_project_latest_for_commit_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Using it:
@@ -206,7 +206,7 @@ stream.AppendOne(new ShipmentScanned("Leeds"));
 // and SaveChangesAsync() keeps them
 var shipment = await session.Events.ProjectLatestForCommit<Shipment>(shipmentId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/project_latest_for_commit_tests.cs#L345-L354' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_project_latest_for_commit' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/project_latest_for_commit_tests.cs#L358-L367' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_project_latest_for_commit' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### What It Guarantees
@@ -238,6 +238,12 @@ Under `EventAppendMode.Rich` it can also throw the version conflict the commit w
 assigned the pending events their versions, as for `StartStream()` followed by `FetchForWriting()` on an id that
 already exists.
 
+`SaveChangesAsync()` throws an `InvalidStreamOperationException`, before anything is written, when the stream's
+expected version changed after the call: the stream was fetched for writing again, or appended to with a new
+expected version, `AppendOptimistic()` or `AppendExclusive()`. The aggregate the call returned no longer
+matches that commit. Call `ProjectLatestForCommit()` again after the last change to the stream. Appending more
+events to the stream with its expected version unchanged, as `IEventStream.AppendOne()` does, is not refused.
+
 ### Limits
 
 - `IEvent.Sequence` is assigned by the database at commit, so it is 0 in the answer.
@@ -247,8 +253,6 @@ already exists.
 - A user name, correlation id or causation id set on the session after the call does not replace the value
   assigned at the call. One that is not set on the session at the call is filled in by the commit, so the
   answer has no value where the stored event has one. Session headers always take their values at commit.
-- Changing the stream's expected version after the call, by fetching it for writing again or appending with a
-  new expected version, makes the answer wrong.
 - The answer is folded onto the same starting state `ProjectLatest` uses: the stored snapshot or the committed
   events.
 - For a global aggregate (`AddGlobalProjection`), each event's tenant id in the answer is the one the

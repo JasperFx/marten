@@ -303,6 +303,8 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         stream.PrepareEvents(currentVersion, events, new Queue<long>(),
             TenantPropagation.MetadataContextFor(committing, stream, commitTenantId));
 
+        committing.WorkTracker.PinVersionForCommit(stream, currentVersion);
+
         foreach (var @event in stream.Events)
         {
             // Npgsql writes this as infinity and reads it back unchanged

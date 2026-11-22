@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
@@ -12,11 +13,15 @@ using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
+using Marten.Exceptions;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Time.Testing;
+using Npgsql;
 using Shouldly;
 using StronglyTypedIds;
+using Weasel.Postgresql;
 using Xunit;
 
 namespace EventSourcingTests.Projections;
@@ -130,6 +135,14 @@ public partial class GlobalShipmentProjection: SingleStreamProjection<Shipment, 
     public Shipment Create(IEvent<ShipmentStarted> e) => Shipment.Create(e);
 
     public void Apply(IEvent<ShipmentScanned> e, Shipment shipment) => shipment.Apply(e);
+}
+
+public enum GuardChange
+{
+    FetchForWritingAgain,
+    AppendWithExpectedVersion,
+    AppendOptimistic,
+    AppendExclusive
 }
 
 public enum PendingShape
@@ -756,6 +769,283 @@ public class project_latest_for_commit_tests: OneOffConfigurationsContext
         {
             // The clock's sub-microsecond ticks, dropped by the database
             stored.Timestamp.ShouldBe(_clock.GetUtcNow().AddTicks(-7));
+        }
+    }
+
+    private async Task competingScan(Guid id)
+    {
+        await using var other = theStore.LightweightSession();
+        other.Events.Append(id, new ShipmentScanned("Elsewhere"));
+        await other.SaveChangesAsync();
+    }
+
+    private static async Task changeExpectedVersion(IDocumentSession session, Guid id, GuardChange change)
+    {
+        switch (change)
+        {
+            case GuardChange.FetchForWritingAgain:
+                await session.Events.FetchForWriting<Shipment>(id);
+                break;
+            case GuardChange.AppendWithExpectedVersion:
+                // Two events pending, ending at version 5, so the stream is expected at version 3
+                session.Events.Append(id, 5, new ShipmentScanned("Hull"));
+                break;
+            case GuardChange.AppendOptimistic:
+                await session.Events.AppendOptimistic(id, new ShipmentScanned("Hull"));
+                break;
+            case GuardChange.AppendExclusive:
+                await session.Events.AppendExclusive(id, new ShipmentScanned("Hull"));
+                break;
+        }
+    }
+
+    public static IEnumerable<object[]> GuardChanges()
+    {
+        foreach (var appendMode in new[] { EventAppendMode.Rich, EventAppendMode.QuickWithServerTimestamps })
+        foreach (var change in Enum.GetValues<GuardChange>())
+        {
+            yield return [appendMode, change];
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(GuardChanges))]
+    public async Task commit_refuses_a_stream_whose_expected_version_changed_after_the_call(EventAppendMode appendMode,
+        GuardChange change)
+    {
+        configure(appendMode, opts => register<Shipment>(opts, ProjectionLifecycle.Live));
+
+        var id = await startShipment();
+
+        await using var session = theStore.LightweightSession();
+        stampMetadata(session, "call");
+        var stream = await session.Events.FetchForWriting<Shipment>(id);
+        stream.AppendOne(new ShipmentScanned("Leeds"));
+
+        await session.Events.ProjectLatestForCommit<Shipment>(id);
+
+        await competingScan(id);
+        await changeExpectedVersion(session, id, change);
+
+        var ex = await Should.ThrowAsync<InvalidStreamOperationException>(() => session.SaveChangesAsync());
+        ex.Message.ShouldContain("ProjectLatestForCommit() again");
+
+        await using var query = theStore.QuerySession();
+        (await query.Events.FetchStreamStateAsync(id))!.Version.ShouldBe(3);
+    }
+
+    [Theory]
+    [InlineData(EventAppendMode.Rich, GuardChange.FetchForWritingAgain)]
+    [InlineData(EventAppendMode.QuickWithServerTimestamps, GuardChange.AppendWithExpectedVersion)]
+    public async Task calling_again_after_the_expected_version_changed_lets_the_commit_through(
+        EventAppendMode appendMode, GuardChange change)
+    {
+        configure(appendMode, opts => register<Shipment>(opts, ProjectionLifecycle.Live));
+
+        var id = await startShipment();
+
+        await using var session = theStore.LightweightSession();
+        stampMetadata(session, "call");
+        var stream = await session.Events.FetchForWriting<Shipment>(id);
+        stream.AppendOne(new ShipmentScanned("Leeds"));
+
+        await session.Events.ProjectLatestForCommit<Shipment>(id);
+
+        await competingScan(id);
+        await changeExpectedVersion(session, id, change);
+
+        var returned = await session.Events.ProjectLatestForCommit<Shipment>(id);
+
+        _clock.Advance(5.Seconds());
+        await session.SaveChangesAsync();
+
+        await shouldMatchTheCommit(returned, id);
+    }
+
+    [Theory]
+    [InlineData(EventAppendMode.Rich)]
+    [InlineData(EventAppendMode.QuickWithServerTimestamps)]
+    public async Task appending_to_the_guarded_stream_after_the_call_still_commits(EventAppendMode appendMode)
+    {
+        configure(appendMode, opts => register<Shipment>(opts, ProjectionLifecycle.Live));
+
+        var id = await startShipment();
+
+        await using var session = theStore.LightweightSession();
+        var stream = await session.Events.FetchForWriting<Shipment>(id);
+        stream.AppendOne(new ShipmentScanned("Leeds"));
+
+        var returned = await session.Events.ProjectLatestForCommit<Shipment>(id);
+
+        stream.AppendOne(new ShipmentScanned("Hull"));
+        await session.SaveChangesAsync();
+
+        returned.ShouldNotBeNull();
+        await using var query = theStore.QuerySession();
+        var stored = await query.Events.AggregateStreamAsync<Shipment>(id);
+        stored.ShouldNotBeNull();
+        stored.Scans.ShouldBe(returned.Scans + 1);
+        stored.LastEventVersion.ShouldBe(4);
+    }
+
+    [Fact]
+    public async Task a_session_that_never_called_is_free_to_fetch_for_writing_again()
+    {
+        configure(EventAppendMode.QuickWithServerTimestamps, opts => register<Shipment>(opts, ProjectionLifecycle.Live));
+
+        var id = await startShipment();
+
+        await using var session = theStore.LightweightSession();
+        var stream = await session.Events.FetchForWriting<Shipment>(id);
+        stream.AppendOne(new ShipmentScanned("Leeds"));
+
+        await competingScan(id);
+        await session.Events.FetchForWriting<Shipment>(id);
+        await session.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        (await query.Events.FetchStreamStateAsync(id))!.Version.ShouldBe(4);
+    }
+
+    [Fact]
+    public async Task ejecting_the_pending_changes_forgets_the_call()
+    {
+        configure(EventAppendMode.QuickWithServerTimestamps, opts => register<Shipment>(opts, ProjectionLifecycle.Live));
+
+        var id = await startShipment();
+
+        await using var session = theStore.LightweightSession();
+        var stream = await session.Events.FetchForWriting<Shipment>(id);
+        stream.AppendOne(new ShipmentScanned("Leeds"));
+        await session.Events.ProjectLatestForCommit<Shipment>(id);
+
+        session.EjectAllPendingChanges();
+        await competingScan(id);
+
+        stream = await session.Events.FetchForWriting<Shipment>(id);
+        stream.AppendOne(new ShipmentScanned("Hull"));
+        await session.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        (await query.Events.FetchStreamStateAsync(id))!.Version.ShouldBe(4);
+    }
+
+    private class CommandCounter: IMartenLogger, IMartenSessionLogger
+    {
+        private int _count;
+
+        public int Count => _count;
+
+        public void Reset() => Interlocked.Exchange(ref _count, 0);
+
+        public IMartenSessionLogger StartSession(IQuerySession session) => this;
+        public void SchemaChange(string sql) { }
+        public void OnBeforeExecute(NpgsqlCommand command) => Interlocked.Increment(ref _count);
+        public void OnBeforeExecute(NpgsqlBatch batch) => Interlocked.Increment(ref _count);
+        public void LogSuccess(NpgsqlCommand command) { }
+        public void LogFailure(NpgsqlCommand command, Exception ex) { }
+        public void LogSuccess(NpgsqlBatch batch) { }
+        public void LogFailure(NpgsqlBatch batch, Exception ex) { }
+        public void LogFailure(Exception ex, string message) { }
+        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit) { }
+    }
+
+    private async Task<(long streams, long tombstones, long lastSequence)> readEventStorage()
+    {
+        await theStore.Options.EventGraph.WaitForPendingTombstonesAsync();
+
+        var schema = theStore.Options.Events.DatabaseSchemaName;
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        async Task<long> scalar(string sql) => Convert.ToInt64(await conn.CreateCommand(sql).ExecuteScalarAsync());
+
+        return (await scalar($"select count(*) from {schema}.mt_streams"),
+            await scalar($"select count(*) from {schema}.mt_events where type = 'tombstone'"),
+            await scalar($"select last_value from {schema}.mt_events_sequence"));
+    }
+
+    [Theory]
+    [InlineData(EventAppendMode.Rich, false)]
+    [InlineData(EventAppendMode.Rich, true)]
+    [InlineData(EventAppendMode.QuickWithServerTimestamps, false)]
+    [InlineData(EventAppendMode.QuickWithServerTimestamps, true)]
+    public async Task a_refused_commit_sends_nothing_to_the_database(EventAppendMode appendMode,
+        bool afterAFailedCommit)
+    {
+        var commands = new CommandCounter();
+        configure(appendMode, opts =>
+        {
+            register<Shipment>(opts, ProjectionLifecycle.Live);
+            opts.Logger(commands);
+        });
+
+        var id = await startShipment();
+
+        await using var session = theStore.LightweightSession();
+        var stream = await session.Events.FetchForWriting<Shipment>(id);
+        stream.AppendOne(new ShipmentScanned("Leeds"));
+        await session.Events.ProjectLatestForCommit<Shipment>(id);
+
+        await competingScan(id);
+        if (afterAFailedCommit)
+        {
+            await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(() => session.SaveChangesAsync());
+        }
+
+        await session.Events.FetchForWriting<Shipment>(id);
+
+        var before = await readEventStorage();
+        commands.Reset();
+
+        await Should.ThrowAsync<InvalidStreamOperationException>(() => session.SaveChangesAsync());
+
+        // A tombstone write is asynchronous, so wait for it before asserting nothing was written
+        await theStore.Options.EventGraph.WaitForPendingTombstonesAsync();
+        commands.Count.ShouldBe(0);
+        (await readEventStorage()).ShouldBe(before);
+    }
+
+    [Theory]
+    [InlineData(EventAppendMode.Rich, true)]
+    [InlineData(EventAppendMode.Rich, false)]
+    [InlineData(EventAppendMode.QuickWithServerTimestamps, true)]
+    [InlineData(EventAppendMode.QuickWithServerTimestamps, false)]
+    public async Task retrying_on_the_same_session_after_a_failed_commit(EventAppendMode appendMode, bool callAgain)
+    {
+        configure(appendMode, opts => register<Shipment>(opts, ProjectionLifecycle.Live));
+
+        var id = await startShipment();
+
+        await using var session = theStore.LightweightSession();
+        stampMetadata(session, "call");
+        var stream = await session.Events.FetchForWriting<Shipment>(id);
+        stream.AppendOne(new ShipmentScanned("Leeds"));
+        var returned = await session.Events.ProjectLatestForCommit<Shipment>(id);
+
+        // A competing commit with the expected version left alone is the usual concurrency failure
+        await competingScan(id);
+        await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(() => session.SaveChangesAsync());
+
+        await session.Events.FetchForWriting<Shipment>(id);
+
+        if (!callAgain)
+        {
+            await Should.ThrowAsync<InvalidStreamOperationException>(() => session.SaveChangesAsync());
+            return;
+        }
+
+        returned = await session.Events.ProjectLatestForCommit<Shipment>(id);
+
+        if (appendMode == EventAppendMode.Rich)
+        {
+            await session.SaveChangesAsync();
+            await shouldMatchTheCommit(returned, id);
+        }
+        else
+        {
+            // As without the call: under the quick modes a retry on the session of a failed commit fails again
+            await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(() => session.SaveChangesAsync());
         }
     }
 }
