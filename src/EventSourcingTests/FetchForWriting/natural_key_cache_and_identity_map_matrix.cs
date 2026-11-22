@@ -52,7 +52,7 @@ public class natural_key_cache_and_identity_map_matrix: OneOffConfigurationsCont
     private readonly MartenTestAggregateWriteCache theCache = new();
 
     public static IEnumerable<object[]> WriteCacheCases() =>
-        from lifecycle in new[] { SnapshotLifecycle.Inline, SnapshotLifecycle.Async }
+        from lifecycle in new[] { MatrixLifecycle.Inline, MatrixLifecycle.Async, MatrixLifecycle.Live }
         from seed in new[] { ByWhat.StreamId, ByWhat.NaturalKey, ByWhat.BatchedStreamId, ByWhat.BatchedNaturalKey }
         from take in new[] { ByWhat.StreamId, ByWhat.NaturalKey, ByWhat.BatchedStreamId, ByWhat.BatchedNaturalKey }
         select new object[] { lifecycle, seed, take };
@@ -62,6 +62,19 @@ public class natural_key_cache_and_identity_map_matrix: OneOffConfigurationsCont
         from first in new[] { ByWhat.StreamId, ByWhat.NaturalKey }
         from then in new[] { ByWhat.StreamId, ByWhat.NaturalKey, ByWhat.BatchedStreamId, ByWhat.BatchedNaturalKey }
         select new object[] { lifecycle, first, then };
+
+    private static void registerFor(StoreOptions opts, MatrixLifecycle lifecycle)
+    {
+        if (lifecycle == MatrixLifecycle.Live)
+        {
+            opts.Projections.LiveStreamAggregation<KeyedSimpleAggregate>();
+        }
+        else
+        {
+            opts.Projections.Snapshot<KeyedSimpleAggregate>(
+                lifecycle == MatrixLifecycle.Inline ? SnapshotLifecycle.Inline : SnapshotLifecycle.Async);
+        }
+    }
 
     private async Task<Guid> startAsync()
     {
@@ -114,12 +127,12 @@ public class natural_key_cache_and_identity_map_matrix: OneOffConfigurationsCont
 
     [Theory]
     [MemberData(nameof(WriteCacheCases))]
-    public async Task the_write_cache_is_taken_however_it_was_seeded(SnapshotLifecycle lifecycle, ByWhat seed,
+    public async Task the_write_cache_is_taken_however_it_was_seeded(MatrixLifecycle lifecycle, ByWhat seed,
         ByWhat take)
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<KeyedSimpleAggregate>(lifecycle);
+            registerFor(opts, lifecycle);
             opts.Events.AggregateWriteCaching.Cache = theCache;
             opts.Events.CacheAggregatesForWriting<KeyedSimpleAggregate>();
         });
@@ -208,7 +221,7 @@ public class natural_key_cache_and_identity_map_matrix: OneOffConfigurationsCont
     }
 
     public static IEnumerable<object[]> KeyChangeCases() =>
-        from lifecycle in new[] { SnapshotLifecycle.Inline, SnapshotLifecycle.Async }
+        from lifecycle in new[] { MatrixLifecycle.Inline, MatrixLifecycle.Async, MatrixLifecycle.Live }
         from seed in new[] { ByWhat.StreamId, ByWhat.NaturalKey }
         from change in Enum.GetValues<KeyChange>()
         from through in Enum.GetValues<ChangedThrough>()
@@ -216,12 +229,12 @@ public class natural_key_cache_and_identity_map_matrix: OneOffConfigurationsCont
 
     [Theory]
     [MemberData(nameof(KeyChangeCases))]
-    public async Task a_changed_key_is_not_answered_by_its_old_value(SnapshotLifecycle lifecycle, ByWhat seed,
+    public async Task a_changed_key_is_not_answered_by_its_old_value(MatrixLifecycle lifecycle, ByWhat seed,
         KeyChange change, ChangedThrough through)
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<KeyedSimpleAggregate>(lifecycle);
+            registerFor(opts, lifecycle);
             opts.Events.AggregateWriteCaching.Cache = theCache;
             opts.Events.CacheAggregatesForWriting<KeyedSimpleAggregate>();
         });

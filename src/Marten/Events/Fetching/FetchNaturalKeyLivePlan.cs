@@ -13,13 +13,15 @@ using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Storage;
 using Weasel.Postgresql;
+using Weasel.Postgresql.SqlGeneration;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Events.Fetching;
 
 /// <summary>
 /// A Live aggregate has no stored snapshot, so the fetch reads the whole stream, as
-/// <see cref="FetchLivePlan{TDoc,TId}"/> does, and aggregates it.
+/// <see cref="FetchLivePlan{TDoc,TId}"/> does, and aggregates it. With the aggregate write cache, a cached aggregate
+/// is caught up by the events after it.
 /// </summary>
 [UnconditionalSuppressMessage("Trimming", "IL2026",
     Justification = "Class-level: as FetchLivePlan. Aggregate types are preserved at the projection-registration boundary.")]
@@ -62,12 +64,18 @@ internal class FetchNaturalKeyLivePlan<TDoc, TNaturalKey, TId>: FetchNaturalKeyP
         await identityStrategy(session).EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
     }
 
-    // Live aggregates are never cached, so cached is always null here
+    protected override bool UsesWriteCache => true;
+
+    // As FetchLivePlan: a cached aggregate behind the stream is caught up by the events after it, one ahead of it is
+    // wrong
+    protected override bool cachedSnapshotFits(long cachedVersion, long streamVersion) =>
+        cachedVersion <= streamVersion;
+
     protected override void writeAggregateStatements(ICommandBuilder builder, QuerySession session,
         object keyValue, CachedSnapshot? cached)
     {
         builder.StartNewCommand();
-        eventQuery(session, keyValue).ConfigureCommand(builder, session);
+        eventQuery(session, keyValue, cached?.Version).ConfigureCommand(builder, session);
     }
 
     // As FetchLivePlan.FetchForReading: a stream fetched for writing earlier in the session, plus whatever has
@@ -94,13 +102,18 @@ internal class FetchNaturalKeyLivePlan<TDoc, TNaturalKey, TId>: FetchNaturalKeyP
         return (false, null);
     }
 
-    private ListQueryHandler<IEvent> eventQuery(QuerySession session, object keyValue)
+    /// <summary>
+    /// The stream's events, or with a cached aggregate only the ones after its version, as FetchLivePlan reads them.
+    /// </summary>
+    private ListQueryHandler<IEvent> eventQuery(QuerySession session, object keyValue, long? afterVersion)
     {
         var selector = session.EventStorage();
         var statement = new EventStatement(selector, _events)
         {
             TenantId = IsGlobal ? StorageConstants.DefaultTenantId : session.TenantId,
-            Filters = [_lookup.StreamIdFilter(keyValue)]
+            Filters = afterVersion is { } version
+                ? [_lookup.StreamIdFilter(keyValue), new WhereFragment("d.version > ?", version)]
+                : [_lookup.StreamIdFilter(keyValue)]
         };
 
         return new ListQueryHandler<IEvent>(statement, selector);
@@ -119,7 +132,15 @@ internal class FetchNaturalKeyLivePlan<TDoc, TNaturalKey, TId>: FetchNaturalKeyP
         _events.Options.OpenTelemetry
             .RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.LivePlan);
 
-        var document = await _aggregator.BuildAsync(events, session, default, streamId, _identitySetter, cancellation)
+        // With a cached aggregate, the events are the ones after it, and an event appended between the two reads is
+        // among them, so the aggregate is at the version of the last one
+        if (cached != null)
+        {
+            version = FetchAsyncPlan<TDoc, TId>.reachedVersion(version, false, null, events);
+        }
+
+        var document = await _aggregator.BuildAsync(events, session, cached?.Aggregate, streamId, _identitySetter,
+                cancellation)
             .ConfigureAwait(false);
 
         if (document != null)
