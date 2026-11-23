@@ -66,10 +66,31 @@ internal partial class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TI
         }
         else
         {
-            storage = session.StorageFor<TDoc, TId>();
+            // #6148: as fetchForWriting, so an aggregate with a strong-typed id can be read by its stream's Guid or
+            // string. session.StorageFor<TDoc, TId>() refuses an id type that is not the document's own.
+            storage = ((IMartenSession)session).Options.ResolveCorrectedDocumentStorage<TDoc, TId>(session.TrackingMode);
         }
 
         return storage;
     }
 
+    /// <summary>
+    ///     Take the instance pending events were just folded onto out of the identity map, so the inline projection
+    ///     does not fold them onto it a second time at commit.
+    /// </summary>
+    /// <remarks>
+    ///     #6148: the map is keyed by the aggregate's own id type. For a strong-typed id that is the wrapper, not the
+    ///     stream's Guid or string, so ejecting by <paramref name="id" /> alone removes nothing. The storage ejects by
+    ///     the document's own identity.
+    /// </remarks>
+    internal static void EjectFoldedInstance(DocumentSessionBase session, IDocumentStorage<TDoc, TId> storage, TId id,
+        TDoc? stored)
+    {
+        session.EjectAggregateFromIdentityMap<TDoc, TId>(id);
+
+        if (stored != null)
+        {
+            storage.Eject(session, stored);
+        }
+    }
 }

@@ -254,15 +254,9 @@ internal class FetchNaturalKeyAsyncPlan<TDoc, TNaturalKey, TId>: FetchNaturalKey
     protected override async Task<TDoc?> applyPendingEventsAsync(DocumentSessionBase session, TId streamId,
         TDoc? aggregate, IReadOnlyList<IEvent> pending, CancellationToken cancellation)
     {
-        aggregate = await _aggregator.BuildAsync(pending, session, aggregate, streamId, _storage, cancellation)
+        // As FetchAsyncPlan.ProjectLatest since #6145: nothing is stored. The async daemon applies every event in its
+        // slice to the stored document without checking a version, so a stored fold would count these events twice.
+        return await _aggregator.BuildAsync(pending, session, aggregate, streamId, _storage, cancellation)
             .ConfigureAwait(false);
-
-        // As FetchAsyncPlan.ProjectLatest: store the updated document so it persists when the session commits
-        if (aggregate != null)
-        {
-            session.Store(aggregate);
-        }
-
-        return aggregate;
     }
 }
