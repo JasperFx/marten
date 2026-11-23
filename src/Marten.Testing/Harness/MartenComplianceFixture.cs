@@ -74,6 +74,13 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsPendingEventAges => true;
 
     /// <summary>
+    /// jasperfx#1282 (marten#6152). <c>RegisteredAggregateTypes()</c> answers from <c>ProjectionGraph.AllAggregateTypes()</c>,
+    /// and <c>MartenDatabase.FetchAggregateStreamStatsAsync</c> groups <c>mt_streams</c> by its <c>type</c> column in one
+    /// round trip, never reading <c>mt_events</c>.
+    /// </summary>
+    public override bool SupportsAggregateStreamStats => true;
+
+    /// <summary>
     /// #5383 part 5 — the database a tenant's data lives in, through Marten's own tenancy rather than
     /// a test-local map, so the suite exercises the resolution the product ships.
     /// </summary>
