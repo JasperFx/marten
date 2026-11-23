@@ -32,7 +32,7 @@ If you cannot obtain the desired diagnostic data through Marten's [diagnostics](
 metrics can help:
 
 * Set `opts.DisableNpgsqlLogging = false` to forward Npgsql's logging to your application's `ILoggerFactory`. It is off by
-  default because it is very noisy. See [Disabling Npgsql Logging](/diagnostics#disabling-npgsql-logging-).
+  default because it is very noisy. See [Disabling Npgsql Logging](/diagnostics#disabling-npgsql-logging).
 * Npgsql publishes [OpenTelemetry tracing and metrics](https://www.npgsql.org/doc/diagnostics/overview.html) of its own,
   alongside [Marten's](/otel).
 

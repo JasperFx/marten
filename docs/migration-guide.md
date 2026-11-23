@@ -29,7 +29,7 @@ list of what you get.
 - [`RewriteStoredEventsAsync()`](/events/rewriting) rewrites stored events the way an append would store them today,
   and can resume after a crash.
 - [`UnArchiveStream()`](/events/archiving#un-archiving-a-stream) reverses `ArchiveStream()`.
-- [`ProjectLatestForCommit<T>(id)`](/events/projections/project-latest#projectlatestforcommit-the-aggregate-as-the-commit-writes-it)
+- [`ProjectLatestForCommit<T>(id)`](/events/projections/project-latest#project-latest-for-commit)
   returns an aggregate with the version, timestamp and metadata its pending events get at commit, so a document or
   response you build before `SaveChangesAsync()` matches what a read after the commit returns. If the stream's
   expected version changes after the call, `SaveChangesAsync()` throws `InvalidStreamOperationException`.
@@ -1749,7 +1749,7 @@ no longer matches `AggregateStreamAsync()` ([#4439](https://github.com/JasperFx/
 
 Either stop modifying the fetched aggregate, or set `UseIdentityMapForAggregates = false`. See
 [Aggregate Projections](events/projections/aggregate-projections.md) and
-[FetchForWriting](events/projections/aggregate-projections.md#rehydrating-aggregates-for-writes).
+[FetchForWriting](/scenarios/command_handler_workflow#fetchforwriting).
 :::
 
 **`EnableBigIntEvents`.** Event versions, sequences and hi-lo values are 64-bit, removing the limit of

@@ -48,96 +48,80 @@ configuration and what is already there: `db-patch` and `db-assert` connect and 
 and writes.
 :::
 
-For the moment, Marten is not directly supporting any kind of database migration strategy. There are community tools build on top of Marten for managing schema db migration, refer to our [community section](/community/tools-and-libraries.html#sable) for more details.
+To generate migration scripts for an existing database, rather than the complete script, see
+[Schema Migrations and Patches](/schema/migrations).
 
-The code above creates the following SQL script below, with these elements:
+The code above creates a SQL script with these elements:
 
-1. For each document type, there is a table systematically named `mt_doc_[document type name]` that consists of an id column and a
-   JSONB column called "data"
-2. For each document type, there is a function called `mt_upsert_[document type name]` that performs inserts or updates of that document type
-3. You'll see an index named `mt_doc_user_idx_user_name` that is on a duplicated, searchable field for the `User` document (it's configured by attribute)
-4. `mt_hilo` and `mt_get_next_hi` that support Marten's HiLo numeric identifier strategy.
+1. A block that creates the `public` schema if it is missing, and the same for any other schema your configuration uses
+2. Marten's shared helper functions, created once per schema: the `mt_immutable_*` functions that computed indexes on
+   date and time members use, the `mt_grams_*` and `mt_safe_unaccent` functions behind
+   [n-gram search](/documents/full-text#partial-text-search-in-a-multi-word-text-ngram-search), and the `mt_jsonb_*` functions behind
+   [partial updates](/documents/partial-updates-patching)
+3. For each document type, a table systematically named `mt_doc_[document alias]`, with the `id` column, the `data`
+   JSONB column, and the `mt_last_modified`, `mt_version` and `mt_dotnet_type` metadata columns. Any indexes, duplicated
+   fields or foreign keys you configure for a document type are created with its table.
+4. When any document type uses numeric identifiers, the `mt_hilo` table and `mt_get_next_hi` function behind Marten's
+   [HiLo identifier strategy](/documents/identity)
 
-The full DDL exported from above is:
+Marten writes documents with ordinary SQL statements against these tables, so there is no function per document type.
+The document tables exported from above are:
 
 ```sql
-DROP TABLE IF EXISTS mt_doc_user CASCADE;
-CREATE TABLE mt_doc_user (
-    id           uuid CONSTRAINT pk_mt_doc_user PRIMARY KEY,
-    data         jsonb NOT NULL ,
-    user_name    varchar
+CREATE TABLE IF NOT EXISTS public.mt_doc_company (
+    id                  uuid                        NOT NULL,
+    data                jsonb                       NOT NULL,
+    mt_last_modified    timestamp with time zone    NULL DEFAULT (transaction_timestamp()),
+    mt_version          uuid                        NOT NULL DEFAULT (md5(random()::text || clock_timestamp()::text)::uuid),
+    mt_dotnet_type      varchar                     NULL,
+CONSTRAINT pkey_mt_doc_company_id PRIMARY KEY (id)
+);
+CREATE TABLE IF NOT EXISTS public.mt_doc_issue (
+    id                  uuid                        NOT NULL,
+    data                jsonb                       NOT NULL,
+    mt_last_modified    timestamp with time zone    NULL DEFAULT (transaction_timestamp()),
+    mt_version          uuid                        NOT NULL DEFAULT (md5(random()::text || clock_timestamp()::text)::uuid),
+    mt_dotnet_type      varchar                     NULL,
+CONSTRAINT pkey_mt_doc_issue_id PRIMARY KEY (id)
+);
+CREATE TABLE IF NOT EXISTS public.mt_doc_user (
+    id                  uuid                        NOT NULL,
+    data                jsonb                       NOT NULL,
+    mt_last_modified    timestamp with time zone    NULL DEFAULT (transaction_timestamp()),
+    mt_version          uuid                        NOT NULL DEFAULT (md5(random()::text || clock_timestamp()::text)::uuid),
+    mt_dotnet_type      varchar                     NULL,
+CONSTRAINT pkey_mt_doc_user_id PRIMARY KEY (id)
+);
+```
+
+All three of those document types use `Guid` identifiers. Add a document type with an `int` or `long` identifier, and
+the script also contains the HiLo support:
+
+```sql
+CREATE TABLE IF NOT EXISTS public.mt_hilo (
+    entity_name    varchar    NOT NULL,
+    hi_value       bigint     NULL DEFAULT 0,
+CONSTRAINT pkey_mt_hilo_entity_name PRIMARY KEY (entity_name)
 );
 
-
-CREATE OR REPLACE FUNCTION mt_upsert_user(docId uuid, doc JSONB, arg_user_name varchar) RETURNS VOID AS
+CREATE OR REPLACE FUNCTION public.mt_get_next_hi(entity varchar) RETURNS bigint AS
 $$
-BEGIN
-INSERT INTO mt_doc_user VALUES (docId, doc, arg_user_name)
-  ON CONFLICT ON CONSTRAINT pk_mt_doc_user
-  DO UPDATE SET data = doc, user_name = arg_user_name;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE INDEX mt_doc_user_idx_user_name ON mt_doc_user (user_name)
-
-
-DROP TABLE IF EXISTS mt_doc_company CASCADE;
-CREATE TABLE mt_doc_company (
-    id      uuid CONSTRAINT pk_mt_doc_company PRIMARY KEY,
-    data    jsonb NOT NULL
-);
-
-
-CREATE OR REPLACE FUNCTION mt_upsert_company(docId uuid, doc JSONB) RETURNS VOID AS
-$$
-BEGIN
-INSERT INTO mt_doc_company VALUES (docId, doc)
-  ON CONFLICT ON CONSTRAINT pk_mt_doc_company
-  DO UPDATE SET data = doc;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE INDEX mt_doc_company_idx_data ON mt_doc_company USING gin (data jsonb_path_ops)
-
-
-DROP TABLE IF EXISTS mt_doc_issue CASCADE;
-CREATE TABLE mt_doc_issue (
-    id      uuid CONSTRAINT pk_mt_doc_issue PRIMARY KEY,
-    data    jsonb NOT NULL
-);
-
-
-CREATE OR REPLACE FUNCTION mt_upsert_issue(docId uuid, doc JSONB) RETURNS VOID AS
-$$
-BEGIN
-INSERT INTO mt_doc_issue VALUES (docId, doc)
-  ON CONFLICT ON CONSTRAINT pk_mt_doc_issue
-  DO UPDATE SET data = doc;
-END;
-$$ LANGUAGE plpgsql;
-
-
-DROP TABLE IF EXISTS mt_hilo CASCADE;
-CREATE TABLE mt_hilo (
-    entity_name            varchar CONSTRAINT pk_mt_hilo PRIMARY KEY,
-    hi_value            bigint default 0
-);
-
-CREATE OR REPLACE FUNCTION mt_get_next_hi(entity varchar) RETURNS int AS $$
 DECLARE
-    current_value bigint;
     next_value bigint;
 BEGIN
-    select hi_value into current_value from mt_hilo where entity_name = entity;
-    IF current_value is null THEN
-        insert into mt_hilo (entity_name, hi_value) values (entity, 0);
-        next_value := 0;
-    ELSE
-        next_value := current_value + 1;
-        update mt_hilo set hi_value = next_value where entity_name = entity;
+    update public.mt_hilo
+    set hi_value = hi_value + 1
+    where entity_name = entity
+    returning hi_value into next_value;
+
+    IF NOT FOUND THEN
+        insert into public.mt_hilo (entity_name, hi_value) values (entity, 0)
+        on conflict (entity_name) do update set hi_value = public.mt_hilo.hi_value + 1
+        returning hi_value into next_value;
     END IF;
 
     return next_value;
 END
-$$ LANGUAGE plpgsql;
+$$
+LANGUAGE plpgsql;
 ```

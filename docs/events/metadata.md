@@ -102,7 +102,7 @@ events.ShouldAllBe(e => e.CausationId == "The Cause");
 <!-- endSnippet -->
 
 ::: tip
- To utilize metadata within Projections, see [Using Event Metadata in Aggregates](/events/projections/aggregate-projections#using-event-metadata-in-aggregates).
+ To utilize metadata within Projections, see [Using Event Metadata in Aggregates](/events/projections/aggregate-projections#using-event-metadata).
 :::
 
 ## Overriding Metadata <Badge type="tip" text="8.4" />

@@ -41,7 +41,7 @@ var store = DocumentStore.For(opts =>
     opts.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L58-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L51-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:
@@ -62,16 +62,17 @@ running `db-apply` or `resources setup` as a deployment step, or handing `db-pat
 [Schema Migrations and Patches](/schema/migrations#choosing-an-approach).
 :::
 
-**As of Marten v0.9.2, Marten will also check if the existing _upsert_ function and any table indexes match
-what is configured in the document store, and attempts to update these objects if necessary based on the same
-All/None/CreateOnly/CreateOrUpdate rules as the table storage.**
+Marten also checks whether each table's columns, indexes, foreign keys and partitions match what is configured in the
+document store, and updates them if necessary based on the same All/None/CreateOnly/CreateOrUpdate rules as the tables
+themselves.
 
 ## Overriding Schema Name
 
-By default marten will use the default `public` database scheme to create the document tables and function. You may, however, choose to set a different document store database schema name, like so:
+By default marten will use the default `public` database schema to create the document tables and functions. You may, however, choose to set a different document store database schema name, like so:
 
 ```cs
-StoreOptions.DatabaseSchemaName = "other";
+// opts is the StoreOptions in AddMarten() or DocumentStore.For()
+opts.DatabaseSchemaName = "other";
 ```
 
 The `Hilo` sequence table is always created in this document store database schema.
@@ -79,20 +80,21 @@ The `Hilo` sequence table is always created in this document store database sche
 If you wish to assign certain document tables to different (new or existing) schemas, you can do so like that:
 
 ```cs
-StoreOptions.Schema.For<User>().DatabaseSchemaName("other");
+opts.Schema.For<User>().DatabaseSchemaName("other");
 ```
 
-This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`. When a schema doesn't exist it will be generated in the database.
+With no other configuration, that creates the `User` table as `other.mt_doc_user`, while every other document type stays in
+the store's schema, as `public.mt_doc_company` for example. When a schema doesn't exist it will be generated in the database.
 
 ### Event Store
 
 The EventStore database object are by default created in the document store DatabaseSchemaName. This can be overridden by setting the DatabaseSchemaName property of the event store options.
 
 ```cs
-StoreOptions.Events.DatabaseSchemaName = "event_store";
+opts.Events.DatabaseSchemaName = "event_store";
 ```
 
-This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions are created in the `event_store` schema.
+This will ensure that all EventStore tables (`mt_streams`, `mt_events`, ...) and functions are created in the `event_store` schema.
 
 ## Create Database
 
@@ -143,6 +145,10 @@ await host.StartAsync();
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behavior to check for database existence from `pg_database`.
 
 Note that database creation requires the `CREATEDB` privilege. See PostgreSQL [CREATE DATABASE](https://www.postgresql.org/docs/current/static/sql-createdatabase.html) documentation for more.
+
+`CREATE DATABASE` and `DROP DATABASE` run under their own command timeout, two minutes by default, rather than the store's
+command timeout, which is usually tuned for queries. Change it with `ProvisioningCommandTimeout()` inside
+`CreateDatabasesForTenants()`. See [Provisioning command timeout](/configuration/multitenancy#provisioning-command-timeout).
 
 ::: tip
 `MaintenanceDatabase()` also accepts a caller-owned `NpgsqlDataSource` instead of a connection string. Use that overload when the maintenance server authenticates with a rotating credential — for example an Azure Entra ID / managed-identity access token — so provisioning can log in through the data source's token provider. See [Azure Database for PostgreSQL with Entra ID](/configuration/azure-managed-identity#database-provisioning-with-a-rotating-credential).
