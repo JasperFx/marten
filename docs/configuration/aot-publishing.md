@@ -236,7 +236,7 @@ As of Marten 9.0.0-alpha:
 - **`services.AddRuntimeCompilation()`** — the seam doesn't exist in Marten 9. If you have it in your composition root from a pre-9 app, delete the call.
 - **Pre-built `Internal/Generated/`** — irrelevant to Marten 9. Delete the folder.
 
-## The Newtonsoft.Json escape hatch
+## The Newtonsoft.Json escape hatch {#the-newtonsoft-json-escape-hatch}
 
 If your existing app uses `Marten.Newtonsoft`, the AOT migration is:
 
