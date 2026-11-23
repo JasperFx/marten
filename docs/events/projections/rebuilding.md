@@ -10,7 +10,7 @@ For example, if we have this projection:
 <!-- snippet: sample_rebuild-shop_projection -->
 <a id='snippet-sample_rebuild-shop_projection'></a>
 ```cs
-public partial class ShopProjection: SingleStreamProjection<Guid, Shop>
+public partial class ShopProjection: SingleStreamProjection<Shop, Guid>
 {
     public ShopProjection()
     {
@@ -65,7 +65,7 @@ If you don't set it, Marten derives a conservative default from the Npgsql conne
 20-connection pool allows 2. The fraction leaves headroom for application traffic during rebuild windows. Setting
 the knob to zero or a negative number opts back into the historical unbounded fan-out.
 
-Two things to know about the shape of the throttle:
+Three things to know about the shape of the throttle:
 
 - **It caps rebuild only.** Continuous catch-up is governed separately by
   `opts.Projections.MaxConcurrentEventLoadsPerDatabase` and `opts.Projections.MaxConcurrentBatchWritesPerDatabase`
@@ -131,6 +131,8 @@ per-row `INSERT` for bulk loads, and Marten already uses it for `IDocumentStore.
 
 Opt in with:
 
+<!-- snippet: sample_rebuilding_with_bulk_copy -->
+<a id='snippet-sample_rebuilding_with_bulk_copy'></a>
 ```cs
 builder.Services.AddMarten(opts =>
 {
@@ -141,6 +143,8 @@ builder.Services.AddMarten(opts =>
     opts.Projections.RebuildWithBulkCopy = true;
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/rebuilding_documentation_samples.cs#L39-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuilding_with_bulk_copy' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 When enabled, a **rebuild** batch buffers document inserts and flushes them through the same
 `COPY` (BulkWriter) machinery `BulkInsertAsync` uses — id assignment, `tenant_id`, the `data`
@@ -162,8 +166,7 @@ The dispatch degrades gracefully and is safe to leave on:
   doesn't get the `COPY` win.
 - Aggregation / single-stream-snapshot projections re-store the same aggregate id across event
   pages during a rebuild; that is an `UPSERT`, not a pure insert, so those rebuilds continue to use
-  the per-row path even with the flag on. Extending the `COPY` win to aggregation rebuilds composes
-  with the deferred-flush work tracked separately.
+  the per-row path even with the flag on.
 
 The flag defaults to `false`.
 
@@ -188,13 +191,12 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection("some connection string");
 
-    // Opts into a mode where Marten is able to rebuild single // [!code ++]
-    // stream projections faster by building one stream at a time // [!code ++]
-    // Does require new table migrations for Marten 7 users though // [!code ++]
-    opts.Events.UseOptimizedProjectionRebuilds = true; // [!code ++]
+    // Opts into a mode where Marten is able to rebuild single
+    // stream projections faster by building one stream at a time
+    opts.Events.UseOptimizedProjectionRebuilds = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L61-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_rebuilding' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L50-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_rebuilding' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In this mode, Marten will rebuild single stream projection documents stream by stream in the reverse order that the 
@@ -207,7 +209,7 @@ single stream projections for zero downtime deployments while trying to create l
 When deploying projection changes to production without downtime, you can use projection
 versioning to run old and new projection versions in parallel:
 
-1. **Increment `ProjectionVersion`** on your projection class to create a new version that
+1. **Increment `Version`** (or `[ProjectionVersion]`) on your projection class to create a new version that
    writes to separate database tables from the previous version
 2. **Use Async lifecycle** for the new version so it can "catch up" to the current event
    sequence while the old version continues serving requests
@@ -239,6 +241,8 @@ Marten guards against that by default: `GateSideEffectsBehindPriorVersion` is **
 turns it off. You only need to set it to turn the gate off (`false`), for example when re-emitting
 every side effect on a new version is what you want:
 
+<!-- snippet: sample_rebuilding_gate_side_effects_behind_prior_version -->
+<a id='snippet-sample_rebuilding_gate_side_effects_behind_prior_version'></a>
 ```cs
 public class TripProjection : SingleStreamProjection<Trip, Guid>
 {
@@ -254,6 +258,8 @@ public class TripProjection : SingleStreamProjection<Trip, Guid>
     // Apply(...) methods and RaiseSideEffects(...) as usual
 }
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/rebuilding_documentation_samples.cs#L12-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuilding_gate_side_effects_behind_prior_version' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 When the gate is on and a new version starts behind the highest prior version's persisted
 progression mark `N`, the shard catches up in two phases, both inside its ordinary running agent:
@@ -298,7 +304,7 @@ on `IDocumentStore`:
 ```cs
 await theStore.Advanced.RebuildSingleStreamAsync<SimpleAggregate>(streamId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/rebuilding_a_single_stream_projection.cs#L32-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild_single_stream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/rebuilding_a_single_stream_projection.cs#L35-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild_single_stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The call commits the rebuilt document itself. A stream that folds to nothing (its aggregate was deleted, say) deletes
@@ -326,11 +332,15 @@ daemon runs, and for a multi-stream projection that Marten can find one identity
 `Options.UseSliceIndex()` turned on. It refuses with `IdentityRebuildRefusedException` when it can't (the shard isn't
 running there, is rebuilding, or has never committed anything):
 
+<!-- snippet: sample_rebuilding_one_identity_through_the_daemon -->
+<a id='snippet-sample_rebuilding_one_identity_through_the_daemon'></a>
 ```cs
-var result = await daemon.RebuildIdentityAsync("TripProjection", tenantId: null, identity: tripId, token);
+var result = await daemon.RebuildIdentityAsync("Trip", tenantId: null, identity: tripId, token);
 
 // The document is now consistent with every event of its stream up to result.BoundCeiling
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/rebuilding_documentation_samples.cs#L55-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuilding_one_identity_through_the_daemon' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Any other multi-stream projection is refused with `IdentityRebuildRefusal.IdentityNotFindable`. For those,
 `RebuildIdentityByScanAsync()` reads every event of the projection's event types to find the identity's events, which is

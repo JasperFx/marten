@@ -8,12 +8,10 @@ using Xunit;
 
 namespace DocumentDbTests.Writing.Identity.Sequences;
 
-#region sample_custom-id-generation
 public class CustomIdGeneration : IIdGeneration
 {
     public bool IsNumeric { get; } = false;
 }
-#endregion
 
 public class CustomKeyGenerationTests : OneOffConfigurationsContext
 {
@@ -30,9 +28,7 @@ public class CustomKeyGenerationTests : OneOffConfigurationsContext
     {
         StoreOptions(options =>
         {
-            #region sample_configuring-mapping-specific-custom
             options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
-            #endregion
         });
 
         theStore.StorageFeatures.MappingFor(typeof(UserWithString)).As<DocumentMapping>().IdStrategy.ShouldBeOfType<CustomIdGeneration>();

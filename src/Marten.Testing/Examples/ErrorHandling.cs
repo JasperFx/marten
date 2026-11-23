@@ -54,4 +54,22 @@ public class ErrorHandling
 
         #endregion
     }
+
+    public static void extend_write_polly(StoreOptions opts)
+    {
+        #region sample_extend_write_polly
+
+        opts.ExtendWritePolly(builder =>
+        {
+            builder.AddRetry(new()
+            {
+                ShouldHandle = new PredicateBuilder().Handle<ApplicationException>(),
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromMilliseconds(50),
+                BackoffType = DelayBackoffType.Linear
+            });
+        });
+
+        #endregion
+    }
 }

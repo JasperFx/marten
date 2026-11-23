@@ -88,7 +88,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
     [Fact]
     public async Task will_isolate_tenants_when_using_any_and_tenants_use_unique_ids()
     {
-        #region sample_tenancy-scoping-session-write
+        #region sample_tenancy-scoping-session-write_bug_1884
 
         // Write some User documents to tenant "tenant1"
         using (var session = theStore.LightweightSession("tenant1"))
@@ -137,7 +137,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
     [Fact]
     public async Task can_query_with_AnyTenant()
     {
-        #region sample_tenancy-scoping-session-write
+        #region sample_tenancy-scoping-session-write_bug_1884
 
         // Write some User documents to tenant "tenant1"
         using (var session = theStore.LightweightSession("tenant1"))

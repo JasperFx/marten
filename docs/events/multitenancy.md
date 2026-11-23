@@ -126,7 +126,7 @@ be appended as the default tenant id _no matter what the session's tenant id is_
 5. `AppendOptimistic()` and `AppendPessimistic()` do not work (yet) with this setting, but you should probably
    be using `FetchForWriting()` instead anyway. 
 
-## Per-Tenant Event Partitioning <Badge type="tip" text="9.4" />
+## Per-Tenant Event Partitioning <Badge type="tip" text="9.4" /> {#per-tenant-event-partitioning}
 
 ::: tip
 This is an advanced, opt-in option aimed at large multi-tenanted event stores where a single, shared

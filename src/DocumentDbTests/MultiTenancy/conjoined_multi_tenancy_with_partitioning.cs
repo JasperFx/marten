@@ -273,7 +273,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
     [Fact]
     public async Task can_query_on_multi_tenanted_and_non_tenanted_documents()
     {
-        #region sample_tenancy-mixed-tenancy-non-tenancy-sample
+        #region sample_tenancy-mixed-tenancy-non-tenancy-sample_partitioned
 
         using var store = DocumentStore.For(opts =>
         {
@@ -362,7 +362,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
         using (var query = theStore.QuerySession())
         {
-            #region sample_any_tenant
+            #region sample_any_tenant_partitioned
 
             // query data across all tenants
             var actual =(await  query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
@@ -417,7 +417,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
         await using (var query = theStore.QuerySession())
         {
-            #region sample_tenant_is_one_of
+            #region sample_tenant_is_one_of_partitioned
 
             // query data for a selected list of tenants
             var actual = await query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)

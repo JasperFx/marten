@@ -16,6 +16,30 @@ namespace DocumentDbTests.Writing.Identity.Sequences;
 
 public class CombGuidIdGenerationTests: OneOffConfigurationsContext
 {
+    // #6125: docs/documents/identity.md says IdStrategy(new GuidIdGeneration()) gives random Guid.NewGuid() ids
+    [Fact]
+    public async Task guid_id_generation_assigns_random_version_4_guids()
+    {
+        StoreOptions(options => options.Schema.For<UserWithGuid>().IdStrategy(new GuidIdGeneration()));
+
+        var users = Enumerable.Range(0, 20).Select(_ => new UserWithGuid()).ToArray();
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Store(users);
+            await session.SaveChangesAsync();
+        }
+
+        users.ShouldAllBe(x => x.Id != Guid.Empty);
+        users.Select(x => x.Id).Distinct().Count().ShouldBe(users.Length);
+
+        // Guid.NewGuid() is RFC 9562 version 4: the version nibble is the first character of the third group
+        users.ShouldAllBe(x => x.Id.ToString()[14] == '4');
+
+        await using var query = theStore.QuerySession();
+        (await query.LoadAsync<UserWithGuid>(users[0].Id)).ShouldNotBeNull();
+    }
+
     [Fact]
     public void generate_lots_of_guids()
     {

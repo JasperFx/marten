@@ -15,7 +15,7 @@ First, some terminology:
 There are only two basic things to configure the *Async Daemon*:
 
 1. Register the projections that should run asynchronously
-2. Set the `StoreOptions.AsyncMode` to either `Solo` or `HotCold` (more on what these options mean later in this page)
+2. Turn the daemon on with `AddAsyncDaemon(DaemonMode.Solo)` or `AddAsyncDaemon(DaemonMode.HotCold)` (more on what these options mean later in this page)
 
 As an example, this configures the daemon to run in the current node with a single active projection:
 
@@ -64,23 +64,17 @@ var host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L88-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrap_daemon_hotcold' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-::: tip
-If you are experiencing any level of "stale high water" detection or getting log messages about "event skipping" with
-Marten, you want to at least consider switching to the [QuickAppend](https://martendb.io/events/appending.html#rich-vs-quick-appends) option. The `QuickAppend`
-mode is faster, and is substantially less likely to lead to gaps in the event sequence which in turn helps the async daemon
-run more smoothly.
-:::
-
 ## How the Daemon Works
 
 ![How Aggregation Works](/images/aggregation-projection-flow.png "How Aggregation Projections Work")
 
 First off, in production usage, events should be continuously flowing into the event storage within a Marten-ized PostgreSQL
 database. Part of the [Async Daemon](/events/projections/async-daemon) is a little agent that constantly watches your
-database to now where the *high water mark* that means the highest assigned event sequence number where it's safe to
+database to know where the *high water mark* is: the highest assigned event sequence number where it's safe to
 process asynchronous projections and subscriptions to. At the same time, the async daemon always knows what the current progression
 by event sequence number is for each individual asynchronous projection. Assuming that the "high water mark" is higher than
-the current progression point, the daemon
+the current progression point, the daemon loads the next page of events above that projection's progression and applies
+it, then records the new progression in the same transaction.
 
 ## Solo vs. HotCold
 
@@ -94,7 +88,7 @@ There are three ways to run the daemon:
 1. *Wolverine-managed distribution* -- if you have more than one node, this is what we recommend. Wolverine spreads
    the projections and subscriptions evenly across the running nodes, places them by capacity, keeps blue/green
    deployments apart, keeps related shards together, lets an operator pause, restart or pin an agent, and tells you
-   why it could not place one. This mode is also more resilient to projection interruptions or a single projection *somehow* hitting the dreaded `ProjectionProgressOutOfOrderException` that can sometimes happen when node clusters are being started or stopped. See [Distributing Work with Wolverine](#distributing-work-with-wolverine) below.
+   why it could not place one. This mode is also more resilient to projection interruptions or a single projection *somehow* hitting the dreaded `ProgressionProgressOutOfOrderException` that can sometimes happen when node clusters are being started or stopped. See [Distributing Work with Wolverine](#distributing-work-with-wolverine) below.
 
 Marten itself will not grow its own distribution of async projections across nodes; that job belongs to Wolverine.
 
@@ -105,6 +99,8 @@ holding it keeps no transaction open while it is the leader. Set
 mode, which can hand a session-scoped lock's server connection to another client, but it means the
 leader keeps a transaction open for as long as it holds leadership.
 
+<!-- snippet: sample_async_daemon_transaction_scoped_leadership_lock -->
+<a id='snippet-sample_async_daemon_transaction_scoped_leadership_lock'></a>
 ```cs
 builder.Services.AddMarten(opts =>
 {
@@ -115,6 +111,8 @@ builder.Services.AddMarten(opts =>
 })
 .AddAsyncDaemon(DaemonMode.HotCold);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Daemon/async_daemon_documentation_samples.cs#L26-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_transaction_scoped_leadership_lock' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Leadership lock monitoring
 
@@ -124,6 +122,8 @@ the lock is gone, and because the leadership loop only tries to re-attain a lock
 it does not have one, two nodes can end up running the same projection. That is why monitoring is on
 by default:
 
+<!-- snippet: sample_async_daemon_unmonitored_leadership_lock -->
+<a id='snippet-sample_async_daemon_unmonitored_leadership_lock'></a>
 ```cs
 builder.Services.AddMarten(opts =>
 {
@@ -134,6 +134,8 @@ builder.Services.AddMarten(opts =>
 })
 .AddAsyncDaemon(DaemonMode.HotCold);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Daemon/async_daemon_documentation_samples.cs#L44-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_unmonitored_leadership_lock' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Monitoring used to be visible in the database as a long-running `SELECT pg_catalog.pg_sleep(60)`,
 which some monitoring tools reported as load. On a data source Marten owns that is no longer how it
@@ -230,6 +232,8 @@ Tools that work against any Critter Stack store, such as CritterWatch, use the s
 `IEventStore` instead (added in JasperFx 2.92.0). It also has a read-only preview, so you can see what an
 advance would skip before you do it:
 
+<!-- snippet: sample_async_daemon_preview_high_water_advance -->
+<a id='snippet-sample_async_daemon_preview_high_water_advance'></a>
 ```cs
 IEventStore eventStore = store;
 var database = (await eventStore.AllDatabases()).Single();
@@ -241,6 +245,8 @@ var previews = await eventStore.PreviewHighWaterAdvanceAsync(database, tenantId:
 var results = await eventStore.AdvanceHighWaterMarkToLatestAsync(
     database, tenantId: null, expectedCurrentMark: previews[0].CurrentMark, ct);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Daemon/async_daemon_documentation_samples.cs#L60-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_preview_high_water_advance' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 These methods are stricter about the tenant than the `Advanced` methods:
 
@@ -361,6 +367,8 @@ tenant. A store without per-tenant partitioning already builds one batch at a ti
 `TenantLoadBudget` is the recommended setting. It gives all of a store's tenant agents on a node one shared budget
 of events that may be loaded but not yet committed, across every projection and every database of the store:
 
+<!-- snippet: sample_async_daemon_tenant_load_budget -->
+<a id='snippet-sample_async_daemon_tenant_load_budget'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
@@ -379,6 +387,8 @@ builder.Services.AddMarten(opts =>
     opts.Projections.TenantLoadMemoryThreshold = 0.9;
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Daemon/async_daemon_documentation_samples.cs#L77-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_tenant_load_budget' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 With a budget set:
 
@@ -455,7 +465,7 @@ running tenant agent.
 
 The trade-off is throughput. One projection's tenants no longer build in parallel on a node, in continuous mode as
 well as in rebuilds. It also bounds only the built batches: every waiting agent can still hold up to
-`MaximumHopperSize` (5,000 by default) loaded events.
+`MaximumHopperSize` (two pages, 2 x `BatchSize`, by default) loaded events.
 
 Prefer `TenantLoadBudget`. A budget of one page uses about the same memory as the queue, a larger budget gives back
 the speed, and the budget still helps under server GC, where the queue saved little. Turning both on gains nothing
@@ -535,6 +545,8 @@ shutdown indefinitely.
 By default the async daemon discovers new events by polling the high water mark. If you want projections
 and subscriptions to react to an append almost immediately, opt into PostgreSQL `LISTEN`/`NOTIFY`:
 
+<!-- snippet: sample_async_daemon_listen_notify -->
+<a id='snippet-sample_async_daemon_listen_notify'></a>
 ```cs
 builder.Services.AddMarten(opts =>
 {
@@ -544,6 +556,8 @@ builder.Services.AddMarten(opts =>
     opts.Events.UseListenNotifyForEventAppends = true;
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Daemon/async_daemon_documentation_samples.cs#L103-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_listen_notify' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 With the flag on, every `SaveChangesAsync()` that appends events also issues a `NOTIFY` on the
 `mt_events_appended` channel, and the daemon holds a dedicated connection that `LISTEN`s on it and wakes the
@@ -651,6 +665,8 @@ By default in Marten 10, when an async aggregation projection throws on an event
 stays at its last good state, its later events are held back, and every other document keeps moving. You can see what's
 parked in the `mt_parked_identities` table, and replay or discard a parked identity once you've fixed the problem:
 
+<!-- snippet: sample_async_daemon_replay_or_discard_parked_identity -->
+<a id='snippet-sample_async_daemon_replay_or_discard_parked_identity'></a>
 ```cs
 var daemon = await store.BuildProjectionDaemonAsync();
 
@@ -660,6 +676,8 @@ await daemon.ReplayParkedIdentityAsync("Trip", tenantId: null, tripId, token);
 // Or accept the loss: the events that still fail are dead-lettered, the rest are applied
 await daemon.DiscardParkedIdentityAsync("Trip", tenantId: null, tripId, token);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Daemon/async_daemon_documentation_samples.cs#L119-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_replay_or_discard_parked_identity' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The same thing works from the command line with `dotnet run -- projections parked` (see
 [Command Line Support](#command-line-support)). To see parked identities in your
@@ -716,8 +734,7 @@ You can use this approach to track progress or start or stop individual projecti
 ```cs
 public static async Task accessing_the_daemon(IHost host)
 {
-    // This is a new service introduced by Marten 7.0 that
-    // is automatically registered as a singleton in your
+    // IProjectionCoordinator is registered as a singleton in your
     // application by IServiceCollection.AddMarten()
 
     var coordinator = host.Services.GetRequiredService<IProjectionCoordinator>();
@@ -728,10 +745,10 @@ public static async Task accessing_the_daemon(IHost host)
 
     // If targeting multiple databases for multi-tenancy
     var daemon2 = await coordinator.DaemonForDatabase("tenant1");
-    await daemon.StopAllAsync();
+    await daemon2.StopAllAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/DaemonUsage.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projection_coordinator' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/DaemonUsage.cs#L10-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projection_coordinator' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Testing Async Projections <Badge type="tip" text="7.0" />
@@ -1003,7 +1020,8 @@ with the addition of the Marten database identifier in the case of multi-tenancy
 * `processed` - a counter giving you an indication of how many events are being processed by the currently running subscription or projection shard
 * `gap` - a histogram telling you the "gap" between the high water mark of the system and the furthest progression of the running subscription or projection. 
 * `skipped` - added in Marten 8.6, a counter telling you how many events were skipped during asynchronous projection or subscription processing. Depending on how the application is 
-  configured, Marten may skip events because of serialization errors, unknown events, or application errors (basically, *your* code threw an exception)
+  configured, Marten may skip events because of serialization errors, unknown events, or application errors (basically, *your* code threw an exception, and only when you have configured the daemon to
+  skip errors, see [Error Handling](#error-handling))
 
 ::: tip
 The `gap` metrics are a good health check on the performance of any given projection or subscription. If this gap
@@ -1013,16 +1031,9 @@ events
 
 ## High Water Mark <Badge type="tip" text="7.33" />
 
-One of the possible issues in Marten operation is "event skipping" in the async daemon where the high water mark
-detection grows "stale" because of gaps in the event sequence (generally caused by either very slow outstanding transactions or errors)
-and Marten emits an error message like this in the log file:
-
-```js
-"High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap to events marked after {SafeHarborTime} for database {Name}"
-```
-
-With the recent prevalence of [Open Telemetry](https://opentelemetry.io/) tooling in the software industry, Marten
-is now emitting Open Telemetry spans and metrics around the high water mark detection in the async daemon.
+Marten emits [Open Telemetry](https://opentelemetry.io/) spans and metrics around the high water mark detection in the
+async daemon. For why the mark holds or skips a gap, see
+[Sequence Gaps and the High Water Mark](#sequence-gaps-and-the-high-water-mark).
 
 First off, Marten is emitting spans named either `marten.daemon.highwatermark` in the case of
 only targeting a single database, or `marten.[database name].daemon.highwatermark` in the case of 
@@ -1039,9 +1050,9 @@ that just emits and update every time that Marten has to "skip" stale events.
 
 ## Extended Progression Tracking
 
-Extended progression tracking adds eight monitoring columns (`heartbeat`,
+Extended progression tracking adds nine monitoring columns (`heartbeat`,
 `agent_status`, `pause_reason`, `running_on_node`, `failure_category`, `failure_event_sequence`,
-`failure_event_type`, `failure_event_tenant_id`) to `mt_event_progression`. The async daemon writes
+`failure_event_type`, `failure_event_tenant_id`, `parked_count`) to `mt_event_progression`. The async daemon writes
 them from existing runtime state and the shard-state selector reads them back
 into `ShardState` so monitoring tooling such as CritterWatch can display
 per-shard health.
@@ -1060,14 +1071,19 @@ polling the database — which is exactly what a monitoring tool must fall back 
 was running the shard is down — sees the same reason an in-process `ShardState` observer does instead
 of only that the shard is `Paused`. They are read back onto `ShardState.Failure`:
 
+<!-- snippet: sample_async_daemon_reading_shard_failures -->
+<a id='snippet-sample_async_daemon_reading_shard_failures'></a>
 ```cs
 var states = await store.Storage.Database.AllProjectionProgress();
 foreach (var state in states.Where(x => x.Failure != null))
 {
-    // ApplyEvent, EventSerialization, UnknownEventType, ProgressionOutOfOrder, or Other
+    // ApplyEvent, EventSerialization, UnknownEventType, ProgressionOutOfOrder,
+    // ParkedLimitReached, or Other
     Console.WriteLine($"{state.ShardName}: {state.Failure!.Category} on {state.Failure.Event}");
 }
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Daemon/async_daemon_documentation_samples.cs#L134-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_reading_shard_failures' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 `failure_category` stores the enum *name* rather than its ordinal, so reordering
 `ShardFailureCategory` in a future release can never silently re-label rows an older deployment wrote.
@@ -1112,22 +1128,8 @@ Marten registers a storage-agnostic
 [`IEventStoreInstrumentation`](https://github.com/JasperFx/jasperfx/blob/main/src/JasperFx.Events/IEventStoreInstrumentation.cs)
 adapter (from JasperFx.Events 2.9.0) in the container. Satellite packages such as
 `Wolverine.CritterWatch.Marten` control the same columns by resolving that service
-from DI and setting the interface property -- no reference to Marten's concrete
-`EventGraph` required:
-
-```cs
-builder.Services.AddSingleton<IConfigureMarten>(new EnableExtendedProgression());
-
-// ...
-
-public class EnableExtendedProgression: IConfigureMarten
-{
-    public void Configure(IServiceProvider services, StoreOptions options)
-    {
-        options.Events.EnableExtendedProgressionTracking = true;
-    }
-}
-```
+from DI and setting its `ExtendedProgressionEnabled` property -- no reference to Marten's concrete
+`EventGraph` required.
 
 The adapter's value is applied at store build only if something actually set it, so it does **not**
 overwrite a direct `opts.Events.EnableExtendedProgressionTracking = ...` of either polarity and the
@@ -1153,6 +1155,8 @@ If you want the periodic beat back -- a monitoring console that needs to disting
 alive but idle" from "this shard's agent died" -- opt in explicitly and pick a cadence that suits your
 database count:
 
+<!-- snippet: sample_async_daemon_extended_progression_heartbeat -->
+<a id='snippet-sample_async_daemon_extended_progression_heartbeat'></a>
 ```cs
 opts.Events.EnableExtendedProgressionTracking = true;
 
@@ -1160,6 +1164,8 @@ opts.Events.EnableExtendedProgressionTracking = true;
 // null, zero or negative keeps it off.
 opts.Projections.ExtendedProgressionHeartbeatInterval = TimeSpan.FromSeconds(30);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Daemon/async_daemon_documentation_samples.cs#L149-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_extended_progression_heartbeat' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Budget it as `databases-on-this-node / interval` connection acquisitions per second. All shard states
 that arrive within one interval are coalesced into a single flush on one rented connection, so the
@@ -1181,18 +1187,14 @@ Status transitions are always written immediately regardless of this setting, so
 lose is the periodic refresh of `heartbeat` on a shard that is quietly making progress.
 :::
 
-## Advanced Skipping Tracking <Badge type="tip" text="8.6" />
+## Skip Tracking <Badge type="tip" text="8.6" />
 
-::: info
-This setting will be required and utilized by the forthcoming "CritterWatch" tool.
-:::
+Marten writes every time the high water detection has to "skip" over stale data to a table called
+`mt_high_water_skips`. This is on by default since Marten 9.0. The table is the ledger that the
+[late event recovery](#events-that-commit-late) reads, and you can use it to know which streams and projections a
+skip may have affected.
 
-As part of some longer term planned improvements for Marten projection/subscription monitoring and potential
-administrative "healing" functions, you can opt into having Marten write out an additional table
-called `mt_high_water_skips` that tracks every time the high water detection has to "skip" over stale data. You can 
-use this information to "know" what streams and projections may be impacted by a skip.
-
-The flag for this is shown below:
+To turn it off, set `EnableAdvancedAsyncTracking` to false, or call `opts.RestoreV8Defaults()`:
 
 <!-- snippet: sample_enabling_advanced_tracking -->
 <a id='snippet-sample_enabling_advanced_tracking'></a>
@@ -1202,10 +1204,12 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-    opts.Events.EnableAdvancedAsyncTracking = true;
+    // On by default. This turns off the mt_high_water_skips ledger
+    // and the late event recovery that reads it
+    opts.Events.EnableAdvancedAsyncTracking = false;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L195-L205' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_advanced_tracking' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L195-L207' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_advanced_tracking' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Non Stale Data
@@ -1262,7 +1266,9 @@ make *every* call throw, even though the projection has perfectly usable, slight
 materialized. If you would rather serve the latest available data than fail the request, use the overload that
 takes a `NonStaleDataTimeoutMode`:
 
-```csharp
+<!-- snippet: sample_async_daemon_return_stale_data_on_timeout -->
+<a id='snippet-sample_async_daemon_return_stale_data_on_timeout'></a>
+```cs
 // Wait up to 5 seconds for the projection to catch up, but if it cannot,
 // return the latest available (possibly stale) data instead of throwing.
 var latest = await session
@@ -1271,6 +1277,8 @@ var latest = await session
     .Take(10)
     .ToListAsync();
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Daemon/async_daemon_documentation_samples.cs#L162-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_return_stale_data_on_timeout' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 `NonStaleDataTimeoutMode.ThrowException` is the default and matches the behavior of the single-argument
 `QueryForNonStaleData<T>(timeout)` overload, so existing usages are unaffected. Choose

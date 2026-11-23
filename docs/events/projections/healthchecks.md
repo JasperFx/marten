@@ -12,24 +12,30 @@ The check will verify that no projection's progression lags more than `maxEventL
 The default `maxEventLag` is 100. Read more about events progression tracking and `HighWaterMark` in [Async Daemon documentation](/events/projections/async-daemon).
 
 The `maxEventLag` setting controls how far behind the `HighWaterMark` any async projection is allowed to lag before it's considered unhealthy. 
-E.g. if the `HighWaterMark` is 1000 and an a system with 3 async projections `ProjA`, `ProjB` and `ProjC` are processed respectively to sequence number 899, 901 and 901 then the system will be considered unhealthy with a `maxEventLag` of 100 (1000 - 899 = 101), BUT healthy with a `mavEventLag` of 101 or higher.
+E.g. if the `HighWaterMark` is 1000 and a system with 3 async projections `ProjA`, `ProjB` and `ProjC` are processed respectively to sequence number 899, 901 and 901 then the system will be considered unhealthy with a `maxEventLag` of 100 (1000 - 899 = 101), BUT healthy with a `maxEventLag` of 101 or higher.
 
 ::: tip INFO
 The healthcheck will only be checked against `Async` projections
 :::
 
-## Example configuration:
+## Example configuration
 
+<!-- snippet: sample_async_daemon_health_check -->
+<a id='snippet-sample_async_daemon_health_check'></a>
 ```cs
 // Add HealthCheck
-Services.AddHealthChecks().AddMartenAsyncDaemonHealthCheck(maxEventLag: 500);
+builder.Services.AddHealthChecks().AddMartenAsyncDaemonHealthCheck(maxEventLag: 500);
 
 // Map HealthCheck Endpoint
+var app = builder.Build();
 app.MapHealthChecks("/health");
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/health_check_documentation_samples.cs#L25-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_health_check' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 If you want to add some time toleration for the healthcheck, you may use additional parameter `maxSameLagTime`.
-It treats as unhealthy projections same as described below, but ONLY IF the same projection lag remains for the given time.
+A projection is then unhealthy only if it stays behind by more than `maxEventLag` at the same sequence for
+`maxSameLagTime`.
 
 ### Example use case #1 
 
@@ -49,15 +55,21 @@ Assuming that `maxEventLag` = `100` and `maxSameLagTime` = `TimeSpan.FromSeconds
 
 It's healthy, because the projection progressed since last healthcheck.
 
-## Example configuration:
+## Example configuration with `maxSameLagTime`
 
+<!-- snippet: sample_async_daemon_health_check_with_same_lag_time -->
+<a id='snippet-sample_async_daemon_health_check_with_same_lag_time'></a>
 ```cs
 // Add HealthCheck
-Services.AddHealthChecks().AddMartenAsyncDaemonHealthCheck(maxEventLag: 500, maxSameLagTime: TimeSpan.FromSeconds(30));
+builder.Services.AddHealthChecks()
+    .AddMartenAsyncDaemonHealthCheck(maxEventLag: 500, maxSameLagTime: TimeSpan.FromSeconds(30));
 
 // Map HealthCheck Endpoint
+var app = builder.Build();
 app.MapHealthChecks("/health");
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/health_check_documentation_samples.cs#L41-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_health_check_with_same_lag_time' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## High-Water Staleness HealthCheck
 
@@ -72,13 +84,18 @@ reports **Unhealthy** only when the mark *stops advancing* while later events ke
 past it — a strong signal that the high-water agent has died (see
 [marten#4961](https://github.com/JasperFx/marten/issues/4961)).
 
+<!-- snippet: sample_high_water_health_check -->
+<a id='snippet-sample_high_water_health_check'></a>
 ```cs
 // Add HealthCheck
-Services.AddHealthChecks().AddMartenHighWaterHealthCheck(staleThreshold: TimeSpan.FromSeconds(30));
+builder.Services.AddHealthChecks().AddMartenHighWaterHealthCheck(staleThreshold: TimeSpan.FromSeconds(30));
 
 // Map HealthCheck Endpoint
+var app = builder.Build();
 app.MapHealthChecks("/health");
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/health_check_documentation_samples.cs#L58-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_high_water_health_check' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The check is deliberately conservative to avoid false positives:
 
@@ -102,17 +119,21 @@ store registered with `AddMartenStore<TStore>()`, use the generic overload. It p
 and with `autoRestart` it restarts the agent through that store's own projection coordinator
 (see [marten#5705](https://github.com/JasperFx/marten/issues/5705)):
 
+<!-- snippet: sample_high_water_health_check_for_a_separate_store -->
+<a id='snippet-sample_high_water_health_check_for_a_separate_store'></a>
 ```cs
-Services.AddMartenStore<IInvoicingStore>(opts =>
+builder.Services.AddMartenStore<IInvoicingStore>(opts =>
 {
     // ...
 }).AddAsyncDaemon(DaemonMode.Solo);
 
-Services.AddHealthChecks()
+builder.Services.AddHealthChecks()
     .AddMartenHighWaterHealthCheck<IInvoicingStore>(
         staleThreshold: TimeSpan.FromSeconds(30),
         autoRestart: true);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/health_check_documentation_samples.cs#L74-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_high_water_health_check_for_a_separate_store' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Call it once per store. Each store's check is registered under its own name,
 `HighWaterHealthCheck:IInvoicingStore`, with its own settings, so it can sit beside the default
@@ -127,8 +148,10 @@ spread across nodes (e.g. Wolverine-managed) — a node ends up probing database
 the daemon for. Two options scope it to the databases the local node actually owns
 (see [marten#4991](https://github.com/JasperFx/marten/issues/4991)):
 
+<!-- snippet: sample_high_water_health_check_for_locally_owned_databases -->
+<a id='snippet-sample_high_water_health_check_for_locally_owned_databases'></a>
 ```cs
-Services.AddHealthChecks().AddMartenHighWaterHealthCheck(
+builder.Services.AddHealthChecks().AddMartenHighWaterHealthCheck(
     staleThreshold: TimeSpan.FromSeconds(30),
 
     // Only probe (and, with autoRestart, only restart) the databases this node owns. The
@@ -141,6 +164,8 @@ Services.AddHealthChecks().AddMartenHighWaterHealthCheck(
     // store has nothing to assert on there.
     includeExternallyManaged: true);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/health_check_documentation_samples.cs#L93-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_high_water_health_check_for_locally_owned_databases' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 #### When ownership is runtime state
 
@@ -185,8 +210,8 @@ store-global) is never applied per tenant. No extra configuration is needed —
 On the **store-global** `HighWaterMark` row `last_updated` only moves when the mark *advances*, so
 it says nothing about liveness and the sequence-gap heuristic is the only signal available from the
 database. That means a store-global poll loop that has wedged while fully caught up is not
-detectable from the progression table. For in-process detection of that case use
-`IProjectionDaemon.HighWaterAgent.IsStale` / `LastPolledAt` on the node hosting the daemon.
+detectable from the progression table. For in-process detection of that case, use `IProjectionDaemon.IsHighWaterStale`
+and `HighWaterLastPolledAt` on the node hosting the daemon.
 :::
 
 ::: tip INFO

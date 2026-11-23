@@ -196,7 +196,7 @@ This relatively new behavior that was built for a specific [JasperFx Software](h
 but has been on the backlog for quite some time. If there are any difficulties with this approach, please feel free
 to join the [Marten Discord room](https://discord.gg/BGkCDx5d).
 
-## Side Effects in Inline Projections <Badge type="tip" text="7.40" />
+## Side Effects in Inline Projections <Badge type="tip" text="7.40" /> {#side-effects-in-inline-projections}
 
 Since Marten 10, projection "side effects" run for `Inline` projections as well as during continuous asynchronous
 processing. Marten 9 and earlier only ran them in the async daemon unless you turned on this setting, which is now the default.

@@ -367,7 +367,7 @@ npx --yes cspell --config ./docs/cSpell.json "docs/**/*.md"
 
 Common issues to watch for:
 
-- **MD051 (link-fragments).** Heading slugs are generated from the heading text after stripping markdown but **including** trailing inline components like `<Badge type="tip" text="9.0" />`, which leaves a trailing hyphen on the slug. If you intend to link to a heading section, either drop the `<Badge>` from the heading (use a `::: tip` callout under it instead) or write the link with the trailing-hyphen slug.
+- **MD051 (link-fragments).** markdownlint slugs a heading that ends in a `<Badge type="tip" text="9.0" />` with a trailing hyphen, but the rendered VitePress site does not keep that hyphen. A link written with the trailing-hyphen slug passes markdownlint and is broken for readers. Give such a heading an explicit `{#id}` (`## Some Heading <Badge type="tip" text="9.0" /> {#some-heading}`) and link to that id; both markdownlint and the site honor it. The same goes for a heading with an em dash, which the site keeps in its slug.
 - **Snippet drift.** Snippet blocks (`<!-- snippet: sample_* -->`) are mechanically regenerated from `#region sample_*` markers in the source tree. Edit the source comment, not the doc markdown copy, or the next snippet refresh wipes the markdown change.
 - **cspell unknown words.** Add legitimate technical terms to `docs/cSpell.json`'s `words` array rather than papering over with `<!-- cspell:ignore ... -->`.
 

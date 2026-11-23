@@ -29,6 +29,10 @@ list of what you get.
 - [`RewriteStoredEventsAsync()`](/events/rewriting) rewrites stored events the way an append would store them today,
   and can resume after a crash.
 - [`UnArchiveStream()`](/events/archiving#un-archiving-a-stream) reverses `ArchiveStream()`.
+- [`ProjectLatestForCommit<T>(id)`](/events/projections/project-latest#projectlatestforcommit-the-aggregate-as-the-commit-writes-it)
+  returns an aggregate with the version, timestamp and metadata its pending events get at commit, so a document or
+  response you build before `SaveChangesAsync()` matches what a read after the commit returns. If the stream's
+  expected version changes after the call, `SaveChangesAsync()` throws `InvalidStreamOperationException`.
 - [Shrinking mt_events](/events/shrinking) compares archiving and stream compaction.
 - [Hot/cold partitioning of archived streams](#archived-stream-partitioning-is-opt-in) stays opt-in, and its cost on
   appends and bulk loading is now measured. Turn it on if your system archives whole streams.
@@ -57,7 +61,8 @@ list of what you get.
 - `opts.Projections.IgnoreAdvisoryLockHoldersForGapDetection(lockKey)` keeps another process's advisory lock from
   holding up the high water mark ([details](/events/projections/async-daemon#sequence-gaps-and-the-high-water-mark)).
 - Creating and dropping tenant databases runs under its own, longer command timeout.
-- `opts.RestoreV9Defaults()` puts every changed `StoreOptions` default back in one call.
+- `opts.RestoreV9Defaults()` puts every changed `StoreOptions` default back in one call, except the daemon's
+  transient retries ([details](#restoring-v9-defaults)).
 
 ## Key Changes in 10.0.0
 
@@ -114,13 +119,15 @@ Turkish or Azerbaijani machine with an `I` in one of those type or member names,
 an alias before upgrading ([details](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-9-0)).
 Duplicated-field columns, tag tables and indexes created under the old names are created again under the new names
 by the next schema migration, and the data in the old ones is not copied over, so rebuild or copy that data.
-Separately, `Evolve()` methods may now use bare `case Foo:` labels, and the source generator bundled in the Marten
-package picks them up.
+Separately, an `Evolve()` that matches events with a bare `case Foo:`, a `Foo =>` arm, `case Foo when ...:` or an `or`
+pattern now receives those events. Before, they were not fetched, so check aggregates written that way: their state
+can change.
 
-### JasperFx 3.12: natural keys are checked at startup, and a failed composite rebuild throws <Badge type="warning" text="behavior change" />
+### JasperFx 3.12 and 3.13: natural keys are checked at startup, and a failed composite rebuild throws <Badge type="warning" text="behavior change" />
 
-Marten 10.0.0-rc.1 is built on JasperFx 3.12.1. Between 3.10 and 3.12.1, these change what you see
-([details](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-12-1)):
+Marten 10.0.0-rc.1 is built on JasperFx 3.13.0. Between 3.10 and 3.13.0, these change what you see
+([3.12.1](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-12-1),
+[3.13.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-13-0)):
 
 - **A natural key must be an `int`, `long` or `string`, or a strong-typed identifier wrapping one of those.** A
   `[NaturalKey]` of any other type, a `Guid` for example, used to be accepted and then fail on the first append. It now
@@ -243,6 +250,8 @@ foreach (var user in session.Query<User>())
 
 After:
 
+<!-- snippet: sample_migration_10_asynchronous_linq_operators -->
+<a id='snippet-sample_migration_10_asynchronous_linq_operators'></a>
 ```cs
 var users = await session.Query<User>().Where(x => x.Active).ToListAsync();
 var first = await session.Query<User>().FirstAsync(x => x.UserName == "jdm");
@@ -253,6 +262,8 @@ await foreach (var user in session.Query<User>().ToAsyncEnumerable())
     Console.WriteLine(user.UserName);
 }
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/migration_guide_documentation_samples.cs#L38-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_migration_10_asynchronous_linq_operators' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The exception names the operator you called and the one to use instead. For a single-result or aggregating operator:
 
@@ -307,6 +318,8 @@ session.BeginTransaction();
 
 After:
 
+<!-- snippet: sample_migration_10_get_connection_async -->
+<a id='snippet-sample_migration_10_get_connection_async'></a>
 ```cs
 var connection = await session.GetConnectionAsync();
 var count = await connection
@@ -315,6 +328,8 @@ var count = await connection
 
 await session.BeginTransactionAsync(CancellationToken.None);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/migration_guide_documentation_samples.cs#L54-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_migration_10_get_connection_async' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The synchronous session factories keep their `IsolationLevel` parameter, and `ReadCommitted` (the default),
 `RepeatableRead` and the other levels still work. Only `Serializable` is refused, because a Serializable session has
@@ -332,10 +347,12 @@ A custom `ISessionFactory` that returned `LightweightSession(IsolationLevel.Seri
 Sessions keep `Dispose()`, so `using var session = store.LightweightSession();` still compiles and works. With
 [row level security](/documents/multi-tenancy#row-level-security) on, a synchronous `Dispose()` makes one synchronous
 database call: it resets the tenant setting on a connection the session opened, before releasing that connection to
-the pool. This is the only synchronous database call left in Marten 10. It is there so a stale tenant cannot outlive
-the session on a pooled connection when the connection string sets `No Reset On Close=true`. If the reset fails,
-`Dispose()` does not throw. Marten logs the failure and makes sure the connection is not returned to the pool as
-healthy.
+the pool. It is the only synchronous database call a session makes when it is disposed. It is there so a stale tenant
+cannot outlive the session on a pooled connection when the connection string sets `No Reset On Close=true`. If the
+reset fails, `Dispose()` does not throw. Marten logs the failure and makes sure the connection is not returned to the
+pool as healthy. HiLo id blocks and the first resolution of a tenant from a synchronous session factory also still use
+synchronous I/O; see [below](#hilo-blocks-are-reserved-one-block-ahead) and
+[synchronous sessions and tenants](/configuration/multitenancy#synchronous-sessions-and-tenants-that-are-not-cached-yet).
 
 A connection you supplied (`SessionOptions.ForTransaction()`) is yours, so a synchronous `Dispose()` leaves its tenant
 setting alone. `DisposeAsync()` resets it. Either way, `await using` is still the recommended way to dispose a
@@ -465,17 +482,21 @@ overwrote a newer revision. The visible change is in ordinary read-modify-write 
 `IRevisioned` document now throws `ConcurrencyException`**, because after a load or a save the document carries the
 revision that is already stored, and that is not greater than itself. Either of these restores a working write:
 
+<!-- snippet: sample_migration_10_store_a_revisioned_document -->
+<a id='snippet-sample_migration_10_store_a_revisioned_document'></a>
 ```cs
 var doc = await session.LoadAsync<Reservation>(id);
 doc.Name = "changed";
 
-// Name the revision the document becomes -- the optimistic check still applies
+// Name the revision the document becomes. The optimistic check still applies
 session.UpdateRevision(doc, doc.Version + 1);
 
 // ...or opt out of the check and let Marten assign the next revision
 doc.Version = 0;
 session.Store(doc);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/migration_guide_documentation_samples.cs#L68-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_migration_10_store_a_revisioned_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Sessions opened with `ConcurrencyChecks.Disabled` still overwrite without a check. Also fixed along the way: in a
 dirty-tracking session, a loaded document that was changed and then passed to `UpdateRevision()`/`TryUpdateRevision()`
@@ -728,6 +749,8 @@ failure came much later, when a migration was computed against an existing table
 
 Declare the index once. If you really want a second index over the same member, give it its own name:
 
+<!-- snippet: sample_migration_10_second_index_over_the_same_member -->
+<a id='snippet-sample_migration_10_second_index_over_the_same_member'></a>
 ```cs
 opts.Schema.For<Order>().Index(x => x.CustomerEmail);
 opts.Schema.For<Order>().Index(x => x.CustomerEmail, x =>
@@ -736,6 +759,15 @@ opts.Schema.For<Order>().Index(x => x.CustomerEmail, x =>
     x.Name = "idx_order_customer_email_lower";
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/migration_guide_documentation_samples.cs#L85-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_migration_10_second_index_over_the_same_member' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### `GinIndexJsonData()` no longer replaces a `GinIndexJsonDataMember()` index <Badge type="warning" text="schema change" />
+
+Declaring `GinIndexJsonData()` after `GinIndexJsonDataMember()` on one document type used to replace the member index
+with a whole-document index that kept the member index's name. Now you get both indexes, as declared
+([#6017](https://github.com/JasperFx/marten/issues/6017)). If you declared both, the next migration creates the
+whole-document index and rebuilds the member-named index over the member.
 
 ### Stream compaction waits for async projections and subscriptions <Badge type="warning" text="behavior change" />
 
@@ -816,6 +848,23 @@ events you appended to the fetched aggregate. A second `FetchLatest()` for the s
 same events again, which double-counted them on a mutable aggregate
 ([#6105](https://github.com/JasperFx/marten/pull/6105),
 [FetchLatest](/events/projections/read-aggregates)).
+
+### `ProjectLatest()` no longer stores an `Async` aggregate <Badge type="warning" text="behavior change" />
+
+`ProjectLatest()` on an aggregate projected with `ProjectionLifecycle.Async` returns the aggregate with your pending
+events applied, but no longer stores it in the session. In Marten 9 it stored the document, and the async daemon then
+applied the same events to it again, so the stored aggregate counted them twice
+([#6145](https://github.com/JasperFx/marten/issues/6145)). It now stores nothing under any lifecycle, as it already
+did for `Inline` and `Live`.
+
+What you see after `SaveChangesAsync()`:
+
+- `FetchLatest()` still returns the current state, because it folds the events the daemon has not applied yet.
+- `LoadAsync()` and queries on the document return it as the daemon left it, and catch up when the daemon does. If
+  you read the document right after the commit, use `FetchLatest()`, or wait for the daemon with
+  `WaitForProjectionsAsync()`.
+
+See [ProjectLatest](/events/projections/project-latest).
 
 ### Natural-key fetches fold forward and work inside a transaction <Badge type="warning" text="behavior change" />
 
@@ -915,16 +964,19 @@ and add to it, or pass `_ => { }` to pause on the first transient failure. `Conf
 | [The async daemon builds a batch again after a transient failure](/configuration/retries#the-async-daemon-builds-a-failed-batch-again) (a timeout, a dropped connection, an exhausted pool), up to 3 times under every error policy, then pauses the shard with `IsTransient = true` ([JasperFx 3.11.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-11-0)) | none; `opts.ConfigureDaemonPolly(_ => { })` turns the retries off ([details](#the-async-daemon-retries-a-transient-batch-failure)) |
 | [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created) | none; schema change, see below |
 | [New `mt_event_range_marks` table](#new-mt-event-range-marks-table) for stored-event rewrites | none; schema change, see below |
+| Async daemon `MaximumHopperSize` is 2 x `BatchSize` (was 5,000), so a shard that is behind holds fewer events in memory ([JasperFx 3.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-0-0)) | none in `RestoreV9Defaults()`; set `MaximumHopperSize = 5000` on the projection's async options |
 | [Late events are recovered](#late-events-are-recovered): the daemon re-checks a skipped sequence range for an hour and rebuilds the streams of events that commit late; schema change | `opts.Events.EnableAdvancedAsyncTracking = false` (already on in Marten 9, so `RestoreV9Defaults()` leaves it alone) |
 
-Three defaults the 10.0 alphas changed were put back to their Marten 9 values before 10.0.0, after the rc.1 performance
-round ([#6144](https://github.com/JasperFx/marten/issues/6144)), so there is nothing to restore for them:
-[event metadata](#event-metadata-stays-opt-in), [document metadata](#document-metadata-stays-opt-in) and
+Four defaults the 10.0 alphas changed were put back to their Marten 9 values before 10.0.0, so there is nothing to
+restore for them: [archived-stream partitioning](#archived-stream-partitioning-is-opt-in)
+([#6143](https://github.com/JasperFx/marten/pull/6143)), and, after the rc.1 performance round
+([#6144](https://github.com/JasperFx/marten/issues/6144)), [event metadata](#event-metadata-stays-opt-in),
+[document metadata](#document-metadata-stays-opt-in) and
 [`StartIndexesByTenantId` on conjoined documents](#conjoined-indexes-and-tenant-id). Each section says what turning it
 on buys, including what CritterWatch uses it for.
 
-`opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0
-([details](#restoring-v9-defaults)).
+`opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0, except the daemon's
+transient retries ([details](#restoring-v9-defaults)).
 
 Defaults that already turned on during 9.x minors, for readers coming from an older 9.x: the daemon's connection
 governors (`MaxConcurrentEventLoadsPerDatabase` and `MaxConcurrentBatchWritesPerDatabase`, both 4, since 9.13;
@@ -952,7 +1004,20 @@ Marten 9 had [`RestoreV8Defaults()`](#restoring-v8-defaults). It does not call `
 The side-effect gate is a per-projection setting in JasperFx, so `RestoreV9Defaults()` turns it off for every
 projection registered when the store is built, overriding a projection's own value. The serializer setting is applied to the serializer Marten builds and to
 one you pass in, whichever comes first, and a `configure` callback given to `UseSystemTextJsonForSerialization()` still
-wins. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
+wins.
+
+Call `RestoreV9Defaults()` first, then add your own settings. It assigns every setting in the table above, so it
+overwrites anything you set before it, such as `EnableStrictStreamIdentityEnforcement = true` or a `DcbConflictScope`:
+
+```cs
+opts.RestoreV9Defaults();
+
+// Your own settings go after it
+opts.Events.EnableStrictStreamIdentityEnforcement = true;
+```
+
+It doesn't touch event or document metadata or `StartIndexesByTenantId`, which kept their Marten 9 defaults, or the
+daemon's transient retries, which you turn off with `opts.ConfigureDaemonPolly(_ => { })`.
 
 ### Event-store objects that used to depend on configuration are always created <Badge type="warning" text="schema change" /> {#event-store-objects-that-used-to-depend-on-configuration-are-always-created}
 
@@ -1083,7 +1148,8 @@ fetched stream, so retry policies on `ConcurrencyException` see it. A genuine du
 same save. Under the `Quick` append modes, the version conflict's message now reports the stream's actual version
 instead of `-1`.
 
-Sessions with a sticky connection, an external transaction or an ambient `TransactionScope` now also offer a
+Sessions pinned to one connection (after `BeginTransactionAsync()` or `GetConnectionAsync()`), an external
+transaction or an ambient `TransactionScope` now also offer a
 failure to the failing operation before the transforms in `AdvancedOptions.ExceptionTransforms`, which is the order
 the other sessions already used.
 
@@ -1119,9 +1185,15 @@ and two decisions that should have conflicted can both commit. Before a rolling 
 
 - deploy Marten 9.60 or later with `opts.Events.DcbConflictScope = DcbConflictScope.TagValueRecordingEventTypes`
   to every node first, then roll out Marten 10; or
-- roll out Marten 10 with `opts.Events.DcbConflictScope = DcbConflictScope.TagValueRecordingEventTypes` (or
-  `opts.RestoreV9Defaults()`, which sets `TagValue`), and remove that line in a later deployment once no Marten 9
-  node is left.
+- roll out Marten 10 with `opts.Events.DcbConflictScope = DcbConflictScope.TagValueRecordingEventTypes` while
+  Marten 9 and Marten 10 nodes run together, and move to `TagValueAndEventType` (remove the line) in a later
+  deployment, once no Marten 9 node is left.
+
+`TagValueRecordingEventTypes` detects conflicts the way Marten 9 does, and also keeps the per-event-type versions
+that `TagValueAndEventType` checks. Never go straight from `TagValue` to `TagValueAndEventType` while nodes on both
+run. That includes `opts.RestoreV9Defaults()`, which sets `TagValue`: if you use it, set
+`opts.Events.DcbConflictScope = DcbConflictScope.TagValueRecordingEventTypes` after it for one deployment, before
+you remove both lines.
 
 A deployment that stops every node before starting Marten 10 needs neither step. A store that never calls
 `FetchForWritingByTags` is unaffected.
@@ -1242,6 +1314,8 @@ they added four columns to every document table on upgrade
 documents by `last_modified_by`, `correlation_id` and `causation_id`, and its saved filter watches use the same
 columns. Without them, those filters have nothing to match. For all documents:
 
+<!-- snippet: sample_migration_10_turn_on_document_metadata -->
+<a id='snippet-sample_migration_10_turn_on_document_metadata'></a>
 ```cs
 opts.Policies.ForAllDocuments(x =>
 {
@@ -1251,6 +1325,8 @@ opts.Policies.ForAllDocuments(x =>
     x.Metadata.Headers.Enabled = true;
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/migration_guide_documentation_samples.cs#L99-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_migration_10_turn_on_document_metadata' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 What they cost: every document write stores four more values. On the CritterStackScalability RC rig, with
 archived-stream partitioning off, the trip single-stream projection rebuild ran about 9% slower than on Marten 9.58 with
@@ -1297,6 +1373,8 @@ event query filters events by correlation id, causation id and user name, and th
 connects a Wolverine message to the events its handler appended, and to the messages a projection's side effects send
 in turn. Headers are only needed if you read them yourself:
 
+<!-- snippet: sample_migration_10_turn_on_event_metadata -->
+<a id='snippet-sample_migration_10_turn_on_event_metadata'></a>
 ```cs
 opts.Events.MetadataConfig.CorrelationIdEnabled = true;
 opts.Events.MetadataConfig.CausationIdEnabled = true;
@@ -1304,6 +1382,8 @@ opts.Events.MetadataConfig.CausationIdEnabled = true;
 // Only if you want the session's LastModifiedBy on every event
 opts.Events.MetadataConfig.UserNameEnabled = true;
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/migration_guide_documentation_samples.cs#L114-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_migration_10_turn_on_event_metadata' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The columns are always created in 10.0 ([above](#event-store-objects-that-used-to-depend-on-configuration-are-always-created)),
 so turning one on needs no new column. Under the `Quick` append modes, including the default `QuickWithServerTimestamps`,
@@ -1470,7 +1550,7 @@ dotnet run -- db-patch ./schema-9.21.sql --drop ./schema-9.21.drop.sql
 
 ## Key Changes in 9.4.0
 
-### Required schema migration — DCB tag-version side table <Badge type="warning" text="action required" />
+### Required schema migration — DCB tag-version side table <Badge type="warning" text="action required" /> {#required-schema-migration-dcb-tag-version-side-table}
 
 If you register **any** DCB tag types via `Events.RegisterTagType<T>()` (or auto-discovery from `SingleStreamProjection<TDoc, TId>` with a strong-typed `TId`), Marten 9.4 introduces a new schema object: a side table `mt_dcb_tag_version` in your event-store schema. The table is created automatically on first save under the default `AutoCreate.CreateOrUpdate`, but **deployments that pin `AutoCreate.None` and ship schema changes via `db-patch` / `db-apply` must run the migration before deploying 9.4**, or saves with tagged events will fail with `relation "<schema>.mt_dcb_tag_version" does not exist`.
 

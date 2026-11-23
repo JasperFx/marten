@@ -62,11 +62,12 @@ public class guid_id_document_operations : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         invoice.Name = "updated";
+        theSession.Store(invoice);
         await theSession.SaveChangesAsync();
 
-        // This is a new overload
+        // Load by the strong typed identifier
         var loaded = await theSession.LoadAsync<Invoice>(invoice.Id);
-        loaded.Name.ShouldBeNull("updated");
+        loaded.Name.ShouldBe("updated");
     }
 
     #endregion
