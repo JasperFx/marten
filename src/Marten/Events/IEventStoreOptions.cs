@@ -667,6 +667,21 @@ namespace Marten.Events
         void TagEventsBy(Func<object, IEnumerable<object>?> tagger);
 
         /// <summary>
+        /// Register a named transform that a stored event rewrite can apply, by naming it in
+        /// <c>EventRewriteDefinition.Transforms</c>, to change events read as <typeparamref name="T" /> (or
+        /// types that can be cast to it) before the rewrite writes them back.
+        /// <para>
+        /// This rewrites history. Nothing derived from the old events, such as projections, natural keys or
+        /// tags, is updated.
+        /// </para>
+        /// </summary>
+        /// <param name="name">The name a rewrite definition uses to refer to this transform</param>
+        /// <param name="transform">Returns the event to write back in place of the stored one</param>
+        /// <typeparam name="T">The event type, or a base type of it</typeparam>
+        /// <exception cref="InvalidOperationException">A transform with this name is already registered.</exception>
+        void AddRewriteTransform<T>(string name, Func<T, T> transform) where T : class;
+
+        /// <summary>
         /// The registered tag types for DCB support.
         /// </summary>
         IReadOnlyList<ITagTypeRegistration> TagTypes { get; }

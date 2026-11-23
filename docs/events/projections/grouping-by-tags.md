@@ -81,8 +81,8 @@ session.Events.StartStream(Guid.NewGuid(), fee);
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/tag_grouped_projection_samples.cs#L119-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tagging_one_event_by_hand' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Tagging an event with two values of one tag type needs the default `DcbStorageMode.TagTables` storage. `HStore` mode keeps
-one value per tag type.
+Tagging an event with two values of one tag type needs the default `DcbStorageMode.TagTables` storage. `HStore` mode
+refuses an event that carries two values of one tag type.
 
 ## Why Not an `Identity()` Delegate?
 

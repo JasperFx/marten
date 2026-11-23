@@ -1470,7 +1470,7 @@ dotnet run -- db-patch ./schema-9.21.sql --drop ./schema-9.21.drop.sql
 
 ## Key Changes in 9.4.0
 
-### Required schema migration — DCB tag-version side table <Badge type="warning" text="action required" />
+### Required schema migration — DCB tag-version side table <Badge type="warning" text="action required" /> {#required-schema-migration-dcb-tag-version-side-table}
 
 If you register **any** DCB tag types via `Events.RegisterTagType<T>()` (or auto-discovery from `SingleStreamProjection<TDoc, TId>` with a strong-typed `TId`), Marten 9.4 introduces a new schema object: a side table `mt_dcb_tag_version` in your event-store schema. The table is created automatically on first save under the default `AutoCreate.CreateOrUpdate`, but **deployments that pin `AutoCreate.None` and ship schema changes via `db-patch` / `db-apply` must run the migration before deploying 9.4**, or saves with tagged events will fail with `relation "<schema>.mt_dcb_tag_version" does not exist`.
 

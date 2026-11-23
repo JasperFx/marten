@@ -199,7 +199,9 @@ public class when_skipping_events_in_daemon_with_advanced_tracking : DaemonConte
         {
             opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-            opts.Events.EnableAdvancedAsyncTracking = true;
+            // On by default. This turns off the mt_high_water_skips ledger
+            // and the late event recovery that reads it
+            opts.Events.EnableAdvancedAsyncTracking = false;
         });
 
         #endregion

@@ -11,8 +11,7 @@ public class DaemonUsage
 
     public static async Task accessing_the_daemon(IHost host)
     {
-        // This is a new service introduced by Marten 7.0 that
-        // is automatically registered as a singleton in your
+        // IProjectionCoordinator is registered as a singleton in your
         // application by IServiceCollection.AddMarten()
 
         var coordinator = host.Services.GetRequiredService<IProjectionCoordinator>();
@@ -23,7 +22,7 @@ public class DaemonUsage
 
         // If targeting multiple databases for multi-tenancy
         var daemon2 = await coordinator.DaemonForDatabase("tenant1");
-        await daemon.StopAllAsync();
+        await daemon2.StopAllAsync();
     }
 
     #endregion
