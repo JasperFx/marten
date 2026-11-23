@@ -69,7 +69,7 @@ var store = host.Services.GetRequiredService<IDocumentStore>();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Bugs/Bug_962_initial_data_populate_causing_null_ref_ex.cs#L20-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-initial-data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-`IInitialData.Populate(IDocumentStore store)` will be executed for each configured entry as part of the initialization of your document store. They will be executed in the order they were added.
+`IInitialData.Populate(IDocumentStore store, CancellationToken cancellation)` is executed for each configured entry when the host starts, after Marten has applied any database changes, and again whenever you call `store.Advanced.ResetAllData()`. Building a `DocumentStore` outside of a host does not run it. The entries are executed in the order they were added.
 
 ## Applying Initial Data only in Testing
 

@@ -4,8 +4,6 @@ One option to speed up queries against the JSONB documents is by duplicating a p
 
 ::: tip
 we strongly recommend using [Computed Indexes/Calculated Indexes](/documents/indexing/computed-indexes) over duplicated fields for most cases to speed up queries. Calculated indexes optimize the querying of a document type without incurring potentially expensive schema changes and extra runtime insert costs.
-
-Also note that there are few cases where calculated index does not work i.e `DateTime`, `DateTimeOffset` fields, resort to using duplicated fields for these.
 :::
 
 To create a duplicated field, you can use the `[DuplicateField]` attribute like this:

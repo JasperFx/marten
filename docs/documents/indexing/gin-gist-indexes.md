@@ -73,3 +73,7 @@ the containment (`@>`) strategies described in
 including equality `Any()` predicates, OR-of-equality predicates, and the equality pre-filter of
 mixed predicates. Whole-element `Contains()` queries anchor at the document root and are served
 by the plain `GinIndexJsonData()` index instead.
+
+The two can be combined on one document type. Since Marten 10, declaring both `GinIndexJsonData()` and
+`GinIndexJsonDataMember()` creates both indexes; earlier versions replaced the member index with the whole-document
+index.

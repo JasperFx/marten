@@ -2,7 +2,7 @@
 
 Partial update or patching JSON involves making changes to specific parts of a JSON document without replacing the entire document. This is particularly useful when you only need to modify certain fields or elements within a large JSON object, rather than rewriting the entire structure.
 
-Starting with Marten v7.x, there is native partial updates or patching support available in core library using a pure Postgres PL/pgSQL and JSON operators based implementation. Marten earlier supported a PLV8 based patching a separate opt-in plugin `Marten.PLv8`. This library will be deprecated and we recommend users to use this new native patching functionality.
+Marten's patching is built into the core library, using PostgreSQL PL/pgSQL functions and JSON operators.
 
 ## Patching API
 
@@ -20,9 +20,12 @@ The following are the supported operations:
 - Remove an element from a child array, list, or collection
 - Rename a persisted field or property to a new name for structural document changes
 - Delete a persisted field or property
-- Patching multiple fields with the combination of the above operations using a fluent API. Note that the PLV8 based API was able to do only one patch operation per DB call.
+- Patching multiple fields with the combination of the above operations using a fluent API, in one database call
 
-To use the native patching include `using Marten.Patching;`. If you want to migrate from PLV8 based patching, change `using Marten.PLv8.Patching;` to `using Marten.Patching;` and all the API will work "as is" since we managed to retain the API the same.
+To use patching, include `using Marten.Patching;`.
+
+On `net11.0`, a patch path can't reach into a case of a C# union member, as in `Set(x => ((Card)x.Payment.Value).Last4, "2222")`.
+Patch the whole union member instead. See [what Marten refuses for union members](/documents/querying/linq/unions#what-marten-refuses).
 
 The patch operation can be configured to either execute against a single document by supplying its id, or with a _Where_ clause expression.
 In all cases, the property or field being updated can be a deep accessor like `Target.Inner.Color`.

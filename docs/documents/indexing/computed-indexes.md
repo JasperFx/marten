@@ -94,10 +94,10 @@ public required DateOnly From { get; set; }
 public int FromYear => From.Year;
 ```
 
-::: warning
-At this time, calculated indexes do not work against `DateTime` or `DateTimeOffset` fields. You will have
-to resort to a duplicated field for these types.
-:::
+A calculated index can also cover a `DateTime`, `DateTimeOffset`, `DateOnly` or `TimeOnly` member directly, as in
+`Index(x => x.ScheduledAt)`. PostgreSQL only indexes immutable expressions, so Marten indexes the member through its
+`mt_immutable_timestamp`, `mt_immutable_timestamptz`, `mt_immutable_date` or `mt_immutable_time` helper function, and
+LINQ queries against that member use the same expression, so they can use the index.
 
 ## Multi-Column Indexes <Badge type="tip" text="7.0" />
 
@@ -168,3 +168,8 @@ var store = DocumentStore.For(_ =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L82-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+Each calculated index on a document type needs its own name. Declaring the same index twice, such as `Index()` on the
+same member a second time, or again with only `Casing = Lower`, throws an `InvalidOperationException` when the document
+type is configured. To keep a second index over the same member, set its `Name` in the customization `Action`. See
+[Declaring the same computed index twice throws](/migration-guide#declaring-the-same-computed-index-twice-throws).
