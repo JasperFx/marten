@@ -53,9 +53,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public const int DefaultTimeout = 5;
     internal const string? NoConnectionMessage = "No tenancy is configured! Ensure that you provided connection string in `AddMarten` method or called `UseNpgsqlDataSource`";
 
-    internal static readonly Func<string, NpgsqlDataSourceBuilder> DefaultNpgsqlDataSourceBuilderFactory =
-        connectionString => new NpgsqlDataSourceBuilder(connectionString);
-
     internal Func<string, NpgsqlDataSourceBuilder> NpgsqlDataSourceBuilderFactory
     {
         get => _npgsqlDataSourceBuilderFactory;
@@ -294,17 +291,26 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         ResiliencePipeline = new ResiliencePipelineBuilder().AddMartenDefaults().Build();
         WriteResiliencePipeline = new ResiliencePipelineBuilder().AddMartenWriteDefaults().Build();
 
-        // Add logging into our NpgsqlDataSource
-        NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(connectionString =>
-        {
-            var builder = new NpgsqlDataSourceBuilder(connectionString);
-            if (LogFactory != null && !DisableNpgsqlLogging)
-            {
-                builder.UseLoggerFactory(LogFactory);
-            }
+        // The logging goes into the builder factory rather than only into this data source factory, so that
+        // every factory rebuilt from it -- ConfigureNpgsqlDataSourceBuilder(), Connection(NpgsqlDataSource) --
+        // keeps it. Building it into the data source factory alone lost it the moment pgvector, NodaTime or the
+        // DCB HStore mode configured the builder.
+        _npgsqlDataSourceBuilderFactory = createNpgsqlDataSourceBuilder;
+        NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(NpgsqlDataSourceBuilderFactory);
+    }
 
-            return builder;
-        });
+    private NpgsqlDataSourceBuilder createNpgsqlDataSourceBuilder(string connectionString)
+    {
+        var builder = new NpgsqlDataSourceBuilder(connectionString);
+
+        // Read when each builder is made, not when the store is configured: AddMarten() assigns LogFactory
+        // after the application's own configuration has run
+        if (LogFactory != null && !DisableNpgsqlLogging)
+        {
+            builder.UseLoggerFactory(LogFactory);
+        }
+
+        return builder;
     }
 
     /// <summary>
@@ -782,7 +788,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     private Lazy<ITenancy>? _tenancy;
-    private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory = DefaultNpgsqlDataSourceBuilderFactory;
+    private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory;
     private INpgsqlDataSourceFactory _npgsqlDataSourceFactory;
 
     /// <summary>
