@@ -62,8 +62,9 @@ internal sealed class NaturalKeyStreamIndex
     {
         foreach (var key in keysFor(cacheKey.DocumentType))
         {
+            // An int or long key that was never set reads as 0, which is no key to point anywhere
             var value = key.ReadValue(aggregate);
-            if (value == null) continue;
+            if (value is null or 0 or 0L) continue;
 
             _pointers.Store(pointerFor(key, cacheKey, value), cacheKey.Id);
         }
@@ -78,11 +79,13 @@ internal sealed class NaturalKeyStreamIndex
     {
         if (_keysByType.TryFind(documentType, out var keys)) return keys;
 
-        keys = _events.Options.Projections.TryFindAggregate(documentType, out var projection)
-            ? projection.MappedNaturalKeyDefinitions
-                .Concat(projection.NaturalKeyDefinition == null ? [] : [projection.NaturalKeyDefinition])
-                .ToArray()
-            : [];
+        // Not remembered while the type has no projection: an aggregate auto-registered by its first fetch by key
+        // gets one later, and its keys would never be pointed at its stream if the miss were cached
+        if (!_events.Options.Projections.TryFindAggregate(documentType, out var projection)) return [];
+
+        keys = projection.MappedNaturalKeyDefinitions
+            .Concat(projection.NaturalKeyDefinition == null ? [] : [projection.NaturalKeyDefinition])
+            .ToArray();
 
         _keysByType = _keysByType.AddOrUpdate(documentType, keys);
         return keys;

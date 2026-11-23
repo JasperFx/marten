@@ -126,6 +126,46 @@ public class natural_key_store_shapes: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task a_global_aggregate_on_string_streams_ignores_another_tenants_stream_of_the_same_key()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Projections.AddGlobalProjection(new SingleStreamProjection<OrderAggregateAsString, string>(),
+                ProjectionLifecycle.Inline);
+        });
+
+        var number = new OrderNumber("ORD-GLOBAL-STRING");
+        var streamKey = $"order-{Guid.NewGuid():N}";
+
+        await using (var red = theStore.LightweightSession("red"))
+        {
+            red.Events.StartStream<OrderAggregateAsString>(streamKey, new OrderCreated(number, "Alice"),
+                new OrderItemAdded("Widget", 5m));
+            await red.SaveChangesAsync();
+        }
+
+        // A stream of the same key in another tenant, which is no global aggregate's: the lookup row must not join to it
+        await using (var blue = theStore.LightweightSession("blue"))
+        {
+            blue.Events.StartStream(streamKey, new UnrelatedToOrders("noise"));
+            await blue.SaveChangesAsync();
+        }
+
+        await using var green = theStore.LightweightSession("green");
+
+        var order = await green.Events.FetchLatest<OrderAggregateAsString, OrderNumber>(number);
+        order!.Id.ShouldBe(streamKey);
+        order.TotalAmount.ShouldBe(5m);
+
+        var stream = await green.Events.FetchForWriting<OrderAggregateAsString, OrderNumber>(number);
+        stream.Key.ShouldBe(streamKey);
+        stream.CurrentVersion.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task a_key_whose_cache_pointer_was_evicted_still_finds_its_stream()
     {
         StoreOptions(opts =>
@@ -325,3 +365,5 @@ public class natural_keys_with_a_database_per_tenant: IAsyncLifetime
         theCache.Hits.ShouldBe(hits + 1);
     }
 }
+
+public record UnrelatedToOrders(string Note);

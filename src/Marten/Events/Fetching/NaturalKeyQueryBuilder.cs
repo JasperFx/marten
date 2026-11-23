@@ -18,6 +18,7 @@ internal class NaturalKeyQueryBuilder
     private readonly string _tableName;
     private readonly string _streamsTableName;
     private readonly string _streamIdColumn;
+    private readonly bool _joinOnTenant;
     private readonly bool _filterByTenant;
 
     /// <param name="events"></param>
@@ -30,8 +31,8 @@ internal class NaturalKeyQueryBuilder
         _tableName = NaturalKeyTable.TableNameFor(events, lookup).QualifiedName;
         _streamsTableName = $"{events.DatabaseSchemaName}.{StreamsTable.TableName}";
         _streamIdColumn = events.StreamIdentity == StreamIdentity.AsGuid ? "stream_id" : "stream_key";
-        _filterByTenant = events.TenancyStyle == TenancyStyle.Conjoined &&
-                          !events.GlobalAggregates.Contains(lookup.AggregateType);
+        _joinOnTenant = events.TenancyStyle == TenancyStyle.Conjoined;
+        _filterByTenant = _joinOnTenant && !events.GlobalAggregates.Contains(lookup.AggregateType);
     }
 
     /// <summary>
@@ -86,8 +87,10 @@ internal class NaturalKeyQueryBuilder
         builder.Append(_streamIdColumn);
 
         // tenant_id is part of the primary key of both tables, so the join has to match it too or the same
-        // key in two tenants would join across them.
-        if (_filterByTenant)
+        // key in two tenants would join across them. That holds for a global aggregate as well: its lookup row and
+        // its stream are both in the default tenant, and the foreign key between them always pairs tenant_id, but
+        // under string stream identity another tenant's stream can share its key and would join as a second row.
+        if (_joinOnTenant)
         {
             builder.Append(" and s.tenant_id = nk.tenant_id");
         }

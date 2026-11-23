@@ -31,8 +31,8 @@ public class natural_key_compliance
 
 /// <summary>
 ///     Mapped natural keys: an async aggregate fetched by keys whose lookups inline owners maintain.
-///     Marten resolves the key through the owner's mt_natural_key_X table and then fetches by stream
-///     identity through the aggregate's own lifecycle plan.
+///     Marten resolves the key against the owner's mt_natural_key_X table inside each statement of the
+///     aggregate's own lifecycle plan, so the fetch stays one round trip.
 /// </summary>
 public class mapped_natural_key_compliance
     : MappedNaturalKeyCompliance<MartenComplianceFixture, IDocumentOperations, IQuerySession>;

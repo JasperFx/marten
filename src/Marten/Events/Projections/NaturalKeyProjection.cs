@@ -24,7 +24,7 @@ namespace Marten.Events.Projections;
 /// <c>is_archived</c> column is only maintained under <c>UseArchivedStreamPartitioning</c>, where
 /// <c>mt_archive_stream</c> and <c>mt_unarchive_stream</c> copy the row between partitions along with its
 /// stream (marten#5476; before that the cascading foreign key deleted it on archive). Readers get the flag off
-/// <c>mt_streams</c> instead — see <c>FetchNaturalKeyPlan.BuildNaturalKeyToStreamQuery</c>.
+/// <c>mt_streams</c> instead — see <c>NaturalKeyQueryBuilder</c>, which every fetch by natural key resolves the key with.
 /// </remarks>
 internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IProjectionSchemaSource
 {

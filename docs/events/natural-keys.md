@@ -569,10 +569,15 @@ The retired row is removed rather than left behind, so the previous value immedi
 
 ## Null and Default Keys
 
-When a `[NaturalKeySource]` produces a `null` or default key value, the stream has no natural key. If the stream
+When a `[NaturalKeySource]` produces a `null` key value, the stream has no natural key. That includes a
+strong-typed key whose value is null, which is what `default` of a struct wrapping a `string` is. If the stream
 has never been assigned a key, it has no lookup row. If it used to have a key and it is now set to `null` then
 the lookup row is retired - the stream can no longer be found by the old key, and that key is free for another
 stream to claim.
+
+An `int` or `long` key of 0 is a key like any other. Because an aggregate whose `int` or `long` key was never set
+also reads as 0, a fetch by 0 never answers from the identity map or the write cache: it always asks the database,
+which only has a lookup row for a stream that was given the key.
 
 ## Clean and Maintenance Operations
 

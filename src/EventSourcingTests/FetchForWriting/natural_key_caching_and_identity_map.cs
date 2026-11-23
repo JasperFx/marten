@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using JasperFx.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -38,6 +39,32 @@ public class natural_key_caching_and_identity_map: OneOffConfigurationsContext
             new OrderItemAdded("Widget", 10m));
         await theSession.SaveChangesAsync();
         return streamId;
+    }
+
+    [Fact]
+    public async Task an_aggregate_whose_int_key_was_never_set_is_not_found_by_0_in_the_identity_map()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<IntKeyedAggregate>(SnapshotLifecycle.Inline));
+
+        // A stream that never gets a key, so its aggregate's key reads as 0, and one actually keyed 0
+        var keyless = Guid.NewGuid();
+        var keyedZero = Guid.NewGuid();
+        theSession.Events.StartStream<IntKeyedAggregate>(keyless, new BEvent());
+        theSession.Events.StartStream<IntKeyedAggregate>(keyedZero, new BinKeyed(new BinKey(0)));
+        await theSession.SaveChangesAsync();
+
+        await using var session = theStore.IdentitySession();
+
+        // In the identity map now
+        (await session.LoadAsync<IntKeyedAggregate>(keyless))!.Key.ShouldBe(default);
+
+        var found = await session.Events.FetchLatest<IntKeyedAggregate, BinKey>(new BinKey(0));
+        found!.Id.ShouldBe(keyedZero);
+
+        var batch = session.CreateBatchQuery();
+        var batched = batch.Events.FetchLatest<IntKeyedAggregate, BinKey>(new BinKey(0));
+        await batch.Execute();
+        (await batched)!.Id.ShouldBe(keyedZero);
     }
 
     [Fact]

@@ -156,7 +156,15 @@ internal abstract class FetchNaturalKeyPlan<TDoc, TNaturalKey, TId>: IAggregateF
         return false;
     }
 
-    protected bool hasKey(object candidate, object keyValue) => Equals(_naturalKey.ReadValue(candidate), keyValue);
+    protected bool hasKey(object candidate, object keyValue)
+        => !couldBeUnset(keyValue) && Equals(_naturalKey.ReadValue(candidate), keyValue);
+
+    /// <summary>
+    /// An int or long key that was never set reads as 0 on the aggregate, so in memory an aggregate without a key
+    /// can't be told from one keyed 0. A fetch by 0 always goes to the database, which only has a lookup row for a
+    /// stream that was actually given the key.
+    /// </summary>
+    private static bool couldBeUnset(object keyValue) => keyValue is 0 or 0L;
 
     /// <summary>
     /// Whether a stream fetched earlier in the session has this key once its appended events are counted. Worked
@@ -165,7 +173,7 @@ internal abstract class FetchNaturalKeyPlan<TDoc, TNaturalKey, TId>: IAggregateF
     /// </summary>
     protected bool currentKeyMatches(IEventStream<TDoc> stream, object keyValue)
     {
-        if (stream.Aggregate == null) return false;
+        if (stream.Aggregate == null || couldBeUnset(keyValue)) return false;
 
         // A mapped key changes when its owner's key does, through the owner's mappings
         var owner = _naturalKey.SourceProjectionDefinition ?? _naturalKey;
