@@ -107,8 +107,9 @@ identically to `FetchLatest` — it returns the current committed state.
 
 ## Limitations
 
-- **Natural key projections**: `ProjectLatest` with a natural key ID falls back to `FetchLatest`
-  because the natural key mapping may not exist yet for uncommitted streams.
+- **Natural key projections**: `ProjectLatest` with a natural key resolves the key against what is committed.
+  A stream started in this session has no natural key mapping until the commit, so it is not found. For a
+  committed stream, the session's pending events are applied as for a stream id.
 - **Read-only sessions**: `ProjectLatest` is only available on `IDocumentSession.Events`
   (not `IQuerySession.Events`) because only a document session has pending events to project.
 

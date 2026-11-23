@@ -123,12 +123,13 @@ internal class FetchNaturalKeyInlinePlan<TDoc, TNaturalKey, TId>: FetchNaturalKe
                              .CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, storage, typeof(TDoc),
                                  storage.IdType, typeof(TId), typeof(IQuerySession));
 
+        var stored = aggregate;
         aggregate = await aggregator.BuildAsync(pending, session, aggregate, streamId, storage, cancellation)
             .ConfigureAwait(false);
 
         // As FetchInlinedPlan.ProjectLatest: BuildAsync may have mutated the cached instance in place, and the
         // inline projection would re-apply the same events to it during SaveChangesAsync.
-        session.EjectAggregateFromIdentityMap<TDoc, TId>(streamId);
+        FetchInlinedPlan<TDoc, TId>.EjectFoldedInstance(session, storage, streamId, stored);
 
         return aggregate;
     }

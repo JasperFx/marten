@@ -30,6 +30,14 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 var starting = stream.Aggregate;
                 var appendedEvents = stream.Events;
 
+                // #6147: as FetchLivePlan (#5225), the fold below can land on the very instance FetchForWriting
+                // registered for write-back, which would then hold events its registered version says it does not,
+                // and the next FetchForWriting would fold them a second time
+                if (_cache != null && appendedEvents.Count > 0)
+                {
+                    session.AggregateWriteCache.Discard(cacheKeyFor(session, id));
+                }
+
                 var aggregate = await _aggregator.BuildAsync(appendedEvents, session, starting, id, _storage, cancellation).ConfigureAwait(false);
 
                 var foldedOntoFetchedInstance = starting != null && appendedEvents.Count > 0;
