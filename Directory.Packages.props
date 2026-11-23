@@ -930,15 +930,21 @@
          natural key of a type the store cannot hold is refused when the projection is registered. jasperfx#1273,
          ParkedIdentity.NaturalKey and a "Natural Key" column in `projections parked`, which Marten fills (marten#6132).
          jasperfx#1277, a composite rebuild that pauses or stops its shard now throws the shard's failure. -->
-    <PackageVersion Include="JasperFx" Version="3.12.1" />
-    <PackageVersion Include="JasperFx.Events" Version="3.12.1" />
+    <!-- JasperFx 3.13.0 (from 3.12.1): jasperfx#1281, the JasperFx half of this branch's natural key work (mapped and
+         nullable keys, the stricter registration checks and JFXEVT010 to JFXEVT017, FetchForWriting by key at an
+         expected version, FetchManyForWriting by key, OnPublished with the aggregate, and the MappedNaturalKeyCompliance
+         and NaturalKeyRegistrationCompliance suites, which Marten enrolls in wave 14). jasperfx#1282, aggregate stream
+         stats: Marten does not implement RegisteredAggregateTypes or FetchAggregateStreamStatsAsync yet, so their
+         defaults throw NotSupportedException and AggregateStreamStatsCompliance stays off. -->
+    <PackageVersion Include="JasperFx" Version="3.13.0" />
+    <PackageVersion Include="JasperFx.Events" Version="3.13.0" />
     <!--
       The shared cross-store event sourcing compliance suites (#5116). Source-only package: the
       suites compile inside EventSourcingTests so JasperFx's aggregate source generator can bind
       Marten's own session types. Marten.Testing needs it too because MartenComplianceFixture,
       which closes the seam, lives beside the rest of the harness.
     -->
-    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.12.1" />
+    <PackageVersion Include="JasperFx.Events.ComplianceTests" Version="3.13.0" />
     <!--
       No longer ahead of the rest of the JasperFx line. As of the 2.59.0 bump (marten#5305) the
       whole family moves together, and this note is kept for the history below. This package is
@@ -957,11 +963,11 @@
       which does not care how the instance was constructed. The generator is otherwise byte-identical
       from 2.38.0 through 2.42.0, so this is an isolated swap of that one fix.
     -->
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.12.1">
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="3.13.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.12.1" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="3.13.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
