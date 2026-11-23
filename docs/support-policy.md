@@ -6,8 +6,9 @@ Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) ar
 
 | Marten Version | End-of-Life |    Status     |  Support Options   |
 | -------------- | :---------: | :-----------: | :----------------: |
-| 9              |   Current   |    Current    | Community/JasperFx |
-| 8              |  Nov 2026   | P1 Fixes Only | Community/JasperFx |
+| 10             |   Current   |    Current    | Community/JasperFx |
+| 9              |  Jun 2027   | P1 Fixes Only | Community/JasperFx |
+| 8              |  Nov 2026   |      EoL      | Community/JasperFx |
 | 7              |  Dec 2025   |      EoL      | Community/JasperFx |
 | 6              |  Sep 2024   |      EoL      |      JasperFx      |
 | 5              |  Nov 2023   |      EoL      |      JasperFx      |
@@ -16,18 +17,19 @@ Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) ar
 
 ## .NET Version Compatibility
 
-Marten aligns with the [.NET Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform support. Marten 9 targets `net9.0` and `net10.0`.
+Marten aligns with the [.NET Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform support. Marten 10 targets `net10.0` and `net11.0`.
 
-| Marten Version |       .NET 5       |       .NET 6       |       .NET 7       |       .NET 8       |       .NET 9       |      .NET 10       |
-| -------------- | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: |
-| 9              |        :x:         |        :x:         |        :x:         |        :x:         | :white_check_mark: | :white_check_mark: |
-| 8              |        :x:         |        :x:         |        :x:         | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| 7              |        :x:         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |        :x:         |
-| 6              |        :x:         | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |
-| 5              | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |        :x:         |
-| 4              | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |        :x:         |
+| Marten Version |      .NET 5      |      .NET 6      |      .NET 7      |      .NET 8      |      .NET 9      |     .NET 10      |     .NET 11      |
+| -------------- |:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|:----------------:|
+| 10             |       :x:        |       :x:        |       :x:        |       :x:        |       :x:        |:white_check_mark:|:white_check_mark:|
+| 9              |       :x:        |       :x:        |       :x:        |       :x:        |:white_check_mark:|:white_check_mark:|       :x:        |
+| 8              |       :x:        |       :x:        |       :x:        |:white_check_mark:|:white_check_mark:|:white_check_mark:|       :x:        |
+| 7              |       :x:        |:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|       :x:        |       :x:        |
+| 6              |       :x:        |:white_check_mark:|:white_check_mark:|       :x:        |       :x:        |       :x:        |       :x:        |
+| 5              |:white_check_mark:|:white_check_mark:|       :x:        |       :x:        |       :x:        |       :x:        |       :x:        |
+| 4              |:white_check_mark:|:white_check_mark:|       :x:        |       :x:        |       :x:        |       :x:        |       :x:        |
 
 ## Postgres Version Compatibility
 
 Marten aligns with the [PostgreSQL Support Lifecycle](https://www.postgresql.org/support/versioning/) to determine platform support. Marten currently targets versions 14 and onwards, but our continuous integration
-builds target PostgreSQL 15 & 16. We recommend at least version 15, as Marten might require more recent JSONB features in future releases.
+builds run against PostgreSQL 15 and the latest PostgreSQL release. We recommend at least version 15, as Marten might require more recent JSONB features in future releases.

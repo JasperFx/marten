@@ -161,7 +161,7 @@ rest of the `projections` command.
 ### Creating a SQL Script from your Marten Database
 
 ```sh
-dotnet run -- db-dump -d Marten ./marten.sql
+dotnet run -- db-dump ./marten.sql
 ```
 
 ### Codegen
@@ -187,42 +187,57 @@ dotnet run --project src/MyConsoleApp %*
 
 All the example above does is delegate any arguments to your console application. Once you have that file, some sample usages are shown below:
 
-Assert that the database matches the current database. This command will fail if there are differences
+Assert that the database matches the current configuration. This command fails if there are differences:
 
 ```bash
-marten db-assert --log log.txt
+marten db-assert
 ```
 
-This command tries to update the database to reflect the application configuration
+Update the database to match the application configuration:
 
 ```bash
-marten db-apply --log log.txt
+marten db-apply
 ```
 
-This dumps a single file named "database.sql" with all the DDL necessary to build the database to
-match the application configuration
+With several databases, such as one per tenant, `db-apply` and `db-assert` walk every one of them. `--parallel N` processes up to
+`N` physical databases at once:
+
+```bash
+marten db-apply --parallel 4
+```
+
+Dump a single file named "database.sql" with all the DDL necessary to build the database to match the application
+configuration:
 
 ```bash
 marten db-dump database.sql
 ```
 
-This dumps the DDL to separate files per document
-type to a folder named "scripts"
+Dump the DDL to a folder named "scripts", with a separate file for each feature (each document type, the event store and
+so on):
 
 ```bash
-marten db-dump scripts --by-type
+marten db-dump scripts --by-feature
 ```
 
-Create a patch file called "patch1.sql" and
-the corresponding rollback file "patch.drop.sql" if any
-differences are found between the application configuration
-and the database
+Create a patch file called "patch1.sql", and the matching rollback file "patch1.drop.sql", if any differences are found
+between the application configuration and the database. Add `--transactional-script` to wrap the patch in a transaction:
 
 ```bash
-marten db-patch patch1.sql --drop patch1.drop.sql
+marten db-patch patch1.sql
 ```
 
-In all cases, the commands expose usage help through "marten help [command]." Each of the commands also exposes a "--conn" (or "-c" if you prefer) flag to override the database connection string and a "--log" flag to record all the command output to a file.
+`db-dump` and `db-patch` work against one database. When the application has more than one, choose it with
+`--database` (or `-d`), which takes the database's identifier or its Uri. `db-list` shows what is available:
+
+```bash
+marten db-list
+marten db-patch tenant1.sql --database tenant1
+```
+
+In all cases, the commands expose usage help through `marten help [command]`. Every command also takes the shared host
+flags, such as `--environment` to choose the hosting environment and `--log-level` (or `--verbose`) to change how much
+logging is written to the console.
 
 ## Projections Support
 
