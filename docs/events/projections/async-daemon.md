@@ -561,8 +561,9 @@ Things to be aware of:
 
 ## Daemon Logging
 
-The daemon logs through the standard .NET `ILogger` registered in your application's DI container. At startup it also
-logs, for each async projection, whether that projection can park a failing identity and why not when it can't.
+The daemon logs through the standard .NET `ILogger` registered in your application's DI container. When a projection
+shard starts and that projection can't park a failing identity, the daemon logs why, and that a failing event will
+pause the shard instead.
 
 By default in Marten 10, an event that fails in your projection code parks its identity rather than being skipped, and
 the parked identity is recorded in the `mt_parked_identities` table along with the error. An event is only recorded in
@@ -680,7 +681,7 @@ var withKeys = await database.FetchParkedIdentitiesAsync(
 withKeys.Single(x => x.IdentityText == keyed.ToString("D")).NaturalKey.ShouldBe("L-100");
 withKeys.Single(x => x.IdentityText == neverKeyed.ToString("D")).NaturalKey.ShouldBeNull();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Parking/natural_keys_on_the_parked_identity_list.cs#L123-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reading_the_natural_key_of_a_parked_identity' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Parking/natural_keys_on_the_parked_identity_list.cs#L156-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reading_the_natural_key_of_a_parked_identity' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The key is read from the aggregate's natural key table when the list is read; it isn't stored on the parked row. It's
