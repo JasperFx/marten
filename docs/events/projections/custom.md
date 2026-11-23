@@ -1,29 +1,15 @@
 # Custom Projections
 
-To build your own Marten projection, you just need a class that implements the `Marten.Events.Projections.IProjection` interface shown below:
+To build your own Marten projection, you just need a class that implements the `Marten.Events.Projections.IProjection`
+interface. It has one method to implement, which it gets from `JasperFx.Events.Projections.IJasperFxProjection<IDocumentOperations>`:
 
-<!-- snippet: sample_iprojection -->
-<a id='snippet-sample_iprojection'></a>
 ```cs
-/// <summary>
-///     Interface for all event projections
-///     IProjection implementations define the projection type and handle its projection document lifecycle
-///     Optimized for inline usage
-/// </summary>
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
-[UnconditionalSuppressMessage("Trimming", "IL2091",
-    Justification = "Class-level: generic type argument doesn't carry the DAM annotation of its target. The argument types flow in from StoreOptions / projection-registration on the caller side and are preserved by the trimmer at that boundary.")]
-[UnconditionalSuppressMessage("AOT", "IL3050",
-    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
-public interface IProjection: IJasperFxProjection<IDocumentOperations>, IMartenRegistrable
+Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Projections/IProjection.cs#L11-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iprojection' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
-The `StreamAction` aggregates outstanding events by the event stream, which is how Marten tracks events inside of an `IDocumentSession` that has
-yet to be committed. The `IDocumentOperations` interface will give you access to a large subset of the `IDocumentSession` API to make document changes
-or deletions. Here's a sample custom projection from our tests:
+`events` is the page of new events to apply: the events being committed for an `Inline` projection, or the next batch the
+async daemon read for an `Async` one. The `IDocumentOperations` interface will give you access to a large subset of the
+`IDocumentSession` API to make document changes or deletions. Here's a sample custom projection from our tests:
 
 <!-- snippet: sample_questpatchtestprojection -->
 <a id='snippet-sample_questpatchtestprojection'></a>

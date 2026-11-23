@@ -106,11 +106,16 @@ A couple notes on this version of the code:
   column with default values or constraints like the `NotNull()`.
 * In this case, I'm building a database row per event stream. The `FlatTableProjection` can also map to arbitrary
   members of each event type.
-* The `Project<T>(lambda)` configuration leads to a runtime, code generation of a Postgresql upsert command so
-  as to not be completely dependent upon events being captured in the exact right order. I think this will be more
-  robust in real life usage than the first, more explicit version.
+* The `Project<T>(lambda)` configuration makes Marten create a PostgreSQL upsert function for each event type, so
+  as to not be completely dependent upon events being captured in the exact right order.
 
 The `FlatTableProjection` in its first incarnation is not yet able to use event metadata.
+
+::: info Errors in the async daemon
+By default in Marten 10, an async aggregation projection [parks a failing identity](/events/projections/async-daemon#parking-a-failing-identity)
+and keeps going. A flat table projection has no single identity to park, so when it throws while applying an event, the whole projection
+**pauses** instead. See [error handling](/events/projections/async-daemon#error-handling) for the choices you have.
+:::
 
 ### Enums, Nullable Values, and Registered Value Types <Badge type="tip" text="8.x" />
 

@@ -1,7 +1,7 @@
 # Multi-Stream Projections
 
 ::: warning
-**Multi-Stream Projections are registered by default as async.** We recommend it as safe default because under heavy load you can easily have contention between requests that effectively stomps over previous updates and leads to apparent "event skipping" and invalid results. Still, you can change that setting and register them synchronously if you're aware of that tradeoff.
+**We recommend registering Multi-Stream Projections as async.** Every registration names its lifecycle, and `Async` is the safe choice for a multi-stream projection because under heavy load you can easily have contention between requests that effectively stomps over previous updates and leads to apparent "event skipping" and invalid results. Still, you can register them `Inline` if you're aware of that tradeoff.
 
 **Registering projection as async means that it requires running the
 [Async Daemon](/events/projections/async-daemon) as hosted service.**
@@ -18,14 +18,52 @@ For simple event to aggregate groupings, you can use the:
 - `Identity<TEvent>(Func<TEvent, TId> func)` method to assign an incoming event to a single aggregate by the aggregate id. Do note that this method works
   with common base classes or common interfaces so you don't have to specify this for every single event type
 - `Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)` method to assign an incoming event to multiple aggregates
-- `IdentityFromTag<TTag>()` to group events by a stored [DCB tag](/events/dcb). We recommend it over `Identity()` delegates where it fits, because Marten can then rebuild, park and replay one identity at a time. See [Grouping by Tags](/events/projections/grouping-by-tags)
-- For grouping rules that fall outside the simpler `Identity()` or `Identities()` methods, supply a custom `IAggregateGrouper` that will sort events into aggregate groups of events by aggregate id
-- For advanced usages, supply a custom `IEventSlicer` that let's you write your own mechanism to divide an incoming segment of events to aggregated view documents
+- `IdentityFromStream<TEvent>()` to group an event by the stream it was appended to. Prefer it to `Identity<TEvent>(e => e.StreamId)`, for the reason below
+- `IdentityFromTag<TTag>()` to group events by a stored [DCB tag](/events/dcb). We recommend it over `Identity()` delegates where it fits, for the same reason. See [Grouping by Tags](/events/projections/grouping-by-tags)
+- For grouping rules that fall outside those methods, `CustomGrouping()`, either with a custom `IAggregateGrouper<TId>` or with a
+  `Func<IQuerySession, IReadOnlyList<IEvent>, IEventGrouping<TId>, Task>`, sorts events into aggregate groups of events by aggregate id.
+  See [Custom Grouper](#custom-grouper)
 
-It's important to note that the first three options (`Identity()`, `Identities()`, and custom `IAggregateGrouping`) are completely additive, while
-using a custom `IEventSlicer` is a complete replacement for the first three approaches and cannot be used simultaneously.
+These options are additive, so one projection can combine them for different event types. A custom grouping can use
+additional information in the underlying Marten database.
 
-The last two mechanisms will allow you to use additional information in the underlying Marten database.
+## Grouping that can park a failing identity <Badge type="tip" text="10.0" /> {#grouping-that-can-park-a-failing-identity}
+
+By default in Marten 10, when an async projection throws while applying an event, the daemon
+[parks the identity that failed](/events/projections/async-daemon#parking-a-failing-identity) and keeps going for every
+other document. To park one identity, the daemon has to be able to find that identity's events again, and how it can
+depends on the grouping:
+
+- `IdentityFromStream<TEvent>()` and `IdentityFromTag<TTag>()` are exact: the stream id or the tag finds the events.
+  A failing identity is parked, and `RebuildIdentityAsync()` can rebuild one identity on its own.
+- `Identity()`, `Identities()` and `CustomGrouping()` are delegates the daemon can't run backwards, so on an apply error the
+  projection **pauses**, the same as before Marten 10 for every error. `Identity<IEvent<T>>(e => e.StreamId)` is still a
+  delegate, even though it picks the stream id.
+- `TenancyGrouping.AcrossTenants` and `RollUpByTenant()` also pause.
+
+A slice index makes the other groupings exact too. `Options.UseSliceIndex()` makes the daemon record which identities
+each event went to, at the cost of one more write per batch. It does not help `RollUpByTenant()`, which always pauses, or
+a custom grouping combined with a [fan out](#event-fan-out-rules) that runs before grouping:
+
+```cs
+public class InvoiceSummaryProjection: MultiStreamProjection<InvoiceSummary, Guid>
+{
+    public InvoiceSummaryProjection()
+    {
+        Identity<InvoiceLineAdded>(x => x.InvoiceId);
+
+        // Lets the daemon park, and replay, one failing InvoiceSummary
+        Options.UseSliceIndex();
+    }
+
+    // Apply() methods...
+}
+```
+
+A custom grouping is replayed from the index as it was recorded. Call `RerunCustomGroupingOnReplay()` on the slice
+index options to run the grouping again on replay instead. Marten writes a log line at startup for each async
+projection saying whether it parks or pauses. See [Rebuilding](/events/projections/rebuilding) for rebuilding one
+identity, which needs the same exact grouping.
 
 Jumping right into an example, having defined events and views as:
 
@@ -529,7 +567,7 @@ query returns nothing, the usage event is silently dropped, and no exception is 
 
 This is the same failure mode the general warning in [Custom Grouper](#custom-grouper)
 describes: *"If your grouping logic requires you to access the aggregate view itself,
-ViewProjection will not function correctly."* Pattern 2 violates that rule by querying
+`MultiStreamProjection` will not function correctly."* Pattern 2 violates that rule by querying
 the projection being built.
 
 If you must keep this shape (because you genuinely need the bounded linked-id list
@@ -823,7 +861,7 @@ public record CompleteShipment(int Version);
 public static class CompleteShipmentEndpoint
 {
     [WolverinePost("/api/shipments/{shipmentId:guid}/complete")]
-    public static async Task<ShipmentBilled> Post(CompleteShipment command, [WriteAggregate] Shipment shipment)
+    public static ShipmentBilled Post(CompleteShipment command, Guid shipmentId, [WriteAggregate] Shipment shipment)
     {
         return new ShipmentBilled(shipment.CustomerId, shipmentId, shipment.Items.Count);
     }
@@ -904,11 +942,27 @@ public class Rollup
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/rolling_up_by_tenant.cs#L92-L114' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rollup_projection_by_tenant_id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Do note that you'll probably also need this flag in your configuration:
+`RollUpByTenant()` needs no other configuration.
+
+### Grouping across tenants
+
+By default, a multi-stream projection over a conjoined multi-tenanted event store groups each tenant's events
+separately, so every tenant gets its own documents (`TenancyGrouping.RespectTenant`). To group events from every tenant
+into the same documents instead, set the projection's `TenancyGrouping`:
 
 ```cs
-// opts is a StoreOptions object
-opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
+public class GlobalProductSalesProjection: MultiStreamProjection<ProductSales, Guid>
+{
+    public GlobalProductSalesProjection()
+    {
+        // Events from every tenant are grouped together
+        TenancyGrouping = TenancyGrouping.AcrossTenants;
+
+        Identity<ProductSold>(x => x.ProductId);
+    }
+
+    // Apply() methods...
+}
 ```
 
 ## Event "Fan Out" Rules

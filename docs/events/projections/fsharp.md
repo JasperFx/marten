@@ -9,12 +9,11 @@ Starting with Marten 9.0, the runtime Roslyn code generation used in earlier ver
 Projection dispatch now happens one of two ways:
 
 1. The **conventional** `Apply` / `Create` / `ShouldDelete` methods are wired up at compile time by the
-   `JasperFx.Events` **Roslyn source generator**. Projection subclasses that use these convention methods
-   must be declared `partial` so the generator can emit the dispatcher into the other half of the class.
+   `JasperFx.Events` **Roslyn source generator**, which C# compilations run.
 2. The **explicit** `Evolve` / `EvolveAsync` (aggregations) and `ApplyAsync` (event projections) methods
    are plain `virtual` methods that you `override`. No source generation is involved.
 
-F# supports **neither `partial` classes nor Roslyn source generators**, so the conventional
+F# compilations don't run Roslyn source generators, so the conventional
 `Apply`/`Create` path is unavailable. F# projections must therefore inherit from
 `SingleStreamProjection<TDoc, TId>`, `MultiStreamProjection<TDoc, TId>`, or `EventProjection` and
 **override the explicit `Evolve` / `EvolveAsync` / `ApplyAsync` methods**. This turns out to be a good fit

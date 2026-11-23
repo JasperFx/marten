@@ -41,8 +41,9 @@ public class Trip
     }
 
     // Create a new aggregate based on the initial
-    // event type
-    internal Trip(TripStarted started)
+    // event type. Like every conventional method,
+    // it must be public
+    public Trip(TripStarted started)
     {
         StartedOn = started.Day;
         Active = true;
@@ -61,10 +62,10 @@ public class Trip
     public Guid? RepairShopId { get; set; }
 
     // The Apply() methods would mutate the aggregate state
-    internal void Apply(Arrival e) => State = e.State;
-    internal void Apply(Travel e) => Traveled += e.TotalDistance();
+    public void Apply(Arrival e) => State = e.State;
+    public void Apply(Travel e) => Traveled += e.TotalDistance();
 
-    internal void Apply(TripEnded e)
+    public void Apply(TripEnded e)
     {
         Active = false;
         EndedOn = e.Day;
@@ -73,12 +74,12 @@ public class Trip
     // We think stream aggregation is mostly useful for live aggregations,
     // but hey, if you want to use a aggregation as an asynchronous projection,
     // you can also specify when the aggregate document should be deleted
-    internal bool ShouldDelete(TripAborted e) => true;
-    internal bool ShouldDelete(Breakdown e) => e.IsCritical;
-    internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
+    public bool ShouldDelete(TripAborted e) => true;
+    public bool ShouldDelete(Breakdown e) => e.IsCritical;
+    public bool ShouldDelete(VacationOver e) => Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L118-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/StreamAggregationSample.cs#L9-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or finally, you can use a method named `Create()` on a projection type as shown in this sample:
@@ -127,7 +128,7 @@ The `Create()` method has to return either the aggregate document type or `Task<
 Marten will apply all those event types that can be cast to the interface or abstract type to that method when executing the projection.
 :::
 
-To make changes to an existing aggregate, declare `Apply()` methods on a `partial` projection class. The `JasperFx.Events.SourceGenerator` discovers them at compile time and emits a `[GeneratedEvolver]` dispatcher with no runtime reflection. The pre-9.0 `ProjectEvent<T>(...)` / `ProjectEventAsync<T>(...)` constructor helpers were removed alongside the JasperFx 2.0 line ([JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)); see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal) for the migration walkthrough.
+To make changes to an existing aggregate, declare public `Apply()` methods on the aggregate or on its projection class. The `JasperFx.Events.SourceGenerator` discovers them at compile time and emits a `[GeneratedEvolver]` dispatcher with no runtime reflection. A `SingleStreamProjection` or `MultiStreamProjection` subclass doesn't need to be `partial` for this, because the dispatcher is written to a file of its own; only a generic projection, or one nested inside a `private` or `protected` type, needs `partial` on itself and every containing type. An `EventProjection` always needs `partial`, because its dispatcher is generated into the class. The pre-9.0 `ProjectEvent<T>(...)` / `ProjectEventAsync<T>(...)` constructor helpers were removed alongside the JasperFx 2.0 line ([JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)); see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal) for the migration walkthrough.
 
 The generator tells you at build time when a projection that needs to be `partial` isn't (`JFXEVT003`), and when an
 `Apply()` method isn't public (`JFXEVT009`): generated dispatch only calls public members, so a non-public `Apply()`
@@ -185,6 +186,17 @@ The valid return types are:
 1. The aggregate type itself, and this allows you to use immutable aggregate types
 1. `Task` if you are mutating the aggregate document with the use of external data read through `IQuerySession`
 1. `Task<T>` where `T` is the aggregate type. This allows you to use immutable aggregate types while also using external data read through `IQuerySession`
+
+### Union event types <Badge type="tip" text="10.0" />
+
+On `net11.0`, an event can be a C# 15 union. Marten stores an appended union as its active case, so the stored event is,
+say, a `Deposited` rather than an `AccountEvent`. An `Apply()` method whose event parameter is the bare union type,
+`Apply(AccountEvent e)`, is called for every case of the union.
+
+That is the only place a union works as the event parameter. `IEvent<AccountEvent>`, a `Create()` or `ShouldDelete()`
+method, and an `EventProjection` method can never match a stored case, so Marten refuses them with an
+`InvalidProjectionException` when the store is built. Take the case types in those methods instead, or take `IEvent` and
+switch on `e.Data`. On `net10.0` no type is a union, so none of this applies.
 
 ## Deleting the Aggregate Document
 

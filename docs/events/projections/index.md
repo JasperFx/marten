@@ -109,15 +109,19 @@ Now, let's move on to *how* you build projections in Marten with a discussion of
 Do note that all the various types of aggregated projections inherit from a common base type and have the same core set of conventions. The aggregation conventions are best explained in the [Aggregate Projections](/events/projections/aggregate-projections) page.
 :::
 
-Marten supplies 5 main recipes for constructing projections.
+Marten supplies these main recipes for constructing projections.
 
 1. [Single Stream Projections](/events/projections/aggregate-projections) combine events from a single stream into a single view.
-2. [Multi Stream Projections](/events/projections/multi-stream-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams.
+2. [Multi Stream Projections](/events/projections/multi-stream-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams,
+   including [grouping by DCB tags](/events/projections/grouping-by-tags).
 3. [Event Projections](/events/projections/event-projections) are a recipe for building projections that create or delete one or more documents for a single event
-4. [Custom Aggregations](/events/projections/custom-aggregates) are a recipe for building aggregate projections that require more logic than
-   can be accomplished by the other aggregation types. Example usages are soft-deleted aggregate documents that maybe be recreated later or
+4. [Explicit Aggregations](/events/projections/explicit) are a recipe for building aggregate projections that require more logic than
+   can be accomplished with the conventional methods. Example usages are soft-deleted aggregate documents that maybe be recreated later or
    if you only apply events to an aggregate if the aggregate document previously existed.
-5. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
+5. [Flat Table Projections](/events/projections/flat) write events to rows of your own PostgreSQL table rather than to documents.
+6. [Composite Projections](/events/projections/composite) run several projections together, in stages.
+7. [EF Core Projections](/events/projections/efcore) project events into Entity Framework Core entities.
+8. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
 
 ## Aggregates
 
@@ -176,8 +180,8 @@ var party_yesterday = await session2.Events
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L149-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well. Additionally, you can do stream aggregations in batch queries with
-`IBatchQuery.Events.AggregateStream<T>(streamId)`.
+In a [batch query](/documents/querying/batched-queries), use `batch.Events.FetchLatest<T>(streamId)` to read an
+aggregate's current state alongside other queries.
 
 ## Inline Projections
 

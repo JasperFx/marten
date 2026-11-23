@@ -44,8 +44,10 @@ Or you can use the pre-V8 conventions as well:
 
 With conventional method usage, the `EventProjection` recipe does the pattern matching for you.
 
-::: warning Removed in Marten 9.0
-The inline-lambda `Project<TEvent>(action)` / `ProjectAsync<TEvent>(action)` calls in the constructors below are removed in Marten 9.0 alongside the JasperFx 2.0 line ([JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)). Replace them with `Project` / `ProjectAsync` method-convention overloads on the `partial` projection class so `JasperFx.Events.SourceGenerator` can emit a `[GeneratedEvolver]` dispatcher. See [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal) for the migration walkthrough.
+::: tip Moving from Marten 8
+Marten 9 removed the inline-lambda `Project<TEvent>(action)` / `ProjectAsync<TEvent>(action)` registrations in an
+`EventProjection` constructor. Use `Project` / `ProjectAsync` methods on a `partial` projection class instead, as in the
+sample below. See [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal).
 :::
 
 To show off what `EventProjection` does, here's a sample that uses most features that `EventProjection` supports:
@@ -116,6 +118,8 @@ Use either the `Create()` or `Project()` method conventions to define event hand
 
 ## Create() Method Convention
 
+A method named `Transform()` follows the same convention as `Create()`, if that name reads better for your projection.
+
 The `Create()` method can accept these arguments:
 
 * The actual event type or `IEvent<T>` where `T` is the event type. One of these is required
@@ -139,26 +143,44 @@ The return value must be either `void` or `Task` depending on whether or not the
 
 ## Rebuilds and Document Teardown
 
-::: warning
-Because an `EventProjection` writes documents through *ad-hoc* `IDocumentOperations` calls (`ops.Insert`, `ops.Store`, etc.) inside its `Project()` / `Create()` methods, Marten **cannot infer which document types the projection produces**. Unlike a single-stream or multi-stream aggregation (whose view type is known), an `EventProjection` therefore does **not** automatically wipe its documents when the projection is rebuilt.
-
-If you rebuild an `EventProjection` and want the previously-written documents cleared first (the normal rebuild semantics), **declare each written document type explicitly** so it participates in the rebuild teardown:
+When an `EventProjection` is rebuilt, Marten deletes the documents it wrote before projecting the events again, the same
+as for an aggregation projection. For an `EventProjection`, Marten learns which document types it writes from the
+`Store()`, `Insert()`, `Delete()` and similar calls in its methods, which `JasperFx.Events.SourceGenerator` finds at
+compile time. That needs the projection class to be `partial`:
 
 ```cs
-public class MyProjection: EventProjection
+public partial class MyProjection: EventProjection
 {
-    public MyProjection()
-    {
-        // Tell Marten this projection writes MyDoc, so a rebuild TRUNCATEs it first
-        Options.DeleteViewTypeOnTeardown<MyDoc>();
-    }
-
+    // A rebuild deletes the existing MyDoc documents first
     public void Project(SomethingHappened e, IDocumentOperations ops)
         => ops.Insert(new MyDoc { Id = e.Id /* ... */ });
 }
 ```
 
-Without this declaration the old documents survive the rebuild. The per-row rebuild path tolerates that (re-inserting an existing id upserts), but the INSERT-only [binary `COPY` rebuild](/events/projections/rebuilding) (`Projections.RebuildWithBulkCopy`) requires an empty target table and will fail with a duplicate-key error. This is a long-standing `EventProjection` limitation, not specific to bulk-copy rebuilds.
+A projection that isn't `partial` gets the `JFXEVT006` build warning naming the document types it could not register,
+and a call the generator can't resolve to a concrete document type gets `JFXEVT005`. For those, or for an `ApplyAsync()`
+override, declare the types yourself:
+
+```cs
+public MyProjection()
+{
+    // Tell Marten this projection writes MyDoc, so a rebuild deletes it first
+    Options.DeleteViewTypeOnTeardown<MyDoc>();
+}
+```
+
+If the projection writes to documents that must survive a rebuild, such as an append-only audit trail or documents
+another projection owns, set `DeletePublishedTypesOnTeardown = false` in its constructor and declare only the types that
+should be deleted with `Options.DeleteViewTypeOnTeardown<T>()`.
+
+Documents that aren't deleted survive the rebuild. The per-row rebuild path tolerates that (re-inserting an existing id
+upserts), but the INSERT-only [binary `COPY` rebuild](/events/projections/rebuilding) (`Projections.RebuildWithBulkCopy`)
+requires an empty target table and will fail with a duplicate-key error.
+
+::: info Errors in the async daemon
+By default in Marten 10, an async aggregation projection [parks a failing identity](/events/projections/async-daemon#parking-a-failing-identity)
+and keeps going. An `EventProjection` has no single identity to park, so when it throws while applying an event, the whole projection
+**pauses** instead. See [error handling](/events/projections/async-daemon#error-handling) for the choices you have.
 :::
 
 ## Identifying the Event Parameter
@@ -326,7 +348,7 @@ public partial class TaskSummaryProjection : EventProjection
 
 * `EnrichEventsAsync` is called **once per tenant batch** before any individual event handlers run
 * The `querySession` parameter provides read access to the database for loading reference data
-* Modifications to `e.Data` properties are visible to `Project<T>` and `ProjectAsync<T>` handlers
+* Modifications to `e.Data` properties are visible to the `Project()` and `Create()` methods
 * Works with both **Inline** and **Async** projection lifecycles
 * The method has a no-op default implementation -- only override it when you need enrichment
 
