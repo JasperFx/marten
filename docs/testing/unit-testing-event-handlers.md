@@ -11,7 +11,10 @@ command* to *the events that should be appended*. Both halves of that are just o
 needs nothing more than a stand-in for the stream.
 
 `JasperFx.Events.StubEventStream<T>` is that stand-in. It records appended events in a list instead
-of persisting them, and it reads identically across Marten, Polecat and Fisher.
+of persisting them, and it reads identically across Marten, Polecat and Fisher. The JasperFx
+documentation covers it for every store in
+[Unit Testing Handlers](https://shared-libs.jasperfx.net/events/unit-testing-handlers); this page walks
+through the same stub with Marten in mind.
 
 ## The handler under test
 
@@ -217,15 +220,10 @@ identity style the handler under test reads.
 
 ## Why not a mocking library?
 
-The obvious alternative is `Substitute.For<IEventStream<Account>>()` followed by
-`stream.Received(1).AppendOne(Arg.Any<Withdrawn>())`. That verifies *a method was called*. It says
-nothing about **which** event was appended or what it carried — which is the entire content of the
-decision the handler makes — and it breaks on a behavior-preserving refactor, such as one
-`AppendMany` in place of two `AppendOne` calls.
-
-A recorded list of events is the thing the handler is actually supposed to produce. Asserting on it
-survives that refactor and fails when the decision changes, which is the only time you want a unit
-test to fail.
+Verifying `stream.Received(1).AppendOne(...)` on a mock proves a method was called, not which event the
+handler decided on or what it carried, and it breaks when one `AppendMany` replaces two `AppendOne`
+calls. Assert on the recorded events instead. The JasperFx page explains this in
+[Don't reach for a mocking library here](https://shared-libs.jasperfx.net/events/unit-testing-handlers#don-t-reach-for-a-mocking-library-here).
 
 ## What the stub does not do
 

@@ -123,6 +123,10 @@ dotnet build path/to/Satellite.csproj -v:n | grep -o '/analyzer:[^ ]*JasperFx[^ 
 or set `<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>` and inspect
 `obj/Debug/<tfm>/generated/JasperFx.Events.SourceGenerator/`. Empty output from either means the generator never ran, and the fix is a Marten or analyzer-only `PackageReference` on that project — not a change to the aggregate.
 
+To turn that green build into a failure instead, set `<JasperFxEventsRequireSourceGenerator>true</JasperFxEventsRequireSourceGenerator>`
+in the satellite's project file. The build then fails with `JFXEVT900` when the generator isn't attached. See
+[Making sure the generator ran at all](https://shared-libs.jasperfx.net/codegen/diagnostics#making-sure-the-generator-ran-at-all).
+
 ## Out of scope
 
 * NuGet-package distribution scenarios (satellite as a `.nupkg` consumed by downstream apps) are tracked separately. The contracts above hold for ProjectReference-composed assemblies.

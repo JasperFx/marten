@@ -214,7 +214,9 @@ Map it with `app.MapHealthChecks("/health")` like the others. It reports:
   count, then the first 10 parked identities of each projection. A parked document is stuck at its last good state until
   someone replays or discards it, but everything else is still moving.
 - **Unhealthy** while a shard is paused at the parking cap (`ShardFailureCategory.ParkedLimitReached`), which means the
-  whole projection has stopped. Fix the projection, replay or discard what's parked, then restart the shard.
+  whole projection has stopped. Fix the projection, replay or discard what's parked, then restart the shard. The cap
+  (`MaxParkedIdentitiesPerShard`) and the systemic trip that pauses a batch parking too many identities at once are
+  described in [Guard rails](https://shared-libs.jasperfx.net/events/parked-identities#guard-rails).
 
 Each listed identity is the stream id, followed by the aggregate's [natural key](/events/natural-keys) in parentheses
 when it has one. A projection with more than 10 parked ends its list with "and N more". A Degraded description reads

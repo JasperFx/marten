@@ -43,6 +43,11 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L16-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_tenant_id_style' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+If you also use Wolverine, set `opts.Durability.TenantIdStyle` in Wolverine to the same value as Marten's
+`TenantIdStyle`. When the two differ, Wolverine rewrites a mixed-case tenant id that Marten doesn't, and Marten throws
+`UnknownTenantIdException`. See [Tenant Id Casing](https://shared-libs.jasperfx.net/configuration/tenant-id-case)
+in the JasperFx documentation.
+
 ## Static Database to Tenant Mapping
 
 ::: info

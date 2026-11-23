@@ -16,6 +16,8 @@ Marten's Event Store functionality is a powerful way to utilize Postgresql in th
 
 For a deeper dive into event sourcing, its core concepts, advanced implementation scenarios, and Marten's specific features, be sure to check out our comprehensive guide: [Understanding Event Sourcing with Marten](/events/learning).
 
+Much of Marten's event store is built on store-neutral abstractions in `JasperFx.Events` that Polecat and Fisher share. To write code against those abstractions, or to prototype on the in-memory store before you choose one, see [Event Store Abstractions](https://shared-libs.jasperfx.net/events/) in the JasperFx documentation.
+
 ## Terminology and Concepts
 
 First, some terminology that we're going to use throughout this section:
