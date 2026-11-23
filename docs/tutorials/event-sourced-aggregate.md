@@ -22,7 +22,7 @@ This approach enforces a clear, consistent flow of state changes and ensures tha
 
 - **Static `Create`**: Marten uses this method to initialize the aggregate from the first event in the stream. It must return a fully constructed aggregate.
 - **Static `Apply`**: Each subsequent event in the stream is passed to the relevant `Apply` method to update the current instance. These methods must return the updated aggregate.
-- This design avoids mutation during construction and encourages an immutable mindset. It also aligns with Marten's default code generation and improves transparency when reading aggregate logic.
+- This design avoids mutation during construction and encourages an immutable mindset. It also improves transparency when reading aggregate logic.
 
 By adopting this convention, your aggregate classes are fully compatible with Marten’s projection engine and behave consistently across live and inline projections.
 

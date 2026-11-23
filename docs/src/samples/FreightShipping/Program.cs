@@ -16,7 +16,7 @@ var commandMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase)
     ["cross-aggregate-views-async-daemon"] = () => _ = CrossAggregateViews.RunDaemon(cts.Token),
     ["cross-aggregate-views"] = () => RunAndWait(CrossAggregateViews.Run, true),
     // ReSharper disable once AccessToDisposedClosure
-    ["wolverine-integration"] = () => CrossAggregateViews.RunDaemon(cts.Token)
+    ["wolverine-integration"] = () => WolverineIntegration.RunDaemon(cts.Token)
 };
 
 var commands = commandMap.Keys.Cast<string>().ToArray();

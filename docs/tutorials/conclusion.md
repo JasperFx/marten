@@ -16,9 +16,9 @@ We encourage you to explore Marten’s documentation and experiment further:
 
 - For a deeper dive into event sourcing, its core concepts, advanced implementation scenarios, and Marten's specific features, be sure to check out our comprehensive guide: [Understanding Event Sourcing with Marten](/events/learning).
 - Try adding a new type of event (e.g., a `ShipmentDelayed` event) and see how to handle it in the projection.
-- Implement a query that uses Marten’s `AggregateStreamAsync` LINQ integration for an ad-hoc calculation.
+- Implement a query that uses Marten’s `AggregateToAsync()` LINQ integration for an ad-hoc calculation.
 - If you have multiple bounded contexts, consider using separate schemas or databases with Marten, and possibly multiple DocumentStores.
-- Look into Marten’s support for **sagas** (long-running workflows) and how events can drive them.
+- Look into [Wolverine's sagas](https://wolverinefx.net/guide/durability/sagas.html) (long-running workflows) and how Marten events can drive them.
 
 With Marten and PostgreSQL, you have a potent combination of conventional technology and innovative patterns. We hope this freight shipment example showed you how to harness Marten’s power in a real-world scenario. Happy coding with Marten!
 

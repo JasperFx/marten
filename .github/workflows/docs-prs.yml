@@ -49,3 +49,9 @@ jobs:
 
       - name: Build docs
         run: ./build.sh docs-build
+
+      # The freight shipping tutorial sample is downloaded as a zip and built against the published Marten and
+      # Wolverine packages named in its own Directory.Packages.props, so this catches a tutorial that no longer
+      # compiles against them. After the docs build, so bin/ and obj/ are not there when the zip is made.
+      - name: Build the freight shipping tutorial sample
+        run: dotnet build docs/src/samples/FreightShipping/FreightShipping.csproj -c Release

@@ -41,13 +41,17 @@ Behind the scenes, Marten stored the shipment as a JSON document in a Postgres t
   "Id": "3a1f...d45", 
   "Origin": "Rotterdam",
   "Destination": "New York",
-  "Status": "Scheduled",
+  "Status": 0,
   "ScheduledAt": "2025-03-21T08:30:00Z",
   "PickedUpAt": null,
   "DeliveredAt": null,
   "CancelledAt": null
 }
 ```
+
+`Status` is stored as `0` because Marten's default System.Text.Json serializer stores enums by their numeric value. Call
+`opts.UseSystemTextJsonForSerialization(enumStorage: EnumStorage.AsString)` to store `"Scheduled"` instead. See
+[Enum Storage](/configuration/json#enum-storage).
 
 As the shipment goes through its lifecycle, we would update this document. For example, when the freight is picked up, we might do:
 

@@ -17,7 +17,7 @@ public static class EvolveToEventSourcing
         #endregion store-setup
         
         #region storing-events
-        using var session = store.LightweightSession();
+        await using var session = store.LightweightSession();
 
         // 1. Start a new event stream for a shipment
         var shipmentId = Guid.NewGuid();

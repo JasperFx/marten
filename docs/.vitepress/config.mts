@@ -19,7 +19,7 @@ function freightShippingTutorialZipPlugin() {
     buildStart() {
       console.info(`[freight-shipping-tutorial-zip] Building zip from ${freightShippingSamplePath}`)
       rmSync(freightShippingZipPath, { force: true })
-      execFileSync('zip', ['-r', '-q', freightShippingZipPath, '.'], {
+      execFileSync('zip', ['-r', '-q', freightShippingZipPath, '.', '-x', 'bin/*', 'obj/*'], {
         cwd: freightShippingSamplePath
       })
       console.info(`[freight-shipping-tutorial-zip] Wrote ${freightShippingZipPath}`)
