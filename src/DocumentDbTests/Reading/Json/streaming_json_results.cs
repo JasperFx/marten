@@ -1264,4 +1264,64 @@ public class streaming_json_results : IntegrationContext
             await theSession.Query<Target>().StreamPagedJsonArray(stream, 1, 0);
         });
     }
+
+    private async Task<string> storeUsersNamed(int count)
+    {
+        // A name unique to this test, so documents written by sibling tests in this class
+        // (IntegrationContext does not clear between tests) never match the query
+        var name = "stream-single-" + Guid.NewGuid();
+        for (var i = 0; i < count; i++)
+        {
+            theSession.Store(new SimpleUser
+            {
+                UserName = name,
+                Number = i,
+                Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
+            });
+        }
+
+        await theSession.SaveChangesAsync();
+        return name;
+    }
+
+    [Fact]
+    public async Task stream_json_single_throws_like_to_json_single_when_more_than_one_matches()
+    {
+        var name = await storeUsersNamed(2);
+
+        var expected = await Should.ThrowAsync<InvalidOperationException>(() =>
+            theSession.Query<SimpleUser>().Where(x => x.UserName == name).ToJsonSingle());
+        expected.Message.ShouldBe("Sequence contains more than one element");
+
+        var stream = new MemoryStream();
+        var actual = await Should.ThrowAsync<InvalidOperationException>(() =>
+            theSession.Query<SimpleUser>().Where(x => x.UserName == name).StreamJsonSingle(stream));
+        actual.Message.ShouldBe(expected.Message);
+    }
+
+    [Fact]
+    public async Task stream_json_single_throws_like_to_json_single_when_nothing_matches()
+    {
+        var name = "stream-single-" + Guid.NewGuid();
+
+        var expected = await Should.ThrowAsync<InvalidOperationException>(() =>
+            theSession.Query<SimpleUser>().Where(x => x.UserName == name).ToJsonSingle());
+        expected.Message.ShouldBe("Sequence contains no elements");
+
+        var stream = new MemoryStream();
+        var actual = await Should.ThrowAsync<InvalidOperationException>(() =>
+            theSession.Query<SimpleUser>().Where(x => x.UserName == name).StreamJsonSingle(stream));
+        actual.Message.ShouldBe(expected.Message);
+    }
+
+    [Fact]
+    public async Task stream_json_single_writes_the_only_match()
+    {
+        var name = await storeUsersNamed(1);
+
+        var stream = new MemoryStream();
+        await theSession.Query<SimpleUser>().Where(x => x.UserName == name).StreamJsonSingle(stream);
+
+        deserialize<SimpleUser>(stream).UserName.ShouldBe(name);
+    }
 }
