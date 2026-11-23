@@ -32,18 +32,18 @@ IDocumentSession <|.. DirtyCheckingDocumentSession
 While there are sections below describing each session in more detail, at a high level the different
 types of sessions are:
 
-| **Creation**                                                  | **Read/Write** | **Identity Map** | **Dirty Checking** |
-| ------------------------------------------------------------- | -------------- | ---------------- | ------------------ |
-| `IDocumentStore.QuerySession()`                               | Read Only      | No               | No                 |
-| `IDocumentStore.QuerySerializableSessionAsync()`              | Read Only      | No               | No                 |
-| `IDocumentStore.LightweightSession()`                         | Read/Write     | No               | No                 |
-| `IDocumentStore.LightweightSerializableSessionAsync()`        | Read/Write     | No               | No                 |
-| `IDocumentStore.IdentitySession()`                            | Read/Write     | Yes              | No                 |
-| `IDocumentStore.IdentitySerializableSessionAsync()`           | Read/Write     | Yes              | No                 |
-| `IDocumentStore.DirtyTrackedSession()`                        | Read/Write     | Yes              | Yes                |
-| `IDocumentStore.DirtyTrackedSerializableSessionAsync()`       | Read/Write     | Yes              | Yes                |
-| `IDocumentStore.OpenSession(SessionOptions)`                  | Read/Write     | Yes              | No                 |
-| `IDocumentStore.OpenSerializableSessionAsync(SessionOptions)` | Read/Write     | Yes              | No                 |
+| **Creation**                                                  | **Read/Write** | **Identity Map**                               | **Dirty Checking**                             |
+| ------------------------------------------------------------- | -------------- | ---------------------------------------------- | ---------------------------------------------- |
+| `IDocumentStore.QuerySession()`                               | Read Only      | No                                             | No                                             |
+| `IDocumentStore.QuerySerializableSessionAsync()`              | Read Only      | No                                             | No                                             |
+| `IDocumentStore.LightweightSession()`                         | Read/Write     | No                                             | No                                             |
+| `IDocumentStore.LightweightSerializableSessionAsync()`        | Read/Write     | No                                             | No                                             |
+| `IDocumentStore.IdentitySession()`                            | Read/Write     | Yes                                            | No                                             |
+| `IDocumentStore.IdentitySerializableSessionAsync()`           | Read/Write     | Yes                                            | No                                             |
+| `IDocumentStore.DirtyTrackedSession()`                        | Read/Write     | Yes                                            | Yes                                            |
+| `IDocumentStore.DirtyTrackedSerializableSessionAsync()`       | Read/Write     | Yes                                            | Yes                                            |
+| `IDocumentStore.OpenSession(SessionOptions)`                  | Read/Write     | Set by `SessionOptions.Tracking` (default: No) | Set by `SessionOptions.Tracking` (default: No) |
+| `IDocumentStore.OpenSerializableSessionAsync(SessionOptions)` | Read/Write     | Set by `SessionOptions.Tracking` (default: No) | Set by `SessionOptions.Tracking` (default: No) |
 
 ::: tip INFO
 The recommended session type for read/write operations is `LightweightSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.
@@ -58,14 +58,22 @@ which is what lets one body of code be compiled against Marten, Polecat or Fishe
 contracts carry an `Events` accessor, so a consumer holding a session as the shared contract can
 reach the event store without naming a Marten type:
 
-```csharp
-// The session was opened through the shared IDocumentSessionFactory, so nothing here
-// knows it is talking to Marten.
-IDocumentSessionOperations session = factory.LightweightSession();
+<!-- snippet: sample_shared_contract_session_events -->
+<a id='snippet-sample_shared_contract_session_events'></a>
+```cs
+public async Task append_through_the_shared_contract(
+    IDocumentSessionFactory factory, Guid streamKey, CancellationToken token)
+{
+    // The session was opened through the shared IDocumentSessionFactory, so nothing here
+    // knows it is talking to Marten.
+    await using var session = factory.LightweightSession();
 
-session.Events.StartStream<Order>(streamKey, new OrderPlaced(/* ... */));
-await session.SaveChangesAsync(token);
+    session.Events.StartStream<Order>(streamKey, new OrderPlaced("Acme", 100m));
+    await session.SaveChangesAsync(token);
+}
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/session_documentation_samples.cs#L20-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shared_contract_session_events' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The split mirrors Marten's own: `IDocumentReadOperations.Events` is read-only
 (`IQueryEventStore`), and `IDocumentSessionOperations.Events` adds appending
@@ -82,19 +90,29 @@ yet committed — every `StartStream` and `Append` enlisted since the last `Save
 there for a listener or a pre-commit hook that needs to decide something from the events the session
 is about to write, again without naming a store:
 
-```csharp
-IDocumentSessionOperations session = factory.LightweightSession();
-
-session.Events.StartStream<Order>(streamKey, new OrderPlaced(/* ... */));
-
-// One StreamAction, carrying the OrderPlaced event, before anything is written.
-foreach (var stream in session.PendingStreams)
+<!-- snippet: sample_shared_contract_pending_streams -->
+<a id='snippet-sample_shared_contract_pending_streams'></a>
+```cs
+public async Task read_the_pending_streams(
+    IDocumentSessionFactory factory, Guid streamKey, CancellationToken token)
 {
-    // stream.ActionType is Start here; it would be Append against an existing stream.
-}
+    await using var session = factory.LightweightSession();
 
-await session.SaveChangesAsync(token);   // PendingStreams is empty again afterwards
+    session.Events.StartStream<Order>(streamKey, new OrderPlaced("Acme", 100m));
+
+    // One StreamAction, carrying the OrderPlaced event, before anything is written
+    foreach (var stream in session.PendingStreams)
+    {
+        // stream.ActionType is Start here. It would be Append against an existing stream
+        Console.WriteLine($"{stream.ActionType} {stream.Id} with {stream.Events.Count} event(s)");
+    }
+
+    // PendingStreams is empty again afterwards
+    await session.SaveChangesAsync(token);
+}
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/session_documentation_samples.cs#L33-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shared_contract_pending_streams' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Only the streams are exposed, deliberately — pending **document** operations are not part of the shared
 contract. In Marten this is the same collection as `IDocumentSession.PendingChanges.Streams()`, and
@@ -157,7 +175,7 @@ var badIssues = await session.Query<Issue>()
 
 ## Async session for serializable transactions
 
-Use `IDocumentStore.LightweightSerializableSessionAsync()` to Open a new `IDocumentSession` with the supplied options and immediately open the database connection and start the transaction for the session. This is appropriate for Serializable transaction sessions. This is added in v5.
+Use `IDocumentStore.LightweightSerializableSessionAsync()` to Open a new `IDocumentSession` with the supplied options and immediately open the database connection and start the transaction for the session. This is appropriate for Serializable transaction sessions.
 
 <!-- snippet: sample_opening_session_async -->
 <a id='snippet-sample_opening_session_async'></a>
@@ -196,13 +214,13 @@ using var session = theStore.IdentitySession();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdentityMapTests.cs#L14-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-identity-map' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the `IDocumentStore.LightweightSession()` which forgos the identity map functionality, or use the read only `IQuerySession` alternative. RavenDb users will note that Marten does not (yet) support any notion of `Evict()` to manually remove documents from identity map tracking to avoid memory usage problems. Our hope is that the existence of the lightweight session and the read only interface will alleviate the memory explosion problems that you can run into with naive usage of identity maps or the dirty checking when fetching a large number of documents.
+Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the `IDocumentStore.LightweightSession()` which skips the identity map functionality, or use the read only `IQuerySession` alternative. To stop tracking a document, use `Eject()` (see below).
 
-The Identity Map functionality is applied to all documents loaded by Id or Linq queries with `IQuerySession/IDocumentSession.Query<T>()`. **Documents loaded by user-supplied SQL in the `IQuerySession.Query<T>(sql)` mechanism bypass the Identity Map functionality.**
+The Identity Map functionality is applied to all documents loaded by Id or Linq queries with `IQuerySession/IDocumentSession.Query<T>()`. **Documents loaded by user-supplied SQL in the `IQuerySession.QueryAsync<T>(sql)` mechanism bypass the Identity Map functionality.**
 
 ## Ejecting Documents from a Session
 
-If for some reason you need to completely remove a document from a session's [identity map](/documents/identity) and [unit of work tracking](/documents/sessions), as of Marten 2.4.0 you can use the
+If for some reason you need to completely remove a document from a session's [identity map](#identity-map-mechanics) and [unit of work tracking](#unit-of-work-mechanics), use the
 `IDocumentSession.Eject<T>(T document)` syntax shown below in one of the tests:
 
 <!-- snippet: sample_ejecting_a_document -->
@@ -261,8 +279,7 @@ theSession.PendingChanges.Operations().Any().ShouldBeFalse();
 ## Connection Handling
 
 ::: tip
-This behavior changed in Marten 7. And regardless of the new Marten 7 behavior or opting into the V6 and before "sticky"
-connection handling, you almost certainly want connection pooling enabled (it is by default).
+Since Marten 7, a session opens a connection only for each operation. Keep Npgsql connection pooling on (it is by default).
 :::
 
 By default, Marten will only open a database connection within a session immediately before any operation that involves
@@ -274,7 +291,7 @@ within [Hot Chocolate integrations](https://chillicream.com/docs/hotchocolate/v1
 There are some exceptions to this behavior:
 
 1. When creating a session with an existing connection or transaction
-2. When creating a session with serializable transaction isolation levels, the connection is opened immediately and sticky throughout. I.e., `IDocumentStore.******SerializableSessionAsync()`
+2. When creating a session with serializable transaction isolation levels, the connection is opened immediately and sticky throughout. I.e., the `*SerializableSessionAsync()` methods
 3. When opting to have Marten enroll in ambient transactions (`SessionOptions.ForCurrentTransaction()`)
 4. When choosing to use explicit transaction boundaries (see the next section)
 5. When using the session's underlying connection for user defined querying (`GetConnectionAsync()`).
@@ -305,7 +322,7 @@ public static async Task using_session_connection(IQuerySession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ExplicitTransactions.cs#L11-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_session_connection_directly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-You can register SQL statements to be executed as part of the `SaveChanges()` / `SaveChangesAsync()` batch and transaction through
+You can register SQL statements to be executed as part of the `SaveChangesAsync()` batch and transaction through
 `IDocumentSession.QueueSqlCommand()`, and the Marten team would recommend doing that as much as possible.
 
 ### Explicit Transaction Boundaries
@@ -346,13 +363,29 @@ There is no place within Marten where it keeps a stateful connection open across
 By default, Marten just uses the underlying timeout configuration from the [Npgsql connection string](http://www.npgsql.org/doc/connection-string-parameters.html).
 You can though, opt to set a different command timeout per session with this syntax:
 
+<!-- snippet: sample_configurecommandtimeout -->
+<a id='snippet-sample_configurecommandtimeout'></a>
+```cs
+public void ConfigureCommandTimeout(IDocumentStore store)
+{
+    // Overrides the store's command timeout for this session,
+    // setting it to 60 seconds
+    using (var session = store.LightweightSession(new SessionOptions { Timeout = 60 }))
+    {
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L23-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ### How the effective timeout is resolved
 
 For any given session, the timeout is the first of these that has an opinion:
 
 1. `SessionOptions.Timeout`, if you set one for that session.
 2. `StoreOptions.CommandTimeout`, if you set it deliberately — either by assigning it, or by passing a connection
-   string to `StoreOptions.Connection(...)`, which reads `Command Timeout` out of it.
+   string to `StoreOptions.Connection(...)`. That uses the string's `Command Timeout`, or Npgsql's default of 30
+   seconds when there is none.
 3. The `Command Timeout` on the connection string of **the database this session is actually working against**.
 4. Marten's own default of 5 seconds.
 
@@ -368,25 +401,10 @@ is not overridden by whatever an individual shard's connection string happens to
 timeouts, put them on the shard connection strings and leave `StoreOptions.CommandTimeout` alone.
 :::
 
-<!-- snippet: sample_configurecommandtimeout -->
-<a id='snippet-sample_configurecommandtimeout'></a>
-```cs
-public void ConfigureCommandTimeout(IDocumentStore store)
-{
-    // Sets the command timeout for this session to 60 seconds
-    // The default is 30
-    using (var session = store.LightweightSession(new SessionOptions { Timeout = 60 }))
-    {
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L23-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
 ## Unit of Work Mechanics
 
 ::: tip
-The call to `IDocumentSession.SaveChanges()` tries to batch all the queued updates and deletes into a single ADO.Net call to PostgreSQL. Our testing has
+The call to `IDocumentSession.SaveChangesAsync()` tries to batch all the queued updates and deletes into a single ADO.Net call to PostgreSQL. Our testing has
 shown that this technique is much faster than issuing one ADO.Net call at a time.
 :::
 
@@ -394,13 +412,13 @@ At this point, the `IDocumentSession` is the sole [unit of work](http://martinfo
 
 1. Lightweight and the standard "identity map" sessions require users to do all the change tracking manually and tell the `IDocumentSession`
    what documents have changed
-1. The "dirty checking" session tries to determine which documents loaded from that `IDocumentSession` has any changes when `IDocumentSession.SaveChanges()` is called
+1. The "dirty checking" session tries to determine which documents loaded from that `IDocumentSession` has any changes when `IDocumentSession.SaveChangesAsync()` is called
 
 ::: tip INFO
-When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.
+When using a `Guid`, `int`, or `long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.
 :::
 
-TODO -- Need to talk about SaveChanges / SaveChangesAsync here!
+Nothing is written until you call `SaveChangesAsync()`, which sends every queued operation in one batch and one transaction.
 
 ## Adding Listeners
 
@@ -413,13 +431,8 @@ Marten is unable to evaluate database migrations within a session that is create
 (`TransactionScope`). If you need to use ambient transactions, you will need to apply database changes upfront.
 :::
 
-Before Marten 2.4.0, a Marten `IDocumentSession` always controlled the lifecycle of its underlying database
-connection and transaction boundaries. With the 2.4.0+ release, you can pass in an existing transaction or connection, direct
-Marten to enlist in an ambient transaction scope, and even direct Marten on whether or not it owns the transaction boundaries
-to override whether or not `SaveChanges/SaveChangesAsync` will commit the underlying transaction.
-
-Do note that the transaction scope enlisting is only available in either the full .Net framework (> .Net 4.6) or applications targeting
-Netstandard 2.0.
+You can pass in an existing connection or transaction, or enlist in an ambient `TransactionScope`, and choose whether
+`SaveChangesAsync()` commits the transaction.
 
 <!-- snippet: sample_passing-in-existing-connections-and-transactions -->
 <a id='snippet-sample_passing-in-existing-connections-and-transactions'></a>
@@ -443,6 +456,12 @@ var session4 = store.LightweightSession(SessionOptions.ForCurrentTransaction());
 
 The transaction isolation level when opening a new `IDocumentSession` can be configured by
 supplying the optional `isolationLevel` argument. The default level is `ReadCommitted`.
+
+::: warning
+In Marten 10, passing `IsolationLevel.Serializable` to `LightweightSession()`, `IdentitySession()`,
+`DirtyTrackedSession()` or `OpenSession()` throws `NotSupportedException`. Open serializable sessions with the matching
+`*SerializableSessionAsync()` method.
+:::
 
 As one of the use cases that spawned this feature, say that you are using the [Saga pattern](https://lostechies.com/jimmybogard/2013/03/21/saga-implementation-patterns-variations/) in a service bus architecture. When handling a message with this pattern, you typically want to load some kind of persisted state for the long running saga, do some work, then persist the updated saga state.
 
@@ -478,8 +497,7 @@ You may also specify other [transaction isolation level supported by PostgreSQL]
 ```cs
 public async Task execute_saga(IDocumentStore store, Guid sagaId, CancellationToken ct)
 {
-    // The session below will open its connection and start a
-    // snapshot transaction
+    // The session below uses a snapshot transaction
     await using var session = store.LightweightSession(IsolationLevel.Snapshot);
     var state = await session.LoadAsync<MySagaState>(sagaId, ct);
 
@@ -488,7 +506,7 @@ public async Task execute_saga(IDocumentStore store, Guid sagaId, CancellationTo
     await session.SaveChangesAsync(ct);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SagaStorageExample.cs#L31-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_saga-transaction' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SagaStorageExample.cs#L31-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_saga-transaction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Manual Change Tracking
@@ -525,7 +543,7 @@ Do note that Marten's `Store()` method makes no distinctions between inserts and
 
 In the case an `IDocumentSession` opened with the dirty checking enabled, the session will try to detect changes to any of the documents loaded by that
 session. The dirty checking is done by keeping the original JSON fetched from Postgresql and using `System.Text.Json`'s `JsonNode.DeepEquals` to do a node by node comparison of the
-JSON representation of the document at the time that `IDocumentSession` is called.
+JSON representation of the document when `SaveChangesAsync()` is called.
 
 <!-- snippet: sample_tracking_document_session_uow -->
 <a id='snippet-sample_tracking_document_session_uow'></a>

@@ -36,7 +36,7 @@ var store = DocumentStore.For(_ =>
 <!-- endSnippet -->
 
 ::: info
-Previous to Marten v8, Newtonsoft.Json was the default serializer. Starting with Marten 9.0, Newtonsoft support is shipped as the separate **`Marten.Newtonsoft`** NuGet package. Add a package reference and `using Marten.Newtonsoft;` to keep using it.
+Before Marten 9, Newtonsoft.Json was the default serializer. Since 9.0, Newtonsoft support ships as the separate **`Marten.Newtonsoft`** NuGet package. Add a package reference and `using Marten.Newtonsoft;` to keep using it.
 :::
 
 ## Enum Storage
@@ -122,7 +122,7 @@ You can also use other options of `NonPublicMembersStorage`:
     4. Use default constructor.
 - `All` - Use both properties with non-public setters and non-public constructors.
 
-When using `System.Text.Json` the only support for private properties is to mark the field using [\[JsonInclude\]](https://docs.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonincludeattribute?view=net-6.0) attribute.
+When using `System.Text.Json` the only support for private properties is to mark the field using [\[JsonInclude\]](https://docs.microsoft.com/en-us/dotnet/api/system.text.json.serialization.jsonincludeattribute) attribute.
 
 Alternatively if you want immutability you can mark the setter as `init` like so:
 
@@ -133,7 +133,7 @@ public class User
 }
 ```
 
-## Polymorphic Serialization <Badge type="warning" text=".NET 9+ & System.Text.Json Only" />
+## Polymorphic Serialization <Badge type="warning" text="System.Text.Json only" />
 
 ::: tip
 This is specifically to do with types stored *within* documents. For polymorphism at the root document level see [Multi Level Hierarchies](/documents/hierarchies#multi-level-hierarchies)
@@ -157,24 +157,35 @@ System.Text.Json builds the serialization metadata for each type via reflection 
 
 Declare a context for the types you want covered:
 
+<!-- snippet: sample_stj_source_generated_context -->
+<a id='snippet-sample_stj_source_generated_context'></a>
 ```cs
 [JsonSerializable(typeof(MyDocument))]
 [JsonSerializable(typeof(AnotherDocument))]
 internal partial class MyMartenJsonContext : JsonSerializerContext;
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/json_serialization_documentation_samples.cs#L23-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_stj_source_generated_context' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Then layer it into Marten's serializer with `UseTypeInfoResolver`:
 
+<!-- snippet: sample_use_type_info_resolver -->
+<a id='snippet-sample_use_type_info_resolver'></a>
 ```cs
-var serializer = new SystemTextJsonSerializer();
-serializer.UseTypeInfoResolver(MyMartenJsonContext.Default);
-
-var store = DocumentStore.For(opts =>
+public void use_type_info_resolver(string connectionString)
 {
-    opts.Connection(connectionString);
-    opts.Serializer(serializer);
-});
+    var serializer = new SystemTextJsonSerializer();
+    serializer.UseTypeInfoResolver(MyMartenJsonContext.Default);
+
+    using var store = DocumentStore.For(opts =>
+    {
+        opts.Connection(connectionString);
+        opts.Serializer(serializer);
+    });
+}
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/json_serialization_documentation_samples.cs#L31-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_type_info_resolver' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Types known to the context use its precompiled metadata, while everything else — Marten's internal documents, dynamic types, and any type the context does not cover — falls back to reflection. The reflection fallback is preserved on purpose, so covering only a subset of your types is safe.
 
@@ -273,7 +284,7 @@ Marten actually has to keep two Newtonsoft.Json serializers, with one being a "c
 
 You might prefer to configure the serializer separately from the document store and can do so via passing the serializer instance to the `Serializer` method.
 
-An example of configuring Marten's `JsonNetSerializer` is shown below:
+An example of configuring Marten's `JsonNetSerializer` (from the `Marten.Newtonsoft` package) is shown below:
 
 <!-- snippet: sample_customize_json_net_serialization -->
 <a id='snippet-sample_customize_json_net_serialization'></a>
@@ -446,7 +457,9 @@ public interface ISerializer: IStorageSerializer, Weasel.Core.ISerializer
 <!-- endSnippet -->
 
 To support a new serialization library or customize the JSON serialization options, you can write a new version of `ISerializer` and plug it
-into the `DocumentStore`. An example of integrating with the `Jil` serializer is below.
+into the `DocumentStore`. Use Marten's own
+[`SystemTextJsonSerializer`](https://github.com/JasperFx/marten/blob/master/src/Marten/Services/SystemTextJsonSerializer.cs)
+as the reference implementation.
 
 ::: tip
 Regardless of which JSON serializer you use, make sure to set the `Casing` property
@@ -455,109 +468,22 @@ naming on the underlying JSON serializer. The Linq querying support needs this i
 in order to create the correct SQL queries within JSON bodies.
 :::
 
-::: warning
-The code below is provided as an example only, `Jil` is no longer maintained
-and should not be used in your application.
-:::
+Then replace the default `ISerializer` when you bootstrap your `DocumentStore`. Pass an instance to `Serializer()`, as
+below, or use `Serializer<T>()` for a serializer type with a public, parameterless constructor:
 
+<!-- snippet: sample_replace_the_serializer -->
+<a id='snippet-sample_replace_the_serializer'></a>
 ```cs
-public class JilSerializer : ISerializer
+public void replace_the_serializer(ISerializer mySerializer)
 {
-    private readonly Options _options
-        = new(dateFormat: DateTimeFormat.ISO8601, includeInherited:true);
-
-    public ValueCasting ValueCasting { get; } = ValueCasting.Strict;
-
-    public string ToJson(object? document)
+    using var store = DocumentStore.For(opts =>
     {
-        return JSON.Serialize(document, _options);
-    }
+        opts.Connection("the connection string");
 
-    public T FromJson<T>(Stream stream)
-    {
-        return JSON.Deserialize<T>(stream.GetStreamReader(), _options);
-    }
-
-    public T FromJson<T>(DbDataReader reader, int index)
-    {
-        var stream = reader.GetStream(index);
-        return FromJson<T>(stream);
-    }
-
-    public ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default)
-    {
-        return new(FromJson<T>(stream));
-    }
-
-    public ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default)
-    {
-        return new (FromJson<T>(reader, index));
-    }
-
-    public object FromJson(Type type, Stream stream)
-    {
-        return JSON.Deserialize(stream.GetStreamReader(), type, _options);
-    }
-
-    public object FromJson(Type type, DbDataReader reader, int index)
-    {
-        var stream = reader.GetStream(index);
-        return FromJson(type, stream);
-    }
-
-    public ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default)
-    {
-        return new (FromJson(type, stream));
-    }
-
-    public ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index, CancellationToken cancellationToken = default)
-    {
-        return new (FromJson(type, reader, index));
-    }
-
-    public string ToCleanJson(object? document)
-    {
-        return ToJson(document);
-    }
-
-    public EnumStorage EnumStorage => EnumStorage.AsString;
-    public Casing Casing => Casing.Default;
-
-    public void WriteTo(IBufferWriter<byte> writer, object? value)
-    {
-        throw new NotSupportedException();
-    }
-
-    public void WriteToParameter(NpgsqlParameter parameter, object? value)
-    {
-        throw new NotSupportedException();
-    }
-
-    public void WriteToCleanJson(IBufferWriter<byte> writer, object? value)
-    {
-        throw new NotSupportedException();
-    }
-
-    public string ToJsonWithTypes(object document)
-    {
-        throw new NotSupportedException();
-    }
-
-    public void WriteToJsonWithTypes(IBufferWriter<byte> writer, object value)
-    {
-        throw new NotSupportedException();
-    }
+        // Replace Marten's ISerializer with your own
+        opts.Serializer(mySerializer);
+    });
 }
 ```
-
-Next, replace the default `ISerializer` when you bootstrap your `DocumentStore` as in this example below:
-
-```cs
-var store = DocumentStore.For(_ =>
-{
-    _.Connection("the connection string");
-
-    // Replace the ISerializer w/ the TestsSerializer
-    _.Serializer<TestsSerializer>();
-});
-```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/json_serialization_documentation_samples.cs#L45-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replace_the_serializer' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

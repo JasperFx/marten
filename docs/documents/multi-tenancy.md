@@ -4,7 +4,7 @@ Marten supports multi-tenancy to provide data isolation between tenants, aka gro
 
 By default, Marten operates in single-tenancy mode (`TenancyStyle.Single`) with multi-tenancy disabled.
 
-Once configured for multi-tenancy, Marten exposes it via sessions (`IQuerySession`, `IDocumentSession`) scoped to specific tenants, as well as various overloads to saving operations that accept a tenant identifier.
+Once configured for multi-tenancy, Marten exposes it via sessions (`IQuerySession`, `IDocumentSession`) scoped to specific tenants, as well as `ForTenant()` on a session and tenant overloads of `BulkInsertAsync()`.
 
 ## Scoping Sessions to Tenancy
 
@@ -14,28 +14,6 @@ The following sample demonstrates scoping a document session to tenancy identifi
 <a id='snippet-sample_tenancy-scoping-session-write'></a>
 ```cs
 // Write some User documents to tenant "tenant1"
-using (var session = theStore.LightweightSession("tenant1"))
-{
-    session.Store(new User { Id = "u1", UserName = "Bill", Roles = ["admin"] });
-    session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = [] });
-    await session.SaveChangesAsync();
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L91-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_tenancy-scoping-session-write-1'></a>
-```cs
-// Write some User documents to tenant "tenant1"
-using (var session = theStore.LightweightSession("tenant1"))
-{
-    session.Store(new User { Id = "u1", UserName = "Bill", Roles = ["admin"] });
-    session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = [] });
-    await session.SaveChangesAsync();
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_1884_multi_tenancy_and_Any_query.cs#L140-L150' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-1' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_tenancy-scoping-session-write-2'></a>
-```cs
-// Write some User documents to tenant "tenant1"
 using (var session = store.LightweightSession("tenant1"))
 {
     session.Store(new User { UserName = "Bill" });
@@ -43,7 +21,7 @@ using (var session = store.LightweightSession("tenant1"))
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L58-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L58-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-write' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As with storing, the load operations respect tenancy of the session.
@@ -62,10 +40,10 @@ using (var query = store.QuerySession("tenant1"))
         .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L78-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L78-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Lastly, unlike reading operations, `IDocumentSession.Store` offers an overload to explicitly pass in a tenant identifier, bypassing any tenancy associated with the session. Similar overload for tenancy exists for `IDocumentStore.BulkInsert`.
+To write to a different tenant from the same session, use `session.ForTenant("tenant2").Store(doc)`. `IDocumentStore.BulkInsertAsync()` has an overload that takes a tenant id.
 
 ## Default Tenancy
 
@@ -75,74 +53,6 @@ The following sample demonstrates persisting documents as non-tenanted, under de
 
 <!-- snippet: sample_tenancy-mixed-tenancy-non-tenancy-sample -->
 <a id='snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample'></a>
-```cs
-using var store = DocumentStore.For(opts =>
-{
-    opts.DatabaseSchemaName = "mixed_multi_tenants";
-    opts.Connection(ConnectionSource.ConnectionString);
-    opts.Schema.For<Target>().MultiTenanted(); // tenanted
-    opts.Schema.For<User>(); // non-tenanted
-    opts.Schema.For<Issue>().MultiTenanted(); // tenanted
-});
-
-await store.Advanced.Clean.DeleteAllDocumentsAsync();
-
-// Add documents to tenant Green
-var greens = Target.GenerateRandomData(10).ToArray();
-await store.BulkInsertAsync("Green", greens);
-
-// Add documents to tenant Red
-var reds = Target.GenerateRandomData(11).ToArray();
-await store.BulkInsertAsync("Red", reds);
-
-// Add non-tenanted documents
-// User is non-tenanted in schema
-var user1 = new User { UserName = "Frank" };
-var user2 = new User { UserName = "Bill" };
-await store.BulkInsertAsync(new[] { user1, user2 });
-
-// Add documents to default tenant
-// Note that schema for Issue is multi-tenanted hence documents will get added
-// to default tenant if tenant is not passed in the bulk insert operation
-var issue1 = new Issue { Title = "Test issue1" };
-var issue2 = new Issue { Title = "Test issue2" };
-await store.BulkInsertAsync(new[] { issue1, issue2 });
-
-// Create a session with tenant Green
-using (var session = store.QuerySession("Green"))
-{
-    // Query tenanted document as the tenant passed in session
-    (await session.Query<Target>().CountAsync()).ShouldBe(10);
-
-    // Query non-tenanted documents
-    (await session.Query<User>().CountAsync()).ShouldBe(2);
-
-    // Query documents in default tenant from a session using tenant Green
-    (await session.Query<Issue>().CountAsync(x => x.TenantIsOneOf(StorageConstants.DefaultTenantId))).ShouldBe(2);
-
-    // Query documents from tenant Red from a session using tenant Green
-    (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Red"))).ShouldBe(11);
-}
-
-// create a session without passing any tenant, session will use default tenant
-using (var session = store.QuerySession())
-{
-    // Query non-tenanted documents
-    (await session.Query<User>().CountAsync()).ShouldBe(2);
-
-    // Query documents in default tenant
-    // Note that session is using default tenant
-    (await session.Query<Issue>().CountAsync()).ShouldBe(2);
-
-    // Query documents on tenant Green
-    (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Green"))).ShouldBe(10);
-
-    // Query documents on tenant Red
-    (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Red"))).ShouldBe(11);
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L276-L343' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample-1'></a>
 ```cs
 using var store = DocumentStore.For(opts =>
 {
@@ -209,7 +119,7 @@ using (var session = store.QuerySession())
     (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Red"))).ShouldBe(11);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L249-L316' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L249-L316' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-mixed-tenancy-non-tenancy-sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In some cases, You may want to disable using the default tenant for storing documents, set `StoreOptions.Advanced.DefaultTenantUsageEnabled` to `false`. With this option disabled, Tenant (non-default tenant) should be passed via method argument or `SessionOptions` when creating a session using document store. Marten will throw an exception `DefaultTenantUsageDisabledException` if a session is created using default tenant.
@@ -239,7 +149,7 @@ using (var query = store.QuerySession("tenant1"))
         .ShouldHaveTheSameElementsAs("Bill", "Lindsey");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L78-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L78-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-scoping-session-read' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten will automatically filter the LINQ query for the current tenant _if the current document type is tenanted_. However, if
@@ -253,14 +163,7 @@ filter:
 var actual = await query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L420-L426' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_tenant_is_one_of-1'></a>
-```cs
-// query data for a selected list of tenants
-var actual = await query.Query<Target>().Where(x => x.TenantIsOneOf("Green", "Red") && x.Flag)
-    .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L393-L399' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L393-L399' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenant_is_one_of' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or the `AnyTenant()` filter:
@@ -272,14 +175,7 @@ Or the `AnyTenant()` filter:
 var actual =(await  query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
     .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy_with_partitioning.cs#L365-L371' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_any_tenant-1'></a>
-```cs
-// query data across all tenants
-var actual =(await  query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
-    .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync());
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L338-L344' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/MultiTenancy/conjoined_multi_tenancy.cs#L338-L344' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any_tenant' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Configuring Tenancy
@@ -340,7 +236,7 @@ storeOptions.Policies.AllDocumentsAreMultiTenantedWithPartitioning(x =>
     x.ByExternallyManagedRangePartitions();
 }, PrimaryKeyTenancyOrdering.TenantId_Then_Id);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L115-L146' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy_with_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L117-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-through-policy_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The primary key of a partitioned, conjoined table is `(tenant_id, id)` (`PrimaryKeyTenancyOrdering.TenantId_Then_Id`),
@@ -363,7 +259,7 @@ var store = DocumentStore.For(opts =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L196-L208' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_partitioning_on_single_table' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L200-L212' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_partitioning_on_single_table' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And lastly, if you need to use a mix of tenanted and global document types, but still want to use a consistent 
@@ -391,7 +287,7 @@ var store = DocumentStore.For(opts =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L213-L234' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_tenancy_partitioning_policy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L217-L238' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_tenancy_partitioning_policy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Tenancy Through Policies
@@ -466,12 +362,8 @@ _.Schema.For<User>()
 
 ## Marten-Managed Table Partitioning by Tenant <Badge type="tip" text="7.28" />
 
-Man, that's a mouthful! So here's the situation. You have a large number of tenants, use the "conjoined" tenancy model,
-and also want to use the table partitioning support as a way to improve performance in large databases. Marten has an 
-option where you can store the valid tenant ids and what named partition that tenant id should be stored in to a database 
-table (also Marten managed, because that's how we roll!). By using this Marten controlled storage, Marten is able to
-dynamically create the right table partitions for each known tenant id for each known, "conjoined"/multi-tenanted
-document storage.
+Use this when you have many tenants, use conjoined tenancy, and want a table partition per tenant. Marten stores each
+tenant id and its partition name in a table it manages, and creates the partitions for every conjoined document type.
 
 Here's a sample of using this feature. First, the configuration is:
 
@@ -658,7 +550,7 @@ You can selectively exclude individual document types from RLS when it would oth
 options.UseRowLevelSecurity();
 options.Schema.For<Target>().MultiTenanted().DisableRowLevelSecurity();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/row_level_security_unit_tests.cs#L201-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disable_row_level_security_per_mapping' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/row_level_security_unit_tests.cs#L163-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disable_row_level_security_per_mapping' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or use a different GUC setting name for a specific document type:
@@ -669,7 +561,7 @@ Or use a different GUC setting name for a specific document type:
 options.UseRowLevelSecurity();
 options.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity("app.org_id");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/row_level_security_unit_tests.cs#L220-L225' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_row_level_security_per_mapping' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/row_level_security_unit_tests.cs#L182-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_row_level_security_per_mapping' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The resolution order per mapping is: explicit mapping-level override, then the store-level setting, falling back to `"app.tenant_id"`.
@@ -687,7 +579,7 @@ Toggling RLS off store-wide, or adding `DisableRowLevelSecurity()` on a mapping 
 
 ## Implementation Details
 
-At the moment, Marten implements two modes of tenancy, namely single tenancy and conjoined multi-tenancy.
+Within one database, Marten has two tenancy styles: single and conjoined. Database-per-tenant tenancy is configured separately; see [Multi-Tenancy with Database per Tenant](/configuration/multitenancy).
 
 ### Conjoined Tenancy
 
