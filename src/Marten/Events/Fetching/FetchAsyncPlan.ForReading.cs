@@ -29,6 +29,14 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 var starting = stream.Aggregate;
                 var appendedEvents = stream.Events;
 
+                // #6147: FetchForWriting stored this very instance in the write cache at the version it fetched.
+                // The fold below would leave the cached entry holding events its version says it does not, and the
+                // next FetchForWriting would fold them a second time, so take the entry out of the cache first
+                if (_cache != null && appendedEvents.Count > 0)
+                {
+                    _cache.TryTake(cacheKeyFor(session, id), out _, out _);
+                }
+
                 var aggregate = await _aggregator.BuildAsync(appendedEvents, session, starting, id, _storage, cancellation).ConfigureAwait(false);
 
                 var foldedOntoFetchedInstance = starting != null && appendedEvents.Count > 0;

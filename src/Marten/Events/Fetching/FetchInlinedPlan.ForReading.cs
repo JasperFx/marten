@@ -61,6 +61,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
                                  storage is IDocumentStorage<TDoc, TId> s ? s.IdType : typeof(TId),
                                  typeof(TId), typeof(IQuerySession));
 
+        var stored = snapshot;
         snapshot = await aggregator.BuildAsync(pendingEvents, session, snapshot, id, storage, cancellation)
             .ConfigureAwait(false);
 
@@ -70,7 +71,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         // projection during SaveChangesAsync to re-apply the same pending events
         // on top of the already-mutated aggregate. The configured inline projection
         // persists the document during SaveChangesAsync, so we don't store it here.
-        session.EjectAggregateFromIdentityMap<TDoc, TId>(id);
+        EjectFoldedInstance(session, storage, id, stored);
 
         return snapshot;
     }
