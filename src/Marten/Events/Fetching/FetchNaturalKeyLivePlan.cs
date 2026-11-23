@@ -132,12 +132,12 @@ internal class FetchNaturalKeyLivePlan<TDoc, TNaturalKey, TId>: FetchNaturalKeyP
         _events.Options.OpenTelemetry
             .RecordEventsReplayed(events.Count, _aggregateTypeName, OpenTelemetryOptions.LivePlan);
 
-        // With a cached aggregate, the events are the ones after it, and an event appended between the two reads is
-        // among them, so the aggregate is at the version of the last one
-        if (cached != null)
-        {
-            version = FetchAsyncPlan<TDoc, TId>.reachedVersion(version, false, null, events);
-        }
+        // The events statement runs after the version statement and has no upper bound, so an event appended between
+        // the two reads is among them, cached aggregate or not, and the aggregate is at the version of the last one.
+        // Answering with the version read first would label it with fewer events than it folded: the write cache
+        // would then hold it a version behind and fold that event onto it again, and a commit would fail against an
+        // append it already accounts for. FetchLivePlan.completeStream does the same.
+        version = FetchAsyncPlan<TDoc, TId>.reachedVersion(version, false, null, events);
 
         var document = await _aggregator.BuildAsync(events, session, cached?.Aggregate, streamId, _identitySetter,
                 cancellation)
