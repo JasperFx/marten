@@ -11,7 +11,7 @@ public class LinqExamples
     #region sample_query_for_all
     public async Task get_all_documents_of_a_type(IDocumentSession session)
     {
-        // Calling ToArray() just forces the query to be executed
+        // ToListAsync() executes the query
         var targets = await session.Query<Target>().ToListAsync();
     }
 
@@ -87,7 +87,6 @@ public class LinqExamples
         session.Query<Target>().Where(x => x.String.StartsWith("A", StringComparison.OrdinalIgnoreCase));
         session.Query<Target>().Where(x => x.String.EndsWith("SuFfiX", StringComparison.OrdinalIgnoreCase));
 
-        // using Marten.Util
         session.Query<Target>().Where(x => x.String.Contains("soMeThiNg", StringComparison.OrdinalIgnoreCase));
 
         session.Query<Target>().Where(x => x.String.Equals("ThE SaMe ThInG", StringComparison.OrdinalIgnoreCase));
@@ -195,7 +194,7 @@ public class LinqExamples
         await session.Query<Target>().Where(x => x.NullableNumber.HasValue).ToListAsync();
 
         // You can always search by field is NULL
-        session.Query<Target>().Where(x => x.Inner == null);
+        await session.Query<Target>().Where(x => x.Inner == null).ToListAsync();
     }
 
     #endregion

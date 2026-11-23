@@ -20,5 +20,8 @@ public async Task query_by_booleans(IDocumentSession session)
     await session.Query<Target>().Where(x => x.Flag == false).ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L172-L188' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_boolean_queries' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L171-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_boolean_queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+An element of a `bool[]` or `List<bool>` can be read by position, `x.Flags[0]`. See
+[Reading an Element by Position](/documents/querying/linq/child-collections#reading-an-element-by-position).

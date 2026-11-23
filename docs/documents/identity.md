@@ -515,7 +515,7 @@ public async Task include_a_single_reference()
 
 `LoadManyAsync()` is not supported for strong typed identifiers.
 
-### LINQ Support
+### LINQ Support {#linq-support}
 
 ::: tip
 If you want to use custom value types in Marten and especially if you want to involve these value types in LINQ queries,

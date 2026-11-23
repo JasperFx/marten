@@ -1,6 +1,6 @@
 # Including Related Documents
 
-## Include a Single Document
+## Include a Single Document {#include-a-single-document}
 
 ::: tip
 If you're interested, this functionality does not use SQL `JOIN` clauses, and has not since
@@ -43,9 +43,93 @@ The `Include()` method takes an expression that will assign the fetched related 
 
 Marten will use the equivalent of a left join. This means that any `Issue` with no corresponding `User` (or no `AssigneeId`) will still be fetched, just with no matching user.
 
-## Include Many Documents
+## Include Many Documents {#include-many-documents}
 
-If you wish to fetch a list of related documents, you can declare a `List<User>` variable and pass it as the second parameter. The `Include()` method should be appended with `ToList()` or `ToArray()`.
+To fetch the related documents of every document the query returns, declare a `List<User>` and pass it to
+`Include()`. `Include(list).On(x => x.AssigneeId)` and `Include(x => x.AssigneeId, list)` are the same. Each related
+document is added to the list once, however many queried documents refer to it:
+
+<!-- snippet: sample_include_to_list -->
+<a id='snippet-sample_include_to_list'></a>
+```cs
+[Fact]
+public async Task include_to_list_async()
+{
+    var user1 = new User();
+    var user2 = new User();
+
+    var issue1 = new Issue { AssigneeId = user1.Id, Title = "Garage Door is busted" };
+    var issue2 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+    var issue3 = new Issue { AssigneeId = user2.Id, Title = "Garage Door is busted" };
+
+    await using var session = theStore.IdentitySession();
+    session.Store(user1, user2);
+    session.Store(issue1, issue2, issue3);
+    await session.SaveChangesAsync();
+
+    await using var query = theStore.QuerySession();
+    var list = new List<User>();
+
+    await query.Query<Issue>().Include(x => x.AssigneeId, list).ToListAsync();
+
+    list.Count.ShouldBe(2);
+
+    list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+    list.Any(x => x.Id == user2.Id).ShouldBeTrue();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L629-L655' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_to_list' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The id member can also be an array or list of ids. Marten includes every document the ids name:
+
+<!-- snippet: sample_include_many_to_list -->
+<a id='snippet-sample_include_many_to_list'></a>
+```cs
+[Fact]
+public async Task include_many_to_list()
+{
+    var user1 = new User { };
+    var user2 = new User { };
+    var user3 = new User { };
+    var user4 = new User { };
+    var user5 = new User { };
+    var user6 = new User { };
+    var user7 = new User { };
+
+    await theStore.BulkInsertAsync(new User[] { user1, user2, user3, user4, user5, user6, user7 });
+
+    var group1 = new Group { Name = "Odds", Users = [user1.Id, user3.Id, user5.Id, user7.Id] };
+
+    var group2 = new Group { Name = "Evens", Users = [user2.Id, user4.Id, user6.Id] };
+
+    using (var session = theStore.LightweightSession())
+    {
+        session.Store(group1, group2);
+        await session.SaveChangesAsync();
+    }
+
+    using (var query = theStore.QuerySession())
+    {
+        // Group.Users is a Guid[] of user ids
+        var list = new List<User>();
+
+        (await query.Query<Group>()
+            .Include(x => x.Users, list)
+            .Where(x => x.Name == "Odds")
+            .SingleAsync())
+            .Name.ShouldBe("Odds");
+
+        list.Count.ShouldBe(4);
+        list.Any(x => x.Id == user1.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user3.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user5.Id).ShouldBeTrue();
+        list.Any(x => x.Id == user7.Id).ShouldBeTrue();
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L772-L814' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_many_to_list' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Instead of a List, you could also use a Dictionary with a key type corresponding to the Id type and a value type corresponding to the Document type:
 
@@ -80,7 +164,7 @@ public async Task include_to_dictionary()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L481-L508' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Filtering included documents
+## Filtering included documents {#filtering-included-documents}
 
 As of Marten V7, you can also filter the included documents in case of large data sets by
 supplying an extra filter argument on the included document type (essentially a `Where()` clause on just the
@@ -107,7 +191,7 @@ public async Task filter_included_documents_to_lambda()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/includes_with_filtering_on_included_documents.cs#L50-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_filter_included_documents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Include Multiple Document Types
+## Include Multiple Document Types {#include-multiple-document-types}
 
 ::: warning
 Marten can only filter the included documents, not sort them. You would have to
@@ -147,10 +231,10 @@ public async Task multiple_includes()
     reporter2.Id.ShouldBe(reporter.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L738-L769' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L739-L770' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Mapping to documents on any property
+## Mapping to documents on any property {#mapping-to-documents-on-any-property}
 
 By default, documents are included based on a value that maps to the related document's `Id`/`[Identity]` property. It is also possible to map related documents on any property of that document which allows for much more flexible joins.
 
@@ -180,10 +264,10 @@ public async Task include_using_custom_map()
     user2.ShouldNotBeNull();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L942-L967' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_using_custom_map' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L944-L969' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_using_custom_map' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-By joining on a value other than the document id, this opens up the possibility of one-to-many joins, with potentially many related documents matching the queried document. Using a list as described above will allow for all matching records to be returned.  Alternatively you can also use a dictionary of lists, where the key is the Id type and the value is an `IList` of a type corresponding to the Document type:
+By joining on a value other than the document id, this opens up the possibility of one-to-many joins, with potentially many related documents matching the queried document. Using a list as described above will allow for all matching records to be returned.  Alternatively you can also use a dictionary of lists, where the key is the Id type and the value is an `IList<T>` or a `List<T>` of a type corresponding to the Document type:
 
 <!-- snippet: sample_dictionary_list_include -->
 <a id='snippet-sample_dictionary_list_include'></a>
@@ -219,10 +303,51 @@ public async Task include_to_dictionary_list()
     dict[class2.RoomCode].Count.ShouldBe(2);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L969-L1002' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_list_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L971-L1004' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_list_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Batched query Support
+### Including the Children of the Queried Document {#including-children-of-the-queried-document}
+
+The member on the queried document can be its own `Id`. Mapping it to the member of the other document that holds the
+parent's id includes every child of the documents the query returns:
+
+<!-- snippet: sample_include_the_children_of_the_queried_document -->
+<a id='snippet-sample_include_the_children_of_the_queried_document'></a>
+```cs
+public async Task include_the_children_of_the_queried_document(IQuerySession session)
+{
+    var items = new List<FolderItem>();
+
+    // Every FolderItem whose FolderId is the Id of a folder this query returns
+    var folders = await session.Query<Folder>()
+        .Where(x => x.Name == "Invoices")
+        .Include(items).On(x => x.Id, i => i.FolderId)
+        .ToListAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/include_documentation_samples.cs#L28-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_the_children_of_the_queried_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Include after SelectMany() {#include-after-selectmany}
+
+`Include()` also works after a `SelectMany()`. It includes the documents that the flattened child documents refer
+to:
+
+<!-- snippet: sample_include_after_select_many -->
+<a id='snippet-sample_include_after_select_many'></a>
+```cs
+var dict = new Dictionary<Guid, User>();
+
+// Every User named by the UserId of a child document
+var results = (await query.Query<Target>()
+    .SelectMany(x => x.Children)
+    .Include(x => x.UserId, dict)
+    .ToListAsync());
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/select_many.cs#L451-L459' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_after_select_many' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Batched query Support {#batched-query-support}
 
 Marten also supports running an Include query within [batched queries](/documents/querying/batched-queries):
 

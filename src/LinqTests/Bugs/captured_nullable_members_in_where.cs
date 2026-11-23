@@ -58,10 +58,13 @@ public class captured_nullable_members_in_where: BugIntegrationContext
         theSession.Store(first, second);
         await theSession.SaveChangesAsync();
 
+        #region sample_optional_filter_with_a_captured_nullable
+        // When excluded is null, the filter is skipped
         Guid? excluded = null;
         var results = await theSession.Query<CapturedNullableDoc>()
             .Where(x => !excluded.HasValue || x.Id != excluded)
             .ToListAsync();
+        #endregion
 
         results.Select(x => x.Id).ShouldContain(first.Id);
         results.Select(x => x.Id).ShouldContain(second.Id);

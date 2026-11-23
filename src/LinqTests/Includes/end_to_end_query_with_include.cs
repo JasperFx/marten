@@ -626,6 +626,7 @@ public class end_to_end_query_with_include: IntegrationContext
         issue2.ShouldNotBeNull();
     }
 
+    #region sample_include_to_list
     [Fact]
     public async Task include_to_list_async()
     {
@@ -644,7 +645,6 @@ public class end_to_end_query_with_include: IntegrationContext
         await using var query = theStore.QuerySession();
         var list = new List<User>();
 
-
         await query.Query<Issue>().Include(x => x.AssigneeId, list).ToListAsync();
 
         list.Count.ShouldBe(2);
@@ -652,6 +652,7 @@ public class end_to_end_query_with_include: IntegrationContext
         list.Any(x => x.Id == user1.Id).ShouldBeTrue();
         list.Any(x => x.Id == user2.Id).ShouldBeTrue();
     }
+    #endregion
 
     [Fact]
     public async Task include_to_list_with_orderby_descending_async()
@@ -768,6 +769,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
     #endregion
 
+    #region sample_include_many_to_list
     [Fact]
     public async Task include_many_to_list()
     {
@@ -793,8 +795,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-    
-
+            // Group.Users is a Guid[] of user ids
             var list = new List<User>();
 
             (await query.Query<Group>()
@@ -810,6 +811,7 @@ public class end_to_end_query_with_include: IntegrationContext
             list.Any(x => x.Id == user7.Id).ShouldBeTrue();
         }
     }
+    #endregion
 
     [Fact]
     public async Task Bug_1751_Include_with_select()

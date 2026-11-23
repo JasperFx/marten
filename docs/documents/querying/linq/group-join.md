@@ -6,7 +6,7 @@ Marten supports LINQ `GroupJoin()` to perform SQL `JOIN` operations between diff
 Marten translates `GroupJoin()` into CTE-based SQL JOINs, where each document table is queried independently in a Common Table Expression (CTE) and the results are joined. This approach works naturally with Marten's JSONB document storage.
 :::
 
-## Inner Join (GroupJoin + SelectMany)
+## Inner Join (GroupJoin + SelectMany) {#inner-join}
 
 The most common pattern uses `GroupJoin()` followed by `SelectMany()` to produce a flattened inner join. Only rows with matching keys on both sides are included in the result.
 
@@ -169,7 +169,7 @@ SELECT ... FROM outer_cte INNER JOIN inner_cte ON ...;
 
 Multiple `Where` calls on either source are supported and are AND-ed together.
 
-## Left Join (GroupJoin + SelectMany + DefaultIfEmpty)
+## Left Join (GroupJoin + SelectMany + DefaultIfEmpty) {#left-join}
 
 To include outer rows that have no matching inner rows (a SQL `LEFT JOIN`), add `.DefaultIfEmpty()` to the collection selector in `SelectMany()`:
 
@@ -247,7 +247,7 @@ public void duplicate_both_join_keys(StoreOptions opts)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/group_join_documentation_samples.cs#L150-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_join_duplicate_both_keys' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## With Aggregation
+## With Aggregation {#with-aggregation}
 
 Standard LINQ aggregation operators work after a GroupJoin:
 
@@ -284,7 +284,35 @@ public async Task with_aggregation(IQuerySession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/group_join_documentation_samples.cs#L158-L185' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_join_with_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Join, LeftJoin, RightJoin and FullJoin
+`Distinct()` de-duplicates the joined rows, and `SumAsync()`, `MinAsync()`, `MaxAsync()`, `AverageAsync()` and
+`CountAsync()` work over a scalar projection of a join. This sample uses `Join()`, which is the same join in one
+operator, described [below](#join-leftjoin-rightjoin-and-fulljoin):
+
+<!-- snippet: sample_join_distinct_and_aggregates -->
+<a id='snippet-sample_join_distinct_and_aggregates'></a>
+```cs
+public async Task join_distinct_and_aggregates(IQuerySession session)
+{
+    // Distinct() de-duplicates the joined rows
+    var pairs = await session.Query<Customer>()
+        .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId,
+            (c, o) => new { c.Name, o.Status })
+        .Distinct()
+        .ToListAsync();
+
+    // Aggregates over a scalar projection of the join
+    var amounts = session.Query<Customer>()
+        .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId, (c, o) => o.Amount);
+
+    var total = await amounts.SumAsync(x => x);
+    var largest = await amounts.MaxAsync(x => x);
+    var distinctAmounts = await amounts.Distinct().CountAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/group_join_documentation_samples.cs#L188-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_join_distinct_and_aggregates' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Join, LeftJoin, RightJoin and FullJoin {#join-leftjoin-rightjoin-and-fulljoin}
 
 Marten translates `Queryable.Join()` and the `LeftJoin()` and `RightJoin()` operators added in .NET 10 by rewriting
 each one into the `GroupJoin()` + `SelectMany()` form above before the query is parsed. The SQL is the same as for
@@ -324,7 +352,7 @@ public async Task join_left_join_and_right_join(IQuerySession session)
         .ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/group_join_documentation_samples.cs#L187-L210' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_join_left_join_and_right_join' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/group_join_documentation_samples.cs#L238-L261' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_join_left_join_and_right_join' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 .NET 11 also adds overloads of `Join()`, `LeftJoin()` and `RightJoin()` without a result selector, which return
@@ -344,7 +372,7 @@ public async Task join_without_a_result_selector(IQuerySession session)
         .ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/group_join_documentation_samples.cs#L213-L223' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_join_tuple_overloads' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/group_join_documentation_samples.cs#L264-L274' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_join_tuple_overloads' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Only the shapes that rewrite answers correctly are translated. Marten refuses the rest with
@@ -364,7 +392,46 @@ Only the shapes that rewrite answers correctly are translated. Marten refuses th
   rows the filter should remove. Filter the inner source before the join if that is what you mean, or use an inner
   join for the rows that have a match.
 
-## Limitations
+## Grouping and Ordering over a Join {#grouping-and-ordering-over-a-join}
+
+`GroupBy()` after a join groups the joined rows, with the same aggregates as
+[GroupBy()](/documents/querying/linq/operators#groupby). The result selector of the `SelectMany()` after a `GroupJoin()` can
+return the whole outer document, `(x, _) => x.c`, which gives one row per match. An `OrderBy()` key over the joined rows can be computed,
+with the same translations as [Computed Ordering Keys](/documents/querying/linq/operators#computed-ordering-keys):
+
+<!-- snippet: sample_group_by_and_ordering_over_a_join -->
+<a id='snippet-sample_group_by_and_ordering_over_a_join'></a>
+```cs
+public async Task group_by_and_ordering_over_a_join(IQuerySession session)
+{
+    // Group the joined rows
+    var totals = await session.Query<Customer>()
+        .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId,
+            (c, o) => new { c.Name, o.Amount })
+        .GroupBy(x => x.Name)
+        .Select(g => new { Name = g.Key, Orders = g.Count(), Total = g.Sum(x => x.Amount) })
+        .ToListAsync();
+
+    // Project the whole outer document: one customer row per matching order
+    var customers = await session.Query<Customer>()
+        .GroupJoin(session.Query<Order>().Where(o => o.Amount > 100), c => c.Id, o => o.CustomerId,
+            (c, orders) => new { c, orders })
+        .SelectMany(x => x.orders, (x, _) => x.c)
+        .Where(c => c.City == "Seattle")
+        .ToListAsync();
+
+    // A computed key over either side of the join
+    var largestFirst = await session.Query<Customer>()
+        .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId,
+            (c, o) => new { c.Name, o.Amount })
+        .OrderBy(x => -x.Amount)
+        .ToListAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/group_join_documentation_samples.cs#L210-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_and_ordering_over_a_join' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Limitations {#limitations}
 
 - **GroupJoin as the final operator** (no `SelectMany`) throws `NotSupportedException`. Use `GroupJoin` + `SelectMany`.
 - **Composite keys** and **cross-apply or subquery joins** throw `BadLinqExpressionException`; see the rules above.

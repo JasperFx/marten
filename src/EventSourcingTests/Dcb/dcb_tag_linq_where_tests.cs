@@ -70,10 +70,12 @@ public class dcb_tag_linq_where_tests: OneOffConfigurationsContext
         await AppendTagged(streamId, new StudentEnrolled("Alice", "Math"), alice);
         await AppendTagged(streamId, new AssignmentSubmitted("HW1", 95), alice);
 
+        #region sample_dcb_has_tag_in_where
         // "Alice's events, but only the enrollments" — the tag predicate AND a normal event predicate.
         var events = await theSession.Events.QueryAllRawEvents()
             .Where(e => e.HasTag<StudentId>(alice) && e.EventTypesAre(typeof(StudentEnrolled)))
             .ToListAsync();
+        #endregion
 
         events.Count.ShouldBe(1);
         events.Single().Data.ShouldBeOfType<StudentEnrolled>();

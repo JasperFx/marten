@@ -1,6 +1,9 @@
 # Supported Linq Operators
 
-## Element Operations
+This page shows the standard LINQ operators Marten translates, with examples. For a one-page list of what is and is
+not supported, see [What Marten Supports](/documents/querying/linq/#what-marten-supports).
+
+## Element Operations {#element-operations}
 
 Marten supports these [element operations](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/element-operations),
 asynchronously only:
@@ -36,10 +39,10 @@ public async Task select_a_single_value(IDocumentSession session)
     await session.Query<Target>().SingleAsync(x => x.Number == 5);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L152-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_select_a_single_value' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L151-L169' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_select_a_single_value' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Filtering Documents
+## Filtering Documents {#filtering-documents}
 
 Since you usually don't want to pull down the entire database at one time, Marten supports these basic operators in Linq searches:
 
@@ -94,7 +97,72 @@ public void and_or(IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L52-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_with_and_or_or' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Ordering Results
+A predicate can also read a dictionary entry, an array element by position, or a member of a C# union case. See
+[Querying Dictionaries](/documents/querying/linq/child-collections#querying-dictionaries),
+[Reading an Element by Position](/documents/querying/linq/child-collections#reading-an-element-by-position) and
+[Querying C# Union Members](/documents/querying/linq/unions).
+
+### Contains() over a Local Collection {#contains-over-a-local-collection}
+
+Call `Contains()` on an array, `List<T>` or `HashSet<T>` from your own code to find the documents whose member is one
+of its values. Marten sends the values as one array parameter and tests the member with `= ANY(...)`, which works
+like SQL `IN`. `IsOneOf()` and `In()`, described in
+[IsOneOf](/documents/querying/linq/child-collections#isoneof), do the same thing.
+
+<!-- snippet: sample_contains_over_a_local_collection -->
+<a id='snippet-sample_contains_over_a_local_collection'></a>
+```cs
+public async Task contains_over_a_local_collection(IQuerySession session, Guid[] ids)
+{
+    // An array, List<T> or HashSet<T> of values from your code becomes a SQL IN test
+    var byId = await session.Query<Target>().Where(x => ids.Contains(x.Id)).ToListAsync();
+
+    var numbers = new List<int> { 1, 2, 3 };
+    var byNumber = await session.Query<Target>().Where(x => numbers.Contains(x.Number)).ToListAsync();
+
+    var colors = new HashSet<Colors> { Colors.Red, Colors.Blue };
+    var byColor = await session.Query<Target>().Where(x => colors.Contains(x.Color)).ToListAsync();
+
+    // An array written inline works too
+    var byName = await session.Query<Target>()
+        .Where(x => new[] { "Red", "Blue" }.Contains(x.String))
+        .ToListAsync();
+
+    // Negate it for NOT IN
+    var others = await session.Query<Target>().Where(x => !ids.Contains(x.Id)).ToListAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L80-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_contains_over_a_local_collection' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The element type can be a string, a number, a `Guid` or an enum. With C# 14 on .NET 10, `ids.Contains(x.Id)` on an
+array binds to `MemoryExtensions.Contains()` instead of `Enumerable.Contains()`. Marten translates both.
+
+### CompareTo() {#compareto}
+
+`CompareTo()` compared with 0 becomes the matching comparison operator. It works on numbers, dates, `Guid` and
+strings, and the comparison can be on either side. A `Guid` has no `<` or `>` operator in C#, so `CompareTo()` is how
+you write a range filter on one. Comparing the result with anything other than 0, such as `CompareTo(x) > 1`, throws
+`BadLinqExpressionException`. For strings, see
+[Comparing Strings](/documents/querying/linq/strings#comparing-strings).
+
+<!-- snippet: sample_compare_to -->
+<a id='snippet-sample_compare_to'></a>
+```cs
+public async Task compare_to(IQuerySession session, Guid pivot, DateTime cutoff)
+{
+    // CompareTo() compared with 0 becomes a plain comparison. It is the only way to write
+    // a range comparison on a Guid, which has no < or > operator in C#
+    var afterPivot = await session.Query<Target>().Where(x => x.OtherGuid.CompareTo(pivot) > 0).ToListAsync();
+
+    var upToTen = await session.Query<Target>().Where(x => x.Number.CompareTo(10) <= 0).ToListAsync();
+    var later = await session.Query<Target>().Where(x => x.Date.CompareTo(cutoff) > 0).ToListAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L103-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compare_to' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Ordering Results {#ordering-results}
 
 Marten contains support for expressing ordering in both ascending and descending order in Linq queries:
 
@@ -116,8 +184,10 @@ public void order_by(IDocumentSession session)
     session.Query<Target>().OrderBySql("substring(d.data -> 'String', 1, 2)");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L99-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L98-L114' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+### Computed Ordering Keys {#computed-ordering-keys}
 
 A key can also read an element of an array or list on the document by position, such as
 `OrderBy(x => x.Scores[1])` or `ThenBy(x => x.Grid[1][0])`. See
@@ -140,7 +210,29 @@ widening casts, string concatenation, `ToUpper()`, `ToLower()`, `Length`, and `T
 narrowing cast, a conditional or a `Math` call, throws `BadLinqExpressionException` rather than ordering by
 something else.
 
-## Ordering with dynamic properties
+A key can read a dictionary entry, `OrderBy(x => x.Tags["zone"])`. See
+[Querying Dictionaries](/documents/querying/linq/child-collections#querying-dictionaries).
+
+### Ordering with Raw SQL {#ordering-with-raw-sql}
+
+`OrderBySql()` and `ThenBySql()` take a SQL expression for the `ORDER BY` clause, with an optional `desc`. Use `d` as
+the alias of the document table:
+
+<!-- snippet: sample_order_by_sql_then_by_sql -->
+<a id='snippet-sample_order_by_sql_then_by_sql'></a>
+```cs
+public async Task order_by_sql_then_by_sql(IQuerySession session)
+{
+    var results = await session.Query<Target>()
+        .OrderBySql("d.data ->> 'String'")
+        .ThenBySql("d.data ->> 'AnotherString' desc")
+        .ToListAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L125-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order_by_sql_then_by_sql' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Ordering with dynamic properties {#ordering-with-dynamic-properties}
 
 Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is useful when you don't know the properties used for ordering at build time.
 
@@ -170,10 +262,10 @@ public void order_by_dynamic_props(IDocumentSession session)
     session.Query<Target>().OrderBy("Date DESC", "Number");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L117-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq-using-dynamic-props' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L116-L140' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq-using-dynamic-props' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Case-insensitive ordering for strings
+## Case-insensitive ordering for strings {#case-insensitive-ordering-for-strings}
 
 If you use `StringComparer.InvariantCultureIgnoreCase` or `StringComparer.OrdinalIgnoreCase` with an `OrderBy` on strings, Marten automatically applies case-insensitive ordering using `lower()` in generated SQL.
 
@@ -193,10 +285,10 @@ public async Task order_by_case_insensitive(IQuerySession session)
         .ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L14-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order_by_case_insensitive' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L15-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order_by_case_insensitive' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Aggregate Functions
+## Aggregate Functions {#aggregate-functions}
 
 ::: info
 In many cases the asynchronous versions of these operators are extension methods within Marten itself as these were not present
@@ -228,10 +320,10 @@ public async Task sample_aggregation_operations(IQuerySession session)
     var average = await session.Query<Target>().AverageAsync(x => x.Number);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L204-L219' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_operations' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L203-L218' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_operations' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Partitioning Operators
+## Partitioning Operators {#partitioning-operators}
 
 Marten has been successfully tested with these [partition operators](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/partitioning-data):
 
@@ -247,12 +339,26 @@ public async Task using_take_and_skip(IDocumentSession session)
     await session.Query<Target>().OrderBy(x => x.Number).Skip(10).Take(10).ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L143-L150' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_take_and_skip' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L142-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_take_and_skip' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`CountAsync()` and `LongCountAsync()` after `Take()` or `Skip()` count the rows on the page, as in LINQ to Objects:
+
+<!-- snippet: sample_count_after_take -->
+<a id='snippet-sample_count_after_take'></a>
+```cs
+public async Task count_after_take(IQuerySession session)
+{
+    // Counts the rows on the page: at most 10
+    var onThePage = await session.Query<Target>().OrderBy(x => x.Number).Skip(20).Take(10).CountAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L116-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_count_after_take' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For paging with total counts, see [Paging](/documents/querying/linq/paging).
 
-## GroupBy()
+## GroupBy() {#groupby}
 
 Marten supports the `GroupBy()` LINQ operator for grouping documents by one or more keys and computing aggregate values. GroupBy translates to SQL `GROUP BY` with aggregate functions like `COUNT`, `SUM`, `MIN`, `MAX`, and `AVG`.
 
@@ -295,7 +401,7 @@ public async Task group_by_composite_key(IQuerySession session)
         .ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L30-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_composite_key' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L31-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_composite_key' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Where Before GroupBy
@@ -314,10 +420,10 @@ public async Task group_by_where_before(IQuerySession session)
         .ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L40-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_where_before' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L41-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_where_before' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### HAVING (Where After GroupBy)
+### HAVING (Where After GroupBy) {#having-where-after-groupby}
 
 Filter groups with a `Where()` clause after `GroupBy()`. This translates to SQL `HAVING`:
 
@@ -334,7 +440,7 @@ public async Task group_by_having(IQuerySession session)
         .ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L51-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_having' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L52-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_having' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Supported Aggregates
@@ -355,7 +461,63 @@ document `Where()` clauses, including nullable comparisons, duplicated fields, c
 predicates, and bound parameters. Predicates that query a child collection, such as `x.Tags.Any(...)`, are not
 supported.
 
-## Distinct()
+### Ordering and Paging Groups {#ordering-and-paging-groups}
+
+`OrderBy()`, `ThenBy()`, `Skip()` and `Take()` after a grouped `Select()` order and page the groups. The ordering key
+can be the group key, an aggregate, a member of the projected object, or raw SQL with `OrderBySql()`:
+
+<!-- snippet: sample_group_by_ordering_and_paging -->
+<a id='snippet-sample_group_by_ordering_and_paging'></a>
+```cs
+public async Task group_by_ordering_and_paging(IQuerySession session)
+{
+    // Order the groups by an aggregate, break ties by the key, then take the second group
+    var secondBiggest = await session.Query<Target>()
+        .GroupBy(x => x.Color)
+        .Select(g => new { Color = g.Key, Total = g.Sum(x => x.Number) })
+        .OrderByDescending(x => x.Total)
+        .ThenBy(x => x.Color)
+        .Skip(1)
+        .Take(1)
+        .ToListAsync();
+
+    // A scalar projection of the groups orders by the projected value
+    var countsLargestFirst = await session.Query<Target>()
+        .GroupBy(x => x.Color)
+        .Select(g => g.Count())
+        .OrderByDescending(x => x)
+        .ToListAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L136-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_ordering_and_paging' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+An ordering key must be something the projection selected. Ordering by a member the `Select()` left out throws
+`BadLinqExpressionException`.
+
+### Counting Groups {#counting-groups}
+
+`CountAsync()` and `LongCountAsync()` after a grouped `Select()` count the groups:
+
+<!-- snippet: sample_group_by_counting_groups -->
+<a id='snippet-sample_group_by_counting_groups'></a>
+```cs
+public async Task group_by_counting_groups(IQuerySession session)
+{
+    // How many distinct colors there are
+    var colorCount = await session.Query<Target>()
+        .GroupBy(x => x.Color)
+        .Select(g => g.Key)
+        .CountAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L159-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_counting_groups' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`GroupBy()` also works over a join. See
+[Grouping and Ordering over a Join](/documents/querying/linq/group-join#grouping-and-ordering-over-a-join).
+
+## Distinct() {#distinct}
 
 Marten supports the LINQ `Distinct()` operator:
 
@@ -411,7 +573,7 @@ public async Task get_distinct_numbers()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L31-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### DistinctBy()
+### DistinctBy() {#distinctby}
 
 Marten translates the LINQ `DistinctBy(keySelector)` operator to PostgreSQL's [`SELECT DISTINCT ON (key) ...`](https://www.postgresql.org/docs/current/sql-select.html#SQL-DISTINCT), keeping one row per distinct key value ([#4565](https://github.com/JasperFx/marten/issues/4565)). Use it after a `Select(...)` projection:
 
@@ -445,7 +607,7 @@ Things to know:
 - The key expression is automatically prepended to the `ORDER BY` because Postgres requires the `DISTINCT ON` expression to be the leftmost `ORDER BY` expression. Any `OrderBy()` you add becomes a secondary sort, so _which_ row survives within each key group follows your ordering (and is otherwise arbitrary, exactly like SQL `DISTINCT ON`).
 - The `DistinctBy()` key must be a member that also exists on the queried document (the common case where the projection copies members through, e.g. `Select(x => new { x.Number, ... })`). `DistinctBy()` must be preceded by a `Select(...)` projection; calling it directly on the document (`Query<T>().DistinctBy(...)`) throws a `BadLinqExpressionException` — project first, or materialize and use `DistinctBy()` in memory.
 
-## CountBy(), AggregateBy(), and Index() (.NET 9)
+## CountBy(), AggregateBy(), and Index() (.NET 9) {#countby-aggregateby-and-index}
 
 The `CountBy`, `AggregateBy` and `Index` operators added in .NET 9 exist only on `Enumerable`, with no `IQueryable`
 overloads, so Marten never sees them. Calling one on a Marten query enumerates the query synchronously, and that throws
@@ -470,14 +632,14 @@ public async Task count_by_after_loading(IQuerySession session)
     var numbered = targets.Index();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L63-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_count_by_after_loading' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L64-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_count_by_after_loading' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 That pulls every matching document into memory. For counts over a large table, use `GroupBy(...).Select(...)` instead,
 which Marten translates to a SQL `GROUP BY`, as shown in [GroupBy()](#groupby).
 :::
 
-## Modulo Queries
+## Modulo Queries {#modulo-queries}
 
 Marten has the ability to use the modulo operator in Linq queries:
 

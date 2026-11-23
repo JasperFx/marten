@@ -448,14 +448,15 @@ public class select_many : IntegrationContext
         await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.LightweightSession();
+        #region sample_include_after_select_many
         var dict = new Dictionary<Guid, User>();
 
-
-
+        // Every User named by the UserId of a child document
         var results = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Include(x => x.UserId, dict)
             .ToListAsync());
+        #endregion
 
         dict.Count.ShouldBe(2);
 

@@ -13,8 +13,6 @@ different queries for "IsBlue()." First, implement the `IMethodCallParser` inter
 ```cs
 public class IsBlue: IMethodCallParser
 {
-    private static readonly PropertyInfo _property = ReflectionHelper.GetProperty<ColorTarget>(x => x.Color);
-
     public bool Matches(MethodCallExpression expression)
     {
         return expression.Method.Name == nameof(CustomExtensions.IsBlue);
@@ -29,7 +27,7 @@ public class IsBlue: IMethodCallParser
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L82-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_isblue' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L82-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_isblue' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For reference, the `IMethodCallParser` interface that `IsBlue` implements is shown below:
@@ -98,3 +96,29 @@ public async Task query_with_custom_parser()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L23-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_custom_linq_parser' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Teaching Marten a New Member Type {#custom-member-types}
+
+`opts.Linq.MemberSources` is a second extension point. An `IMemberSource` tells Marten how to locate and compare a
+member whose type Marten does not know, so the member can be used in `Where()`, `OrderBy()` and `Select()`:
+
+<!-- snippet: sample_IMemberSource -->
+<a id='snippet-sample_IMemberSource'></a>
+```cs
+/// <summary>
+///     An extension point to "teach" Marten how to support new member types in the Linq support
+/// </summary>
+public interface IMemberSource
+{
+    bool TryResolve(IQueryableMember parent, StoreOptions options,
+        MemberInfo memberInfo, Type memberType, [NotNullWhen(true)] out IQueryableMember? member);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/Members/IMemberSource.cs#L8-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IMemberSource' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`TryResolve()` is called for each member Marten meets in a query. Return `true` with an `IQueryableMember` for a type
+you handle, and `false` for everything else. The `Marten.NodaTime` package is a working example. Its member source maps
+`LocalDate` to the same `DateOnlyMember` Marten uses for `DateOnly`, and `Instant` to a `timestamptz` member, and
+`UseNodaTime()` registers it ahead of Marten's own sources with
+`opts.Linq.MemberSources.Insert(0, new NodaTimeMemberSource())`.

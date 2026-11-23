@@ -271,6 +271,27 @@ var events = await theSession.Events.QueryByTagsAsync(query);
 
 Events are always returned ordered by sequence number (global append order).
 
+### Tags in a LINQ Where() {#has-tag-in-linq}
+
+`HasTag<TTag>(value)` filters a LINQ query over raw events, such as `session.Events.QueryAllRawEvents()`, to the
+events that carry that tag value. It goes in the same `Where()` as the other event predicates, such as the event type,
+the timestamp or the stream:
+
+<!-- snippet: sample_dcb_has_tag_in_where -->
+<a id='snippet-sample_dcb_has_tag_in_where'></a>
+```cs
+// "Alice's events, but only the enrollments" — the tag predicate AND a normal event predicate.
+var events = await theSession.Events.QueryAllRawEvents()
+    .Where(e => e.HasTag<StudentId>(alice) && e.EventTypesAre(typeof(StudentEnrolled)))
+    .ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_linq_where_tests.cs#L73-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dcb_has_tag_in_where' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`&&` of several `HasTag()` calls requires every tag. `TTag` must be a registered tag type, or the query throws
+`InvalidOperationException`. For tags combined with `||`, use `EventTagQuery` and `QueryByTagsAsync` as shown above.
+`HasTag()` works with both [storage modes](#storage-modes).
+
 ::: tip
 The read-only tag queries, `QueryByTagsAsync`, `AggregateByTagsAsync` and `EventsExistAsync`, are on
 `IQuerySession.Events` as well as on `IDocumentSession.Events`, so a read-only endpoint can call them
@@ -582,7 +603,7 @@ This is useful for guard clauses and validation logic in DCB workflows where you
 
 ## How It Works
 
-### Storage Modes
+### Storage Modes {#storage-modes}
 
 DCB tags can be stored two different ways, controlled by `opts.Events.DcbStorageMode`. The default is `DcbStorageMode.TagTables` — the behavior shipped in Marten 8. Marten 9.0 adds `DcbStorageMode.HStore` as an opt-in alternative that stores all tags inline on the event row using PostgreSQL's [hstore](https://www.postgresql.org/docs/current/hstore.html) key-value type.
 

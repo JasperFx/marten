@@ -83,8 +83,6 @@ public static class CustomExtensions
 
 public class IsBlue: IMethodCallParser
 {
-    private static readonly PropertyInfo _property = ReflectionHelper.GetProperty<ColorTarget>(x => x.Color);
-
     public bool Matches(MethodCallExpression expression)
     {
         return expression.Method.Name == nameof(CustomExtensions.IsBlue);

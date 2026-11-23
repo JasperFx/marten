@@ -136,7 +136,22 @@
     "SQLSTATEs",
     "tsvector",
     "unpartitioned",
-    "unwrapper"
+    "unwrapper",
+    "aggregateby",
+    "compareto",
+    "countby",
+    "distinctby",
+    "fulljoin",
+    "groupby",
+    "ienumerables",
+    "isoneof",
+    "issubsetof",
+    "issupersetof",
+    "leftjoin",
+    "matchessql",
+    "rightjoin",
+    "selectmany",
+    "streampagedbycursor"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links
