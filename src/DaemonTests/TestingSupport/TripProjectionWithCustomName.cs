@@ -49,8 +49,8 @@ namespace DaemonTests.TestingSupport
 
     public partial class TripProjection: SingleStreamProjection<Trip, Guid>
     {
-        // These methods can be either public, internal, or private but there's
-        // a small performance gain to making them public
+        // Conventional methods like Apply, Create and ShouldDelete must be public. The source generator
+        // only calls public ones, and flags a non-public one with JFXEVT009
         public void Apply(Arrival e, Trip trip) => trip.State = e.State;
 
         public void Apply(Travel e, Trip trip)

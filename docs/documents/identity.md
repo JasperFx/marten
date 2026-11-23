@@ -94,7 +94,7 @@ options.Policies.ForAllDocuments(m =>
     }
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L47-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-sequentialguid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L71-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-sequentialguid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It is also possible use the SequentialGuid id generation algorithm for a specific document type.
@@ -104,7 +104,7 @@ It is also possible use the SequentialGuid id generation algorithm for a specifi
 ```cs
 options.Schema.For<UserWithGuid>().IdStrategy(new SequentialGuidIdGeneration());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L82-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-sequentialguid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L106-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-sequentialguid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Sequential Identifiers with Hilo
@@ -304,7 +304,7 @@ below and use either Vogen or StronglyTypedId.
 
 ::: info
 For strong typed identifiers on aggregates built by event projections, see
-[aggregate projections](/events/projections/aggregate-projections#strong-typed-identifiers-).
+[aggregate projections](/events/projections/aggregate-projections#strong-typed-identifiers).
 :::
 
 Marten can now support [strong typed identifiers](https://en.wikipedia.org/wiki/Strongly_typed_identifier) using a couple different strategies.

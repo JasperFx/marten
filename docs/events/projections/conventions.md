@@ -88,8 +88,8 @@ Or finally, you can use a method named `Create()` on a projection type as shown 
 ```cs
 public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
-    // These methods can be either public, internal, or private but there's
-    // a small performance gain to making them public
+    // Conventional methods like Apply, Create and ShouldDelete must be public. The source generator
+    // only calls public ones, and flags a non-public one with JFXEVT009
     public void Apply(Arrival e, Trip trip) => trip.State = e.State;
 
     public void Apply(Travel e, Trip trip)
@@ -141,8 +141,8 @@ Here's a `TripProjection` using `Apply()` methods to mutate the `Trip` document:
 ```cs
 public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
-    // These methods can be either public, internal, or private but there's
-    // a small performance gain to making them public
+    // Conventional methods like Apply, Create and ShouldDelete must be public. The source generator
+    // only calls public ones, and flags a non-public one with JFXEVT009
     public void Apply(Arrival e, Trip trip) => trip.State = e.State;
 
     public void Apply(Travel e, Trip trip)

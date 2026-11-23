@@ -168,7 +168,7 @@ Starting with Marten 8.0, we've tried somewhat to conform to the terminology use
 
 See the content on aggregate caching in [Optimizing Performance](/events/optimizing).
 
-## Strong Typed Identifiers <Badge type="tip" text="7.29" />
+## Strong Typed Identifiers <Badge type="tip" text="7.29" /> {#strong-typed-identifiers}
 
 ::: info
 The rise of Strong Typed Identifiers has not been the most pleasant experience for the Marten and

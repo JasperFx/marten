@@ -377,7 +377,7 @@ with a `ConcurrencyException` if the stream has moved on:
 ```cs
 var stream = await session.Events.FetchForWriting<OrderAggregate, OrderNumber>(order, 3);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_expected_version.cs#L45-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_writing_by_natural_key_with_expected_version' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_expected_version.cs#L47-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_writing_by_natural_key_with_expected_version' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A natural key that doesn't match any stream is at version 0.
