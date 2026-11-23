@@ -32,10 +32,12 @@ public class BadgeHolder
 }
 
 /// <summary>
-///     marten#6133: a batched natural-key fetch resolves the key in the batch and then loads the stream it found with
-///     commands of its own. Inside a transaction the session has one connection, so those commands ran into the
+///     marten#6133: a batched natural-key fetch used to resolve the key in the batch and then load the stream it found
+///     with commands of its own. Inside a transaction the session has one connection, so those commands ran into the
 ///     batch's open reader ("A command is already in progress") and failed the whole batch, whatever the aggregate's
-///     lifecycle. An exclusive fetch always opens that transaction; a caller can open it too.
+///     lifecycle. An exclusive fetch always opens that transaction; a caller can open it too. Since #6150 the fetch
+///     resolves the key inside each of its own statements and needs no further commands; these cases guard that it
+///     stays that way.
 /// </summary>
 public class batched_natural_key_fetch_inside_a_transaction: OneOffConfigurationsContext
 {

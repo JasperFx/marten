@@ -28,8 +28,8 @@ public class batched_exclusive_fetch_followups: OneOffConfigurationsContext
 
     /// <summary>
     /// #5532 gave the <c>string</c> overload the identical change but covered only <c>Guid</c>. It is not
-    /// the same code path underneath: <c>FindFetchPlan&lt;T, string&gt;</c> can resolve to
-    /// <c>FetchNaturalKeyPlan</c>, which emits its own <c>for update of s</c>. The non-batched suite covers
+    /// the same code path underneath: <c>FindFetchPlan&lt;T, string&gt;</c> can resolve to a natural key plan,
+    /// whose <c>NaturalKeyQueryBuilder</c> emits its own <c>for update of s</c>. The non-batched suite covers
     /// both stream identities side by side, so the batched one should too.
     /// </summary>
     [Fact]

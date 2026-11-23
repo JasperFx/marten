@@ -45,6 +45,38 @@ public class RegisteredOrderProjection: SingleStreamProjection<RegisteredOrder, 
 
 #endregion
 
+#region sample_natural_key_source_that_retires_the_key
+
+public record ShipmentCode(string Value);
+
+public record ShipmentBooked(ShipmentCode Code);
+
+public record ShipmentUpdated(ShipmentCode? NewCode, string Notes);
+
+public class Shipment
+{
+    public Guid Id { get; set; }
+
+    [NaturalKey]
+    public ShipmentCode Code { get; set; } = null!;
+
+    public string Notes { get; set; } = string.Empty;
+
+    [NaturalKeySource]
+    public void Apply(ShipmentBooked e) => Code = e.Code;
+
+    // Don't do this. Every ShipmentUpdated is read as "the stream's key is now NewCode", so one whose
+    // NewCode is null retires the key, even though this method leaves Code as it was
+    [NaturalKeySource]
+    public void Apply(ShipmentUpdated e)
+    {
+        if (e.NewCode != null) Code = e.NewCode;
+        Notes = e.Notes;
+    }
+}
+
+#endregion
+
 /// <summary>
 /// The code samples in docs/events/natural-keys.md that no other test shows.
 /// </summary>
@@ -120,6 +152,69 @@ public class natural_key_documentation_samples: OneOffConfigurationsContext
         var order = await query.Events.FetchLatest<OrderAggregate>(streamId);
         order.ShouldNotBeNull();
         order.TotalAmount.ShouldBe(19.99m);
+    }
+
+    [Fact]
+    public async Task fetch_latest_by_natural_key_answers_from_the_session()
+    {
+        StoreOptions(opts =>
+        {
+            #region sample_natural_key_write_cache_and_identity_map
+
+            opts.Projections.Snapshot<OrderAggregate>(SnapshotLifecycle.Inline);
+
+            // FetchForWriting by natural key starts from a cached aggregate, as a fetch by stream id does
+            opts.Events.CacheAggregatesForWriting<OrderAggregate>();
+
+            // The default. FetchLatest by natural key answers with an aggregate the session already holds
+            opts.Events.UseIdentityMapForAggregates = true;
+
+            #endregion
+        });
+
+        var number = new OrderNumber("ORD-SESSION");
+        var streamId = await startOrder(number);
+
+        await using var session = theStore.IdentitySession();
+
+        #region sample_fetch_latest_by_natural_key_from_the_session
+
+        var stream = await session.Events.FetchForWriting<OrderAggregate, OrderNumber>(number);
+
+        // The aggregate this session already holds, found by its current natural key
+        var latest = await session.Events.FetchLatest<OrderAggregate, OrderNumber>(number);
+
+        #endregion
+
+        latest.ShouldBeSameAs(stream.Aggregate);
+        latest!.Id.ShouldBe(streamId);
+    }
+
+    [Fact]
+    public async Task a_source_that_only_sometimes_sets_the_key_retires_it()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<Shipment>(SnapshotLifecycle.Inline));
+
+        var code = new ShipmentCode("SHP-1");
+        var streamId = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<Shipment>(streamId, new ShipmentBooked(code));
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.Append(streamId, new ShipmentUpdated(null, "Left the depot"));
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = theStore.LightweightSession();
+
+        // The lookup retired the key, but the aggregate kept it. The fetch by key goes first: once a session
+        // holds the aggregate, FetchLatest by key answers from it, matched by the key the aggregate carries
+        (await query.Events.FetchLatest<Shipment, ShipmentCode>(code)).ShouldBeNull();
+        (await query.Events.FetchLatest<Shipment>(streamId))!.Code.ShouldBe(code);
     }
 
     [Fact]
