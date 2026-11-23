@@ -9,9 +9,10 @@ lowest code ceremony possible to use Marten within a CQRS architecture.
 :::
 
 ::: tip
-Projection *document* types need to be scoped as public because of Marten's internal code generation techniques. Some methods
-discovered by the method conventions can be internal or private, but the holding type must be public. If you really
-care deeply about marking types as `internal`, just use the explicit code options.
+Projection *document* types and the projection types that hold the conventional methods need to be public. So does every
+`Apply`, `Create` and `ShouldDelete` method, and every constructor Marten calls: the source-generated dispatcher can only
+call public members, so a non-public one is skipped, and the build reports a `JFXEVT009` warning for it. If you really
+care deeply about marking types as `internal`, just use the [explicit code options](/events/projections/explicit).
 :::
 
 Single stream projections (i.e., a projected view of the events within a single event stream)
@@ -90,17 +91,13 @@ If you don't like putting the conventional methods directly on the projected typ
 more advanced settings for projections, you can move those `Apply` or `Create` methods to a separate type that
 inherits from the `SingleStreamProjection<TDoc, TId>` base type like this:
 
-::: warning Removed in Marten 9.0
-The `DeleteEvent<T>(...)` calls inside the constructor in the sample below are removed in Marten 9.0 alongside the JasperFx 2.0 line ([JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)). Migrate them to a `ShouldDelete` method-convention overload on the projection class — see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal). The `Apply` / `Create` method-convention overloads in the same sample are unchanged.
-:::
-
 <!-- snippet: sample_tripprojection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
 public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
-    // These methods can be either public, internal, or private but there's
-    // a small performance gain to making them public
+    // Conventional methods like Apply, Create and ShouldDelete must be public. The source generator
+    // only calls public ones, and flags a non-public one with JFXEVT009
     public void Apply(Arrival e, Trip trip) => trip.State = e.State;
 
     public void Apply(Travel e, Trip trip)

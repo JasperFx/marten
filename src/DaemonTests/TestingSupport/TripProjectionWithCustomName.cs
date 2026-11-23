@@ -115,8 +115,6 @@ namespace TripProjection.StreamAggregation
     }
 
 
-    #region sample_trip_stream_aggregation
-
     public class Trip
     {
         // Probably safest to have an empty, default
@@ -164,8 +162,6 @@ namespace TripProjection.StreamAggregation
         internal bool ShouldDelete(Breakdown e) => e.IsCritical;
         internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
     }
-
-    #endregion
 }
 
 

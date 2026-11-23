@@ -94,7 +94,11 @@ public class using_guid_based_strong_typed_id_for_aggregate_identity: OneOffConf
 
     private async Task use_fetch_for_writing_with_strong_typed_identifier(PaymentId id, IDocumentSession session)
     {
-        var stream = await session.Events.FetchForWriting<Payment>(id.Value);
+        // Name the identifier type as the second type argument
+        var stream = await session.Events.FetchForWriting<Payment, PaymentId>(id);
+
+        // The same works for reading the latest state
+        var latest = await session.Events.FetchLatest<Payment, PaymentId>(id);
     }
 
     #endregion

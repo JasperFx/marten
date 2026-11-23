@@ -52,7 +52,7 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
         // the call to SaveChangesAsync() and the resulting document update
         // of the new MonsterDefeated document will happen in the same database
         // transaction
-        await theSession.SaveChangesAsync();
+        await session.SaveChangesAsync();
 
         #endregion
     }

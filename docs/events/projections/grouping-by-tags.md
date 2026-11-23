@@ -171,5 +171,6 @@ opts.Schema.For<AccountBalance>().MultiTenanted();
 The same holds with `UseTenantPartitionedEvents`, where each tenant has its own event sequence: the daemon reads each
 event's tags in its own tenant.
 
-Grouping across tenants or rolling up by tenant (`RollUpByTenant()`) makes the projection `ScanOnly`, because one
-identity's events no longer live in one tenant. Across tenants, the slice index still works.
+Grouping across tenants (`TenancyGrouping = TenancyGrouping.AcrossTenants`) or rolling up by tenant (`RollUpByTenant()`)
+makes the projection `ScanOnly`, because one identity's events no longer live in one tenant. Across tenants, the slice
+index still works. See [grouping across tenants](/events/projections/multi-stream-projections#grouping-across-tenants).

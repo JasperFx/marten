@@ -10,7 +10,8 @@ The `Marten.EntityFrameworkCore` NuGet package provides three projection base cl
 | `EfCoreMultiStreamProjection<TDoc, TId, TDbContext>` | Aggregate events across multiple streams into one EF Core entity |
 | `EfCoreEventProjection<TDbContext>` | React to individual events, writing to both EF Core and Marten |
 
-All three types support **Inline**, **Async**, and **Live** projection lifecycles.
+All three types support the **Inline** and **Async** projection lifecycles. The single and multi stream types also
+support **Live**; `EfCoreEventProjection` is not an aggregation, so registering it as `Live` throws.
 
 ## Installation
 
@@ -139,6 +140,29 @@ public class OrderAggregate
     }
 }
 ```
+
+`ApplyEvent` is synchronous. If applying an event needs to read data, from the `DbContext` or from the Marten
+`IQuerySession`, override `ApplyEventsAsync` instead. It receives every event in the slice at once, along with a
+`CancellationToken`, and returns the new aggregate along with whether to store or delete it. Its default implementation
+calls `ApplyEvent` for each event:
+
+```csharp
+public override async ValueTask<(Order?, ActionType)> ApplyEventsAsync(
+    Order? snapshot, Guid identity, IReadOnlyList<IEvent> events,
+    IQuerySession session, OrderDbContext dbContext, CancellationToken token)
+{
+    foreach (var @event in events)
+    {
+        // await any EF Core or Marten lookups the event needs here, then apply it
+        snapshot = ApplyEvent(snapshot, identity, @event, dbContext, session);
+    }
+
+    return (snapshot, snapshot == null ? ActionType.Delete : ActionType.Store);
+}
+```
+
+`ApplyEventsAsync` is `public` on `EfCoreSingleStreamProjection` and `protected` on `EfCoreMultiStreamProjection`, so
+override it with the matching access modifier.
 
 ### Registration
 
@@ -393,23 +417,27 @@ Marten validates your configuration at startup. If the event store uses conjoine
 
 ## Composite Projections
 
-EF Core projections can participate in [composite projections](/events/projections/composite) for multi-stage processing:
+EF Core single and multi stream projections can participate in [composite projections](/events/projections/composite)
+for multi-stage processing. Pass the `StoreOptions` to the composite's `Add()` overload from `Marten.EntityFrameworkCore`,
+so that the projection's EF Core storage and entity tables are registered as well:
 
 ```csharp
 var store = DocumentStore.For(opts =>
 {
     opts.Connection(connectionString);
-    opts.Projections.Composite(composite =>
+    opts.Projections.CompositeProjectionFor("orders", composite =>
     {
         composite.Add(opts, new OrderAggregate(), stageNumber: 1);
         composite.Add(opts, new CustomerOrderHistoryProjection(), stageNumber: 2);
-    }, ProjectionLifecycle.Async);
+    });
 });
 ```
 
+A composite projection always runs asynchronously.
+
 ## DbContext Configuration
 
-All EF Core projection types expose a `ConfigureDbContext` method you can override to customize the `DbContextOptionsBuilder`. The Npgsql provider is already configured before this method is called:
+All EF Core projection types expose a `ConfigureDbContext` method you can override to customize the `DbContextOptionsBuilder`. The Npgsql provider is already configured before this method is called. It is `public` on the single and multi stream projection types, and `protected` on `EfCoreEventProjection`:
 
 ```csharp
 public class MyProjection

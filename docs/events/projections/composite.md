@@ -55,7 +55,7 @@ What we really want is some way to efficiently utilize the upstream products and
 
 Before we dive into each child projection, this is how we can 
 set up the composite projection using the `StoreOptions` model
-in Marten:~~~~
+in Marten:
 
 <!-- snippet: sample_defining_a_composite_projection -->
 <a id='snippet-sample_defining_a_composite_projection'></a>
@@ -543,5 +543,11 @@ composite batch, so any entity the upstream just produced is reachable by id reg
 * You can use as many stages as you wish, but we're not sure why you would need to use more than 2 or 3
 * Side effects will work with composite projections, but they will be executed after the entire batch of changes are made for all constituent projections
 * If you rebuild a composite projection, you will have to rebuild all constituent projections
+* A composite projection rebuild that fails throws the failing shard's exception, and throws `OperationCanceledException`
+  when it runs out of time between pages, rather than returning with the projection paused
+* A composite projection has no single identity to [park](/events/projections/async-daemon#parking-a-failing-identity),
+  so an error applying an event in the async daemon pauses the whole composite
+* An aggregate inside a composite projection can't own a [natural key](/events/natural-keys#composite-projections);
+  building the `DocumentStore` throws an `InvalidProjectionException` if one does
 
 Any other questions? You might have to reach out to the Marten team via Discord.

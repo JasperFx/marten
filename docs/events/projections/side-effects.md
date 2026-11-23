@@ -180,17 +180,20 @@ the original overload for everything else.
 
 A couple important facts about this new functionality:
 
-- The `RaiseSideEffects()` method is only called during _continuous_ asynchronous projection execution, and will not
-  be called during projection rebuilds or `Inline` projection usage **unless you explicitly enable this behavior as shown below**
-- Side effects are also suppressed during the **blue/green warm-up phase** of a gated new projection version. When a
-  projection opts into `GateSideEffectsBehindPriorVersion`, a freshly deployed version first replays history the prior
-  version already processed in Rebuild mode (no side effects) and only fires side effects for events past the prior
-  version's mark. See [Suppressing Side Effects During the Blue/Green Warm-up](/events/projections/rebuilding#suppressing-side-effects-during-the-blue-green-warm-up).
+- The `RaiseSideEffects()` method is called during _continuous_ asynchronous projection execution and, since Marten 10,
+  for `Inline` projections as well. It is never called during projection rebuilds. Set
+  `opts.Events.EnableSideEffectsOnInlineProjections = false` to only run side effects in the async daemon, as Marten 9
+  did. See [Side Effects in Inline Projections](#side-effects-in-inline-projections) below
+- Side effects are also suppressed during the **blue/green warm-up phase** of a new projection version.
+  `GateSideEffectsBehindPriorVersion` is on by default since Marten 10: a freshly deployed version first replays history the
+  prior version already processed in Rebuild mode (no side effects) and only fires side effects for events past the prior
+  version's mark. Set `GateSideEffectsBehindPriorVersion = false` in the projection's constructor, or call
+  `opts.RestoreV9Defaults()`, to turn it off. See [Suppressing Side Effects During the Blue/Green Warm-up](/events/projections/rebuilding#suppressing-side-effects-during-the-blue-green-warm-up).
 - Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
 - You _can_ alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
   is on you the user to apply idempotent updates to the aggregate based on these new events in the actual handlers for
   the new events when those events are handled by the daemon in a later batch
-- There is a [Wolverine](https://wolverinefx.net) integration (of course) to publish the messages through Wolverine if using the `AddMarten()IntegrateWithWolverine()` option
+- There is a [Wolverine](https://wolverinefx.net) integration (of course) to publish the messages through Wolverine if using the `AddMarten().IntegrateWithWolverine()` option
 
 This relatively new behavior that was built for a specific [JasperFx Software](https://jasperfx.net) client project,
 but has been on the backlog for quite some time. If there are any difficulties with this approach, please feel free

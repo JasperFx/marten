@@ -1,7 +1,7 @@
 # Inline Projections
 
 An "inline" projection just means that Marten will process the projection against new events being appended
-to the event store at the time that `IDocumentSession.SaveChanges()` is called to commit a unit of work. Here's a small example projection:
+to the event store at the time that `IDocumentSession.SaveChangesAsync()` is called to commit a unit of work. Here's a small example projection:
 
 <!-- snippet: sample_monsterdefeatedtransform -->
 <a id='snippet-sample_monsterdefeatedtransform'></a>
@@ -23,7 +23,10 @@ public class MonsterDefeated
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_transformation_of_events.cs#L160-L176' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monsterdefeatedtransform' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Note that the inline projection is able to use the [event metadata](/events/metadata) at the time the inline projection is executed. That was previously a limitation of Marten that was fixed in Marten V4.
+Note that the inline projection is able to use the [event metadata](/events/metadata) at the time the inline projection
+is executed, with one exception: under the default "Quick" [append mode](/events/appending), `IEvent.Version` and
+`IEvent.Sequence` are not assigned yet while an inline projection runs. Use the "Rich" append mode, or an asynchronous or
+live projection, if an inline projection needs them.
 
 <!-- snippet: sample_usage_of_inline_projection -->
 <a id='snippet-sample_usage_of_inline_projection'></a>
@@ -45,7 +48,7 @@ var streamId = session.Events
 // the call to SaveChangesAsync() and the resulting document update
 // of the new MonsterDefeated document will happen in the same database
 // transaction
-await theSession.SaveChangesAsync();
+await session.SaveChangesAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_transformation_of_events.cs#L36-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usage_of_inline_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

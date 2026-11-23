@@ -213,24 +213,28 @@ public class Payment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L140-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_strong_typed_identifier_for_aggregate_projections' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L144-L176' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_strong_typed_identifier_for_aggregate_projections' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Just note that for single stream aggregations, your strong typed identifier types will need to wrap either a `Guid` or
 `string` depending on your application's `StreamIdentity`. 
 
-At this point, the `FetchForWriting` and `FetchLatest` APIs do not directly support strongly typed identifiers and you
-will have to just pass in the wrapped, primitive value like this:
+`FetchForWriting`, `FetchForExclusiveWriting` and `FetchLatest` take a strong typed identifier directly when you name its
+type as the second type argument:
 
 <!-- snippet: sample_use_fetch_for_writing_with_strong_typed_identifier -->
 <a id='snippet-sample_use_fetch_for_writing_with_strong_typed_identifier'></a>
 ```cs
 private async Task use_fetch_for_writing_with_strong_typed_identifier(PaymentId id, IDocumentSession session)
 {
-    var stream = await session.Events.FetchForWriting<Payment>(id.Value);
+    // Name the identifier type as the second type argument
+    var stream = await session.Events.FetchForWriting<Payment, PaymentId>(id);
+
+    // The same works for reading the latest state
+    var latest = await session.Events.FetchLatest<Payment, PaymentId>(id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L93-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_fetch_for_writing_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L93-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_fetch_for_writing_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Aggregate by Stream
