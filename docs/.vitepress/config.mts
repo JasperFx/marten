@@ -77,7 +77,7 @@ const config: UserConfig<DefaultTheme.Config> = {
 
     nav: [
       {
-        text: 'latest (v9.x)',
+        text: 'latest (v10.x)',
         items: [
           { text: 'v7.x', link: 'https://marten-docs-v7.netlify.app', target: "_blank" },
           { text: 'v6.x', link: 'https://marten-docs-v6.netlify.app', target: "_blank" },
@@ -332,7 +332,6 @@ const config: UserConfig<DefaultTheme.Config> = {
           collapsed: true,
           items: [
             { text: 'Database Management', link: '/schema/' },
-            { text: 'How Documents are Stored', link: '/schema/storage' },
             { text: 'Schema Migrations', link: '/schema/migrations' },
             { text: 'Exporting Schema Definition', link: '/schema/exporting' },
             { text: 'Schema Feature Extensions', link: '/schema/extensions' },

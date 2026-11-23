@@ -140,12 +140,6 @@ The easiest possible way to export SQL migration files is to use Marten's [comma
 dotnet run -- db-patch [filename]
 ```
 
-or for backward compatibility with Marten <V5.0
-
-```bash
-dotnet run -- marten-patch [filename]
-```
-
 If you'd rather write a database SQL migration file with your own code, bootstrap your `IDocumentStore` pointing to the database connection you
 want to update, and use:
 
@@ -163,10 +157,11 @@ The command above will generate a file called "1.initial.sql" to update the sche
 mechanism covers:
 
 1. Creates any missing database schemas
-2. Document storage tables, "upsert" functions, and any configured indexes -- including missing columns or column type changes
-3. Javascript transforms
-4. The Hilo support table
-5. The Event Store schema objects
+2. Document storage tables and any configured indexes, foreign keys and partitions -- including missing columns or column type changes
+3. The Hilo support table and its `mt_get_next_hi` function
+4. Marten's helper functions, such as the `mt_immutable_*` functions behind computed indexes and the `mt_jsonb_*` patching functions
+5. Any objects you added to `opts.Storage.ExtendedSchemaObjects`
+6. The Event Store schema objects
 
 ### Include in your ci/cd pipeline
 
@@ -189,12 +184,6 @@ including the `--parallel` flag for a store with many tenant databases):
 
 ```bash
 dotnet run -- db-apply
-```
-
-or in Marten <V5.0:
-
-```bash
-dotnet run -- marten-apply
 ```
 
 Lastly, Marten V5 adds a new option to have the latest database changes detected and applied on application startup with
@@ -254,10 +243,4 @@ With the [command line tooling](/configuration/cli), it's ([db-assert](https://w
 
 ```bash
 dotnet run -- db-assert
-```
-
-or
-
-```bash
-dotnet run -- marten-assert
 ```

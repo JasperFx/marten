@@ -1,12 +1,15 @@
 # Database Storage
 
-For each top level document type, Marten will generate database objects for:
+For each top level document type, Marten creates a database table called *mt_doc_[document alias]*, where the document
+alias is typically derived from the class name of the top level document type, along with any indexes, foreign keys and
+partitions you configure for it. A conjoined multi-tenanted document type that uses
+[row level security](/documents/multi-tenancy#row-level-security) also gets its policy.
 
-* A database table called *mt_doc_[document alias]*, where the document alias is typically derived from the class name of the top level document type
-* A function called *mt_upsert_[document alias]*
-* A function called *mt_update_[document alias]*
-* A function called *mt_insert_[document alias]*
-* A function called *mt_overwrite_[document alias]*, an upsert function that bypasses any kind of configured optimistic concurrency checks
+Marten writes documents with ordinary `insert`, `update` and `insert ... on conflict` statements against that table. The
+per-document *mt_upsert_*, *mt_insert_*, *mt_update_* and *mt_overwrite_* functions that earlier versions generated were
+removed in Marten 9, and a migration no longer creates them. Shared helper functions such as `mt_immutable_timestamp` (for
+computed indexes) and the `mt_jsonb_*` [patching](/documents/partial-updates-patching) functions are still created, once
+per schema.
 
 ## Overriding the Database Schema
 
