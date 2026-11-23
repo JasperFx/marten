@@ -61,6 +61,12 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
     DatabaseCardinality IEventStore.DatabaseCardinality => Options.Tenancy.Cardinality;
 
+    /// <summary>
+    ///     jasperfx#1282 (marten#6152): every aggregate type this store knows, each once. Read alongside
+    ///     <see cref="IEventDatabase.FetchAggregateStreamStatsAsync" />, which reports the types found on stored streams.
+    /// </summary>
+    IReadOnlyList<Type> IEventStore.RegisteredAggregateTypes() => Options.Projections.AllAggregateTypes().Distinct().ToList();
+
     // #750: gate the daemon's ExtendedProgressionWriter observer on the store's opt-in — without this
     // the observer (which reads IEventStore.ExtendedProgressionEnabled, default false) never fires and
     // the heartbeat/agent_status/pause_reason/running_on_node columns stay NULL. Both the direct

@@ -16,6 +16,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
+using Marten.Events.Schema;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 using Marten.Services;
@@ -500,6 +501,152 @@ public partial class MartenDatabase : IEventDatabase
             .Select(p => new PendingEventAge(p.TenantId, p.Sequence,
                 timestamps.TryGetValue(lookupFor(p), out var timestamp) ? timestamp : null))
             .ToList();
+    }
+
+    /// <summary>
+    ///     jasperfx#1282 (marten#6152): this database's streams counted by aggregate type, read from <c>mt_streams</c>
+    ///     alone in one round trip: a grouped count with a conditional count per length threshold, and, unless
+    ///     <see cref="AggregateStreamStatsRequest.LongestStreams" /> is zero, one ranking per type for the longest
+    ///     streams. The events table is never read.
+    /// </summary>
+    public async Task<IReadOnlyList<AggregateStreamStats>> FetchAggregateStreamStatsAsync(
+        AggregateStreamStatsRequest request, CancellationToken token = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        // The same rule as FetchFirstEventTimestampsAfterAsync: a tenant only narrows the read where streams
+        // carry one
+        var tenantId = Options.Events.TenancyStyle == TenancyStyle.Conjoined || Options.Events.UseTenantPartitionedEvents
+            ? request.TenantId
+            : null;
+
+        var thresholds = request.LengthThresholds;
+        var table = $"{Options.Events.DatabaseSchemaName}.{StreamsTable.TableName}";
+
+        // Each statement's own positional parameters: the tenant, when it narrows the read, comes first
+        var conditions = new List<string>();
+        if (!request.IncludeArchived) conditions.Add("is_archived = false");
+        if (tenantId != null) conditions.Add("tenant_id = $1");
+        var where = conditions.Count == 0 ? "" : " where " + string.Join(" and ", conditions);
+        var next = tenantId == null ? 1 : 2;
+
+        var buckets = string.Concat(thresholds.Select((_, i) =>
+            $", count(*) filter (where coalesce(version, 0) >= ${next + i})"));
+
+        var grouped = new NpgsqlBatchCommand(
+            "select type, count(*), coalesce(sum(coalesce(version, 0)), 0)::bigint, coalesce(max(version), 0)" +
+            $"{buckets} from {table}{where} group by type");
+        addTenant(grouped);
+        foreach (var threshold in thresholds)
+        {
+            grouped.Parameters.Add(new NpgsqlParameter { Value = threshold, NpgsqlDbType = NpgsqlDbType.Bigint });
+        }
+
+        NpgsqlBatchCommand? ranked = null;
+        if (request.LongestStreams > 0)
+        {
+            ranked = new NpgsqlBatchCommand(
+                "select type, id, tenant_id, version from (select type, id, tenant_id, coalesce(version, 0) as version, " +
+                "row_number() over (partition by type order by coalesce(version, 0) desc) as rank " +
+                $"from {table}{where}) ranked where rank <= ${next} order by type, version desc");
+            addTenant(ranked);
+            ranked.Parameters.Add(new NpgsqlParameter
+            {
+                Value = (long)request.LongestStreams, NpgsqlDbType = NpgsqlDbType.Bigint
+            });
+        }
+
+        // A dictionary key can't be null, so the untagged streams get a key no alias can be
+        const string untagged = "\0";
+        var stats = new Dictionary<string, (long Count, long Total, long Max, long[] Buckets)>();
+        var longest = new Dictionary<string, List<AggregateStreamLength>>();
+
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+
+            await using var batch = new NpgsqlBatch(conn);
+            batch.BatchCommands.Add(grouped);
+            if (ranked != null) batch.BatchCommands.Add(ranked);
+
+            await using var reader = await batch.ExecuteReaderAsync(token).ConfigureAwait(false);
+
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                var counts = new long[thresholds.Count];
+                for (var i = 0; i < counts.Length; i++)
+                {
+                    counts[i] = reader.GetInt64(4 + i);
+                }
+
+                stats[await aliasAsync(reader).ConfigureAwait(false)] =
+                    (reader.GetInt64(1), reader.GetInt64(2), reader.GetInt64(3), counts);
+            }
+
+            if (ranked != null)
+            {
+                await reader.NextResultAsync(token).ConfigureAwait(false);
+
+                var guidIdentity = Options.Events.StreamIdentity == StreamIdentity.AsGuid;
+                while (await reader.ReadAsync(token).ConfigureAwait(false))
+                {
+                    var alias = await aliasAsync(reader).ConfigureAwait(false);
+                    var stream = new AggregateStreamLength(
+                        guidIdentity ? reader.GetGuid(1) : Guid.Empty,
+                        guidIdentity ? null : reader.GetString(1),
+                        await reader.IsDBNullAsync(2, token).ConfigureAwait(false) ? null : reader.GetString(2),
+                        reader.GetInt64(3));
+
+                    if (!longest.TryGetValue(alias, out var list))
+                    {
+                        longest[alias] = list = [];
+                    }
+
+                    list.Add(stream);
+                }
+            }
+        }
+        catch (Exception e) when (isMissingEventStorage(e))
+        {
+            // No event storage means no streams
+            logMissingEventStorage(e, nameof(FetchAggregateStreamStatsAsync));
+            return [];
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+
+        return stats
+            .Select(pair =>
+            {
+                var alias = pair.Key == untagged ? null : pair.Key;
+                var (count, total, max, counts) = pair.Value;
+
+                return new AggregateStreamStats(
+                    alias,
+                    alias == null ? null : Options.EventGraph.TryResolveAggregateType(alias),
+                    count,
+                    total,
+                    max,
+                    thresholds.Select((threshold, i) => new StreamLengthBucket(threshold, counts[i])).ToList(),
+                    longest.TryGetValue(pair.Key, out var streams) ? streams : []);
+            })
+            .ToList();
+
+        void addTenant(NpgsqlBatchCommand command)
+        {
+            if (tenantId != null)
+            {
+                command.Parameters.Add(new NpgsqlParameter { Value = tenantId, NpgsqlDbType = NpgsqlDbType.Varchar });
+            }
+        }
+
+        async Task<string> aliasAsync(DbDataReader reader)
+            => await reader.IsDBNullAsync(0, token).ConfigureAwait(false) ? untagged : reader.GetString(0);
     }
 
     string IEventDatabase.StorageIdentifier => _storageIdentifier;
