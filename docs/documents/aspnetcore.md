@@ -230,7 +230,7 @@ var stream = new MemoryStream();
 bool found = await session.Events.StreamLatestJson<Order>(orderId, stream);
 ```
 
-## Typed Streaming Result Types <Badge type="tip" text="8.x" />
+## Typed Streaming Result Types <Badge type="tip" text="8.x" /> {#typed-streaming-result-types}
 
 For Minimal API endpoints (and for frameworks like [Wolverine.Http](https://wolverinefx.net/guide/http/)
 that dispatch any `IResult` return value), `Marten.AspNetCore` ships seven typed

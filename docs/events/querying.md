@@ -301,7 +301,7 @@ public async Task use_both_plans_in_one_batch()
 
 ::: tip
 Both plans also back an ASP.NET Core endpoint return value —
-[`StreamEventState` and `StreamEvents`](/documents/aspnetcore#typed-streaming-result-types-) write the
+[`StreamEventState` and `StreamEvents`](/documents/aspnetcore#typed-streaming-result-types) write the
 same data straight to an HTTP response, and accept a pre-built plan so a handler can share one plan
 between a batched query and its HTTP result.
 :::
