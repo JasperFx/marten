@@ -241,8 +241,8 @@ public class MartenDocumentComplianceFixture: DocumentStorageComplianceFixture
         options.DatabaseSchemaName = (config.SchemaName ?? "doc_compliance").ToLowerInvariant();
 
         // The suites treat correlation id, causation id, last modified by and headers as captured only by a
-        // type that asks for them (ITracked, or an explicit mapping). Marten 10 captures them on every
-        // document by default (#5812), so turn them off wherever no member is mapped to them.
+        // type that asks for them (ITracked, or an explicit mapping). That is Marten's default again (#6144),
+        // and this keeps it so whatever the default does next.
         options.Policies.ForAllDocuments(mapping =>
         {
             var metadata = mapping.Metadata;

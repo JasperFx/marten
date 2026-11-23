@@ -904,11 +904,8 @@ and add to it, or pass `_ => { }` to pause on the first transient failure. `Conf
 | [`EnableExtendedProgressionTracking`](#enableextendedprogressiontracking-is-on-by-default) is on | `opts.RestoreV9Defaults()`, or `opts.Events.EnableExtendedProgressionTracking = false` |
 | [DCB conflicts scoped by event type](#dcb-conflicts-are-scoped-by-event-type-by-default) (`DcbConflictScope.TagValueAndEventType`) | `opts.RestoreV9Defaults()`, or `opts.Events.DcbConflictScope = DcbConflictScope.TagValue` |
 | [Side-effect gate](/events/projections/rebuilding#suppressing-side-effects-during-the-blue-green-warm-up) (`GateSideEffectsBehindPriorVersion`, jasperfx#1075) is on | `opts.RestoreV9Defaults()`, or `GateSideEffectsBehindPriorVersion = false` on the projection |
-| [**Side effects run on inline projections**](#side-effects-run-on-inline-projections) (`EnableSideEffectsOnInlineProjections`) | `opts.RestoreV9Defaults()`, or `opts.Events.EnableSideEffectsOnInlineProjections = false` |
+| [**Side effects run on inline projections**](#side-effects-run-on-inline-projections) (`EnableSideEffectsOnInlineProjections`); a startup warning names each `Inline` projection that overrides `RaiseSideEffects()` | `opts.RestoreV9Defaults()`, or `opts.Events.EnableSideEffectsOnInlineProjections = false` |
 | [Strict stream identity follows archived-stream partitioning](#archived-stream-partitioning-is-opt-in): `EnableStrictStreamIdentityEnforcement` is on whenever you turn `UseArchivedStreamPartitioning` on (partitioning itself stays off by default); schema change for a store that uses partitioning | `opts.RestoreV9Defaults()`, or `opts.Events.EnableStrictStreamIdentityEnforcement = false` |
-| [Document metadata columns](#document-metadata-is-on-by-default) `correlation_id`, `causation_id`, `headers`, `last_modified_by` are on; schema change | `opts.RestoreV9Defaults()`, or `opts.Policies.ForAllDocuments(x => x.Metadata.CausationId.Enabled = false)` and the same for the other three |
-| [Computed indexes on conjoined documents start with `tenant_id`](#conjoined-indexes-start-with-tenant-id) (`StartIndexesByTenantId`); schema change | `opts.RestoreV9Defaults()`, or `opts.Policies.ForAllDocuments(x => x.StartIndexesByTenantId = false)` |
-| [All event metadata](#all-event-metadata-is-on-by-default) (causation id, correlation id, headers, user name) is on | `opts.RestoreV9Defaults()`, or set the `opts.Events.MetadataConfig.*Enabled` flags to `false` |
 | [Skipped events are filtered](#event-skipping-is-on-by-default) (`EnableEventSkippingInProjectionsOrSubscriptions`) | `opts.RestoreV9Defaults()`, or `opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = false` |
 | [Event counters and `FetchForWriting` metrics](#metrics-are-on-by-default) are exported | `opts.RestoreV9Defaults()`, or `opts.OpenTelemetry.EnableEventCounters = false` and `opts.OpenTelemetry.EnableFetchForWritingMetrics = false` |
 | [System.Text.Json `AllowOutOfOrderMetadataProperties`](#allow-out-of-order-metadata-properties) is on | `opts.RestoreV9Defaults()`, or `o.AllowOutOfOrderMetadataProperties = false` in the `configure` callback of `UseSystemTextJsonForSerialization()` |
@@ -916,6 +913,13 @@ and add to it, or pass `_ => { }` to pause on the first transient failure. `Conf
 | [The async daemon builds a batch again after a transient failure](/configuration/retries#the-async-daemon-builds-a-failed-batch-again) (a timeout, a dropped connection, an exhausted pool), up to 3 times under every error policy, then pauses the shard with `IsTransient = true` ([JasperFx 3.11.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-11-0)) | none; `opts.ConfigureDaemonPolly(_ => { })` turns the retries off ([details](#the-async-daemon-retries-a-transient-batch-failure)) |
 | [Cheap event-store objects always created](#event-store-objects-that-used-to-depend-on-configuration-are-always-created) | none; schema change, see below |
 | [New `mt_event_range_marks` table](#new-mt-event-range-marks-table) for stored-event rewrites | none; schema change, see below |
+| [Late events are recovered](#late-events-are-recovered): the daemon re-checks a skipped sequence range for an hour and rebuilds the streams of events that commit late; schema change | `opts.Events.EnableAdvancedAsyncTracking = false` (already on in Marten 9, so `RestoreV9Defaults()` leaves it alone) |
+
+Three defaults the 10.0 alphas changed were put back to their Marten 9 values before 10.0.0, after the rc.1 performance
+round ([#6144](https://github.com/JasperFx/marten/issues/6144)), so there is nothing to restore for them:
+[event metadata](#event-metadata-stays-opt-in), [document metadata](#document-metadata-stays-opt-in) and
+[`StartIndexesByTenantId` on conjoined documents](#conjoined-indexes-and-tenant-id). Each section says what turning it
+on buys, including what CritterWatch uses it for.
 
 `opts.RestoreV9Defaults()` is the single opt-out for every `StoreOptions` default flipped in 10.0
 ([details](#restoring-v9-defaults)).
@@ -938,18 +942,13 @@ Marten 9 had [`RestoreV8Defaults()`](#restoring-v8-defaults). It does not call `
 | `GateSideEffectsBehindPriorVersion` on every registered projection | `false` | [Rebuilding](/events/projections/rebuilding) |
 | `Events.EnableSideEffectsOnInlineProjections` | `false` | [Side Effects](/events/projections/side-effects#side-effects-in-inline-projections) |
 | `Events.EnableStrictStreamIdentityEnforcement` | `false`, even with `UseArchivedStreamPartitioning` on | [Archiving](/events/archiving#strict-stream-identity-after-archive) |
-| Document metadata `CausationId`, `CorrelationId`, `Headers` and `LastModifiedBy` | off | [Marten Metadata](/documents/metadata) |
-| `StartIndexesByTenantId` on conjoined documents | `false` | [Multi-Tenancy](/documents/multi-tenancy#make-all-documents-start-their-index-by-tenant-id) |
-| `Events.MetadataConfig` causation id, correlation id, headers and user name | `false` | [Event Metadata](/events/metadata) |
 | `Events.EnableEventSkippingInProjectionsOrSubscriptions` | `false` | [Marking Events as Skipped](/events/skipping) |
 | `OpenTelemetry.EnableEventCounters` and `OpenTelemetry.EnableFetchForWritingMetrics` | `false` | [Open Telemetry](/otel) |
 | System.Text.Json `AllowOutOfOrderMetadataProperties` | `false` | [JSON Serialization](/configuration/json) |
 | `Projections.Errors.ApplyErrors` and `Projections.Errors.SerializationErrors` | `Skip` | [Async Projection Daemon](/events/projections/async-daemon#parking-a-failing-identity) |
 
 The side-effect gate is a per-projection setting in JasperFx, so `RestoreV9Defaults()` turns it off for every
-projection registered when the store is built, overriding a projection's own value. The document metadata and
-`StartIndexesByTenantId` defaults are decided when each document mapping is built, so a policy, attribute or
-`Schema.For<T>()` setting wins wherever it is. The serializer setting is applied to the serializer Marten builds and to
+projection registered when the store is built, overriding a projection's own value. The serializer setting is applied to the serializer Marten builds and to
 one you pass in, whichever comes first, and a `configure` callback given to `UseSystemTextJsonForSerialization()` still
 wins. Each 10.0 default flip adds its row here and its test to `RestoreV9DefaultsTests`.
 
@@ -1001,7 +1000,7 @@ With `DcbStorageMode.HStore`, `mt_quick_append_events` gains a `tag_hstores hsto
 `mt_events.tags` in its own insert instead of a follow-up update per tagged event, which scanned `mt_events`
 ([#5896](https://github.com/JasperFx/marten/issues/5896)). The function is dropped and recreated by the next schema
 migration, with the same `AutoCreate.None` and rolling-upgrade caveat as the metadata parameters
-([above](#all-event-metadata-is-on-by-default)). Under the default tag tables, a tag query that matches two values of
+([below](#event-metadata-stays-opt-in)). Under the default tag tables, a tag query that matches two values of
 one tag type no longer returns, and folds, the same event twice, so a boundary aggregate over such a query can change
 value ([#5897](https://github.com/JasperFx/marten/issues/5897)). And with `DcbStorageMode.HStore`, a data source passed to
 `opts.Connection(NpgsqlDataSource)` is no longer replaced by one built from the connection string
@@ -1026,7 +1025,7 @@ documenting itself as enabling all optional metadata. A store that calls `Enable
 
 The `user_name` column is always created in 10.0 (see above), but under the `Quick` append modes turning the user name
 on changes the parameters of `mt_quick_append_events`, so the next schema migration replaces that function (see
-[All event metadata is on by default](#all-event-metadata-is-on-by-default)). Events are never rewritten, so if your `LastModifiedBy` holds a person's name or login and you have data-retention rules, decide
+[Event metadata stays opt-in](#event-metadata-stays-opt-in)). Events are never rewritten, so if your `LastModifiedBy` holds a person's name or login and you have data-retention rules, decide
 before upgrading whether you want it stored. To keep the 9.x behavior, turn it off after `EnableAll()`:
 
 ```cs
@@ -1142,7 +1141,19 @@ did not before.** In Marten 9 those side effects only ran in the async daemon.
 :::
 
 Check every `SingleStreamProjection` and `MultiStreamProjection` with a `RaiseSideEffects()` override that is
-registered with `ProjectionLifecycle.Inline`. Projections running `Async` are unchanged. See
+registered with `ProjectionLifecycle.Inline`. Projections running `Async` are unchanged. Marten logs a warning at
+startup naming each `Inline` projection that overrides `RaiseSideEffects()`, so you can find them in your own logs.
+
+What it costs: the side effects run inside the `SaveChangesAsync()` that touched the projection, in the same
+transaction, so their work adds to that commit's time, and a message or event they raise goes out with the commit.
+Nothing runs for a projection that doesn't override `RaiseSideEffects()`.
+
+What it buys: an `Inline` projection behaves the same as an `Async` one. In Marten 9, a `RaiseSideEffects()` override on
+an `Inline` projection silently never ran. A side effect can pass the triggering event's correlation id on to the
+message it publishes, with `slice.PublishMessage(message, metadata)` and a `MessageMetadata` whose `CorrelationId` is
+`IEvent.CorrelationId`. CritterWatch's conversation view then follows a command to the events it appended and on to the
+messages the projection sent, which is how CritterWatch's own projections work. That needs the event correlation id
+turned on ([event metadata stays opt-in](#event-metadata-stays-opt-in)). See
 [Side Effects in Inline Projections](/events/projections/side-effects#side-effects-in-inline-projections). To keep the
 9.x behavior:
 
@@ -1217,82 +1228,88 @@ Archived-stream partitioning still cannot be combined with
 [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning) (`UseTenantPartitionedEvents`),
 which partitions the same tables by tenant, and strict stream identity stays off under it unless you set it.
 
-### Document metadata is on by default <Badge type="warning" text="schema change" /> {#document-metadata-is-on-by-default}
+### Document metadata stays opt-in {#document-metadata-stays-opt-in}
 
-Every document type now has the `correlation_id`, `causation_id`, `headers` and `last_modified_by` metadata columns, and
-every write stores the session's `CorrelationId`, `CausationId`, headers and `LastModifiedBy` in them
-([Marten Metadata](/documents/metadata)). In Marten 9 each column was opt in per document type.
+The `correlation_id`, `causation_id`, `headers` and `last_modified_by` document metadata columns are off by default, as
+in Marten 9 ([Marten Metadata](/documents/metadata)). The 10.0 alphas turned them on for every document type. That was
+reverted before 10.0.0 because they were about half of what Marten 10 still cost on projection rebuilds, and because
+they added four columns to every document table on upgrade
+([#6144](https://github.com/JasperFx/marten/issues/6144)).
 
-The first schema apply after upgrading adds the four nullable columns to every document table and replaces the upsert
-functions. Adding a nullable column is a metadata-only change in PostgreSQL. A document type that maps these columns to
-its own members, through `ITracked` or `Metadata(...)`, is unaffected.
-
-`last_modified_by` holds whatever `IDocumentSession.LastModifiedBy` is set to. If that is a person's name or login and
-you have data-retention rules, decide before upgrading whether you want it stored. To keep the 9.x behavior for all
-documents, call `opts.RestoreV9Defaults()`, or turn the columns off with a policy:
+**Turn them on if you use CritterWatch or want document-level tracing.** CritterWatch's document explorer filters
+documents by `last_modified_by`, `correlation_id` and `causation_id`, and its saved filter watches use the same
+columns. Without them, those filters have nothing to match. For all documents:
 
 ```cs
 opts.Policies.ForAllDocuments(x =>
 {
-    x.Metadata.CausationId.Enabled = false;
-    x.Metadata.CorrelationId.Enabled = false;
-    x.Metadata.Headers.Enabled = false;
-    x.Metadata.LastModifiedBy.Enabled = false;
+    x.Metadata.CausationId.Enabled = true;
+    x.Metadata.CorrelationId.Enabled = true;
+    x.Metadata.LastModifiedBy.Enabled = true;
+    x.Metadata.Headers.Enabled = true;
 });
 ```
 
-`RestoreV9Defaults()` decides this when each document mapping is built, so a policy, attribute or
-`Schema.For<T>().Metadata(...)` that turns one of the columns back on still does, wherever it is in your configuration.
+What they cost: every document write stores four more values. On the CritterStackScalability RC rig, with
+archived-stream partitioning off, the trip single-stream projection rebuild ran about 9% slower than on Marten 9.58 with
+these columns on, and about 5% slower with them off (1M streams, median of 3 rounds). These are measurements from that
+rig, not guarantees. Turning them on adds four nullable columns to each document table, which is a metadata-only change
+in PostgreSQL, and replaces the upsert functions. `last_modified_by` holds whatever `IDocumentSession.LastModifiedBy` is
+set to; if that's a person's name or login and you have data-retention rules, decide whether you want it stored.
 
-The columns cost something on every document write. On the CritterStackScalability RC rig (the same rig as the
-[archived-stream partitioning numbers](#archived-stream-partitioning-is-opt-in), all with partitioning off), a
-projection rebuild that writes documents, the trip single-stream projection, ran about 9% slower than Marten 9.58 with
-the 10.0 defaults, document metadata included (1M streams, median of 3 rounds). In a 500k-stream run with the four
-document metadata columns turned off, the gap to 9.58 was about 5%, and with `RestoreV9Defaults()` the rebuild matched
-9.58. So document metadata accounts for roughly half of that gap, and the other 10.0 defaults for the rest. These are
-measurements from that rig, not guarantees.
+### Computed indexes on conjoined documents don't start with `tenant_id` unless you ask {#conjoined-indexes-and-tenant-id}
 
-### Computed indexes on conjoined documents start with `tenant_id` <Badge type="warning" text="schema change" /> {#conjoined-indexes-start-with-tenant-id}
+`StartIndexesByTenantId` is off by default, as in Marten 9
+([details](/documents/multi-tenancy#make-all-documents-start-their-index-by-tenant-id)). The 10.0 alphas turned it on for
+every conjoined (multi-tenanted) document. That was reverted before 10.0.0, because as a default it dropped and recreated
+every computed index on every conjoined table during the upgrade, blocking writes while each index was rebuilt
+([#6144](https://github.com/JasperFx/marten/issues/6144)).
 
-`StartIndexesByTenantId` now defaults to `true` for conjoined (multi-tenanted) documents
-([details](/documents/multi-tenancy#make-all-documents-start-their-index-by-tenant-id)). Every computed index on such a
-document leads with `tenant_id`, so a query in one tenant's session reads only that tenant's index entries. Single
-tenanted documents are unchanged.
-
-- A unique index scoped `TenancyScope.PerTenant` now leads with `tenant_id` instead of ending with it.
-- A unique index scoped `TenancyScope.Global` (the default for `UniqueIndex()` and `[UniqueIndex]`) does **not** get
-  `tenant_id`, so it stays unique across tenants. This also applies when you set `StartIndexesByTenantId` yourself;
-  in Marten 9 that setting quietly turned a global unique index into a per-tenant one, and the first migration now
-  puts it back to global, which fails if two tenants already share a value.
-
-The first schema apply after upgrading drops and recreates every computed index on a conjoined document. Building an
-index on a large table takes time and blocks writes to it, so generate the migration script and run it in a maintenance
-window if that matters to you. To keep the 9.x indexes:
+**Turn it on for a large conjoined table that's queried tenant by tenant.** Every computed index then leads with
+`tenant_id`, so a query in one tenant's session reads only that tenant's index entries:
 
 ```cs
-opts.Policies.ForAllDocuments(x => x.StartIndexesByTenantId = false);
+opts.Policies.ForAllDocuments(x => x.StartIndexesByTenantId = true);
 ```
 
-### All event metadata is on by default {#all-event-metadata-is-on-by-default}
+What it costs: turning it on rebuilds every computed index on the table, so generate the migration script and run it in a
+maintenance window if the table is large. A query across tenants (`AnyTenant()`, or reporting reads without a tenant)
+can no longer seek on those indexes, because their first column is unconstrained, so those get slower.
 
-`opts.Events.MetadataConfig` now has `CausationIdEnabled`, `CorrelationIdEnabled`, `HeadersEnabled` and
-`UserNameEnabled` all `true` ([Event Metadata](/events/metadata)). Every appended event stores the session's
-causation id, correlation id, headers and `LastModifiedBy`, and `IEvent` reads them back. The columns are always
-created in 10.0 (see above), but `mt_quick_append_events` takes one array parameter for each metadata column that is
-turned on (`causation_ids`, `correlation_ids`, `headers`, `user_names`). Under the `Quick` append modes, including the
-default `QuickWithServerTimestamps`, the first schema migration drops and recreates that function with the new
-parameters. Under `AutoCreate.None`, apply the migration before deploying. After that migration, a Marten 9 node
-still appending to the same event store calls the old signature and fails. For a rolling upgrade, keep the Marten 9
-metadata settings on Marten 10 (below, or `opts.RestoreV9Defaults()`) until no Marten 9 node is left. As with [`EnableAll()`](#metadataconfig-enableall-also-enables-the-user-name),
-events are never rewritten, so decide whether you want a user name in `mt_events` before upgrading. To keep the 9.x
-behavior:
+One fix in 10.0 applies either way: a unique index scoped `TenancyScope.Global` (the default for `UniqueIndex()` and
+`[UniqueIndex]`) never gets `tenant_id`, so it stays unique across tenants. In Marten 9, turning on
+`StartIndexesByTenantId` quietly made a global unique index per tenant. If you had it on, the first migration puts that
+index back to global, which fails if two tenants already share a value. A unique index scoped `TenancyScope.PerTenant`
+leads with `tenant_id` when the setting is on, instead of ending with it.
+
+### Event metadata stays opt-in {#event-metadata-stays-opt-in}
+
+`opts.Events.MetadataConfig` has `CausationIdEnabled`, `CorrelationIdEnabled`, `HeadersEnabled` and `UserNameEnabled`
+all `false` by default, as in Marten 9 ([Event Metadata](/events/metadata)). The 10.0 alphas turned all four on. That
+was reverted before 10.0.0 because, once archived-stream partitioning was off again, it was most of what Marten 10
+still cost on appends: about 11 KB more allocated per append and about 5% lower daemon append throughput on the
+CritterStackScalability RC rig ([#6144](https://github.com/JasperFx/marten/issues/6144)).
+
+**Turn on the correlation and causation ids if you use CritterWatch, Wolverine or OpenTelemetry tracing.** CritterWatch's
+event query filters events by correlation id, causation id and user name, and those ids are how its conversation view
+connects a Wolverine message to the events its handler appended, and to the messages a projection's side effects send
+in turn. Headers are only needed if you read them yourself:
 
 ```cs
-opts.Events.MetadataConfig.CausationIdEnabled = false;
-opts.Events.MetadataConfig.CorrelationIdEnabled = false;
-opts.Events.MetadataConfig.HeadersEnabled = false;
-opts.Events.MetadataConfig.UserNameEnabled = false;
+opts.Events.MetadataConfig.CorrelationIdEnabled = true;
+opts.Events.MetadataConfig.CausationIdEnabled = true;
+
+// Only if you want the session's LastModifiedBy on every event
+opts.Events.MetadataConfig.UserNameEnabled = true;
 ```
+
+The columns are always created in 10.0 ([above](#event-store-objects-that-used-to-depend-on-configuration-are-always-created)),
+so turning one on needs no new column. Under the `Quick` append modes, including the default `QuickWithServerTimestamps`,
+`mt_quick_append_events` takes one array parameter for each metadata column that is turned on, so the next schema
+migration drops and recreates that function. Under `AutoCreate.None`, apply the migration before deploying. A Marten 9
+node still appending to the same event store after that calls the old signature and fails, so in a rolling upgrade,
+turn new metadata on only once no Marten 9 node is left. Events are never rewritten, so decide whether you want a user
+name in `mt_events` before turning it on.
 
 ### Skipped events are filtered by default {#event-skipping-is-on-by-default}
 

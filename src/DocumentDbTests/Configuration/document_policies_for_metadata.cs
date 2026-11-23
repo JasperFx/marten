@@ -30,11 +30,11 @@ public class document_policies_for_metadata: OneOffConfigurationsContext
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.SoftDeletedAt.Enabled.ShouldBeTrue();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DocumentType.Enabled.ShouldBeTrue();
         theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.DotNetType.Enabled.ShouldBeTrue();
-        // On by default since 10.0 (#5812)
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CausationId.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CorrelationId.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModifiedBy.Enabled.ShouldBeTrue();
-        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Headers.Enabled.ShouldBeTrue();
+        // Opt-in, as in Marten 9 (#6144). The 10.0 alphas turned them on (#5812)
+        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CausationId.Enabled.ShouldBeFalse();
+        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.CorrelationId.Enabled.ShouldBeFalse();
+        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.LastModifiedBy.Enabled.ShouldBeFalse();
+        theStore.StorageFeatures.MappingFor(typeof(UserMetadata)).Metadata.Headers.Enabled.ShouldBeFalse();
     }
 
     [Fact]

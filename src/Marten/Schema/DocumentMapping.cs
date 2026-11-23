@@ -187,15 +187,15 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
     private bool? _startIndexesByTenantId;
 
     /// <summary>
-    ///     Lead every computed index on this document with <c>tenant_id</c>. Defaults to <c>true</c> for a
-    ///     conjoined document since 10.0 (#5812) and stays <c>false</c> for a single-tenanted one;
-    ///     <c>StoreOptions.RestoreV9Defaults()</c> puts back the 9.x default of <c>false</c>. Setting it
-    ///     yourself overrides both.
+    ///     Lead every computed index on this document with <c>tenant_id</c>, so a query in one tenant's session reads
+    ///     only that tenant's index entries. Off by default, as in Marten 9 (#6144): turning it on rebuilds every
+    ///     computed index on the table, and a query across tenants can no longer seek on those indexes. Worth turning
+    ///     on for a large conjoined table queried tenant by tenant. A unique index scoped
+    ///     <c>TenancyScope.Global</c> never gets <c>tenant_id</c>, so it stays unique across tenants.
     /// </summary>
     public bool StartIndexesByTenantId
     {
-        get => _startIndexesByTenantId
-               ?? (TenancyStyle == TenancyStyle.Conjoined && !StoreOptions.V9DefaultsRestored);
+        get => _startIndexesByTenantId ?? false;
         set => _startIndexesByTenantId = value;
     }
 

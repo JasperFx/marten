@@ -1020,6 +1020,60 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         }
 
         autoDiscoverTagTypesFromProjections(logger);
+        warnAboutInlineSideEffects(logger);
+    }
+
+    /// <summary>
+    ///     #6144: since 10.0, side effects run on inline projections by default, inside the <c>SaveChangesAsync()</c>
+    ///     that touches the projection. In 9.x a <c>RaiseSideEffects()</c> override on an Inline projection never ran,
+    ///     so an upgraded application can start publishing messages or appending events on commit without having
+    ///     changed a line. Said once per projection at startup, so that shows up in the application's own log.
+    /// </summary>
+    private void warnAboutInlineSideEffects(ILogger logger)
+    {
+        foreach (var name in InlineProjectionsThatRaiseSideEffects())
+        {
+            logger.LogWarning(
+                "Inline projection {Projection} overrides RaiseSideEffects(), so its side effects run inside every SaveChangesAsync() that touches it, in the same transaction, and any messages it publishes or events it appends go out with that commit. This is the Marten 10 default; in Marten 9 the override never ran for an Inline projection. Set opts.Events.EnableSideEffectsOnInlineProjections = false to keep the Marten 9 behavior",
+                name);
+        }
+    }
+
+    /// <summary>
+    ///     The names of the Inline projections whose side effects run on commit: none unless
+    ///     <see cref="EnableSideEffectsOnInlineProjections" /> is on, and then each one that overrides
+    ///     <c>RaiseSideEffects()</c> itself.
+    /// </summary>
+    internal IReadOnlyList<string> InlineProjectionsThatRaiseSideEffects()
+    {
+        if (!EnableSideEffectsOnInlineProjections) return [];
+
+        return Options.Projections.All
+            .OfType<ProjectionBase>()
+            .Where(x => x.Lifecycle == ProjectionLifecycle.Inline && overridesRaiseSideEffects(x.GetType()))
+            .Select(x => x.Name)
+            .ToList();
+    }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2070",
+        Justification = "Projection types are registered by the application and preserved per the AOT publishing guide. A trimmed RaiseSideEffects override only means the startup warning is not written.")]
+    private static bool overridesRaiseSideEffects(Type projectionType)
+    {
+        try
+        {
+            // An override declared by the application's own projection, not one inherited from JasperFx or Marten
+            return projectionType
+                .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                .Any(m => m.Name == "RaiseSideEffects"
+                          && m.DeclaringType != m.GetBaseDefinition().DeclaringType
+                          && m.DeclaringType!.Assembly != typeof(ProjectionBase).Assembly
+                          && m.DeclaringType.Assembly != typeof(EventGraph).Assembly);
+        }
+        catch (Exception)
+        {
+            // Only feeds a warning, so a reflection failure must never stop the store from building
+            return false;
+        }
     }
 
     private static readonly HashSet<Type> PrimitiveIdentityTypes =

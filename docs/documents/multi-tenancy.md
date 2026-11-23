@@ -436,10 +436,19 @@ storeOptions.Schema.For<Target>().SingleTenanted();
 
 When using conjoined multi tenancy it is often beneficial to have database indexes start with tenant_id. Even when a tenant is specified on the session and PostgreSQL can already restrict queries to the relevant table partition, this does not always fully isolate a single tenant. With hash partitioning, multiple tenants can end up in the same partition, so indexes that do not start with tenant_id may still scan entries belonging to other tenants. By consistently prefixing tenant_id on all indexes, either globally through policies or per document type, Marten allows PostgreSQL to efficiently filter within a partition as well, improving index selectivity and reducing unnecessary index scans in databases with many tenants.
 
-Since Marten 10 this is the default for every conjoined document: its computed indexes start with `tenant_id`, and a
-unique index scoped per tenant does not repeat `tenant_id` at the end. Single-tenanted documents are unaffected. In
-Marten 9 and earlier you opted in with the settings below; set `StartIndexesByTenantId = false` in a policy or call
-`opts.RestoreV9Defaults()` to go back.
+This is opt in. With it on, a conjoined document's computed indexes start with `tenant_id`, and a unique index scoped
+per tenant leads with `tenant_id` instead of ending with it. A unique index scoped `TenancyScope.Global` never gets
+`tenant_id`, so it stays unique across tenants.
+
+::: tip When to turn it on
+Turn it on for a large conjoined table that's queried tenant by tenant, especially with many tenants. What it costs:
+turning it on rebuilds every computed index on the table, which blocks writes while each one builds, so run that
+migration in a maintenance window. A query across tenants (`AnyTenant()`, or reporting reads without a tenant) can no
+longer seek on those indexes, because their first column is unconstrained. That's why it isn't the default
+([#6144](https://github.com/JasperFx/marten/issues/6144)).
+:::
+
+These are the settings:
 
 <!-- snippet: sample_tenancy-start_indexes_by_tenant_id -->
 <a id='snippet-sample_tenancy-start_indexes_by_tenant_id'></a>

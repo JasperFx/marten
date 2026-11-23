@@ -234,7 +234,7 @@ public class event_diagnostics_metadata_filter_tests
                     opts.DatabaseSchemaName = schema;
                     opts.Events.StreamIdentity = StreamIdentity.AsString;
 
-                    // Set both ways: event metadata is on by default since 10.0 (#5812)
+                    // Set both ways, so these facts hold whatever the default is (off since #6144)
                     opts.Events.MetadataConfig.CorrelationIdEnabled = enableCorr;
                     opts.Events.MetadataConfig.CausationIdEnabled = enableCaus;
                     opts.Events.MetadataConfig.UserNameEnabled = enableUser;
