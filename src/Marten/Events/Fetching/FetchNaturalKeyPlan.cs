@@ -185,7 +185,9 @@ internal abstract class FetchNaturalKeyPlan<TDoc, TNaturalKey, TId>: IAggregateF
             {
                 if (mapping.EventType.IsAssignableFrom(@event.Data.GetType()))
                 {
-                    current = owner.Unwrap(mapping.Extractor(@event));
+                    // jasperfx#1287 (#6153): a null from an inferred source leaves the key as it was
+                    var value = owner.Unwrap(mapping.Extractor(@event));
+                    if (value != null || mapping.RetiresKeyOnNull) current = value;
                 }
             }
         }
@@ -251,7 +253,7 @@ internal abstract class FetchNaturalKeyPlan<TDoc, TNaturalKey, TId>: IAggregateF
         if (isNullKey(id))
         {
             throw new ArgumentOutOfRangeException(nameof(id),
-                $"Cannot use a null natural key of type {typeof(TNaturalKey).FullNameInCode()} to fetch {typeof(TDoc).FullNameInCode()} for writing");
+                $"Cannot use a null natural key of type {typeof(TNaturalKey).FullNameInCode()} to fetch {typeof(TDoc).FullNameInCode()} for writing. A null key can't match a stream, so check for a missing key before fetching");
         }
     }
 

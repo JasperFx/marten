@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using JasperFx.Core.Reflection;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -64,7 +65,7 @@ internal partial class EventStore
         if (Nullable.GetUnderlyingType(typeof(TId)) is { } underlying)
         {
             throw new ArgumentException(
-                $"{typeof(T).Name} cannot be fetched by {typeof(TId).Name}. Fetch by {underlying.Name} instead, and drop the null ids before fetching.",
+                $"{typeof(T).FullNameInCode()} cannot be fetched by {typeof(TId).FullNameInCode()}. Fetch by {underlying.FullNameInCode()} instead, and drop the null ids before fetching.",
                 nameof(ids));
         }
 

@@ -23,7 +23,7 @@ namespace EventSourcingTests.Parking;
 
 /// <summary>
 ///     A Guid-identified ledger whose natural key is a primitive string, the shape a batch reaches by natural key
-///     through <c>IBatchEvents.FetchLatest&lt;T&gt;(string)</c> and <c>FetchForWriting&lt;T&gt;(string)</c>.
+///     through the untyped <c>IBatchEvents.FetchLatest&lt;T&gt;(string)</c> and <c>FetchForWriting&lt;T&gt;(string)</c>.
 /// </summary>
 public class CodedLedger
 {
@@ -53,9 +53,10 @@ public class CodedLedger
 ///     identity, and neither breaks the batch nor picks up another slice's key.
 /// </summary>
 /// <remarks>
-///     The batch reaches <c>FetchNaturalKeyPlan</c> only through its Guid and string overloads, and a natural key is an
-///     int, long or string (<c>NaturalKeyDefinition.IsValid()</c>). So the only batched natural-key path is a string
-///     key on a Guid-identified store: on a string-identified store the string overloads address the stream itself.
+///     This drives the batch's <c>string</c> overloads, which reach a natural key plan only for a bare string key on a
+///     Guid-identified store: on a string-identified store they address the stream itself. The typed batch forms,
+///     <c>IBatchEvents.FetchLatest&lt;T, TId&gt;</c> and its siblings (#6150), take every key shape and are covered by
+///     <c>natural_key_fetch_matrix</c>.
 /// </remarks>
 public class batched_natural_key_fetch_over_parked_slices: OneOffConfigurationsContext
 {

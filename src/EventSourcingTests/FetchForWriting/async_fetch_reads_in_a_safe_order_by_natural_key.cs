@@ -24,6 +24,9 @@ public readonly record struct RaceKey(string Value)
 /// <summary>The first event of every stream in these tests, carrying the stream's natural key.</summary>
 public record KeyedAEvent(RaceKey Key);
 
+/// <summary>Retires the stream's key. jasperfx#1287 (#6153): only an explicit source can do that.</summary>
+public record KeyedKeyRetired;
+
 public class KeyedSimpleAggregate
 {
     public Guid Id { get; set; }
@@ -42,6 +45,12 @@ public class KeyedSimpleAggregate
         Key = e.Key;
         ACount++;
     }
+
+    // A static source returning the key type is explicit, so its null retires the key
+    [NaturalKeySource]
+    public static RaceKey? KeyFor(KeyedKeyRetired e) => null;
+
+    public void Apply(KeyedKeyRetired e) => Key = default;
 
     public void Apply(BEvent _) => BCount++;
     public void Apply(CEvent _) => CCount++;
@@ -107,6 +116,12 @@ public class RaceKeyOwner
 
     [NaturalKeySource]
     public void Apply(KeyedAEvent e) => Key = e.Key;
+
+    // jasperfx#1287 (#6153): the explicit source that retires the key
+    [NaturalKeySource]
+    public static RaceKey? KeyFor(KeyedKeyRetired e) => null;
+
+    public void Apply(KeyedKeyRetired e) => Key = default;
 }
 
 public class MappedKeySimpleAggregate

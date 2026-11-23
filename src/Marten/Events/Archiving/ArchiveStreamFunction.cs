@@ -311,7 +311,7 @@ $function$;
         {
             // marten#5476: only rows still flagged are touched, so un-archiving a live stream, or one that does
             // not exist, writes nothing. The natural key lookup rows need nothing here: in this layout they
-            // are never moved or flagged by archiving, and FetchNaturalKeyPlan reads archival off mt_streams.
+            // are never moved or flagged by archiving, and NaturalKeyQueryBuilder reads archival off mt_streams.
             writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {_events.DatabaseSchemaName}.{UnArchiveName}({argList}) RETURNS VOID LANGUAGE plpgsql AS
 $function$

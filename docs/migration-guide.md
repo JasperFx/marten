@@ -125,9 +125,10 @@ can change.
 
 ### JasperFx 3.12 and 3.13: natural keys are checked at startup, and a failed composite rebuild throws <Badge type="warning" text="behavior change" />
 
-Marten 10.0.0-rc.1 is built on JasperFx 3.13.0. Between 3.10 and 3.13.0, these change what you see
+Marten 10.0 is built on JasperFx 3.14.0. Between 3.10 and 3.14.0, these change what you see
 ([3.12.1](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-12-1),
-[3.13.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-13-0)):
+[3.13.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-13-0)). JasperFx 3.14.0's change to null
+natural keys is described under [natural keys](#natural-keys-in-10-0-0):
 
 - **A natural key must be an `int`, `long` or `string`, or a strong-typed identifier wrapping one of those.** A
   `[NaturalKey]` of any other type, a `Guid` for example, used to be accepted and then fail on the first append. It now
@@ -143,8 +144,9 @@ Marten 10.0.0-rc.1 is built on JasperFx 3.13.0. Between 3.10 and 3.13.0, these c
 Fetching by a [natural key](/events/natural-keys) now behaves like fetching by stream id, and several natural key
 setups that used to fail silently are refused when the `DocumentStore` is built.
 
-**Refused at startup** with `InvalidProjectionException`. Most of these are also build errors, from the JasperFx
-analyzers `JFXEVT010` to `JFXEVT017`:
+**Refused at startup** with `InvalidProjectionException`. The first is also a build error, from the JasperFx
+analyzers `JFXEVT010` and `JFXEVT011`; the others are only found when the `DocumentStore` is built. See
+[startup checks](/events/natural-keys#startup-checks) for what to do about each:
 
 - two owned `[NaturalKey]` properties on one aggregate, or two natural keys of the same type. Map the extra keys to
   the aggregate that owns them with `[MappedNaturalKey<T>]`;
@@ -158,9 +160,11 @@ analyzers `JFXEVT010` to `JFXEVT017`:
 
 **Fetching changes:**
 
-- **A `[NaturalKeySource]` that returns null retires the stream's key.** The stream can no longer be found by its old
-  key, and another stream can claim it. It used to keep the old key. A stream whose first event carries no key is
-  unaffected. Check any `Apply` used as a key source that only sets the key on some events.
+- **An explicit key source that returns null retires the stream's key.** A `[NaturalKeySource]` static method that
+  returns the key type, or a `NaturalKeyFor()` registration, can now remove a key: the stream can no longer be found by
+  its old key, and another stream can claim it. In Marten 9 a null was ignored and the stream kept its key. A null from
+  a source Marten infers, a key read off the event or an `Apply` method, is still ignored, so an `Apply` that only sets
+  the key on some events keeps it ([natural keys](/events/natural-keys#null-and-default-keys), jasperfx#1287).
 - **The key type of a fetch is `TKey`, never `TKey?`.** `FetchForWriting`, `FetchForExclusiveWriting`, `FetchLatest`,
   `FetchManyForWriting` and their batch forms throw `ArgumentException` for a `Nullable<T>` type argument. `TKey?` is
   still fine on the aggregate's property and as a source's return type.
@@ -171,9 +175,20 @@ analyzers `JFXEVT010` to `JFXEVT017`:
 - **`FetchLatest` by key can return the session's own instance** when `UseIdentityMapForAggregates` is on, as
   `FetchLatest` by stream id does. A fetch by an `int` or `long` key of 0 always queries, since an aggregate whose
   key was never set also reads as 0.
+- **A batched fetch by key can throw the new `NaturalKeyMovedException`** when the key moves to another stream, or is
+  retired, while the batch reads it. Retry the batch. A fetch outside a batch redoes itself.
 
-**Recompile** anything that implements or mocks `IBatchEvents`, which has four new members for fetching by natural key
-in a batch query.
+**If you implement these interfaces yourself:**
+
+- `IBatchEvents` has four new members, `FetchForWriting<T, TId>(id)`, `FetchForWriting<T, TId>(id, expectedVersion)`,
+  `FetchForExclusiveWriting<T, TId>(id)` and `FetchLatest<T, TId>(id)`. Implement them, and recompile anything that
+  mocks `IBatchEvents`.
+- JasperFx's `IEventStoreOperations`, which Marten's `IEventStoreOperations` extends, has two new members,
+  `FetchForWriting<T, TId>(id, expectedVersion)` and `FetchManyForWriting<T, TId>(ids)`. Both have default
+  implementations, so an existing implementation still compiles and loads. The defaults are not what Marten does:
+  `FetchManyForWriting` fetches one id at a time, and `FetchForWriting(id, expectedVersion)` checks the version
+  after the fetch, so a stale version has already enlisted the stream in the session. A wrapper around Marten's event
+  store should pass both through.
 
 ### Async projections park a failing identity instead of skipping the event <Badge type="warning" text="behavior change" /> {#async-projections-park-a-failing-identity}
 

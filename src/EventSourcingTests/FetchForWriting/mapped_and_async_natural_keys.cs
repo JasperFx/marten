@@ -38,8 +38,50 @@ public class OrderSummary
 
 #endregion
 
+// #6153: a mapped key can name its source by the projection class that owns the key, not only by its aggregate type
+public class RegisteredOrderSummary
+{
+    public Guid Id { get; set; }
+
+    [MappedNaturalKey<RegisteredOrderProjection>]
+    public OrderNumber Number { get; set; } = null!;
+
+    public int Items { get; set; }
+
+    public static RegisteredOrderSummary Create(OrderCreated e) => new() { Number = e.OrderNumber };
+
+    public void Apply(OrderItemAdded e) => Items++;
+
+    public void Apply(OrderNumberChanged e) => Number = e.NewOrderNumber;
+}
+
 public class mapped_and_async_natural_keys: OneOffConfigurationsContext
 {
+    [Fact]
+    public async Task a_mapped_key_can_name_its_source_by_projection_class()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add<RegisteredOrderProjection>(ProjectionLifecycle.Inline);
+            opts.Projections.Snapshot<RegisteredOrderSummary>(SnapshotLifecycle.Inline);
+        });
+
+        var orderNumber = new OrderNumber($"BY-CLASS-{Guid.NewGuid():N}");
+        var streamId = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<RegisteredOrder>(streamId, new OrderCreated(orderNumber, "Alice"),
+                new OrderItemAdded("Widget", 9.99m));
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = theStore.LightweightSession();
+        var summary = await query.Events.FetchLatest<RegisteredOrderSummary, OrderNumber>(orderNumber);
+        summary.ShouldNotBeNull();
+        summary.Id.ShouldBe(streamId);
+        summary.Items.ShouldBe(1);
+    }
+
     [Fact]
     public async Task an_async_aggregate_that_owns_its_key_keeps_its_lookup_through_the_daemon_and_a_rebuild()
     {

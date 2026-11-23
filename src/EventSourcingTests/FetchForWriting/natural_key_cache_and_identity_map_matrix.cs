@@ -253,14 +253,17 @@ public class natural_key_cache_and_identity_map_matrix: OneOffConfigurationsCont
         var newKey = change == KeyChange.Renamed ? new RaceKey("K-NEW-" + streamId) : new RaceKey(null!);
         await using (var changing = theStore.LightweightSession())
         {
+            // jasperfx#1287 (#6153): a null key read off KeyedAEvent no longer retires the key, so retiring takes the
+            // explicit source on KeyedKeyRetired
+            object keyEvent = change == KeyChange.Retired ? new KeyedKeyRetired() : new KeyedAEvent(newKey);
             if (through == ChangedThrough.Fetch)
             {
                 var stream = await changing.Events.FetchForWriting<KeyedSimpleAggregate>(streamId);
-                stream.AppendOne(new KeyedAEvent(newKey));
+                stream.AppendOne(keyEvent);
             }
             else
             {
-                changing.Events.Append(streamId, new KeyedAEvent(newKey));
+                changing.Events.Append(streamId, keyEvent);
             }
 
             await changing.SaveChangesAsync();

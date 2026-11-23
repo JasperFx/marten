@@ -41,7 +41,7 @@ namespace Marten.Events.Operations;
 /// is re-asserting its own mapping (idempotent by design — every event carrying the key rewrites the
 /// row), or the stream currently holding it has been archived. That last one is read off
 /// <c>mt_streams</c> rather than the lookup row's own <c>is_archived</c>, for the same reason
-/// <c>FetchNaturalKeyPlan</c> joins the streams table: nothing on the write side copies the flag
+/// <c>NaturalKeyQueryBuilder</c> joins the streams table: nothing on the write side copies the flag
 /// across, so the lookup column is only maintained under <c>UseArchivedStreamPartitioning</c>. The
 /// ruling refuses a claim on a <em>live</em> key, so an archived stream's key is free to take.
 /// </para>

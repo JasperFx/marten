@@ -67,8 +67,10 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
                         {
                             queueClaim(operations, stream.Id, stream.Key, stream.TenantId, innerValue);
                         }
-                        else
+                        else if (mapping.RetiresKeyOnNull)
                         {
+                            // jasperfx#1287 (#6153): only an explicit source removes the key with a null. A null from
+                            // an inferred source, such as a conditional Apply, means the event carried no key
                             queueRetirementOfAllKeys(operations, stream.Id, stream.Key, stream.TenantId);
                         }
                     }
@@ -117,8 +119,9 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
                     {
                         queueUpsertSql(operations, @event.StreamId, @event.StreamKey, @event.TenantId, innerValue);
                     }
-                    else
+                    else if (mapping.RetiresKeyOnNull)
                     {
+                        // jasperfx#1287 (#6153): as in ApplyAsync, only an explicit source removes the key
                         queueRetirementOfAllKeys(operations, @event.StreamId, @event.StreamKey, @event.TenantId);
                     }
                 }
