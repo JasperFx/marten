@@ -46,23 +46,31 @@ Each tag type gets its own table (`mt_event_tag_student`, `mt_event_tag_course`,
 
 When you register a `SingleStreamProjection<TDoc, TId>` or `MultiStreamProjection<TDoc, TId>` that uses a strong-typed identifier as its `TId`, Marten will **automatically register that type as a tag type** with `ForAggregate()` pointing to `TDoc`. This means you don't need to call `RegisterTagType<TId>()` explicitly in most cases:
 
-```csharp
+<!-- snippet: sample_dcb_automatic_tag_type_registration -->
+<a id='snippet-sample_dcb_automatic_tag_type_registration'></a>
+```cs
 // The projection's TId (TicketId) is auto-registered as a tag type
 opts.Projections.Add<TicketSummaryProjection>(ProjectionLifecycle.Inline);
 
 // No need for: opts.Events.RegisterTagType<TicketId>().ForAggregate<TicketSummary>();
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_configuration_documentation_samples.cs#L17-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dcb_automatic_tag_type_registration' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Auto-discovery only applies to strong-typed identifiers (e.g., `record struct TicketId(Guid Value)`). Primitive types like `Guid`, `string`, `int`, `long`, and `short` are not auto-registered.
 
 If you explicitly register a tag type before auto-discovery runs, your explicit registration takes precedence. This lets you customize the table suffix when needed:
 
-```csharp
+<!-- snippet: sample_dcb_explicit_tag_type_registration_with_custom_suffix -->
+<a id='snippet-sample_dcb_explicit_tag_type_registration_with_custom_suffix'></a>
+```cs
 // Explicit registration with custom table suffix — auto-discovery won't overwrite this
 opts.Events.RegisterTagType<TicketId>("custom_ticket")
     .ForAggregate<TicketSummary>();
 opts.Projections.Add<TicketSummaryProjection>(ProjectionLifecycle.Inline);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_configuration_documentation_samples.cs#L29-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dcb_explicit_tag_type_registration_with_custom_suffix' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Every discovered tag type adds a table, with its foreign key and indexes, and a parameter on `mt_quick_append_events`, whether or not you ever write a tag. If you use strong-typed identifiers but not DCB, turn auto-discovery off:
 
@@ -81,11 +89,15 @@ and an AOT-analyzed application sees IL2026/IL3050 warnings where it calls them.
 applications, register the tag type with an explicit unwrapper instead. It is backed by
 `TagTypeRegistration.FromUnwrapper<TTag, TInner>()` in JasperFx.Events, and needs no reflection:
 
-```csharp
+<!-- snippet: sample_dcb_aot_safe_tag_type_registration -->
+<a id='snippet-sample_dcb_aot_safe_tag_type_registration'></a>
+```cs
 // Trim- and AOT-safe: the unwrapper says how to read the stored primitive out of the tag
 opts.Events.RegisterTagType<StudentId, Guid>(id => id.Value, "student")
     .ForAggregate<StudentCourseEnrollment>();
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_configuration_documentation_samples.cs#L41-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dcb_aot_safe_tag_type_registration' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The second type argument is the primitive the tag table stores, typically `Guid`, `string`, `int`
 or `long`. The suffix is optional and defaults to the tag type's own name, exactly as it does for
@@ -137,7 +149,7 @@ public record CourseId(Guid Value);
 
 Supported inner value types: `Guid`, `string`, `int`, `long`, `short`.
 
-Tags work with both **Rich** and **Quick** append modes (the default in Marten 9 is `QuickWithServerTimestamps`). In Rich mode, tags are inserted using pre-assigned sequence numbers. In Quick mode, tags are inserted using a subquery that looks up the sequence from the event's id.
+Tags work with both **Rich** and **Quick** append modes (the default is `QuickWithServerTimestamps`). In Rich mode, tags are inserted using pre-assigned sequence numbers. In Quick mode, tags are inserted using a subquery that looks up the sequence from the event's id.
 
 ## Tagging Events
 
@@ -156,12 +168,14 @@ await theSession.SaveChangesAsync();
 
 Events can have multiple tags of different types. Tags are persisted to their respective tag tables in the same transaction as the event.
 
-### Tag Rules <Badge type="tip" text="9.30" />
+### Tag Rules <Badge type="tip" text="9.30" /> {#tag-rules}
 
 Tagging every event at its call site is a rule nothing enforces, and a forgotten tag is not an error to a
 tag query -- it is simply absent from the answer. A tag rule states the rule once, and Marten applies it
 wherever the event is built:
 
+<!-- snippet: sample_dcb_tag_rules -->
+<a id='snippet-sample_dcb_tag_rules'></a>
 ```cs
 opts.Events.RegisterTagType<InvoiceId>("invoice");
 opts.Events.RegisterTagType<LineId>("line");
@@ -170,6 +184,8 @@ opts.Events.RegisterTagType<LineId>("line");
 opts.Events.TagWith<IInvoiceEvent>(e => new InvoiceId(e.Invoice));
 opts.Events.TagWith<LineInvoiced>(e => new LineId(e.Line));
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_configuration_documentation_samples.cs#L52-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dcb_tag_rules' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 This closes the two gaps that [tag inference](#tag-routing) leaves open. Inference matches a property by
 its *type*, so an event that names its identifiers as `Guid` or `string` can never be inferred, and it only
@@ -190,6 +206,8 @@ query can ever match.
 When an application already owns a single place that knows what an event is about, hand that over whole
 instead of restating it as one registration per tag type:
 
+<!-- snippet: sample_dcb_tag_events_by -->
+<a id='snippet-sample_dcb_tag_events_by'></a>
 ```cs
 opts.Events.TagEventsBy(data => data switch
 {
@@ -198,6 +216,8 @@ opts.Events.TagEventsBy(data => data switch
     _ => Array.Empty<object>()
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_configuration_documentation_samples.cs#L66-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dcb_tag_events_by' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Return an empty sequence to leave an event untagged. The rule receives the event body: the stream is
 assigned after the event is built, so it is not available here.
@@ -390,7 +410,7 @@ catch (DcbConcurrencyException ex)
 The consistency check only detects events appended **after the read that carry a tag value the query reads**. Events appended to unrelated tags or streams never cause a violation, and neither does another boundary's save that appends nothing carrying one of those tag values. Since Marten 10 the check also honours the event types a condition names with `AndEventsOfType`: an event of a type the query does not select does not conflict. See [scoping conflicts by event type](#scoping-conflicts-by-event-type).
 :::
 
-### How the boundary check serializes <Badge type="tip" text="9.4" />
+### How the boundary check serializes <Badge type="tip" text="9.4" /> {#how-the-boundary-check-serializes}
 
 ::: warning Upgrading from 9.3 or earlier
 Marten 9.4 added a new schema object — `mt_dcb_tag_version` — to fix [#4591](https://github.com/JasperFx/marten/issues/4591). Deployments with `AutoCreate.None` must run `db-patch` / `db-apply` before deploying 9.4. See [Migration Guide → 9.4 schema migration](/migration-guide#required-schema-migration-dcb-tag-version-side-table).
@@ -486,7 +506,7 @@ var boundary = await session.Events.FetchForWritingByTags<LibraryLoanState>(quer
 
 A condition without event types conflicts with any event carrying its tag value under every setting.
 
-`TagValueAndEventType` checks a version per (tag value, event type), which is only maintained by nodes running `TagValueRecordingEventTypes` or `TagValueAndEventType`. No schema change is involved — the extra versions are rows in the same `mt_dcb_tag_version` table — but **switching a running system takes two deployments**, and that includes [upgrading from Marten 9](/migration-guide#dcb-conflicts-are-scoped-by-event-type-by-default-):
+`TagValueAndEventType` checks a version per (tag value, event type), which is only maintained by nodes running `TagValueRecordingEventTypes` or `TagValueAndEventType`. No schema change is involved — the extra versions are rows in the same `mt_dcb_tag_version` table — but **switching a running system takes two deployments**, and that includes [upgrading from Marten 9](/migration-guide#dcb-conflicts-are-scoped-by-event-type-by-default):
 
 1. Deploy `TagValueRecordingEventTypes` to every node. Conflicts are still detected per tag value, and every append now also maintains the per-type versions.
 2. Once no node is left on `TagValue`, deploy `TagValueAndEventType`.
@@ -634,12 +654,16 @@ write outage rather than a migration.
 
 Marten can build it for you without blocking writes (9.30+):
 
-```csharp
+<!-- snippet: sample_dcb_build_hstore_index_concurrently -->
+<a id='snippet-sample_dcb_build_hstore_index_concurrently'></a>
+```cs
 opts.Events.DcbStorageMode = DcbStorageMode.HStore;
 
 // Non-blocking, whichever shape mt_events has
 opts.Events.BuildHStoreTagIndexConcurrently = true;
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_configuration_documentation_samples.cs#L80-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dcb_build_hstore_index_concurrently' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 On an ordinary event table that is `CREATE INDEX CONCURRENTLY`. Under `UseTenantPartitionedEvents`,
 `mt_events` is a partitioned table and PostgreSQL refuses `CONCURRENTLY` on a partitioned parent
@@ -657,12 +681,16 @@ If you would rather own the index yourself, hand it to the operator instead. Ign
 leaves it out of the schema diff in **both** directions — it will neither create it nor treat one you
 built yourself as drift:
 
-```csharp
+<!-- snippet: sample_dcb_ignore_the_hstore_index -->
+<a id='snippet-sample_dcb_ignore_the_hstore_index'></a>
+```cs
 opts.Events.DcbStorageMode = DcbStorageMode.HStore;
 
 // Marten adds the tags column, but leaves this index alone
 opts.Events.IgnoreIndex(EventGraph.HStoreTagIndexName);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_configuration_documentation_samples.cs#L92-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dcb_ignore_the_hstore_index' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Apply the schema as usual to get the column, then build the index out of band. On an unpartitioned
 event table:
@@ -717,10 +745,12 @@ Two bugs made one or the other mode far slower on a large store. Benchmarks on a
 
 ### Consistency Check <Badge type="tip" text="9.4" />
 
-At `SaveChangesAsync` time, Marten emits one statement checking `version = $captured` per distinct `(tag_table, tag_value)` row the boundary read against the `mt_dcb_tag_version` side table, together with the bumps of the tag values the save's own events carry, all in one deterministic sort order. The row-level write lock plus the version predicate is the serialization point: concurrent saves over the same row take turns, and a save fails with `DcbConcurrencyException` when an event carrying one of its tag values was committed after its read. This works at PostgreSQL's default `READ COMMITTED` isolation — no advisory locks, no `SERIALIZABLE` transactions. See [how the boundary check serializes](#how-the-boundary-check-serializes-) for the detail.
+At `SaveChangesAsync` time, Marten emits one statement checking `version = $captured` per distinct `(tag_table, tag_value)` row the boundary read against the `mt_dcb_tag_version` side table, together with the bumps of the tag values the save's own events carry, all in one deterministic sort order. The row-level write lock plus the version predicate is the serialization point: concurrent saves over the same row take turns, and a save fails with `DcbConcurrencyException` when an event carrying one of its tag values was committed after its read. This works at PostgreSQL's default `READ COMMITTED` isolation — no advisory locks, no `SERIALIZABLE` transactions. See [how the boundary check serializes](#how-the-boundary-check-serializes) for the detail.
 
 The check shape no longer depends on `DcbStorageMode`. Both `TagTables` and `HStore` share the same side-table mechanism for the consistency check; the storage mode only affects how tags are physically read at fetch time and written at append time.
 
 ### Tag Routing
 
 Events appended via `IEventBoundary.AppendOne()` are automatically routed to streams based on their tags. Each tag value becomes the stream identity, so events with the same tag value end up in the same stream.
+
+An event appended to a boundary with no tags of its own gets them by inference. Marten looks for public properties whose type is exactly a registered tag type, and tags the event with each value it finds. Inference only runs on the `IEventBoundary` path. An event with no tags that infers none is refused, because a boundary has no stream to put it in. For ordinary appends, use `WithTag` or a [tag rule](#tag-rules).

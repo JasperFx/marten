@@ -44,7 +44,7 @@ public async Task SampleArchive(IDocumentSession session, string streamId)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L36-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_archive_stream_usage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-As in all cases with an `IDocumentSession`, you need to call `SaveChanges()` to commit the
+As in all cases with an `IDocumentSession`, you need to call `SaveChangesAsync()` to commit the
 unit of work.
 
 ::: tip
@@ -106,7 +106,7 @@ identity collision (`ExistingStreamIdCollisionException`), not an archived-strea
 `UseArchivedStreamPartitioning` the archived row lives in a different partition, and it is
 `EnableStrictStreamIdentityEnforcement` (on along with partitioning unless you turn it off) that still refuses the
 reuse; turn it off and the reuse is silently allowed. See
-[Strict Stream Identity After Archive](/events/archiving.html#strict-stream-identity-after-archive) below.
+[Strict Stream Identity After Archive](#strict-stream-identity-after-archive) below.
 
 ## Un-archiving a Stream
 
@@ -158,14 +158,14 @@ Some details worth knowing:
   natural key lookups find the stream again. If another stream has claimed the natural key while this one was
   archived, the other stream keeps it.
 * **A reused identity is refused.** Under `UseArchivedStreamPartitioning` without
-  [strict stream identity](/events/archiving.html#strict-stream-identity-after-archive), a new stream can be started with an archived
+  [strict stream identity](#strict-stream-identity-after-archive), a new stream can be started with an archived
   stream's id. Two live streams cannot share an id, so un-archiving the old stream then fails on
   `SaveChangesAsync()` with an `InvalidStreamOperationException`, and nothing is changed. Archive or delete the new
   stream first.
 * **Projections are not rewound.** `ArchiveStream()` appends no event, so projections never see the archive or the
   un-archive. An inline or async snapshot stays as it was and picks up new events as usual. The restored events keep
   their sequence numbers, which the async daemon has already passed, so they are not processed a second time. If the
-  stream was archived by an [`Archived` event](/events/archiving.html#archived-event), that event is still in the stream after un-archiving,
+  stream was archived by an [`Archived` event](#archived-event), that event is still in the stream after un-archiving,
   and any document your projection deleted or changed when it handled that event stays as it is. Rebuild the
   projection if it should reflect the reopened stream.
 
@@ -214,7 +214,7 @@ and will probably require system downtime. Turning it off again rebuilds the sam
 ### What it costs
 
 Partitioning is not free. Every write to `mt_events` and `mt_streams` is routed to a partition, the primary keys
-include `is_archived`, and [strict stream identity](/events/archiving.html#strict-stream-identity-after-archive), which comes on with
+include `is_archived`, and [strict stream identity](#strict-stream-identity-after-archive), which comes on with
 partitioning, adds one more insert for every new stream.
 
 These numbers come from the CritterStackScalability RC performance rig: an Apple M5 Max running PostgreSQL, the same
@@ -261,6 +261,8 @@ identity reuse than the non-partitioned mode.
 The `EnableStrictStreamIdentityEnforcement` flag gives you the strict behavior under both modes. This is what you get
 when you turn partitioning on, written out:
 
+<!-- snippet: sample_archiving_strict_stream_identity_with_partitioning -->
+<a id='snippet-sample_archiving_strict_stream_identity_with_partitioning'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
@@ -273,6 +275,8 @@ builder.Services.AddMarten(opts =>
     opts.Events.EnableStrictStreamIdentityEnforcement = true;
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Archiving/archiving_documentation_samples.cs#L13-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_archiving_strict_stream_identity_with_partitioning' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Under the hood Marten creates a sibling, **non-partitioned**
 `mt_streams_identity` table whose primary key is just the stream identity
@@ -292,7 +296,7 @@ practical reason for it is exactly the combination above. If you turn
 partitioning off, the `mt_streams` primary key already enforces this and the
 flag is unnecessary.
 
-## Archived Event <Badge type="tip" text="7.34" />
+## Archived Event <Badge type="tip" text="7.34" /> {#archived-event}
 
 ::: tip
 The `Archived` type moved into the shared JasperFx.Events library for Marten 8.0.
@@ -311,7 +315,7 @@ public record Archived(string Reason);
 ```
 
 When this event is appended to an event stream *and* that event is processed through any type of single stream projection
-for that event stream (snapshot or what we used to call a "self-aggregate", `SingleStreamProjection`, or `CustomProjection` with the `AggregateByStream` option),
+for that event stream (a snapshot, a self-aggregate or a `SingleStreamProjection`),
 Marten will automatically mark that entire event stream as archived as part of processing the projection. This applies for
 both `Inline` and `Async` execution of projections. 
 
@@ -499,7 +503,7 @@ What `TombstoneStream()` does, compared with `ArchiveStream()`:
 | | `ArchiveStream()` | `TombstoneStream()` |
 | --- | --- | --- |
 | Stream row in `mt_streams` | kept, marked archived (or moved to the archived partition) | deleted |
-| Event rows in `mt_events` | kept, marked archived | deleted |
+| Event rows in `mt_events` | kept, marked archived (or moved to the archived partition) | deleted |
 | DCB tag rows (`mt_event_tag_*`) | kept | deleted |
 | DCB tag versions (`mt_dcb_tag_version`) | kept | deleted when no other stream carries the tag |
 | Can be undone | yes, with `UnArchiveStream()` | no |

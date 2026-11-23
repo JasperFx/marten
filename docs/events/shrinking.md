@@ -8,9 +8,6 @@ Left alone, `mt_events` only grows. Marten has two ways to keep it in check, and
   holding a snapshot of one aggregate type in their place. That is lossy by design. The history is gone unless you copied
   it somewhere else with an archiver.
 
-A third option is planned for Marten 10.1: moving the older part of a stream into storage your application owns, where
-Marten can still read it.
-
 ## Side by Side
 
 | | `ArchiveStream()` | `CompactStreamAsync<T>()` |

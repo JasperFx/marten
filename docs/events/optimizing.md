@@ -1,11 +1,8 @@
 # Optimizing for Performance and Scalability <Badge type="tip" text="7.25" />
 
 ::: tip
-The asynchronous projection and subscription support can in some cases suffer some event "skipping" when transactions
-that are appending transactions become slower than the `StoreOptions.Projections.StaleSequenceThreshold` (the default is only 3 seconds).
-
-From initial testing, the `Quick` append mode seems to stop this problem altogether. This only seems to be an issue with 
-very large data loads.
+For how the async daemon handles gaps in the event sequence, see
+[Sequence Gaps and the High Water Mark](/events/projections/async-daemon#sequence-gaps-and-the-high-water-mark).
 :::
 
 Marten has several options to potentially increase the performance and scalability of a system that uses
@@ -30,23 +27,12 @@ builder.Services.AddMarten(opts =>
     // hot/cold storage on archived events
     opts.Events.UseArchivedStreamPartitioning = true;
 
-    // Use the *much* faster workflow for appending events
-    // at the cost of *some* loss of metadata usage for
-    // inline projections
-    opts.Events.AppendMode = EventAppendMode.Quick;
-
-    // Little more involved, but this can reduce the number
-    // of database queries necessary to process projections
-    // during CQRS command handling with certain workflows
-    opts.Events.UseIdentityMapForAggregates = true;
-
     // Opts into a mode where Marten is able to rebuild single
     // stream projections faster by building one stream at a time
-    // Does require new table migrations for Marten 7 users though
     opts.Events.UseOptimizedProjectionRebuilds = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L32-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L32-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The archived stream option is off by default. It is further described, along with what it costs, in the section on
@@ -60,6 +46,9 @@ This partitions `mt_events` / `mt_streams` by `tenant_id`, gives each tenant its
 per-tenant projection rebuilds — removing the single shared event store as a scalability bottleneck across tenants.
 :::
 
+Two more optimizations are on by default since Marten 9.0, so you don't need to set them: the `QuickWithServerTimestamps`
+append mode and `UseIdentityMapForAggregates`.
+
 See the ["Rich" vs "Quick" Appends](/events/appending.html#rich-vs-quick-appends) section for more information about the
 applicability and drawbacks of the "Quick" event appending.
 
@@ -70,7 +59,7 @@ Lastly, check out [Optimized Projection Rebuilds](/events/projections/rebuilding
 
 ## Caching for Asynchronous Projections
 
-You may be able to wring out more throughput for aggregated projections (`SingleStreamProjection`, `MultiStreamProjection`, `CustomProjection`)
+You may be able to wring out more throughput for aggregated projections (`SingleStreamProjection`, `MultiStreamProjection`)
 by opting into 2nd level caching of the aggregated projected documents during asynchronous projection building. You can
 do that by setting a greater than zero value for `CacheLimitPerTenant` directly inside of the aforementioned projection types
 like so:
@@ -162,12 +151,16 @@ Think of it as an identity map for aggregates with a lifetime longer than a sess
 
 It is off for every aggregate type, and is enabled per type:
 
-```csharp
+<!-- snippet: sample_optimizing_cache_aggregates_for_writing -->
+<a id='snippet-sample_optimizing_cache_aggregates_for_writing'></a>
+```cs
 opts.Projections.Snapshot<Order>(SnapshotLifecycle.Async);
 
 // Keep up to 1000 recently fetched Order snapshots
 opts.Events.CacheAggregatesForWriting<Order>(sizeLimit: 1000);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/optimizing_documentation_samples.cs#L54-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_optimizing_cache_aggregates_for_writing' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Per type rather than store-wide because the win is proportional to how often *one* stream is fetched for
 writing. It is real on a hot aggregate under high message volume, and only overhead on an aggregate
@@ -208,10 +201,14 @@ fetch reloads from the database.
 
 An aggregate with no stored snapshot, built Live on every fetch, can be enrolled the same way:
 
-```csharp
+<!-- snippet: sample_optimizing_cache_live_aggregates_for_writing -->
+<a id='snippet-sample_optimizing_cache_live_aggregates_for_writing'></a>
+```cs
 // No Snapshot<Order>() registration: Order is built Live
 opts.Events.CacheAggregatesForWriting<Order>();
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/optimizing_documentation_samples.cs#L66-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_optimizing_cache_live_aggregates_for_writing' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 A hit reads the stream version and only the events after the cached version, and folds them onto the cached
 aggregate, instead of reading and folding the whole stream. That is the case of a chain of commands over one
@@ -263,10 +260,14 @@ replayed — and it does not measure the load.
 The default is a bounded, least-recently-used, in-process cache. Substitute any implementation of the
 three-member `JasperFx.Events.Fetching.IAggregateWriteCache`:
 
-```csharp
+<!-- snippet: sample_optimizing_custom_aggregate_write_cache -->
+<a id='snippet-sample_optimizing_custom_aggregate_write_cache'></a>
+```cs
 opts.Events.AggregateWriteCaching.Cache = new MyAggregateWriteCache();
 opts.Events.CacheAggregatesForWriting<Order>();
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/optimizing_documentation_samples.cs#L76-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_optimizing_custom_aggregate_write_cache' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 One requirement an implementation owes callers, because it is a correctness property rather than a
 performance detail: `TryTake` must **remove** the entry in the same atomic step it hands it out.
@@ -341,7 +342,7 @@ for better performance.
 ```
 
 If you see these messages in your logs, enable the event type index and the warnings
-will stop — the index eliminates the need for the fallback strategies entirely.
+will stop suggesting it. Timeouts become much rarer.
 
 ### Tuning Batch Size
 
@@ -349,12 +350,16 @@ The default batch size for the async daemon is 500 events per fetch. If you are
 experiencing timeouts during projection rebuilds **and** cannot add the event type index,
 you can reduce the batch size as a workaround:
 
+<!-- snippet: sample_optimizing_smaller_batch_size -->
+<a id='snippet-sample_optimizing_smaller_batch_size'></a>
 ```cs
 opts.Projections.Snapshot<MyAggregate>(SnapshotLifecycle.Async, asyncOptions =>
 {
     asyncOptions.BatchSize = 100;
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/optimizing_documentation_samples.cs#L86-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_optimizing_smaller_batch_size' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 A smaller batch size means smaller sequence ranges per query, reducing the chance of
 scanning through large stretches of non-matching events. The trade-off is more round
