@@ -280,6 +280,16 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
+    // A projection session never commits through SaveChangesAsync(), so there is nothing to check a pin against
+    void ISessionWorkTracker.PinVersionForCommit(StreamAction stream, long version)
+    {
+    }
+
+    void ISessionWorkTracker.AssertVersionsPinnedForCommitAreUnchanged()
+    {
+        throw new NotSupportedException();
+    }
+
     public void EjectAll()
     {
         throw new NotSupportedException();

@@ -28,6 +28,16 @@ internal interface ISessionWorkTracker: IUnitOfWork, IChangeSet
     void EjectAll();
 
     /// <summary>
+    ///     Record that ProjectLatestForCommit() prepared the stream's pending events from this version
+    /// </summary>
+    void PinVersionForCommit(StreamAction stream, long version);
+
+    /// <summary>
+    ///     Throw if a stream still in this unit of work no longer has the version it was pinned to
+    /// </summary>
+    void AssertVersionsPinnedForCommitAreUnchanged();
+
+    /// <summary>
     /// Remove all outstanding operations for the designated document
     /// </summary>
     /// <param name="id"></param>

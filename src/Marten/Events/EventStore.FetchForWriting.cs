@@ -229,6 +229,101 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return plan.ProjectLatest(_session, id, cancellation);
     }
 
+    public async ValueTask<T?> ProjectLatestForCommit<T>(Guid id, CancellationToken cancellation = default) where T : class
+    {
+        var plan = FindFetchPlan<T, Guid>();
+        if (_session.WorkTracker.TryFindStream(id, _store.Events.TenantToMatch(_session), out var stream))
+        {
+            prepareEventsAsTheCommitWill(stream);
+        }
+
+        return await plan.ProjectLatest(_session, id, cancellation).ConfigureAwait(false);
+    }
+
+    public async ValueTask<T?> ProjectLatestForCommit<T>(string id, CancellationToken cancellation = default) where T : class
+    {
+        if (IsNaturalKeyIdentity<T, string>(((IMartenSession)_session).Options))
+        {
+            throw new InvalidOperationException(
+                $"ProjectLatestForCommit() takes the stream's id, and '{id}' is the natural key of {typeof(T).FullNameInCode()}, " +
+                "which cannot be resolved to the stream's pending events before the session commits. Pass the stream's " +
+                "id instead, such as the Id of the stream FetchForWriting() returned.");
+        }
+
+        var plan = FindFetchPlan<T, string>();
+        if (_session.WorkTracker.TryFindStream(id, _store.Events.TenantToMatch(_session), out var stream))
+        {
+            prepareEventsAsTheCommitWill(stream);
+        }
+
+        return await plan.ProjectLatest(_session, id, cancellation).ConfigureAwait(false);
+    }
+
+    private static readonly long _postgresEpochTicks = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc).Ticks;
+
+    private void prepareEventsAsTheCommitWill(StreamAction stream)
+    {
+        if (stream.Events.Count == 0) return;
+
+        var events = _store.Events;
+        if (events.AppendMode == EventAppendMode.Quick)
+        {
+            throw new InvalidOperationException(
+                $"ProjectLatestForCommit() cannot be used with {nameof(EventAppendMode)}.{nameof(EventAppendMode.Quick)}, " +
+                "where the database assigns each event's timestamp when the session commits. Use " +
+                $"{nameof(EventAppendMode)}.{nameof(EventAppendMode.QuickWithServerTimestamps)} or " +
+                $"{nameof(EventAppendMode)}.{nameof(EventAppendMode.Rich)}, or ProjectLatest() if the event metadata is not needed.");
+        }
+
+        long currentVersion;
+        if (stream.ActionType == StreamActionType.Start)
+        {
+            currentVersion = 0;
+        }
+        else if (stream.ExpectedVersionOnServer is { } expectedVersion)
+        {
+            currentVersion = expectedVersion;
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"ProjectLatestForCommit() cannot know the versions of the events pending for stream '{(object?)stream.Key ?? stream.Id}' " +
+                "until the session commits. Use FetchForWriting(), StartStream(), or Append() with an expected version.");
+        }
+
+        // The commit prepares a ForTenant() session's events against the session SaveChangesAsync() runs on, and
+        // its own PrepareEvents() keeps the versions, timestamps and metadata this one assigns
+        var committing = _session;
+        while (committing is NestedTenantSession nested)
+        {
+            committing = (DocumentSessionBase)nested.Parent;
+        }
+
+        stream.TenantId ??= committing.TenantId;
+
+        // GlobalEventAppenderDecorator moves a global aggregate's stream to the default tenant before the appender
+        // prepares it. Doing that here would also move the session's own lookup of the stream, so only the
+        // metadata context it leads to is used
+        var commitTenantId = events.EventAppender is GlobalEventAppenderDecorator global && global.Matches(stream)
+            ? StorageConstants.DefaultTenantId
+            : stream.TenantId;
+
+        stream.PrepareEvents(currentVersion, events, new Queue<long>(),
+            TenantPropagation.MetadataContextFor(committing, stream, commitTenantId));
+
+        committing.WorkTracker.PinVersionForCommit(stream, currentVersion);
+
+        foreach (var @event in stream.Events)
+        {
+            // Npgsql writes this as infinity and reads it back unchanged
+            if (@event.Timestamp == DateTimeOffset.MaxValue) continue;
+
+            // Npgsql writes a timestamptz as whole microseconds since 2000-01-01 by integer division, so the stored
+            // value is truncated toward 2000, on either side of it
+            @event.Timestamp = @event.Timestamp.AddTicks(-((@event.Timestamp.UtcTicks - _postgresEpochTicks) % 10));
+        }
+    }
+
     public Task<bool> StreamLatestJson<T>(Guid id, Stream destination, CancellationToken cancellation = default) where T : class
     {
         var plan = FindFetchPlan<T, Guid>();
@@ -444,7 +539,7 @@ public interface IAggregateFetchPlan<TDoc, in TId> where TDoc : notnull
 
     /// <summary>
     ///     Fetch the projected aggregate including any uncommitted events in the session.
-    ///     For inline projections, the updated document is also stored in the session.
+    ///     Nothing is stored in the session.
     /// </summary>
     ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation);
 

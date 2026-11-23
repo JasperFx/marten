@@ -101,12 +101,6 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 .ConfigureAwait(false);
         }
 
-        // Store the updated document so it persists when the session commits
-        if (snapshot != null)
-        {
-            session.Store(snapshot);
-        }
-
         return snapshot;
     }
 

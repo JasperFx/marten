@@ -7,6 +7,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten.Events;
+using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Services;
 using Marten.Storage;
@@ -27,6 +28,12 @@ internal class UnitOfWork: ISessionWorkTracker
     ///     costs at most the walk this replaces and a document can never be missing from it.
     /// </summary>
     private HashSet<object?>? _queuedDocuments;
+
+    /// <summary>
+    ///     The version each stream's pending events were prepared from by ProjectLatestForCommit(), which the commit
+    ///     must still prepare them from
+    /// </summary>
+    private readonly Dictionary<StreamAction, long> _versionsPinnedForCommit = new();
 
     public UnitOfWork(IMartenSession parent)
     {
@@ -53,6 +60,33 @@ internal class UnitOfWork: ISessionWorkTracker
         _eventOperations.Clear();
         _queuedDocuments?.Clear();
         Streams.Clear();
+        _versionsPinnedForCommit.Clear();
+    }
+
+    public void PinVersionForCommit(StreamAction stream, long version)
+    {
+        _versionsPinnedForCommit[stream] = version;
+    }
+
+    public void AssertVersionsPinnedForCommitAreUnchanged()
+    {
+        if (_versionsPinnedForCommit.Count == 0) return;
+
+        foreach (var (stream, pinned) in _versionsPinnedForCommit)
+        {
+            // An ejected stream is no longer part of this commit
+            if (!Streams.Contains(stream)) continue;
+
+            var current = stream.ActionType == StreamActionType.Start ? 0 : stream.ExpectedVersionOnServer;
+            if (current != pinned)
+            {
+                throw new InvalidStreamOperationException(
+                    $"The expected version of stream '{(object?)stream.Key ?? stream.Id}' changed from {pinned} to " +
+                    $"{current?.ToString() ?? "none"} after ProjectLatestForCommit(), by fetching it for writing again or " +
+                    "appending with a new expected version, so the aggregate it returned no longer matches this commit. " +
+                    "Call ProjectLatestForCommit() again after the last change to the stream.");
+            }
+        }
     }
 
     public void Add(Weasel.Storage.IStorageOperation operation)
@@ -265,6 +299,7 @@ internal class UnitOfWork: ISessionWorkTracker
         _eventOperations.Clear();
         _queuedDocuments?.Clear();
         Streams.Clear();
+        _versionsPinnedForCommit.Clear();
     }
 
     public void PurgeOperations<T, TId>(TId id) where T : notnull where TId : notnull

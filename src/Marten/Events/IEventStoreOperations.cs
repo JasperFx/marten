@@ -23,6 +23,8 @@ namespace Marten.Events;
 /// <list type="bullet">
 ///   <item><c>StreamLatestJson&lt;T&gt;</c> — Marten-specific JSON-passthrough
 ///   optimization that streams raw aggregate JSON to a destination stream.</item>
+///   <item><c>ProjectLatestForCommit&lt;T&gt;</c> — assigns pending events the metadata Marten's own commit
+///   assigns, so it depends on how that commit prepares them.</item>
 /// </list>
 /// <para>
 /// <c>UnArchiveStream(Guid)</c> / <c>UnArchiveStream(string)</c> are inherited from
@@ -57,6 +59,26 @@ public interface IEventStoreOperations : JasperFx.Events.IEventStoreOperations, 
     /// the async projection is caught up. Returns true if found, false if not found.
     /// </summary>
     Task<bool> StreamLatestJson<T>(string id, Stream destination, CancellationToken cancellation = default) where T : class;
+
+    /// <summary>
+    ///     Project the aggregate T for the stream, including the events pending in this session, exactly as
+    ///     <c>SaveChangesAsync()</c> will write it: the pending events are given now the versions, timestamps,
+    ///     user name, correlation id and causation id that the commit then keeps. Nothing is stored.
+    ///     Behaves as <c>ProjectLatest</c> when the stream has no pending events.
+    /// </summary>
+    /// <remarks>
+    ///     Throws <see cref="InvalidOperationException"/> under <see cref="EventAppendMode.Quick"/>, and when the
+    ///     stream's version is not known before commit: start it with <c>StartStream</c>, fetch it with
+    ///     <c>FetchForWriting</c>, or append with an expected version. Takes the stream's id, and throws
+    ///     <see cref="InvalidOperationException"/> for an aggregate's natural key. Under
+    ///     <see cref="EventAppendMode.Rich"/> it can also throw the version conflict the commit would, after assigning
+    ///     the pending events their versions.
+    ///     The event sequence is still assigned at commit, and events appended after the call are not covered by it.
+    /// </remarks>
+    ValueTask<T?> ProjectLatestForCommit<T>(Guid id, CancellationToken cancellation = default) where T : class;
+
+    /// <inheritdoc cref="ProjectLatestForCommit{T}(Guid, CancellationToken)"/>
+    ValueTask<T?> ProjectLatestForCommit<T>(string id, CancellationToken cancellation = default) where T : class;
 
     /// <inheritdoc cref="IQueryEventStore.EventsExistAsync"/>
     new Task<bool> EventsExistAsync(EventTagQuery query, CancellationToken cancellation = default);

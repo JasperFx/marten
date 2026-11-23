@@ -44,7 +44,17 @@ internal static class TenantPropagation
     /// </summary>
     internal static IMetadataContext MetadataContextFor(IMetadataContext session, StreamAction stream)
     {
-        if (stream.TenantId.IsEmpty() || stream.TenantId == session.TenantId)
+        return MetadataContextFor(session, stream, stream.TenantId);
+    }
+
+    /// <summary>
+    /// As <see cref="MetadataContextFor(IMetadataContext, StreamAction)"/>, for a stream that will commit under
+    /// <paramref name="commitTenantId"/> rather than the tenant it holds now.
+    /// </summary>
+    internal static IMetadataContext MetadataContextFor(IMetadataContext session, StreamAction stream,
+        string? commitTenantId)
+    {
+        if (commitTenantId.IsEmpty() || commitTenantId == session.TenantId)
         {
             return session;
         }
@@ -63,21 +73,22 @@ internal static class TenantPropagation
         // doesn't clobber the propagated value).
         foreach (var @event in stream.Events)
         {
-            if (!@event.TenantId.IsEmpty() && @event.TenantId != stream.TenantId)
+            if (!@event.TenantId.IsEmpty() && @event.TenantId != commitTenantId)
             {
                 return session;
             }
         }
 
-        return new StreamTenantMetadataContext(session, stream.TenantId);
+        return new StreamTenantMetadataContext(session, commitTenantId);
     }
 }
 
 /// <summary>
 /// <see cref="IMetadataContext"/> wrapper that reports a caller-supplied
 /// <c>TenantId</c> while delegating every other member to the underlying
-/// session. Used by <see cref="TenantPropagation.MetadataContextFor"/> to make
-/// in-memory event metadata pick up <see cref="StreamAction.TenantId"/>
+/// session. Used by
+/// <see cref="TenantPropagation.MetadataContextFor(IMetadataContext, StreamAction, string)"/>
+/// to make in-memory event metadata pick up <see cref="StreamAction.TenantId"/>
 /// instead of the session's tenant.
 /// </summary>
 internal sealed class StreamTenantMetadataContext: IMetadataContext

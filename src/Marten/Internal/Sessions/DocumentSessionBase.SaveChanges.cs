@@ -36,6 +36,17 @@ public abstract partial class DocumentSessionBase
             return;
         }
 
+        // A refused commit draws no event sequences, so it must not reach the tombstone write in the catch below
+        try
+        {
+            _workTracker.AssertVersionsPinnedForCommitAreUnchanged();
+        }
+        catch (Exception)
+        {
+            discardAggregateWrites();
+            throw;
+        }
+
         try
         {
             await Options.EventGraph.ProcessEventsAsync(this, token).ConfigureAwait(false);
