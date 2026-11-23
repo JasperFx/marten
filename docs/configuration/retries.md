@@ -134,8 +134,8 @@ So the retry has to happen somewhere that can do something different. In order o
    commit path it is also the only safe one — replaying the old batch can append the same events twice.
 3. **Retry around your own call site** if you are not using Wolverine: catch the exception outside the `using` block
    for the session, build a new session, and redo the work. The key is that the retry is outside the session, not
-   inside it. Retrying with the session still open gets you nothing on a read, and on a sticky session it can get
-   you a `25P02` instead of the original error.
+   inside it. Retrying with the session still open gets you nothing on a read, and on a session pinned to one connection
+   (after `BeginTransactionAsync()` or `GetConnectionAsync()`) it can get you a `25P02` instead of the original error.
 
 ::: tip
 Do not reach for `ConfigurePolly` to put timeout retries back. It governs reads only, so it cannot restore the
@@ -257,7 +257,7 @@ using var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ErrorHandling.cs#L12-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_polly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Or you can **extend** default marten configuration with your custom policies. Any user supplied policies will take precedence over the default policies.
+Or you can **extend** default marten configuration with your custom policies. Your strategies are added before Marten's defaults, so they wrap them: a retry you add multiplies with Marten's three.
 
 <!-- snippet: sample_extend_polly -->
 <a id='snippet-sample_extend_polly'></a>
@@ -288,6 +288,8 @@ using var store = DocumentStore.For(opts =>
 Marten's write defaults, so that tuning retries for reads cannot silently take the replay protection off a
 non-idempotent write. Use `ConfigureWritePolly` / `ExtendWritePolly` when you mean to change commits as well:
 
+<!-- snippet: sample_extend_write_polly -->
+<a id='snippet-sample_extend_write_polly'></a>
 ```cs
 opts.ExtendWritePolly(builder =>
 {
@@ -300,6 +302,8 @@ opts.ExtendWritePolly(builder =>
     });
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ErrorHandling.cs#L60-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_extend_write_polly' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 If you replace the write pipeline outright with `ConfigureWritePolly`, you take on responsibility for the
 duplicate-append hazard described above.

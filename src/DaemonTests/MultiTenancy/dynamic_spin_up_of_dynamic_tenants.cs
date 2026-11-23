@@ -89,6 +89,8 @@ public class dynamic_spin_up_of_dynamic_tenants : IAsyncLifetime
         await tenancy.ClearAllDatabaseRecordsAsync();
     }
 
+    #region sample_add_tenant_database_and_verify_the_daemon_projections_are_running
+
     [Fact]
     public async Task add_tenant_database_and_verify_the_daemon_projections_are_running()
     {
@@ -114,6 +116,8 @@ public class dynamic_spin_up_of_dynamic_tenants : IAsyncLifetime
         await daemon2.WaitForShardToBeRunning("TripCustomName:All", 30.Seconds());
         await daemon3.WaitForShardToBeRunning("TripCustomName:All", 30.Seconds());
     }
+
+    #endregion
 
     public async ValueTask DisposeAsync()
     {

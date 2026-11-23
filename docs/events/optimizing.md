@@ -154,7 +154,7 @@ so that updates from new events can be directly applied to the in memory documen
 load those documents over and over again from the database as new events trickle in. This is of course much more effective
 when your projection is constantly updating a relatively small number of different aggregates.
 
-## Caching Aggregate Snapshots for FetchForWriting <Badge type="tip" text="9.26" />
+## Caching Aggregate Snapshots for FetchForWriting <Badge type="tip" text="9.26" /> {#caching-aggregate-snapshots-for-fetchforwriting}
 
 The cache above is the *daemon's*. This one is the command side's: an opt-in, node-local cache of aggregate
 snapshots that lets `FetchForWriting` skip loading the stored snapshot and read only the events after it.

@@ -169,7 +169,7 @@ Some details worth knowing:
   and any document your projection deleted or changed when it handled that event stays as it is. Rebuild the
   projection if it should reflect the reopened stream.
 
-## Hot/Cold Storage Partitioning <Badge type="tip" text="7.25" />
+## Hot/Cold Storage Partitioning <Badge type="tip" text="7.25" /> {#hot-cold-storage-partitioning}
 
 Marten can use PostgreSQL native table partitioning on the event and event stream data to keep the "hot" (active) and
 "cold" (archived) events in separate partition tables. This is off by default. With it on, archiving a stream moves its
@@ -233,7 +233,7 @@ from that rig, not guarantees, and your own hardware and workload will give diff
 The bulk loading cost matters most for imports and migrations into a new event store. The 5 to 9% on everyday appends
 is what a system pays all the time, in exchange for active tables that stay small as streams are archived.
 
-### Strict Stream Identity After Archive <Badge type="tip" text="8.x" />
+### Strict Stream Identity After Archive <Badge type="tip" text="8.x" /> {#strict-stream-identity-after-archive}
 
 ::: tip
 Unless you set it yourself, this setting follows `UseArchivedStreamPartitioning`: it is on when partitioning is on, and

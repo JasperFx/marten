@@ -552,7 +552,7 @@ Options.Schema.For<DocThatShouldBeExempted2>().DoNotPartition();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L38-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exempt_from_partitioning_through_fluent_interface' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Partitioning your own tables by tenant <Badge type="tip" text="10.0" />
+### Partitioning your own tables by tenant <Badge type="tip" text="10.0" /> {#partitioning-your-own-tables-by-tenant}
 
 If you add your own tables to the store through `opts.Storage.ExtendedSchemaObjects` and want them partitioned per
 tenant the same way as the document tables, use `opts.Storage.PartitionPerTenant(table)`:
@@ -615,7 +615,7 @@ This API will:
 
 This API is able to differentiate between documents that are configured for tenancy and document types that are global.
 
-## Row Level Security <Badge type="tip" text="8.31" />
+## Row Level Security <Badge type="tip" text="8.31" /> {#row-level-security}
 
 Conjoined tenancy filters rows by `tenant_id` at Marten's query layer. PostgreSQL [Row Level Security (RLS)](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) adds a database-enforced safety net so any connection — including raw SQL, ad-hoc analytics, or code that bypasses Marten's session — can only see rows belonging to the current tenant.
 

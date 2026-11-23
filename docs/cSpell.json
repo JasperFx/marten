@@ -5,6 +5,7 @@
     "jasperfx",
     "metadataconfig",
     "enableall",
+    "fetchforwriting",
     "HMAC",
     "batchable",
     "TimescaleDB",

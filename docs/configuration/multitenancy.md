@@ -11,19 +11,17 @@ separate tenant data by using separate databases for each tenant or for a group 
 First off, let's try to answer the obvious questions you probably have:
 
 * *Can I combine [conjoined multi-tenancy](/documents/multi-tenancy) and database per tenant?* - That's a **yes**.  
-* *Does Marten know how to handle database migrations with multiple databases?* - Yes, and that was honestly most of the work to support this functionality:(
+* *Does Marten know how to handle database migrations with multiple databases?* - Yes.
 * *Will the [async daemon](/events/projections/async-daemon) work with multiple databases?* - Yes, and there's nothing else you need to do to enable that on the async daemon side
 * *What strategies does Marten support out of the box for this?* - That's explained in the next two sections below.
 * *If Marten doesn't do what I need for this feature, can I plug in my own strategy?* - That's also a yes, see the section on writing your own.
-* *Does the `IDocumentStore.Advanced` features work for multiple databases?* - This is a little more complicated, but the answer is still yes. See the very last section on administering databases.
+* *Does the `IDocumentStore.Advanced` features work for multiple databases?* - This is a little more complicated, but the answer is still yes. See [Administering Multiple Databases](#administering-multiple-databases) below.
 * *Can this strategy use different database schemas in the same database?* - **That's a hard no.** The databases have to be identical in all structures.
 
 ## Tenant Id Case Sensitivity
 
-Hey, we've all been there. Our perfectly crafted code fails because of a @#$%#@%ing case sensitivity string comparison.
-That's unfortunately happened to Marten users with the `tenantId` values passed into Marten, and it's likely to happen
-again. To guard against that, you can force Marten to convert all supplied tenant ids from the outside world to either
-upper or lower case to try to stop these kinds of case sensitivity bugs in their tracks like so:
+Case-sensitive comparisons of the `tenantId` values passed into Marten have caused real bugs. To guard against that,
+you can force Marten to convert every tenant id it is given to upper or lower case:
 
 <!-- snippet: sample_using_tenant_id_style -->
 <a id='snippet-sample_using_tenant_id_style'></a>
@@ -150,6 +148,8 @@ Creating a database can take a while on a busy server, longer than the command t
 keeps the store's command timeout. The provisioning timeout only ever lengthens the timeout, so a longer store command
 timeout is kept, and `TimeSpan.Zero` means no limit.
 
+<!-- snippet: sample_provisioning_command_timeout_single_server -->
+<a id='snippet-sample_provisioning_command_timeout_single_server'></a>
 ```cs
 opts.MultiTenantedWithSingleServer(connectionString, t =>
 {
@@ -157,10 +157,14 @@ opts.MultiTenantedWithSingleServer(connectionString, t =>
     t.ProvisioningCommandTimeout = TimeSpan.FromMinutes(5);
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/multitenancy_documentation_samples.cs#L19-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_provisioning_command_timeout_single_server' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 `CreateDatabasesForTenants()` has the same setting, and extension installs (`CREATE EXTENSION`) use the one on
 Weasel's migrator:
 
+<!-- snippet: sample_provisioning_command_timeout_create_databases -->
+<a id='snippet-sample_provisioning_command_timeout_create_databases'></a>
 ```cs
 opts.CreateDatabasesForTenants(c =>
 {
@@ -170,6 +174,8 @@ opts.CreateDatabasesForTenants(c =>
 
 opts.Advanced.Migrator.ProvisioningCommandTimeout = TimeSpan.FromMinutes(5);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/multitenancy_documentation_samples.cs#L32-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_provisioning_command_timeout_create_databases' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Master Table Tenancy Model
 
@@ -179,8 +185,7 @@ This option may also be easier to maintain than the static mapped option if the 
 going to be a matter of preference and taste rather than any hard technical reasoning
 :::
 
-New in Marten 7.0 is a built in recipe for database multi-tenancy that allows for new tenant database to be discovered at
-runtime using this syntax option:
+Marten has a built in recipe for database multi-tenancy that discovers new tenant databases at runtime:
 
 <!-- snippet: sample_master_table_multi_tenancy -->
 <a id='snippet-sample_master_table_multi_tenancy'></a>
@@ -234,10 +239,11 @@ using var host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MultiTenancyExamples.cs#L15-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-With this model, Marten is setting up a table named `mt_tenant_databases` to store with just two columns:
+With this model, Marten sets up a table named `mt_tenant_databases` with three columns:
 
 1. `tenant_id`
 2. `connection_string`
+3. `disabled` (`boolean`, default `false`), set by `DisableTenantAsync()`
 
 At runtime, when you ask for a new session for a specific tenant like so:
 
@@ -258,9 +264,11 @@ Now, let me try to anticipate a couple questions you might have here:
 
 * **Can Marten track and apply database schema changes to new tenant databases at runtime?** Yes, Marten does the schema check tracking on a database by database basis. This means that if you add a new tenant database to that underlying table, Marten will absolutely be able to make schema changes as needed to just that tenant database regardless of the state of other tenant databases.
 * **Will the Marten command line tools recognize new tenant databases?** Yes, same thing. If you call `dotnet run -- db-apply` for example (see [db-apply](https://weasel.jasperfx.net/cli/db-apply.html), whose `--parallel` flag exists for exactly this case), Marten will do the schema migrations independently for each tenant database, so any outstanding changes will be performed on each tenant database. The same goes for `db-assert`, `db-patch` and `resources setup`.
-* **Can Marten spin up asynchronous projections for a new tenant database without requiring downtime?** Yes! Check out this big ol’ integration test proving that the new Marten V7 version of the async daemon can handle that just fine:
+* **Can Marten spin up asynchronous projections for a new tenant database without requiring downtime?** Yes. This integration test proves it:
 
-```csharp
+<!-- snippet: sample_add_tenant_database_and_verify_the_daemon_projections_are_running -->
+<a id='snippet-sample_add_tenant_database_and_verify_the_daemon_projections_are_running'></a>
+```cs
 [Fact]
 public async Task add_tenant_database_and_verify_the_daemon_projections_are_running()
 {
@@ -271,14 +279,14 @@ public async Task add_tenant_database_and_verify_the_daemon_projections_are_runn
     await tenancy.AddDatabaseRecordAsync("tenant1", tenant1ConnectionString);
     await tenancy.AddDatabaseRecordAsync("tenant2", tenant2ConnectionString);
     await tenancy.AddDatabaseRecordAsync("tenant3", tenant3ConnectionString);
- 
+
     // This is a new service in Marten specifically to help you interrogate or
     // manipulate the state of running asynchronous projections within the current process
     var coordinator = _host.Services.GetRequiredService<IProjectionCoordinator>();
     var daemon1 = await coordinator.DaemonForDatabase("tenant1");
     var daemon2 = await coordinator.DaemonForDatabase("tenant2");
     var daemon3 = await coordinator.DaemonForDatabase("tenant3");
- 
+
     // Just proving that the configured projections for the 3 new databases
     // are indeed spun up and running after Marten's new daemon coordinator
     // "finds" the new databases
@@ -287,8 +295,10 @@ public async Task add_tenant_database_and_verify_the_daemon_projections_are_runn
     await daemon3.WaitForShardToBeRunning("TripCustomName:All", 30.Seconds());
 }
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/MultiTenancy/dynamic_spin_up_of_dynamic_tenants.cs#L92-L120' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add_tenant_database_and_verify_the_daemon_projections_are_running' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
-At runtime, if the Marten V7 version of the async daemon (our sub system for building asynchronous projections constantly in a background IHostedService) is constantly doing “health checks” to make sure that *some process* is running all known asynchronous projections on all known client databases. Long story, short, Marten 7 is able to detect new tenant databases and spin up the asynchronous projection handling for these new tenants with zero downtime.
+The async daemon checks regularly that some node runs every async projection on every known database, so it picks up a new tenant database without a restart.
 
 ## Sharded Multi-Tenancy with Database Pooling <Badge type="tip" text="8.x" />
 
@@ -306,13 +316,15 @@ filtering.
 This approach gives you:
 
 * **Horizontal scaling** — spread data across many databases to distribute I/O and storage
-* **Physical tenant isolation** — each tenant has its own PostgreSQL partitions for both document and event tables
+* **Physical tenant isolation** — each tenant has its own PostgreSQL partitions for document tables, and for event tables too if you turn on `UseTenantPartitionedEvents`
 * **Dynamic tenant routing** — new tenants are automatically assigned to databases based on a pluggable strategy
 * **Runtime expandability** — add new databases to the pool without downtime
 
 ### Configuration
 
-```csharp
+<!-- snippet: sample_configure_sharded_tenancy -->
+<a id='snippet-sample_configure_sharded_tenancy'></a>
+```cs
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
 {
@@ -338,11 +350,13 @@ builder.Services.AddMarten(opts =>
     });
 });
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/multitenancy_documentation_samples.cs#L52-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_sharded_tenancy' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Calling `MultiTenantedWithShardedDatabases()` automatically enables:
 
 * `Policies.AllDocumentsAreMultiTenanted()` — all document types use conjoined tenancy
-* `Events.TenancyStyle = TenancyStyle.Conjoined` — events are partitioned by tenant
+* `Events.TenancyStyle = TenancyStyle.Conjoined` — events carry a tenant id (they are partitioned by tenant only with `Events.UseTenantPartitionedEvents`)
 * `Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()` — native PG list partitions are created per tenant
 
 ### Tenant Assignment Strategies
@@ -357,8 +371,8 @@ x.UseHashAssignment();
 ```
 
 Uses a deterministic FNV-1a hash of the tenant ID modulo the number of available (non-full) databases.
-This is the fastest strategy and requires no database queries to make the assignment decision. The same
-tenant ID will always hash to the same database, making it predictable and debuggable.
+This is the fastest strategy and requires no database queries to make the assignment decision. A tenant keeps the
+database it was first assigned. While the pool doesn't change, the same tenant id always hashes to the same database.
 
 Best for: systems where tenants are roughly equal in size and you want even distribution without any
 management overhead.
@@ -451,7 +465,9 @@ database to prevent concurrent corruption.
 
 #### Adding Tenants
 
-```csharp
+<!-- snippet: sample_sharded_tenancy_add_tenant_to_shard -->
+<a id='snippet-sample_sharded_tenancy_add_tenant_to_shard'></a>
+```cs
 // Auto-assign a tenant using the configured strategy
 // Returns the database_id the tenant was assigned to
 var dbId = await store.Advanced.AddTenantToShardAsync("new-tenant", ct);
@@ -459,19 +475,25 @@ var dbId = await store.Advanced.AddTenantToShardAsync("new-tenant", ct);
 // Explicitly assign a tenant to a specific database
 await store.Advanced.AddTenantToShardAsync("vip-tenant", "shard_01", ct);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/multitenancy_documentation_samples.cs#L84-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sharded_tenancy_add_tenant_to_shard' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 When a tenant is assigned, Marten automatically creates native PostgreSQL LIST partitions for that
-tenant in the target database across all multi-tenanted document tables and event tables.
+tenant in the target database across all multi-tenanted document tables, and the event tables under `UseTenantPartitionedEvents`.
 
 #### Managing the Database Pool
 
-```csharp
+<!-- snippet: sample_sharded_tenancy_manage_database_pool -->
+<a id='snippet-sample_sharded_tenancy_manage_database_pool'></a>
+```cs
 // Add a new database to the pool at runtime
 await store.Advanced.AddDatabaseToPoolAsync("shard_05", newConnectionString, ct);
 
-// Mark a database as full — no new tenants will be assigned to it
+// Mark a database as full. No new tenants are assigned to it
 await store.Advanced.MarkDatabaseFullAsync("shard_01", ct);
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/multitenancy_documentation_samples.cs#L98-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sharded_tenancy_manage_database_pool' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Marking a database as full is useful when a database is approaching capacity limits. Existing tenants
 in that database continue to work normally, but all new tenant assignments will go to other databases.
@@ -737,6 +759,8 @@ With a multi-database tenancy there is no session that spans databases, so a que
 fleet has to visit every database. `QueryAcrossAllDatabasesAsync()` opens a query session per database, runs your
 query with bounded parallelism, and flattens the results:
 
+<!-- snippet: sample_query_across_all_databases -->
+<a id='snippet-sample_query_across_all_databases'></a>
 ```cs
 var users = await store.Advanced.QueryAcrossAllDatabasesAsync(
     async (session, ct) => await session.Query<User>()
@@ -748,6 +772,8 @@ var users = await store.Advanced.QueryAcrossAllDatabasesAsync(
 var names = await store.Advanced.QueryAcrossAllDatabasesAsync<string>(
     (session, database, ct) => Task.FromResult<IReadOnlyList<string>>([database.Identifier]));
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/multitenancy_documentation_samples.cs#L111-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_across_all_databases' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The query reads every tenant. For conjoined documents and events, which is everything under
 `MultiTenantedWithShardedDatabases()`, each session reads all the tenants in its database: LINQ queries, compiled
