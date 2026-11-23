@@ -122,7 +122,7 @@ its databases, every tenant database included, with Weasel so that they see them
 [db-patch](https://weasel.jasperfx.net/cli/db-patch.html), [db-dump](https://weasel.jasperfx.net/cli/db-dump.html) and
 [db-list](https://weasel.jasperfx.net/cli/db-list.html).
 
-The `resources` command is JasperFx's [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html) model. Marten's database is one
+The `resources` command is JasperFx's [stateful resource](https://shared-libs.jasperfx.net/cli/resources) model. Marten's database is one
 such resource, so `resources setup` applies the same migration `db-apply` does, and `resources check` runs the same comparison as `db-assert`,
 but across *every* resource in the application: Wolverine's message storage and message broker objects too. See
 [Schema Migrations and Patches](/schema/migrations#choosing-an-approach) for when to reach for which.
@@ -145,12 +145,18 @@ To rebuild *all* of your projections:
 ```bash
 dotnet run -- projections rebuild
 ```
+
 To rebuild a single projection:
 
 ```bash
- dotnet run -- projections -p Course rebuild
+dotnet run -- projections rebuild -p Course
 ```
+
 (where `Course` is the name of the projection, from the list)
+
+The action (`list`, `rebuild`, `parked` and so on) is the first argument, and options are flags. See
+[Command Line Support](/events/projections/async-daemon#command-line-support) in the async daemon documentation for the
+rest of the `projections` command.
 
 ### Creating a SQL Script from your Marten Database
 
@@ -164,6 +170,7 @@ dotnet run -- db-dump -d Marten ./marten.sql
 Marten 9.0 completely removed its runtime code-generation pipeline (PR [#4461](https://github.com/JasperFx/marten/pull/4461)). **`dotnet run -- codegen write` is no longer necessary for Marten** — there are no Marten artifacts to write or pre-generate. If you committed an `Internal/Generated/` folder pre-9.0, delete it and remove it from `.gitignore`; nothing reads or writes those files anymore.
 
 The `codegen` family of subcommands is still surfaced by the shared JasperFx CLI for other Critter-Stack tools (Wolverine, for example), so the command itself may still run successfully against a host that registers those tools. It just won't do anything on Marten's behalf.
+When Wolverine code shares the host, see [CLI: codegen Command](https://shared-libs.jasperfx.net/codegen/cli) for `TypeLoadMode` and the recommended workflow.
 
 See [Runtime code generation removed](/migration-guide#runtime-code-generation-removed) for the full migration story.
 :::

@@ -76,6 +76,7 @@ list of what you get.
 | `Npgsql.EntityFrameworkCore.PostgreSQL` (for `Marten.EntityFrameworkCore`) | 9.0.x / 10.0.x per TFM | 10.0.x on `net10.0`, 11.0.x on `net11.0` |
 
 You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
+Every JasperFx 3.x change is listed in the [JasperFx Migration Guide](https://shared-libs.jasperfx.net/migration-guide).
 Marten 10.0.0-rc.1 is built on Weasel 10.0.0-rc.1; Weasel's own changes are in its
 [migration guide](https://weasel.jasperfx.net/migration-guide-10). On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605. On `net10.0`,
 Npgsql 11 needs `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging.Abstractions`
@@ -377,7 +378,8 @@ schema migration; until it is applied, the old function keeps working as it did.
 ### Abstractions lifted into JasperFx and Weasel <Badge type="warning" text="recompile" />
 
 Marten 10 shares more of its machinery with Polecat and Fisher. The behavior is the same unless listed here, but
-assemblies compiled against Marten 9 must be recompiled.
+assemblies compiled against Marten 9 must be recompiled. What the shared event store abstractions cover is described in
+[Event Store Abstractions](https://shared-libs.jasperfx.net/events/) in the JasperFx documentation.
 
 - `Marten.ITransactionParticipant` is now `ITransactionParticipant<NpgsqlConnection, NpgsqlTransaction>` from
   `Weasel.Storage`. `BeforeCommitAsync` and `AfterCommitAsync` keep their signatures, so an implementer's source is

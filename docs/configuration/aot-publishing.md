@@ -299,6 +299,8 @@ JasperFx.Events.SourceGenerator only picks up projection types that the consumin
 - Confirm the projection extends `SingleStreamProjection<,>`, `MultiStreamProjection<,>`, or `EventProjection` (not a custom base type the generator doesn't know about).
 - Re-run a clean build (`dotnet build -c Release --no-incremental`); source generators run at compile time and the output is in `obj/`, so a stale build can mask new registrations.
 
+The JasperFx documentation covers the build-time side of this error: [Build Diagnostics](https://shared-libs.jasperfx.net/codegen/diagnostics) lists the `JFXEVT` warnings and errors the generator reports, and [Projection Apply Dispatch](https://shared-libs.jasperfx.net/codegen/projection-apply-dispatch#telling-the-generator-never-ran-from-the-generator-declined-your-type) explains how to tell a generator that never ran from one that declined your type.
+
 ### `IL3050` warning on a custom projection base type
 
 The source generator skips base types it doesn't recognize. If you wrote a custom projection base, either:

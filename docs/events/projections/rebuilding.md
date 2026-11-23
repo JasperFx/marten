@@ -321,14 +321,22 @@ When the document is written by an **asynchronous** single-stream projection, Ma
 Inline and live projections always take the third path, since there is no shard to race.
 
 You can also rebuild one identity through a running daemon directly. It works for any single-stream projection the
-daemon runs, and refuses with `IdentityRebuildRefusedException` when it can't (the shard isn't running there, is
-rebuilding, or has never committed anything):
+daemon runs, and for a multi-stream projection that Marten can find one identity's events for: one grouped with
+`IdentityFromStream<TEvent>()` or [`IdentityFromTag<TTag>()`](/events/projections/grouping-by-tags), or one with
+`Options.UseSliceIndex()` turned on. It refuses with `IdentityRebuildRefusedException` when it can't (the shard isn't
+running there, is rebuilding, or has never committed anything):
 
 ```cs
 var result = await daemon.RebuildIdentityAsync("TripProjection", tenantId: null, identity: tripId, token);
 
 // The document is now consistent with every event of its stream up to result.BoundCeiling
 ```
+
+Any other multi-stream projection is refused with `IdentityRebuildRefusal.IdentityNotFindable`. For those,
+`RebuildIdentityByScanAsync()` reads every event of the projection's event types to find the identity's events, which is
+as expensive as it sounds. Both are described in
+[Rebuilding one identity](https://shared-libs.jasperfx.net/events/parked-identities#rebuilding-one-identity) in the
+JasperFx documentation.
 
 A projection whose documents are kept in custom projection storage, like an EF Core entity from
 `Marten.EntityFrameworkCore`, can't be rebuilt one identity at a time. Use `RebuildProjectionAsync()` for those.

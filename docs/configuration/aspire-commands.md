@@ -11,8 +11,9 @@ into the dashboard's resource console.
 
 Marten apps inherit this for free because they build on the shared JasperFx
 command layer. See also the page on [Command Line Tooling](/configuration/cli)
-for the local-terminal workflow and the
-[JasperFx.Aspire package README](https://github.com/JasperFx/jasperfx/tree/master/src/JasperFx.Aspire).
+for the local-terminal workflow, and the JasperFx documentation's
+[Aspire Dashboard Integration](https://shared-libs.jasperfx.net/cli/aspire) for startup gates, dynamic
+command discovery and the safety rules for mutating commands.
 
 ## Quick start
 

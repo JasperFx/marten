@@ -561,9 +561,15 @@ Things to be aware of:
 
 ## Daemon Logging
 
-The daemon logs through the standard .Net `ILogger` interface service registered in your application's underlying DI container. In the case of the daemon having to skip
-"poison pill" events, you can see a record of this in the `DeadLetterEvent` storage in your database (the `mt_doc_deadletterevent` table) along with the exception. Use this to fix underlying issues
-and be able to replay events later after the fix.
+The daemon logs through the standard .NET `ILogger` registered in your application's DI container. When a projection
+shard starts and that projection can't park a failing identity, the daemon logs why, and that a failing event will
+pause the shard instead.
+
+By default in Marten 10, an event that fails in your projection code parks its identity rather than being skipped, and
+the parked identity is recorded in the `mt_parked_identities` table along with the error. An event is only recorded in
+the `DeadLetterEvent` storage (the `mt_doc_deadletterevent` table), with its exception, when it's actually dropped:
+when you've configured the daemon to skip errors, or when you discard a parked identity and an event still fails. See
+[Error Handling](#error-handling).
 
 ## PgBouncer
 
@@ -579,8 +585,19 @@ locks and also spreads work out more evenly through a cluster.
 
 ## Error Handling
 
-**In all examples, `opts` is a `StoreOptions` object. Besides the basic [Polly error handling](/configuration/retries#resiliency-policies),
-you have these three options to configure error handling within your system's usage of asynchronous projections:
+In all examples, `opts` is a `StoreOptions` object. Besides the basic [Polly error handling](/configuration/retries#resiliency-policies),
+you choose what the daemon does when an async projection fails on an event: park the one failing identity, pause the
+projection, or skip the event. Marten 10 parks by default. Parking, its guard rails, transient retries and replaying or
+discarding a parked identity are covered in
+[Parking a Failing Projection Identity](https://shared-libs.jasperfx.net/events/parked-identities).
+
+The sample below turns skipping on for continuous runs:
+
+::: warning
+Setting `SkipApplyErrors` and `SkipSerializationErrors` to `true`, as this sample does, turns parking off and goes back
+to skipping failed events the way Marten 9 did. Leave those two lines out if you want to keep Marten 10's default of
+parking a failing identity.
+:::
 
 <!-- snippet: sample_async_daemon_error_policies -->
 <a id='snippet-sample_async_daemon_error_policies'></a>
@@ -609,13 +626,23 @@ using var host = await Host.CreateDefaultBuilder()
 | Option                | Description                                                                                                            | Continuous Default | Rebuild Default |
 |-----------------------|------------------------------------------------------------------------------------------------------------------------|--------------------|-----------------|
 | `ApplyErrors`         | What happens when projection code (not Marten or PostgreSQL) throws on an event: `Park`, `Pause` or `Skip`             | `Park`             | `Pause`         |
-| `SerializationErrors` | What happens when an event can't be deserialized or upcast: `Park`, `Pause` or `Skip`                                  | `Park`             | `Pause`         |
+| `SerializationErrors` | What happens when an event can't be deserialized or upcast: `Park`, `Pause` or `Skip`                                  | `Park`<sup>*</sup> | `Pause`         |
 | `SkipUnknownEvents`   | Should unknown event types be skipped by the daemon?                                                                   | True               | False           |
+
+<sup>*</sup> Only a single-stream projection parks on a serialization error. A multi-stream projection needs the event's
+body to know which identity it belongs to, so it pauses instead.
 
 `SkipApplyErrors` and `SkipSerializationErrors` still work: `true` means `Skip` and `false` means `Pause`.
 
 `Skip` writes a `DeadLetterEvent` for the event and moves on. `Pause` stops that one projection. During a rebuild, any
-error that isn't skipped stops the rebuild. `Park` is new in Marten 10 and is described in the next section.
+error that isn't skipped stops the rebuild. `Park` is new in Marten 10 and is described below.
+
+`Park` doesn't apply to every failure. An exception from your own projection code parks the identity. A systemic
+database failure, like a missing column or a permissions problem, pauses the projection instead, because every identity
+would fail the same way. A transient failure, like a deadlock or a connection pool timeout, doesn't park, pause or skip
+anything at first: the daemon retries the whole batch through its Polly pipeline, and pauses only when that gives up.
+Inline projections never park, and neither does a full rebuild. The complete rules are in
+[What fails and what parks](https://shared-libs.jasperfx.net/events/parked-identities#what-fails-and-what-parks).
 
 ### Parking a failing identity <Badge type="tip" text="10.0" /> {#parking-a-failing-identity}
 
@@ -634,7 +661,8 @@ await daemon.ReplayParkedIdentityAsync("Trip", tenantId: null, tripId, token);
 await daemon.DiscardParkedIdentityAsync("Trip", tenantId: null, tripId, token);
 ```
 
-The same thing works from the command line with `dotnet run -- projections parked`. To see parked identities in your
+The same thing works from the command line with `dotnet run -- projections parked` (see
+[Command Line Support](#command-line-support)). To see parked identities in your
 health checks, see [the parked identities health check](/events/projections/healthchecks#parked-identities-healthcheck).
 
 If the projection's aggregate has a [natural key](/events/natural-keys), the parked list shows it next to the stream id,
@@ -653,7 +681,7 @@ var withKeys = await database.FetchParkedIdentitiesAsync(
 withKeys.Single(x => x.IdentityText == keyed.ToString("D")).NaturalKey.ShouldBe("L-100");
 withKeys.Single(x => x.IdentityText == neverKeyed.ToString("D")).NaturalKey.ShouldBeNull();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Parking/natural_keys_on_the_parked_identity_list.cs#L123-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reading_the_natural_key_of_a_parked_identity' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Parking/natural_keys_on_the_parked_identity_list.cs#L156-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reading_the_natural_key_of_a_parked_identity' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The key is read from the aggregate's natural key table when the list is read; it isn't stored on the parked row. It's
@@ -677,10 +705,6 @@ To go back to skipping errors the way Marten 9 did, call `opts.RestoreV9Defaults
 Skipping unknown event types is important for "blue/green" deployment of system changes where a new application version
 introduces an entirely new event type.
 :::
-
-## Poison Event Detection
-
-See the section on error handling. Poison event detection is a little more automatically integrated into Marten 7.0.
 
 ## Accessing the Executing Async Daemon
 
@@ -833,58 +857,43 @@ progression.
 If you're using [Marten's command line support](/configuration/cli), you have the new `projections` command to help
 manage the daemon at development or even deployment time.
 
+The command takes an action as its first argument: `run` (the default), `list`, `rebuild`, `parked` or `floor`.
+Options like `--projection` and `--tenant` are flags.
+
 To just start up and run the async daemon for your application in a console window, use:
 
 ```bash
 dotnet run -- projections
 ```
 
-To interactively select which projections to run, use:
-
-```bash
-dotnet run -- projections -i
-```
-
-or
-
-```bash
-dotnet run -- projections --interactive
-```
-
 To list out all the known projection shards, use:
 
 ```bash
-dotnet run -- projections --list
+dotnet run -- projections list
 ```
 
 To run a single projection, use:
 
 ```bash
-dotnet run -- projections --projection [shard name]
+dotnet run -- projections --projection [projection name]
 ```
 
 or
 
 ```bash
-dotnet run -- projections -p [shard name]
+dotnet run -- projections -p [projection name]
 ```
 
 To rebuild all the known projections with both asynchronous and inline lifecycles, use:
 
 ```bash
-dotnet run -- projections --rebuild
-```
-
-To interactively select which projections to rebuild, use:
-
-```bash
-dotnet run -- projections -i --rebuild
+dotnet run -- projections rebuild
 ```
 
 To rebuild a single projection at a time, use:
 
 ```bash
-dotnet run -- projections --rebuild -p [shard name]
+dotnet run -- projections rebuild -p [projection name]
 ```
 
 If you are using multi-tenancy with multiple Marten databases, you can choose to rebuild the
@@ -892,8 +901,20 @@ projections for only one tenant database -- but note that this will rebuild the 
 across all the tenants in that database -- by using the `--tenant` flag like so:
 
 ```bash
-dotnet run -- projections --rebuild --tenant tenant1
+dotnet run -- projections rebuild --tenant tenant1
 ```
+
+To list the identities that are [parked](#parking-a-failing-identity), or to ask the node running a projection to
+replay or discard them, use the `parked` action:
+
+```bash
+dotnet run -- projections parked
+dotnet run -- projections parked --projection Trip --replay --identity [stream id]
+dotnet run -- projections parked --projection Trip --discard --identity [stream id] --yes
+```
+
+`--replay --all`, `--replay --oldest N` and `--wait` are described in the JasperFx documentation for
+[the parked command line](https://shared-libs.jasperfx.net/events/parked-identities#command-line).
 
 ## Using the Async Daemon from DocumentStore
 

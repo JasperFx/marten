@@ -127,7 +127,14 @@ The `Create()` method has to return either the aggregate document type or `Task<
 Marten will apply all those event types that can be cast to the interface or abstract type to that method when executing the projection.
 :::
 
-To make changes to an existing aggregate, declare `Apply()` methods on a `partial` projection class. The `JasperFx.Events.SourceGenerator` discovers them at compile time and emits a `[GeneratedEvolver]` dispatcher with no runtime reflection. The pre-9.0 `ProjectEvent<T>(...)` / `ProjectEventAsync<T>(...)` constructor helpers were removed alongside the JasperFx 2.0 line ([JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)); see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal) for the migration walkthrough. Here's a `TripProjection` using `Apply()` methods to mutate the `Trip` document:
+To make changes to an existing aggregate, declare `Apply()` methods on a `partial` projection class. The `JasperFx.Events.SourceGenerator` discovers them at compile time and emits a `[GeneratedEvolver]` dispatcher with no runtime reflection. The pre-9.0 `ProjectEvent<T>(...)` / `ProjectEventAsync<T>(...)` constructor helpers were removed alongside the JasperFx 2.0 line ([JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)); see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal) for the migration walkthrough.
+
+The generator tells you at build time when a projection that needs to be `partial` isn't (`JFXEVT003`), and when an
+`Apply()` method isn't public (`JFXEVT009`): generated dispatch only calls public members, so a non-public `Apply()`
+compiles and is never called. See
+[Build Diagnostics](https://shared-libs.jasperfx.net/codegen/diagnostics#projections-and-aggregates) for the full list.
+
+Here's a `TripProjection` using `Apply()` methods to mutate the `Trip` document:
 
 <!-- snippet: sample_tripprojection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
