@@ -21,11 +21,7 @@ public class compliance_suite_inventory
                 [typeof(BackfillCompliance<,,>)] =
                     "Marten does not run projection backfills yet (marten#5632): a version-bumped single-stream "
                     + "projection writes a new table, so Marten has to keep the old one for a projection that "
-                    + "declares a backfill first. SupportsBackfills stays false until then",
-                [typeof(AggregateStreamStatsCompliance<,,>)] =
-                    "Marten does not implement IEventStore.RegisteredAggregateTypes or "
-                    + "IEventDatabase.FetchAggregateStreamStatsAsync yet (jasperfx#1282, marten#6152), so their "
-                    + "defaults throw and SupportsAggregateStreamStats stays false until then"
+                    + "declares a backfill first. SupportsBackfills stays false until then"
             });
     }
 
