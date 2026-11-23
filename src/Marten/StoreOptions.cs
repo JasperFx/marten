@@ -1220,15 +1220,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///       </item>
     ///       <item><see cref="EventGraph.EnableEventSkippingInProjectionsOrSubscriptions"/> &rarr; <c>false</c></item>
     ///       <item>
-    ///         <see cref="EventGraph.MetadataConfig"/>: causation id, correlation id, headers and user name
-    ///         &rarr; <c>false</c>
-    ///       </item>
-    ///       <item>
-    ///         Document metadata: <c>CausationId</c>, <c>CorrelationId</c>, <c>Headers</c> and
-    ///         <c>LastModifiedBy</c> &rarr; off. Applied when each document mapping is built, so policies,
-    ///         attributes and <c>Schema.For&lt;T&gt;()</c> can still turn one back on.
-    ///       </item>
-    ///       <item>
     ///         <see cref="OpenTelemetryOptions.EnableEventCounters"/> and
     ///         <see cref="OpenTelemetryOptions.EnableFetchForWritingMetrics"/> &rarr; <c>false</c>
     ///       </item>
@@ -1238,10 +1229,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///         configured first. A <c>configure</c> callback given to
     ///         <see cref="UseSystemTextJsonForSerialization(EnumStorage, Casing, Action{JsonSerializerOptions})"/>
     ///         still wins.
-    ///       </item>
-    ///       <item>
-    ///         <see cref="DocumentMapping.StartIndexesByTenantId"/> &rarr; <c>false</c> for conjoined documents,
-    ///         applied when each document mapping is built
     ///       </item>
     ///       <item><see cref="EventGraph.EnableSideEffectsOnInlineProjections"/> &rarr; <c>false</c></item>
     ///       <item>
@@ -1256,6 +1243,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///       </item>
     ///     </list>
     ///     </para>
+    ///     <para>
+    ///     Event metadata, document metadata and <see cref="DocumentMapping.StartIndexesByTenantId"/> are not
+    ///     listed because 10.0 kept their Marten 9 defaults (#6144): all off, so there is nothing to restore.
+    ///     </para>
     /// </remarks>
     public void RestoreV9Defaults()
     {
@@ -1267,12 +1258,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         Events.EnableSideEffectsOnInlineProjections = false;
         // 9.x: strict identity did not follow UseArchivedStreamPartitioning
         Events.EnableStrictStreamIdentityEnforcement = false;
-
-        var metadata = Events.MetadataConfig;
-        metadata.CausationIdEnabled = false;
-        metadata.CorrelationIdEnabled = false;
-        metadata.HeadersEnabled = false;
-        metadata.UserNameEnabled = false;
 
         OpenTelemetry.EnableEventCounters = false;
         OpenTelemetry.EnableFetchForWritingMetrics = false;
@@ -1289,7 +1274,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     /// <summary>
     ///     Set by <see cref="RestoreV9Defaults"/>. Read by the defaults that are decided later than the call:
-    ///     each document mapping's metadata and index defaults, the serializer, and the side-effect gate.
+    ///     the serializer and the side-effect gate.
     /// </summary>
     internal bool V9DefaultsRestored { get; private set; }
 

@@ -16,10 +16,10 @@ The available columns for document storage are:
 | `mt_last_modified` | Timestamp of the last time the document record was modified                                       | Yes                                                     |
 | `mt_version`       | `Guid` value that marks the current version of the document. This supports optimistic concurrency | Yes                                                     |
 | `mt_dotnet_type`   | Assembly qualified name of the .Net type persisted to this row                                    | Yes                                                     |
-| `correlation_id`   | User-supplied correlation identifier (`string`)                                                   | Yes, since 10.0                                         |
-| `causation_id`     | User-supplied causation identifier (`string`)                                                     | Yes, since 10.0                                         |
-| `headers`          | User-supplied key/value pairs for extensible metadata                                             | Yes, since 10.0                                         |
-| `last_modified_by` | User name of the session that last changed the document (`string`)                                | Yes, since 10.0                                         |
+| `correlation_id`   | User-supplied correlation identifier (`string`)                                                   | No, opt in                                              |
+| `causation_id`     | User-supplied causation identifier (`string`)                                                     | No, opt in                                              |
+| `headers`          | User-supplied key/value pairs for extensible metadata                                             | No, opt in                                              |
+| `last_modified_by` | User name of the session that last changed the document (`string`)                                | No, opt in                                              |
 | `mt_deleted`       | Boolean flag noting whether the document is soft-deleted                                          | Only if the document type is configured as soft-deleted |
 | `mt_deleted_at`    | Timestamp marking when a document was soft-deleted                                                | Only if the document type is configured as soft-deleted |
 | `mt_created_at`    | Timestamp marking when a document was originally created                                          | No, opt in                                              |
@@ -33,10 +33,19 @@ correlation and causation data is the most likely usage for this feature. The Ma
 plans to build a sample application showing Marten being used with [Open Telemetry](https://opentelemetry.io/) tracing soon.
 :::
 
-These four columns are on for every document type by default since Marten 10. In Marten 9 and earlier they were
-opt in, with the settings below. Use the same settings with `false` to turn a column off for one document type or for
-all of them, or call `opts.RestoreV9Defaults()` to go back to the Marten 9 behavior where they are off unless you
-turn them on:
+These four columns are opt in, per document type or for all of them with a policy.
+
+::: tip Why turn them on
+[CritterWatch](https://critterwatch.jasperfx.net)'s document explorer filters documents by `last_modified_by`,
+`correlation_id` and `causation_id`, and its saved filter watches use the same columns. Without them those filters have
+nothing to match. They're also how you trace a document back to the request or message that last changed it.
+
+What they cost: four more values on every document write, and four more columns on the table. On the
+CritterStackScalability RC rig they were about half of what Marten 10 still cost on projection rebuilds that write
+documents, which is why they're opt-in ([#6144](https://github.com/JasperFx/marten/issues/6144)).
+:::
+
+These are the settings:
 
 <!-- snippet: sample_enabling_causation_fields -->
 <a id='snippet-sample_enabling_causation_fields'></a>

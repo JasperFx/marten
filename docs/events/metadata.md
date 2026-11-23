@@ -3,8 +3,23 @@
 See [Marten Metadata](/documents/metadata) for more information and examples
 about capturing metadata as part of `IDocumentSession` unit of work operations.
 
-Marten tracks causation, correlation, user names, and key/value headers on events. All four are on by default since
-Marten 10; in Marten 9 and earlier each one had to be turned on. These are the settings:
+Marten can track causation, correlation, user names, and key/value headers on events. Each one is off by default, and
+you turn on the ones you want. The columns are always created, so turning one on later needs no new column, though
+under the `Quick` append modes it does replace the `mt_quick_append_events` function.
+
+::: tip Why turn them on
+The correlation and causation ids are what tie an event back to the message or request that caused it. With them on,
+[CritterWatch](https://critterwatch.jasperfx.net) can filter events by correlation id, causation id and user name in its
+event query, and its conversation view follows a Wolverine message to the events its handler appended. OpenTelemetry
+traces and your own diagnostics can do the same. Turn on the user name if you want `LastModifiedBy` recorded on every
+event, and headers only if you read them yourself.
+
+What they cost: each one adds a value to every appended event. With all four on, Marten 10 allocated about 11 KB more per
+append and ran about 5% slower on daemon appends on the CritterStackScalability RC rig, which is why they're opt-in
+([#6144](https://github.com/JasperFx/marten/issues/6144)).
+:::
+
+These are the settings:
 
 <!-- snippet: sample_configureeventmetadata -->
 <a id='snippet-sample_configureeventmetadata'></a>

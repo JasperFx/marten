@@ -146,7 +146,7 @@ public class document_store_diagnostics_explain_tests: HostedStoreContext
             opts.DatabaseSchemaName = schema;
 
             // The parcel does not capture its correlation id, which explain_refuses_a_metadata_filter_the_read_refuses
-            // needs; document metadata is on by default since 10.0 (#5812)
+            // needs. Off by default again (#6144); set explicitly so the fact doesn't depend on the default
             var mapping = opts.Schema.For<ExplainedParcel>().Metadata(m => m.CorrelationId.Enabled = false);
             if (indexState)
             {

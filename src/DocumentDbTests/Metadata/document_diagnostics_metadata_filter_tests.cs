@@ -240,7 +240,7 @@ public class document_diagnostics_metadata_filter_tests
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = schema;
 
-                    // Set both ways: these columns are on by default since 10.0 (#5812)
+                    // Set both ways, so these facts hold whatever the default is (off since #6144)
                     opts.Schema.For<DiagMetaDoc>().Metadata(m =>
                     {
                         m.CorrelationId.Enabled = enableCorr;

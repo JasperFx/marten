@@ -199,7 +199,21 @@ to join the [Marten Discord room](https://discord.gg/BGkCDx5d).
 ## Side Effects in Inline Projections <Badge type="tip" text="7.40" />
 
 Since Marten 10, projection "side effects" run for `Inline` projections as well as during continuous asynchronous
-processing. Marten 9 and earlier only ran them in the async daemon unless you turned on this setting, which is now the default:
+processing. Marten 9 and earlier only ran them in the async daemon unless you turned on this setting, which is now the default.
+Marten logs a warning at startup naming each `Inline` projection that overrides `RaiseSideEffects()`.
+
+::: tip What it costs, and what it buys
+An `Inline` projection's side effects run inside the `SaveChangesAsync()` that touched the projection, in the same
+transaction, so their work adds to that commit's time, and the messages they publish and events they append go out with
+the commit. A projection that doesn't override `RaiseSideEffects()` pays nothing.
+
+In return, a projection behaves the same whether it runs `Inline` or `Async`. A side effect can also pass the
+triggering event's correlation id on to the message it publishes, with `slice.PublishMessage(message, metadata)`, so
+[CritterWatch](https://critterwatch.jasperfx.net)'s conversation view follows a command to the events it appended and on
+to the messages the projection sent. That needs the event correlation id [turned on](/events/metadata).
+:::
+
+The setting:
 
 <!-- snippet: sample_using_enablesideeffectsoninlineprojections -->
 <a id='snippet-sample_using_enablesideeffectsoninlineprojections'></a>

@@ -9,14 +9,10 @@ public class DocumentMetadataCollection
     {
         DocumentType = new DocumentTypeColumn(parent);
 
-        // #5812: causation id, correlation id, headers and last modified by are on by default since 10.0.
-        // Decided here, when the mapping is built, so RestoreV9Defaults() works wherever it is called and
-        // policies, attributes and Schema.For<T>() still override it.
-        var enabled = !(parent.StoreOptions?.V9DefaultsRestored ?? false);
-        CausationId.Enabled = enabled;
-        CorrelationId.Enabled = enabled;
-        LastModifiedBy.Enabled = enabled;
-        Headers.Enabled = enabled;
+        // #6144: causation id, correlation id, headers and last modified by are off by default, as in Marten 9.
+        // The 10.0 alphas turned them on (#5812); the rc.1 perf round measured them as about half the remaining
+        // projection rebuild cost, and they added four columns to every document table on upgrade. Policies,
+        // attributes and Schema.For<T>() turn them on.
     }
 
     public MetadataColumn Version { get; } = new VersionColumn();

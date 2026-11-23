@@ -159,46 +159,49 @@ public class RestoreV9DefaultsTests
         opts.Events.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeFalse();
     }
 
-    // #5812 item 2: every optional event metadata column is written and read
+    // #6144: the optional event metadata stays off by default, as in Marten 9. The 10.0 alphas turned it on (#5812)
     [Fact]
-    public void all_event_metadata_is_on_by_default()
+    public void event_metadata_is_off_by_default()
     {
         var metadata = new StoreOptions().Events.MetadataConfig;
 
-        metadata.CausationIdEnabled.ShouldBeTrue();
-        metadata.CorrelationIdEnabled.ShouldBeTrue();
-        metadata.HeadersEnabled.ShouldBeTrue();
-        metadata.UserNameEnabled.ShouldBeTrue();
-    }
-
-    [Fact]
-    public void restores_event_metadata_to_the_v9_values()
-    {
-        var opts = new StoreOptions();
-
-        opts.RestoreV9Defaults();
-
-        var metadata = opts.Events.MetadataConfig;
         metadata.CausationIdEnabled.ShouldBeFalse();
         metadata.CorrelationIdEnabled.ShouldBeFalse();
         metadata.HeadersEnabled.ShouldBeFalse();
         metadata.UserNameEnabled.ShouldBeFalse();
     }
 
-    // #5812 item 3: causation id, correlation id, headers and last modified by on every document
     [Fact]
-    public void document_metadata_is_on_by_default()
+    public void event_metadata_turned_on_before_the_restore_stays_on()
+    {
+        var opts = new StoreOptions();
+        opts.Events.MetadataConfig.CorrelationIdEnabled = true;
+        opts.Events.MetadataConfig.CausationIdEnabled = true;
+
+        opts.RestoreV9Defaults();
+
+        var metadata = opts.Events.MetadataConfig;
+        metadata.CorrelationIdEnabled.ShouldBeTrue();
+        metadata.CausationIdEnabled.ShouldBeTrue();
+        metadata.HeadersEnabled.ShouldBeFalse();
+        metadata.UserNameEnabled.ShouldBeFalse();
+    }
+
+    // #6144: causation id, correlation id, headers and last modified by stay off on documents by default, as in
+    // Marten 9. The 10.0 alphas turned them on (#5812)
+    [Fact]
+    public void document_metadata_is_off_by_default()
     {
         var metadata = new StoreOptions().Storage.MappingFor(typeof(MetadataDoc)).Metadata;
 
-        metadata.CausationId.Enabled.ShouldBeTrue();
-        metadata.CorrelationId.Enabled.ShouldBeTrue();
-        metadata.Headers.Enabled.ShouldBeTrue();
-        metadata.LastModifiedBy.Enabled.ShouldBeTrue();
+        metadata.CausationId.Enabled.ShouldBeFalse();
+        metadata.CorrelationId.Enabled.ShouldBeFalse();
+        metadata.Headers.Enabled.ShouldBeFalse();
+        metadata.LastModifiedBy.Enabled.ShouldBeFalse();
     }
 
     [Fact]
-    public void restores_document_metadata_to_the_v9_values()
+    public void document_metadata_stays_off_after_the_restore()
     {
         var opts = new StoreOptions();
 
@@ -366,14 +369,15 @@ public class RestoreV9DefaultsTests
         readShape(opts).ShouldBeOfType<Circle>();
     }
 
-    // #5812 item 6: computed indexes on conjoined documents lead with tenant_id
+    // #6144: computed indexes on conjoined documents don't lead with tenant_id by default, as in Marten 9. The 10.0
+    // alphas turned it on (#5812); the fix that keeps a global unique index global stays
     [Fact]
-    public void computed_indexes_start_with_tenant_id_on_conjoined_documents_by_default()
+    public void computed_indexes_do_not_start_with_tenant_id_on_conjoined_documents_by_default()
     {
         var opts = new StoreOptions();
         opts.Schema.For<MetadataDoc>().MultiTenanted();
 
-        opts.Storage.MappingFor(typeof(MetadataDoc)).StartIndexesByTenantId.ShouldBeTrue();
+        opts.Storage.MappingFor(typeof(MetadataDoc)).StartIndexesByTenantId.ShouldBeFalse();
     }
 
     [Fact]
@@ -383,7 +387,7 @@ public class RestoreV9DefaultsTests
     }
 
     [Fact]
-    public void restores_start_indexes_by_tenant_id_to_the_v9_value()
+    public void start_indexes_by_tenant_id_stays_off_after_the_restore()
     {
         var opts = new StoreOptions();
         opts.Schema.For<MetadataDoc>().MultiTenanted();
@@ -408,7 +412,7 @@ public class RestoreV9DefaultsTests
     public void a_per_tenant_unique_index_names_tenant_id_once()
     {
         var opts = new StoreOptions();
-        opts.Schema.For<MetadataDoc>().MultiTenanted()
+        opts.Schema.For<MetadataDoc>().MultiTenanted().StartIndexesByTenantId()
             .UniqueIndex(UniqueIndexType.Computed, "uidx_name", TenancyScope.PerTenant, x => x.Name);
 
         var index = opts.Storage.MappingFor(typeof(MetadataDoc)).Indexes.OfType<ComputedIndex>().Single();
@@ -420,7 +424,8 @@ public class RestoreV9DefaultsTests
     public void a_global_unique_index_on_a_conjoined_document_stays_global()
     {
         var opts = new StoreOptions();
-        opts.Schema.For<MetadataDoc>().MultiTenanted()
+        // #6144: StartIndexesByTenantId is opt-in again, and the global unique index stays global when it's on
+        opts.Schema.For<MetadataDoc>().MultiTenanted().StartIndexesByTenantId()
             .UniqueIndex(UniqueIndexType.Computed, "uidx_name", TenancyScope.Global, x => x.Name)
             .Index(x => x.Age);
 
@@ -445,6 +450,31 @@ public class RestoreV9DefaultsTests
         opts.RestoreV9Defaults();
 
         opts.Events.EnableSideEffectsOnInlineProjections.ShouldBeFalse();
+    }
+
+    // #6144: an Inline projection that overrides RaiseSideEffects() is named in a startup warning
+    [Fact]
+    public void inline_projections_that_override_raise_side_effects_are_found()
+    {
+        var opts = new StoreOptions();
+        opts.Projections.Add<SideEffectGateProjection>(ProjectionLifecycle.Inline);
+        opts.Projections.Add<GateProjection>(ProjectionLifecycle.Inline);
+
+        opts.EventGraph.InlineProjectionsThatRaiseSideEffects()
+            .ShouldBe([opts.Projections.All.OfType<SideEffectGateProjection>().Single().Name]);
+    }
+
+    [Fact]
+    public void async_projections_and_disabled_inline_side_effects_are_not_warned_about()
+    {
+        var async = new StoreOptions();
+        async.Projections.Add<SideEffectGateProjection>(ProjectionLifecycle.Async);
+        async.EventGraph.InlineProjectionsThatRaiseSideEffects().ShouldBeEmpty();
+
+        var disabled = new StoreOptions();
+        disabled.Projections.Add<SideEffectGateProjection>(ProjectionLifecycle.Inline);
+        disabled.Events.EnableSideEffectsOnInlineProjections = false;
+        disabled.EventGraph.InlineProjectionsThatRaiseSideEffects().ShouldBeEmpty();
     }
 
     // #5812 item 9, reversed before 10.0 GA: archived-stream partitioning stays opt-in as in 9.x, and strict stream
@@ -552,5 +582,21 @@ public class RestoreV9DefaultsTests
     public partial class GateProjection: SingleStreamProjection<GateDoc, System.Guid>
     {
         public void Apply(GateDoc doc, GateStarted _){}
+    }
+
+    public class SideEffectGateDoc
+    {
+        public System.Guid Id { get; set; }
+    }
+
+    public partial class SideEffectGateProjection: SingleStreamProjection<SideEffectGateDoc, System.Guid>
+    {
+        public void Apply(SideEffectGateDoc doc, GateStarted _){}
+
+        public override System.Threading.Tasks.ValueTask RaiseSideEffects(IDocumentOperations operations,
+            JasperFx.Events.IEventSlice<SideEffectGateDoc> slice)
+        {
+            return System.Threading.Tasks.ValueTask.CompletedTask;
+        }
     }
 }

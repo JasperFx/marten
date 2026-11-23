@@ -120,8 +120,8 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
             options.Events.StreamIdentity = config.StreamIdentity.Value;
         }
 
-        // Each flag is replayed both ways: all event metadata is on by default since Marten 10 (#5812), and
-        // the suites describe a store that captures only what the config asks for. The user_name column is
+        // Each flag is replayed both ways, so the store captures exactly what the config asks for whatever
+        // Marten's default is (off, as in Marten 9, since #6144). The user_name column is
         // what the jasperfx#737 EventQueryCompliance suite's user-name filter facts need.
         options.Events.MetadataConfig.CorrelationIdEnabled = config.EnableCorrelationTracking;
         options.Events.MetadataConfig.CausationIdEnabled = config.EnableCorrelationTracking;

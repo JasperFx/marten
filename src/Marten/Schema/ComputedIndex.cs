@@ -87,7 +87,7 @@ public class ComputedIndex: IndexDefinition
     private IEnumerable<string> buildColumns()
     {
         // #5812: a unique index scoped globally stays global. Leading it with tenant_id would make it unique per
-        // tenant, which matters now that StartIndexesByTenantId is the default for conjoined documents.
+        // tenant, which Marten 9 did silently whenever StartIndexesByTenantId was turned on.
         var leadWithTenantId = _mapping.StartIndexesByTenantId && !(IsUnique && TenancyScope == TenancyScope.Global);
 
         if (leadWithTenantId)
