@@ -289,7 +289,7 @@ opts.Projections.Snapshot<RegisteredOrder>(SnapshotLifecycle.Inline, p =>
         // stream key, timestamp or headers
         .SetByEvent<OrderNumberChanged>(e => e.Data.NewOrderNumber)));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L225-L235' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_explicit_registration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L259-L269' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_explicit_registration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The same `NaturalKeyFor()` method is available on a projection class you register with
@@ -344,7 +344,7 @@ catch (DuplicateNaturalKeyException e)
                       $"so stream {e.ClaimingStreamId} cannot claim it");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L105-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_duplicate_claim' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L113-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_duplicate_claim' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The exception names the key, the aggregate type, the stream that holds the key and the stream that tried to
@@ -417,7 +417,7 @@ var stream = await session.Events.FetchForExclusiveWriting<OrderAggregate, Order
 stream.AppendOne(new OrderItemAdded("Gadget", 19.99m));
 await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L140-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_exclusive_writing_by_natural_key' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L148-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_exclusive_writing_by_natural_key' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A natural key that doesn't match any stream starts a new stream, as `FetchForWriting` does.
@@ -499,7 +499,7 @@ opts.Events.CacheAggregatesForWriting<OrderAggregate>();
 // The default. FetchLatest by natural key answers with an aggregate the session already holds
 opts.Events.UseIdentityMapForAggregates = true;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L162-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_write_cache_and_identity_map' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L170-L180' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_write_cache_and_identity_map' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 **Identity map.** With `UseIdentityMapForAggregates` on, which is the default, `FetchLatest<T, TKey>` answers with the
@@ -513,7 +513,7 @@ var stream = await session.Events.FetchForWriting<OrderAggregate, OrderNumber>(n
 // The aggregate this session already holds, found by its current natural key
 var latest = await session.Events.FetchLatest<OrderAggregate, OrderNumber>(number);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L180-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_latest_by_natural_key_from_the_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L188-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_latest_by_natural_key_from_the_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 **Write cache.** `FetchForWriting<T, TKey>` takes a cached aggregate through a pointer from the key to its stream, kept
@@ -576,7 +576,7 @@ opts.Projections.Snapshot<OrderAggregate>(SnapshotLifecycle.Inline);
 // ...and the async view is fetched through it
 opts.Projections.Snapshot<OrderSummary>(SnapshotLifecycle.Async);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/mapped_and_async_natural_keys.cs#L96-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_mapped_natural_key_projections' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/mapped_and_async_natural_keys.cs#L138-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_mapped_natural_key_projections' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Mapped keys suit an `Async` read model well. The owner keeps the lookup current inline, so the read model can
@@ -589,7 +589,7 @@ read model is needed:
 // Current state, whether or not the daemon has caught up yet
 var latest = await theSession.Events.FetchLatest<OrderSummary, OrderNumber>(orderNumber);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/mapped_and_async_natural_keys.cs#L113-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_async_aggregate_by_mapped_natural_key' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/mapped_and_async_natural_keys.cs#L155-L158' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_async_aggregate_by_mapped_natural_key' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 An aggregate can map any number of keys, alongside at most one key it owns, as long as every key has a
@@ -656,20 +656,20 @@ The retired row is removed rather than left behind, so the previous value immedi
 
 ## Null and Default Keys
 
-When a `[NaturalKeySource]` produces a `null` key value, the stream has no natural key. That includes a
-strong-typed key whose value is null, which is what `default` of a struct wrapping a `string` is. If the stream
-has never been assigned a key, it has no lookup row. If it used to have a key and it is now set to `null` then
-the lookup row is retired - the stream can no longer be found by the old key, and that key is free for another
-stream to claim.
+What a `null` key value means depends on the source that produced it.
 
-::: warning
-Every event that a `[NaturalKeySource]` method or `NaturalKeyFor()` maps is read as "the stream's key is now this
-value", and `null` means "the stream has no key". A source can't say "the key is unchanged". So an `Apply` that only
-sets the key when its event carries one retires the key whenever the event carries `null`, even though the aggregate
-keeps its key:
+- An **explicit** source can remove a stream's key on purpose: a `[NaturalKeySource]` static method that returns the
+  key type, or a `NaturalKeyFor()` registration. When it returns `null`, the lookup row is retired, the stream can no
+  longer be found by its old key, and that key is free for another stream to claim. That includes a strong-typed key
+  whose value is null, which is what `default` of a struct wrapping a `string` is.
+- A source Marten **infers**, by reading a property of the key's type off the event or by running your `Apply`
+  method, reads a `null` as "this event carries no key". The stream keeps its key. So an `Apply` that only sets the
+  key when its event carries one does what it says.
 
-<!-- snippet: sample_natural_key_source_that_retires_the_key -->
-<a id='snippet-sample_natural_key_source_that_retires_the_key'></a>
+A stream that has never been given a key has no lookup row.
+
+<!-- snippet: sample_natural_key_sources_and_null -->
+<a id='snippet-sample_natural_key_sources_and_null'></a>
 ```cs
 public record ShipmentCode(string Value);
 
@@ -677,37 +677,42 @@ public record ShipmentBooked(ShipmentCode Code);
 
 public record ShipmentUpdated(ShipmentCode? NewCode, string Notes);
 
+public record ShipmentCodeWithdrawn;
+
 public class Shipment
 {
     public Guid Id { get; set; }
 
     [NaturalKey]
-    public ShipmentCode Code { get; set; } = null!;
+    public ShipmentCode? Code { get; set; }
 
     public string Notes { get; set; } = string.Empty;
 
     [NaturalKeySource]
     public void Apply(ShipmentBooked e) => Code = e.Code;
 
-    // Don't do this. Every ShipmentUpdated is read as "the stream's key is now NewCode", so one whose
-    // NewCode is null retires the key, even though this method leaves Code as it was
+    // Marten reads the key off the event here, so a ShipmentUpdated whose NewCode is null means
+    // "this event carries no key", and the stream keeps its code
     [NaturalKeySource]
     public void Apply(ShipmentUpdated e)
     {
         if (e.NewCode != null) Code = e.NewCode;
         Notes = e.Notes;
     }
+
+    // A static source that returns the key type is explicit, so its null removes the stream's key
+    [NaturalKeySource]
+    public static ShipmentCode? KeyFor(ShipmentCodeWithdrawn e) => null;
+
+    public void Apply(ShipmentCodeWithdrawn e) => Code = null;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L48-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_source_that_retires_the_key' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/natural_key_documentation_samples.cs#L48-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_sources_and_null' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-After a `ShipmentUpdated` with no `NewCode`, `FetchLatest<Shipment, ShipmentCode>` finds nothing,
-`FetchForWriting<Shipment, ShipmentCode>` starts a new stream, and another stream can claim the code. A session
-that already holds the aggregate still answers `FetchLatest` by the old code from its identity map, which makes this
-easy to miss in a test. Map only events that always carry the stream's key, and change the key with an event of its
-own, as `OrderNumberChanged` does for `OrderAggregate`.
-:::
+In Marten 9 a `null` key value was ignored, so there was no way to remove a stream's key. Marten 10 lets an explicit
+source do that, and keeps ignoring a `null` from a source it infers, so a conditional `Apply` can't free a key by
+accident ([#6153](https://github.com/JasperFx/marten/issues/6153)).
 
 An `int` or `long` key of 0 is a key like any other. Because an aggregate whose `int` or `long` key was never set
 also reads as 0, a fetch by 0 never answers from the identity map or the write cache: it always asks the database,

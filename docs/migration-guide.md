@@ -125,9 +125,10 @@ can change.
 
 ### JasperFx 3.12 and 3.13: natural keys are checked at startup, and a failed composite rebuild throws <Badge type="warning" text="behavior change" />
 
-Marten 10.0.0-rc.1 is built on JasperFx 3.13.0. Between 3.10 and 3.13.0, these change what you see
+Marten 10.0 is built on JasperFx 3.14.0. Between 3.10 and 3.14.0, these change what you see
 ([3.12.1](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-12-1),
-[3.13.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-13-0)):
+[3.13.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-13-0)). JasperFx 3.14.0's change to null
+natural keys is described under [natural keys](#natural-keys-in-10-0-0):
 
 - **A natural key must be an `int`, `long` or `string`, or a strong-typed identifier wrapping one of those.** A
   `[NaturalKey]` of any other type, a `Guid` for example, used to be accepted and then fail on the first append. It now
@@ -159,9 +160,11 @@ analyzers `JFXEVT010` and `JFXEVT011`; the others are only found when the `Docum
 
 **Fetching changes:**
 
-- **A `[NaturalKeySource]` that returns null retires the stream's key.** The stream can no longer be found by its old
-  key, and another stream can claim it. It used to keep the old key. A stream whose first event carries no key is
-  unaffected. Check any `Apply` used as a key source that only sets the key on some events.
+- **An explicit key source that returns null retires the stream's key.** A `[NaturalKeySource]` static method that
+  returns the key type, or a `NaturalKeyFor()` registration, can now remove a key: the stream can no longer be found by
+  its old key, and another stream can claim it. In Marten 9 a null was ignored and the stream kept its key. A null from
+  a source Marten infers, a key read off the event or an `Apply` method, is still ignored, so an `Apply` that only sets
+  the key on some events keeps it ([natural keys](/events/natural-keys#null-and-default-keys), jasperfx#1287).
 - **The key type of a fetch is `TKey`, never `TKey?`.** `FetchForWriting`, `FetchForExclusiveWriting`, `FetchLatest`,
   `FetchManyForWriting` and their batch forms throw `ArgumentException` for a `Nullable<T>` type argument. `TKey?` is
   still fine on the aggregate's property and as a source's return type.

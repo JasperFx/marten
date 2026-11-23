@@ -45,7 +45,7 @@ public class RegisteredOrderProjection: SingleStreamProjection<RegisteredOrder, 
 
 #endregion
 
-#region sample_natural_key_source_that_retires_the_key
+#region sample_natural_key_sources_and_null
 
 public record ShipmentCode(string Value);
 
@@ -53,26 +53,34 @@ public record ShipmentBooked(ShipmentCode Code);
 
 public record ShipmentUpdated(ShipmentCode? NewCode, string Notes);
 
+public record ShipmentCodeWithdrawn;
+
 public class Shipment
 {
     public Guid Id { get; set; }
 
     [NaturalKey]
-    public ShipmentCode Code { get; set; } = null!;
+    public ShipmentCode? Code { get; set; }
 
     public string Notes { get; set; } = string.Empty;
 
     [NaturalKeySource]
     public void Apply(ShipmentBooked e) => Code = e.Code;
 
-    // Don't do this. Every ShipmentUpdated is read as "the stream's key is now NewCode", so one whose
-    // NewCode is null retires the key, even though this method leaves Code as it was
+    // Marten reads the key off the event here, so a ShipmentUpdated whose NewCode is null means
+    // "this event carries no key", and the stream keeps its code
     [NaturalKeySource]
     public void Apply(ShipmentUpdated e)
     {
         if (e.NewCode != null) Code = e.NewCode;
         Notes = e.Notes;
     }
+
+    // A static source that returns the key type is explicit, so its null removes the stream's key
+    [NaturalKeySource]
+    public static ShipmentCode? KeyFor(ShipmentCodeWithdrawn e) => null;
+
+    public void Apply(ShipmentCodeWithdrawn e) => Code = null;
 }
 
 #endregion
@@ -190,8 +198,9 @@ public class natural_key_documentation_samples: OneOffConfigurationsContext
         latest!.Id.ShouldBe(streamId);
     }
 
+    // #6153 / jasperfx#1287: a null from an inferred source keeps the key
     [Fact]
-    public async Task a_source_that_only_sometimes_sets_the_key_retires_it()
+    public async Task a_source_that_only_sometimes_sets_the_key_keeps_it()
     {
         StoreOptions(opts => opts.Projections.Snapshot<Shipment>(SnapshotLifecycle.Inline));
 
@@ -210,11 +219,36 @@ public class natural_key_documentation_samples: OneOffConfigurationsContext
         }
 
         await using var query = theStore.LightweightSession();
+        (await query.Events.FetchLatest<Shipment, ShipmentCode>(code))!.Id.ShouldBe(streamId);
 
-        // The lookup retired the key, but the aggregate kept it. The fetch by key goes first: once a session
-        // holds the aggregate, FetchLatest by key answers from it, matched by the key the aggregate carries
+        await using var writing = theStore.LightweightSession();
+        var stream = await writing.Events.FetchForWriting<Shipment, ShipmentCode>(code);
+        stream.Id.ShouldBe(streamId);
+        stream.CurrentVersion.ShouldBe(2);
+    }
+
+    // #6153 / jasperfx#1287: a null from an explicit source removes the key
+    [Fact]
+    public async Task a_static_source_returning_null_removes_the_key()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<Shipment>(SnapshotLifecycle.Inline));
+
+        var code = new ShipmentCode("SHP-2");
+        var streamId = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<Shipment>(streamId, new ShipmentBooked(code));
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.Append(streamId, new ShipmentCodeWithdrawn());
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = theStore.LightweightSession();
         (await query.Events.FetchLatest<Shipment, ShipmentCode>(code)).ShouldBeNull();
-        (await query.Events.FetchLatest<Shipment>(streamId))!.Code.ShouldBe(code);
     }
 
     [Fact]

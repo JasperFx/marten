@@ -148,8 +148,11 @@ public class natural_key_resolution_races: OneOffConfigurationsContext
             {
                 if (change == Change.ArchivedAndReclaimed) retire.Events.ArchiveStream(first);
                 else
+                    // jasperfx#1287 (#6153): retiring a key takes an explicit source, KeyedKeyRetired
                     retire.Events.Append(first,
-                        new KeyedAEvent(change == Change.Retired ? new RaceKey(null!) : new RaceKey("K-" + Guid.NewGuid())));
+                        change == Change.Retired
+                            ? new KeyedKeyRetired()
+                            : new KeyedAEvent(new RaceKey("K-" + Guid.NewGuid())));
                 await retire.SaveChangesAsync(ct);
             }
 
