@@ -769,5 +769,5 @@ You can resolve the keyed `ISessionFactory` for an ancillary store directly from
 
 ```csharp
 var factory = serviceProvider.GetRequiredKeyedService<ISessionFactory>(typeof(IInvoicingStore));
-using var session = factory.OpenSession();
+await using var session = factory.OpenSession();
 ```

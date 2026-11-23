@@ -144,10 +144,10 @@ partitions.
 ## Appending Events
 
 ::: tip
-`Append()` will create a new stream for the stream id if it does not already exist at the time that `IDocumentSession.SaveChanges()` is called.
+`Append()` will create a new stream for the stream id if it does not already exist at the time that `IDocumentSession.SaveChangesAsync()` is called.
 :::
 
-If you have an existing stream, you can later append additional events with `IEventStore.Append()` as shown below:
+If you have an existing stream, you can later append additional events with `session.Events.Append()` as shown below:
 
 <!-- snippet: sample_append-events -->
 <a id='snippet-sample_append-events'></a>
@@ -210,7 +210,7 @@ look only within the session's tenant.
 ## `Append(streamId, expectedVersion, events)` requires Rich mode
 
 ::: warning
-The overload `IEventStore.Append(streamId, expectedVersion, events)` — passing an explicit expected
+The overload `session.Events.Append(streamId, expectedVersion, events)` — passing an explicit expected
 stream version to `Append()` — **requires `EventAppendMode.Rich`** (the Marten 8 default, no longer
 the Marten 9 default). Quick mode (`Quick` / `QuickWithServerTimestamps`, the Marten 9 default)
 relies on a server-side function to assign event versions and to insert the stream row, so calling

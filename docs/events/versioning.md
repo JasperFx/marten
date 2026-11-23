@@ -595,10 +595,7 @@ options.Events.Upcast<ShoppingCartOpenedUpcaster>();
 The techniques presented above should be enough for the majority of cases. Yet, sometimes we need to do more than that. E.g. load the JSON schema to validate event payload and do different mapping in case of validation failure. We may also want to load some additional data or use the library with the async-only API. We got you also covered in this case. You can also define upcasting transformations using .NET async code.
 
 ::: warning
-We recommend ensuring that you know what you're doing, as:
-
-1. **Upcasting code is run each time the event is deserialized.** That means that if you read a lot of events and you're trying to call external resources (especially if that involves network calls or IO operations), then you may end up with poor performance and the [N+1 problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping). If you need to do more exhausting call, make sure that you're caching results or getting the results upfront and reusing Task. Read also [Understanding the Whys, Whats, and Whens of ValueTask](https://devblogs.microsoft.com/dotnet/understanding-the-whys-whats-and-whens-of-valuetask/).
-2. Marten supports both synchronous and asynchronous calls. **If you define async upcaster, the exception will be thrown if you read events with sync code.**
+We recommend ensuring that you know what you're doing, because **upcasting code is run each time the event is deserialized.** That means that if you read a lot of events and you're trying to call external resources (especially if that involves network calls or IO operations), then you may end up with poor performance and the [N+1 problem](https://stackoverflow.com/questions/97197/what-is-the-n1-selects-problem-in-orm-object-relational-mapping). If you need to do more exhausting call, make sure that you're caching results or getting the results upfront and reusing Task. Read also [Understanding the Whys, Whats, and Whens of ValueTask](https://devblogs.microsoft.com/dotnet/understanding-the-whys-whats-and-whens-of-valuetask/).
 :::
 
 Let's assume that you're aware of the async code consequences explained above and that you'd like to read additional client data while upcasting using the following interface:

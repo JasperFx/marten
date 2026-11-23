@@ -59,7 +59,7 @@ var times = await session.QueryAsync<DateTimeOffset>(
 
 The basic rules for how Marten handles user-supplied queries are:
 
-* The `T` argument to `Query<T>()/QueryAsync<T>()` denotes the return value of each item
+* The `T` argument to `QueryAsync<T>()` denotes the return value of each item
 * If the `T` is a [npgsql mapped type](https://www.npgsql.org/doc/types/basic.html) like a .Net `int` or `Guid`, the data is handled by reading the first
   field of the returned data
 * If the `T` is not a mapped type, Marten will try to read the first field with the JSON serializer

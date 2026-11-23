@@ -70,7 +70,7 @@ And some other things you probably want to know about how this works internally:
 
 Marten is smart enough to order the "upsert" operations to make the dependent documents be updated last.
 In the `Issue` referencing `User` example above, this means that if you create a new `User` and a new
-`Issue` in the same session, when you call `IDocumentSession.SaveChanges()/SaveChangesAsync()`, Marten will know
+`Issue` in the same session, when you call `IDocumentSession.SaveChangesAsync()`, Marten will know
 to save the new user first so that the issue will not fail with referential integrity violations.
 
 ## Foreign Keys to non-Marten tables

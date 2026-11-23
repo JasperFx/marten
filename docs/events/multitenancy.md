@@ -123,7 +123,7 @@ be appended as the default tenant id _no matter what the session's tenant id is_
 2. Marten "corrects" the tenant id applied to events from globally projected aggregates regardless of how the events are appended or how the session was created
 3. Marten automatically marks the storage for the aggregate type as single tenanted
 4. Live, Async, or Inline projections have all been tested with this functionality
-5. `AppendOptimistic()` and `AppendPessimistic()` do not work (yet) with this setting, but you should probably
+5. `AppendOptimistic()` and `AppendExclusive()` do not work (yet) with this setting, but you should probably
    be using `FetchForWriting()` instead anyway. 
 
 ## Per-Tenant Event Partitioning <Badge type="tip" text="9.4" /> {#per-tenant-event-partitioning}

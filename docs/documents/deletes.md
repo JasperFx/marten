@@ -4,7 +4,7 @@ You can register document deletions with an active `IDocumentSession` by either 
 a document from the database just to turn around and delete it. Keep in mind that using any of the methods
 around deleting a document or specifying a criteria for deleting documents in an `IDocumentSession`,
 you're really just queueing up a pending operation to the current `IDocumentSession` that is executed
-in a single database transaction by calling the `IDocumentSession.SaveChanges()/SaveChangesAsync()` method.
+in a single database transaction by calling the `IDocumentSession.SaveChangesAsync()` method.
 
 As explained later in this page, Marten supports both "hard" deletes where the underlying database row is permanently deleted
 and "soft" deletes where the underlying database row is just marked as deleted with a timestamp.
@@ -61,7 +61,7 @@ await theSession.SaveChangesAsync();
 
 A couple things to note:
 
-1. The actual Sql command to delete documents by a query is not executed until `IDocumentSession.SaveChanges()` is called
+1. The actual Sql command to delete documents by a query is not executed until `IDocumentSession.SaveChangesAsync()` is called
 1. The bulk delete command runs in the same batched sql command and transaction as any other document updates or deletes
    in the session
 

@@ -862,7 +862,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
                 // that is the targeted "T" in FetchForWriting<T>() when using
                 // an Inline projection for the "T". Saves on Marten doing an extra
                 // database fetch of the same data you already fetched from FetchForWriting()
-                // when Marten needs to apply the Inline projection as part of SaveChanges()
+                // when Marten needs to apply the Inline projection as part of SaveChangesAsync()
                 opts.Events.UseIdentityMapForAggregates = true;
             })
             // This is non-trivial performance optimization if you never

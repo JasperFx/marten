@@ -396,7 +396,7 @@ alias, to discriminate event types on the client. The assembly qualified .NET ty
 
 #### Empty streams: 404 or an empty array?
 
-`FetchStream` yields an empty list both for a stream that does not exist _and_ for a filter that
+`FetchStreamAsync` yields an empty list both for a stream that does not exist _and_ for a filter that
 excludes every event, and the two cannot be told apart. `StreamEvents` therefore exposes an
 `OnEmptyStatus` that defaults to `404`, matching the other single-resource results. Set it to
 `200` when running off the end of a stream is expected rather than exceptional — paging forward
