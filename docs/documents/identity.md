@@ -6,19 +6,17 @@ Besides being serializable, Marten's only other requirement for a .Net type to b
    [Identity Map](/documents/sessions#identity-map-mechanics) feature of Marten Db. In this case, the user will
    be responsible for supplying the identifier.
 1. `Guid`. If the id is a Guid, Marten will assign a new value for you when you persist the document for the first time if the id is empty.
-   _And for the record, it's pronounced "gwid"_.
-1. `CombGuid` is a [sequential Guid algorithm](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/CombGuidIdGeneration.cs). It can improve performance over the default Guid as it reduces fragmentation of the PK index.
 1. `Int` or `Long`. As of right now, Marten uses a [HiLo generator](http://stackoverflow.com/questions/282099/whats-the-hi-lo-algorithm) approach to assigning numeric identifiers by document type.
    Marten may support Postgresql sequences or star-based algorithms as later alternatives.
 1. _Strong Typed Identifiers_ where a type like the C# `public record struct NewGuidId(Guid Value);` wraps an inner `int`, `long`, `Guid`, or `string` value
 1. A single-case F# discriminated union can be used as the identifier. In this case, only `Guid` and `string` can be used as inner types, and you must set the ID yourself before saving the document (the ID cannot be automatically set by Marten since F# records are immutable and do not have setters - this would require deep copying arbitrary document types dynamically which is a relatively complex feature not supported at this time)
 1. When the ID member of a document is not settable or not public a `NoOpIdGeneration` strategy is used. This ensures that Marten does not set the ID itself, so the ID should be generated manually.
-1. A `Custom` ID generator strategy is used to implement the ID generation strategy yourself.
 
-Marten by default uses the identity value set on documents and only assigns one in case it has no value (`Guid.Empty`, `0`, `string.Empty` etc).
+Marten by default uses the identity value set on documents and only assigns one in case it has no value (`Guid.Empty`
+or `0`). A `string` id must be set by you unless you use `UseIdentityKey()`.
 
 ::: tip INFO
-When using a `Guid`/`CombGuid`, `Int`, or `Long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.
+When using a `Guid`, `int`, or `long` identifier, Marten will ensure the identity is set immediately after calling `IDocumentSession.Store` on the entity.
 :::
 
 You can see some example id usages below:
@@ -79,11 +77,11 @@ storeOptions.Schema.For<OverriddenIdDoc>().Identity(x => x.Name);
 ## Guid Identifiers
 
 ::: tip INFO
-As of Marten 1.0, the default Guid mechanism is a sequential or "Comb" Guid. While more expensive to
-generate, this makes inserts into the underlying document tables more efficient.
+Marten assigns new `Guid` ids with `SequentialGuidIdGeneration`. The ids sort the way PostgreSQL compares a `uuid`, so
+inserts go to the end of the index. Since Marten 10 they are not COMB Guids and carry no readable timestamp.
 :::
 
-Because _CombGuid_ is already the default, you only need to configure this explicitly if you want to ensure the strategy is applied uniformly as a policy across all document types:
+Because `SequentialGuidIdGeneration` is already the default, you only need to configure this explicitly if you want to ensure the strategy is applied uniformly as a policy across all document types:
 
 <!-- snippet: sample_configuring-global-sequentialguid -->
 <a id='snippet-sample_configuring-global-sequentialguid'></a>
@@ -113,7 +111,7 @@ options.Schema.For<UserWithGuid>().IdStrategy(new SequentialGuidIdGeneration());
 
 The _Hilo_ sequence generation can be customized with either global defaults or document type-specific overrides. By default, the Hilo sequence generation in Marten increments by 1 and uses a "maximum lo" number of 1000.
 
-To set different global defaults, use the `StoreOptions.HiloSequenceDefaults` property like this sample:
+To set different global defaults, use the `StoreOptions.Advanced.HiloSequenceDefaults` property like this sample:
 
 <!-- snippet: sample_configuring-global-hilo-defaults -->
 <a id='snippet-sample_configuring-global-hilo-defaults'></a>
@@ -180,7 +178,7 @@ var store = DocumentStore.For(_ =>
 
 ## Set the HiLo Identifier Floor
 
-Marten 1.2 adds a convenience method to reset the "floor" of the Hilo sequence for a single document type:
+Use `ResetHiloSequenceFloor<T>()` to reset the "floor" of the Hilo sequence for a single document type:
 
 <!-- snippet: sample_resethilosequencefloor -->
 <a id='snippet-sample_resethilosequencefloor'></a>
@@ -284,59 +282,29 @@ var store = DocumentStore.For(opts =>
 
 ## Custom Identity Strategies
 
-::: warning
-As of Marten 9.0 the document storage hierarchy no longer runtime-generates `IDocumentStorage<T, TId>` (see [#4404](https://github.com/JasperFx/marten/issues/4404)). The `IIdGeneration.GenerateCode` hook below is therefore no longer honored on the write path — the value lives on `DocumentMapping.IdStrategy` for configuration-surface compatibility, but it does not influence id assignment. Extending id assignment is now done by implementing `Marten.Internal.ClosedShape.IIdentification<TDoc, TId>` and registering the strategy directly. A standalone documentation page covering the new extension point is planned for a follow-up; in the meantime the existing in-tree strategies (`GuidIdentification`, `IdentityKeyIdentification`, `HiloIntIdentification`, `HiloLongIdentification`, `ValueTypeIdentification`) under `src/Marten/Internal/ClosedShape/` are good worked examples.
-:::
+Marten 9 and later do not support custom id generation. Marten picks how to assign ids from the id type alone:
 
-A custom ID generator strategy should implement [IIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/IIdGeneration.cs).
+| Id type | How Marten assigns a missing id |
+| --- | --- |
+| `Guid` | `SequentialGuidIdGeneration` (the default), or random `Guid.NewGuid()` values if you set `IdStrategy(new GuidIdGeneration())` |
+| `int` or `long` | A HiLo sequence per document type, configured as shown above |
+| `string` | Never. You assign the id, or opt into `UseIdentityKey()` |
+| Strong typed identifier | The same rule as the type it wraps, as described below |
+| F# single-case union | Never. You assign the id |
 
-<!-- snippet: sample_custom-id-generation -->
-<a id='snippet-sample_custom-id-generation'></a>
-```cs
-public class CustomIdGeneration : IIdGeneration
-{
-    public bool IsNumeric { get; } = false;
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-For more advances examples you can have a look at existing ID generator: [HiloIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/HiloIdGeneration.cs), [CombGuidGenerator](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/CombGuidIdGeneration.cs) and the [IdentityKeyGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/IdentityKeyGeneration.cs),
-
-To use custom id generation you should enable it when configuring the document store. This defines that the strategy will be used for all the documents types. The example below illustrates the legacy `IIdGeneration` configuration surface; under Marten 9.0 the strategy is preserved in the mapping but is no longer evaluated on the write path (see the warning above).
-
-```cs
-options.Policies.ForAllDocuments(m =>
-{
-    if (m.IdType == typeof(string))
-    {
-        m.IdStrategy = new CustomIdGeneration();
-    }
-});
-```
-
-It is also possible define a custom id generation algorithm for a specific document type.
-
-<!-- snippet: sample_configuring-mapping-specific-custom -->
-<a id='snippet-sample_configuring-mapping-specific-custom'></a>
-```cs
-options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L33-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+Setting `IdStrategy` to your own `IIdGeneration` compiles, but it has no effect on how ids are assigned. Assign the id
+yourself before `Store()`, or use a `string` id with `UseIdentityKey()`.
 
 ## Strong Typed Identifiers <Badge type="tip" text="7.20" />
 
 ::: warning
-There are lots of rules in Marten about what can and what can't be used as a strong typed identifier, and this
-documentation is trying hard to explain them, but you're best off copying the examples and using something like either
-Vogen or StronglyTypedID for now. 
+Marten has several rules about what it accepts as a strong typed identifier. The simplest path is to copy the examples
+below and use either Vogen or StronglyTypedId.
 :::
 
 ::: info
-As of Marten 7.29.0, the event sourcing features support strong typed identifiers for the aggregated
-document types, but there is still no direct support for supplying strong typed identifiers for event streams yet. 
-This may change in Marten 8.0.
+For strong typed identifiers on aggregates built by event projections, see
+[aggregate projections](/events/projections/aggregate-projections#strong-typed-identifiers-).
 :::
 
 Marten can now support [strong typed identifiers](https://en.wikipedia.org/wiki/Strongly_typed_identifier) using a couple different strategies.
@@ -367,8 +335,9 @@ public readonly struct Task2Id
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/TestingTypes.cs#L32-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_valid_strong_typed_identifiers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-In _all_ cases, the type name will have to be suffixed with "Id" (and it's case sensitive) to be considered by Marten to be
-a strong typed identity type. The identity types will also need to be immutable `struct` types
+The type must be a public `struct` with exactly one public property of type `int`, `long`, `Guid` or `string`, plus a
+public constructor or public static method that takes that value. (An F# single-case union must also have a name ending
+in `Id`.)
 
 The property names or static "builder" methods do not have any requirements for the names, but `Value` and `From` are common.
 So far, Marten's strong typed identifier support has been tested with:
@@ -394,7 +363,7 @@ public class Invoice
     public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L316-L329' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_with_vogen_id' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L317-L330' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_with_vogen_id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The usage of our `Invoice` document is essentially the same as a document type with the primitive identifier types:
@@ -414,25 +383,26 @@ public async Task update_a_document_smoke_test()
     await theSession.SaveChangesAsync();
 
     invoice.Name = "updated";
+    theSession.Store(invoice);
     await theSession.SaveChangesAsync();
 
-    // This is a new overload
+    // Load by the strong typed identifier
     var loaded = await theSession.LoadAsync<Invoice>(invoice.Id);
-    loaded.Name.ShouldBeNull("updated");
+    loaded.Name.ShouldBe("updated");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L51-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L51-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
-Marten 7.31.0 "fixed" it so that you don't have to use `Nullable<T>` for the identity member of strong typed identifiers.
+The identity member of a strong typed identifier does not have to be `Nullable<T>`.
 :::
 
-As you might infer -- or not -- there's a couple rules and internal behavior:
+The rules and internal behavior are:
 
 - The identity selection is done just the same as the primitive types, Marten is either looking for an `id`/`Id` member, or a member decorated with
   `[Identity]`
-- There is a new `IQuerySession.LoadAsync<T>(object id)` overload that was specifically built for strong typed identifiers
+- `IQuerySession.LoadAsync<T>(object id)` is the overload for strong typed identifiers
 - For `Guid`-wrapped values, Marten is assigning missing identity values based on its sequential `Guid` support
 - For `int` or `long`-wrapped values, Marten is using its HiLo support to define the wrapped values
 - For `string`-wrapped values, Marten is going to require you to assign the identity to documents yourself
@@ -453,10 +423,6 @@ public class Order2
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/StrongTypedId/int_based_document_operations.cs#L237-L248' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order2_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-::: warning
-Sorry folks, only the asynchronous APIs for loading documents are supported for strong typed identifiers
-:::
 
 As of now, Marten supports:
 
@@ -506,10 +472,6 @@ public async Task load_many()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/StrongTypedId/long_based_document_operations.cs#L352-L371' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_strong_typed_identifier_and_is_one_of-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-::: warning
-LoadManyAsync()_ is not supported for strong typed identifiers
-:::
-
 - Deleting a document by identity
 - Deleting a document by the document itself
 - Within `Include()` queries:
@@ -550,6 +512,8 @@ public async Task include_a_single_reference()
 - Within LINQ `OrderBy()` clauses
 - Identity map resolution
 - Automatic dirty checks
+
+`LoadManyAsync()` is not supported for strong typed identifiers.
 
 ### LINQ Support
 

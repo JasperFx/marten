@@ -77,7 +77,7 @@ public void deep_queries(IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L64-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep_nested_properties' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Right now, Marten supports both _and_ and _or_ queries with Linq:
+Marten supports both _and_ and _or_ queries with Linq:
 
 <!-- snippet: sample_querying_with_and_or_or -->
 <a id='snippet-sample_querying_with_and_or_or'></a>
@@ -142,7 +142,7 @@ something else.
 
 ## Ordering with dynamic properties
 
-Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is quite useful for cases where you wouldn't know the properties being used for ordering at build time. This functionality is added in v5.
+Marten provides helper methods to express ordering using dynamic properties in LINQ queries. This is useful when you don't know the properties used for ordering at build time.
 
 <!-- snippet: sample_ordering-in-linq-using-dynamic-props -->
 <a id='snippet-sample_ordering-in-linq-using-dynamic-props'></a>
@@ -175,15 +175,26 @@ public void order_by_dynamic_props(IDocumentSession session)
 
 ## Case-insensitive ordering for strings
 
-If you use `StringComparer.InvariantCultureIgnoreCase` or `StringComparer.OrdinalIgnoreCase` with an `OrderBy` on strings, Marten automatically applies case-insensitive ordering using `lower()` in generated SQL. This functionality is added in v5.
+If you use `StringComparer.InvariantCultureIgnoreCase` or `StringComparer.OrdinalIgnoreCase` with an `OrderBy` on strings, Marten automatically applies case-insensitive ordering using `lower()` in generated SQL.
 
+<!-- snippet: sample_order_by_case_insensitive -->
+<a id='snippet-sample_order_by_case_insensitive'></a>
 ```cs
-// invariant culture ignore case
-var query = theSession.Query<Target>().OrderBy(x => x.String, StringComparer.InvariantCultureIgnoreCase);
+public async Task order_by_case_insensitive(IQuerySession session)
+{
+    // Invariant culture, ignoring case
+    var byInvariant = await session.Query<Target>()
+        .OrderBy(x => x.String, StringComparer.InvariantCultureIgnoreCase)
+        .ToListAsync();
 
-// ordinal ignore case
-var query = theSession.Query<Target>().OrderBy(x => x.String, StringComparer.OrdinalIgnoreCase);
+    // Ordinal, ignoring case
+    var byOrdinal = await session.Query<Target>()
+        .OrderBy(x => x.String, StringComparer.OrdinalIgnoreCase)
+        .ToListAsync();
+}
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L14-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order_by_case_insensitive' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Aggregate Functions
 
@@ -233,13 +244,13 @@ Marten has been successfully tested with these [partition operators](https://doc
 public async Task using_take_and_skip(IDocumentSession session)
 {
     // gets records 11-20 from the database
-    await session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToListAsync();
+    await session.Query<Target>().OrderBy(x => x.Number).Skip(10).Take(10).ToListAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L143-L150' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_take_and_skip' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-TODO -- link to the paging support
+For paging with total counts, see [Paging](/documents/querying/linq/paging).
 
 ## GroupBy()
 
@@ -273,36 +284,58 @@ public async Task group_by_simple_key_with_count()
 
 You can group by multiple properties using an anonymous type:
 
-```csharp
-var results = await session.Query<Target>()
-    .GroupBy(x => new { x.Color, x.String })
-    .Select(g => new { Color = g.Key.Color, Text = g.Key.String, Count = g.Count() })
-    .ToListAsync();
+<!-- snippet: sample_group_by_composite_key -->
+<a id='snippet-sample_group_by_composite_key'></a>
+```cs
+public async Task group_by_composite_key(IQuerySession session)
+{
+    var results = await session.Query<Target>()
+        .GroupBy(x => new { x.Color, x.String })
+        .Select(g => new { Color = g.Key.Color, Text = g.Key.String, Count = g.Count() })
+        .ToListAsync();
+}
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L30-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_composite_key' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Where Before GroupBy
 
 Filter documents before grouping with a standard `Where()` clause:
 
-```csharp
-var results = await session.Query<Target>()
-    .Where(x => x.Number > 20)
-    .GroupBy(x => x.Color)
-    .Select(g => new { Color = g.Key, Count = g.Count() })
-    .ToListAsync();
+<!-- snippet: sample_group_by_where_before -->
+<a id='snippet-sample_group_by_where_before'></a>
+```cs
+public async Task group_by_where_before(IQuerySession session)
+{
+    var results = await session.Query<Target>()
+        .Where(x => x.Number > 20)
+        .GroupBy(x => x.Color)
+        .Select(g => new { Color = g.Key, Count = g.Count() })
+        .ToListAsync();
+}
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L40-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_where_before' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### HAVING (Where After GroupBy)
 
-Filter groups with a `Where()` clause after `GroupBy()` -- this translates to SQL `HAVING`:
+Filter groups with a `Where()` clause after `GroupBy()`. This translates to SQL `HAVING`:
 
-```csharp
-var results = await session.Query<Target>()
-    .GroupBy(x => x.Color)
-    .Where(g => g.Count() > 1)
-    .Select(g => new { Color = g.Key, Count = g.Count() })
-    .ToListAsync();
+<!-- snippet: sample_group_by_having -->
+<a id='snippet-sample_group_by_having'></a>
+```cs
+public async Task group_by_having(IQuerySession session)
+{
+    // The Where() after GroupBy() becomes a SQL HAVING clause
+    var results = await session.Query<Target>()
+        .GroupBy(x => x.Color)
+        .Where(g => g.Count() > 1)
+        .Select(g => new { Color = g.Key, Count = g.Count() })
+        .ToListAsync();
+}
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L51-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_having' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ### Supported Aggregates
 
@@ -319,11 +352,12 @@ The following aggregate methods are supported within GroupBy projections:
 
 `Count(predicate)` and `LongCount(predicate)` use the same predicate translation as
 document `Where()` clauses, including nullable comparisons, duplicated fields, compound
-predicates, and bound parameters.
+predicates, and bound parameters. Predicates that query a child collection, such as `x.Tags.Any(...)`, are not
+supported.
 
 ## Distinct()
 
-New in Marten 1.2 is support for the Linq `Distinct()` operator:
+Marten supports the LINQ `Distinct()` operator:
 
 <!-- snippet: sample_get_distinct_strings -->
 <a id='snippet-sample_get_distinct_strings'></a>
@@ -401,32 +435,46 @@ public async Task distinct_by(IDocumentSession session)
 This generates roughly:
 
 ```sql
-select distinct on (d.data ->> 'InstitutionId') jsonb_build_object(...) as data
-from mt_doc_pendinginstitutionclaimline as d
-order by d.data ->> 'InstitutionId'
+select distinct on (CAST(d.data ->> 'Number' as integer)) jsonb_build_object('Number', ..., 'String', ...) as data
+from public.mt_doc_target as d
+order by CAST(d.data ->> 'Number' as integer)
 ```
 
 Things to know:
 
 - The key expression is automatically prepended to the `ORDER BY` because Postgres requires the `DISTINCT ON` expression to be the leftmost `ORDER BY` expression. Any `OrderBy()` you add becomes a secondary sort, so _which_ row survives within each key group follows your ordering (and is otherwise arbitrary, exactly like SQL `DISTINCT ON`).
-- The `DistinctBy()` key must be a member that also exists on the queried document (the common case where the projection copies members through, e.g. `Select(x => new { x.InstitutionId, ... })`). `DistinctBy()` must be preceded by a `Select(...)` projection; calling it directly on the document (`Query<T>().DistinctBy(...)`) throws a `BadLinqExpressionException` — project first, or materialize and use `DistinctBy()` in memory.
+- The `DistinctBy()` key must be a member that also exists on the queried document (the common case where the projection copies members through, e.g. `Select(x => new { x.Number, ... })`). `DistinctBy()` must be preceded by a `Select(...)` projection; calling it directly on the document (`Query<T>().DistinctBy(...)`) throws a `BadLinqExpressionException` — project first, or materialize and use `DistinctBy()` in memory.
 
 ## CountBy(), AggregateBy(), and Index() (.NET 9)
 
-The `CountBy`, `AggregateBy`, and `Index` operators added in .NET 9 are **not translated to SQL by Marten**, because .NET only added them to `Enumerable` (there are no `IQueryable` overloads, so a query provider never sees them). Calling them on a Marten query therefore **runs client-side**: the full result set is pulled into memory first and the operator is applied there with LINQ to Objects — the same behavior you get with EF Core.
+The `CountBy`, `AggregateBy` and `Index` operators added in .NET 9 exist only on `Enumerable`, with no `IQueryable`
+overloads, so Marten never sees them. Calling one on a Marten query enumerates the query synchronously, and that throws
+`NotSupportedException` in Marten 10, the same as `ToList()` or `foreach`.
 
 ::: warning
-`session.Query<Target>().CountBy(x => x.Color)` does **not** push the grouping into PostgreSQL — it materializes every matching document first. For large tables, express the grouping with `GroupBy(...).Select(...)`, which Marten does translate to a SQL `GROUP BY`:
+`session.Query<Target>().CountBy(x => x.Color)` throws as soon as you enumerate the result. Load the rows first with
+`await query.ToListAsync()` and apply the operator to the list:
 
-```csharp
-// Translated to SQL: select count(*), color ... group by color
-var counts = await session.Query<Target>()
-    .GroupBy(x => x.Color)
-    .Select(g => new { Color = g.Key, Count = g.Count() })
-    .ToListAsync();
+<!-- snippet: sample_count_by_after_loading -->
+<a id='snippet-sample_count_by_after_loading'></a>
+```cs
+public async Task count_by_after_loading(IQuerySession session)
+{
+    // CountBy(), AggregateBy() and Index() only exist on Enumerable,
+    // so load the rows first, then apply them to the list in memory
+    var targets = await session.Query<Target>()
+        .Where(x => x.Number > 5)
+        .ToListAsync();
+
+    var countsByColor = targets.CountBy(x => x.Color);
+    var numbered = targets.Index();
+}
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/linq_operators_documentation_samples.cs#L63-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_count_by_after_loading' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
-(There is no efficient SQL equivalent for `AggregateBy`'s arbitrary accumulator function; `Index` corresponds to a window `row_number()` but is likewise only an in-memory operator today.) If/when .NET ships `Queryable` overloads for these, Marten can revisit native translation.
+That pulls every matching document into memory. For counts over a large table, use `GroupBy(...).Select(...)` instead,
+which Marten translates to a SQL `GROUP BY`, as shown in [GroupBy()](#groupby).
 :::
 
 ## Modulo Queries

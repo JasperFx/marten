@@ -144,7 +144,7 @@ public class LinqExamples
     public async Task using_take_and_skip(IDocumentSession session)
     {
         // gets records 11-20 from the database
-        await session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToListAsync();
+        await session.Query<Target>().OrderBy(x => x.Number).Skip(10).Take(10).ToListAsync();
     }
 
     #endregion

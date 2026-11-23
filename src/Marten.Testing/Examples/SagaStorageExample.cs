@@ -32,8 +32,7 @@ public class SagaStorageExample
 
     public async Task execute_saga(IDocumentStore store, Guid sagaId, CancellationToken ct)
     {
-        // The session below will open its connection and start a
-        // snapshot transaction
+        // The session below uses a snapshot transaction
         await using var session = store.LightweightSession(IsolationLevel.Snapshot);
         var state = await session.LoadAsync<MySagaState>(sagaId, ct);
 

@@ -24,8 +24,8 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
     public void ConfigureCommandTimeout(IDocumentStore store)
     {
-        // Sets the command timeout for this session to 60 seconds
-        // The default is 30
+        // Overrides the store's command timeout for this session,
+        // setting it to 60 seconds
         using (var session = store.LightweightSession(new SessionOptions { Timeout = 60 }))
         {
         }
