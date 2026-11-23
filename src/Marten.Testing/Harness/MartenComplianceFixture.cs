@@ -573,6 +573,12 @@ public class MartenComplianceFixture: EventStoreComplianceFixture<IDocumentOpera
     public override bool SupportsNaturalKeys => true;
 
     /// <summary>
+    ///     Keys declared with [MappedNaturalKey&lt;T&gt;] or [NaturalKey(SourceProjection = ...)] read the
+    ///     source projection's lookup table, so an async aggregate is fetchable by natural key.
+    /// </summary>
+    public override bool SupportsMappedNaturalKeys => true;
+
+    /// <summary>
     ///     jasperfx#762. Both plan types ship on Marten (Marten.FetchStreamStatePlan /
     ///     Marten.FetchStreamPlan), each implementing IQueryPlan&lt;T&gt; and IBatchQueryPlan&lt;T&gt;
     ///     so the same instance can run standalone or inside a batch.

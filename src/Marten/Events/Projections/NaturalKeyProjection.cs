@@ -24,7 +24,7 @@ namespace Marten.Events.Projections;
 /// <c>is_archived</c> column is only maintained under <c>UseArchivedStreamPartitioning</c>, where
 /// <c>mt_archive_stream</c> and <c>mt_unarchive_stream</c> copy the row between partitions along with its
 /// stream (marten#5476; before that the cascading foreign key deleted it on archive). Readers get the flag off
-/// <c>mt_streams</c> instead — see <c>FetchNaturalKeyPlan.BuildNaturalKeyToStreamQuery</c>.
+/// <c>mt_streams</c> instead — see <c>NaturalKeyQueryBuilder</c>, which every fetch by natural key resolves the key with.
 /// </remarks>
 internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IProjectionSchemaSource
 {
@@ -66,6 +66,10 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
                         if (innerValue != null)
                         {
                             queueClaim(operations, stream.Id, stream.Key, stream.TenantId, innerValue);
+                        }
+                        else
+                        {
+                            queueRetirementOfAllKeys(operations, stream.Id, stream.Key, stream.TenantId);
                         }
                     }
                 }
@@ -112,6 +116,10 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
                     if (innerValue != null)
                     {
                         queueUpsertSql(operations, @event.StreamId, @event.StreamKey, @event.TenantId, innerValue);
+                    }
+                    else
+                    {
+                        queueRetirementOfAllKeys(operations, @event.StreamId, @event.StreamKey, @event.TenantId);
                     }
                 }
             }
@@ -172,6 +180,29 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
             operations.QueueSqlCommand(
                 $"DELETE FROM {_tableName} WHERE {streamCol} = ? AND natural_key_value <> ?",
                 streamIdValue, innerValue);
+        }
+    }
+
+    /// <summary>
+    /// A key source that yields null for an event it is mapped to says the stream no longer has a key
+    /// (a nullable key set back to null), so every row pointing at the stream is retired and it can no
+    /// longer be fetched by its old key. On a stream that never had a key -- its first event carrying no
+    /// key yet -- there is nothing to retire.
+    /// </summary>
+    private void queueRetirementOfAllKeys(IDocumentOperations operations, Guid streamId, string? streamKey,
+        string tenantId)
+    {
+        var streamCol = _isGuid ? "stream_id" : "stream_key";
+        object streamIdValue = _isGuid ? (object)streamId : streamKey!;
+
+        if (_isConjoined)
+        {
+            operations.QueueSqlCommand($"DELETE FROM {_tableName} WHERE tenant_id = ? AND {streamCol} = ?",
+                tenantId, streamIdValue);
+        }
+        else
+        {
+            operations.QueueSqlCommand($"DELETE FROM {_tableName} WHERE {streamCol} = ?", streamIdValue);
         }
     }
 

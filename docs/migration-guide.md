@@ -35,6 +35,10 @@ list of what you get.
 - DCB conflicts are scoped by event type, as the DCB specification does.
 - The aggregate write cache covers `Live` aggregates and every fetch for writing, and batched fetches of `Async`
   aggregates no longer have ordering rules.
+- [Natural keys](/events/natural-keys) work almost everywhere a stream id does: mapped keys shared between
+  aggregates, `TKey?` keys, fetches in batch queries, `FetchForWriting(key, expectedVersion)`, `FetchManyForWriting`
+  by key, one round trip per fetch, and the identity map and write cache by key. See
+  [natural keys in 10.0.0](#natural-keys-in-10-0-0) for what changed.
 
 ### Documents and LINQ
 
@@ -125,6 +129,43 @@ Marten 10.0.0-rc.1 is built on JasperFx 3.12.1. Between 3.10 and 3.12.1, these c
   composite rebuild that runs out of time between pages throws `OperationCanceledException`.
 - **The async daemon builds a batch again after a transient failure** (JasperFx 3.11). See
   [the async daemon retries a transient batch failure](#the-async-daemon-retries-a-transient-batch-failure).
+
+### Natural keys: stricter, and fetched like stream ids <Badge type="warning" text="behavior change" /> {#natural-keys-in-10-0-0}
+
+Fetching by a [natural key](/events/natural-keys) now behaves like fetching by stream id, and several natural key
+setups that used to fail silently are refused when the `DocumentStore` is built.
+
+**Refused at startup** with `InvalidProjectionException`. Most of these are also build errors, from the JasperFx
+analyzers `JFXEVT010` to `JFXEVT017`:
+
+- two owned `[NaturalKey]` properties on one aggregate, or two natural keys of the same type. Map the extra keys to
+  the aggregate that owns them with `[MappedNaturalKey<T>]`;
+- an owned key that no event sets, so its lookup would never be written;
+- a non-public `[NaturalKeySource]` method, or two sources for one event that derive the key differently;
+- an owned key on an aggregate inside a composite projection. That used to fail on every fetch with PostgreSQL
+  `42P01`; register the aggregate's projection outside the composite, or map the key instead;
+- a bare `string` natural key on a `StreamIdentity.AsString` store, where a fetch by `string` is a fetch by stream
+  key. Wrap the key in a strong-typed identifier. A bare `string` key on a `Guid` store is unaffected;
+- a mapped key where only one of the aggregate and the key's owner is a global aggregate.
+
+**Fetching changes:**
+
+- **A `[NaturalKeySource]` that returns null retires the stream's key.** The stream can no longer be found by its old
+  key, and another stream can claim it. It used to keep the old key. A stream whose first event carries no key is
+  unaffected. Check any `Apply` used as a key source that only sets the key on some events.
+- **The key type of a fetch is `TKey`, never `TKey?`.** `FetchForWriting`, `FetchForExclusiveWriting`, `FetchLatest`,
+  `FetchManyForWriting` and their batch forms throw `ArgumentException` for a `Nullable<T>` type argument. `TKey?` is
+  still fine on the aggregate's property and as a source's return type.
+- **A null key is refused like a null stream id.** A fetch for writing throws `ArgumentOutOfRangeException`, and
+  `FetchLatest` returns null without a query. A strong-typed key wrapping null counts as null.
+- **`FetchForWriting(key, expectedVersion)` checks the version against what the fetch read, before it changes the
+  session.** A stale version throws `ConcurrencyException`, including when an event was appended while the fetch ran.
+- **`FetchLatest` by key can return the session's own instance** when `UseIdentityMapForAggregates` is on, as
+  `FetchLatest` by stream id does. A fetch by an `int` or `long` key of 0 always queries, since an aggregate whose
+  key was never set also reads as 0.
+
+**Recompile** anything that implements or mocks `IBatchEvents`, which has four new members for fetching by natural key
+in a batch query.
 
 ### Async projections park a failing identity instead of skipping the event <Badge type="warning" text="behavior change" /> {#async-projections-park-a-failing-identity}
 

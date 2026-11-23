@@ -159,7 +159,7 @@ public partial class MartenDatabase
 
     /// <summary>
     /// marten#6132: the qualified natural key table of every single stream projection (composite members included)
-    /// whose aggregate has a natural key, by the projection name and version its parked rows carry.
+    /// whose aggregate has a natural key, owned or mapped, by the projection name and version its parked rows carry.
     /// </summary>
     private Dictionary<(string Name, uint Version), string> naturalKeyedProjections()
     {
@@ -175,7 +175,7 @@ public partial class MartenDatabase
                 }
 
                 if (source is IAggregateProjection { Scope: AggregationScope.SingleStream } aggregate &&
-                    aggregate.NaturalKeyDefinition is { } naturalKey)
+                    lookupFor(aggregate) is { } naturalKey)
                 {
                     keyed.TryAdd((source.Name, source.Version),
                         NaturalKeyTable.TableNameFor(Options.EventGraph, naturalKey).QualifiedName);
@@ -186,6 +186,17 @@ public partial class MartenDatabase
         add(Options.Projections.All);
         return keyed;
     }
+
+    /// <summary>
+    /// The key whose lookup names an aggregate's streams: its owned key, or else its first mapped key, read through
+    /// the source projection's lookup. Mapped keys mostly sit on Async read models, which are the projections that
+    /// park, and composite members can only map a key, never own one.
+    /// </summary>
+    private static NaturalKeyDefinition? lookupFor(IAggregateProjection aggregate)
+        => aggregate.NaturalKeyDefinition
+           ?? aggregate.MappedNaturalKeyDefinitions
+               .Select(x => x.SourceProjectionDefinition)
+               .FirstOrDefault(x => x != null);
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<ParkedShardCount>> FetchParkedCountsAsync(string? tenantId,

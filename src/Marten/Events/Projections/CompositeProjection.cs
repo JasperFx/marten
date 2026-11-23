@@ -343,6 +343,8 @@ internal class CompositeProjectionWithServicesSource<TProjection> :
         _aggregateType == null ? [] : Source.As<IAggregateProjection>().AllEventTypes;
     NaturalKeyDefinition? IAggregateProjection.NaturalKeyDefinition =>
         _aggregateType == null ? null : Source.As<IAggregateProjection>().NaturalKeyDefinition;
+    NaturalKeyDefinition[] IAggregateProjection.MappedNaturalKeyDefinitions =>
+        _aggregateType == null ? [] : Source.As<IAggregateProjection>().MappedNaturalKeyDefinitions;
 
     void IMartenAggregateProjection.ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
     {

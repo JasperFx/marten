@@ -142,7 +142,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     ///     #6086: the floor is the cached aggregate's version, which the cached batch statement
     ///     (<see cref="writeCachedReads" />) chose over the snapshot's.
     /// </param>
-    private readonly record struct Delta(IReadOnlyList<IEvent> Events, long Floor, bool StreamExists, bool CacheHit = false);
+    internal readonly record struct Delta(IReadOnlyList<IEvent> Events, long Floor, bool StreamExists, bool CacheHit = false);
 
     private async Task<Delta> readDeltaAsync(DbDataReader reader, IEventStorage selector, CancellationToken token,
         bool readsCacheHit = false)
@@ -180,7 +180,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     ///     neither. With <paramref name="detect" /> on that throws <see cref="SnapshotRaceException" /> so the
     ///     caller can redo the fetch; with it off, the delta is applied as it stands.
     /// </remarks>
-    private static IReadOnlyList<IEvent> eventsAfterSnapshot(TId id, bool hasSnapshot, long? snapshotVersion,
+    internal static IReadOnlyList<IEvent> eventsAfterSnapshot(TId id, bool hasSnapshot, long? snapshotVersion,
         Delta delta, bool detect)
     {
         if (delta.Floor > 0 && !delta.StreamExists)
@@ -212,7 +212,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     ///     The stream version the fetched aggregate reflects. The stream version is read first, so the
     ///     snapshot or the events can be past it, and the aggregate is then at the later version.
     /// </summary>
-    private static long reachedVersion(long streamVersion, bool hasSnapshot, long? snapshotVersion,
+    internal static long reachedVersion(long streamVersion, bool hasSnapshot, long? snapshotVersion,
         IReadOnlyList<IEvent> events)
     {
         var reached = streamVersion;
@@ -222,9 +222,12 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     }
 
     // The revision is recorded under the document's own id type, which a strong-typed id is not
-    private long? snapshotVersionFor(DocumentSessionBase session, TId id) => _storage is IValueTypeRevisions<TId> wrapped
-        ? wrapped.RevisionFor(session, id)
-        : ((IMartenSession)session).Versions.RevisionFor<TDoc, TId>(id);
+    private long? snapshotVersionFor(DocumentSessionBase session, TId id) => snapshotVersionFor(_storage, session, id);
+
+    internal static long? snapshotVersionFor(IDocumentStorage<TDoc, TId> storage, DocumentSessionBase session, TId id) =>
+        storage is IValueTypeRevisions<TId> wrapped
+            ? wrapped.RevisionFor(session, id)
+            : ((IMartenSession)session).Versions.RevisionFor<TDoc, TId>(id);
 
     /// <summary>
     ///     The delta query for a cache hit: only the events after the version of the snapshot we already

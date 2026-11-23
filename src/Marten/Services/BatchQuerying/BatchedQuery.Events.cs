@@ -197,6 +197,47 @@ internal partial class BatchedQuery: IBatchEvents
         return AddItem(handler);
     }
 
+    public Task<IEventStream<T>> FetchForWriting<T, TId>(TId id) where T : class where TId : notnull
+    {
+        var plan = enlistFetchPlan<T, TId>();
+        return AddItem(plan.BuildQueryHandler(Parent, id, false));
+    }
+
+    public Task<IEventStream<T>> FetchForWriting<T, TId>(TId id, long expectedVersion)
+        where T : class where TId : notnull
+    {
+        var plan = enlistFetchPlan<T, TId>();
+        return AddItem(plan.BuildQueryHandler(Parent, id, expectedVersion));
+    }
+
+    public async Task<IEventStream<T>> FetchForExclusiveWriting<T, TId>(TId id) where T : class where TId : notnull
+    {
+        // See FetchForExclusiveWriting<T>(Guid) for why the transaction is started without being awaited.
+        var plan = enlistFetchPlan<T, TId>();
+        var resultTask = AddItem(plan.BuildQueryHandler(Parent, id, true));
+        startTransaction();
+        return await resultTask.ConfigureAwait(false);
+    }
+
+    public Task<T?> FetchLatest<T, TId>(TId id) where T : class where TId : notnull
+    {
+        var plan = enlistFetchPlan<T, TId>();
+        return AddItem(plan.BuildQueryHandler(Parent, id));
+    }
+
+    private IAggregateFetchPlan<T, TId> enlistFetchPlan<T, TId>() where T : class where TId : notnull
+    {
+        // A natural key's lookup table is part of the event storage
+        _documentTypes.Add(typeof(IEvent));
+        var plan = Parent.Events.As<EventStore>().FindFetchPlan<T, TId>();
+        if (plan.Lifecycle != ProjectionLifecycle.Live)
+        {
+            _documentTypes.Add(typeof(T));
+        }
+
+        return plan;
+    }
+
     public Task<bool> EventsExist(EventTagQuery query)
     {
         _documentTypes.Add(typeof(IEvent));

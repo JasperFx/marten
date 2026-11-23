@@ -1127,6 +1127,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     public List<Type> GlobalAggregates { get; } = new();
 
+    private NaturalKeyStreamIndex? _naturalKeyStreams;
+
+    /// <summary>
+    /// Natural key pointers into the aggregate write cache, so a fetch by natural key can use it too.
+    /// </summary>
+    internal NaturalKeyStreamIndex NaturalKeyStreams =>
+        LazyInitializer.EnsureInitialized(ref _naturalKeyStreams,
+            () => new NaturalKeyStreamIndex(this, AggregateWriteCaching.SizeLimit));
+
     // CacheAggregatesForWriting<T> is EventRegistry's, unchanged. The write back is no longer a session
     // listener: each DocumentSessionBase owns an AggregateWriteCacheSession (jasperfx#1050), flushed by
     // SaveChangesAsync after a commit the session owns.

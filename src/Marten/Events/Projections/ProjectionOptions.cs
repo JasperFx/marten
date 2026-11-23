@@ -483,6 +483,58 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     }
 
     /// <summary>
+    /// A mapped natural key reads its source's lookup table, which is tenanted the way the source aggregate
+    /// is. Both aggregates project the same stream, so one global and the other not cannot both be right.
+    /// Runs after <see cref="ProjectionGraph{TProjection,TOperations,TQuerySession}.AssertValidity{T}"/>
+    /// has resolved each mapped key's source.
+    /// </summary>
+    internal void AssertMappedNaturalKeysAgreeOnGlobalTenancy()
+    {
+        var globals = _options.EventGraph.GlobalAggregates;
+        var messages = AllAggregateProjections()
+            .SelectMany(aggregate => aggregate.MappedNaturalKeyDefinitions
+                .Where(x => x.SourceProjectionDefinition != null)
+                .Where(x => globals.Contains(aggregate.AggregateType) !=
+                            globals.Contains(x.SourceProjectionDefinition!.AggregateType))
+                .Select(x =>
+                    $"Mapped natural key {aggregate.AggregateType.FullNameInCode()}.{x.Member.Name} reads the lookup of {x.SourceProjectionDefinition!.AggregateType.FullNameInCode()}, but only one of the two is a global aggregate. Make both global or neither."))
+            .ToArray();
+
+        if (messages.Length > 0)
+        {
+            throw new InvalidProjectionException(messages);
+        }
+    }
+
+    /// <summary>
+    /// A natural key of the store's own stream identity type, a bare <c>string</c> on a string-identity store,
+    /// can never be fetched by: <c>FetchForWriting&lt;T, string&gt;</c> and the other fetches by <c>string</c>
+    /// are fetches by stream key there (see <c>EventStore.IsNaturalKeyIdentity</c>), which would silently find
+    /// nothing, or start a new stream named after the key. A bare
+    /// <c>string</c> key on a Guid-identity store is unaffected (#5344).
+    /// </summary>
+    internal void AssertNaturalKeysAreNotStreamIdentities()
+    {
+        var streamIdentityType = _options.EventGraph.StreamIdentity == StreamIdentity.AsGuid
+            ? typeof(Guid)
+            : typeof(string);
+
+        var messages = AllAggregateProjections()
+            .SelectMany(aggregate => new[] { aggregate.NaturalKeyDefinition }
+                .Concat(aggregate.MappedNaturalKeyDefinitions)
+                .OfType<NaturalKeyDefinition>()
+                .Where(x => x.OuterType == streamIdentityType)
+                .Select(x =>
+                    $"Natural key {aggregate.AggregateType.FullNameInCode()}.{x.Member.Name} has type {streamIdentityType.FullNameInCode()}, the same type as this store's stream identity ({_options.EventGraph.StreamIdentity}), so fetching by it would fetch by stream identity instead. Wrap it in a strong-typed identifier, such as a record struct with a single Value property."))
+            .ToArray();
+
+        if (messages.Length > 0)
+        {
+            throw new InvalidProjectionException(messages);
+        }
+    }
+
+    /// <summary>
     /// Find a registered natural key definition for the given aggregate type, if any.
     /// </summary>
     public NaturalKeyDefinition? FindNaturalKeyDefinition(Type aggregateType)

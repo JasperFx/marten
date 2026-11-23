@@ -213,7 +213,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             if (_cache != null && document != null && version > 0 && storage != null)
             {
                 session.AggregateWriteCache.Register(cacheAttempt, document, version);
-                advanceAfterCommit(session, storage, cacheKeyFor(session, id), id);
+                AdvanceAfterCommit(session, storage, cacheKeyFor(session, id), id, IsGlobal);
             }
 
             return version == 0
@@ -247,8 +247,8 @@ internal partial class FetchInlinedPlan<TDoc, TId>
     ///     nothing is written back, because guessing would put a wrong aggregate where the next writer
     ///     decides from it.
     /// </summary>
-    private void advanceAfterCommit(DocumentSessionBase session, IDocumentStorage<TDoc, TId> storage,
-        AggregateCacheKey key, TId id)
+    internal static void AdvanceAfterCommit(DocumentSessionBase session, IDocumentStorage<TDoc, TId> storage,
+        AggregateCacheKey key, TId id, bool isGlobal)
     {
         var tenantId = session.TenantId;
 
@@ -258,7 +258,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             foreach (var candidate in commit.GetStreams())
             {
                 var sameStream = id is Guid guid ? candidate.Id == guid : Equals(candidate.Key, id as string);
-                if (sameStream && (IsGlobal || candidate.TenantId == tenantId))
+                if (sameStream && (isGlobal || candidate.TenantId == tenantId))
                 {
                     stream = candidate;
                     break;

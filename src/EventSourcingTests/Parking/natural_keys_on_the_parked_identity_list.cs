@@ -40,6 +40,39 @@ public class NaturalKeyStringLedger: IParkingLedger
     }
 }
 
+/// <summary>Owns the ledger number that <see cref="MappedKeyLedger" /> maps, and never parks.</summary>
+public class LedgerNumberOwner
+{
+    public Guid Id { get; set; }
+
+    [NaturalKey]
+    public LedgerNumber Number { get; set; } = null!;
+
+    [NaturalKeySource]
+    public void Apply(LedgerOpened e) => Number = new LedgerNumber(e.Number);
+}
+
+/// <summary>An Async read model that finds its ledger number through <see cref="LedgerNumberOwner" />'s lookup.</summary>
+public class MappedKeyLedger: IParkingLedger
+{
+    public Guid Id { get; set; }
+
+    [MappedNaturalKey<LedgerNumberOwner>]
+    public LedgerNumber Number { get; set; } = null!;
+
+    public int Postings { get; set; }
+
+    public void Apply(LedgerOpened e) => Number = new LedgerNumber(e.Number);
+
+    public void Apply(LedgerPosted e) => Postings++;
+
+    public void Apply(IEvent<LedgerBroken> e)
+    {
+        LedgerPoison.ThrowIfPoisoned(e.TenantId, e.StreamId);
+        Postings++;
+    }
+}
+
 /// <summary>
 ///     marten#6132: <c>FetchParkedIdentitiesAsync</c> fills in <see cref="ParkedIdentity.NaturalKey" /> from the
 ///     aggregate's natural key table, so the parked list can show the key an operator knows the aggregate by.
@@ -145,6 +178,39 @@ public class natural_keys_on_the_parked_identity_list: OneOffConfigurationsConte
                 TestContext.Current.CancellationToken);
             all.Count.ShouldBe(4);
             all.Where(x => x.NaturalKey != null).ShouldHaveSingleItem().ProjectionName.ShouldBe(nameof(NaturalKeyLedger));
+        }
+        finally
+        {
+            await daemon.StopAllAsync();
+        }
+    }
+
+    [Fact]
+    public async Task a_read_model_with_a_mapped_key_gets_the_key_from_its_source()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Errors.ApplyErrors = ProjectionErrorAction.Park;
+            opts.Projections.Snapshot<LedgerNumberOwner>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<MappedKeyLedger>(SnapshotLifecycle.Async);
+        });
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        try
+        {
+            var stream = Guid.NewGuid();
+            await appendAsync(stream, new LedgerOpened("M-9"), new LedgerPosted());
+            await waitAsync();
+
+            poison(stream);
+            await appendAsync(stream, new LedgerBroken(), new LedgerPosted());
+            await waitAsync();
+
+            var parked = (await parkedAsync(nameof(MappedKeyLedger))).ShouldHaveSingleItem();
+            parked.IdentityText.ShouldBe(stream.ToString("D"));
+            parked.NaturalKey.ShouldBe("M-9");
         }
         finally
         {

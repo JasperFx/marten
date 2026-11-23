@@ -43,6 +43,46 @@ internal partial class EventStore
             (batch, key) => batch.Events.FetchForWriting<T>(key),
             key => Operations.FetchForWriting<T>(key, cancellation), cancellation);
 
+    /// <summary>
+    ///     The many-stream form of <see cref="FetchForWriting{T, TId}(TId, CancellationToken)" />: by a natural
+    ///     key, a strong-typed identifier or the stream id itself, in one round trip. A natural key is resolved
+    ///     inside the batch.
+    /// </summary>
+    /// <remarks>
+    ///     An id that matches no stream comes back as a handle with a null aggregate at version 0, as a single
+    ///     <c>FetchForWriting</c> by that id would: appending starts the stream.
+    /// </remarks>
+    /// <exception cref="ArgumentException">
+    ///     When <paramref name="ids" /> repeats an id, or <typeparamref name="TId" /> is <c>Nullable&lt;T&gt;</c>.
+    /// </exception>
+    /// <exception cref="ArgumentNullException">When an id is null.</exception>
+    public Task<IReadOnlyList<IEventStream<T>>> FetchManyForWriting<T, TId>(IReadOnlyList<TId> ids,
+        CancellationToken cancellation = default) where T : class where TId : notnull
+    {
+        // Ahead of the empty-list shortcut, so a TKey? call is refused whatever it is given, as
+        // FetchForWriting<T, TKey?> is
+        if (Nullable.GetUnderlyingType(typeof(TId)) is { } underlying)
+        {
+            throw new ArgumentException(
+                $"{typeof(T).Name} cannot be fetched by {typeof(TId).Name}. Fetch by {underlying.Name} instead, and drop the null ids before fetching.",
+                nameof(ids));
+        }
+
+        ArgumentNullException.ThrowIfNull(ids, nameof(ids));
+        for (var i = 0; i < ids.Count; i++)
+        {
+            if (ids[i] is null)
+            {
+                throw new ArgumentNullException(nameof(ids),
+                    $"{nameof(FetchManyForWriting)} was given a null id at position {i}. Drop the null ids before fetching.");
+            }
+        }
+
+        return fetchManyForWritingAsync<T, TId>(ids, nameof(ids),
+            (batch, id) => batch.Events.FetchForWriting<T, TId>(id),
+            id => FetchForWriting<T, TId>(id, cancellation), cancellation);
+    }
+
     private async Task<IReadOnlyList<IEventStream<T>>> fetchManyForWritingAsync<T, TId>(
         IReadOnlyList<TId> identities,
         string parameterName,
@@ -74,11 +114,11 @@ internal partial class EventStore
         {
             await batch.Execute(cancellation).ConfigureAwait(false);
         }
-        catch (SnapshotRaceException)
+        catch (Exception e) when (e is SnapshotRaceException or NaturalKeyMovedException)
         {
-            // An Async snapshot went backwards mid-batch, as it does while a projection is rebuilt. A batch
-            // cannot redo one fetch, but the single-stream fetch can, so fall back to one per stream.
-            // Nothing was handed out yet, so the abandoned batch items are never observed -- but the fetches
+            // An Async snapshot went backwards mid-batch, as it does while a projection is rebuilt, or a natural
+            // key changed hands while it was read. A batch cannot redo one fetch, but the single-stream fetch
+            // can, so fall back to one per stream. Nothing was handed out yet, so the abandoned batch items are never observed -- but the fetches
             // read before the refused one already added their stream actions to the session. Take those back,
             // or a new stream would be started twice: once by the batch and again by the fallback (#6073).
             discardStreamActionsSince(streamActionsBefore);
