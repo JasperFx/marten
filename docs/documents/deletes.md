@@ -170,7 +170,7 @@ internal void AllDocumentTypesShouldBeSoftDeleted()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_alldocumenttypesshouldbesoftdeleted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Querying a "Soft Deleted" Document Type
+### Querying a "Soft Deleted" Document Type {#querying-a-soft-deleted-document-type}
 
 By default, Marten quietly filters out documents marked as deleted from Linq queries as demonstrated
 in this acceptance test from the Marten codebase:

@@ -231,7 +231,7 @@ public class BlogPost
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L75-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_multiple_properties_full_text_index_through_attribute_with_custom_settings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Text Search
+## Text Search {#text-search}
 
 Postgres contains built in [Text Search functions](https://www.postgresql.org/docs/10/textsearch-controls.html). They enable the possibility to do more sophisticated searching through text fields. Marten gives possibility to define full text indexes and perform queries on them.
 Five full text search operators are supported, one per PostgreSQL query function plus a prefix form built on `to_tsquery`:

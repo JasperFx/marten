@@ -131,7 +131,7 @@ handles this refusal across Critter Stack stores can catch the one shared type. 
 broad `catch (MartenException)` to handle it, catch the exception itself — or the JasperFx base — instead.
 :::
 
-## Querying Multi-Tenanted Documents
+## Querying Multi-Tenanted Documents {#querying-multi-tenanted-documents}
 
 Inside the LINQ provider, when you open a session for a specific tenant like so:
 

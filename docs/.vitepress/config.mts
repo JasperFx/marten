@@ -179,6 +179,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                 { text: 'Mixing Raw SQL with Linq', link: '/documents/querying/linq/sql' },
                 { text: 'Searching with Boolean Flags', link: '/documents/querying/linq/booleans' },
                 { text: 'Searching for NULL Values', link: '/documents/querying/linq/nulls' },
+                { text: 'Querying C# Union Members', link: '/documents/querying/linq/unions' },
                 { text: 'Querying with Postgres SQL', link: '/documents/querying/sql' },
                 { text: 'Advanced Querying with Postgres SQL', link: '/documents/querying/advanced-sql' },
                 { text: 'Querying for Raw JSON', link: '/documents/querying/query-json' },

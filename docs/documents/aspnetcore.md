@@ -230,7 +230,7 @@ var stream = new MemoryStream();
 bool found = await session.Events.StreamLatestJson<Order>(orderId, stream);
 ```
 
-## Typed Streaming Result Types <Badge type="tip" text="8.x" />
+## Typed Streaming Result Types <Badge type="tip" text="8.x" /> {#typed-streaming-result-types}
 
 For Minimal API endpoints (and for frameworks like [Wolverine.Http](https://wolverinefx.net/guide/http/)
 that dispatch any `IResult` return value), `Marten.AspNetCore` ships seven typed
@@ -582,7 +582,7 @@ compiled query's declared return type. Prefer compiled queries when the endpoint
 is on a hot path — Marten caches the compiled SQL and bypasses LINQ parsing on
 subsequent calls.
 
-## `StreamPagedByCursor<T>` — keyset-paginated streaming <Badge type="tip" text="9.18" />
+## `StreamPagedByCursor<T>` — keyset-paginated streaming <Badge type="tip" text="9.18" /> {#streampagedbycursor-t-keyset-paginated-streaming}
 
 `StreamMany<T>` and `WriteArray()` stream an entire result set. For very large or
 open-ended result sets — infinite scroll UIs, data exports, catch-up feeds — you

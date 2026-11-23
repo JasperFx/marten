@@ -175,12 +175,14 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        await theSession.SaveChangesAsync();(await 
+        await theSession.SaveChangesAsync();
 
-        theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
-            .ToListAsync())
-            .Select(x => x.Name)
-            .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
+        var names = await theSession.Query<User>()
+            .OrderBy(x => x.FirstName)
+            .Select(x => new { Name = x.FirstName })
+            .ToListAsync();
+
+        names.Select(x => x.Name).ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
     }
 
     #endregion
@@ -206,9 +208,10 @@ public class select_clause_usage: IntegrationContext
         });
     }
 
+    // User2 has properties, not public fields: System.Text.Json, Marten's default serializer, does not
+    // populate public fields, which is why this test used to run under Newtonsoft only (#5068)
     #region sample_other_type_projection
-    // #5068: confirmed to fail under System.Text.Json.
-    [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
+    [Fact]
     public async Task use_select_with_multiple_fields_to_other_type()
     {
         theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
@@ -233,8 +236,8 @@ public class select_clause_usage: IntegrationContext
 
     public class User2
     {
-        public string First;
-        public string Last;
+        public string First { get; set; }
+        public string Last { get; set; }
     }
 
 

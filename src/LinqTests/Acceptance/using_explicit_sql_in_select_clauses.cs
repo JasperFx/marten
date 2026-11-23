@@ -42,9 +42,12 @@ public class using_explicit_sql_in_select_clauses : IntegrationContext
         theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
         await theSession.SaveChangesAsync();
 
-        var firstNames = await theSession.Query<User>().Where(x => x.FirstName == "Hank")
-            .Select(x => new {Name = x.ExplicitSql<string>("d.data ->> 'FirstName'")})
+        #region sample_explicit_sql_in_select
+        var firstNames = await theSession.Query<User>()
+            .Where(x => x.FirstName == "Hank")
+            .Select(x => new { Name = x.ExplicitSql<string>("d.data ->> 'FirstName'") })
             .ToListAsync();
+        #endregion
 
         firstNames.ShouldNotBeEmpty();
         firstNames.ShouldAllBe(x => x.Name == "Hank");

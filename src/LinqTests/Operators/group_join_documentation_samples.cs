@@ -184,6 +184,57 @@ public class group_join_documentation_samples
     }
     #endregion
 
+    // Covered by Bugs/Bug_groupjoin_distinct_and_scalar_projection.cs
+    #region sample_join_distinct_and_aggregates
+    public async Task join_distinct_and_aggregates(IQuerySession session)
+    {
+        // Distinct() de-duplicates the joined rows
+        var pairs = await session.Query<Customer>()
+            .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId,
+                (c, o) => new { c.Name, o.Status })
+            .Distinct()
+            .ToListAsync();
+
+        // Aggregates over a scalar projection of the join
+        var amounts = session.Query<Customer>()
+            .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId, (c, o) => o.Amount);
+
+        var total = await amounts.SumAsync(x => x);
+        var largest = await amounts.MaxAsync(x => x);
+        var distinctAmounts = await amounts.Distinct().CountAsync();
+    }
+    #endregion
+
+    // Covered by Bugs/Bug_groupjoin_outer_projection_and_grouping.cs and
+    // Bugs/Bug_5968_computed_ordering_keys_over_children_and_joins.cs
+    #region sample_group_by_and_ordering_over_a_join
+    public async Task group_by_and_ordering_over_a_join(IQuerySession session)
+    {
+        // Group the joined rows
+        var totals = await session.Query<Customer>()
+            .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId,
+                (c, o) => new { c.Name, o.Amount })
+            .GroupBy(x => x.Name)
+            .Select(g => new { Name = g.Key, Orders = g.Count(), Total = g.Sum(x => x.Amount) })
+            .ToListAsync();
+
+        // Project the whole outer document: one customer row per matching order
+        var customers = await session.Query<Customer>()
+            .GroupJoin(session.Query<Order>().Where(o => o.Amount > 100), c => c.Id, o => o.CustomerId,
+                (c, orders) => new { c, orders })
+            .SelectMany(x => x.orders, (x, _) => x.c)
+            .Where(c => c.City == "Seattle")
+            .ToListAsync();
+
+        // A computed key over either side of the join
+        var largestFirst = await session.Query<Customer>()
+            .Join(session.Query<Order>(), c => c.Id, o => o.CustomerId,
+                (c, o) => new { c.Name, o.Amount })
+            .OrderBy(x => -x.Amount)
+            .ToListAsync();
+    }
+    #endregion
+
     #region sample_join_left_join_and_right_join
     public async Task join_left_join_and_right_join(IQuerySession session)
     {

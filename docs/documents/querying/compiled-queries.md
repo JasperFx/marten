@@ -180,7 +180,7 @@ public class CompiledTimeline : ICompiledListQuery<TimelineItem>, IQueryPlanning
 Pay close attention to the `SetUniqueValuesForQueryPlanning()` method. That has absolutely no other purpose but to help Marten
 create a compiled query plan for the `CompiledTimeline` type.
 
-## What is Supported?
+## What is Supported? {#what-is-supported}
 
 To the best of our knowledge and testing, you may use any [Linq feature that Marten supports](/documents/querying/linq/) within a compiled query. So any combination of:
 
@@ -192,20 +192,23 @@ To the best of our knowledge and testing, you may use any [Linq feature that Mar
 * `OrderBy/OrderByDescending` etc.
 * `Count()`
 * `Any()`
-* `AsJson()`
-* `ToJsonArray()`
 * `Skip()`, `Take()` and `Stats()` for pagination
+
+To get the results as raw JSON, run the compiled query with `ToJsonMany()`, `ToJsonOne()`, `StreamJsonMany()` or
+`StreamJsonOne()`, as shown in [Querying for Results as JSON](#querying-for-results-as-json).
 
 As for limitations,
 
 * You cannot use the Linq `ToArray()` or `ToList()` operators. See the next section for an explanation of how to query for multiple results with `ICompiledListQuery`.
 * The compiled query planning just cannot match Boolean fields or properties to command arguments, so Boolean flags cannot be used
 * `QueryIs()` has to read each value directly from a member of the query object. A value computed from members inside the expression, such as `First + Second`, `Name.ToUpper()` or `new List<string> { First, Second }`, is refused with an `InvalidCompiledQueryException` when the plan is built: it matches no member, so it would be frozen at its planning value. Compute it in a property of the query instead, the way `SkipCount` does in the example above. Conversions that keep a member's value, like comparing an `int` member to an `int?` field, and inline arrays of members, `new[] { First, Second }`, are fine (see [#5711](https://github.com/JasperFx/marten/issues/5711))
-* You cannot use any asynchronous operators. So in all cases, use the synchronous operator equivalent. So `FirstOrDefault()`, but not `FirstOrDefaultAsync()`. **This does not preclude you from using compiled queries in asynchronous querying**
+* A `Select()` projection that runs on the client (see [Projections That Can't Be Expressed in SQL](/documents/querying/linq/projections#client-side-projections)) cannot read a member of the query object. Marten throws `InvalidCompiledQueryException` when it builds the plan, because the compiled projection would keep the value from the first execution forever. A client-side projection that only reads the document is fine (see [#5233](https://github.com/JasperFx/marten/issues/5233))
+* `Join()`, `LeftJoin()` and `RightJoin()` are refused in a compiled query, whose only source is its own parameter. See [Join, LeftJoin, RightJoin and FullJoin](/documents/querying/linq/group-join#join-leftjoin-rightjoin-and-fulljoin)
+* You cannot use any asynchronous operators. So in all cases, use the synchronous operator equivalent. So `FirstOrDefault()`, but not `FirstOrDefaultAsync()`. `QueryIs()` only builds an expression and never executes it, so Marten 10's refusal of synchronous LINQ does not apply there. **This does not preclude you from using compiled queries in asynchronous querying**
 
 ## Querying for Multiple Results
 
-To query for multiple results, you need to just return the raw `IQueryable<T>` as `IEnumerable<T>` as the result type. You cannot use the `ToArray()` or `ToList()` operators (it'll throw exceptions from the Relinq library if you try). As a convenience mechanism, Marten supplies these helper interfaces:
+To query for multiple results, you need to just return the raw `IQueryable<T>` as `IEnumerable<T>` as the result type. You cannot use the `ToArray()` or `ToList()` operators. Marten refuses them. As a convenience mechanism, Marten supplies these helper interfaces:
 
 If you are selecting the whole document without any kind of `Select()` transform, you can use this interface:
 
@@ -272,8 +275,8 @@ public class UserNamesForFirstName: ICompiledListQuery<User, string>
 
 ## Querying for Related Documents with Include()
 
-If you wish to use a compiled query for a document, using a `JOIN` so that the query will include another document, just as the [`Include()`](/documents/querying/linq/include) method does on a simple query, the compiled query would be constructed just like any other, using the `Include()` method
-on the query:
+A compiled query can [include related documents](/documents/querying/linq/include) the same way a simple query
+does, with the `Include()` method on the query:
 
 <!-- snippet: sample_compiled_include -->
 <a id='snippet-sample_compiled_include'></a>
@@ -314,12 +317,11 @@ public class IssueByTitleWithAssignee: ICompiledQuery<Issue>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_compiled_include.cs#L16-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-In this example, the query has an `Included` property which will receive the included Assignee / `User`. The 'resulting' included property can only be
-a property of the query, so that Marten would know how to assign the included result of the postgres query.
-The `JoinType` property here is just an example for overriding the default `INNER JOIN`. If you wish to force an `INNER JOIN` within the query
-you can simply remove the `JoinType` parameter like so: `.Include<Issue, IssueByTitleWithAssignee>(x => x.AssigneeId, x => x.Included)`
+In this example, the query has an `Included` property which receives the included Assignee / `User`, through
+`Include(x => x.AssigneeId, Included)`. The list that receives the included documents has to be a member of the query
+object, so that Marten knows where to put them when it runs the plan again.
 
-You can also chain `Include` methods if you need more than one `JOIN`s.
+You can chain `Include()` calls to include more than one document type.
 
 ## Querying for Multiple Related Documents
 
@@ -494,31 +496,19 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L375-L392' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_finduserbyallthethings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Querying for Multiple Results as JSON
+## Querying for Results as JSON {#querying-for-results-as-json}
 
-To query for multiple results and have them returned as a Json string, you may run any query on your `IQueryable<T>` (be it ordering or filtering) and then simply finalize the query with `ToJsonArray();` like so:
+Any compiled query can return its results as raw JSON instead of documents. The query class does not change. Run it
+with one of these methods on the session:
 
-<!-- snippet: sample_compiledtojsonarray -->
-<a id='snippet-sample_compiledtojsonarray'></a>
-```cs
-public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
-{
-    public string FirstName { get; set; }
+| Method | Returns |
+| --- | --- |
+| `ToJsonMany(query)` | The results as a JSON array string |
+| `StreamJsonMany(query, stream)` | Writes the JSON array to a `Stream`, and returns the number of documents written |
+| `ToJsonOne(query)` | One document as a JSON string, or `null` if nothing matched |
+| `StreamJsonOne(query, stream)` | Writes one document to a `Stream`, and returns `false` if nothing matched |
 
-    Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> ICompiledQuery<User, IEnumerable<User>>.QueryIs()
-    {
-        return query =>
-            query.Where(x => FirstName == x.FirstName)
-                .OrderBy(x => x.UserName);
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L409-L423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-If you wish to do it asynchronously, you can use the `ToJsonArrayAsync()` method.
-
-A sample usage of this type of query is shown below:
+Here are the two compiled queries used below, one for a list and one for a single document:
 
 <!-- snippet: sample_compiledtojsonarray -->
 <a id='snippet-sample_compiledtojsonarray'></a>
@@ -538,12 +528,6 @@ public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L409-L423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Note that the result has the documents comma separated and wrapped in square brackets (as per the JSON array notation).
-
-## Querying for a Single Document as JSON
-
-Finally, if you are querying for a single document as json, you will need to prepend your call to `Single()`, `First()` and so on with a call to `AsJson()`:
-
 <!-- snippet: sample_compiledasjson -->
 <a id='snippet-sample_compiledasjson'></a>
 ```cs
@@ -561,26 +545,31 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L394-L407' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-And an example:
+And the calls that run them as JSON:
 
-<!-- snippet: sample_compiledasjson -->
-<a id='snippet-sample_compiledasjson'></a>
+<!-- snippet: sample_compiled_query_as_json -->
+<a id='snippet-sample_compiled_query_as_json'></a>
 ```cs
-public class FindJsonUserByUsername: ICompiledQuery<User>
+public async Task compiled_query_as_json(IQuerySession session, Stream destination)
 {
-    public string Username { get; set; }
+    // A list query as a JSON array string
+    var json = await session.ToJsonMany(new FindJsonOrderedUsersByUsername { FirstName = "Jeremy" });
 
-    Expression<Func<IMartenQueryable<User>, User>> ICompiledQuery<User, User>.QueryIs()
-    {
-        return query =>
-            query.Where(x => Username == x.UserName).Single();
-    }
+    // Or written straight to a stream. Returns the number of documents written
+    var count = await session.StreamJsonMany(new FindJsonOrderedUsersByUsername { FirstName = "Jeremy" },
+        destination);
+
+    // A single document query as JSON, or null if nothing matched
+    var one = await session.ToJsonOne(new FindJsonUserByUsername { Username = "jdm" });
+
+    // Or written straight to a stream. Returns false if nothing matched
+    var found = await session.StreamJsonOne(new FindJsonUserByUsername { Username = "jdm" }, destination);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L394-L407' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_query_documentation_samples.cs#L11-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled_query_as_json' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-(our `ToJson()` method simply returns a string representation of the `User` instance in Json notation)
+The JSON array has the documents comma separated and wrapped in square brackets.
 
 ## Using with QueryStatistics
 
@@ -635,7 +624,7 @@ public async Task use_compiled_query_with_statistics()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L38-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_querystatistics_with_compiled_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Query Plans <Badge type="tip" text="7.25" />
+## Query Plans <Badge type="tip" text="7.25" /> {#query-plans}
 
 ::: info
 The query plan concept was created specifically to help a [JasperFx](https://jasperfx.net) client try to eliminate their
@@ -643,7 +632,7 @@ custom repository wrappers around Marten and to better utilize batch querying.
 :::
 
 ::: tip
-Batch querying is a great way to improve the performance of your system~~~~
+Batch querying is a great way to improve the performance of your system.
 :::
 
 A query plan is another flavor of "Specification" for Marten that just enables you to bundle up query logic that can

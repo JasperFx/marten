@@ -1,12 +1,10 @@
 # Querying within Child Collections
 
-::: tip
-Marten V4 greatly improved Marten's abilities to query within child collections of documents
-:::
+## Quantifier Operations within Child Collections {#quantifier-operations}
 
-## Quantifier Operations within Child Collections
-
-Marten supports the `Any()` and `Contains()` [quantifier operations](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/quantifier-operations) within child collections.
+Marten supports the `Any()`, `All()` and `Contains()`
+[quantifier operations](https://learn.microsoft.com/en-us/dotnet/csharp/linq/standard-query-operators/quantifier-operations)
+within child collections.
 
 The following code sample demonstrates the supported Linq patterns for collection searching:
 
@@ -38,24 +36,25 @@ public void searching(IDocumentStore store)
             // Where for Contains() on array of simple types
             .Where(x => x.Names.Contains("Corey"))
 
-            // Where for Contains() on List<T> of simple types
+            // Where for Contains() on IList<T> of simple types
             .Where(x => x.NameList.Contains("Phillip"))
 
-            // Where for Contains() on IList<T> of simple types
+            // Where for Contains() on List<T> of simple types
             .Where(x => x.NameList2.Contains("Jens"))
 
             // Where for Any(element == value) on simple types
             .Where(x => x.Names.Any(_ => _ == "Phillip"))
 
-            // The Contains() operator on subqueries within Any() searches
-            // only supports constant array of String or Guid expressions.
-            // Both the property being searched (Names) and the values
-            // being compared (searchNames) need to be arrays.
-            .Where(x => x.Names.Any(_ => searchNames.Contains(_)));
+            // Where any element is one of a set of values from your code.
+            // The collection on the document can be an array or a List<T>
+            .Where(x => x.Names.Any(_ => searchNames.Contains(_)))
+
+            // Where every element matches
+            .Where(x => x.Companies.All(_ => _.Name.StartsWith("J")));
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Searching_Within_Child_Collections.cs#L10-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_searching_within_child_collections' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Searching_Within_Child_Collections.cs#L10-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_searching_within_child_collections' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can search on equality of multiple fields or properties within the child collection
@@ -89,7 +88,31 @@ Finally, you can query for child collections that do **not** contain a value:
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_561_negation_of_query_on_contains.cs#L81-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## How Marten Translates Collection Predicates <Badge type="tip" text="9.15" />
+## Nested Any() {#nested-any}
+
+An `Any()` can contain another `Any()` over a collection of the child, to any depth, and the inner predicate can be
+combined with conditions on the outer element:
+
+<!-- snippet: sample_nested_any -->
+<a id='snippet-sample_nested_any'></a>
+```cs
+public async Task nested_any(IQuerySession session)
+{
+    // A team with a green squad that has a player named Bill
+    var teams = await session.Query<Team>()
+        .Where(x => x.Squads.Any(s => s.Color == "Green" && s.Players.Any(p => p.Name == "Bill")))
+        .ToListAsync();
+
+    // A team with any squad that has any player at all
+    var staffed = await session.Query<Team>()
+        .Where(x => x.Squads.Any(s => s.Players.Any()))
+        .ToListAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/child_collections_documentation_samples.cs#L71-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_nested_any' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## How Marten Translates Collection Predicates <Badge type="tip" text="9.15" /> {#how-marten-translates-collection-predicates}
 
 Marten picks the most index-friendly SQL strategy it can for a `Where()` clause that filters
 against a child collection, in this order:
@@ -110,19 +133,20 @@ against a child collection, in this order:
 
 A couple of practical notes:
 
-- The containment strategies compare against `data -> 'CollectionName'`, so a GIN index needs to
-  be an *expression* index on that same expression to be used, e.g.
+- The `Any()` containment strategies (the first two rows) compare against `data -> 'CollectionName'`, so a GIN
+  index needs to be an *expression* index on that same expression to be used, e.g.
   `CREATE INDEX ON mt_doc_order USING gin ((data -> 'Lines') jsonb_path_ops)`. A whole-document
-  index from `GinIndexJsonData()` will not accelerate child collection containment.
+  index from `GinIndexJsonData()` will not accelerate them. `Contains()` of a whole element is different: it
+  compares against `d.data`, so a whole-document index does accelerate it.
 - The JSONPath strategy passes all comparison values through the `vars` argument of
   `jsonb_path_exists()`, so the SQL stays fully parameterized and works with compiled queries.
 - JSONPath comparisons follow C# semantics more closely than the older
   common-table-expression strategy did: comparing a `null` member with `!=` matches, and range
   comparisons against `null` or missing members do not.
 
-## Querying within Value IEnumerables
+## Querying within Value IEnumerables {#querying-within-value-ienumerables}
 
-As of now, Marten allows you to do "contains" searches within Arrays, Lists & ILists of primitive values like string or numbers:
+Marten can do "contains" searches within arrays, `List<T>` and `IList<T>` of primitive values like strings or numbers:
 
 <!-- snippet: sample_query_against_string_array -->
 <a id='snippet-sample_query_against_string_array'></a>
@@ -143,7 +167,7 @@ public async Task query_against_string_array()
         .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L519-L537' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L544-L562' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):
@@ -171,10 +195,10 @@ public async Task query_against_number_list_with_any()
         .CountAsync(x => x.Numbers.Any())).ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L635-L659' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L660-L684' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-As of 1.2, you can also query against the `Count()` or `Length` of a child collection with the normal comparison
+You can also query against the `Count()` or `Length` of a child collection with the normal comparison
 operators (`==`, `>`, `>=`, etc.):
 
 <!-- snippet: sample_query_against_number_list_with_count_method -->
@@ -197,27 +221,37 @@ public async Task query_against_number_list_with_count_method()
         .SingleAsync(x => x.Numbers.Count() == 4)).Id.ShouldBe(doc3.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L661-L682' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L686-L707' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Reading an Element by Position
+## Reading an Element by Position {#reading-an-element-by-position}
 
 An array or list on the document can be indexed in `Where()`, `OrderBy()`/`ThenBy()` and `Select()`. That works
 with an array index, a `List<T>` indexer or `ElementAt()`. The index can be a literal or any value computed on the
 client, like a captured variable. Indexes can be chained through jagged arrays and nested lists, and can be followed
 by a member of the element:
 
+<!-- snippet: sample_reading_an_element_by_position -->
+<a id='snippet-sample_reading_an_element_by_position'></a>
 ```cs
-var row = 1;
+public async Task reading_an_element_by_position(IQuerySession session)
+{
+    var row = 1;
 
-var hits = await session.Query<Plan>()
-    .Where(x => x.Grid[row][0] > 3 && x.Steps[0].Name == "start")
-    .OrderBy(x => x.Scores[2])
-    .Select(x => new { x.Id, First = x.Tags[0], Cell = x.Grid[1][1] })
-    .ToListAsync();
+    var hits = await session.Query<Plan>()
+        .Where(x => x.Grid[row][0] > 3 && x.Steps[0].Name == "start")
+        .OrderBy(x => x.Scores[2])
+        .Select(x => new { x.Id, First = x.Tags[0], Cell = x.Grid[1][1] })
+        .ToListAsync();
+
+    // ElementAt() reads by position too
+    var second = await session.Query<Plan>().Where(x => x.Steps.ElementAt(1).Name == "build").ToListAsync();
+}
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/child_collections_documentation_samples.cs#L53-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_reading_an_element_by_position' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
-Each index becomes a `jsonb` array lookup, such as `CAST(d.data -> 'grid' -> 1 ->> 0 as integer)`. Two things
+Each index becomes a `jsonb` array lookup by position, such as `d.data -> 'Lines' -> 0 ->> 'ItemName'`. Two things
 work differently from LINQ to Objects:
 
 - An index past the end of the stored array reads as `null` rather than throwing. A comparison against it does not
@@ -225,10 +259,52 @@ work differently from LINQ to Objects:
 - A negative index throws `BadLinqExpressionException`. PostgreSQL would read it from the end of the array, which is
   not what it means in C#.
 
-## IsOneOf
+`bool[]` and `List<bool>` elements can be read the same way, `x.Flags[0]`.
+
+## Querying Dictionaries {#querying-dictionaries}
+
+A dictionary member is stored as a JSON object. Marten translates `ContainsKey()`, `Keys` and `Values` with
+`Contains()` or `Any()`, `Any()` over the entries, `Count`, and the indexer, in `Where()` and in `OrderBy()`.
+`SelectMany()` can flatten the keys or the values:
+
+<!-- snippet: sample_querying_dictionaries -->
+<a id='snippet-sample_querying_dictionaries'></a>
+```cs
+public async Task querying_dictionaries(IQuerySession session)
+{
+    // Target.StringDict is an IDictionary<string, string>
+    var hasKey = await session.Query<Target>().Where(x => x.StringDict.ContainsKey("key0")).ToListAsync();
+    var hasValue = await session.Query<Target>().Where(x => x.StringDict.Values.Contains("value3"))
+        .ToListAsync();
+    var someKey = await session.Query<Target>().Where(x => x.StringDict.Keys.Any(k => k.EndsWith("3")))
+        .ToListAsync();
+    var someEntry = await session.Query<Target>().Where(x => x.StringDict.Any(p => p.Value == "value2"))
+        .ToListAsync();
+    var bigOnes = await session.Query<Target>().Where(x => x.StringDict.Count > 2).ToListAsync();
+
+    // Contains() of a whole entry needs the IDictionary<TKey, TValue> interface
+    var pair = new KeyValuePair<string, string>("key0", "value0");
+    var hasPair = await session.Query<Target>().Where(x => x.StringDict.Contains(pair)).ToListAsync();
+
+    // Flatten the keys or the values of every document
+    var allValues = await session.Query<Target>().SelectMany(x => x.StringDict.Values).ToListAsync();
+
+    // Machine.Tags is a Dictionary<string, string>. The indexer reads one entry,
+    // in Where() and in OrderBy()
+    var redMachines = await session.Query<Machine>()
+        .Where(x => x.Tags["color"] == "red")
+        .OrderBy(x => x.Tags["zone"])
+        .ToListAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/child_collections_documentation_samples.cs#L88-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_dictionaries' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## IsOneOf {#isoneof}
 
 `IsOneOf()` extension can be used to query for documents having
-a field or property matching one of many supplied values:
+a field or property matching one of many supplied values. It works like `Contains()` over a local collection, which
+is described in [Contains() over a Local Collection](/documents/querying/linq/operators#contains-over-a-local-collection):
 
 <!-- snippet: sample_is_one_of -->
 <a id='snippet-sample_is_one_of'></a>
@@ -241,7 +317,9 @@ var users = session.Query<SuperUser>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IsOneOfExamples.cs#L11-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_one_of' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-To find one of for an array you can use this strategy:
+On a collection member, `IsOneOf()` finds the documents whose collection holds at least one of the values. On a
+string collection it becomes the `?|` operator, which a GIN index with the default `jsonb_ops` operator class can
+serve:
 
 <!-- snippet: sample_is_one_of_array -->
 <a id='snippet-sample_is_one_of_array'></a>
@@ -271,7 +349,7 @@ var users = session.Query<SuperUser>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IsOneOfExamples.cs#L22-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_one_of_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## In
+## In {#in}
 
 `In()` extension works exactly the same as `IsOneOf()`. It was introduced as syntactic sugar to ease RavenDB transition:
 
@@ -316,7 +394,7 @@ var users = session.Query<SuperUser>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/InExamples.cs#L22-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_in_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## IsSupersetOf
+## IsSupersetOf {#issupersetof}
 
 <!-- snippet: sample_is_superset_of -->
 <a id='snippet-sample_is_superset_of'></a>
@@ -329,7 +407,7 @@ var posts = theSession.Query<Post>()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/is_super_set_of_operator.cs#L15-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_is_superset_of' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## IsSubsetOf
+## IsSubsetOf {#issubsetof}
 
 <!-- snippet: sample_is_subset_of -->
 <a id='snippet-sample_is_subset_of'></a>

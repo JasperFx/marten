@@ -50,11 +50,15 @@ public class matches_sql_queries: IntegrationContext
 
         // The JSONPath itself travels as a bound parameter rather than being concatenated into the
         // SQL, which is the reason to reach for the overload that takes them.
-        (await session.Query<User>()
-                .Where(x => x.MatchesJsonPath("d.data @? ^::jsonpath", "$ ? (@.UserName == \"baz\")"))
-                .Select(x => x.UserName)
-                .ToListAsync())
-            .ShouldHaveTheSameElementsAs("baz");
+        #region sample_matches_json_path_with_a_parameter
+        // The JSONPath is bound as a parameter in place of ^
+        var baz = await session.Query<User>()
+            .Where(x => x.MatchesJsonPath("d.data @? ^::jsonpath", "$ ? (@.UserName == \"baz\")"))
+            .Select(x => x.UserName)
+            .ToListAsync();
+        #endregion
+
+        baz.ShouldHaveTheSameElementsAs("baz");
 
         // More than one, to prove the parameters are not transposed or reused.
         (await session.Query<User>()
@@ -150,13 +154,20 @@ public class matches_sql_queries: IntegrationContext
         session.Store(user1, user2, user3, user4);
         await session.SaveChangesAsync();
 
+        #region sample_matches_sql_with_a_fragment
+        // WhereFragment and CompoundWhereFragment come from Weasel.Postgresql.SqlGeneration
         var whereFragment = CompoundWhereFragment.And();
         whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "baz"));
         whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "jack"));
 
-        // no where clause
-        (await session.Query<User>().Where(x => x.MatchesSql(whereFragment)).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "foo");
+        var names = await session.Query<User>()
+            .Where(x => x.MatchesSql(whereFragment))
+            .OrderBy(x => x.UserName)
+            .Select(x => x.UserName)
+            .ToListAsync();
+        #endregion
+
+        names.ShouldHaveTheSameElementsAs("bar", "foo");
 
         // with a where clause
         (await session.Query<User>().Where(x => x.UserName != "bar" && x.MatchesSql(whereFragment))

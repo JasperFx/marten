@@ -260,7 +260,7 @@ Furthermore, `StreamState` contains metadata for when the stream was created, `S
 
 ## Stream Query Plans
 
-The stream fetches above are also available as reusable [query plans](/documents/querying/compiled-queries#query-plans-):
+The stream fetches above are also available as reusable [query plans](/documents/querying/compiled-queries#query-plans):
 `FetchStreamStatePlan` wraps `FetchStreamState()`/`FetchStreamStateAsync()` and `FetchStreamPlan` wraps `FetchStream()`/`FetchStreamAsync()`.
 Both plans accept either a `Guid` stream id or a `string` stream key, and `FetchStreamPlan` carries the optional
 `version`, `timestamp`, and `fromVersion` filters. Because the plans implement both `IQueryPlan<T>` and
@@ -301,7 +301,7 @@ public async Task use_both_plans_in_one_batch()
 
 ::: tip
 Both plans also back an ASP.NET Core endpoint return value —
-[`StreamEventState` and `StreamEvents`](/documents/aspnetcore#typed-streaming-result-types-) write the
+[`StreamEventState` and `StreamEvents`](/documents/aspnetcore#typed-streaming-result-types) write the
 same data straight to an HTTP response, and accept a pre-built plan so a handler can share one plan
 between a batched query and its HTTP result.
 :::

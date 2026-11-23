@@ -104,15 +104,19 @@ public class regex_is_match: IntegrationContext
             .ToCommand().CommandText;
         sql.ShouldContain(" ~ ");
 
+        #region sample_regex_is_match
+        // WHERE d.data ->> 'UserName' ~ :pattern
         var matching = await theSession.Query<RegexUser>()
             .Where(x => Regex.IsMatch(x.UserName, "^[a-z]+-\\d+$"))
             .ToListAsync();
-        matching.Single().UserName.ShouldBe("alice-42");
 
-        // case-insensitive flavor
+        // RegexOptions.IgnoreCase is the only option, and becomes ~*
         var insensitive = await theSession.Query<RegexUser>()
             .Where(x => Regex.IsMatch(x.UserName, "^[a-z]+-\\d+$", RegexOptions.IgnoreCase))
             .ToListAsync();
+        #endregion
+
+        matching.Single().UserName.ShouldBe("alice-42");
         insensitive.Select(x => x.UserName).OrderBy(x => x)
             .ShouldBe(new[] { "Carol-7", "alice-42" }, ignoreOrder: true);
     }

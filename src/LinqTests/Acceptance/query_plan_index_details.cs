@@ -56,13 +56,16 @@ public class query_plan_index_details: OneOffConfigurationsContext
         await storeDocuments(opts =>
             opts.Schema.For<PlannedDoc>().Index(x => x.Number, x => x.Name = "idx_planned_doc_number"));
 
+        #region sample_query_plan_index_details
         var plan = await theSession.Query<PlannedDoc>().Where(x => x.Number == 4321).ExplainAsync();
 
+        // The scan is usually a child node of the plan: allNodes() walks QueryPlan.Plans
         var scan = allNodes(plan).Single(x => x.IndexName != null);
         scan.NodeType.ShouldBe("Index Scan");
         scan.IndexName.ShouldBe("idx_planned_doc_number");
         scan.IndexCondition.ShouldContain("Number");
         scan.ScanDirection.ShouldBe("Forward");
+        #endregion
 
         var backward = await theSession.Query<PlannedDoc>().OrderByDescending(x => x.Number).Take(1).ExplainAsync();
         var backwardScan = allNodes(backward).Single(x => x.IndexName != null);

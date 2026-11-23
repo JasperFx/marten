@@ -33,20 +33,21 @@ public class Searching_Within_Child_Collections
                 // Where for Contains() on array of simple types
                 .Where(x => x.Names.Contains("Corey"))
 
-                // Where for Contains() on List<T> of simple types
+                // Where for Contains() on IList<T> of simple types
                 .Where(x => x.NameList.Contains("Phillip"))
 
-                // Where for Contains() on IList<T> of simple types
+                // Where for Contains() on List<T> of simple types
                 .Where(x => x.NameList2.Contains("Jens"))
 
                 // Where for Any(element == value) on simple types
                 .Where(x => x.Names.Any(_ => _ == "Phillip"))
 
-                // The Contains() operator on subqueries within Any() searches
-                // only supports constant array of String or Guid expressions.
-                // Both the property being searched (Names) and the values
-                // being compared (searchNames) need to be arrays.
-                .Where(x => x.Names.Any(_ => searchNames.Contains(_)));
+                // Where any element is one of a set of values from your code.
+                // The collection on the document can be an array or a List<T>
+                .Where(x => x.Names.Any(_ => searchNames.Contains(_)))
+
+                // Where every element matches
+                .Where(x => x.Companies.All(_ => _.Name.StartsWith("J")));
         }
     }
 

@@ -69,7 +69,7 @@ var store = DocumentStore.For(options =>
 
 The member-scoped index is substantially smaller than the whole-document index and accelerates
 the containment (`@>`) strategies described in
-[querying within child collections](/documents/querying/linq/child-collections#how-marten-translates-collection-predicates-),
+[querying within child collections](/documents/querying/linq/child-collections#how-marten-translates-collection-predicates),
 including equality `Any()` predicates, OR-of-equality predicates, and the equality pre-filter of
 mixed predicates. Whole-element `Contains()` queries anchor at the document root and are served
 by the plain `GinIndexJsonData()` index instead.

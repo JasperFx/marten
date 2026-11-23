@@ -444,7 +444,7 @@ var store = DocumentStore.For(_ =>
     _.Logger(new ConsoleMartenLogger());
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L197-L204' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L190-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also directly apply a session logger to any `IQuerySession` or `IDocumentSession` like this:
@@ -456,7 +456,7 @@ using var session = store.LightweightSession();
 // Replace the logger for only this one session
 session.Logger = new RecordingLogger();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L206-L212' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L199-L205' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.
@@ -607,6 +607,10 @@ The sql string in our debug window for the code above is:
 select d.data from mt_doc_trade as d where d.value > :arg0
 ```
 
+`ToCommand()` shows the SQL that executing the query sends with the matching operator. `FetchType.FetchOne` previews
+what `FirstAsync()` and `FirstOrDefaultAsync()` send. `SingleAsync()` and `SingleOrDefaultAsync()` read up to two rows
+instead of one, so they can tell when a second document matches.
+
 ## Session Specific Logging
 
 The `IMartenLogger` can be swapped out on any `IQuerySession` or `IDocumentSession` like this example from the unit tests:
@@ -652,6 +656,34 @@ TotalCost: 24.13
 PlanRows: 377
 PlanWidth: 36
 ```
+
+A plan is a tree: the child nodes are in `QueryPlan.Plans`. Each node also says how it found its rows:
+
+| Member | What it holds |
+| --- | --- |
+| `IndexName` | The index an index scan or bitmap index scan used |
+| `IndexCondition` | The condition the index was searched with |
+| `RecheckCondition` | The condition a bitmap heap scan checks again on each row |
+| `Filter` | A condition applied to the rows after they were read |
+| `RowsRemovedByFilter` | How many rows the filter removed. Only filled in when you explain with `Analyze()` |
+| `ScanDirection` | `Forward` or `Backward` for an index scan |
+
+That tells you whether a query used the index you expected:
+
+<!-- snippet: sample_query_plan_index_details -->
+<a id='snippet-sample_query_plan_index_details'></a>
+```cs
+var plan = await theSession.Query<PlannedDoc>().Where(x => x.Number == 4321).ExplainAsync();
+
+// The scan is usually a child node of the plan: allNodes() walks QueryPlan.Plans
+var scan = allNodes(plan).Single(x => x.IndexName != null);
+scan.NodeType.ShouldBe("Index Scan");
+scan.IndexName.ShouldBe("idx_planned_doc_number");
+scan.IndexCondition.ShouldContain("Number");
+scan.ScanDirection.ShouldBe("Forward");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_plan_index_details.cs#L59-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_plan_index_details' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Request Counting and Thresholds
 
