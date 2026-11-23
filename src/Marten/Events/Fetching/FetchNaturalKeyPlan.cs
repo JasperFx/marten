@@ -247,12 +247,17 @@ internal abstract class FetchNaturalKeyPlan<TDoc, TNaturalKey, TId>: IAggregateF
         }
     }
 
-    public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TNaturalKey id,
+    public Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TNaturalKey id,
         bool forUpdate, CancellationToken cancellation = default)
+        => fetchForWritingAsync(session, id, forUpdate, null, cancellation);
+
+    private async Task<IEventStream<TDoc>> fetchForWritingAsync(DocumentSessionBase session, TNaturalKey id,
+        bool forUpdate, long? expectedStartingVersion, CancellationToken cancellation)
     {
         assertKeyForWriting(id);
         return await withRedos(session,
-            detect => fetchForWritingWithCache(session, id, forUpdate, detect, cancellation)).ConfigureAwait(false);
+            detect => fetchForWritingWithCache(session, id, forUpdate, detect, expectedStartingVersion, cancellation))
+            .ConfigureAwait(false);
     }
 
     /// <summary>
@@ -291,33 +296,36 @@ internal abstract class FetchNaturalKeyPlan<TDoc, TNaturalKey, TId>: IAggregateF
         }
     }
 
-    public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TNaturalKey id,
+    /// <summary>
+    /// As the by-id plans do, the version is checked once the reads are done and before the session is touched, so
+    /// a stale version leaves the session as it was: no stream action, no write-cache claim, no identity map entry.
+    /// </summary>
+    public Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TNaturalKey id,
         long expectedStartingVersion, CancellationToken cancellation = default)
-    {
-        var stream = await FetchForWriting(session, id, false, cancellation).ConfigureAwait(false);
-        assertExpectedVersion(id, expectedStartingVersion, stream.CurrentVersion ?? 0);
-        return stream;
-    }
+        => fetchForWritingAsync(session, id, false, expectedStartingVersion, cancellation);
 
     private async Task<IEventStream<TDoc>> fetchForWritingWithCache(DocumentSessionBase session, TNaturalKey id,
-        bool forUpdate, bool detectSnapshotRace, CancellationToken cancellation)
+        bool forUpdate, bool detectSnapshotRace, long? expectedStartingVersion, CancellationToken cancellation)
     {
         try
         {
-            return await fetchForWriting(session, id, forUpdate, detectSnapshotRace, true, cancellation)
+            return await fetchForWriting(session, id, forUpdate, detectSnapshotRace, true, expectedStartingVersion,
+                    cancellation)
                 .ConfigureAwait(false);
         }
         catch (CachedSnapshotUnusableException)
         {
             // The pointer named another stream than the database did, or the snapshot did not fit the stream's
             // version. Either way the always-correct uncached path follows.
-            return await fetchForWriting(session, id, forUpdate, detectSnapshotRace, false, cancellation)
+            return await fetchForWriting(session, id, forUpdate, detectSnapshotRace, false, expectedStartingVersion,
+                    cancellation)
                 .ConfigureAwait(false);
         }
     }
 
     private async Task<IEventStream<TDoc>> fetchForWriting(DocumentSessionBase session, TNaturalKey id,
-        bool forUpdate, bool detectSnapshotRace, bool useCache, CancellationToken cancellation)
+        bool forUpdate, bool detectSnapshotRace, bool useCache, long? expectedStartingVersion,
+        CancellationToken cancellation)
     {
         await prepareAsync(session, cancellation).ConfigureAwait(false);
 
@@ -338,7 +346,8 @@ internal abstract class FetchNaturalKeyPlan<TDoc, TNaturalKey, TId>: IAggregateF
             await using var reader =
                 await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
 
-            return await readStreamAsync(reader, session, keyValue, detectSnapshotRace, cached, cancellation)
+            return await readStreamAsync(reader, session, id, keyValue, detectSnapshotRace, cached,
+                    expectedStartingVersion, cancellation)
                 .ConfigureAwait(false);
         }
         catch (Exception e) when (e is not SnapshotRaceException && e is not CachedSnapshotUnusableException &&
@@ -365,11 +374,21 @@ internal abstract class FetchNaturalKeyPlan<TDoc, TNaturalKey, TId>: IAggregateF
     }
 
     private async Task<IEventStream<TDoc>> readStreamAsync(DbDataReader reader, DocumentSessionBase session,
-        object? keyValue, bool detectSnapshotRace, CachedSnapshot? cached, CancellationToken cancellation)
+        TNaturalKey id, object? keyValue, bool detectSnapshotRace, CachedSnapshot? cached,
+        long? expectedStartingVersion, CancellationToken cancellation)
     {
         var (found, streamId, version, aggregate) =
             await readFetchAsync(reader, session, keyValue, detectSnapshotRace, cached, cancellation)
                 .ConfigureAwait(false);
+
+        // Checked before anything below touches the session, as the by-id plans do, so a stale version leaves it
+        // as it was. Against the version the aggregate reached, as the Async plan by stream id checks it, so an
+        // append that landed between the reads fails here rather than at the commit. And only once the reads are
+        // done, so that a key that changed hands mid-fetch is still redone rather than reported as a conflict.
+        if (expectedStartingVersion.HasValue)
+        {
+            assertExpectedVersion(id, expectedStartingVersion.Value, version);
+        }
 
         var identity = identityStrategy(session);
 
@@ -667,17 +686,12 @@ internal abstract class FetchNaturalKeyPlan<TDoc, TNaturalKey, TId>: IAggregateF
             {
                 // A batch cannot redo itself, so a snapshot race surfaces as SnapshotRaceException, as it does
                 // for a batched fetch by stream id.
-                stream = await _parent.readStreamAsync(reader, (DocumentSessionBase)session,
-                    _parent.keyValueFor(_id), true, null, token).ConfigureAwait(false);
+                stream = await _parent.readStreamAsync(reader, (DocumentSessionBase)session, _id,
+                    _parent.keyValueFor(_id), true, null, _expectedVersion, token).ConfigureAwait(false);
             }
             catch (Exception e) when (e is not SnapshotRaceException && isLockFailure(e))
             {
                 throw new StreamLockedException(_id, e.InnerException!);
-            }
-
-            if (_expectedVersion.HasValue)
-            {
-                assertExpectedVersion(_id, _expectedVersion.Value, stream.CurrentVersion ?? 0);
             }
 
             return stream;

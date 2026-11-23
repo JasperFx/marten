@@ -76,6 +76,28 @@ public class live_fetch_by_natural_key_reads_in_a_safe_order: OneOffConfiguratio
     }
 
     [Fact]
+    public async Task an_expected_version_fails_at_the_fetch_after_an_append_between_the_reads()
+    {
+        configure(cache: false);
+        var number = new OrderNumber("LIVE-EXPECTED");
+        var streamId = await startOrderAsync(number);
+
+        await using var session = theStore.LightweightSession();
+        var pause = pauseAndAddAnItem(streamId);
+        session.Logger = pause;
+
+        // The stream was at 2 when the fetch read its version, but the aggregate it folded is at 3, as the Async
+        // plan checks it by stream id
+        var ex = await Should.ThrowAsync<JasperFx.ConcurrencyException>(() =>
+            session.Events.FetchForWriting<OrderAggregate, OrderNumber>(number, 2,
+                TestContext.Current.CancellationToken));
+        await pause.Paused;
+
+        ex.Message.ShouldContain("but was 3");
+        session.PendingChanges.Streams().ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task the_write_cache_holds_the_aggregate_at_the_version_it_folded_to()
     {
         configure(cache: true);

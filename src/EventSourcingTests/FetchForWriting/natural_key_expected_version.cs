@@ -10,12 +10,14 @@ namespace EventSourcingTests.FetchForWriting;
 
 public class natural_key_expected_version: OneOffConfigurationsContext
 {
-    private void configure()
+    private void configure(bool live = false, bool cache = false)
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<OrderAggregate>(SnapshotLifecycle.Inline);
+            if (live) opts.Projections.LiveStreamAggregation<OrderAggregate>();
+            else opts.Projections.Snapshot<OrderAggregate>(SnapshotLifecycle.Inline);
             opts.Projections.Snapshot<OrderSummary>(SnapshotLifecycle.Async);
+            if (cache) opts.Events.CacheAggregatesForWriting<OrderAggregate>();
         });
     }
 
@@ -68,5 +70,59 @@ public class natural_key_expected_version: OneOffConfigurationsContext
 
         await Should.ThrowAsync<ConcurrencyException>(() =>
             session.Events.FetchForWriting<OrderAggregate, OrderNumber>(new OrderNumber("EV-NONE"), 1));
+    }
+
+    public static TheoryData<bool, bool> EveryShape() => new()
+    {
+        { false, false }, { false, true }, { true, false }, { true, true }
+    };
+
+    [Theory]
+    [MemberData(nameof(EveryShape))]
+    public async Task a_stale_version_leaves_the_session_as_it_was(bool live, bool cache)
+    {
+        configure(live, cache);
+
+        var order = new OrderNumber("EV-STALE");
+        var orderId = await startOrder(order, 2);
+
+        await using var session = theStore.LightweightSession();
+
+        // Checked before the fetch enlists anything, as a fetch by stream id is
+        await Should.ThrowAsync<ConcurrencyException>(() =>
+            session.Events.FetchForWriting<OrderAggregate, OrderNumber>(order, 2));
+
+        session.PendingChanges.Streams().ShouldBeEmpty();
+
+        // So the session carries on as though the stale fetch never happened
+        var stream = await session.Events.FetchForWriting<OrderAggregate, OrderNumber>(order, 3);
+        stream.AppendOne(new OrderItemAdded("Gadget", 5m));
+        await session.SaveChangesAsync();
+
+        var state = await theSession.Events.FetchStreamStateAsync(orderId);
+        state!.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [MemberData(nameof(EveryShape))]
+    public async Task a_stale_version_in_a_batch_leaves_the_session_as_it_was(bool live, bool cache)
+    {
+        configure(live, cache);
+
+        var order = new OrderNumber("EV-STALE-BATCH");
+        await startOrder(order, 2);
+
+        await using var session = theStore.LightweightSession();
+
+        var batch = session.CreateBatchQuery();
+        var fetch = batch.Events.FetchForWriting<OrderAggregate, OrderNumber>(order, 2);
+
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            await batch.Execute();
+            await fetch;
+        });
+
+        session.PendingChanges.Streams().ShouldBeEmpty();
     }
 }
