@@ -302,7 +302,7 @@ public static class QueryableExtensions
     public static Task StreamJsonSingle<T>(this IQueryable<T> queryable, Stream destination,
         CancellationToken token = default) where T : notnull
     {
-        return queryable.As<MartenLinqQueryable<T>>().StreamJsonFirst(destination, token);
+        return queryable.As<MartenLinqQueryable<T>>().StreamJsonSingle(destination, token);
     }
 
     public static Task StreamJsonSingleOrDefault<T>(this IQueryable<T> queryable, Stream destination,
