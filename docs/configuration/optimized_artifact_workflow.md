@@ -35,8 +35,8 @@ options, use this option in Marten bootstrapping:
 ::: tip
 `CritterStackDefaults` is defined in the shared JasperFx infrastructure that
 Marten and Wolverine both consume. For the full reference of the per-environment
-options and how `ResourceAutoCreate` is resolved from `JasperFxOptions`, see the
-[JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
+options and how `ResourceAutoCreate` is resolved from `JasperFxOptions`, see
+[CritterStackDefaults](https://shared-libs.jasperfx.net/configuration/critter-stack-defaults) in the JasperFx documentation.
 :::
 
 ```cs

@@ -606,6 +606,9 @@ The JasperFx source generator reports natural key mistakes as compiler errors, a
 | `JFXEVT016` | Wolverine's `[WriteAggregate<TKey>]`, `[ReadAggregate<TKey>]`, `[WriteModel<TKey>]` or `[ReadModel<TKey>]` (or `NaturalKey = typeof(TKey)`) names a key type the aggregate doesn't have |
 | `JFXEVT017` | One of those attributes names `TKey?` instead of `TKey`                                                                                                                                 |
 
+The same list is kept in the JasperFx documentation under
+[Build Diagnostics: natural keys](https://shared-libs.jasperfx.net/codegen/diagnostics#natural-keys).
+
 ## Integration with Wolverine
 
 Natural keys integrate with Wolverine's aggregate handler workflow. See the [Wolverine documentation on natural keys with Marten](https://wolverinefx.net/guide/durability/marten/event-sourcing.html#natural-keys) for details on how Wolverine resolves natural keys from command properties.

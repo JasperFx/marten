@@ -173,7 +173,9 @@ return builder
 `DaemonBatchRetryAttempts` is 3, so a batch is built at most 4 times. Each command inside the batch still goes through
 the read pipeline above, so this one is kept small on purpose. When it gives up, the shard pauses and its `ShardFailure.IsTransient` is true, so
 Wolverine or CritterWatch can restart it later. A failure that isn't transient, including any failure in your
-projection's own code, goes straight to the error policy.
+projection's own code, goes straight to the error policy. How the daemon treats transient failures under each error
+policy is described in [Transient failures](https://shared-libs.jasperfx.net/events/parked-identities#transient-failures)
+in the JasperFx documentation.
 
 To change it, replace the store's daemon pipeline with `ConfigureDaemonPolly()`, new in Marten 10:
 

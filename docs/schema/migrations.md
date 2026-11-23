@@ -25,7 +25,7 @@ database and produces the DDL for the difference. What you choose is *when* that
 | Approach | How | Typical use |
 | --- | --- | --- |
 | Lazily, on first use of each document type or the event store | A permissive `AutoCreateSchemaObjects` mode, described in the next section | Local development |
-| Once at application startup | `.ApplyAllDatabaseChangesOnStartup()` on `AddMarten()`, or `services.AddResourceSetupOnStartup()` to set up every [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html) in the application, Wolverine's message storage and broker objects included | Development, integration tests, and production deployments where the application owns its schema |
+| Once at application startup | `.ApplyAllDatabaseChangesOnStartup()` on `AddMarten()`, or `services.AddResourceSetupOnStartup()` to set up every [stateful resource](https://shared-libs.jasperfx.net/cli/resources) in the application, Wolverine's message storage and broker objects included | Development, integration tests, and production deployments where the application owns its schema |
 | As an explicit deployment step | `dotnet run -- db-apply` ([reference](https://weasel.jasperfx.net/cli/db-apply.html)), or `dotnet run -- resources setup` for every resource at once, with the application itself on `AutoCreate.None` | Production, when the deployment identity may run DDL |
 | From reviewed SQL scripts | `dotnet run -- db-patch` and `dotnet run -- db-dump` ([db-patch](https://weasel.jasperfx.net/cli/db-patch.html), [db-dump](https://weasel.jasperfx.net/cli/db-dump.html)), applied by a DBA or a migration tool, with the application on `AutoCreate.None` | Production, when the application's credentials cannot run DDL |
 
@@ -223,7 +223,7 @@ services.AddMarten(opts =>
 
 In the option above, Marten is calling the same functionality within an `IHostedService` background task.
 
-Marten's database is also a JasperFx [stateful resource](https://shared-libs.jasperfx.net/cli/resources.html), so the same migration runs when
+Marten's database is also a JasperFx [stateful resource](https://shared-libs.jasperfx.net/cli/resources), so the same migration runs when
 you set up every resource in the application at once. `services.AddResourceSetupOnStartup()` does it at startup, and covers Wolverine's
 message storage and any message broker queues alongside the Marten schema, while the command line equivalent is:
 
