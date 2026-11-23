@@ -139,3 +139,42 @@ And another example, but this time transforming to an anonymous type:
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L982-L994' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Streaming Raw JSON
+
+The `ToJson*()` methods above build a `string`. To write the raw JSON straight to a `Stream`, such as an HTTP response
+body, without building the string or deserializing any documents, use the streaming forms:
+
+<!-- snippet: sample_streaming_raw_json -->
+<a id='snippet-sample_streaming_raw_json'></a>
+```cs
+// Every document that matches, as one JSON array. Returns how many documents were written
+var count = await session.Query<User>()
+    .Where(x => x.LastName == "Miller")
+    .OrderBy(x => x.FirstName)
+    .StreamJsonArray(destination, token);
+
+// The first matching document. Writes nothing and returns false when no document matches
+var found = await session.Query<User>()
+    .Where(x => x.UserName == "jdm")
+    .StreamJsonFirstOrDefault(destination, token);
+
+// One document by its id. Returns false when there is none
+found = await session.Json.StreamById<User>(userId, destination, token);
+
+// The results of your own SQL, as one JSON array
+count = await session.StreamJson<User>(destination, token,
+    "where data ->> 'LastName' = ?", "Miller");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/StreamingJsonSamples.cs#L18-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_streaming_raw_json' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+- `StreamJsonArray()`, `StreamJsonFirst()`, `StreamJsonFirstOrDefault()`, `StreamJsonSingle()` and
+  `StreamJsonSingleOrDefault()` work on any Marten LINQ query, including one with a `Select()` transform.
+- `session.Json.StreamById<T>()` writes one document by its id.
+- `session.StreamJson<T>()` writes the results of your own SQL. See [Querying with Postgres SQL](/documents/querying/sql).
+- `StreamPagedJsonArray()` writes one page of results with its paging metadata. See [Paging](/documents/querying/linq/paging).
+- `StreamJsonOne()` and `StreamJsonMany()` stream the results of a [compiled query](/documents/querying/compiled-queries).
+
+In ASP.NET Core, the [Marten.AspNetCore](/documents/aspnetcore) package wraps these up to write to the
+`HttpResponse` directly, along with the status code and content type.

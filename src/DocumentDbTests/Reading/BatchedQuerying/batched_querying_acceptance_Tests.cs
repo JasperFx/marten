@@ -535,7 +535,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
         var admins = batch.LoadMany<User>().ById("user2", "user3");
 
         // User-supplied sql
-        var toms = batch.Query<User>("where first_name == ?", "Tom");
+        var toms = batch.Query<User>("where data ->> 'FirstName' = ?", "Tom");
 
         // Where with Linq
         var jills = batch.Query<User>().Where(x => x.FirstName == "Jill").ToList();

@@ -65,13 +65,16 @@ public class statistics_and_paged_list: IntegrationContext
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
 
+        // QueryIs() has to read each value straight from a member, so compute the offset here
+        public int SkipCount => (PageNumber - 1) * PageSize;
+
         public QueryStatistics Stats { get; } = new QueryStatistics();
 
         public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
         {
             return query => query
                 .Where(x => x.Number > 10)
-                .Skip(PageNumber)
+                .Skip(SkipCount)
                 .Take(PageSize);
         }
     }

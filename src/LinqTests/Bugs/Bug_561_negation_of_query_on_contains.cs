@@ -78,10 +78,8 @@ public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegra
     [Fact]
     public async Task negated_contains()
     {
-        #region sample_negated-contains
         (await theSession.Query<DocWithArrays>().CountAsync(x => !x.Strings.Contains("c")))
             .ShouldBe(2);
-        #endregion
     }
 
     [Fact]

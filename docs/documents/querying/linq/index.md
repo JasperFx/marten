@@ -32,7 +32,8 @@ to use instead. Use `ToListAsync()`, `FirstAsync()`, `CountAsync()` and the othe
 
 The tables below list the LINQ operators and expression shapes Marten translates to SQL. Each row links to an
 example. Marten does not run part of a query in memory to make up for a shape it cannot translate. It throws, and the
-last table says which exception you get and what to do instead.
+last table says which exception you get and what to do instead. The one exception is the last step of an object
+projection: a `Select()` into an object that SQL can't build is completed on the client, after the query runs.
 
 ### Filtering with Where() {#supported-filtering}
 
@@ -74,6 +75,7 @@ last table says which exception you get and what to do instead.
 | An element by position: `x.Values[1]`, `x.Grid[1][0]`, `ElementAt(1)` | [Reading an Element by Position](/documents/querying/linq/child-collections#reading-an-element-by-position) |
 | Dictionaries: `ContainsKey()`, `Keys`, `Values`, `Count` and the indexer `x.Tags["color"]` | [Querying Dictionaries](/documents/querying/linq/child-collections#querying-dictionaries) |
 | `IsSupersetOf()` and `IsSubsetOf()` | [IsSupersetOf](/documents/querying/linq/child-collections#issupersetof) |
+| `IsEmpty()`, true for an empty or `null` collection | [IsEmpty](/documents/querying/linq/child-collections#isempty) |
 
 ### Projections with Select() {#supported-select}
 
@@ -147,7 +149,7 @@ last table says which exception you get and what to do instead.
 | Synchronous execution: `ToList()`, `ToArray()`, `foreach`, `First()`, `Single()`, `Count()`, `Any()`, `Sum()`, and anything else that enumerates the query, such as .NET 9's `CountBy()` | `NotSupportedException` naming the asynchronous operator | `ToListAsync()`, `FirstAsync()` and the other `*Async()` operators, or `ToAsyncEnumerable()` |
 | `ToAsyncEnumerable()` in a file without `using Marten;` | Binds to .NET 10's `AsyncEnumerable.ToAsyncEnumerable()`, which enumerates the query synchronously: `NotSupportedException` | Add `using Marten;`. See [Querying to IAsyncEnumerable](/documents/querying/linq/async-enumerable#using-marten) |
 | `ToPagedList()` | `NotSupportedException` | `ToPagedListAsync()` |
-| `Last()` and `LastOrDefault()` | `NotSupportedException`. There is no asynchronous version | Reverse the ordering and use `FirstAsync()` or `FirstOrDefaultAsync()` |
+| `Last()` and `LastOrDefault()` | `NotSupportedException`. There is no asynchronous version. Inside a compiled query's `QueryIs()`, `InvalidOperationException` | Reverse the ordering and use `FirstAsync()` or `FirstOrDefaultAsync()`, or `First()` inside a compiled query |
 | `ElementAt()` and `ElementAtOrDefault()` on the query itself | `NotSupportedException` | `Skip(index)`, then `FirstAsync()` or `FirstOrDefaultAsync()` |
 | `Aggregate()` | `NotSupportedException` | `SumAsync()` and the other aggregates, or load the rows with `ToListAsync()` and aggregate in memory |
 | `Reverse()`, `Concat()`, `Union()`, `Zip()`, `TakeWhile()`, `SkipWhile()` and any other operator not listed on this page | `BadLinqExpressionException` | `MatchesSql()`, `session.QueryAsync<T>(sql)`, or load the rows and apply the operator in memory |

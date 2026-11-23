@@ -80,12 +80,6 @@ Finally, you can query for child collections that do **not** contain a value:
     .ShouldBe(2);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_561_negation_of_query_on_contains.cs#L33-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains' title='Start of snippet'>anchor</a></sup>
-<a id='snippet-sample_negated-contains-1'></a>
-```cs
-(await theSession.Query<DocWithArrays>().CountAsync(x => !x.Strings.Contains("c")))
-    .ShouldBe(2);
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_561_negation_of_query_on_contains.cs#L81-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Nested Any() {#nested-any}
@@ -393,6 +387,23 @@ var users = session.Query<SuperUser>()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/InExamples.cs#L22-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_in_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## IsEmpty {#isempty}
+
+Marten's `IsEmpty()` extension method, in the `Marten` namespace, matches documents whose collection is empty or `null`.
+It works on child collections of objects and on value collections, and can be negated:
+
+```cs
+// Orders with no lines at all, whether Lines is empty or null
+var empty = await session.Query<Order>()
+    .Where(x => x.Lines.IsEmpty())
+    .ToListAsync();
+
+// Orders that have at least one line
+var withLines = await session.Query<Order>()
+    .Where(x => !x.Lines.IsEmpty())
+    .ToListAsync();
+```
 
 ## IsSupersetOf {#issupersetof}
 

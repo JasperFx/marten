@@ -1,9 +1,8 @@
 # Batched Queries
 
 ::: tip
-Batched query support was optimized quite a bit in the Marten V4 release. It's now possible to work with the results of the earliest
-queries in the batch before the later queries are completely processed in a background thread to enable you to optimize **your**
-code that uses batch querying.
+You can work with the results of the earliest queries in a batch before the later queries are completely processed, so
+your own code can start on them sooner.
 :::
 
 For the sake of performance, if you have a case where you may need to fetch several sets of document data from Marten
@@ -30,7 +29,7 @@ var user1 = batch.Load<User>("username");
 var admins = batch.LoadMany<User>().ById("user2", "user3");
 
 // User-supplied sql
-var toms = batch.Query<User>("where first_name == ?", "Tom");
+var toms = batch.Query<User>("where data ->> 'FirstName' = ?", "Tom");
 
 // Where with Linq
 var jills = batch.Query<User>().Where(x => x.FirstName == "Jill").ToList();
@@ -55,9 +54,34 @@ Debug.WriteLine($"The first internal user is {internalUser.FirstName} {internalU
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L526-L560' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-batch-query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: info These are not the synchronous LINQ operators
+`ToList()`, `Any()`, `Count()`, `First()` and the others on `batch.Query<T>()` are Marten's own methods on
+`IBatchedQueryable<T>`, and each returns a `Task` that completes when the batch runs. Unlike the `System.Linq`
+operators, which throw in Marten 10 because they would run a query synchronously, they are the intended way to add a
+LINQ query to a batch.
+:::
+
+## What a Batch Can Hold
+
+- Documents by id: `Load<T>()`, `LoadMany<T>().ById()` and `CheckExists<T>()`
+- Your own SQL: `Query<T>(sql, parameters)`
+- LINQ queries through `Query<T>()`, ending in `ToList()`, `Any()`, `Count()`, `First()`, `FirstOrDefault()`,
+  `Single()`, `SingleOrDefault()`, `Min()`, `Max()`, `Sum()` or `Average()`, and including `Select()` transforms,
+  `Include()`, paging with `Skip()` and `Take()`, and `Stats()`
+- [Compiled queries](#combining-compiled-queries-and-batch-queries) and [query plans](/documents/querying/compiled-queries#query-plans)
+  with `QueryByPlan()`
+- Event store reads through `batch.Events`: `Load()` for one event, `FetchStream()`, `FetchStreamState()`,
+  `EventsExist()`, and the aggregate fetches `FetchLatest<T>()`, `FetchForWriting<T>()` and
+  `FetchForExclusiveWriting<T>()`, including by [natural key](/events/natural-keys) and by
+  [DCB tags](/events/dcb) with `FetchForWritingByTags<T>()`
+
+Since Marten 10, the aggregate fetches can go anywhere in a batch and share it with each other. A batched fetch of an
+`Async` aggregate whose snapshot went backwards between its two reads, as it can while the projection is being rebuilt,
+throws `SnapshotRaceException`; retry the batch.
+
 ## Combining Compiled Queries and Batch Queries
 
-As of v0.8.10, Marten allows you to incorporate [compiled queries](/documents/querying/compiled-queries) as part of a batch query. The Marten team is hoping that this combination will make it easier to create performant applications where you may need to aggregate many documents in a single HTTP request or other operation.
+Marten allows you to incorporate [compiled queries](/documents/querying/compiled-queries) as part of a batch query. The Marten team is hoping that this combination will make it easier to create performant applications where you may need to aggregate many documents in a single HTTP request or other operation.
 
 Say you have a compiled query that finds the first user with a given first name:
 
