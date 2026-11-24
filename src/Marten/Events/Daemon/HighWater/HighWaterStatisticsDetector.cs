@@ -56,7 +56,7 @@ internal sealed record AllocationFenceReading(long AllocatedHigh, DateTimeOffset
 /// #5108: the reserved <c>mt_event_progression.name</c> under which the durable allocation fence
 /// lives. It is bookkeeping for high-water detection, NOT a projection shard: it is deliberately
 /// excluded from <c>ProjectionProgressStatement</c> so it never surfaces as a shard in
-/// <c>AllProjectionProgress()</c>, and from the blanket UPDATE in
+/// <c>AllProjectionProgress()</c>, and from the UPDATE in
 /// <c>HighWaterDetector.TryCorrectProgressInDatabaseAsync</c>, which would otherwise restamp it
 /// against an arbitrary sequence and make the fence claim something that was never observed.
 ///
@@ -83,7 +83,7 @@ internal sealed record StuckGapReading(long Mark, DateTimeOffset FirstObservedAt
 /// <summary>
 /// #5109: the reserved <c>mt_event_progression.name</c> under which the durable stuck-gap clock lives.
 /// Bookkeeping, not a projection shard — excluded from <c>ProjectionProgressStatement</c> and from the
-/// blanket UPDATE in <c>HighWaterDetector.TryCorrectProgressInDatabaseAsync</c> for the same reasons as
+/// UPDATE in <c>HighWaterDetector.TryCorrectProgressInDatabaseAsync</c> for the same reasons as
 /// <see cref="HighWaterAllocationFence" />.
 /// </summary>
 internal static class HighWaterStuckGap

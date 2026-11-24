@@ -255,7 +255,7 @@ from {Schema}.mt_events where seq_id = 1").ExecuteNonQueryAsync(TestContext.Curr
     }
 
     /// <summary>
-    /// TryCorrectProgressInDatabaseAsync rewrites mt_event_progression with no WHERE clause. The fence
+    /// TryCorrectProgressInDatabaseAsync rewrites every mt_event_progression row above the highest sequence. The fence
     /// row records an OBSERVED sequence allocation, not projection progress — restamping it would have
     /// it claim something that was never observed, and a fence dated later than the truth wrongly
     /// excludes a live reserver.
