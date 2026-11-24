@@ -548,7 +548,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         foreach (var aggregate in All.OfType<IAggregateProjection>())
         {
             if (aggregate.Lifecycle != ProjectionLifecycle.Async || aggregate.Version <= 1) continue;
-            if (!PriorVersionMark.IsConfiguredOn(aggregate.Options)) continue;
+            if (!aggregate.Options.StartsFromPriorVersionMark) continue;
 
             messages.Add(priorVersionMarkMessage(
                 $"Aggregate projection for {aggregate.AggregateType.FullNameInCode()}", aggregate.Version));
@@ -556,7 +556,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
 
         foreach (var composite in All.OfType<CompositeProjection>())
         {
-            if (composite.Version <= 1 || !PriorVersionMark.IsConfiguredOn(composite.Options)) continue;
+            if (composite.Version <= 1 || !composite.Options.StartsFromPriorVersionMark) continue;
 
             var aggregates = aggregatesIn(composite).Select(x => x.AggregateType.FullNameInCode()).ToArray();
             if (aggregates.Length == 0) continue;
