@@ -80,7 +80,9 @@ public async Task is_null_or_empty(IQuerySession session)
 ## Case, Trim and Length {#case-trim-and-length}
 
 `ToLower()`, `ToUpper()`, `ToLowerInvariant()`, `ToUpperInvariant()` and `Trim()` on a string member become
-PostgreSQL's `lower()`, `upper()` and `trim()`. `Length` becomes `length()`:
+PostgreSQL's `lower()`, `upper()` and `trim()`. `Length` becomes `length()`, which counts characters where .NET counts
+UTF-16 code units, so the two differ for a string holding an emoji or another character outside the Basic Multilingual
+Plane:
 
 <!-- snippet: sample_string_case_trim_and_length -->
 <a id='snippet-sample_string_case_trim_and_length'></a>

@@ -96,11 +96,11 @@ await batch.Execute();
 
 ## Recommended setup: enable the source generator
 
-::: tip Marten 9.0
-The source-generated path described in this section ships in Marten 9.0 and is the supported way to use compiled queries. Queries the generator can't see at build time (no `[JasperFxAssembly]` marker, or shapes the generator skips) fall through to a reflection + `FastExpressionCompiler`-built descriptor at first use — no Roslyn, no pre-built artifacts.
+::: tip
+The source-generated path described in this section is the supported way to use compiled queries. Queries the generator can't see at build time (no `[JasperFxAssembly]` marker, or shapes the generator skips) fall through to a reflection + `FastExpressionCompiler`-built descriptor at first use — no Roslyn, no pre-built artifacts.
 :::
 
-Marten 9 ships a Roslyn source generator (`Marten.SourceGenerator`) that emits the per-`ICompiledQuery<,>` scaffolding at compile time. Opt-in is implicit — add two things to the project that declares your compiled query types and the runtime picks the source-generated path automatically:
+Marten ships a Roslyn source generator (`Marten.SourceGenerator`) that emits the per-`ICompiledQuery<,>` scaffolding at compile time. Opt-in is implicit — add two things to the project that declares your compiled query types and the runtime picks the source-generated path automatically:
 
 ```xml
 <!-- in your .csproj -->
@@ -192,7 +192,7 @@ To the best of our knowledge and testing, you may use any [Linq feature that Mar
 * `OrderBy/OrderByDescending` etc.
 * `Count()`
 * `Any()`
-* `Skip()`, `Take()` and `Stats()` for pagination
+* `Skip()` and `Take()` for pagination, with a `QueryStatistics` member for the total count (see [Querying for Paginated Results](#querying-for-paginated-results))
 
 To get the results as raw JSON, run the compiled query with `ToJsonMany()`, `ToJsonOne()`, `StreamJsonMany()` or
 `StreamJsonOne()`, as shown in [Querying for Results as JSON](#querying-for-results-as-json).
@@ -200,7 +200,7 @@ To get the results as raw JSON, run the compiled query with `ToJsonMany()`, `ToJ
 As for limitations,
 
 * You cannot use the Linq `ToArray()` or `ToList()` operators. See the next section for an explanation of how to query for multiple results with `ICompiledListQuery`.
-* The compiled query planning just cannot match Boolean fields or properties to command arguments, so Boolean flags cannot be used
+* The compiled query planning cannot match `bool` or nullable (`int?`, `DateTime?` and so on) fields or properties to command arguments, so they cannot be used as parameters. Marten throws an `InvalidCompiledQueryException` naming them when it builds the plan
 * `QueryIs()` has to read each value directly from a member of the query object. A value computed from members inside the expression, such as `First + Second`, `Name.ToUpper()` or `new List<string> { First, Second }`, is refused with an `InvalidCompiledQueryException` when the plan is built: it matches no member, so it would be frozen at its planning value. Compute it in a property of the query instead, the way `SkipCount` does in the example above. Conversions that keep a member's value, like comparing an `int` member to an `int?` field, and inline arrays of members, `new[] { First, Second }`, are fine (see [#5711](https://github.com/JasperFx/marten/issues/5711))
 * A `Select()` projection that runs on the client (see [Projections That Can't Be Expressed in SQL](/documents/querying/linq/projections#client-side-projections)) cannot read a member of the query object. Marten throws `InvalidCompiledQueryException` when it builds the plan, because the compiled projection would keep the value from the first execution forever. A client-side projection that only reads the document is fine (see [#5233](https://github.com/JasperFx/marten/issues/5233))
 * `Join()`, `LeftJoin()` and `RightJoin()` are refused in a compiled query, whose only source is its own parameter. See [Join, LeftJoin, RightJoin and FullJoin](/documents/querying/linq/group-join#join-leftjoin-rightjoin-and-fulljoin)
@@ -442,22 +442,25 @@ public class TargetPaginationQuery: ICompiledListQuery<Target>
     public int PageNumber { get; set; }
     public int PageSize { get; set; }
 
+    // QueryIs() has to read each value straight from a member, so compute the offset here
+    public int SkipCount => (PageNumber - 1) * PageSize;
+
     public QueryStatistics Stats { get; } = new QueryStatistics();
 
     public Expression<Func<IMartenQueryable<Target>, IEnumerable<Target>>> QueryIs()
     {
         return query => query
             .Where(x => x.Number > 10)
-            .Skip(PageNumber)
+            .Skip(SkipCount)
             .Take(PageSize);
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L56-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled-query-statistics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L56-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled-query-statistics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Note that the way to get the `QueryStatistics` out is done by having a property on the query, which we specify in the `Stats()` method, similarly to the way
-we handle Include queries.
+To get the `QueryStatistics` out, expose a `QueryStatistics` property on the query, as `Stats` above. Marten fills it
+in when the query runs, the same way it handles the members that receive `Include()` results.
 
 ## Querying for a Single Document
 

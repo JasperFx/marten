@@ -1,6 +1,6 @@
 # Loading Documents by Id
 
-Documents can be loaded by id from the `IQuerySession` interface (and so also `IDocumentSession`), either one at a time or by an enumerable of id values. The load by id functionality supports GUIDs, integers, long integers, and strings. If the document cannot be found, `null` is returned.
+Documents can be loaded by id from the `IQuerySession` interface (and so also `IDocumentSession`), either one at a time or by an enumerable of id values. The load by id functionality supports GUIDs, integers, long integers, and strings, and the `object` overloads take any other supported identity, such as a [strong typed identifier](/documents/identity#strong-typed-identifiers). If the document cannot be found, `null` is returned.
 
 ## Loading by Id
 

@@ -23,7 +23,7 @@ var hasPrevPage = pagedList.HasPreviousPage; // check if there is previous page
 var firstItemOnPage = pagedList.FirstItemOnPage; // one-based index of first item in current page
 var lastItemOnPage = pagedList.LastItemOnPage; // one-based index of last item in current page
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L217-L232' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L220-L235' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For total row count, by default it internally uses `Stats()` based query which is a window function using `count(*) OVER()`. This works well for small to medium datasets but won't perform well for large dataset with millions of records. To deal with large datasets, `ToPagedListAsync()` supports a method override to pass boolean `useCountQuery` as `true` which will run a separate `count(*)` query for the total rows. See an example below:
@@ -38,7 +38,7 @@ var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pa
 // paged list also provides a list of helper properties to deal with pagination aspects
 var totalItems = pagedList.TotalItemCount; // get total number records
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L254-L261' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_seperate_count_query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L257-L264' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_seperate_count_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Query Statistics {#query-statistics}
@@ -73,7 +73,7 @@ public async Task can_get_the_total_in_results()
     stats.TotalResults.ShouldBe(count);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L158-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-query-statistics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L161-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-query-statistics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For the sake of completeness, the SQL generated in the operation above by Marten would be:

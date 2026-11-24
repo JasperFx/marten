@@ -455,6 +455,11 @@ public async Task operators_after_select_many(IQuerySession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/projections_documentation_samples.cs#L110-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_operators_after_select_many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+`SelectMany()` also works over an array that is [duplicated](/documents/indexing/duplicated-fields) into its own column,
+which Marten flattens with `unnest()`, and over a collection of enums. An `OrderBy()` after `SelectMany()` over enums
+sorts by the stored value, so by name under `EnumStorage.AsString`, the same as an `OrderBy()` on an enum member of a
+document.
+
 A `Select()` of the flattened rows into an anonymous type or a DTO works on its own, or followed by `Take()` and
 `Skip()`. Followed by `Where()`, `OrderBy()`, `Distinct()` or an aggregate, it throws `BadLinqExpressionException`, and
 so does a `GroupBy()` after a projection of the flattened rows. Apply those operators before the `Select()`.
