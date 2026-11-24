@@ -82,7 +82,7 @@ list of what you get.
 
 You get these transitively from `Marten`. If you reference any of them directly, upgrade them at the same time.
 Every JasperFx 3.x change is listed in the [JasperFx Migration Guide](https://shared-libs.jasperfx.net/migration-guide).
-Marten 10.0.0-rc.1 is built on Weasel 10.0.0-rc.1; Weasel's own changes are in its
+Marten 10.0 is built on Weasel 10.0.0; Weasel's own changes are in its
 [migration guide](https://weasel.jasperfx.net/migration-guide-10). On `net11.0`, `Microsoft.Extensions.*` packages must also be on 11.x, otherwise NuGet reports NU1605. On `net10.0`,
 Npgsql 11 needs `Microsoft.Extensions.DependencyInjection.Abstractions` and `Microsoft.Extensions.Logging.Abstractions`
 11.0.0, so raise those two if you reference them directly.
@@ -125,7 +125,7 @@ can change.
 
 ### JasperFx 3.12 and 3.13: natural keys are checked at startup, and a failed composite rebuild throws <Badge type="warning" text="behavior change" />
 
-Marten 10.0 is built on JasperFx 3.14.0. Between 3.10 and 3.14.0, these change what you see
+Marten 10.0 is built on JasperFx 3.16.0. Between 3.10 and 3.14.0, these change what you see
 ([3.12.1](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-12-1),
 [3.13.0](https://shared-libs.jasperfx.net/migration-guide#key-changes-in-3-13-0)). JasperFx 3.14.0's change to null
 natural keys is described under [natural keys](#natural-keys-in-10-0-0):

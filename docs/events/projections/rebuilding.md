@@ -338,10 +338,12 @@ as a Wolverine job, while the new version processes everything after it. Marten 
 ::: warning
 A new `Version` of a single-stream or multi-stream projection writes its documents to a
 [new table](#blue-green-deployments-with-projection-versioning), which starts empty. Started from the prior version's
-mark, it never applies the events before the mark, and its documents are built from later events only. Use
-`SubscribeFromPriorVersionMark()` with a projection whose new version works on what the prior version wrote, such as an
-[event projection](/events/projections/event-projections) that writes the same documents, and only when the new
-version has no need to see the earlier events.
+mark, it would never apply the events before the mark, and its documents would be built from later events only, so
+Marten refuses `SubscribeFromPriorVersionMark()` on an async single-stream or multi-stream projection whose `Version` is
+above 1, or on a composite projection at such a version that projects one: the store throws an
+`InvalidProjectionException` when it is built. Use `SubscribeFromPriorVersionMark()` with a projection whose new version
+works on what the prior version wrote, such as an [event projection](/events/projections/event-projections) that writes
+the same documents, and only when the new version has no need to see the earlier events.
 :::
 
 ## Rebuilding a Single Stream <Badge type="tip" text="7.28" /> {#rebuilding-a-single-stream}

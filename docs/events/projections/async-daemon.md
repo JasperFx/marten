@@ -1021,10 +1021,9 @@ progression.
 
 If the high water mark ever ends up above the highest assigned event sequence in the database, which has been seen
 when an application was connected to a PostgreSQL server that was shutting down, `store.Advanced.TryCorrectProgressInDatabaseAsync()`
-sets the high water mark and the progression of every projection and subscription in that database to the highest
-assigned event sequence. That includes any shard whose progression is *behind* that sequence, which then skips the
-events in between, so only use it for the situation it was written for. When the mark isn't above that sequence it
-does nothing. The overload taking a tenant id corrects only the database that holds that tenant. The `marten --correct`
+pulls the high water mark, and the progression of any projection or subscription that is also above that sequence,
+back to the highest assigned event sequence in that database. A shard whose progression is behind that sequence keeps
+its position, so it still processes the events in between. When the mark isn't above that sequence it does nothing. The overload taking a tenant id corrects only the database that holds that tenant. The `marten --correct`
 command does the same thing from the command line.
 
 <!-- snippet: sample_async_daemon_correct_progress -->

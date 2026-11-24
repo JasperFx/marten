@@ -535,6 +535,62 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     }
 
     /// <summary>
+    /// #6186: <c>SubscribeFromPriorVersionMark()</c> starts a new projection version where the prior version left
+    /// off, on the understanding that a backfill of the same name applies the events up to that mark. Marten runs
+    /// no projection backfills (#5632, <c>SupportsBackfills</c> is false), and a new <c>Version</c> of a
+    /// single-stream or multi-stream projection writes to a new, empty table, so every document it built would be
+    /// missing its history. Refuse that at startup rather than build those documents silently.
+    /// </summary>
+    internal void AssertNoPriorVersionMarkOnVersionedAggregates()
+    {
+        var messages = new List<string>();
+
+        foreach (var aggregate in All.OfType<IAggregateProjection>())
+        {
+            if (aggregate.Lifecycle != ProjectionLifecycle.Async || aggregate.Version <= 1) continue;
+            if (!aggregate.Options.StartsFromPriorVersionMark) continue;
+
+            messages.Add(priorVersionMarkMessage(
+                $"Aggregate projection for {aggregate.AggregateType.FullNameInCode()}", aggregate.Version));
+        }
+
+        foreach (var composite in All.OfType<CompositeProjection>())
+        {
+            if (composite.Version <= 1 || !composite.Options.StartsFromPriorVersionMark) continue;
+
+            var aggregates = aggregatesIn(composite).Select(x => x.AggregateType.FullNameInCode()).ToArray();
+            if (aggregates.Length == 0) continue;
+
+            messages.Add(priorVersionMarkMessage(
+                $"Composite projection '{composite.Name}', which projects {aggregates.Join(", ")},",
+                composite.Version));
+        }
+
+        if (messages.Count > 0)
+        {
+            throw new InvalidProjectionException(messages.ToArray());
+        }
+    }
+
+    private static string priorVersionMarkMessage(string subject, uint version) =>
+        $"{subject} is at Version {version} and calls Options.SubscribeFromPriorVersionMark(). A new version of an aggregate projection writes its documents to a new, empty table, and Marten does not run projection backfills (https://github.com/JasperFx/marten/issues/5632), so the events before the prior version's mark would never be applied and every document would be built without its history. Remove SubscribeFromPriorVersionMark() to let the new version catch up over the whole event history, or rebuild it.";
+
+    private static IEnumerable<IAggregateProjection> aggregatesIn(
+        JasperFx.Events.Projections.Composite.CompositeProjection<IDocumentOperations, IQuerySession> composite)
+    {
+        foreach (var member in composite.AllProjections())
+        {
+            if (member is IAggregateProjection aggregate) yield return aggregate;
+
+            if (member is JasperFx.Events.Projections.Composite.CompositeProjection<IDocumentOperations, IQuerySession>
+                nested)
+            {
+                foreach (var inner in aggregatesIn(nested)) yield return inner;
+            }
+        }
+    }
+
+    /// <summary>
     /// Find a registered natural key definition for the given aggregate type, if any.
     /// </summary>
     public NaturalKeyDefinition? FindNaturalKeyDefinition(Type aggregateType)

@@ -86,6 +86,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         Options.Projections.AssertValidity(Options);
         Options.Projections.AssertMappedNaturalKeysAgreeOnGlobalTenancy();
         Options.Projections.AssertNaturalKeysAreNotStreamIdentities();
+        Options.Projections.AssertNoPriorVersionMarkOnVersionedAggregates();
 
         if (Options.LogFactory != null)
         {

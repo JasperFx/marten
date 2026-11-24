@@ -1238,9 +1238,13 @@ update {graph.DatabaseSchemaName}.{EventProgressionSkippingTable.Name}
             // sequence allocation, not projection progress — restamping it here would have it claim
             // that nothing above an arbitrary sequence had been handed out at a moment when that was
             // never observed, and a fence that is too late wrongly excludes a live reserver.
+            //
+            // #6185: and only the rows ABOVE the highest assigned sequence. The correction pulls a mark back that
+            // claims events which were never assigned; a shard that is behind that sequence has events left to
+            // process, and moving it forward would skip them.
             await using var cmd =
                 new NpgsqlCommand(
-                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq, last_updated = transaction_timestamp() where name <> :fence and name <> :stuck")
+                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq, last_updated = transaction_timestamp() where name <> :fence and name <> :stuck and last_seq_id > :seq")
                     .With("seq", statistics.HighestSequence)
                     .With("fence", HighWaterAllocationFence.ProgressionName)
                     .With("stuck", HighWaterStuckGap.ProgressionName);
