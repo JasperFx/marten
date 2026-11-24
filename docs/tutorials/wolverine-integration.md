@@ -69,7 +69,7 @@ sequenceDiagram
     Wolverine->>Wolverine: Handler emits ShipmentPickedUp + NotifyDispatchCenter
     Wolverine->>Marten: Append events
     Wolverine->>Outbox: Enqueue NotifyDispatchCenter
-    Wolverine->>Marten: SaveChanges (commit)
+    Wolverine->>Marten: SaveChangesAsync (commit)
     Marten-->>Wolverine: Committed
     Wolverine-->>Dispatch: Publish NotifyDispatchCenter
 ```

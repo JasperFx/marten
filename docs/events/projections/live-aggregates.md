@@ -232,7 +232,7 @@ var roomsAvailabilityAtVersion =
 
 ## Aggregating Events into Existing State
 
-Marten also allows aggregating the stream into a specific entity instance. This means that a particular set of events are taken and applied to an object one by one in the same order of occurrence. To achieve it, you should pass the base entity state as a `state` parameter into the `AggregateStream` method.
+Marten also allows aggregating the stream into a specific entity instance. This means that a particular set of events are taken and applied to an object one by one in the same order of occurrence. To achieve it, you should pass the base entity state as a `state` parameter into the `AggregateStreamAsync` method.
 
 <!-- snippet: sample_aggregate-stream-into-state-default -->
 <a id='snippet-sample_aggregate-stream-into-state-default'></a>

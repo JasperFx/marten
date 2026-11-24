@@ -20,24 +20,6 @@ public async Task when_find_then_a_json_should_be_returned()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/document_session_find_json_Tests.cs#L12-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_find-json-by-id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-<!-- snippet: sample_find-json-by-id-async -->
-<a id='snippet-sample_find-json-by-id-async'></a>
-```cs
-[Fact]
-public async Task when_find_then_a_json_should_be_returned()
-{
-    var issue = new Issue { Title = "Issue 2" };
-
-    theSession.Store(issue);
-    await theSession.SaveChangesAsync();
-
-    var json = await theSession.Json.FindByIdAsync<Issue>(issue.Id);
-    json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"Status\": null, \"AssigneeId\": null, \"ReporterId\": null}}");
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/document_session_find_json_async_Tests.cs#L12-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_find-json-by-id-async' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
 Marten supplies the following functionality to retrieve the raw JSON strings:
 
 <!-- snippet: sample_get-raw-json -->
@@ -67,34 +49,9 @@ public async Task when_get_json_then_raw_json_should_be_returned()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/get_raw_json_Tests.cs#L13-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get-raw-json' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-And the asynchronous version:
+## Raw JSON from Select() Transforms
 
-<!-- snippet: sample_get-raw-json-async -->
-<a id='snippet-sample_get-raw-json-async'></a>
-```cs
-[Fact]
-public async Task when_get_json_then_raw_json_should_be_returned_async()
-{
-    await theStore.Advanced.ResetAllData();
-    var issue = new Issue { Title = "Issue 1" };
-
-    theSession.Store(issue);
-    await theSession.SaveChangesAsync();
-    var json = await theSession.Query<Issue>().Where(x => x.Title == "Issue 1").ToJsonArray();
-    json.ShouldNotBeNull();
-
-    json = await theSession.Query<Issue>().ToJsonFirst();
-    json = await theSession.Query<Issue>().ToJsonFirstOrDefault();
-    json = await theSession.Query<Issue>().ToJsonSingle();
-    json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/get_raw_json_Tests.cs#L36-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get-raw-json-async' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-## Using AsJson() with Select() Transforms
-
-Marten has the ability to combine the `AsJson()` mechanics to the result of a `Select()` transform:
+The `ToJsonArray()`, `ToJsonFirst()`, `ToJsonFirstOrDefault()`, `ToJsonSingle()` and `ToJsonSingleOrDefault()` operators also work on the result of a `Select()` transform:
 
 ::: tip
 When a `Select()` projection is a "simple" flat member-access transform, Marten pushes the

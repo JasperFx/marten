@@ -168,7 +168,7 @@ builder.Services.AddMarten(opts =>
         // that is the targeted "T" in FetchForWriting<T>() when using
         // an Inline projection for the "T". Saves on Marten doing an extra
         // database fetch of the same data you already fetched from FetchForWriting()
-        // when Marten needs to apply the Inline projection as part of SaveChanges()
+        // when Marten needs to apply the Inline projection as part of SaveChangesAsync()
         opts.Events.UseIdentityMapForAggregates = true;
     })
     // This is non-trivial performance optimization if you never
@@ -387,7 +387,7 @@ This is useful in workflows where:
 
 ## WriteToAggregate
 
-Lastly, there are several overloads of a method called `IEventStore.WriteToAggregate()` that just puts some syntactic sugar
+Lastly, there are several overloads of a method called `session.Events.WriteToAggregate()` that just puts some syntactic sugar
 over the top of `FetchForWriting()` to simplify the entire workflow. Using that method, our handler versions above becomes:
 
 <!-- snippet: sample_using_writetoaggregate -->

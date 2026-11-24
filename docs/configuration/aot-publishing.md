@@ -15,7 +15,7 @@ AOT publishing is the right choice for serverless / Lambda / fast-restart worklo
 - .NET 9 or .NET 10 SDK
 - Marten 9.0.0-alpha or later
 - JasperFx 2.0 / JasperFx.Events 2.0 / Weasel 9.0 alphas pulled in transitively when you bump `Marten`
-- The System.Text.Json-based serializer (`UseSystemTextJsonForSerialization`) — Newtonsoft.Json is not AOT-compatible (see [The Newtonsoft.Json escape hatch](#the-newtonsoftjson-escape-hatch))
+- The System.Text.Json-based serializer (`UseSystemTextJsonForSerialization`) — Newtonsoft.Json is not AOT-compatible (see [The Newtonsoft.Json escape hatch](#the-newtonsoft-json-escape-hatch))
 - `Marten.SourceGenerator` if you use compiled queries — see the [Marten.SourceGenerator README](https://github.com/JasperFx/marten/blob/master/src/Marten.SourceGenerator/README.md)
 
 :::
@@ -206,7 +206,7 @@ As of Marten 9.0.0-alpha:
 
   This one is **not Marten's code**, which is worth knowing before you go looking in the wrong place. Writing `.Where(x => x.Amount > 10)` against an `IQueryable<T>` makes the compiler emit code in *your* assembly that builds the expression tree at runtime, and `Expression.GreaterThan` on two decimals cannot use an IL comparison — `decimal` has no primitive `>` — so it looks up `System.Decimal.op_GreaterThan` by reflection. The trimmer has no reason to keep an operator nothing statically calls, and the factory then reports it as *"The binary operator GreaterThan is not defined for the types 'System.Decimal' and 'System.Decimal'"*. Equality is fine; it is the ordering comparisons that need the operator. See [#5597](https://github.com/JasperFx/marten/issues/5597), and note `Marten.AotRuntimeSmoke` covers this so the behaviour stays pinned if the runtime changes it.
 
-- **Event storage** — `StartStream`, `Append`, `FetchStream`, `FetchStreamStateAsync`, `AggregateStreamAsync`, `QueryAllRawEvents`, the async daemon. Reading an event needed a JIT until [#5373](https://github.com/JasperFx/marten/issues/5373): the events table closed its per-column reader over the column's member type at runtime.
+- **Event storage** — `StartStream`, `Append`, `FetchStreamAsync`, `FetchStreamStateAsync`, `AggregateStreamAsync`, `QueryAllRawEvents`, the async daemon. Reading an event needed a JIT until [#5373](https://github.com/JasperFx/marten/issues/5373): the events table closed its per-column reader over the column's member type at runtime.
 - **Dynamic Consistency Boundary tags** — **once you register them with the explicit overload**, one line per tag type:
 
   ```cs
@@ -236,7 +236,7 @@ As of Marten 9.0.0-alpha:
 - **`services.AddRuntimeCompilation()`** — the seam doesn't exist in Marten 9. If you have it in your composition root from a pre-9 app, delete the call.
 - **Pre-built `Internal/Generated/`** — irrelevant to Marten 9. Delete the folder.
 
-## The Newtonsoft.Json escape hatch
+## The Newtonsoft.Json escape hatch {#the-newtonsoft-json-escape-hatch}
 
 If your existing app uses `Marten.Newtonsoft`, the AOT migration is:
 

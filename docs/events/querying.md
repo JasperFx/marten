@@ -2,7 +2,7 @@
 
 ## Fetch Events for a Stream
 
-You can retrieve the events for a single stream at any time with the `IEventStore.FetchStream()` methods shown below:
+You can retrieve the events for a single stream at any time with the `session.Events.FetchStreamAsync()` methods shown below:
 
 <!-- snippet: sample_using-fetch-stream -->
 <a id='snippet-sample_using-fetch-stream'></a>
@@ -172,7 +172,7 @@ public interface IEvent
 
 ## Stream State
 
-If you just need to check on the state of an event stream - what version (effectively the number of events in the stream) it is and what, if any, aggregate type it represents - you can use the `IEventStore.FetchStreamState()/FetchStreamStateAsync()` methods or `IBatchQuery.Events.FetchStreamState()`, as shown below:
+If you just need to check on the state of an event stream - what version (effectively the number of events in the stream) it is and what, if any, aggregate type it represents - you can use `session.Events.FetchStreamStateAsync()`, or `batch.Events.FetchStreamState()` in a [batch query](/documents/querying/batched-queries), as shown below:
 
 <!-- snippet: sample_fetching_stream_state -->
 <a id='snippet-sample_fetching_stream_state'></a>
@@ -261,7 +261,7 @@ Furthermore, `StreamState` contains metadata for when the stream was created, `S
 ## Stream Query Plans
 
 The stream fetches above are also available as reusable [query plans](/documents/querying/compiled-queries#query-plans):
-`FetchStreamStatePlan` wraps `FetchStreamState()`/`FetchStreamStateAsync()` and `FetchStreamPlan` wraps `FetchStream()`/`FetchStreamAsync()`.
+`FetchStreamStatePlan` wraps `FetchStreamStateAsync()` and `FetchStreamPlan` wraps `FetchStreamAsync()`.
 Both plans accept either a `Guid` stream id or a `string` stream key, and `FetchStreamPlan` carries the optional
 `version`, `timestamp`, and `fromVersion` filters. Because the plans implement both `IQueryPlan<T>` and
 `IBatchQueryPlan<T>`, the same object works standalone with `IQuerySession.QueryByPlanAsync()` or combined with any
@@ -308,7 +308,7 @@ between a batched query and its HTTP result.
 
 ## Fetch a Single Event
 
-You can fetch the information for a single event by id, including its version number within the stream, by using `IEventStore.LoadAsync()` as shown below:
+You can fetch the information for a single event by id, including its version number within the stream, by using `session.Events.LoadAsync()` as shown below:
 
 <!-- snippet: sample_load-a-single-event -->
 <a id='snippet-sample_load-a-single-event'></a>

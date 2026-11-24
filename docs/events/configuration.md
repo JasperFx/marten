@@ -22,7 +22,7 @@ var store = DocumentStore.For(opts =>
 
 The Event Store in Marten can identify and index streams either as Guids
 (`System.Guid`) or strings (`System.String`). This is reflected in the overloads
-of `IEventStore` such as `IEventStore.StartStream`, `IEventStore.Append` and `IEventStore.AggregateStream`
+of `session.Events` methods such as `StartStream()`, `Append()` and `AggregateStreamAsync()`
 that accept either `string` or `Guid` as the stream identifier.
 
 Configuration of the stream identity is done through `StoreOptions.Events.StreamIdentity`. If not set, Marten defaults to `StreamIdentity.AsGuid`.

@@ -1,12 +1,12 @@
 # Advanced querying with Postgresql SQL
 
-Besides Linq queries or simple raw SQL queries via `session.Query<T>("where...")`, it is also possible to do even more complex SQL queries via `session.AdvancedSql.QueryAsync<T>()`.
+Besides Linq queries or simple raw SQL queries via `session.QueryAsync<T>("where...")`, it is also possible to do even more complex SQL queries via `session.AdvancedSql.QueryAsync<T>()`.
 With this method Marten does not try to add any missing parts to the SQL query, instead you have to provide the whole query string yourself.
 
 Marten just makes some assumptions on how the schema of the SQl query result must look like, in order to be able to map the query result to documents, scalars or other JSON serializable types.
-With `AdvancedSql.QueryAsync` / `AdvancedSql.Query` it is even possible to return multiple documents, objects and scalars as a tuple. Currently up to three result types can be queried for.
+With `AdvancedSql.QueryAsync` it is even possible to return multiple documents, objects and scalars as a tuple. Currently up to three result types can be queried for.
 
-The following rules must be followed when doing queries with `AdvancedSql.QueryAsync` / `AdvancedSql.Query`:
+The following rules must be followed when doing queries with `AdvancedSql.QueryAsync` (or `AdvancedSql.StreamAsync`, which returns the rows as an `IAsyncEnumerable<T>`):
 
 - If a document should be returned, the SQL `SELECT` statement must contain all the columns required by Marten to build
   the document in the correct order. Which columns are needed depends on the session type and if any meta data are

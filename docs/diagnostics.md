@@ -80,7 +80,7 @@ public interface IChangeListener
 }
 
 /// <summary>
-///     Used to listen to and intercept operations within an IDocumentSession.SaveChanges()/SaveChangesAsync()
+///     Used to listen to and intercept operations within an IDocumentSession.SaveChangesAsync()
 ///     operation
 /// </summary>
 public interface IDocumentSessionListener
@@ -95,7 +95,7 @@ public interface IDocumentSessionListener
     Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
 
     /// <summary>
-    ///     Called just after IDocumentSession.SaveChanges() is called,
+    ///     Called just after IDocumentSession.SaveChangesAsync() is called,
     ///     but before any database calls are made
     /// </summary>
     /// <param name="session"></param>
@@ -410,7 +410,7 @@ public interface IMartenSessionLogger
 
     /// <summary>
     ///     Called immediately after committing an IDocumentSession
-    ///     through SaveChanges() or SaveChangesAsync()
+    ///     through SaveChangesAsync()
     /// </summary>
     /// <param name="session"></param>
     /// <param name="commit"></param>
