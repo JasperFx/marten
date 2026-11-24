@@ -204,7 +204,7 @@ streams were last modified. This was conceived of as being combined with the [`F
 single stream projections for zero downtime deployments while trying to create less load on the database than the original
 "left fold" / "from zero" rebuild would be. 
 
-## Blue/Green Deployments with Projection Versioning
+## Blue/Green Deployments with Projection Versioning {#blue-green-deployments-with-projection-versioning}
 
 When deploying projection changes to production without downtime, you can use projection
 versioning to run old and new projection versions in parallel:
@@ -292,6 +292,57 @@ Behavioral notes:
   still running and advances past `N` afterward, the new version can re-emit side effects for that
   `(N, old_final]` overlap. Stop the old version before (or as) the new one starts to avoid the
   window; fully coordinated drain-and-handoff is a separate concern.
+
+### Starting a New Version Where the Prior Version Left Off {#starting-a-new-version-where-the-prior-version-left-off}
+
+By default a new version catches up over the entire event history. `SubscribeFromPriorVersionMark(backfillName)` starts
+it where the prior version left off instead:
+
+<!-- snippet: sample_subscribe_from_prior_version_mark -->
+<a id='snippet-sample_subscribe_from_prior_version_mark'></a>
+```cs
+public partial class ApiDocsOrderLineProjection: EventProjection
+{
+    public ApiDocsOrderLineProjection()
+    {
+        // Version 1 of this projection has been running in production
+        Version = 2;
+
+        // Start version 2 at the sequence version 1 had reached, instead of replaying
+        // the whole event store
+        Options.SubscribeFromPriorVersionMark("order-lines-v2");
+    }
+
+    public void Project(ApiDocsV2.OrderPlaced e, IDocumentOperations ops)
+        => ops.Store(new ApiDocsOrderLine { Id = e.OrderId, Total = e.Total, Currency = e.Currency });
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L90-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_subscribe_from_prior_version_mark' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The first time the new version starts in a database (and, with
+[per-tenant event partitions](/events/multitenancy), for a tenant), Marten captures a mark: the persisted progress of
+the highest prior version of the same projection, or the new version's own progress when no prior version has any. The
+mark is stored in the `mt_event_range_marks` table under the key `backfill:{projection name}:{backfill name}`, with the
+projection named without its version. Every later start, on any node, uses the stored mark rather than capturing a new
+one, and the version starts at its own progress or the mark, whichever is higher. A rebuild still replays from the
+beginning, or from a [stored floor](/events/subscriptions#pinning-the-start-on-the-first-run). Like the
+other ways of [choosing where a projection starts](/events/subscriptions#starting-position-of-subscriptions), the method takes an optional database
+identifier to apply it to one database only.
+
+The name is the backfill's. In JasperFx.Events the mark is where the new version and a *backfill* of the same name split
+history: the backfill applies the events up to and including the mark to the documents the projection already wrote,
+as a Wolverine job, while the new version processes everything after it. Marten does not run projection backfills yet
+([#5632](https://github.com/JasperFx/marten/issues/5632)), so with Marten the events up to the mark are only ever applied by the prior version.
+
+::: warning
+A new `Version` of a single-stream or multi-stream projection writes its documents to a
+[new table](#blue-green-deployments-with-projection-versioning), which starts empty. Started from the prior version's
+mark, it never applies the events before the mark, and its documents are built from later events only. Use
+`SubscribeFromPriorVersionMark()` with a projection whose new version works on what the prior version wrote, such as an
+[event projection](/events/projections/event-projections) that writes the same documents, and only when the new
+version has no need to see the earlier events.
+:::
 
 ## Rebuilding a Single Stream <Badge type="tip" text="7.28" /> {#rebuilding-a-single-stream}
 

@@ -421,6 +421,40 @@ public Task Handle4(MarkItemReady command, IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L176-L203' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_writetoaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+`WriteToAggregate()` fetches the stream with `FetchForWriting()`, or with the expected version when you pass one, runs
+your `Action<IEventStream<T>>` or `Func<IEventStream<T>, Task>`, and then calls `SaveChangesAsync()` on the session.
+That commits everything pending in the session, not only the stream's events. If your lambda throws,
+`SaveChangesAsync()` is not called.
+
+### WriteExclusivelyToAggregate
+
+`WriteExclusivelyToAggregate()` is the same sugar over `FetchForExclusiveWriting()`, for the
+[exclusive concurrency](#exclusive-concurrency) style:
+
+<!-- snippet: sample_write_exclusively_to_aggregate -->
+<a id='snippet-sample_write_exclusively_to_aggregate'></a>
+```cs
+public static Task Handle(ApiDocsCloseTicket command, IDocumentSession session)
+{
+    // Takes a row lock on the stream, runs the lambda, then calls SaveChangesAsync()
+    return session.Events.WriteExclusivelyToAggregate<ApiDocsTicket>(command.TicketId, stream =>
+    {
+        if (stream.Aggregate is { IsClosed: false })
+        {
+            stream.AppendOne(new ApiDocsTicketClosed(command.Resolution));
+        }
+    });
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L224-L238' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_exclusively_to_aggregate' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+It takes the lock on the stream before your lambda runs, and the `SaveChangesAsync()` it calls at the end releases it.
+As described above, a `SaveChangesAsync()` with nothing to save keeps the lock until the session is disposed, so when
+your lambda appends nothing, the lock lasts as long as the session. Like `FetchForExclusiveWriting()`, it throws a `StreamLockedException` when it cannot get the lock in time. There are
+overloads for `Guid` and `string` stream identities, each taking either an `Action<IEventStream<T>>` or a
+`Func<IEventStream<T>, Task>`. Unlike `WriteToAggregate()`, there is no overload with an expected version.
+
 ## Optimizing FetchForWriting with Inline Aggregates
 
 If you are utilizing `FetchForWriting()` for your command handlers -- and you really, really should! -- and at least some of your aggregates are updated `Inline` as shown below:

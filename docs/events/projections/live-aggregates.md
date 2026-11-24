@@ -230,6 +230,28 @@ var roomsAvailabilityAtVersion =
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/time_travelling_samples.cs#L137-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-time-travelling-by-specific-version' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## The Last Known State of a Deleted Aggregate
+
+An aggregate that deletes itself with a `ShouldDelete()` method aggregates to `null` once the stream holds the event
+that deleted it. `AggregateStreamToLastKnownAsync<T>()` returns the last state that was not `null` instead:
+
+<!-- snippet: sample_aggregate_stream_to_last_known -->
+<a id='snippet-sample_aggregate_stream_to_last_known'></a>
+```cs
+// Null if the stream's last event is ApiDocsTicketPurged
+var current = await session.Events.AggregateStreamAsync<ApiDocsTicket>(ticketId);
+
+// The ticket as it was just before it was purged
+var lastKnown = await session.Events.AggregateStreamToLastKnownAsync<ApiDocsTicket>(ticketId);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L189-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate_stream_to_last_known' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+It aggregates the stream and, while the result is `null`, drops the last event and aggregates again from the start, so
+a long stream that ends in several deleting events costs one full aggregation per event it walks back. It takes the same
+`version` and `timestamp` limits as `AggregateStreamAsync<T>()`, with `Guid` and `string` stream identity overloads, and
+returns `null` for a stream with no events.
+
 ## Aggregating Events into Existing State
 
 Marten also allows aggregating the stream into a specific entity instance. This means that a particular set of events are taken and applied to an object one by one in the same order of occurrence. To achieve it, you should pass the base entity state as a `state` parameter into the `AggregateStreamAsync` method.
@@ -436,3 +458,41 @@ var questParty = await theSession.Events
 <!-- endSnippet -->
 
 This method is an extension method in the `Marten.Events` namespace.
+
+## One Aggregate per Identity from a Linq Query
+
+`AggregateToAsync<T>()` folds every event the query returns into a single aggregate. `AggregateToManyAsync<T>()`
+instead runs the events through the aggregate projection registered for `T`, usually a
+[multi-stream projection](/events/projections/multi-stream-projections), and returns one aggregate for each identity its
+grouping produces. It needs that projection to be registered:
+
+<!-- snippet: sample_registering_projection_for_aggregate_to_many -->
+<a id='snippet-sample_registering_projection_for_aggregate_to_many'></a>
+```cs
+// AggregateToManyAsync<T>() needs a registered aggregate projection for T
+opts.Projections.Add<ApiDocsAccountBalanceProjection>(ProjectionLifecycle.Async);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L202-L207' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_for_aggregate_to_many' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The events can come from any number of streams:
+
+<!-- snippet: sample_aggregate_to_many_usage -->
+<a id='snippet-sample_aggregate_to_many_usage'></a>
+```cs
+// Events from any streams, folded by the projection's own grouping (AccountId here)
+// into one ApiDocsAccountBalance per account
+IReadOnlyList<ApiDocsAccountBalance> balances = await session.Events
+    .QueryAllRawEvents()
+    .Where(x => x.StreamId == importStream || x.StreamId == correctionsStream)
+    .AggregateToManyAsync<ApiDocsAccountBalance>();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L212-L221' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate_to_many_usage' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+It uses the projection's own slicing or custom grouping, its event enrichment and its `Create`/`Apply`/`ShouldDelete`
+logic against the query session, with each aggregate's identity set from its slice. Nothing is stored. An aggregate the
+projection deletes is left out, and a query that matches no events returns an empty list. When no aggregate
+projection registered on the store produces `T`, it throws an `ArgumentException`, even for an empty result. Only
+projections registered directly on `opts.Projections` are found, not the stages of a composite projection. This is
+also an extension method in the `Marten.Events` namespace.

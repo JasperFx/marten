@@ -30,6 +30,9 @@ Once a type has been rewritten in every database, an upcaster that only existed 
 `IncludeAllTypes()` selects every event in the store instead. Archived events are history too, so they are rewritten
 like any other. Events of a type the application no longer knows are left as they are and counted as `UnknownTypes`.
 
+To change a few individual events inside a session instead, see
+[Changing single events in a session](#changing-single-events-in-a-session).
+
 ## Correcting events
 
 ::: warning
@@ -208,3 +211,76 @@ The job's ceiling and cursor are kept in the `mt_event_range_marks` table. Each 
 with its cursor, so a job that crashes and resumes never sends an event through a transform twice. Under per-tenant
 event partitions, a job for the whole database goes through the tenants one after another, each with its own ceiling
 and cursor.
+
+## Changing single events in a session {#changing-single-events-in-a-session}
+
+`RewriteStoredEventsAsync` works through whole event types, page by page. To change a handful of events you have
+already found, `IDocumentSession.Events` has two targeted operations instead. Both only queue an update of the event's
+row in `mt_events`: nothing is written until `SaveChangesAsync()`, and the update is part of that transaction.
+
+`OverwriteEvent(IEvent)` writes back an event you loaded, after you changed its body or its headers:
+
+<!-- snippet: sample_overwrite_event -->
+<a id='snippet-sample_overwrite_event'></a>
+```cs
+var events = await session.Events.FetchStreamAsync(ticketId);
+
+foreach (var opened in events.OfType<Event<ApiDocsTicketOpened>>())
+{
+    // Change the body of the event you loaded...
+    opened.Data = opened.Data with { ReporterEmail = "redacted" };
+
+    // ...and its headers, which are only written when headers are enabled
+    opened.SetHeader("redacted-by", "support");
+
+    session.Events.OverwriteEvent(opened);
+}
+
+// Nothing is written until SaveChangesAsync()
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L149-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_overwrite_event' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+It finds the row by the event's `Sequence` and rewrites its data, its type name and .NET type (those of the event's
+current type, so an event an upcaster read from an older name is stored under the new one) and, when
+[headers](/events/metadata) are enabled, its headers. The id, version, stream, timestamp, tenant, and the causation,
+correlation and user name columns stay as they were. This is the operation
+[`ApplyEventDataMasking()`](/events/protection) uses for every event a masking rule matched.
+
+`CompletelyReplaceEvent<T>(sequence, body)` puts a new body, which may be of another event type, in place of the event
+at that sequence:
+
+<!-- snippet: sample_completely_replace_event -->
+<a id='snippet-sample_completely_replace_event'></a>
+```cs
+var events = await session.Events.FetchStreamAsync(ticketId);
+var last = events[^1];
+
+// The replacement can be of a different event type than the original. Marten
+// returns the new id it assigns to the event
+var newEventId = session.Events.CompletelyReplaceEvent(last.Sequence,
+    new ApiDocsTicketClosed("Closed by an administrator"));
+
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L172-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_completely_replace_event' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The stream and version stay the same. The event gets a new id, which the method returns, and a new timestamp, and its
+headers are emptied and its causation id, correlation id and user name cleared, for whichever of those are enabled.
+This is the operation [stream compacting](/events/compacting) uses to put the `Compacted<T>` snapshot in place of the
+stream's last event.
+
+Both store the event the way an append stores it today. An event type that uses
+[binary serialization](/events/binary-serialization) is written to the binary column, with an empty JSON object in the
+JSON column, and a JSON event clears the binary column, so a row is never read back through an old binary payload.
+Before Marten 10 ([#5642](https://github.com/JasperFx/marten/issues/5642)) both operations always wrote the body as JSON and left the binary column alone, and
+`OverwriteEvent()` left the type name as it was.
+
+::: warning
+Neither operation re-runs anything that was built from the old event. Inline and asynchronous projections, natural keys
+and tags keep what they had until you rebuild them, and an asynchronous projection that has already passed the event's
+sequence never sees the change. With conjoined event tenancy, open the session for the event's tenant: only that tenant's row with
+the sequence is updated.
+:::
