@@ -94,8 +94,8 @@ public interface IReadOnlyEventStoreOptions
 
     /// <summary>
     /// Opt into some performance optimizations for projection rebuilds for both single stream and
-    /// multi-stream projections. This will result in new table columns and a potential database
-    /// migration. Opt-in: the extra columns and the per-stream rebuild mode only suit
+    /// multi-stream projections. Needs no schema migration: the mt_event_progression columns it uses
+    /// are always created (#5309). Opt-in: the per-stream rebuild mode only suits
     /// projections that are the sole single stream projection over their events.
     /// </summary>
     bool UseOptimizedProjectionRebuilds { get; }

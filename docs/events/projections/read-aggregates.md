@@ -82,9 +82,13 @@ Just to understand how this API works, under the covers, if `Invoice` is registe
    events for that `Invoice` that haven't yet been applied, and advances the `Invoice` in memory so that you get the exact
    current state of the `Invoice` even if the async daemon process is behind the latest changes
 
+An aggregate stored in your own `DbContext` by an [EF Core projection](/events/projections/efcore) is the exception:
+it isn't in a Marten document table, so `FetchLatest()` folds it from the stream's events whatever its lifecycle,
+rather than loading it. See [reading the aggregate](/events/projections/efcore#reading-the-aggregate).
+
 Moreover, `FetchLatest` was meant to be used in conjunction with `FetchForWriting()` to get you the most
 current version of an aggregate that was just updated using `FetchForWriting()` from the same session. To really
-get the most of this combination, use this opt in flag:
+get the most of this combination, Marten uses this flag, which is on by default:
 
 <!-- snippet: sample_configure_aggregate_with_optimizations -->
 <a id='snippet-sample_configure_aggregate_with_optimizations'></a>
@@ -94,17 +98,18 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-    // This opts Marten into a pretty big optimization
-    // for how FetchForWriting and/or FetchLatest work internally
+    // This is a pretty big optimization for how FetchForWriting
+    // and/or FetchLatest work internally. It is on by default in
+    // Marten 9 and 10, so this line only makes it explicit
     opts.Events.UseIdentityMapForAggregates = true;
     opts.Projections.Snapshot<Projections.Invoice>(SnapshotLifecycle.Inline);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L104-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_with_optimizations' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L104-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_with_optimizations' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning
-That flag is `true` by default in Marten 9 (it was `false` in earlier versions because it was introduced halfway through the 7.* version lifecycle),
+That flag is `true` by default in Marten 9 and 10 (it was `false` in earlier versions because it was introduced halfway through the 7.* version lifecycle),
 and can introduce subtle bugs in application code if you use some kind of `AggregateRoot` pattern where
 your application code mutates the aggregate projection objects outside of Marten control.
 
@@ -139,7 +144,7 @@ public static class MutationExtensions
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L138-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mutation_extensions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L139-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mutation_extensions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And used it for a command handler something like this:
@@ -160,7 +165,7 @@ public static Task Approve(IDocumentSession session, Guid invoiceId)
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L120-L135' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_approval_workflow_with_mutate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L121-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_approval_workflow_with_mutate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, so for some context, if using the full fledged `UseIdentityMapForAggregates` + `FetchForWriting`, then `FetchLatest`

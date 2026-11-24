@@ -173,7 +173,7 @@ The flag defaults to `false`.
 ## Optimized Projection Rebuilds <Badge type="tip" text="7.30" />
 
 ::: tip
-This optimization must be explicitly opted into via `opts.Events.UseOptimizedProjectionRebuilds = true`. It is not enabled by default because it is only correct when exactly one single stream projection uses any given event stream (see the warning below); it also adds columns to the progression table, which means a schema migration.
+This optimization must be explicitly opted into via `opts.Events.UseOptimizedProjectionRebuilds = true`. It is not enabled by default because it is only correct when exactly one single stream projection uses any given event stream (see the warning below). Turning it on needs no schema migration: since [#5309](https://github.com/JasperFx/marten/issues/5309) the `mode`, `rebuild_threshold` and `assigned_node` columns it uses are always part of `mt_event_progression`, whatever this setting is.
 :::
 
 ::: warning

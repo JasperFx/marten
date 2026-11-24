@@ -149,7 +149,7 @@ public record CourseId(Guid Value);
 
 Supported inner value types: `Guid`, `string`, `int`, `long`, `short`.
 
-Tags work with both **Rich** and **Quick** append modes (the default is `QuickWithServerTimestamps`). In Rich mode, tags are inserted using pre-assigned sequence numbers. In Quick mode, tags are inserted using a subquery that looks up the sequence from the event's id.
+Tags work with both **Rich** and **Quick** append modes (the default is `QuickWithServerTimestamps`). In Rich mode, tags are inserted using pre-assigned sequence numbers. In Quick mode, the `mt_quick_append_events` function writes the tags in the same call that inserts the events: one array parameter per registered tag type with `DcbStorageMode.TagTables`, or one `hstore[]` with `DcbStorageMode.HStore`. Those arrays carry one value of each tag type per event, so with `TagTables`, any further values of the same type on one event are written as follow-up tag rows, found by the event's id. A `StartStream` that does not go through the function (`EventAppendMode.Quick`, archived stream partitioning or strict stream identity) writes all of its tags with follow-up statements found by event id.
 
 ## Tagging Events
 

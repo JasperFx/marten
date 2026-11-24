@@ -168,7 +168,7 @@ public async Task test_async_aggregation()
         opts.Connection(ConnectionSource.ConnectionString);
         opts.DatabaseSchemaName = "incidents";
 
-        // Notice that the "snapshot" is running inline
+        // Notice that the "snapshot" is running asynchronously
         opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
     });
 
@@ -210,21 +210,15 @@ public async Task test_async_aggregation()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L157-L208' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_test_of_async_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The approach above is pretty simple, but it definitely works against your ability to parallelize tests by rewinding the 
-existing projection. It also might become slower over time as you accumulate more and more events and `Invoice` data from
-prior runs. You *could* beat that issue by cleaning off the database before doing the arrange, act, and assert cycle with these lines 
-of code:
+The approach above is pretty simple, but it definitely works against your ability to parallelize tests by rewinding the
+existing projection. It would also become slower over time as you accumulate more and more events and `Invoice` data from
+prior runs, which is why the sample starts by cleaning off the event data and the `Invoice` documents with
+`DeleteAllEventDataAsync()` and `DeleteDocumentsByTypeAsync()`.
 
-```csharp
-        await store.Advanced.Clean.DeleteAllEventDataAsync();
-        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Invoice));
-```
-
-::: warning
-The `WaitForNonStaleProjectionDataAsync(timeout)` can only work on one database at a time. If you are using some kind 
-of multi-tenancy with separate databases per tenant, there is an overload that takes in a tenant id or database name.
-You will need to use that overload separately for any impacted databases in your tests if using multi-tenancy through
-separate databases.
+::: tip
+With multi-tenancy through separate databases, `WaitForNonStaleProjectionDataAsync(timeout)` waits on every database
+the store knows about, one after another ([#4366](https://github.com/JasperFx/marten/issues/4366)). To wait on just one
+of them, use the overload that takes a tenant id or database name.
 :::
 
 Or starting with Marten 7.5, you can just use an already running async daemon, but force the test harness to "wait" for
@@ -247,7 +241,7 @@ public async Task test_async_aggregation_with_wait_for()
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "incidents";
 
-                    // Notice that the "snapshot" is running inline
+                    // Notice that the "snapshot" is running asynchronously
                     opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
                 })
 
@@ -439,7 +433,7 @@ public async Task test_async_aggregation_with_wait_for_and_fake_time_provider()
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "incidents";
 
-                    // Notice that the "snapshot" is running inline
+                    // Notice that the "snapshot" is running asynchronously
                     opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
 
                     opts.Events.TimeProvider = eventsTimeProvider;

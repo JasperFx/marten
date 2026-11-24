@@ -14,7 +14,7 @@ public class MultipleDocumentStores
     {
         #region sample_bootstrapping_separate_store
 
-        using var host = Host.CreateDefaultBuilder()
+        using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 // You can still use AddMarten() for the main document store
@@ -53,7 +53,7 @@ public class MultipleDocumentStores
     {
         #region sample_bootstrapping_separate_store_with_session_config
 
-        using var host = Host.CreateDefaultBuilder()
+        using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddMarten("some connection string");

@@ -180,8 +180,8 @@ namespace Marten.Events
 
         /// <summary>
         /// Opt into some performance optimizations for projection rebuilds for both single stream and
-        /// multi-stream projections. This will result in new table columns and a potential database
-        /// migration. Default is false.
+        /// multi-stream projections. Default is false. Needs no schema migration: the mt_event_progression
+        /// columns it uses are always created, whatever this setting is (#5309).
         /// </summary>
         public bool UseOptimizedProjectionRebuilds { get; set; }
 

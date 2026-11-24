@@ -273,6 +273,14 @@ declared as `DateTime` are unaffected and keep their exact `Kind`. If you depend
 for `object`-typed members, convert explicitly at the point of use.
 :::
 
+::: warning Newtonsoft reads fractional numbers as decimal
+Since Marten 10, `Marten.Newtonsoft` reads JSON with `FloatParseHandling.Decimal`
+([#5876](https://github.com/JasperFx/marten/issues/5876)). On .NET 11, a `decimal` member read through the default
+`double` came back corrupted (`123.45m` as `123.45000000000000284217094304m`). Members declared as `double` are
+unaffected, and `decimal` members now come back exactly, but a member declared as `object` or `dynamic` that holds a fractional number now comes back as a
+`decimal` instead of a `double`. If you depend on a `double` there, convert explicitly at the point of use.
+:::
+
 ::: warning WARNING
 You should not override the Newtonsoft.Json `ContractResolver` with `CamelCasePropertyNamesContractResolver` for Json Serialization. Newtonsoft.Json by default respects the casing used in property / field names which is typically PascalCase.
 This can be overridden to serialize the names to camelCase and Marten will store the JSON in the database as specified by the Newtonsoft.Json settings. However, Marten uses the property / field names casing for its SQL queries and queries are case sensitive and as such, querying will not work correctly.

@@ -83,8 +83,10 @@ to the `Revision` metadata will work as well.
 
 ## Starting a new Stream
 
-You can **optionally** start a new event stream against some kind of .Net type that theoretically marks the type of stream you're capturing.
-Marten does not yet use this type as anything more than metadata, but our thought is that some projections would key off this information and in a future version use that aggregate type to perform versioned snapshots of the entire stream. We may also make the aggregate type optional so that you could just supply either a string to mark the "stream type" or work without a stream type.
+You can **optionally** start a new event stream against some kind of .Net type that marks the type of stream you're capturing.
+Marten stores it as the stream's type, and uses it for [mandatory stream types](#mandatory-stream-types), the
+[optimized projection rebuilds](/events/projections/rebuilding#optimized-projection-rebuilds) and to filter the events
+an asynchronous projection loads.
 
 As usual, our sample problem domain is the Lord of the Rings style "Quest." For now, you can either start a new stream and let Marten assign the Guid id for the stream:
 
@@ -123,14 +125,16 @@ public async Task start_stream_with_guid_stream_identifiers(IDocumentSession ses
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L41-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_stream_with_guid_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-For stream identity (strings vs. Guids), see [event store configuration](/events/configuration).
+For stream identity (strings vs. Guids), see [event store configuration](/events/configuration). On a store using
+`StreamIdentity.AsString`, `StartStream(events)` and `StartStream<T>(events)` with no key generate one for you,
+`Guid.NewGuid().ToString()`, and return it as the stream's `Key`.
 
 Note that `StartStream` checks for an existing stream and throws `ExistingStreamIdCollisionException` if a matching stream already exists.
 The remedy is in the exception message: `StartStream` needs a _new_ id, so to add events to a stream that may already exist, use
 `Append()` (which starts the stream when it is missing) or `FetchForWriting()`, and make create commands idempotent on the stream id.
 
 ::: warning
-Under [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning) (`opts.Events.UseTenantPartitionedEvents()`), a duplicate `StartStream`
+Under [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning) (`opts.Events.UseTenantPartitionedEvents = true`), a duplicate `StartStream`
 surfaces as `EventStreamUnexpectedMaxEventIdException`, **not** `ExistingStreamIdCollisionException`. On that path `StartStream`
 is routed through the bulk `mt_quick_append_events` function with an expected version of 0 — "this is a new stream" — so an id
 that already exists fails the version assertion rather than the stream-insert uniqueness check. This is deliberate and pinned by
@@ -162,7 +166,7 @@ await session.SaveChangesAsync();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/end_to_end_event_capture_and_fetching_the_stream.cs#L471-L480' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Mandatory Stream Types <Badge type="tip" text="7.30" />
+## Mandatory Stream Types <Badge type="tip" text="7.30" /> {#mandatory-stream-types}
 
 ::: warning
 Absolutely use this flag on new development work or when you want to take advantage of the optimized projection rebuilds
@@ -207,27 +211,25 @@ started with a type first. `AppendOptimistic()` and `AppendExclusive()` throw `N
 stream regardless of this setting — they read the stream's current version before appending, so there has to be one, and they
 look only within the session's tenant.
 
-## `Append(streamId, expectedVersion, events)` requires Rich mode
+## Appending with an Expected Version
 
-::: warning
-The overload `session.Events.Append(streamId, expectedVersion, events)` — passing an explicit expected
-stream version to `Append()` — **requires `EventAppendMode.Rich`** (the Marten 8 default, no longer
-the Marten 9 default). Quick mode (`Quick` / `QuickWithServerTimestamps`, the Marten 9 default)
-relies on a server-side function to assign event versions and to insert the stream row, so calling
-`Append(streamId, version, ...)` against a non-existent stream fails with a foreign-key violation.
+`session.Events.Append(streamId, expectedVersion, events)` appends events with an optimistic concurrency check:
+`expectedVersion` is the version the stream should be at _after_ these events are appended. It works in every
+`EventAppendMode`, including the default `QuickWithServerTimestamps` and `Quick`.
 
-If you need this pattern, opt that store back into Rich mode explicitly:
+Under the Quick modes the append goes through the `mt_quick_append_events` function, which checks the stream's current
+version before it writes anything ([#4765](https://github.com/JasperFx/marten/issues/4765)):
 
-```csharp
-opts.Events.AppendMode = EventAppendMode.Rich;
-```
-:::
+* If the stream does not exist yet and `expectedVersion` equals the number of events being appended, the function
+  creates the `mt_streams` row and appends the events, just like a plain `Append()`.
+* Otherwise, if the stream's current version is not `expectedVersion` minus the number of events, the save throws
+  `EventStreamUnexpectedMaxEventIdException`, a `JasperFx.ConcurrencyException`, before any event sequence number is
+  drawn. That includes a stream that does not exist when `expectedVersion` says it should already have events.
 
 ::: tip
 **Strongly recommended:** use [`FetchForWriting`](/scenarios/command_handler_workflow) instead of
-hand-rolling `Append(streamId, expectedVersion, events)`. `FetchForWriting` works in both Rich and
-Quick modes, takes a single round-trip lock on the stream, and gives you the optimistic-concurrency
-guard for free — without forcing your store off the V9 throughput-optimized default. The
+hand-rolling `Append(streamId, expectedVersion, events)`. `FetchForWriting` gives you the current state of the
+aggregate along with the same optimistic concurrency guard, and works in every append mode. The
 `Append(..., expectedVersion, ...)` overload is preserved for backward compatibility, but new code
 should reach for `FetchForWriting`.
 :::
@@ -282,6 +284,13 @@ opts.Events.UseExclusiveLockOnConcurrentAppends = true;
 There is little reason left to turn it on. Measurements of the locked version read under contention, from when it
 was opt-in, are in `src/EventAppenderPerfTester/Results.md`.
 
+A save that appends to more than one stream first locks all of those streams' `mt_streams` rows in one statement, in
+stream id order, before any append runs ([#6083](https://github.com/JasperFx/marten/issues/6083)). Two sessions that
+append to the same streams in a different order then wait for each other instead of deadlocking. The events are still
+appended, and get their sequence numbers, in the order the session appended them. `FetchForExclusiveWriting()` is
+different: it takes each stream's lock when you call it, so a session that exclusively fetches several streams should
+fetch them in a stable order.
+
 ## Serialized Access to the Stream
 
 The `AppendExclusive()` method will actually reserve a database lock on the stream itself until the
@@ -310,6 +319,10 @@ public async Task append_exclusive(IDocumentSession session, Guid streamId)
 <!-- endSnippet -->
 
 This usage will in effect serialize access to a single event stream.
+
+If another session holds the stream's lock and the command times out waiting for it, `AppendExclusive()` throws
+`JasperFx.Events.StreamLockedException`. In Marten 10 that type derives from `JasperFx.ConcurrencyException`, so a
+`catch (ConcurrencyException)` handles a lock timeout along with the other concurrency failures.
 
 ## Tombstone Events
 

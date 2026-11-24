@@ -307,9 +307,11 @@ The bulk append API intentionally trades off features for throughput:
 
 ## Performance
 
-In local benchmarks, the bulk append API achieves approximately **80,000-110,000 events/second**
-depending on event complexity and PostgreSQL configuration. This compares to approximately
-**60,000-80,000 events/second** using Marten's QuickAppend mode with parallel sessions.
+On the CritterStackScalability RC performance rig (an Apple M5 Max running PostgreSQL, Marten 10), loading
+10 million events over 1 million streams with `BulkInsertEventsAsync()` ran at about **217,500 events/second**, and at
+about **85,700 events/second** with [archived stream partitioning](/events/archiving#hot-cold-storage-partitioning)
+turned on. Those are measurements from that rig, not guarantees; see
+[What it costs](/events/archiving#what-it-costs) for how they were taken and how they compare with ordinary appends.
 
 The bulk append approach is especially advantageous when loading tens of millions of events or more,
 where the reduced per-event overhead of PostgreSQL COPY becomes significant.

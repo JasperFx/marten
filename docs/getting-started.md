@@ -102,6 +102,14 @@ lifetime. You should just inject a session directly in most cases. `IDocumentSto
 you'll rarely need to interact with that service.
 :::
 
+::: tip Marten 10 requirements, and asynchronous queries only
+Marten 10 runs on .NET 10 or .NET 11, against a PostgreSQL version listed in the [support policy](/support-policy).
+All data access is asynchronous: a synchronous LINQ operator on a Marten query (`ToList()`, `First()`, `Count()`,
+`foreach` and the rest) still compiles, but throws a `NotSupportedException` when it runs. Use `ToListAsync()`,
+`FirstAsync()`, `CountAsync()` and the other asynchronous operators instead. See
+[Synchronous data access is gone](/migration-guide#synchronous-data-access-is-gone-in-10-0-0).
+:::
+
 From here, an instance of `IDocumentStore` or a type of `IDocumentSession` can be injected into the class/controller/endpoint of your choice and we can start persisting and loading user documents:
 
 <!-- snippet: sample_userendpoints -->
