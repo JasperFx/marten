@@ -193,7 +193,8 @@ A couple important facts about this new functionality:
 - You _can_ alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
   is on you the user to apply idempotent updates to the aggregate based on these new events in the actual handlers for
   the new events when those events are handled by the daemon in a later batch
-- There is a [Wolverine](https://wolverinefx.net) integration (of course) to publish the messages through Wolverine if using the `AddMarten().IntegrateWithWolverine()` option
+- There is a [Wolverine](https://wolverinefx.net) integration (of course) to publish the messages through Wolverine if using the `AddMarten().IntegrateWithWolverine()` option.
+  Without Wolverine or an outbox of your own, published messages are discarded. See [Where Published Messages Go](#where-published-messages-go)
 
 This relatively new behavior that was built for a specific [JasperFx Software](https://jasperfx.net) client project,
 but has been on the backlog for quite some time. If there are any difficulties with this approach, please feel free
@@ -236,3 +237,72 @@ builder.Services.AddMarten(opts =>
 
 This functionality was originally written as a way of sending external messages to a separate system carrying the new state of a single stream projection
 any time new events were captured on an event stream. 
+
+## Where Published Messages Go {#where-published-messages-go}
+
+Messages from `slice.PublishMessage()` go to the store's message outbox, `opts.Events.MessageOutbox`, an
+`IMessageOutbox`. Marten itself has no messaging, and its default outbox discards every message it is given, without
+an error. To send them somewhere, register an outbox.
+
+With [Wolverine](https://wolverinefx.net), you don't write one: `AddMarten().IntegrateWithWolverine()` sets
+`opts.Events.MessageOutbox` to an outbox that publishes the messages through Wolverine's transactional outbox, enlisted
+in the Marten session that published them, and sends them once that session commits. An ancillary store integrated
+with Wolverine gets one that uses its own message storage.
+
+Anything else can implement the two interfaces from the `Marten.Events.Aggregation` namespace:
+
+<!-- snippet: sample_custom_message_outbox -->
+<a id='snippet-sample_custom_message_outbox'></a>
+```cs
+public class ApiDocsMessageOutbox: IMessageOutbox
+{
+    public ValueTask<IMessageBatch> CreateBatch(DocumentSessionBase session)
+        => new(new ApiDocsMessageBatch());
+}
+
+public class ApiDocsMessageBatch: IMessageBatch
+{
+    // PublishAsync() is called from several threads at once by the async daemon
+    private readonly ConcurrentQueue<(object Message, string TenantId)> _messages = new();
+
+    public ValueTask PublishAsync<T>(T message, string tenantId)
+    {
+        _messages.Enqueue((message!, tenantId));
+        return ValueTask.CompletedTask;
+    }
+
+    public Task BeforeCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        // Runs inside Marten's transaction, immediately before the COMMIT. Write the
+        // messages to an outbox table here to store them with the projection's changes
+        return Task.CompletedTask;
+    }
+
+    public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        // Runs after the commit. Send the messages, or tell the outbox they are ready
+        return Task.CompletedTask;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L110-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_message_outbox' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+<!-- snippet: sample_registering_a_message_outbox -->
+<a id='snippet-sample_registering_a_message_outbox'></a>
+```cs
+opts.Events.MessageOutbox = new ApiDocsMessageOutbox();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L242-L246' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_a_message_outbox' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+- Marten calls `CreateBatch()` when a session, or one of the async daemon's projection batches, first publishes a
+  message, and publishes the rest of that unit of work's messages to the same `IMessageBatch`.
+- `PublishAsync(message, tenantId)` receives each message. The overload that takes a `MessageMetadata`, which
+  `slice.PublishMessage(message, metadata)` uses, forwards to it unless your batch implements it too.
+- `BeforeCommitAsync()` runs inside Marten's transaction after every operation of the unit of work has succeeded and
+  immediately before the commit, so it never runs for a unit of work that fails. A session enlisted in an ambient
+  `TransactionScope` does not run it, because Marten does not perform that commit.
+- `AfterCommitAsync()` runs after the commit.
+- The async daemon publishes from several threads at once into one batch, so an `IMessageBatch`, and anything the
+  outbox uses to track its batches, must be thread safe.

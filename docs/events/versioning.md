@@ -156,6 +156,41 @@ var store = new DocumentStore(options);
 In this case, old `OrderStatusChanged` and new `ConfirmedOrderStatusChanged` event type names will be stored with the same `order_status_changed` event type.
 :::
 
+### Mapping with a suffix or a schema version
+
+Two extension methods on `opts.Events` build the name for `MapEventType` from a base name and a suffix, joined by an
+underscore. The base name is the one Marten would give the class by default (its name in lowered _snake\_case_), or one
+you pass. `MapEventTypeWithNameSuffix<T>()` appends any suffix:
+
+<!-- snippet: sample_map_event_type_with_name_suffix -->
+<a id='snippet-sample_map_event_type_with_name_suffix'></a>
+```cs
+opts.Events
+    // Stored as "api_docs_order_confirmed_checked"
+    .MapEventTypeWithNameSuffix<ApiDocsOrderConfirmed>("checked")
+
+    // Stored as "order_status_changed_shipped"
+    .MapEventTypeWithNameSuffix<ApiDocsOrderShipped>("order_status_changed", "shipped");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L266-L275' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_map_event_type_with_name_suffix' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`MapEventTypeWithSchemaVersion<T>()` appends `v` and a version number:
+
+<!-- snippet: sample_map_event_type_with_explicit_name_and_schema_version -->
+<a id='snippet-sample_map_event_type_with_explicit_name_and_schema_version'></a>
+```cs
+// Stored as "order_status_changed_v3"
+opts.Events.MapEventTypeWithSchemaVersion<ApiDocsOrderConfirmed>("order_status_changed", 3);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L280-L285' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_map_event_type_with_explicit_name_and_schema_version' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The default base name is always the class name in _snake\_case_, as `EventNamingStyle.ClassicTypeName` (the default)
+builds it, whatever `EventNamingStyle` the store uses. See
+[Working with multiple Event type versions](#working-with-multiple-event-type-versions) for keeping two versions of an
+event class with the same name.
+
 ## Event Schema Migration
 
 Schema changes are always tricky. Once you find out that you have to do them, it's worth making the thought process to understand the origins of that. You can ask yourself the following questions:
@@ -936,3 +971,26 @@ options.Events.Upcast(new ShoppingCartOpenedAsyncOnlyUpcaster(clientRepository))
 <!-- endSnippet -->
 
 ## Working with multiple Event type versions
+
+When a new version of an event keeps the class name of the old one, in another namespace or nested in another class,
+both get the same default event type name. Give the new version a name of its own with
+`MapEventTypeWithSchemaVersion<T>()`, and upcast the events stored under the old name:
+
+<!-- snippet: sample_map_event_type_with_schema_version -->
+<a id='snippet-sample_map_event_type_with_schema_version'></a>
+```cs
+opts.Events
+    // Events stored before the change are named "order_placed" and are
+    // read as the old shape, then upcast
+    .Upcast((ApiDocsV1.OrderPlaced old) => new ApiDocsV2.OrderPlaced(old.OrderId, old.Total, "USD"))
+
+    // New ApiDocsV2.OrderPlaced events are stored as "order_placed_v2"
+    .MapEventTypeWithSchemaVersion<ApiDocsV2.OrderPlaced>(2);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventStoreApiDocsSamples.cs#L251-L261' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_map_event_type_with_schema_version' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Events appended from now on are stored as `order_placed_v2`, and the ones stored as `order_placed` are read through the
+upcaster. A later version can do the same again: map the third version with `MapEventTypeWithSchemaVersion<T>(3)`, and
+upcast from the second one with the overloads of `Upcast` that take a schema version, such as
+`Upcast<TOldEvent, TEvent>(2, ...)`, which read the events stored under `order_placed_v2`.
