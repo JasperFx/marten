@@ -100,7 +100,12 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
                     opts.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
 
                     configure?.Invoke(opts);
-                }).AddAsyncDaemon(DaemonMode.HotCold);
+                })
+                // Provision the schema before StartAsync() returns. Otherwise the HotCold daemon creates it lazily
+                // in the background, and a caller that goes on to build another store on the same schema races it:
+                // two concurrent CREATE TABLE IF NOT EXISTS fail one side with 23505 on pg_type_typname_nsp_index
+                .ApplyAllDatabaseChangesOnStartup()
+                .AddAsyncDaemon(DaemonMode.HotCold);
             }).StartAsync();
 
         _disposables.Add(host);

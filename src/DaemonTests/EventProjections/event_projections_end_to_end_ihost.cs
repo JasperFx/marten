@@ -19,18 +19,18 @@ public class event_projections_end_to_end_ihost : DaemonContext
         _output = output;
     }
 
+    // One store, the host's, running the projection in its own daemon. This used to configure a second store on the
+    // same schema after starting the host, whose StoreOptions() dropped the schema while the host's daemon was creating
+    // its tables in it: a 23505 on pg_type_typname_nsp_index, or the host's tables gone from under it.
     #region sample_accessing_daemon_from_ihost
 
     [Fact]
     public async Task run_simultaneously()
     {
-        var host = await StartDaemonInHotColdMode();
-
-        StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
+        var host = await StartDaemonInHotColdMode(x =>
+            x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
 
         NumberOfStreams = 10;
-
-        var agent = await StartDaemon();
 
         // This method publishes a random number of events
         await PublishSingleThreaded();
