@@ -1,5 +1,11 @@
 # Querying Event and Stream Data
 
+::: tip
+To look at events, streams or a projection's output from a shell instead of code, see the `event-query`,
+`stream-query` and `projection-run` commands in
+[Querying the Event Store from the Command Line](/configuration/cli#querying-the-event-store-from-the-command-line).
+:::
+
 ## Fetch Events for a Stream
 
 You can retrieve the events for a single stream at any time with the `IEventStore.FetchStream()` methods shown below:

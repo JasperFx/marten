@@ -99,12 +99,15 @@ The available commands are:
   db-list       List all database(s) based on the current configuration
   db-patch      Evaluates the current configuration against the database and writes a patch and drop file if there are any differences
   describe      Writes out a description of your running application to either the console or a file
+  event-query   Query events across all streams with filters, ordered by sequence ascending, paged
   help          List all the available commands
   marten        Advanced Marten operations to 'heal' event store projection issues or reset data  
+  projection-run  Replay a projection over a stream, stream slice, or tag query and show the per-event before/after state
   projections   Asynchronous projection and projection rebuilds
   resources     Check, setup, or teardown stateful resources of this system
   run           Start and run this .Net application
   storage       Administer the Wolverine message storage
+  stream-query  Query event stream metadata (version, aggregate type, compaction watermark, archive flag) with filters and paging
 ```
 
 For any of the listed commands, you can run:
@@ -126,6 +129,10 @@ The `resources` command is JasperFx's [stateful resource](https://shared-libs.ja
 such resource, so `resources setup` applies the same migration `db-apply` does, and `resources check` runs the same comparison as `db-assert`,
 but across *every* resource in the application: Wolverine's message storage and message broker objects too. See
 [Schema Migrations and Patches](/schema/migrations#choosing-an-approach) for when to reach for which.
+
+The `projections`, `event-query`, `stream-query` and `projection-run` commands come from JasperFx.Events, and work against
+any event store registered in the application, Marten's included. See
+[Querying the Event Store from the Command Line](#querying-the-event-store-from-the-command-line) below.
 :::
 
 ## Example Commands
@@ -241,7 +248,92 @@ logging is written to the console.
 
 ## Projections Support
 
-See [the Async Daemon documentation](/events/projections/async-daemon.md) for more information about the newly improved `projections` command.
+See [the Async Daemon documentation](/events/projections/async-daemon.md) for more information about the newly improved `projections` command,
+including a table of its flags and the `floor` action.
+
+## Querying the Event Store from the Command Line {#querying-the-event-store-from-the-command-line}
+
+`event-query`, `stream-query` and `projection-run` read the event store of the application without starting it: they
+build the host, but run no hosted services and no async daemon, and they don't append events or save projected
+documents. What they have in common:
+
+* `--store <store>` picks the event store when the application registers more than one: its subject uri, such as
+  `marten://main` for the store registered with `AddMarten()`, or a bare scheme like `marten` when only one store
+  has it. Without it, an application with several event stores gets an error listing them.
+* `--tenant <tenant>` scopes the read to one tenant. Leave it off to read across tenants.
+* Console logging is turned off, so that nothing interleaves with the output. `--verbose` turns it back on, but only
+  with console table output, never with JSON.
+* A failure still writes a report in the same shape as a success, with the error in it, so that a script parsing the
+  JSON doesn't need a second code path. Because the host is never started, nothing that sets up the database on
+  startup has run, so after a failure the command checks the application's
+  [stateful resources](https://shared-libs.jasperfx.net/cli/resources) and adds what to run to the report when they
+  aren't set up.
+
+### event-query
+
+Pages through events across all streams, in sequence order, with optional filters. The output is JSON unless you ask
+for a table with `--format Text`.
+
+| Flag | What it does |
+| --- | --- |
+| `--stream <id>` | Only this stream's events |
+| `--event-type <alias>` | Only events of these type aliases, comma separated, such as `trip_started,trip_ended` |
+| `--correlation-id`, `--causation-id`, `--user-name` | Exact match on that metadata column |
+| `--timestamp-from`, `--timestamp-to` | Inclusive bounds on the event timestamp, in any `DateTimeOffset` format |
+| `--sequence-floor`, `--sequence-ceiling` | Inclusive bounds on the event sequence |
+| `--tags <json>` | [Tag](/events/dcb) filter as a JSON object of tag name to value, such as `'{"StudentId":"s-1"}'` |
+| `--page <n>`, `--page-size <n>` | 1-based page, default 1, and page size, default 50 |
+| `--format Text` | A console table instead of JSON, which is the default (`--format Json`). The value is case sensitive, so `text` is refused |
+| `--no-payloads` | Leave out the event bodies |
+
+```bash
+dotnet run -- event-query --stream 0b5a8d6e-7a52-4a3a-9f61-2a2f0f3c5d10 --format Text
+dotnet run -- event-query --event-type trip_started --timestamp-from 2026-11-01T00:00:00Z --page-size 20
+```
+
+### stream-query
+
+Pages through the streams themselves: their version, aggregate type, compaction watermark and archived flag. JSON by
+default, `--format Text` for a table.
+
+| Flag | What it does |
+| --- | --- |
+| `--aggregate-type <type>` | Streams started as this aggregate type, by its simple or full CLR name |
+| `--min-version <n>` | Streams with at least this many events |
+| `--version-above-compacted <n>` | Streams that have grown by more than this since they were last compacted |
+| `--archived <true or false>` | Only archived streams, or only live ones. Omit for both |
+| `--created-from`, `--created-to` | Inclusive bounds on when the stream was created |
+| `--updated-from`, `--updated-to` | Inclusive bounds on the stream's last append |
+| `--where <predicate>` | A Dynamic LINQ predicate over `Id`, `Key`, `Version`, `CompactedVersion`, `IsArchived`, `Created` and `LastTimestamp`, combined with the other filters |
+| `--order-by <ordering>` | Such as `"Version desc"`. The default is creation order |
+| `--page <n>`, `--page-size <n>` | 1-based page, default 1, and page size, default 50 |
+| `--format Text` | A console table instead of JSON, which is the default (`--format Json`). The value is case sensitive, so `text` is refused |
+
+```bash
+dotnet run -- stream-query --aggregate-type Trip --min-version 500 --order-by "Version desc" --format Text
+dotnet run -- stream-query --where "Version > 100 and not IsArchived"
+```
+
+### projection-run
+
+Replays a registered projection over a stream, a slice of a stream, or the events matching some tags, and shows the
+projected state before and after each event, for each identity the projection produces. It runs your actual projection
+code through the same slicing and grouping as the daemon, but it's stateless: nothing is persisted. The projection
+name is the argument, and the output is a console table unless you pass `--json`.
+
+| Flag | What it does |
+| --- | --- |
+| `--stream <id>` | The stream whose events drive the replay. Required unless you use `--tag` |
+| `--from <version>`, `--to <version>` | Only this inclusive range of the stream's versions. Use both or neither |
+| `--tag:<name> <value>` | Use the events with this [tag](/events/dcb) instead of a stream. The name is the tag type's CLR name, such as `StudentId`. Repeat it to require several tags. It can't be combined with `--stream`, `--from` or `--to` |
+| `--max-events <n>` | The most events to feed into the projection, default 1000. The report says when it was truncated |
+| `--json` | Write the result as JSON instead of a table |
+
+```bash
+dotnet run -- projection-run Trip --stream 0b5a8d6e-7a52-4a3a-9f61-2a2f0f3c5d10
+dotnet run -- projection-run Trip --stream 0b5a8d6e-7a52-4a3a-9f61-2a2f0f3c5d10 --from 10 --to 25 --json
+dotnet run -- projection-run EnrollmentSummary --tag:StudentId s-1
+```
 
 ## Event Store Management or Resetting Data
 

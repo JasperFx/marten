@@ -8,14 +8,30 @@ Marten supports a customizable [HealthChecks](https://learn.microsoft.com/en-us/
 This can be useful when running the async daemon in a containerized environment such as Kubernetes. 
 Especially if you experience `ProgressionProgressOutOfOrderException` errors in async projections.
 
-The check will verify that no projection's progression lags more than `maxEventLag` behind the `HighWaterMark`. 
-The default `maxEventLag` is 100. Read more about events progression tracking and `HighWaterMark` in [Async Daemon documentation](/events/projections/async-daemon).
+The check reads each async projection's progression and the `HighWaterMark` from every database of the store, and
+reports a projection as unhealthy when it lags the `HighWaterMark` by `maxEventLag` events **or more**, that is when
+its sequence is at or below `HighWaterMark - maxEventLag`. The default `maxEventLag` is 100. Read more about event
+progression tracking and the `HighWaterMark` in the [Async Daemon documentation](/events/projections/async-daemon).
 
-The `maxEventLag` setting controls how far behind the `HighWaterMark` any async projection is allowed to lag before it's considered unhealthy. 
-E.g. if the `HighWaterMark` is 1000 and a system with 3 async projections `ProjA`, `ProjB` and `ProjC` are processed respectively to sequence number 899, 901 and 901 then the system will be considered unhealthy with a `maxEventLag` of 100 (1000 - 899 = 101), BUT healthy with a `maxEventLag` of 101 or higher.
+For example, with a `HighWaterMark` of 1000 and three async projections `ProjA`, `ProjB` and `ProjC` at sequences 899,
+901 and 901, `ProjA` lags by 101. The system is unhealthy with a `maxEventLag` of 100 or 101, and healthy with a
+`maxEventLag` of 102 or higher. `ProjB` and `ProjC` lag by 99, so they make it unhealthy at a `maxEventLag` of 99 or less.
 
 ::: tip INFO
 The healthcheck will only be checked against `Async` projections
+:::
+
+::: warning
+This check only knows about each async projection's plain `{Name}:All` shard of the store registered with
+`AddMarten()`. It doesn't see:
+
+- a projection with a version above 1, whose shard is named like `Trip:V2:All`
+- per-tenant shards under `UseTenantPartitionedEvents`, named like `Trip:All:tenant1`
+- subscriptions
+- a store registered with `AddMartenStore<TStore>()`. There is no `<TStore>` overload of `AddMartenAsyncDaemonHealthCheck()`
+
+The [high water](#high-water-staleness-healthcheck) and [parked identities](#parked-identities-healthcheck) checks
+below both have a `<TStore>` overload.
 :::
 
 ## Example configuration
@@ -34,7 +50,7 @@ app.MapHealthChecks("/health");
 <!-- endSnippet -->
 
 If you want to add some time toleration for the healthcheck, you may use additional parameter `maxSameLagTime`.
-A projection is then unhealthy only if it stays behind by more than `maxEventLag` at the same sequence for
+A projection is then unhealthy only if it lags by `maxEventLag` or more and its sequence hasn't changed for
 `maxSameLagTime`.
 
 ### Example use case #1 
@@ -108,7 +124,10 @@ The check is deliberately conservative to avoid false positives:
   mark is *normal* transiently (the detector deliberately holds the mark inside a "safe
   harbor" behind in-flight or gapped sequences). The check therefore trips only when the mark
   sits at the same value for at least `staleThreshold` (default 30 seconds) while events remain
-  unprocessed beyond it — never on a single snapshot.
+  unprocessed beyond it — never on a single snapshot. A gap of `minimumGap` (default 1) or less counts as caught up
+  and never starts that clock, so raise it, for example `AddMartenHighWaterHealthCheck(minimumGap: 50)`, if your
+  mark normally trails the latest sequence by more than one. `minimumGap` only applies to the store-global
+  `HighWaterMark` row, not to the per-tenant rows described below.
 - **Store-global reading.** It reads database state, so it is correct on any node regardless of
   which one runs the agent; it fails only when *no* node is advancing the mark.
 

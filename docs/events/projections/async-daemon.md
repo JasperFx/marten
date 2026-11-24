@@ -82,8 +82,10 @@ There are three ways to run the daemon:
 
 1. *Solo* -- the daemon will be automatically started when the application is bootstrapped and all projections and projection shards will be started on that node. The assumption with Solo
    is that there is never more than one running system node for your application.
-1. *HotCold* -- the daemon will use a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function individually for each
-   projection on each tenant database and **ensure that each projection is running on exactly one running process**.
+1. *HotCold* -- the daemon uses a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function, an advisory lock,
+   to **ensure that each projection is running on exactly one running process**. With a single database there is one lock per
+   projection shard. With [separate databases for multi-tenancy](/configuration/multitenancy) there is one lock per database,
+   so whichever node holds it runs all of that database's projections (see [Projection Distribution](#projection-distribution)).
    HotCold is failover only. HotCold can do *some* load distribution through intentionally random assignment polling, but you cannot count on a "fair" distribution.
 1. *Wolverine-managed distribution* -- if you have more than one node, this is what we recommend. Wolverine spreads
    the projections and subscriptions evenly across the running nodes, places them by capacity, keeps blue/green
@@ -91,6 +93,14 @@ There are three ways to run the daemon:
    why it could not place one. This mode is also more resilient to projection interruptions or a single projection *somehow* hitting the dreaded `ProgressionProgressOutOfOrderException` that can sometimes happen when node clusters are being started or stopped. See [Distributing Work with Wolverine](#distributing-work-with-wolverine) below.
 
 Marten itself will not grow its own distribution of async projections across nodes; that job belongs to Wolverine.
+
+`DaemonMode` has two more values. `Disabled` is the default when you never call `AddAsyncDaemon()`: nothing runs, and
+Marten writes a warning to the console when the store is built if any projection is registered as `Async`. `ExternallyManaged` means another
+system runs the async projections and subscriptions, which is how Wolverine-managed distribution works. The store
+itself hosts no projection coordinator and starts no shards, the same as `Disabled`, but it doesn't warn, because the
+projections do run somewhere. Integrations such as Wolverine set this mode; application code shouldn't need to. Under
+`ExternallyManaged`, `ForceAllMartenDaemonActivityToCatchUpAsync()` only waits for the externally run shards to reach
+the high water mark instead of driving them itself.
 
 By default the `HotCold` leadership lock is session-scoped (`pg_try_advisory_lock`), so the session
 holding it keeps no transaction open while it is the leader. Set
@@ -540,7 +550,7 @@ the default.
 is limited only by the daemon's own cancellation. Be aware that this means a genuinely wedged shard can hold up
 shutdown indefinitely.
 
-## Waking the Daemon with LISTEN/NOTIFY <Badge type="tip" text="9.0" />
+## Waking the Daemon with LISTEN/NOTIFY <Badge type="tip" text="9.0" /> {#waking-the-daemon-with-listen-notify}
 
 By default the async daemon discovers new events by polling the high water mark. If you want projections
 and subscriptions to react to an append almost immediately, opt into PostgreSQL `LISTEN`/`NOTIFY`:
@@ -573,6 +583,64 @@ Things to be aware of:
 * The flag does nothing for events appended by other tools that do not send the `NOTIFY`; those are still
   picked up by polling.
 
+## Daemon Settings Reference {#daemon-settings-reference}
+
+The daemon's timing, leadership and parking settings are all on `opts.Projections`, where `opts` is the
+`StoreOptions` passed to `AddMarten()`. This sample sets each of them to its default, except for `DaemonLockId`:
+
+<!-- snippet: sample_async_daemon_settings_reference -->
+<a id='snippet-sample_async_daemon_settings_reference'></a>
+```cs
+// Every value below is the default, except DaemonLockId
+opts.Projections.FastPollingTime = 250.Milliseconds();
+opts.Projections.SlowPollingTime = 1.Seconds();
+opts.Projections.StaleSequenceThreshold = 3.Seconds();
+opts.Projections.UseTransactionEvidenceForGapSkipping = true;
+opts.Projections.HealthCheckPollingTime = 5.Seconds();
+opts.Projections.HighWaterStalenessThreshold = 30.Seconds();
+opts.Projections.HighWaterProgressStallThreshold = 2.Minutes();
+
+// HotCold leadership. LeadershipPollingTime is in milliseconds
+opts.Projections.LeadershipPollingTime = 5000;
+opts.Projections.AgentPauseTime = 1.Seconds();
+
+// The default is 4444. Give every application that shares a database its own value
+opts.Projections.DaemonLockId = 5150;
+
+// Parking guard rails and replay batching
+opts.Projections.Errors.ParkedTripMinimum = 20;
+opts.Projections.Errors.ParkedTripFraction = 0.5;
+opts.Projections.Errors.ParkedReplayBatchSize = 10;
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/DaemonDocsSamples.cs#L18-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_settings_reference' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `FastPollingTime` | 250 milliseconds | How long the high water agent waits before polling again after the mark moved. |
+| `SlowPollingTime` | 1 second | How long the high water agent waits before polling again when it is caught up, or after a failed poll. |
+| `StaleSequenceThreshold` | 3 seconds | How long a gap in the event sequence has to sit unfilled before the high water agent considers skipping it. See [Sequence Gaps and the High Water Mark](#sequence-gaps-and-the-high-water-mark). |
+| `UseTransactionEvidenceForGapSkipping` | `true` | Before skipping a stale gap, check PostgreSQL for a transaction that could still fill it, and hold while there is one. `false` goes back to skipping on time alone. |
+| `HealthCheckPollingTime` | 5 seconds | How often the high water agent's watchdog runs. The projection coordinator also starts a paused shard again once it has been paused for longer than this. |
+| `HighWaterStalenessThreshold` | 30 seconds | How long the high water agent's poll loop can go without finishing a cycle before the watchdog restarts it. This measures the loop, not the mark, so a quiet store is never stale. |
+| `HighWaterProgressStallThreshold` | 2 minutes | How long the mark can stay still while there are committed events above it before the watchdog restarts the high water agent. A restart never moves the mark. `null` turns this off. |
+| `LeadershipPollingTime` | 5000 | Milliseconds between the projection coordinator's passes, in which it tries to take leadership locks and starts any shard that isn't running. |
+| `AgentPauseTime` | 1 second | Used instead of `LeadershipPollingTime` between passes while any shard is paused. |
+| `DaemonLockId` | 4444 | The advisory lock id HotCold leadership is built on. With one database, each shard's lock is this value plus a hash of the schema name and shard name. With several databases, it is the lock for each database as it is. **Give every application that shares a database its own value.** |
+| `Wakeup` | `null` | An `IDaemonWakeup` that can end the high water agent's wait between polls early. With `null`, the agent just waits. `opts.Events.UseListenNotifyForEventAppends` replaces whatever is here with Marten's `LISTEN` listener when the daemon starts. See [Waking the Daemon with LISTEN/NOTIFY](#waking-the-daemon-with-listen-notify). |
+| `OtelPrefix` | `"marten"` | The prefix of the high water agent's span and its skipping counter, `{OtelPrefix}.daemon.highwatermark` and `{OtelPrefix}.daemon.skipping`. It doesn't change the per-shard spans and metrics. See [Open Telemetry and Metrics](#open-telemetry-and-metrics). |
+
+Three more settings on `opts.Projections.Errors` tune [parking](#parking-a-failing-identity):
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `ParkedTripMinimum` | 20 | The fewest identities one batch has to fail before the systemic failure trip pauses the shard instead of parking them. |
+| `ParkedTripFraction` | 0.5 | The share of a batch's identities that has to fail, more than this, before that trip pauses the shard. |
+| `ParkedReplayBatchSize` | 10 | The most parked identities a "replay all" or "replay oldest N" puts into one batch of the shard. |
+
+`MaxParkedIdentitiesPerShard` (default 1,000) is on the same object. The connection governors, the tenant load budget,
+`StopAndDrainTimeout` and the late event settings are described in their own sections of this page.
+
 ## Daemon Logging
 
 The daemon logs through the standard .NET `ILogger` registered in your application's DI container. When a projection
@@ -599,9 +667,16 @@ locks and also spreads work out more evenly through a cluster.
 
 ## Error Handling
 
-In all examples, `opts` is a `StoreOptions` object. Besides the basic [Polly error handling](/configuration/retries#resiliency-policies),
-you choose what the daemon does when an async projection fails on an event: park the one failing identity, pause the
-projection, or skip the event. Marten 10 parks by default. Parking, its guard rails, transient retries and replaying or
+In all examples, `opts` is a `StoreOptions` object.
+
+A transient failure while the daemon builds a projection batch, like a dropped connection, a deadlock, a command timeout
+or an exhausted connection pool, goes through the daemon's own Polly pipeline first: by default the batch is built again
+up to 3 times, and then the shard pauses. Replace that pipeline with `opts.ConfigureDaemonPolly(...)`, and start the
+builder with `AddMartenDaemonBatchDefaults()` to keep the default and add to it. `opts.ConfigureDaemonPolly(_ => { })`
+turns the retries off. See [The async daemon builds a failed batch again](/configuration/retries#the-async-daemon-builds-a-failed-batch-again).
+
+When your own projection code fails on an event, you choose what the daemon does: park the one failing identity, pause
+the projection, or skip the event. Marten 10 parks by default. Parking, its guard rails, transient retries and replaying or
 discarding a parked identity are covered in
 [Parking a Failing Projection Identity](https://shared-libs.jasperfx.net/events/parked-identities).
 
@@ -751,6 +826,81 @@ public static async Task accessing_the_daemon(IHost host)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/DaemonUsage.cs#L10-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projection_coordinator' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: warning
+While the coordinator is running (`Solo` or `HotCold`), it starts any shard it owns that isn't running on its next pass,
+within `LeadershipPollingTime` (5 seconds by default). A shard you stop with `StopAgentAsync()` or `PauseShardAsync()`
+therefore comes back on its own. To keep shards stopped, call `PauseAsync()` on the coordinator first, and
+`ResumeAsync()` when you're done.
+:::
+
+For a store registered with `AddMartenStore<TStore>()`, resolve `IProjectionCoordinator<TStore>` instead. These are the
+members for controlling the coordinator and its daemons at runtime:
+
+| Member | What it does |
+| --- | --- |
+| `IProjectionCoordinator.PauseAsync()` | Stops the coordinator's leadership loop, so nothing is restarted, and stops every running shard on every database. Leadership locks are kept. |
+| `IProjectionCoordinator.ResumeAsync()` | Starts the leadership loop again, which starts the shards again. Pair it with `PauseAsync()`. |
+| `IProjectionCoordinator.AllDaemonsAsync()` | The daemon of each of the store's databases. |
+| `IProjectionDaemon.PauseShardAsync(projectionName, tenantId, token)` | Stops every running shard of a projection, matched by the projection's name, so you don't need the shard's key or version. A tenant id stops only that tenant's shards, and `null` stops them all. Start them again with `StartAgentAsync()` or `StartAllAsync()`. |
+| `IProjectionDaemon.StatusFor(shardName)` | `Running`, `Paused` or `Stopped`. A shard this daemon doesn't hold is `Stopped`. |
+| `IProjectionDaemon.HasAnyPaused()` | Whether any of this daemon's shards is paused. |
+| `IProjectionDaemon.EjectPausedShard(shardName)` | Removes a paused shard from the daemon without stopping it, so that it can be started fresh. The coordinator uses it when it fails to restart a paused shard. |
+| `IProjectionDaemon.RestartHighWaterAgentAsync(token)` | Restarts the high water agent's poll loop. It never moves the mark. Check `IsHighWaterStale` and `HighWaterLastPolledAt` first. |
+| `IProjectionDaemon.CatchUpAsync(token)` | Stops the running shards and runs every async projection and subscription up to the high water mark inline. It's for tests: nothing is restarted afterwards. `ForceAllMartenDaemonActivityToCatchUpAsync()` on `IHost` pauses the coordinator, calls it on every daemon, and by default starts the coordinator again. |
+| `IProjectionDaemon.FetchParkedIdentitiesAsync(projectionName, tenantId, token)` | The identities of a projection parked in this daemon's database, oldest first, with the error that parked each one. |
+| `IProjectionDaemon.ReplayParkedIdentitiesAsync(projectionName, tenantId, selection, token)` | Replays `ParkedSelection.All` or `ParkedSelection.OldestFirst(n)` of a projection's parked identities in the shards this daemon runs, at most `ParkedReplayBatchSize` to a batch. |
+| `IProjectionDaemon.IsIdentityParked(projectionName, tenantId, identity)` | Whether an identity is parked in a shard this daemon runs. `false` when the shard isn't running here. |
+
+<!-- snippet: sample_async_daemon_runtime_controls -->
+<a id='snippet-sample_async_daemon_runtime_controls'></a>
+```cs
+public static async Task ControlTheRunningDaemon(IHost host, CancellationToken token)
+{
+    var coordinator = host.Services.GetRequiredService<IProjectionCoordinator>();
+
+    // Stop the coordinator from starting shards again, and stop every running shard
+    // on every database. Nothing restarts until ResumeAsync()
+    await coordinator.PauseAsync();
+
+    foreach (var daemon in await coordinator.AllDaemonsAsync())
+    {
+        // Running, Paused or Stopped. A shard this daemon doesn't hold is Stopped
+        Console.WriteLine($"Trip:All is {daemon.StatusFor("Trip:All")}");
+    }
+
+    await coordinator.ResumeAsync();
+}
+
+public static async Task WorkWithOneDaemon(IProjectionDaemon daemon, CancellationToken token)
+{
+    // Stop every running shard of one projection, matched by name. Pass a
+    // tenant id to stop only that tenant's shards
+    await daemon.PauseShardAsync("Trip", tenantId: null, token);
+
+    // Restart the high water agent's poll loop if it has stopped cycling.
+    // This never moves the high water mark
+    if (daemon.IsHighWaterStale)
+    {
+        await daemon.RestartHighWaterAgentAsync(token);
+    }
+
+    // The identities parked in this daemon's database, oldest first
+    var parked = await daemon.FetchParkedIdentitiesAsync("Trip", tenantId: null, token);
+    Console.WriteLine($"{parked.Count} Trip identities are parked");
+
+    // Replay the five identities parked first, in the shard that runs them here
+    var results = await daemon.ReplayParkedIdentitiesAsync("Trip", tenantId: null,
+        ParkedSelection.OldestFirst(5), token);
+
+    foreach (var result in results)
+    {
+        Console.WriteLine($"{result.Identity}: {result.Outcome}");
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/DaemonDocsSamples.cs#L44-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_runtime_controls' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Testing Async Projections <Badge type="tip" text="7.0" />
 
 ::: tip
@@ -869,6 +1019,38 @@ databases. Since a tenant-qualified shard identity only ever exists in the one d
 the tenant, `ProjectionProgressFor()` with such an identity returns that tenant's exact
 progression.
 
+`store.Advanced.AllAsyncProjectionShardNames()` lists the shard names of every async projection, the names that
+`StartAgentAsync()`, `StopAgentAsync()` and `StatusFor()` take. It doesn't include subscriptions.
+
+If the high water mark ever ends up above the highest assigned event sequence in the database, which has been seen
+when an application was connected to a PostgreSQL server that was shutting down, `store.Advanced.TryCorrectProgressInDatabaseAsync()`
+sets the high water mark and the progression of every projection and subscription in that database to the highest
+assigned event sequence. That includes any shard whose progression is *behind* that sequence, which then skips the
+events in between, so only use it for the situation it was written for. When the mark isn't above that sequence it
+does nothing. The overload taking a tenant id corrects only the database that holds that tenant. The `marten --correct`
+command does the same thing from the command line.
+
+<!-- snippet: sample_async_daemon_correct_progress -->
+<a id='snippet-sample_async_daemon_correct_progress'></a>
+```cs
+public static async Task CorrectProgression(IDocumentStore store, CancellationToken token)
+{
+    // The shard names of every async projection, e.g. "Trip:All"
+    foreach (var shardName in store.Advanced.AllAsyncProjectionShardNames())
+    {
+        Console.WriteLine(shardName.Identity);
+    }
+
+    // Every database of the store
+    await store.Advanced.TryCorrectProgressInDatabaseAsync(token);
+
+    // Or only the database that holds one tenant
+    await store.Advanced.TryCorrectProgressInDatabaseAsync("tenant1", token);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/DaemonDocsSamples.cs#L92-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_async_daemon_correct_progress' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Command Line Support
 
 If you're using [Marten's command line support](/configuration/cli), you have the new `projections` command to help
@@ -933,6 +1115,60 @@ dotnet run -- projections parked --projection Trip --discard --identity [stream 
 `--replay --all`, `--replay --oldest N` and `--wait` are described in the JasperFx documentation for
 [the parked command line](https://shared-libs.jasperfx.net/events/parked-identities#command-line).
 
+These are the `projections` command's own flags. `dotnet run -- help projections` lists them along with the shared
+host flags such as `--environment`.
+
+| Flag | Applies to | What it does |
+| --- | --- | --- |
+| `-p`, `--projection <name>` | all but `list` | Only this projection. `floor` and `parked` need it to change anything. |
+| `-s`, `--store <store>` | all but `list` | Only the event store whose subject uri matches, or whose uri scheme matches a bare name. Ignored when there's only one store. |
+| `-d`, `--database <identifier>` | all but `list` | Only this database of a store with several. Ignored with only one database. |
+| `-t`, `--tenant <tenant>` | all but `list` | Only the database that holds this tenant, all of it. For `floor` and `parked`, also that tenant's own floor or parked identities. |
+| `--shard-timeout <time>` | `rebuild` | How long each shard's rebuild may take, such as `10m` or `90s`. The default is 5 minutes. |
+| `-a`, `--advance` | `run`, `rebuild` | First advance the high water mark of every selected database to the latest committed event sequence. Any gap below it is skipped for good. |
+| `--max-concurrent <n>` | `rebuild` | The most projections rebuilt at once within one database. The default is `MaxConcurrentRebuildsPerDatabase`. |
+| `--show`, `--pin-current`, `--set <n>`, `--clear` | `floor` | See [the floor action](#the-floor-action) below. |
+| `--replay`, `--discard`, `--identity <id>`, `--all`, `--oldest <n>`, `--wait <seconds>` | `parked` | See the [parked command line](https://shared-libs.jasperfx.net/events/parked-identities#command-line). |
+| `--yes` | `floor`, `parked` | Don't ask for confirmation before changing anything. |
+
+`--advance` is the command line form of `AdvanceHighWaterMarkToLatestAsync()`, with the same warning as in
+[Sequence Gaps and the High Water Mark](#sequence-gaps-and-the-high-water-mark): events still in flight below the new
+mark are never seen by the async projections.
+
+```bash
+dotnet run -- projections rebuild -p Trip --shard-timeout 10m
+dotnet run -- projections --advance
+```
+
+### The floor action {#the-floor-action}
+
+A projection's start floor is the event sequence below which it never starts, even when it's rebuilt. It's stored in
+the `mt_event_projection_floors` table, keyed by the projection's name without its version and, under
+`UseTenantPartitionedEvents`, by tenant. `SubscribeFromFirstRun()` pins one, as described in
+[Pinning the start on the first run](/events/subscriptions#pinning-the-start-on-the-first-run). The `floor` action shows
+or changes it without SQL:
+
+```bash
+# Show the stored floor of every projection (--show is the default)
+dotnet run -- projections floor
+
+# Pin Trip's floor at the highest event sequence in the database right now
+dotnet run -- projections floor --projection Trip --pin-current
+
+# Set it to a sequence, or clear it
+dotnet run -- projections floor --projection Trip --set 250000 --yes
+dotnet run -- projections floor --projection Trip --clear
+```
+
+* Use only one of `--show`, `--pin-current`, `--set` and `--clear`.
+* A change needs `--projection`, applies to every selected database, and asks for confirmation unless you pass `--yes`.
+  When nobody can answer, because input is redirected, it changes nothing and tells you to use `--yes`.
+* `--tenant` picks that tenant's floor. Leave it off for the store-global floor, which is also the one a database per
+  tenant store uses.
+* Nothing is replayed when you change a floor. The next continuous start or rebuild of the projection uses it. A
+  cleared floor means the next rebuild replays from the beginning, or from the floor configured in code.
+* The `floor` action doesn't start a daemon, and `--advance` does nothing with it.
+
 ## Using the Async Daemon from DocumentStore
 
 All of the samples so far assumed that your application used the `AddMarten()` extension
@@ -972,7 +1208,7 @@ public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken 
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L130-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_async_daemon_alone' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Open Telemetry and Metrics <Badge type="tip" text="7.10" />
+## Open Telemetry and Metrics <Badge type="tip" text="7.10" /> {#open-telemetry-and-metrics}
 
 ::: info
 All of these facilities are used automatically by Marten. 
@@ -1006,22 +1242,31 @@ builder.Services.AddOpenTelemetry()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L22-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-*And* you are running the async daemon in your system, you should see potentially activities for each running projection
-or subscription with the prefix: `marten.{Subscription or Projection Name}.{shard key, basically always "all" at this point}`:
+*And* you are running the async daemon in your system, you should see these spans for each running projection or
+subscription shard, named `marten.{name}.{shard key}.page.*`, where the name is the projection or subscription name
+in lower case, without its version, and the shard key is almost always `all`:
 
-* `execution` -- traces the execution of a page of events through the projection or subscription, with tags for the tenant id, event sequence floor and ceiling, and database name
-* `loading` -- traces the loading of a page of events for a projection or subscription. Same tags as above
-* `grouping` -- traces the grouping process for projections that happens prior to execution. This does not apply to subscriptions. Same tags as above
+* `marten.{name}.{shard key}.page.execution` -- the execution of a page of events through the projection or
+  subscription, tagged with `page.size`, `event.floor`, `event.ceiling` and `database.uri`
+* `marten.{name}.{shard key}.page.loading` -- the loading of a page of events, tagged with `event.floor` and
+  `database.uri`
+* `marten.{name}.{shard key}.page.grouping` -- the grouping that a projection does before execution, with the same tags
+  as `execution`. Subscriptions don't group
 
-In addition, there are three metrics built for every combination of projection or subscription shard on each
-Marten database (in the case of using separate databases for multi-tenancy), again using the same prefix as above
-with the addition of the Marten database identifier in the case of multi-tenancy through separate databases like `marten.{database name}.{projection or subscription name}.all.*:
+Each shard also gets seven metrics under the prefix `marten.{name}.{shard key}`. Metric names never include the
+database: every measurement carries a `database.uri` tag instead, so with separate databases for multi-tenancy you
+tell the databases apart by that tag.
 
-* `processed` - a counter giving you an indication of how many events are being processed by the currently running subscription or projection shard
-* `gap` - a histogram telling you the "gap" between the high water mark of the system and the furthest progression of the running subscription or projection. 
-* `skipped` - added in Marten 8.6, a counter telling you how many events were skipped during asynchronous projection or subscription processing. Depending on how the application is 
-  configured, Marten may skip events because of serialization errors, unknown events, or application errors (basically, *your* code threw an exception, and only when you have configured the daemon to
-  skip errors, see [Error Handling](#error-handling))
+* `processed` -- a counter of the events the shard has processed
+* `gap` -- a histogram of the distance between the high water mark and the shard's progression
+* `skipped` -- a counter of the events the shard skipped. Depending on your configuration, Marten skips events
+  because of serialization errors, unknown events, or errors in *your* code when you've configured the daemon to skip
+  them (see [Error Handling](#error-handling))
+* `parked` -- a counter of the identities the shard [parked](#parking-a-failing-identity)
+* `unparked` -- a counter of the identities taken off the parked list, with an `outcome` tag as well
+* `parked.held_events` -- a counter of the events held back because their identity is parked
+* `parked.current` -- a gauge of how many identities the shard holds parked right now. It's registered the first time
+  the shard reports a parked count
 
 ::: tip
 The `gap` metrics are a good health check on the performance of any given projection or subscription. If this gap
@@ -1035,9 +1280,8 @@ Marten emits [Open Telemetry](https://opentelemetry.io/) spans and metrics aroun
 async daemon. For why the mark holds or skips a gap, see
 [Sequence Gaps and the High Water Mark](#sequence-gaps-and-the-high-water-mark).
 
-First off, Marten is emitting spans named either `marten.daemon.highwatermark` in the case of
-only targeting a single database, or `marten.[database name].daemon.highwatermark` in the case of 
-using multi-tenancy through a database per tenant. On these spans will be these tags:
+Each poll of the high water agent is a span named `marten.daemon.highwatermark`, whatever the number of databases. It
+carries a `database.uri` tag to say which database it polled, and these tags:
 
 * `sequence` -- the largest event sequence that has been assigned to the database at this point
 * `status` -- either `CaughtUp`, `Changed`, or `Stale` meaning "all good", "proceeding normally", or "uh, oh, something is up with outstanding transactions"
@@ -1045,8 +1289,8 @@ using multi-tenancy through a database per tenant. On these spans will be these 
 * `skipped` -- this tag will only be present as a "true" value if Marten is forcing the high water detection to skip stale gaps in the event sequence
 * `last.mark` -- if skipping event sequences, this will be the last good mark before the high water detection calculated the skip
 
-There is also a counter metric called `marten.daemon.skipping` or `marten.[database name].daemon.skipping`
-that just emits and update every time that Marten has to "skip" stale events.
+There is also a counter called `marten.daemon.skipping` that counts each time the high water detection skips a stale
+gap. It has no tags. The `marten` prefix of both comes from `opts.Projections.OtelPrefix`.
 
 ## Extended Progression Tracking
 
