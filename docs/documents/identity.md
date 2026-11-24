@@ -253,7 +253,7 @@ using var store = DocumentStore.For(opts =>
     opts.Advanced.HiloSequenceDefaults.MaxAdvanceToNextHiAttempts = 50;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L206-L216' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_hilo_max_advance_to_next_hi_attempts' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L205-L215' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_hilo_max_advance_to_next_hi_attempts' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As of Marten 10 there is normally nothing to retry. The old `mt_get_next_hi` returned `-1` to a caller that another caller

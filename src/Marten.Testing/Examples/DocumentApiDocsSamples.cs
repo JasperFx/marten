@@ -56,9 +56,9 @@ public class ApiDocsInvoice
     [LastModifiedMetadata]
     public DateTimeOffset LastModified { get; set; }
 
-    // Filled in from mt_deleted. The attribute class is IsSoftDeletedMetadataAttributeAttribute,
-    // so it has to be written with its "Attribute" suffix
-    [IsSoftDeletedMetadataAttribute]
+    // Filled in from mt_deleted. [SoftDeletedMetadata] is the correctly named form of the
+    // older [IsSoftDeletedMetadataAttribute], which still works
+    [SoftDeletedMetadata]
     public bool IsDeleted { get; set; }
 
     // Filled in from mt_deleted_at
@@ -81,7 +81,7 @@ public class ApiDocsTenantedInvoice
 
 #region sample_docs_index_created_at_via_attribute
 
-// mt_created_at is opt in, so turn the column on as well as indexing it
+// [IndexedCreatedAt] turns the opt-in mt_created_at column on as well
 [IndexedCreatedAt]
 public class ApiDocsAuditEntry
 {
@@ -193,8 +193,7 @@ public static class DocumentApiDocsSamples
             opts.Connection("some connection string");
 
             opts.Schema.For<ApiDocsOrder>()
-                // IndexCreatedAt() does not turn the column on by itself
-                .Metadata(m => m.CreatedAt.Enabled = true)
+                // IndexCreatedAt() turns the opt-in mt_created_at column on as well
                 .IndexCreatedAt();
         });
 

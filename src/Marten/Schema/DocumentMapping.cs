@@ -623,8 +623,14 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
         return null;
     }
 
+    /// <summary>
+    ///     Index the mt_created_at metadata column, turning the column on (it is opt-in) if it is not already
+    /// </summary>
     public DocumentIndex AddCreatedAtIndex(Action<DocumentIndex>? configure = null)
     {
+        // #6187: an index on a column that is not there fails schema creation
+        Metadata.CreatedAt.Enabled = true;
+
         var index = new DocumentIndex(this, SchemaConstants.CreatedAtColumn);
         configure?.Invoke(index);
         Indexes.Add(index);

@@ -357,11 +357,34 @@ await tenants.EnableTenantAsync("tenant5");
 // Deletes the tenant's record, not its database
 await tenants.RemoveTenantAsync("tenant5");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L289-L302' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_tenant_lifecycle_from_services' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L310-L323' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_tenant_lifecycle_from_services' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The `AddMarten(sp => ...)` overload used in the master table example above does not register it, and neither does a
-tenancy configured later through `ConfigureMarten()`. Cast `store.Options.Tenancy` instead in those cases.
+The `AddMarten(sp => ...)` overload used in the master table example above cannot tell when it is registered whether
+the tenancy it will build is dynamic, and neither can a tenancy configured later through `ConfigureMarten()` or a store
+added with `AddMartenStore<T>()`. Ask for the registration with `ExposeDynamicTenantSource()` <Badge type="tip" text="10.0" />
+in those cases. It is resolved from the built store, and resolving it throws if the store's tenancy turns out not to be
+dynamic:
+
+<!-- snippet: sample_expose_dynamic_tenant_source -->
+<a id='snippet-sample_expose_dynamic_tenant_source'></a>
+```cs
+services.AddMarten(sp =>
+    {
+        var options = new StoreOptions();
+        options.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+        {
+            x.ConnectionString = "master database connection string";
+        });
+
+        return options;
+    })
+    // The tenancy is only built from the function above when the store is,
+    // so ask for IDynamicTenantSource<string> to be registered
+    .ExposeDynamicTenantSource();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L289-L305' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_expose_dynamic_tenant_source' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Sharded Multi-Tenancy with Database Pooling <Badge type="tip" text="8.x" />
 

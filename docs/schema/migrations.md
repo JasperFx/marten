@@ -226,7 +226,7 @@ stores sharing one database in one host, or a large schema. Lowering it trades w
 | Mode | At startup |
 | --- | --- |
 | `FailFast` (the default) | A failed migration throws and the host does not start. That includes not getting the lock in time, which fails with "Unable to attain the global lock in time to apply database changes" |
-| `ContinueOnFailures` | A node that does not get the lock in time starts without migrating, on the reasoning that the node holding the lock is applying the same changes. Any other failed migration is logged as an error and startup carries on with the next database, but the `IInitialData` seeders are skipped |
+| `ContinueOnFailures` | A node that does not get the lock in time starts without migrating, on the reasoning that the node holding the lock is applying the same changes. That, and any other failed migration, is logged as an error and startup carries on with the next database, but the `IInitialData` seeders are skipped, since the schema they would write to may still be changing |
 
 `ContinueOnFailures` does not excuse `AssertDatabaseMatchesConfigurationOnStartup()`: a database that does not match
 still fails startup.

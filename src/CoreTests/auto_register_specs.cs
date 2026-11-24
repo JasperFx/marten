@@ -63,9 +63,12 @@ public class auto_register_specs : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void finds_compiled_query_types()
+    public void does_not_register_compiled_query_types()
     {
-        theStore.Options.CompiledQueryTypes.ShouldContain(x => x == typeof(UsersByFirstName));
+        // #6192: nothing has read the registered compiled query types since 9.0, and registering one threw for a
+        // compiled query without a parameterless constructor. UsersByLastName below is one, and this assembly is
+        // scanned, so the store above would not build if AutoRegister() still registered compiled queries.
+        theStore.Options.CompiledQueryTypes.ShouldBeEmpty();
     }
 }
 
@@ -105,6 +108,22 @@ public class UsersByFirstName: ICompiledListQuery<User>
     public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
     {
         return query => query.Where(x => x.FirstName == FirstName);
+    }
+}
+
+// #6192: a compiled query with no parameterless constructor
+public class UsersByLastName: ICompiledListQuery<User>
+{
+    public UsersByLastName(string lastName)
+    {
+        LastName = lastName;
+    }
+
+    public string LastName { get; }
+
+    public Expression<Func<IMartenQueryable<User>, IEnumerable<User>>> QueryIs()
+    {
+        return query => query.Where(x => x.LastName == LastName);
     }
 }
 

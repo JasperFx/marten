@@ -180,7 +180,7 @@ namespace maps one metadata column, and like `MapTo()` it turns that column on:
 | `[CreatedAtMetadata]`              | `mt_created_at`    | `DateTimeOffset`   |
 | `[LastModifiedMetadata]`           | `mt_last_modified` | `DateTimeOffset`   |
 | `[TenantIdMetadata]`               | `tenant_id`        | `string`           |
-| `[IsSoftDeletedMetadataAttribute]` | `mt_deleted`       | `bool`             |
+| `[SoftDeletedMetadata]`            | `mt_deleted`       | `bool`             |
 | `[SoftDeletedAtMetadata]`          | `mt_deleted_at`    | `DateTimeOffset?`  |
 | `[DocumentTypeMetadata]`           | `mt_doc_type`      | `string`           |
 
@@ -200,9 +200,9 @@ public class ApiDocsInvoice
     [LastModifiedMetadata]
     public DateTimeOffset LastModified { get; set; }
 
-    // Filled in from mt_deleted. The attribute class is IsSoftDeletedMetadataAttributeAttribute,
-    // so it has to be written with its "Attribute" suffix
-    [IsSoftDeletedMetadataAttribute]
+    // Filled in from mt_deleted. [SoftDeletedMetadata] is the correctly named form of the
+    // older [IsSoftDeletedMetadataAttribute], which still works
+    [SoftDeletedMetadata]
     public bool IsDeleted { get; set; }
 
     // Filled in from mt_deleted_at
@@ -227,8 +227,8 @@ public class ApiDocsTenantedInvoice
 Some things to know:
 
 * The member has to be exactly the type in the table, or the mapping throws `ArgumentOutOfRangeException`.
-* The attribute for `mt_deleted` is a class named `IsSoftDeletedMetadataAttributeAttribute`, so `[IsSoftDeletedMetadata]`
-  does not compile. Write it as `[IsSoftDeletedMetadataAttribute]`.
+* `[SoftDeletedMetadata]` <Badge type="tip" text="10.0" /> is the correctly named form of the older
+  `[IsSoftDeletedMetadataAttribute]`, a class named `IsSoftDeletedMetadataAttributeAttribute`, which still works.
 * Marten checks the document type when it builds the mapping, and throws `InvalidDocumentException` when
   `[TenantIdMetadata]` is on a type that is not multi-tenanted, `[DocumentTypeMetadata]` is on a type that is not part of a
   [document hierarchy](/documents/hierarchies), or either soft-delete attribute is on a type that is not

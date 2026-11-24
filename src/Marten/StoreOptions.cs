@@ -52,11 +52,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public const int DefaultTimeout = 5;
     internal const string? NoConnectionMessage = "No tenancy is configured! Ensure that you provided connection string in `AddMarten` method or called `UseNpgsqlDataSource`";
 
-    internal Func<string, NpgsqlDataSourceBuilder> NpgsqlDataSourceBuilderFactory
-    {
-        get => _npgsqlDataSourceBuilderFactory;
-        private set => _npgsqlDataSourceBuilderFactory = value;
-    }
+    // #6191: one stable delegate, composed when called from the base builder (Marten's own, or the one supplied
+    // to Connection(Func<string, NpgsqlDataSourceBuilder>, NpgsqlDataSource)), Marten's Npgsql logging and every
+    // ConfigureNpgsqlDataSourceBuilder() action. Supplying a base builder no longer throws the others away.
+    internal Func<string, NpgsqlDataSourceBuilder> NpgsqlDataSourceBuilderFactory => _npgsqlDataSourceBuilderFactory;
 
     internal INpgsqlDataSourceFactory NpgsqlDataSourceFactory
     {
@@ -262,6 +261,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// (e.g. losing the global migration advisory lock during a multi-replica rolling deploy) aborts
     /// startup. Defaults to <see cref="JasperFx.ResourceMigrationFailureMode.FailFast"/> (throw). Set to
     /// <see cref="JasperFx.ResourceMigrationFailureMode.ContinueOnFailures"/> to log and continue starting up.
+    /// When a database fails to migrate, a lost migration lock included, the <c>IInitialData</c> seeders are
+    /// skipped, because the schema they would write to may not be the configured one yet.
     /// If left unset it is inherited from the active JasperFx profile
     /// (<c>JasperFxOptions.ActiveProfile.ResourceMigrationFailureMode</c>); set it explicitly to override
     /// the profile for this store. You can also configure it globally for all Critter Stack tools via
@@ -301,13 +302,19 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     private NpgsqlDataSourceBuilder createNpgsqlDataSourceBuilder(string connectionString)
     {
-        var builder = new NpgsqlDataSourceBuilder(connectionString);
+        var builder = _suppliedNpgsqlDataSourceBuilderFactory?.Invoke(connectionString)
+                      ?? new NpgsqlDataSourceBuilder(connectionString);
 
         // Read when each builder is made, not when the store is configured: AddMarten() assigns LogFactory
         // after the application's own configuration has run
         if (LogFactory != null && !DisableNpgsqlLogging)
         {
             builder.UseLoggerFactory(LogFactory);
+        }
+
+        foreach (var configure in _npgsqlDataSourceBuilderConfigurations)
+        {
+            configure(builder);
         }
 
         return builder;
@@ -550,8 +557,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// The main application assembly. Defaults to <see cref="Assembly.GetEntryAssembly"/>;
     /// override only when the entry-assembly heuristic can't find the consumer's
     /// project (e.g. test runners, plug-in hosts). Used by
-    /// <see cref="AutoRegister"/> assembly scanning and by
-    /// <see cref="TryUseSourceGeneratedDiscovery"/>.
+    /// <see cref="AutoRegister"/> assembly scanning.
     /// </summary>
     public Assembly? ApplicationAssembly { get; set; }
 
@@ -700,7 +706,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     /// <summary>
     ///     Name of the Event Model that this store's projections contribute their derived slices to.
-    ///     Leave null to contribute to the default model, <c>ProjectionEventModelSource.DefaultModelName</c>.
+    ///     Leave null to contribute to the model named after the service (<c>JasperFxOptions.ServiceName</c>),
+    ///     which is the one Wolverine derives too, or, when no service name is set, to the default model,
+    ///     <c>ProjectionEventModelSource.DefaultModelName</c>.
     /// </summary>
     /// <remarks>
     ///     <para>
@@ -827,8 +835,14 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     private Lazy<ITenancy>? _tenancy;
-    private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory;
+    private readonly Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory;
+    private Func<string, NpgsqlDataSourceBuilder>? _suppliedNpgsqlDataSourceBuilderFactory;
+    private readonly List<Action<NpgsqlDataSourceBuilder>> _npgsqlDataSourceBuilderConfigurations = new();
     private INpgsqlDataSourceFactory _npgsqlDataSourceFactory;
+
+    // #6188: true while the data source factory is one the caller handed to DataSourceFactory(). Marten never
+    // replaces such a factory when it rebuilds its own after ConfigureNpgsqlDataSourceBuilder().
+    private bool _dataSourceFactoryWasSupplied;
 
     /// <summary>
     /// #4874: false when the primary NpgsqlDataSource was supplied by the caller
@@ -953,6 +967,12 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Sets custom `NpgsqlDataSource` factory to manage database connections
     /// </summary>
+    /// <remarks>
+    ///     Marten keeps this factory whatever is configured after it. Builder configuration registered with
+    ///     <see cref="ConfigureNpgsqlDataSourceBuilder"/> (pgvector, PostGIS, NodaTime, the DCB HStore mode) only
+    ///     reaches the data sources this factory builds if the factory itself builds them from
+    ///     <c>NpgsqlDataSourceBuilder</c>s configured the same way.
+    /// </remarks>
     /// <param name="dataSourceFactory"></param>
     /// <param name="connectionString"></param>
     public void DataSourceFactory(INpgsqlDataSourceFactory dataSourceFactory, string? connectionString = null)
@@ -960,6 +980,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         // A factory chosen here replaces any data source supplied earlier; Connection(NpgsqlDataSource)
         // records its own afterwards.
         _suppliedDataSource = null;
+        _dataSourceFactoryWasSupplied = true;
         NpgsqlDataSourceFactory = dataSourceFactory;
 
         if (_tenancy == null && connectionString != null)
@@ -1031,6 +1052,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             dataSource.ConnectionString
         );
 
+        // The factory above is Marten's own wrapper around the supplied data source, not a custom one
+        _dataSourceFactoryWasSupplied = false;
         _suppliedDataSource = dataSource;
     }
 
@@ -1038,7 +1061,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///     Supply a mechanism for resolving an NpgsqlConnection object based on the NpgsqlDataSource
     /// </summary>
     /// <remarks>
-    ///     When doing that you need to handle data source disposal.
+    ///     When doing that you need to handle data source disposal. <paramref name="dataSourceBuilderFactory"/>
+    ///     creates the builder for every other data source Marten builds (tenant databases, for example); the
+    ///     configuration registered with <see cref="ConfigureNpgsqlDataSourceBuilder"/>, before or after this call,
+    ///     is still applied on top of it.
     /// </remarks>
     /// <param name="dataSourceBuilderFactory"></param>
     /// <param name="dataSource"></param>
@@ -1047,7 +1073,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         NpgsqlDataSource dataSource
     )
     {
-        NpgsqlDataSourceBuilderFactory = dataSourceBuilderFactory;
+        // #6191: replace only the base builder, never the configuration composed on top of it
+        _suppliedNpgsqlDataSourceBuilderFactory = dataSourceBuilderFactory ?? throw new ArgumentNullException(nameof(dataSourceBuilderFactory));
 
         Connection(dataSource);
     }
@@ -1060,15 +1087,15 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <param name="configure">Action applied to each NpgsqlDataSourceBuilder before Build() is called</param>
     public void ConfigureNpgsqlDataSourceBuilder(Action<NpgsqlDataSourceBuilder> configure)
     {
-        var original = NpgsqlDataSourceBuilderFactory;
-        NpgsqlDataSourceBuilderFactory = cs =>
-        {
-            var builder = original(cs);
-            configure(builder);
-            return builder;
-        };
+        if (configure == null) throw new ArgumentNullException(nameof(configure));
 
-        // Rebuild the data source factory so it uses the updated builder factory.
+        _npgsqlDataSourceBuilderConfigurations.Add(configure);
+
+        // #6188: a factory the caller supplied through DataSourceFactory() is theirs, and stays
+        if (_dataSourceFactoryWasSupplied) return;
+
+        // Rebuild the data source factory so that no data source built (and cached) before this
+        // configuration was added is handed out.
         //
         // #5898: but never by discarding a data source the caller supplied. Replacing it with a
         // DefaultNpgsqlDataSourceFactory made Marten build a second data source from the supplied one's

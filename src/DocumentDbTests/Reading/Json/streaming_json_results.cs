@@ -162,6 +162,44 @@ public class streaming_json_results : IntegrationContext
     }
 
     [Fact]
+    public async Task try_stream_single_with_linq_miss()
+    {
+        // #6194: StreamJsonSingleOrDefault() returns a bare Task, so TryStreamJsonSingle() says what it wrote
+        var stream = new MemoryStream();
+        var found = await theSession.Query<Target>().Where(x => x.Id == Guid.NewGuid())
+            .TryStreamJsonSingle(stream);
+
+        found.ShouldBeFalse();
+        stream.Length.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task try_stream_single_with_linq_hit()
+    {
+        var targets = Target.GenerateRandomData(10).ToArray();
+        await theStore.BulkInsertAsync(targets);
+
+        var stream = new MemoryStream();
+        var found = await theSession.Query<Target>().Where(x => x.Id == targets[3].Id)
+            .TryStreamJsonSingle(stream);
+
+        found.ShouldBeTrue();
+        deserialize<Target>(stream).Id.ShouldBe(targets[3].Id);
+    }
+
+    [Fact]
+    public async Task try_stream_single_with_more_than_one_hit_throws()
+    {
+        var targets = Target.GenerateRandomData(2).ToArray();
+        await theStore.BulkInsertAsync(targets);
+
+        var ids = targets.Select(x => x.Id).ToArray();
+
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
+            await theSession.Query<Target>().Where(x => ids.Contains(x.Id)).TryStreamJsonSingle(new MemoryStream()));
+    }
+
+    [Fact]
     public async Task stream_many_with_no_hits()
     {
         var stream = new MemoryStream();

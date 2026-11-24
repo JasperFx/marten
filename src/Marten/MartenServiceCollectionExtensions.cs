@@ -183,13 +183,39 @@ public static class MartenServiceCollectionExtensions
         // configure callback before AddMarten returns, so a not-yet-configured
         // store is by construction not dynamic and the registration is correctly
         // skipped.
+        //
+        // #6190: the forms that configure the store lazily (AddMarten(Func<IServiceProvider, StoreOptions>),
+        // tenancy set through ConfigureMarten(), AddMartenStore<T>()) cannot be probed here. They opt in with
+        // ExposeDynamicTenantSource() on the expression they return.
         if (TryGetDynamicTenantSource(options) is not null)
         {
-            services.AddSingleton<IDynamicTenantSource<string>>(s =>
-                (IDynamicTenantSource<string>)s.GetRequiredService<IDocumentStore>().As<DocumentStore>().Tenancy);
+            registerDynamicTenantSource<IDocumentStore>(services);
         }
 
         return new MartenConfigurationExpression(services, options);
+    }
+
+    // #6190: marks a store whose tenancy is already exposed as IDynamicTenantSource<string>, so registering it
+    // twice (the probe above, then ExposeDynamicTenantSource()) never puts two entries into GetServices()
+    private sealed class DynamicTenantSourceRegistration<TStore> where TStore : class, IDocumentStore;
+
+    private static void registerDynamicTenantSource<TStore>(IServiceCollection services)
+        where TStore : class, IDocumentStore
+    {
+        if (services.Any(x => !x.IsKeyedService && x.ServiceType == typeof(DynamicTenantSourceRegistration<TStore>)))
+        {
+            return;
+        }
+
+        services.AddSingleton(new DynamicTenantSourceRegistration<TStore>());
+
+        // Resolved lazily from the built store, so the tenancy is whatever the store's configuration ended in
+        services.AddSingleton<IDynamicTenantSource<string>>(s =>
+        {
+            var tenancy = s.GetRequiredService<TStore>().As<DocumentStore>().Tenancy;
+            return tenancy as IDynamicTenantSource<string> ?? throw new InvalidOperationException(
+                $"The {typeof(TStore).NameInCode()} store was registered with ExposeDynamicTenantSource(), but its tenancy ({tenancy.GetType().NameInCode()}) is not a dynamic tenant source. Only a master table (MultiTenantedDatabasesWithMasterDatabaseTable()) or sharded tenancy can be exposed as IDynamicTenantSource<string>.");
+        });
     }
 
     private static IDynamicTenantSource<string>? TryGetDynamicTenantSource(StoreOptions options)
@@ -566,6 +592,23 @@ public static class MartenServiceCollectionExtensions
         public IServiceCollection Services { get; }
 
         /// <summary>
+        ///     Expose this store's dynamic tenancy (master table or sharded) as
+        ///     <see cref="IDynamicTenantSource{T}">IDynamicTenantSource&lt;string&gt;</see>, which store-agnostic
+        ///     tenant administration (CritterWatch, for example) resolves through <c>GetServices()</c>. Resolved lazily
+        ///     from the built store; resolving it throws if the store's tenancy turns out not to be dynamic.
+        /// </summary>
+        /// <remarks>
+        ///     #6190: an ancillary store is configured lazily, so Marten cannot tell when it is registered whether its
+        ///     tenancy will be dynamic, and registering it for every store would hand those consumers a source that is
+        ///     not one.
+        /// </remarks>
+        public MartenStoreExpression<T> ExposeDynamicTenantSource()
+        {
+            registerDynamicTenantSource<T>(Services);
+            return this;
+        }
+
+        /// <summary>
         ///     Register the Async Daemon hosted service to continuously attempt to update asynchronous event projections
         /// </summary>
         /// <param name="mode"></param>
@@ -774,6 +817,24 @@ public static class MartenServiceCollectionExtensions
         ///     Gets the IServiceCollection
         /// </summary>
         public IServiceCollection Services { get; }
+
+        /// <summary>
+        ///     Expose this store's dynamic tenancy (master table or sharded) as
+        ///     <see cref="IDynamicTenantSource{T}">IDynamicTenantSource&lt;string&gt;</see>, which store-agnostic
+        ///     tenant administration (CritterWatch, for example) resolves through <c>GetServices()</c>. Resolved lazily
+        ///     from the built store; resolving it throws if the store's tenancy turns out not to be dynamic.
+        /// </summary>
+        /// <remarks>
+        ///     #6190: <c>AddMarten(StoreOptions)</c> and <c>AddMarten(Action&lt;StoreOptions&gt;)</c> expose a dynamic
+        ///     tenancy on their own, because the tenancy is known when they run. Call this when it is not: the store is
+        ///     configured with <c>AddMarten(Func&lt;IServiceProvider, StoreOptions&gt;)</c>, or its tenancy is set
+        ///     through <c>ConfigureMarten()</c>. Calling it where the store already exposes its tenancy is harmless.
+        /// </remarks>
+        public MartenConfigurationExpression ExposeDynamicTenantSource()
+        {
+            registerDynamicTenantSource<IDocumentStore>(Services);
+            return this;
+        }
 
         /// <summary>
         ///     Use an alternative strategy / configuration for opening IDocumentSession or IQuerySession

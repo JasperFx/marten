@@ -301,10 +301,30 @@ public static class QueryableExtensions
         return queryable.As<MartenLinqQueryable<T>>().StreamJsonSingle(destination, token);
     }
 
+    /// <summary>
+    ///     Write the raw persisted JSON of the single document this query matches, if there is one, to
+    ///     <paramref name="destination" />. Throws when more than one document matches. Use
+    ///     <see cref="TryStreamJsonSingle{T}" /> to learn whether anything was written.
+    /// </summary>
     public static Task StreamJsonSingleOrDefault<T>(this IQueryable<T> queryable, Stream destination,
         CancellationToken token = default) where T : notnull
     {
-        return queryable.As<MartenLinqQueryable<T>>().StreamJsonSingleOrDefault(destination, token);
+        return queryable.TryStreamJsonSingle(destination, token);
+    }
+
+    /// <summary>
+    ///     Write the raw persisted JSON of the single document this query matches, if there is one, to
+    ///     <paramref name="destination" />. Throws when more than one document matches, as
+    ///     <see cref="StreamJsonSingleOrDefault{T}" /> does.
+    /// </summary>
+    /// <returns>True when a document was written, false when nothing matched</returns>
+    public static async Task<bool> TryStreamJsonSingle<T>(this IQueryable<T> queryable, Stream destination,
+        CancellationToken token = default) where T : notnull
+    {
+        // #6194: StreamJsonSingleOrDefault() returns a bare Task, so a caller could not tell whether anything was
+        // written, and changing its return type would break binary compatibility
+        return await queryable.As<MartenLinqQueryable<T>>().StreamJsonSingleOrDefault(destination, token)
+            .ConfigureAwait(false) > 0;
     }
 
     public static Task<string> ToJsonFirst<T>(this IQueryable<T> queryable, CancellationToken token = default) where T : notnull

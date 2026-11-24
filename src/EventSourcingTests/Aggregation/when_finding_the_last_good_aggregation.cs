@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
@@ -77,6 +78,67 @@ public class when_finding_the_last_good_aggregation : IntegrationContext
         newLastGood.ACount.ShouldBe(0);
         newLastGood.BCount.ShouldBe(0);
         newLastGood.CCount.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task a_version_past_the_end_of_the_stream_finds_nothing()
+    {
+        // #6194: as AggregateStreamAsync() does
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleMaybeDeletedAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        (await theSession.Events.AggregateStreamAsync<SimpleMaybeDeletedAggregate>(streamId, 3)).ShouldBeNull();
+        (await theSession.Events.AggregateStreamToLastKnownAsync<SimpleMaybeDeletedAggregate>(streamId, 3)).ShouldBeNull();
+        (await theSession.Events.AggregateStreamToLastKnownAsync<SimpleMaybeDeletedAggregate>(streamId, 2))
+            .ShouldNotBeNull().BCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task does_not_rebuild_from_the_start_for_every_event_it_walks_back()
+    {
+        // #6194: this rebuilt the aggregate from the first event once per trailing event that left no aggregate
+        var streamId = Guid.NewGuid();
+
+        var events = new List<object> { new AEvent(), new BEvent() };
+        for (var i = 0; i < 20; i++) events.Add(new DeleteYourself());
+
+        theSession.Events.StartStream<CountingMaybeDeletedAggregate>(streamId, events.ToArray());
+        await theSession.SaveChangesAsync();
+
+        CountingMaybeDeletedAggregate.AppliedA = 0;
+
+        var lastGood = await theSession.Events.AggregateStreamToLastKnownAsync<CountingMaybeDeletedAggregate>(streamId);
+        lastGood.ShouldNotBeNull();
+        lastGood.ACount.ShouldBe(1);
+        lastGood.BCount.ShouldBe(1);
+
+        // Once on the way forward, once to build the last known aggregate
+        CountingMaybeDeletedAggregate.AppliedA.ShouldBeLessThanOrEqualTo(2);
+    }
+}
+
+public class CountingMaybeDeletedAggregate
+{
+    public static int AppliedA;
+
+    public Guid Id { get; set; }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+
+    public bool ShouldDelete(DeleteYourself _) => true;
+
+    public void Apply(AEvent _)
+    {
+        AppliedA++;
+        ACount++;
+    }
+
+    public void Apply(BEvent _)
+    {
+        BCount++;
     }
 }
 

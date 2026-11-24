@@ -109,7 +109,7 @@ await using var session = store.LightweightSession();
 session.InsertObjects(documents);
 await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L260-L275' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_insert_objects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L259-L274' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_insert_objects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Adding Your Own Operations to the Unit of Work
@@ -158,7 +158,7 @@ session.QueueOperation(new PurgeStaleOrders(DateTimeOffset.UtcNow.AddYears(-1)))
 // Both run in the same batch and the same transaction
 await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L280-L290' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_queue_operation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L279-L289' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_queue_operation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A few rules for an operation of your own:
@@ -216,7 +216,7 @@ using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled)
     scope.Complete();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L295-L307' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_bulk_insert_enlist_transaction' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L294-L306' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_bulk_insert_enlist_transaction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It takes the same `BulkInsertMode` and `batchSize` arguments as `BulkInsertAsync()`, and loads into the default tenant

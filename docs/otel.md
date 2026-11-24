@@ -150,7 +150,7 @@ var store = DocumentStore.For(opts =>
         });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L307-L328' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_export_counter_on_change_sets' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L328-L349' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_export_counter_on_change_sets' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The callback runs after the transaction has committed, so an exception thrown from it is logged rather than

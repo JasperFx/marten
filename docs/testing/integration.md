@@ -447,7 +447,7 @@ await host.ForceAllMartenDaemonActivityToCatchUpAsync(CancellationToken.None, Ca
 // Start them again
 await host.ResumeAllDaemonsAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L312-L330' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_force_all_daemon_activity_to_catch_up' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L311-L329' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_force_all_daemon_activity_to_catch_up' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `ForceAllMartenDaemonActivityToCatchUpAsync<T>()` overload does the same for an
@@ -481,7 +481,7 @@ if (!result.Reached)
     throw new TimeoutException(result.ToString());
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L335-L352' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_wait_for_projections_in_a_test' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L334-L351' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_wait_for_projections_in_a_test' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Pausing the daemons
@@ -501,7 +501,7 @@ await host.PauseAllDaemonsAsync();
 
 await host.ResumeAllDaemonsAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L357-L367' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_pause_and_resume_daemons' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L356-L366' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_pause_and_resume_daemons' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `PauseAllDaemonsAsync<T>()` pauses an ancillary store's daemons. `ResumeAllDaemonsAsync()` has no ancillary-store overload;
