@@ -334,6 +334,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Database Management', link: '/schema/' },
             { text: 'Schema Migrations', link: '/schema/migrations' },
             { text: 'Exporting Schema Definition', link: '/schema/exporting' },
+            { text: 'Customizing Schema Generation', link: '/schema/authorization' },
             { text: 'Schema Feature Extensions', link: '/schema/extensions' },
             { text: 'Tearing Down Document Storage', link: '/schema/cleaning' },
           ]

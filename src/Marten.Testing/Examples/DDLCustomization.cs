@@ -1,3 +1,6 @@
+using System;
+using System.Threading.Tasks;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -20,20 +23,6 @@ public class DDLCustomization
         #endregion
     }
 
-    public void use_security_definer()
-    {
-        #region sample_customizing_upsert_rights
-        var store = DocumentStore.For(_ =>
-        {
-            // Opt into SECURITY DEFINER permissions
-            _.Advanced.Migrator.UpsertRights = SecurityRights.Definer;
-
-            // The default SECURITY INVOKER permissions
-            _.Advanced.Migrator.UpsertRights = SecurityRights.Invoker;
-        });
-        #endregion
-    }
-
     public void configure_role()
     {
         #region sample_customizing_role
@@ -45,17 +34,19 @@ public class DDLCustomization
         #endregion
     }
 
-    public void read_templates()
+    public async Task read_templates()
     {
         #region sample_using_ddl_templates
-        var store = DocumentStore.For(_ =>
-        {
-            // let's say that you have template files in a
-            // "templates" directory under the root of your
-            // application
-            _.Advanced.Migrator.ReadTemplatesAsync("templates");
+        var options = new StoreOptions();
+        options.Connection("some connection string");
 
-        });
+        // let's say that you have template files in a
+        // "templates" directory under the root of your
+        // application. Reading them is asynchronous, so
+        // read them before you build the store
+        await options.Advanced.Migrator.ReadTemplatesAsync("templates");
+
+        var store = new DocumentStore(options);
         #endregion
     }
 
@@ -69,3 +60,25 @@ public class DDLCustomization
         #endregion
     }
 }
+
+#region sample_configure_template_with_attribute
+[DdlTemplate("readonly")]
+public class AuditRecord
+{
+    public Guid Id { get; set; }
+}
+#endregion
+
+#region sample_configure_template_with_configure_marten
+public class LegacyInvoice
+{
+    public Guid Id { get; set; }
+
+    // Marten calls a public static ConfigureMarten(DocumentMapping) method
+    // on a document type when it builds that type's mapping
+    public static void ConfigureMarten(DocumentMapping mapping)
+    {
+        mapping.DdlTemplate = "readonly";
+    }
+}
+#endregion

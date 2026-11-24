@@ -111,7 +111,7 @@ In all of the usages shown below, the database migration functionality is able t
 ## Exporting Database Migrations
 
 It's somewhat unlikely that any self-respecting DBA is going to allow your application to have rights to execute schema changes programmatically,
-so we're stuck needing some kind of migration strategy as we add document types, Javascript transformations, and retrofit indexes. Fortunately, we've got
+so we're stuck needing some kind of migration strategy as we add document types, change their configuration, and retrofit indexes. Fortunately, we've got
 a strong facility to detect and generate database migration scripts.
 
 In usage, you would first need to tell Marten about every possible document type and any event store usage so that Marten

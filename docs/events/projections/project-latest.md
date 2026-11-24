@@ -113,7 +113,7 @@ identically to `FetchLatest` — it returns the current committed state.
 - **Read-only sessions**: `ProjectLatest` is only available on `IDocumentSession.Events`
   (not `IQuerySession.Events`) because only a document session has pending events to project.
 
-## ProjectLatestForCommit — The Aggregate as the Commit Writes It
+## ProjectLatestForCommit — The Aggregate as the Commit Writes It {#project-latest-for-commit}
 
 Use `ProjectLatestForCommit` when something written or returned before the commit has to match what a
 read after the commit returns. Two common cases:
@@ -192,7 +192,7 @@ public record Shipment: TrackedShipment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/project_latest_for_commit_tests.cs#L28-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_project_latest_for_commit_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/project_latest_for_commit_tests.cs#L29-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_project_latest_for_commit_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Using it:
@@ -207,7 +207,7 @@ stream.AppendOne(new ShipmentScanned("Leeds"));
 // and SaveChangesAsync() keeps them
 var shipment = await session.Events.ProjectLatestForCommit<Shipment>(shipmentId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/project_latest_for_commit_tests.cs#L358-L367' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_project_latest_for_commit' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/project_latest_for_commit_tests.cs#L376-L385' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_project_latest_for_commit' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### What It Guarantees

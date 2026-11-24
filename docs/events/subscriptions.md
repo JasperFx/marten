@@ -559,7 +559,7 @@ If your pages are legitimately slow, raise the timeout rather than discover this
 opts.Projections.StopAndDrainTimeout = 30.Seconds();
 ```
 
-See [Graceful Shutdown and the Drain Timeout](/events/projections/async-daemon#graceful-shutdown-and-the-drain-timeout-)
+See [Graceful Shutdown and the Drain Timeout](/events/projections/async-daemon#graceful-shutdown-and-the-drain-timeout)
 for the full picture, including why this bound is what stops a node that has lost a shard's lock from fighting
 the new owner over progression.
 
