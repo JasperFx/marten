@@ -108,6 +108,33 @@ public async Task update_with_stale_version_standard()
 When one document fails the check, `SaveChangesAsync()` throws `ConcurrencyException` and nothing in the batch is
 committed. When several fail, it throws an `AggregateException` containing one `ConcurrencyException` per document.
 
+### Supplying the Expected Version
+
+The sample above relies on the session remembering the version each document was loaded at. When the version comes
+from somewhere else, for example a client that sent back the version it read earlier, pass it to
+`IDocumentOperations.UpdateExpectedVersion()` along with the document:
+
+<!-- snippet: sample_docs_update_expected_version -->
+<a id='snippet-sample_docs_update_expected_version'></a>
+```cs
+await using var session = store.LightweightSession();
+
+shop.Name = "Mozart's";
+
+// Typically the version came back to you from a client, an ETag for example,
+// or from session.MetadataForAsync(shop) when the document was loaded
+session.UpdateExpectedVersion(shop, versionTheClientLoaded);
+
+// Throws ConcurrencyException if mt_version is no longer versionTheClientLoaded
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L145-L158' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_update_expected_version' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The document is written as an upsert with that version as the expected one, and `SaveChangesAsync()` throws
+`ConcurrencyException` if the stored `mt_version` is anything else. You can read a document's current version with
+`session.MetadataForAsync(doc)`, whose `CurrentVersion` holds it.
+
 ## Using IVersioned
 
 Marten has an `IVersioned` marker interface. If your document type implements this interface as shown below:
@@ -294,3 +321,36 @@ Not sure why you'd do this on purpose, but you can happily supply a version to `
 that is not the current version + 1 as long as that supplied version is greater than the current version, Marten will persist
 the document with that new version. This was done purposely to support projected aggregations in the event sourcing functionality.
 :::
+
+## Turning Off the Checks for One Session
+
+Both mechanisms can be switched off for a single session, which is useful for an administrative fix-up or a data
+migration that is supposed to win regardless of what is in the database. Open the session with
+`SessionOptions.ConcurrencyChecks` set to `ConcurrencyChecks.Disabled` (the default is `Enabled`).
+`IDocumentSession.Concurrency` reports the setting a session was opened with:
+
+<!-- snippet: sample_docs_disable_concurrency_checks_for_a_session -->
+<a id='snippet-sample_docs_disable_concurrency_checks_for_a_session'></a>
+```cs
+await using var session = store.LightweightSession(new SessionOptions
+{
+    ConcurrencyChecks = ConcurrencyChecks.Disabled
+});
+
+// IDocumentSession.Concurrency reports what the session was opened with
+Console.WriteLine(session.Concurrency); // Disabled
+
+// Overwrites the stored document, whatever version or revision it is at now
+session.Store(shop);
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L125-L139' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_disable_concurrency_checks_for_a_session' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+In a session like that:
+
+- `Store()` overwrites the stored document without checking its Guid version or its numeric revision.
+- `Update()` skips the Guid version check.
+- In a dirty-tracked session, changes to loaded documents are written the same way, without a check.
+- A check you ask for explicitly still runs. `UpdateExpectedVersion()` with a stale version still throws
+  `ConcurrencyException`, and `UpdateRevision()` still checks the revision you pass.

@@ -256,6 +256,29 @@ using (var session = theStore.QuerySession())
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L16-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+To forget every document of one type at once, use `IDocumentSession.EjectAllOfType(Type)`. It removes the documents of
+that type from the identity map and from dirty tracking, and drops the pending `Store()`, `Insert()` and `Update()`
+operations for that exact type. Pending deletes and patches for the type, and everything queued for other types, are
+left alone. A lightweight session has no identity map, so there it only drops the pending operations.
+
+<!-- snippet: sample_docs_eject_all_of_type -->
+<a id='snippet-sample_docs_eject_all_of_type'></a>
+```cs
+await using var session = store.IdentitySession();
+
+session.Store(order);
+session.Store(shop);
+
+// Forget every ApiDocsOrder: out of the identity map, and the pending
+// store/insert/update operations for that type are dropped
+session.EjectAllOfType(typeof(ApiDocsOrder));
+
+// Only the coffee shop is written
+await session.SaveChangesAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L241-L255' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_eject_all_of_type' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Ejecting all pending changes from a Session
 
 If you want to remove all queued operations such as document changes or event operations in an unit of work, you can use `IDocumentSession.EjectAllPendingChanges()`. Note that calling this method will not impact any existing identity map i.e. all document stores. Here is a sample from one of our tests:
@@ -423,6 +446,40 @@ Nothing is written until you call `SaveChangesAsync()`, which sends every queued
 ## Adding Listeners
 
 See [Diagnostics and Instrumentation](/diagnostics) for information about using document session listeners.
+To add a listener to one session only, use `SessionOptions.ListenAt()`, shown in the next section.
+
+## More Session Options
+
+`SessionOptions` has a few fluent helpers and switches beyond the ones shown elsewhere on this page:
+
+<!-- snippet: sample_docs_session_options_helpers -->
+<a id='snippet-sample_docs_session_options_helpers'></a>
+```cs
+var options = new SessionOptions
+    {
+        // Open a session for the default tenant even when
+        // StoreOptions.Advanced.DefaultTenantUsageEnabled is false
+        AllowAnyTenant = true
+    }
+    // Same as setting SessionOptions.Tracking
+    .WithTracking(DocumentTracking.IdentityOnly)
+    // A listener for this session only, on top of the store-wide StoreOptions.Listeners
+    .ListenAt(auditListener);
+
+await using var session = store.OpenSession(options);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L221-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_session_options_helpers' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+* `AllowAnyTenant` lets the session open for the default tenant on a store with
+  `StoreOptions.Advanced.DefaultTenantUsageEnabled = false`, which otherwise throws `DefaultTenantUsageDisabledException`
+  (see [multi-tenancy](/documents/multi-tenancy)). Database-per-tenant configurations turn that setting off for you.
+* `WithTracking(DocumentTracking)` sets `SessionOptions.Tracking` and returns the options. `None` is a lightweight
+  session, `IdentityOnly` an identity session and `DirtyTracking` a dirty-tracked session.
+* `ListenAt(IDocumentSessionListener)` adds a listener for this session only. The session gets the store's listeners
+  from `StoreOptions.Listeners` and then these.
+* `ConcurrencyChecks` turns optimistic concurrency checks off for the session. See
+  [optimistic concurrency](/documents/concurrency#turning-off-the-checks-for-one-session).
 
 ## Enlisting in Existing Transactions
 

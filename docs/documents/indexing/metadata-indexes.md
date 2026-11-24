@@ -33,6 +33,56 @@ DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L18-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-last-modified-via-fi' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Created At
+
+For `CreatedSince(DateTimeOffset)` or `CreatedBefore(DateTimeOffset)` (see [querying by created time](/documents/metadata#querying-by-created-time)),
+Marten can create a btree index on the `mt_created_at` column, with `IndexCreatedAt()` in the fluent interface or the
+`[IndexedCreatedAt]` attribute.
+
+::: warning
+Neither of these turns the `mt_created_at` column on, and the column is opt in. Turn it on as well, with
+`Metadata(m => m.CreatedAt.Enabled = true)` or a `[CreatedAtMetadata]` member, or applying the schema fails because the
+index refers to a column that does not exist.
+:::
+
+Using the fluent interface:
+
+<!-- snippet: sample_docs_index_created_at_via_fluent_interface -->
+<a id='snippet-sample_docs_index_created_at_via_fluent_interface'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    opts.Schema.For<ApiDocsOrder>()
+        // IndexCreatedAt() does not turn the column on by itself
+        .Metadata(m => m.CreatedAt.Enabled = true)
+        .IndexCreatedAt();
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L189-L201' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_index_created_at_via_fluent_interface' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Or the attribute:
+
+<!-- snippet: sample_docs_index_created_at_via_attribute -->
+<a id='snippet-sample_docs_index_created_at_via_attribute'></a>
+```cs
+// mt_created_at is opt in, so turn the column on as well as indexing it
+[IndexedCreatedAt]
+public class ApiDocsAuditEntry
+{
+    public Guid Id { get; set; }
+
+    [CreatedAtMetadata]
+    public DateTimeOffset CreatedAt { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L82-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_index_created_at_via_attribute' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`IndexCreatedAt()` takes an optional `Action<DocumentIndex>` to customize the index, like `IndexLastModified()`.
+
 ## Tenant Id
 
 When working with multi-tenancy tables, you might wonder if you ever need a single index on the tenantId column, given that it's already the first part of your composite primary key. While the composite key is often sufficient for most queries, there are cases where a dedicated index on just the tenant Id could still be beneficial for performance on specific query's. In that case you can ask Marten to create an index for you on the document's `tenant_id` metadata column either using `IndexedTenantIdAttribute`: 

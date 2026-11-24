@@ -170,6 +170,72 @@ var store = DocumentStore.For(opts =>
 Note that mapping a document member to a metadata column will implicitly enable that metadata column collection.
 :::
 
+### Mapping Metadata with Attributes
+
+Instead of `MapTo()`, you can mark the member on the document type itself. Each attribute in the `Marten.Schema`
+namespace maps one metadata column, and like `MapTo()` it turns that column on:
+
+| Attribute                          | Column             | Member type        |
+| ---------------------------------- | ------------------ | ------------------ |
+| `[CreatedAtMetadata]`              | `mt_created_at`    | `DateTimeOffset`   |
+| `[LastModifiedMetadata]`           | `mt_last_modified` | `DateTimeOffset`   |
+| `[TenantIdMetadata]`               | `tenant_id`        | `string`           |
+| `[IsSoftDeletedMetadataAttribute]` | `mt_deleted`       | `bool`             |
+| `[SoftDeletedAtMetadata]`          | `mt_deleted_at`    | `DateTimeOffset?`  |
+| `[DocumentTypeMetadata]`           | `mt_doc_type`      | `string`           |
+
+<!-- snippet: sample_docs_metadata_attributes -->
+<a id='snippet-sample_docs_metadata_attributes'></a>
+```cs
+[SoftDeleted]
+public class ApiDocsInvoice
+{
+    public Guid Id { get; set; }
+
+    // Filled in from mt_created_at. Mapping the member turns the column on
+    [CreatedAtMetadata]
+    public DateTimeOffset CreatedAt { get; set; }
+
+    // Filled in from mt_last_modified
+    [LastModifiedMetadata]
+    public DateTimeOffset LastModified { get; set; }
+
+    // Filled in from mt_deleted. The attribute class is IsSoftDeletedMetadataAttributeAttribute,
+    // so it has to be written with its "Attribute" suffix
+    [IsSoftDeletedMetadataAttribute]
+    public bool IsDeleted { get; set; }
+
+    // Filled in from mt_deleted_at
+    [SoftDeletedAtMetadata]
+    public DateTimeOffset? DeletedAt { get; set; }
+}
+
+// The tenant id column only exists on a multi-tenanted document type
+[MultiTenanted]
+public class ApiDocsTenantedInvoice
+{
+    public Guid Id { get; set; }
+
+    // Filled in from tenant_id when the document is loaded
+    [TenantIdMetadata]
+    public string TenantId { get; set; } = string.Empty;
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L44-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_metadata_attributes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Some things to know:
+
+* The member has to be exactly the type in the table, or the mapping throws `ArgumentOutOfRangeException`.
+* The attribute for `mt_deleted` is a class named `IsSoftDeletedMetadataAttributeAttribute`, so `[IsSoftDeletedMetadata]`
+  does not compile. Write it as `[IsSoftDeletedMetadataAttribute]`.
+* Marten checks the document type when it builds the mapping, and throws `InvalidDocumentException` when
+  `[TenantIdMetadata]` is on a type that is not multi-tenanted, `[DocumentTypeMetadata]` is on a type that is not part of a
+  [document hierarchy](/documents/hierarchies), or either soft-delete attribute is on a type that is not
+  [soft-deleted](/documents/deletes#soft-deletes).
+* The version and revision columns have their own attribute, `[Version]`, covered in
+  [optimistic concurrency](/documents/concurrency).
+
 For correlation, causation, and last modified tracking, an easy way to do this is to
 just implement the Marten `ITracked` interface as shown below:
 
@@ -255,6 +321,41 @@ public async Task sample_usage(IQuerySession session)
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/last_modified_queries.cs#L35-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_last_modified_queries' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Querying by Created Time
+
+The `mt_created_at` column has a matching pair of operators, in the `Marten.Linq.CreatedAt` namespace:
+
+* `CreatedSince(DateTimeOffset)` - Return only documents created since a specific time (not inclusive)
+* `CreatedBefore(DateTimeOffset)` - Return only documents created before a specific time (not inclusive)
+
+`mt_created_at` is opt in, so turn the column on for the document type first. Without it, the query fails in
+PostgreSQL because the column does not exist:
+
+<!-- snippet: sample_docs_created_at_queries -->
+<a id='snippet-sample_docs_created_at_queries'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // mt_created_at is opt in
+    opts.Schema.For<ApiDocsOrder>().Metadata(m => m.CreatedAt.Enabled = true);
+});
+
+await using var session = store.QuerySession();
+
+var oneHourAgo = DateTimeOffset.UtcNow.AddHours(-1);
+var oneDayAgo = DateTimeOffset.UtcNow.AddDays(-1);
+
+// Orders created between one day and one hour ago
+var orders = await session.Query<ApiDocsOrder>()
+    .Where(x => x.CreatedSince(oneDayAgo))
+    .Where(x => x.CreatedBefore(oneHourAgo))
+    .ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L163-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_created_at_queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Indexing

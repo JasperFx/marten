@@ -236,6 +236,31 @@ What this means for the ids you see:
 HiLo ids were never guaranteed to be gap-free, since several processes share one sequence and a process that stops loses the rest
 of its block. Use a database sequence of your own if you need contiguous numbers.
 
+### `MaxAdvanceToNextHiAttempts` {#max-advance-to-next-hi-attempts}
+
+`HiloSettings.MaxAdvanceToNextHiAttempts` (default `30`) is how many times a sequence calls `mt_get_next_hi` for one block
+before it gives up with `HiloSequenceAdvanceToNextHiAttemptsExceededException`. It is set with the other HiLo defaults, or
+per document type through `HiloSettings()` in the fluent interface (the `[HiloSequence]` attribute does not expose it):
+
+<!-- snippet: sample_docs_hilo_max_advance_to_next_hi_attempts -->
+<a id='snippet-sample_docs_hilo_max_advance_to_next_hi_attempts'></a>
+```cs
+using var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // The default is 30
+    opts.Advanced.HiloSequenceDefaults.MaxAdvanceToNextHiAttempts = 50;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L206-L216' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_hilo_max_advance_to_next_hi_attempts' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+As of Marten 10 there is normally nothing to retry. The old `mt_get_next_hi` returned `-1` to a caller that another caller
+overtook, and that is what the attempts were spent on. The Marten 10 function is a single atomic increment that always
+returns a block ([#5938](https://github.com/JasperFx/marten/issues/5938)), so the first attempt succeeds. The setting only
+matters on a database that still has the pre-10 function, before the schema migration that replaces it has been applied.
+
 ## String Identity
 
 If you use a document type with a `string` identity member, you will be responsible for supplying the
