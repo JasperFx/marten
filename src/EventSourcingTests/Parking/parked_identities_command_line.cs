@@ -180,9 +180,11 @@ public class parked_identities_command_line: OneOffConfigurationsContext
         var lines = output.Split('\n').Where(x => x.Contains(stream.ToString("D"))).ToList();
         lines.Count.ShouldBe(2, output);
 
-        // NaturalKeyLedger's row shows the key the ledger was opened with, GuidLedger's row leaves it blank
-        lines.Single(x => x.Contains(nameof(NaturalKeyLedger))).ShouldContain("A-1");
-        lines.Single(x => x.Contains($" {nameof(GuidLedger)} ")).ShouldNotContain("A-1");
+        // NaturalKeyLedger's row shows the key the ledger was opened with, GuidLedger's row leaves it blank.
+        // Case-sensitive on purpose: both rows carry the stream id, and a lower-case Guid such as
+        // "34e22cda-1ed4-..." contains "a-1", which Shouldly's default case-insensitive comparison matched
+        lines.Single(x => x.Contains(nameof(NaturalKeyLedger))).ShouldContain("A-1", Case.Sensitive);
+        lines.Single(x => x.Contains($" {nameof(GuidLedger)} ")).ShouldNotContain("A-1", Case.Sensitive);
     }
 
     [Fact]
