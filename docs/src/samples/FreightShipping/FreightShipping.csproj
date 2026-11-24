@@ -10,6 +10,8 @@
     <ItemGroup>
       <PackageReference Include="Marten" />
       <PackageReference Include="WolverineFx.Marten" />
+      <!-- Wolverine generates its handler code at runtime in Development -->
+      <PackageReference Include="WolverineFx.RuntimeCompilation" />
     </ItemGroup>
 
     <ItemGroup>

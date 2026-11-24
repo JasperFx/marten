@@ -12,9 +12,9 @@ AOT publishing is the right choice for serverless / Lambda / fast-restart worklo
 
 ::: tip Prerequisites
 
-- .NET 9 or .NET 10 SDK
-- Marten 9.0.0-alpha or later
-- JasperFx 2.0 / JasperFx.Events 2.0 / Weasel 9.0 alphas pulled in transitively when you bump `Marten`
+- .NET 10 or .NET 11 SDK
+- Marten 9.0 or later. This page describes Marten 10
+- JasperFx 3 / JasperFx.Events 3 / Weasel 10, which Marten 10 pulls in transitively
 - The System.Text.Json-based serializer (`UseSystemTextJsonForSerialization`) — Newtonsoft.Json is not AOT-compatible (see [The Newtonsoft.Json escape hatch](#the-newtonsoft-json-escape-hatch))
 - `Marten.SourceGenerator` if you use compiled queries — see the [Marten.SourceGenerator README](https://github.com/JasperFx/marten/blob/master/src/Marten.SourceGenerator/README.md)
 
@@ -153,7 +153,7 @@ documentation for the package reference and the details.
 
 ## What works, what doesn't
 
-As of Marten 9.0.0-alpha:
+As of Marten 10:
 
 ### Works (AOT-clean)
 
@@ -258,12 +258,12 @@ services.AddMarten(opts =>
 
 Things to watch when switching:
 
-- **JSON property casing** — STJ defaults to `camelCase` for properties; Newtonsoft typically defaults to PascalCase. Override with `JsonSerializerOptions { PropertyNamingPolicy = null }` if your existing on-disk JSON uses PascalCase keys.
+- **JSON property casing** — Marten's System.Text.Json serializer writes member names as declared unless you pass a `Casing`, the same as its Newtonsoft serializer, so existing PascalCase JSON reads unchanged. If you passed a `Casing` to `UseNewtonsoftForSerialization()`, pass the same one to `UseSystemTextJsonForSerialization()`.
 - **Enum handling** — `EnumStorage.AsString` works in both; STJ uses the `JsonStringEnumConverter` under the hood.
 - **Polymorphic types** — STJ requires `[JsonDerivedType]` annotations or a source-gen `JsonSerializerContext` for type hierarchies. Newtonsoft's `TypeNameHandling` doesn't have a direct equivalent in STJ.
 - **`DateTime` formatting** — STJ uses round-trip ISO-8601 by default; if your stored JSON was emitted by Newtonsoft with non-default settings, double-check the read path.
 
-You can mix the two at the document level — register one document type with one serializer and another with a different one — but the AOT publish requires the STJ path to be the active one for the document types reached by your AOT-published code paths.
+Marten uses one serializer for the whole store, documents and events alike, so the switch covers every type at once.
 
 ## Verifying your app is AOT-clean
 

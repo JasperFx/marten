@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    The package versions the tutorial is written against. This file stops NuGet from using the Marten
+    repository's Directory.Packages.props, so the sample builds the same way inside the repository as it does
+    from the freight-shipping-tutorial.zip download. Bump these with each Marten and Wolverine release.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Marten" Version="10.0.0-rc.2" />
+    <PackageVersion Include="WolverineFx.Marten" Version="7.0.0-beta.2" />
+    <PackageVersion Include="WolverineFx.RuntimeCompilation" Version="7.0.0-beta.2" />
+  </ItemGroup>
+</Project>

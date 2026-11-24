@@ -1,0 +1,7 @@
+<Project>
+  <!--
+    The tutorial sample is downloaded on its own as freight-shipping-tutorial.zip, so it must not inherit the
+    Marten repository's build settings. This file stops MSBuild from looking further up the directory tree,
+    and the sample builds the same way inside the repository as it does from the zip.
+  -->
+</Project>

@@ -47,6 +47,11 @@ Configuration:
 
 This ensures that your projection daemon is managed by Wolverine’s distributed coordinator.
 
+The sample runs in the `Development` environment and references the `WolverineFx.RuntimeCompilation` package, so
+Wolverine generates the code for its handlers when it starts. In any other environment, Wolverine 7 expects that code
+to be generated ahead of time with `dotnet run -- codegen write`, and fails at startup without it. See Wolverine's
+[code generation guide](https://wolverinefx.net/guide/codegen.html).
+
 ### Summary
 
 - **Messaging + Aggregates**: Wolverine makes it easy to process commands, generate events, and send follow-up messages, all with transactional guarantees.

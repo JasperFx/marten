@@ -56,7 +56,7 @@ public static class EventSourcedAggregate
         var sid = Guid.NewGuid();
         var evt1 = new ShipmentScheduled(sid, "Los Angeles", "Tokyo", DateTime.UtcNow);
         session2.Events.StartStream<FreightShipment>(sid, evt1);
-        await session.SaveChangesAsync();  // Inserts initial ShipmentView
+        await session2.SaveChangesAsync();  // Inserts initial ShipmentView
 
         var evt2 = new ShipmentPickedUp(DateTime.UtcNow.AddHours(2));
         session2.Events.Append(sid, evt2);
