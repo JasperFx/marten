@@ -74,6 +74,39 @@ public class MyStoreOptions: StoreOptions
 This strategy might be beneficial if you need to share Marten configuration across different applications
 or testing harnesses or custom migration tooling.
 
+## Restoring Earlier Defaults
+
+Each major version of Marten has changed some `StoreOptions` defaults. If you are upgrading and want the
+previous behavior back while you work through the changes, there is one call per major version:
+
+<!-- snippet: sample_restoring_earlier_defaults -->
+<a id='snippet-sample_restoring_earlier_defaults'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Put back every default that Marten 10 changed...
+    opts.RestoreV9Defaults();
+
+    // ...and, to go back two majors, the ones Marten 9 changed
+    opts.RestoreV8Defaults();
+
+    // Your own overrides go after the restore calls
+    opts.Events.EnableExtendedProgressionTracking = true;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L72-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_restoring_earlier_defaults' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+* `RestoreV9Defaults()` puts back every `StoreOptions` default that Marten 10 changed. See
+  [Restoring V9 defaults](/migration-guide#restoring-v9-defaults) for the list.
+* `RestoreV8Defaults()` puts back the `StoreOptions` defaults that Marten 9 changed. See
+  [Restoring V8 defaults](/migration-guide#restoring-v8-defaults) for the list, and for the two Marten 9 changes it cannot reach.
+
+`RestoreV9Defaults()` does not call `RestoreV8Defaults()`, so call both to go back two major versions. Both assign
+the settings they cover, so call them first and put your own settings after them.
+
 ## Explicit Document Configuration with MartenRegistry
 
 While there are some limited abilities to configure storage with attributes, the most complete option right now
@@ -192,6 +225,107 @@ public class GinIndexedAttribute: MartenAttribute
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/GinIndexedAttribute.cs#L10-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ginindexedattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+A custom attribute can also override `Register()`. That method is only called by the automatic type discovery
+described in the next section, which hands it each type it finds carrying the attribute.
+
+## Automatic Type Discovery with AutoRegister()
+
+Rather than listing every document and event type in your configuration, you can mark the types themselves
+and have Marten find them. `StoreOptions.AutoRegister()` scans the application assembly for public, concrete types
+decorated with a `MartenAttribute`, and calls that attribute's `Register()` method for each one:
+
+<!-- snippet: sample_auto_register_with_defaults -->
+<a id='snippet-sample_auto_register_with_defaults'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Scans the application assembly for types decorated with
+    // [MartenDocument], [MartenEvent] or any other MartenAttribute
+    // that overrides Register()
+    opts.AutoRegister();
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L26-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_auto_register_with_defaults' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Marten ships two attributes made for this. `[MartenDocument]` registers a document type, and `[MartenEvent]`
+registers an event type, optionally under an alias of your choosing:
+
+<!-- snippet: sample_marten_document_and_event_attributes -->
+<a id='snippet-sample_marten_document_and_event_attributes'></a>
+```cs
+// Registered as a document type by AutoRegister()
+[MartenDocument]
+public class ConfigDocsCustomer
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+// Registered as an event type by AutoRegister()
+[MartenEvent]
+public record ConfigDocsCustomerRenamed(Guid CustomerId, string Name);
+
+// Registered as an event type, stored under the alias "customer_closed"
+[MartenEvent(Alias = "customer_closed")]
+public record ConfigDocsCustomerClosed(Guid CustomerId);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L332-L350' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_document_and_event_attributes' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`[DatabaseSchemaName]`, `[DocumentAlias]`, `[SoftDeleted]` and `[UseOptimisticConcurrency]` derive from
+`[MartenDocument]`, so a document type carrying any of them is registered by the scan as well.
+
+The overload taking a `MartenAssemblyScanner` adds more assemblies to the scan, and registers event types by a
+rule instead of one attribute at a time:
+
+<!-- snippet: sample_auto_register_with_scanner -->
+<a id='snippet-sample_auto_register_with_scanner'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Only needed when Assembly.GetEntryAssembly() is not your
+    // application, a test runner for example
+    opts.ApplicationAssembly = typeof(ConfigDocsOrderPlaced).Assembly;
+
+    opts.AutoRegister(x =>
+    {
+        // Scan this assembly too, in addition to the application assembly
+        x.Assembly(typeof(ConfigDocsCustomer).Assembly);
+
+        // Every public, concrete type that implements or inherits
+        // this type is registered as an event type
+        x.EventsImplement<IConfigDocsDomainEvent>();
+
+        // Or decide for yourself
+        x.EventsMatch(type => type.Name.EndsWith("Happened"));
+    });
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L43-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_auto_register_with_scanner' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+| Scanner method | What it does |
+| --- | --- |
+| `Assembly(assembly)` | Scans this assembly as well as the application assembly |
+| `EventsImplement<T>()` / `EventsImplement(type)` | Registers every scanned type that can be cast to `T` as an event type |
+| `EventsMatch(filter)` | Registers every scanned type that your filter accepts as an event type |
+
+Some things to know about the scan:
+
+* It runs when you call `AutoRegister()`, not later when the store is built.
+* The application assembly is `StoreOptions.ApplicationAssembly`, or `Assembly.GetEntryAssembly()` when that is not set. Under
+  `AddMarten()`, the application assembly from the JasperFx options is only read after your configuration has run,
+  so set `ApplicationAssembly` yourself before calling `AutoRegister()` when the entry assembly is not your
+  application, as it is not under a test runner.
+* Only public types are considered, including public nested types. Abstract types, interfaces and open generic types are skipped.
+* The scan also visits every public compiled query type, and throws an `ArgumentOutOfRangeException` for one
+  that has no parameterless constructor.
+
 ## Embedding Configuration in Document Types
 
 Lastly, Marten can examine the document types themselves for a `public static ConfigureMarten()` method
@@ -211,7 +345,7 @@ public class ConfiguresItself
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L797-L809' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-generic' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L799-L811' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-generic' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `DocumentMapping` type is the core configuration class representing how a document type is persisted or
@@ -235,7 +369,7 @@ public class ConfiguresItselfSpecifically
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L811-L824' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-specifically' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L813-L826' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuremarten-specifically' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Document Policies
@@ -285,7 +419,7 @@ Remarks: Given the sample, you might not want to let tenancy concerns propagate 
 ## Configuring the Database Schema
 
 By default, Marten will put all database schema objects into the main _public_ schema. If you want to override this behavior,
-use the `StoreOptions.DocumentSchemaName` property when configuring your `IDocumentStore`:
+use the `StoreOptions.DatabaseSchemaName` property when configuring your `IDocumentStore`:
 
 <!-- snippet: sample_setting_database_schema_name -->
 <a id='snippet-sample_setting_database_schema_name'></a>
@@ -318,14 +452,20 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDatabaseSchemaName.cs#L22-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_schema_by_document_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+Marten lower-cases the name you give `DatabaseSchemaName`, and cuts it to PostgreSQL's 63 character identifier
+limit. PostgreSQL would truncate a longer name anyway, so this only makes Marten look for its objects under the
+name the server actually stored. Two long names that share their first 63 characters still end up in the same schema.
+
 ## PostgreSQL Limits on Naming
 
-PostgreSQL has a default limitation on the length of database object names (64). This can be overridden in a
-PostgreSQL database by [setting the NAMEDATALEN property](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
+PostgreSQL limits the names of database objects to 63 bytes, one less than its `NAMEDATALEN` setting, which is 64
+unless your PostgreSQL server was compiled with a different value. See
+[the PostgreSQL documentation on identifiers](https://www.postgresql.org/docs/current/static/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
 
-This can unfortunately have a negative impact on Marten's ability to detect changes to the schema configuration when PostgreSQL quietly
-truncates the name of database objects. To guard against this, Marten will now warn you if a schema name exceeds the `NAMEDATALEN` value,
-but you do need to tell Marten about any non-default length limit like so:
+PostgreSQL quietly truncates a longer name, which would leave Marten unable to match the objects it finds in the
+database against its configuration. To guard against this, Marten checks the names of the objects it is about to
+create and throws a `PostgresqlIdentifierTooLongException` for any name of 64 characters or more. That limit comes
+from `NameDataLength`, which defaults to 64, so if your server was built with a different `NAMEDATALEN`, tell Marten:
 
 <!-- snippet: sample_setting-name-data-length -->
 <a id='snippet-sample_setting-name-data-length'></a>
@@ -337,8 +477,64 @@ var store = DocumentStore.For(_ =>
     _.NameDataLength = 100;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L330-L339' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L323-L332' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting-name-data-length' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Other StoreOptions Settings
+
+These are less commonly needed settings directly on `StoreOptions`, or on `StoreOptions.Advanced` where noted:
+
+<!-- snippet: sample_less_common_store_options -->
+<a id='snippet-sample_less_common_store_options'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Lower-cased, and cut to PostgreSQL's 63 character identifier limit
+    opts.DatabaseSchemaName = "Billing";
+
+    // Names the store in monitoring and diagnostics. Defaults to "Main"
+    opts.StoreName = "Billing";
+
+    // The Event Model this store's projections contribute their slices to
+    opts.EventModelName = "Billing";
+
+    // How many operations SaveChangesAsync() sends to PostgreSQL in one
+    // batched command. Defaults to 500
+    opts.UpdateBatchSize = 250;
+
+    // How long ApplyAllDatabaseChangesOnStartup() waits for the migration
+    // advisory lock. Defaults to 10 seconds
+    opts.ApplyChangesLockTimeout = 30.Seconds();
+
+    // Applied to the serializer now, and again to any serializer that
+    // replaces it later in the configuration
+    opts.Advanced.ModifySerializer(serializer =>
+    {
+        if (serializer is SystemTextJsonSerializer stj)
+        {
+            stj.Configure(o => o.Converters.Add(new JsonStringEnumConverter()));
+        }
+    });
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L113-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_less_common_store_options' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+| Member | Default | What it does |
+| --- | --- | --- |
+| `DatabaseSchemaName` | `public` | The schema for Marten's objects, unless a document type names its own. Lower-cased, and cut to 63 characters ([more above](#configuring-the-database-schema)) |
+| `StoreName` | `Main` | Names the store. It becomes the store's identity and its `marten://` subject URI, which monitoring tools such as CritterWatch use to tell stores apart, and the identifier of a single-database store's database. A store added with `AddMartenStore<T>()` is always named after `T`, whatever you set here |
+| `EventModelName` | `null` | Which Event Model this store's projections contribute their slices to. See [Contributing to the Event Model](/configuration/hostbuilder#contributing-to-the-event-model) |
+| `UpdateBatchSize` | `500` | The most operations Marten sends to PostgreSQL in one batched command. A `SaveChangesAsync()` with more is sent as several commands, and the async daemon pages its projection updates by the same number |
+| `ApplyChangesLockTimeout` | 10 seconds | How long `ApplyAllDatabaseChangesOnStartup()` keeps trying for the advisory lock that stops two nodes migrating at once. See [Schema Migrations](/schema/migrations#applying-changes-at-startup) |
+| `ApplyChangesLockId` | `4004` | The id of that advisory lock |
+| `ResourceMigrationFailureMode` | the JasperFx profile's value, `FailFast` | Whether a failed migration at startup stops the host. See [Schema Migrations](/schema/migrations#applying-changes-at-startup) |
+| `DisableNpgsqlLogging` | `true` | Keeps Npgsql's own logging out of your logs. Set it to `false` to forward Npgsql's logging to the application's `ILoggerFactory` under `AddMarten()` |
+| `ConfigureNpgsqlDataSourceBuilder(configure)` | | Applies `configure` to every `NpgsqlDataSourceBuilder` Marten creates, including the ones for tenant databases. This is where Npgsql plugins such as `UseVector()` or `UseNetTopologySuite()` are registered, and it is what Marten's own pgvector and PostGIS packages call. A data source you passed to `Connection(NpgsqlDataSource)` is used as it is |
+| `DataSourceFactory(factory, connectionString)` | Marten's own | Replaces the Weasel `INpgsqlDataSourceFactory` that builds an `NpgsqlDataSource` for each connection string Marten uses. The optional connection string is passed to `Connection()` if no connection or tenancy has been configured yet. `ConfigureNpgsqlDataSourceBuilder()` replaces the factory, so set a custom one after it |
+| `Advanced.ModifySerializer(configure)` | | Applies `configure` to the current serializer straight away, and again to any serializer that replaces it later. Meant for extensions that need to adjust the serializer whichever one the application chooses |
 
 ## Prepared Statements and `Max Auto Prepare`
 

@@ -106,14 +106,56 @@ using var store = DocumentStore.For(opts =>
     opts.OpenTelemetry.EnableEventCounters = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OtelSamples.cs#L42-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_track_event_counters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/OtelSamples.cs#L42-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_track_event_counters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This is adding a [Counter](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/metrics-instrumentation) metric named `marten.event.append`.
 This metric has tags for:
 
-* `event_type` - the Marten name for the type of the event within its configuration
+* `event.type` - the Marten name for the type of the event within its configuration
 * `tenant.id` - the tenant id for which the event was captured. If you are not using multi-tenancy, this value will be "*DEFAULT*" and can be just ignored
+
+## Turning the Default Metrics Off
+
+The `marten.event.append` counter and the `marten.fetch_for_writing.events_replayed` histogram below are the two
+metrics Marten 10 turned on by default. `opts.RestoreV9Defaults()` turns both off again, along with the other
+[Marten 10 default changes](/migration-guide#restoring-v9-defaults). To turn them off without the rest, set
+`opts.OpenTelemetry.EnableEventCounters` and `opts.OpenTelemetry.EnableFetchForWritingMetrics` to `false`.
+
+## Custom Counters on Committed Changes
+
+You can add counters of your own that are recorded after every successful `SaveChangesAsync()`. Each one is created
+on the `Marten` meter, and your callback receives the counter and the `IChangeSet` that was just committed, with
+its inserted, updated and deleted documents and its appended events:
+
+<!-- snippet: sample_export_counter_on_change_sets -->
+<a id='snippet-sample_export_counter_on_change_sets'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // A counter on Marten's "Marten" meter, recorded after every
+    // successful SaveChangesAsync()
+    opts.OpenTelemetry.ExportCounterOnChangeSets<long>(
+        "billing.invoices.inserted",
+        "invoices",
+        (counter, commit) =>
+        {
+            var invoices = commit.Inserted.OfType<ConfigDocsInvoice>().Count();
+            if (invoices > 0)
+            {
+                counter.Add(invoices);
+            }
+        });
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L307-L328' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_export_counter_on_change_sets' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The callback runs after the transaction has committed, so an exception thrown from it is logged rather than
+reported to the caller of `SaveChangesAsync()`, and the other counters are still recorded. `marten.event.append` is
+itself one of these counters.
 
 ## FetchForWriting Metrics <Badge type="tip" text="9.24" />
 
@@ -162,3 +204,14 @@ allocates nothing on the heap either.
 ## Async Daemon Metrics and Spans
 
 See [Open Telemetry and Metrics within the Async Daemon documentation](/events/projections/async-daemon.html#open-telemetry-and-metrics).
+
+The daemon also has a counter named `marten.daemon.late_events`, with one count for each event that committed inside a
+sequence range the high water mark had already skipped. It is tagged with:
+
+* `event.type` - the event type's name
+* `tenant.id` - the event's tenant id
+* `skip.reason` - why the range was skipped: `Proven`, `LiveTransaction`, `WallClock` or `Manual`, or `Unknown` when no reason was recorded
+
+A healthy store never records one, so the counter is only created when the first late event is found. It needs
+`opts.Events.EnableAdvancedAsyncTracking`, which is on by default, and `RestoreV9Defaults()` does not turn it off. See
+[Events that commit late](/events/projections/async-daemon#events-that-commit-late).

@@ -212,6 +212,64 @@ services.AddMarten(opts =>
 
 In the option above, Marten is calling the same functionality within an `IHostedService` background task.
 
+### Applying Changes at Startup {#applying-changes-at-startup}
+
+When several nodes start at once, in a rolling deployment for example, they must not migrate the same database at the
+same time. So unless a database is already known to match the configuration, `ApplyAllDatabaseChangesOnStartup()`
+takes a PostgreSQL advisory lock before migrating it, with the id in `StoreOptions.ApplyChangesLockId` (`4004` by
+default). When another node holds the lock, it keeps trying for up to `StoreOptions.ApplyChangesLockTimeout`, which is
+10 seconds by default. Raise it when a node may have to wait out a migration that is still running, such as several
+stores sharing one database in one host, or a large schema. Lowering it trades waiting for a refused startup.
+
+`StoreOptions.ResourceMigrationFailureMode` decides what a failed migration at startup does:
+
+| Mode | At startup |
+| --- | --- |
+| `FailFast` (the default) | A failed migration throws and the host does not start. That includes not getting the lock in time, which fails with "Unable to attain the global lock in time to apply database changes" |
+| `ContinueOnFailures` | A node that does not get the lock in time starts without migrating, on the reasoning that the node holding the lock is applying the same changes. Any other failed migration is logged as an error and startup carries on with the next database, but the `IInitialData` seeders are skipped |
+
+`ContinueOnFailures` does not excuse `AssertDatabaseMatchesConfigurationOnStartup()`: a database that does not match
+still fails startup.
+
+<!-- snippet: sample_startup_migration_failure_mode -->
+<a id='snippet-sample_startup_migration_failure_mode'></a>
+```cs
+services.AddMarten(opts =>
+    {
+        opts.Connection("some connection string");
+
+        // Log a failed startup migration and keep starting, rather than
+        // failing the host. Defaults to the JasperFx profile's value,
+        // which is FailFast unless you change it
+        opts.ResourceMigrationFailureMode = ResourceMigrationFailureMode.ContinueOnFailures;
+
+        // Give a replica longer to win the migration lock from its peers
+        opts.ApplyChangesLockTimeout = 30.Seconds();
+    })
+    .ApplyAllDatabaseChangesOnStartup();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L152-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startup_migration_failure_mode' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+If you leave `ResourceMigrationFailureMode` unset, Marten uses the value from the active JasperFx profile, which is
+`FailFast` unless you change it. That lets you choose it per environment, for every Critter Stack tool in the
+application at once:
+
+<!-- snippet: sample_startup_migration_failure_mode_by_profile -->
+<a id='snippet-sample_startup_migration_failure_mode_by_profile'></a>
+```cs
+services.AddMarten(opts => opts.Connection("some connection string"))
+    .ApplyAllDatabaseChangesOnStartup();
+
+// Or for every Critter Stack tool in the application, by environment
+services.CritterStackDefaults(x =>
+{
+    x.Production.ResourceMigrationFailureMode = ResourceMigrationFailureMode.ContinueOnFailures;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L173-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startup_migration_failure_mode_by_profile' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 Marten's database is also a JasperFx [stateful resource](https://shared-libs.jasperfx.net/cli/resources), so the same migration runs when
 you set up every resource in the application at once. `services.AddResourceSetupOnStartup()` does it at startup, and covers Wolverine's
 message storage and any message broker queues alongside the Marten schema, while the command line equivalent is:

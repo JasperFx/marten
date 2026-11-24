@@ -300,6 +300,69 @@ public async Task add_tenant_database_and_verify_the_daemon_projections_are_runn
 
 The async daemon checks regularly that some node runs every async projection on every known database, so it picks up a new tenant database without a restart.
 
+### Managing tenants at runtime {#managing-master-table-tenants}
+
+`MasterTableTenancy` has methods for the whole life of a tenant. Each takes an optional `CancellationToken`, and each
+creates the `mt_tenant_databases` table first if it does not exist yet:
+
+| Method | What it does |
+| --- | --- |
+| `AddDatabaseRecordAsync(tenantId, connectionString)` | Adds the tenant's row, or updates its connection string, and caches its database straight away |
+| `DisableTenantAsync(tenantId)` | Sets `disabled` on the tenant's row and evicts it from the cache. The row is kept, and the tenant is refused with `DisabledTenantException` until it is enabled again |
+| `EnableTenantAsync(tenantId)` | Clears `disabled`. The tenant is loaded again the next time it is used. Enabling a tenant that has no row does nothing |
+| `AllDisabledAsync()` | Returns the ids of the disabled tenants |
+| `DeleteDatabaseRecordAsync(tenantId)` | Evicts the tenant and deletes its row. The tenant's own database is left alone |
+| `ClearAllDatabaseRecordsAsync()` | Evicts every tenant and deletes every row, which is handy between integration tests |
+
+<!-- snippet: sample_master_table_tenant_lifecycle -->
+<a id='snippet-sample_master_table_tenant_lifecycle'></a>
+```cs
+var tenancy = (MasterTableTenancy)store.Options.Tenancy;
+
+// Add a tenant, or change its connection string
+await tenancy.AddDatabaseRecordAsync("tenant4", "tenant4 connection string", token);
+
+// Switch a tenant off without losing its record. Sessions for it
+// are refused with DisabledTenantException until it is enabled again
+await tenancy.DisableTenantAsync("tenant4", token);
+IReadOnlyList<string> disabled = await tenancy.AllDisabledAsync(token);
+await tenancy.EnableTenantAsync("tenant4", token);
+
+// Delete a tenant's record. Its database is left alone
+await tenancy.DeleteDatabaseRecordAsync("tenant4", token);
+
+// Delete every tenant record, handy between integration tests
+await tenancy.ClearAllDatabaseRecordsAsync(token);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L265-L284' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_tenant_lifecycle' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The same operations are available without the cast through `IDynamicTenantSource<string>`, the store-agnostic tenant
+administration interface from JasperFx that tools such as CritterWatch use. Its `RemoveTenantAsync()` is
+`DeleteDatabaseRecordAsync()`, and its methods take no `CancellationToken`. `AddMarten(opts => ...)` and
+`AddMarten(storeOptions)` register it in the container when the tenancy they configure is dynamic, as master table
+tenancy is:
+
+<!-- snippet: sample_master_table_tenant_lifecycle_from_services -->
+<a id='snippet-sample_master_table_tenant_lifecycle_from_services'></a>
+```cs
+// AddMarten(opts => ...) registers this when the tenancy it
+// configures is dynamic, master table tenancy included
+var tenants = services.GetRequiredService<IDynamicTenantSource<string>>();
+
+await tenants.AddTenantAsync("tenant5", "tenant5 connection string");
+await tenants.DisableTenantAsync("tenant5");
+await tenants.EnableTenantAsync("tenant5");
+
+// Deletes the tenant's record, not its database
+await tenants.RemoveTenantAsync("tenant5");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L289-L302' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_tenant_lifecycle_from_services' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The `AddMarten(sp => ...)` overload used in the master table example above does not register it, and neither does a
+tenancy configured later through `ConfigureMarten()`. Cast `store.Options.Tenancy` instead in those cases.
+
 ## Sharded Multi-Tenancy with Database Pooling <Badge type="tip" text="8.x" />
 
 ::: tip

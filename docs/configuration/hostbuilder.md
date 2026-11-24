@@ -49,10 +49,17 @@ At runtime, when your application needs to resolve `IDocumentStore` for the firs
 
 1. Resolve a `StoreOptions` object from the initial `AddMarten()` configuration
 2. Apply all registered `IConfigureMarten` services to alter that `StoreOptions` object
-3. Apply all registered `IAsyncConfigureMarten` services to alter that `StoreOptions` object
-4. Reads the `IHostEnvironment` for the application if it exists to try to determine the main application assembly and paths for generated code output
-5. Attaches any `IInitialData` services that were registered in the IoC container to the `StoreOptions` object
-6. *Finally*, Marten builds a new `DocumentStore` object using the now configured `StoreOptions` object
+3. Read the application's `JasperFxOptions`, and take from it whatever you did not set on `StoreOptions` yourself:
+   `TenantIdStyle` and `ApplicationAssembly`, and from the active profile, `AutoCreateSchemaObjects` (the profile's
+   `ResourceAutoCreate`) and `ResourceMigrationFailureMode`. JasperFx works out the active profile and the application
+   assembly from the `IHostEnvironment`
+4. Attach any `IInitialData` services that were registered in the IoC container to the `StoreOptions` object
+5. *Finally*, Marten builds a new `DocumentStore` object using the now configured `StoreOptions` object
+
+`IAsyncConfigureMarten` services are applied to the same `StoreOptions` object, but from a hosted service when the
+host starts, which `AddMarten()` registers ahead of the other hosted services. If anything resolves `IDocumentStore`
+before the host starts, the store is built without them. See
+[Using IoC Services for Configuring Marten](#using-ioc-services-for-configuring-marten).
 
 This model is comparable to the .Net `IOptions` model.
 
@@ -136,8 +143,10 @@ services.CritterStackDefaults(x =>
 ## NpgsqlDataSource
 
 ::: tip
-You will have to use the `NpgsqlDataSource` registration if you want to opt into Npgsql logging. See the [Npgsql documentation on logging](https://www.npgsql.org/doc/diagnostics/logging.html?tabs=console)
-for more information.
+Npgsql's own logging is off by default since Marten 9. Set `opts.DisableNpgsqlLogging = false` to have Marten forward it
+to the application's `ILoggerFactory` from any data source Marten builds. A data source you register yourself and pass to
+Marten with `UseNpgsqlDataSource()` keeps whatever logging it was built with. See the
+[Npgsql documentation on logging](https://www.npgsql.org/doc/diagnostics/logging.html?tabs=console) for more information.
 :::
 
 ::: tip
@@ -179,6 +188,36 @@ services.AddMarten()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L356-L366' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource_keyed' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+The registered data source only serves its own connection string. Marten builds data sources for any other
+connection string it needs, such as a tenant database, and another overload of `UseNpgsqlDataSource()` takes the
+function that creates their `NpgsqlDataSourceBuilder`, along with an optional service key:
+
+<!-- snippet: sample_use_npgsql_data_source_with_builder_factory -->
+<a id='snippet-sample_use_npgsql_data_source_with_builder_factory'></a>
+```cs
+services.AddNpgsqlDataSource("some connection string");
+
+services.AddMarten()
+    .UseLightweightSessions()
+
+    // Marten uses the registered NpgsqlDataSource for its own
+    // connection string, and builds data sources for any other
+    // connection string (a tenant database, say) from this factory
+    .UseNpgsqlDataSource(connectionString =>
+    {
+        var builder = new NpgsqlDataSourceBuilder(connectionString);
+        builder.ConnectionStringBuilder.ApplicationName = "billing-service";
+        return builder;
+    });
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L230-L247' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_npgsql_data_source_with_builder_factory' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Your function replaces the one Marten would have used, and it is applied after your `AddMarten()` configuration has run.
+So the data sources it creates get nothing that was added with `ConfigureNpgsqlDataSourceBuilder()` before it, such as
+the pgvector or PostGIS type mappings, and no Npgsql logging from `DisableNpgsqlLogging = false`. Configure those on the
+builder your function returns.
+
 ## Multi-Host Data Source (Read Replicas)
 
 Marten includes support for `NpgsqlMultiHostDataSource`, allowing you to spread queries over your read replicas, potentially improving throughput in read-heavy applications. To get started, your connection string should specify your primary host along a list of replicas, per [Npgsql documentation](https://www.npgsql.org/doc/failover-and-load-balancing.html):
@@ -206,10 +245,32 @@ services.AddMarten(x =>
 <!-- endSnippet -->
 
 ::: warning
-Marten will only use your read node preference with queries run with `IQuerySession` that are using a Marten-managed connection lifetime. 
+Marten will only use your read node preference with queries run with `IQuerySession` that are using a Marten-managed connection lifetime.
 
-Queries executed via `IDocumentSession`, alongside internal queries (ie async daemon), will always use your primary node to ensure write-side consistency.
+Every other connection, including queries executed via `IDocumentSession` and internal queries (ie async daemon), uses
+`MultiHostSettings.WriteSessionPreference`. That defaults to `TargetSessionAttributes.ReadWrite`, a node that accepts
+writes, to ensure write-side consistency.
 :::
+
+`WriteSessionPreference` can be set too, for example to insist on the primary node:
+
+<!-- snippet: sample_multi_host_write_session_preference -->
+<a id='snippet-sample_multi_host_write_session_preference'></a>
+```cs
+services.AddMultiHostNpgsqlDataSource("some connection string");
+
+services.AddMarten(x =>
+    {
+        // Queries from IQuerySession may go to a standby
+        x.Advanced.MultiHostSettings.ReadSessionPreference = TargetSessionAttributes.PreferStandby;
+
+        // Everything else must reach the primary
+        x.Advanced.MultiHostSettings.WriteSessionPreference = TargetSessionAttributes.Primary;
+    })
+    .UseNpgsqlDataSource();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L211-L225' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_host_write_session_preference' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 For more background, see the blog post
 [Scaling Marten with PostgreSQL Read Replicas](https://jeremydmiller.com/2024/05/08/scaling-marten-with-postgresql-read-replicas/).
@@ -322,7 +383,7 @@ public static IServiceCollection AddUserModule2(this IServiceCollection services
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/BootstrappingExamples.cs#L36-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addusermodule2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Using IoC Services for Configuring Marten <Badge type="tip" text="7.7" />
+### Using IoC Services for Configuring Marten <Badge type="tip" text="7.7" /> {#using-ioc-services-for-configuring-marten}
 
 There is also a newer mechanism called `IAsyncConfigureMarten` that was originally built to enable services
 like the [Feature Management library from Microsoft](https://learn.microsoft.com/en-us/azure/azure-app-configuration/use-feature-flags-dotnet-core) to
@@ -771,3 +832,61 @@ You can resolve the keyed `ISessionFactory` for an ancillary store directly from
 var factory = serviceProvider.GetRequiredKeyedService<ISessionFactory>(typeof(IInvoicingStore));
 using var session = factory.OpenSession();
 ```
+
+## Finding Every Document Store
+
+`AllDocumentStores()`, an extension method on `IServiceProvider`, returns the main store from `AddMarten()`, if there
+is one, followed by every ancillary store from `AddMartenStore<T>()`. It is useful for diagnostics or tooling that
+should cover every store in the application:
+
+<!-- snippet: sample_all_document_stores -->
+<a id='snippet-sample_all_document_stores'></a>
+```cs
+// The main store from AddMarten(), if there is one, followed by
+// every ancillary store from AddMartenStore<T>()
+IReadOnlyList<IDocumentStore> stores = services.AllDocumentStores();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L252-L258' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_all_document_stores' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Contributing to the Event Model {#contributing-to-the-event-model}
+
+`AddMarten()` and `AddMartenStore<T>()` each register their store as a source for the
+[JasperFx Event Model](https://shared-libs.jasperfx.net/event-modeling/). When the Event Model is assembled, every
+projection registered in the store contributes a View slice: the projection, the document it produces, and the events
+it applies. Slices are named after the document type.
+
+Slices merge into a model by the model's name. Marten picks the name for a store's slices in this order:
+
+1. `StoreOptions.EventModelName`, if you set it
+2. Otherwise the JasperFx `ServiceName` (the entry assembly's name unless you set it), which is also the name Wolverine
+   gives the model it derives
+3. Otherwise `EventModel`
+
+So if your application declares its own model under another name, set `EventModelName` to the same name, or you end up
+with two models. The name is read when the model is assembled, not when the store is registered, so it does not matter
+whether `AddEventModel()` is called before or after `AddMarten()`. An empty or whitespace name throws an
+`ArgumentException`; leave it `null` for the default.
+
+<!-- snippet: sample_naming_the_marten_event_model -->
+<a id='snippet-sample_naming_the_marten_event_model'></a>
+```cs
+services.AddMarten(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Contribute this store's projections to the "Billing" model
+    opts.EventModelName = "Billing";
+});
+
+// The application's own declarations for the same model. The two
+// merge by name, and the order of these calls does not matter
+services.AddEventModel("Billing", model =>
+{
+    // declared slices
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L189-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_naming_the_marten_event_model' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+In a modular monolith, give an ancillary store its own `EventModelName` when it is a bounded context of its own.
