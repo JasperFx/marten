@@ -71,8 +71,9 @@ using Weasel.Core;
 [assembly: JasperFxAssembly]
 
 
+// #6109: 9.0's base test database is marten9_testing, which the AOT runtime job's Postgres container creates
 var connection = Environment.GetEnvironmentVariable("marten_testing_database")
-                 ?? "Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
+                 ?? "Host=localhost;Port=5432;Database=marten9_testing;Username=postgres;password=postgres";
 
 var store = DocumentStore.For(o =>
 {
