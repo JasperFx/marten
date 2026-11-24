@@ -39,8 +39,8 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L120-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Set any of them to `false` to stop writing and reading that field, or call `opts.RestoreV9Defaults()` to turn all
-four off. The `mt_events` columns behind them are always created in Marten 10, whatever these settings are.
+Set any of them to `false` to stop writing and reading that field. The `mt_events` columns behind them are always
+created in Marten 10, whatever these settings are.
 
 When appending events, Marten will automatically tag events with the data from these properties
 on the `IDocumentSession` when capturing the new events:

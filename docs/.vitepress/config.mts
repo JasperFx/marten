@@ -220,6 +220,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Understanding Event Sourcing', link: '/events/learning' },
             { text: 'Marten as Event Store', link: '/events/' },
             { text: 'Quick Start', link: '/events/quickstart' },
+            { text: 'Configuration', link: '/events/configuration' },
             { text: 'Storage', link: '/events/storage' },
             { text: 'Appending Events', link: '/events/appending' },
             { text: 'Bulk Appending Events', link: '/events/bulk-appending' },
@@ -249,6 +250,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                     ]
                 },
                 { text: 'Event Projections', link: '/events/projections/event-projections' },
+                { text: 'Projecting by Event Type', link: '/events/projections/projection-by-event-type' },
                 { text: 'Projections with F#', link: '/events/projections/fsharp' },
                 { text: 'Custom Projections', link: '/events/projections/custom' },
                 { text: 'Inline Projections', link: '/events/projections/inline' },

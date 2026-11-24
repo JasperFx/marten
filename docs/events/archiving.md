@@ -505,7 +505,7 @@ What `TombstoneStream()` does, compared with `ArchiveStream()`:
 | Stream row in `mt_streams` | kept, marked archived (or moved to the archived partition) | deleted |
 | Event rows in `mt_events` | kept, marked archived (or moved to the archived partition) | deleted |
 | DCB tag rows (`mt_event_tag_*`) | kept | deleted |
-| DCB tag versions (`mt_dcb_tag_version`) | kept | deleted when no other stream carries the tag |
+| DCB tag versions (`mt_dcb_tag_version`) | kept; versions moved, and a row created for a tag that has none | deleted when no other stream carries the tag |
 | Can be undone | yes, with `UnArchiveStream()` | no |
 | Stream id can start a new stream | depends on partitioning and strict identity settings | yes |
 | Projected documents | left alone | left alone |

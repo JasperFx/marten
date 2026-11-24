@@ -166,7 +166,7 @@ public class testing_projections
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "incidents";
 
-            // Notice that the "snapshot" is running inline
+            // Notice that the "snapshot" is running asynchronously
             opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
         });
 
@@ -222,7 +222,7 @@ public class testing_projections
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "incidents";
 
-                        // Notice that the "snapshot" is running inline
+                        // Notice that the "snapshot" is running asynchronously
                         opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
                     })
 
@@ -289,7 +289,7 @@ public class testing_projections
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "incidents";
 
-                        // Notice that the "snapshot" is running inline
+                        // Notice that the "snapshot" is running asynchronously
                         opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
 
                         opts.Events.TimeProvider = eventsTimeProvider;

@@ -43,7 +43,7 @@ All of the functionality in this section was added as part of Marten v0.8
 Marten has a facility for listening and even intercepting document persistence events with the `IDocumentSessionListener` interface:
 
 ::: warning IEvent.Sequence / IEvent.Version under "Quick" append mode
-`BeforeSaveChangesAsync` (and `IChangeListener.BeforeCommitAsync`) fires **before** the database INSERT runs. Under the Marten 9 default `Events.AppendMode = EventAppendMode.QuickWithServerTimestamps` (or `EventAppendMode.Quick`), event sequences and versions are assigned **server-side** inside that INSERT via `nextval('mt_events_sequence')`, so iterating `session.PendingChanges.GetEvents()` from a pre-commit listener returns events with `Sequence = 0` and `Version = 0`. If your listener forwards events that consumers key off `Sequence` / `Version` (for example Wolverine's `UseFastEventForwarding = true` + `SubscribeToEvent<T>().TransformedTo(e => new SomeMessage(e.Sequence, e.Version))`), opt the affected store into Rich mode so those values are assigned before the listener fires:
+`BeforeSaveChangesAsync` (and `IChangeListener.BeforeCommitAsync`) fires **before** the database INSERT runs. Under the default `Events.AppendMode = EventAppendMode.QuickWithServerTimestamps` (the default since Marten 9) (or `EventAppendMode.Quick`), event sequences and versions are assigned **server-side** inside that INSERT via `nextval('mt_events_sequence')`, so iterating `session.PendingChanges.GetEvents()` from a pre-commit listener returns events with `Sequence = 0` and `Version = 0`. If your listener forwards events that consumers key off `Sequence` / `Version` (for example Wolverine's `UseFastEventForwarding = true` + `SubscribeToEvent<T>().TransformedTo(e => new SomeMessage(e.Sequence, e.Version))`), opt the affected store into Rich mode so those values are assigned before the listener fires:
 
 ```csharp
 opts.Events.AppendMode = EventAppendMode.Rich;
@@ -604,7 +604,7 @@ Debug.WriteLine(cmd.CommandText);
 The sql string in our debug window for the code above is:
 
 ```sql
-select d.data from mt_doc_trade as d where d.value > :arg0
+select d.data from public.mt_doc_trade as d where d.value > :p0;
 ```
 
 `ToCommand()` shows the SQL that executing the query sends with the matching operator. `FetchType.FetchOne` previews
@@ -627,7 +627,7 @@ theSession.Logger = new TestOutputMartenLogger(_output);
 
 ## Previewing the PostgreSQL Query Plan
 
-Marten has a helper to find and preview the [PostgreSQL EXPLAIN plan](http://www.postgresql.org/docs/9.5/static/using-explain.html) for a Linq query. Our hope is that this will be a valuable aid to teams who need face performance problems while using Marten. The syntax for fetching the EXPLAIN plan for the Linq query from the previous section is shown below:
+Marten has a helper to find and preview the [PostgreSQL EXPLAIN plan](https://www.postgresql.org/docs/current/using-explain.html) for a Linq query. Our hope is that this will be a valuable aid to teams who need face performance problems while using Marten. The syntax for fetching the EXPLAIN plan for the Linq query from the previous section is shown below:
 
 <!-- snippet: sample_preview_linq_explain_plan -->
 <a id='snippet-sample_preview_linq_explain_plan'></a>

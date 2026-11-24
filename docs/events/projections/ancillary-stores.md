@@ -58,7 +58,9 @@ public class InvoiceProjection : SingleStreamProjection<Invoice, Guid>
             .Select(e => e.Data.TariefId)
             .Distinct().ToArray();
 
-        var tarieven = await session.LoadManyAsync<Tarief>(cancellation, ids);
+        // LoadManyAsync returns a list, so index it by id for the lookups below
+        var tarieven = (await session.LoadManyAsync<Tarief>(cancellation, ids))
+            .ToDictionary(x => x.Id);
 
         foreach (var slice in group.Slices)
         {

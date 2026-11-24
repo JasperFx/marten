@@ -41,12 +41,18 @@ in the dashboard, the verb runs against the live service with the same
 environment Aspire injects, and the output streams into the resource's log
 view.
 
+The `codegen` preview button does nothing for Marten: Marten 9 removed its
+runtime code generation, so there is nothing for it to preview (see
+[Codegen](/configuration/cli#codegen)). It is still useful when Wolverine
+shares the host.
+
 ## The verbs that matter for Marten users
 
-- **`check-env`** *(read-only)* — runs every registered
-  [environment check](/configuration/environment-checks). Confirms the Marten
-  service can reach its Postgres database, that all projection dependencies
-  are wired, that required schemas exist, etc.
+- **`check-env`** *(read-only)* — runs the
+  [environment checks](/configuration/environment-checks): for each Marten
+  store, a full assertion that every one of its databases matches the
+  configured schema, plus any registered `IHealthCheck`. It fails if a
+  database can't be reached or its schema differs from the configuration.
 - **`describe`** *(read-only)* — dumps the resolved Marten `StoreOptions`
   (document mappings, event store config, projections, retry policies,
   tenancy strategy, …). Useful for verifying composite configuration.
@@ -127,4 +133,4 @@ full `projections` surface.
 
 - **`JasperFx.Aspire` runs at the AppHost project layer**, not inside the Marten service itself. Adding it as a `<ProjectReference>` of the service project is a no-op.
 - The verbs run in a **child process** of the Marten service, with the same environment Aspire injects into the resource. If `check-env`, `resources`, or `projections` fail to reach Aspire-managed dependencies, verify the dashboard shows the resource as `Running` first.
-- Buttons require `ApplyJasperFxExtensions()` + `RunJasperFxCommandsAsync(args)` to already be wired in the Marten service's `Program.cs` (see [Command Line Tooling](/configuration/cli)). Without that wiring the verb spawn succeeds but the child process won't recognize the verb.
+- Buttons require `ApplyJasperFxExtensions()` + `RunJasperFxCommands(args)` to already be wired in the Marten service's `Program.cs` (see [Command Line Tooling](/configuration/cli)). Without that wiring the verb spawn succeeds but the child process won't recognize the verb.

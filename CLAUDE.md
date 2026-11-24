@@ -3,7 +3,7 @@
 .NET transactional document database and event store on PostgreSQL. Uses PostgreSQL's JSONB support for document storage with ACID guarantees and a full event sourcing implementation with projections.
 
 **Repository:** https://github.com/JasperFx/marten
-**Version:** 9.0.0-alpha.1 (`Directory.Build.props:4`) — `9.0` long-lived dev branch
+**Version:** 10.0.0-rc.2 (`Directory.Build.props:4`) — `master` is the 10.0 line
 **License:** MIT
 
 ## Tech Stack

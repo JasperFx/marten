@@ -35,7 +35,7 @@ First, some terminology that we're going to use throughout this section:
 The only requirement that Marten makes on types used as events is that they are:
 
 1. Public, concrete types
-1. Can be bidirectionally serialized and deserialized with a tool like Newtonsoft.Json
+1. Can be bidirectionally serialized and deserialized by the store's [JSON serializer](/configuration/json): System.Text.Json by default, or Newtonsoft.Json through the opt-in `Marten.Newtonsoft` package
 
 Marten does need to know what the event types are before you issue queries against the event data (it's just to handle the de-serialization from JSON). The event registration will happen automatically when you append events,
 but for production usage when you may be querying event data before you append anything, you just need to register the event types upfront like this:
@@ -56,6 +56,16 @@ var store2 = DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/schema_object_management.cs#L43-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-event-types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### Union event types
+
+On `net11.0`, an event can be a C# 15 union. Marten stores an appended union as its active case, so the stored event
+is, say, a `Deposited` rather than an `AccountEvent`. See [union event types](/events/projections/conventions#union-event-types)
+for how projections handle them.
+
 ## Stream or Aggregate Types
 
-At this point there are no specific requirements about stream aggregate types as they are purely marker types. In the future we will probably support aggregating events via snapshot caching using the aggregate type.
+There are no specific requirements on the stream or aggregate type, the `T` in `StartStream<T>()`, which is stored as
+the stream's type in `mt_streams`. Marten does use it:
+[`UseMandatoryStreamTypeDeclaration`](/events/appending#mandatory-stream-types) requires it, the
+[optimized projection rebuilds](/events/projections/rebuilding#optimized-projection-rebuilds) rely on it, and an
+asynchronous projection can filter the events it loads by it.

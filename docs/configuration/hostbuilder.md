@@ -726,7 +726,7 @@ And now to bootstrap that separate store in our system:
 <!-- snippet: sample_bootstrapping_separate_store -->
 <a id='snippet-sample_bootstrapping_separate_store'></a>
 ```cs
-using var host = Host.CreateDefaultBuilder()
+using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
         // You can still use AddMarten() for the main document store
@@ -801,7 +801,7 @@ keyed by the store marker interface type (e.g., `typeof(IInvoicingStore)`).
 <!-- snippet: sample_bootstrapping_separate_store_with_session_config -->
 <a id='snippet-sample_bootstrapping_separate_store_with_session_config'></a>
 ```cs
-using var host = Host.CreateDefaultBuilder()
+using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
         services.AddMarten("some connection string");

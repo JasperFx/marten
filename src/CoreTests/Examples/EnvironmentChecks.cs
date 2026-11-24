@@ -14,13 +14,10 @@ public class EnvironmentChecks
         using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
-                // Do this, or your environment check assertion failures below
-                // is just swallowed and logged on startup
-                services.Configure<HostOptions>(options =>
-                {
-                    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
-                });
-
+                // The assertion runs in the hosted service Marten registers
+                // to activate the store, so a database that does not match
+                // the configuration throws out of StartAsync() and the host
+                // never starts
                 services.AddMarten("connection string")
                     .AssertDatabaseMatchesConfigurationOnStartup();
             })

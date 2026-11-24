@@ -120,5 +120,6 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ignoring_indexes_on_event_store_tables.cs#L47-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_store_ignore_index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The ignore list is consulted by all three event-store tables, so a single name will be treated as
-"ignored" wherever it might appear.
+The ignore list is consulted by every event-store table: `mt_events`, `mt_streams`, `mt_event_progression`,
+`mt_event_range_marks`, `mt_parked_identities`, `mt_event_projection_floors` and the per-projection
+`mt_slice_index_*` tables, so a single name will be treated as "ignored" wherever it might appear.

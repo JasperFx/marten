@@ -108,8 +108,9 @@ public static class FetchLatest
         {
             opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-            // This opts Marten into a pretty big optimization
-            // for how FetchForWriting and/or FetchLatest work internally
+            // This is a pretty big optimization for how FetchForWriting
+            // and/or FetchLatest work internally. It is on by default in
+            // Marten 9 and 10, so this line only makes it explicit
             opts.Events.UseIdentityMapForAggregates = true;
             opts.Projections.Snapshot<Projections.Invoice>(SnapshotLifecycle.Inline);
         });
