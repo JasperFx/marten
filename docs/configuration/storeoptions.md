@@ -272,7 +272,7 @@ public record ConfigDocsCustomerRenamed(Guid CustomerId, string Name);
 [MartenEvent(Alias = "customer_closed")]
 public record ConfigDocsCustomerClosed(Guid CustomerId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L332-L350' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_document_and_event_attributes' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L353-L371' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_document_and_event_attributes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `[DatabaseSchemaName]`, `[DocumentAlias]`, `[SoftDeleted]` and `[UseOptimisticConcurrency]` derive from
@@ -323,8 +323,8 @@ Some things to know about the scan:
   so set `ApplicationAssembly` yourself before calling `AutoRegister()` when the entry assembly is not your
   application, as it is not under a test runner.
 * Only public types are considered, including public nested types. Abstract types, interfaces and open generic types are skipped.
-* The scan also visits every public compiled query type, and throws an `ArgumentOutOfRangeException` for one
-  that has no parameterless constructor.
+* Compiled query types are not scanned <Badge type="tip" text="10.0" />. They need no registration, and
+  `RegisterCompiledQueryType()` is obsolete and does nothing.
 
 ## Embedding Configuration in Document Types
 
@@ -533,7 +533,7 @@ var store = DocumentStore.For(opts =>
 | `ResourceMigrationFailureMode` | the JasperFx profile's value, `FailFast` | Whether a failed migration at startup stops the host. See [Schema Migrations](/schema/migrations#applying-changes-at-startup) |
 | `DisableNpgsqlLogging` | `true` | Keeps Npgsql's own logging out of your logs. Set it to `false` to forward Npgsql's logging to the application's `ILoggerFactory` under `AddMarten()` |
 | `ConfigureNpgsqlDataSourceBuilder(configure)` | | Applies `configure` to every `NpgsqlDataSourceBuilder` Marten creates, including the ones for tenant databases. This is where Npgsql plugins such as `UseVector()` or `UseNetTopologySuite()` are registered, and it is what Marten's own pgvector and PostGIS packages call. A data source you passed to `Connection(NpgsqlDataSource)` is used as it is |
-| `DataSourceFactory(factory, connectionString)` | Marten's own | Replaces the Weasel `INpgsqlDataSourceFactory` that builds an `NpgsqlDataSource` for each connection string Marten uses. The optional connection string is passed to `Connection()` if no connection or tenancy has been configured yet. `ConfigureNpgsqlDataSourceBuilder()` replaces the factory, so set a custom one after it |
+| `DataSourceFactory(factory, connectionString)` | Marten's own | Replaces the Weasel `INpgsqlDataSourceFactory` that builds an `NpgsqlDataSource` for each connection string Marten uses. The optional connection string is passed to `Connection()` if no connection or tenancy has been configured yet. Marten keeps your factory whatever is configured after it. Builder configuration from `ConfigureNpgsqlDataSourceBuilder()` (pgvector, PostGIS, NodaTime, the DCB HStore mode) only reaches the data sources your factory builds if it configures its own `NpgsqlDataSourceBuilder`s the same way |
 | `Advanced.ModifySerializer(configure)` | | Applies `configure` to the current serializer straight away, and again to any serializer that replaces it later. Meant for extensions that need to adjust the serializer whichever one the application chooses |
 
 ## Prepared Statements and `Max Auto Prepare`

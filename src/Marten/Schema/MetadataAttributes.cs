@@ -41,7 +41,9 @@ public class TenantIdMetadataAttribute: MartenAttribute
 }
 
 /// <summary>
-///     Direct Marten to copy the is soft deleted metadata to this member
+///     Direct Marten to copy the is soft deleted metadata to this member. The class name carries a doubled
+///     <c>Attribute</c> suffix, so it is written <c>[IsSoftDeletedMetadataAttribute]</c>; prefer
+///     <see cref="SoftDeletedMetadataAttribute" />, written <c>[SoftDeletedMetadata]</c>.
 /// </summary>
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 public class IsSoftDeletedMetadataAttributeAttribute: MartenAttribute
@@ -50,6 +52,17 @@ public class IsSoftDeletedMetadataAttributeAttribute: MartenAttribute
     {
         mapping.Metadata.IsSoftDeleted.Member = member;
     }
+}
+
+/// <summary>
+///     Direct Marten to copy the is soft deleted metadata (<c>mt_deleted</c>) to this member. The correctly named
+///     form of <see cref="IsSoftDeletedMetadataAttributeAttribute" /> (#6194). It cannot be named
+///     <c>IsSoftDeletedMetadataAttribute</c>: beside the existing class, that would make every
+///     <c>[IsSoftDeletedMetadataAttribute]</c> already written ambiguous (CS1614).
+/// </summary>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public class SoftDeletedMetadataAttribute: IsSoftDeletedMetadataAttributeAttribute
+{
 }
 
 /// <summary>

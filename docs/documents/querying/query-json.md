@@ -75,7 +75,7 @@ var json = await theSession
 
 json.ShouldBe("{\"Name\": \"Bill\"}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L1009-L1019' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L1047-L1057' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And another example, but this time transforming to an anonymous type:
@@ -94,7 +94,7 @@ And another example, but this time transforming to an anonymous type:
         .ToJsonFirstOrDefault())
     .ShouldBe("{\"Name\": \"Bill\"}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L982-L994' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L1020-L1032' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Streaming Raw JSON
@@ -128,6 +128,9 @@ count = await session.StreamJson<User>(destination, token,
 
 - `StreamJsonArray()`, `StreamJsonFirst()`, `StreamJsonFirstOrDefault()`, `StreamJsonSingle()` and
   `StreamJsonSingleOrDefault()` work on any Marten LINQ query, including one with a `Select()` transform.
+- `StreamJsonSingleOrDefault()` returns a plain `Task`. Use `TryStreamJsonSingle()` <Badge type="tip" text="10.0" />
+  for the same query when you need to know whether a document was written: it returns `true` when one was, `false`
+  when nothing matched, and throws like `StreamJsonSingleOrDefault()` when more than one does.
 - `session.Json.StreamById<T>()` writes one document by its id.
 - `session.StreamJson<T>()` writes the results of your own SQL. See [Querying with Postgres SQL](/documents/querying/sql).
 - `StreamPagedJsonArray()` writes one page of results with its paging metadata. See [Paging](/documents/querying/linq/paging).

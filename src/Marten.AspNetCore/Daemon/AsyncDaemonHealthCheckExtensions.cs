@@ -58,6 +58,48 @@ public static class AsyncDaemonHealthCheckExtensions
     }
 
     /// <summary>
+    ///     marten#6189: the async daemon health check for an ancillary store registered with
+    ///     <c>AddMartenStore&lt;TStore&gt;()</c>. See the non-generic overload for what it checks.
+    ///     <para>
+    ///         Call it once per store. Each store's check is named <c>AsyncDaemonHealthCheck:&lt;store type&gt;</c>
+    ///         and carries its own settings and lag tracking, so it never changes the default store's check.
+    ///     </para>
+    /// </summary>
+    /// <typeparam name="TStore">The store's marker interface, as passed to <c>AddMartenStore&lt;TStore&gt;()</c>.</typeparam>
+    /// <param name="builder"><see cref="IHealthChecksBuilder" /></param>
+    /// <param name="maxEventLag">See the non-generic overload. Defaults to 100.</param>
+    /// <param name="maxSameLagTime">See the non-generic overload. Defaults to null.</param>
+    public static IHealthChecksBuilder AddMartenAsyncDaemonHealthCheck<TStore>(
+        this IHealthChecksBuilder builder,
+        int maxEventLag = 100,
+        TimeSpan? maxSameLagTime = null
+    ) where TStore : class, IDocumentStore
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        // The settings and the tracker travel with this store's registration rather than through the
+        // singletons the default store's check uses, so registering this never re-configures that check
+        var settings = new AsyncDaemonHealthCheckSettings(maxEventLag, maxSameLagTime);
+        var tracker = new ProjectionStateTracker();
+
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        return builder.Add(new HealthCheckRegistration(
+            AsyncDaemonHealthCheckNameFor<TStore>(),
+            services => new AsyncDaemonHealthCheck(services.GetRequiredService<TStore>(), settings,
+                services.GetRequiredService<TimeProvider>(), tracker),
+            failureStatus: null,
+            tags: new[] { "Marten", "AsyncDaemon", typeof(TStore).Name }
+        ));
+    }
+
+    /// <summary>
+    ///     marten#6189: the name a store's async daemon check is registered under by
+    ///     <see cref="AddMartenAsyncDaemonHealthCheck{TStore}" />.
+    /// </summary>
+    public static string AsyncDaemonHealthCheckNameFor<TStore>() where TStore : class, IDocumentStore =>
+        $"{nameof(AsyncDaemonHealthCheck)}:{typeof(TStore).Name}";
+
+    /// <summary>
     ///     Internal class used to DI settings to async daemon health check
     /// </summary>
     /// <param name="MaxEventLag"></param>
@@ -69,6 +111,10 @@ public static class AsyncDaemonHealthCheckExtensions
     /// </summary>
     public class ProjectionStateTracker
     {
+        /// <summary>
+        ///     Every shard found lagging on the last check, keyed by database identifier and shard identity, with
+        ///     when it was first seen lagging at its current sequence and that sequence
+        /// </summary>
         public ConcurrentDictionary<string, (DateTime CheckedAt, long Sequence)> LastProjectionsChecks { get; } = new();
     }
 
@@ -119,9 +165,12 @@ public static class AsyncDaemonHealthCheckExtensions
         {
             try
             {
+                // marten#6189: every shard of every async projection, at its registered version. A per-tenant
+                // shard is matched by these same parts, whatever its tenant.
                 var projectionsToCheck = _store.Options.Events.Projections()
                     .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
-                    .Select(x => $"{x.Name}:All")
+                    .SelectMany(x => x.ShardNames())
+                    .Select(x => ShardName.Compose(x.Name, x.ShardKey, version: x.Version).Identity)
                     .ToHashSet();
 
                 var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);
@@ -161,20 +210,28 @@ public static class AsyncDaemonHealthCheckExtensions
             var allProgress = await database.AllProjectionProgress(cancellationToken)
                 .ConfigureAwait(true);
 
-            var highWaterMark = allProgress.FirstOrDefault(x => string.Equals("HighWaterMark", x.ShardName));
-            if (highWaterMark is null)
+            // The store-global mark, and under per-tenant event partitioning one HighWaterMark:{tenant} per tenant
+            var highWaterMarks = new Dictionary<string, long>();
+            foreach (var progress in allProgress)
+            {
+                if (ShardName.TryParse(progress.ShardName, out var name) && name!.IsHighWaterMark)
+                {
+                    highWaterMarks[name.TenantId ?? string.Empty] = progress.Sequence;
+                }
+            }
+
+            if (highWaterMarks.Count == 0)
             {
                 return HealthCheckResult.Healthy("Healthy");
             }
 
-            var projectionMarks = allProgress.Where(x => !string.Equals("HighWaterMark", x.ShardName));
-
-            var projectionsSequences = projectionMarks.Where(x => projectionsToCheck.Contains(x.ShardName))
-                .Select(x => new { x.ShardName, x.Sequence })
+            var projectionsSequences = allProgress.Where(x => isChecked(x.ShardName, projectionsToCheck))
+                .Select(x => new { x.ShardName, x.Sequence, HighWaterMark = highWaterMarkFor(x.ShardName, highWaterMarks) })
+                .Where(x => x.HighWaterMark.HasValue)
                 .ToArray();
 
             var laggingProjections = projectionsSequences
-                .Where(x => x.Sequence <= highWaterMark.Sequence - _maxEventLag)
+                .Where(x => x.Sequence <= x.HighWaterMark!.Value - _maxEventLag)
                 .ToArray();
 
             if (_maxSameLagTime is null)
@@ -187,36 +244,64 @@ public static class AsyncDaemonHealthCheckExtensions
             }
 
             var now = _timeProvider.GetUtcNow().UtcDateTime;
+            var keyPrefix = $"{database.Identifier}:";
 
-            var projectionsLaggingWithSamePositionForGivenTime = laggingProjections.Where(
-                    x =>
-                    {
-                        var (laggingSince, lastKnownPosition) =
-                            _stateTracker.LastProjectionsChecks.GetValueOrDefault(x.ShardName, (now, x.Sequence));
-
-                        var isLaggingWithSamePositionForGivenTime =
-                            now.Subtract(laggingSince) >= _maxSameLagTime &&
-                            x.Sequence == lastKnownPosition;
-
-                        return isLaggingWithSamePositionForGivenTime;
-                    }
-                )
-                .ToArray();
-
+            // marten#6189: the timestamp is when the shard was first seen lagging at its current sequence. It is
+            // kept while the sequence stays put and reset only when the shard moves, so the check fires once the
+            // shard has sat still for maxSameLagTime however often it is probed.
+            var projectionsLaggingWithSamePositionForGivenTime = new List<string>();
             foreach (var laggingProjection in laggingProjections)
             {
-                _stateTracker.LastProjectionsChecks.AddOrUpdate(
-                    laggingProjection.ShardName,
+                var (laggingSince, _) = _stateTracker.LastProjectionsChecks.AddOrUpdate(
+                    keyPrefix + laggingProjection.ShardName,
                     _ => (now, laggingProjection.Sequence),
-                    (_, _) => (now, laggingProjection.Sequence)
+                    (_, existing) => existing.Sequence == laggingProjection.Sequence
+                        ? existing
+                        : (now, laggingProjection.Sequence)
                 );
+
+                if (now.Subtract(laggingSince) >= _maxSameLagTime)
+                {
+                    projectionsLaggingWithSamePositionForGivenTime.Add(laggingProjection.ShardName);
+                }
             }
 
-            return projectionsLaggingWithSamePositionForGivenTime.Length != 0
+            // A shard that caught up starts its clock again the next time it lags
+            var stillLagging = laggingProjections.Select(x => keyPrefix + x.ShardName).ToHashSet();
+            foreach (var key in _stateTracker.LastProjectionsChecks.Keys)
+            {
+                if (key.StartsWith(keyPrefix, StringComparison.Ordinal) && !stillLagging.Contains(key))
+                {
+                    _stateTracker.LastProjectionsChecks.TryRemove(key, out _);
+                }
+            }
+
+            return projectionsLaggingWithSamePositionForGivenTime.Count != 0
                 ? HealthCheckResult.Unhealthy(
-                    $"Unhealthy: Async projection sequence is more than {_maxEventLag} events behind with same sequence for more than {_maxSameLagTime} for projection(s): {projectionsLaggingWithSamePositionForGivenTime.Select(x => x.ShardName).Join(", ")}"
+                    $"Unhealthy: Async projection sequence is more than {_maxEventLag} events behind with same sequence for more than {_maxSameLagTime} for projection(s): {projectionsLaggingWithSamePositionForGivenTime.Join(", ")}"
                 )
                 : HealthCheckResult.Healthy("Healthy");
+        }
+
+        private static long? highWaterMarkFor(string progressionName, Dictionary<string, long> highWaterMarks)
+        {
+            // A per-tenant shard measures against its own tenant's mark when the store keeps one
+            if (ShardName.TryParse(progressionName, out var shardName) && shardName!.TenantId != null &&
+                highWaterMarks.TryGetValue(shardName.TenantId, out var tenantMark))
+            {
+                return tenantMark;
+            }
+
+            return highWaterMarks.TryGetValue(string.Empty, out var globalMark) ? globalMark : null;
+        }
+
+        private static bool isChecked(string progressionName, HashSet<string> projectionsToCheck)
+        {
+            if (projectionsToCheck.Contains(progressionName)) return true;
+
+            // A per-tenant shard carries its tenant as a trailing segment
+            return ShardName.TryParse(progressionName, out var shardName) && shardName is { IsHighWaterMark: false, TenantId: not null } &&
+                   projectionsToCheck.Contains(ShardName.Compose(shardName.Name, shardName.ShardKey, version: shardName.Version).Identity);
         }
     }
 }

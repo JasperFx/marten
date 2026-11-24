@@ -123,10 +123,12 @@ internal class MartenActivator: StoreActivator<IDocumentStore, IDatabase>, IGlob
     {
         var postgresqlDatabase = (PostgresqlDatabase)database;
 
-        // #4750: propagate the failure mode so Weasel's apply returns rather than throwing when it
-        // can't attain the global migration lock (e.g. a replica that loses the lock race during a
-        // multi-replica rolling deploy).
-        postgresqlDatabase.ResourceMigrationFailureMode = FailureMode;
+        // #6194: Weasel stays on FailFast, whatever the store's own failure mode, as JasperFx's StoreActivator
+        // asks. A replica that loses the migration lock race (#4750) then throws here, and StoreActivator logs it
+        // and carries on starting up under ContinueOnFailures, without running the seeders. Copying
+        // ContinueOnFailures onto Weasel made the lost lock read as a completed migration, so the seeders ran
+        // against a schema another node was still migrating.
+        postgresqlDatabase.ResourceMigrationFailureMode = ResourceMigrationFailureMode.FailFast;
 
         await postgresqlDatabase
             .ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate, ct: token)

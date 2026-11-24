@@ -37,7 +37,7 @@ public partial class StoreOptions
 
     /// <summary>
     /// Scan the application assembly and any other supplied assemblies to
-    /// discover compiled query types, event types by supplied filters, or
+    /// discover event types by supplied filters, or
     /// any type decorated with a MartenAttribute
     /// </summary>
     /// <param name="configure">Configure the automatic type discovery</param>
@@ -50,8 +50,7 @@ public partial class StoreOptions
 
     /// <summary>
     /// Scan the application assembly to
-    /// discover compiled query types or
-    /// any type decorated with a MartenAttribute
+    /// discover any type decorated with a MartenAttribute
     /// </summary>
     public void AutoRegister()
     {
@@ -69,10 +68,13 @@ public partial class StoreOptions
     }
 
     /// <summary>
-    ///     Register a compiled query type for the "generate ahead" code generation strategy
+    ///     Register a compiled query type. This did something for the "generate ahead" code generation strategy,
+    ///     which was removed with runtime code generation in Marten 9.0, and now does nothing: compiled queries
+    ///     need no registration.
     /// </summary>
     /// <param name="queryType"></param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
+    [Obsolete("Compiled queries need no registration since Marten 9.0 removed the \"generate ahead\" code generation strategy; this method does nothing and will be removed.")]
     public void RegisterCompiledQueryType(Type queryType)
     {
         if (!queryType.Closes(typeof(ICompiledQuery<,>)))
@@ -150,12 +152,9 @@ public class MartenAssemblyScanner
             TypeRepository.FindTypes(assemblies, TypeClassification.Concretes | TypeClassification.Closed, type => type.IsPublic || type.IsNestedPublic)
                 .ToArray();
 
-        // Find any compiled queries
-        var compiledQueries = publicTypes.Where(x => x.CanBeCastTo<ICompiledQueryMarker>());
-        foreach (var compiledQueryType in compiledQueries)
-        {
-            options.RegisterCompiledQueryType(compiledQueryType);
-        }
+        // #6192: compiled queries are no longer collected here. Nothing has read the list since Marten 9.0 removed
+        // the "generate ahead" code generation strategy, and registering one threw for any compiled query without
+        // a parameterless constructor, which made AutoRegister() unusable for such an application.
 
         // Find any event types
         if (_eventMatchers.Any())

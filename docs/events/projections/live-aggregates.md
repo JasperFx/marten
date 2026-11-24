@@ -493,6 +493,6 @@ IReadOnlyList<ApiDocsAccountBalance> balances = await session.Events
 It uses the projection's own slicing or custom grouping, its event enrichment and its `Create`/`Apply`/`ShouldDelete`
 logic against the query session, with each aggregate's identity set from its slice. Nothing is stored. An aggregate the
 projection deletes is left out, and a query that matches no events returns an empty list. When no aggregate
-projection registered on the store produces `T`, it throws an `ArgumentException`, even for an empty result. Only
-projections registered directly on `opts.Projections` are found, not the stages of a composite projection. This is
-also an extension method in the `Marten.Events` namespace.
+projection registered on the store produces `T`, it throws an `ArgumentException`, even for an empty result. The
+projection is found the same way the other aggregate fetches find it, so one registered as a stage of a composite
+projection works too. This is also an extension method in the `Marten.Events` namespace.

@@ -213,10 +213,10 @@ services.AddMarten()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/ConfigurationDocsSamples.cs#L230-L247' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_npgsql_data_source_with_builder_factory' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Your function replaces the one Marten would have used, and it is applied after your `AddMarten()` configuration has run.
-So the data sources it creates get nothing that was added with `ConfigureNpgsqlDataSourceBuilder()` before it, such as
-the pgvector or PostGIS type mappings, and no Npgsql logging from `DisableNpgsqlLogging = false`. Configure those on the
-builder your function returns.
+Your function creates the builder in place of `new NpgsqlDataSourceBuilder(connectionString)`. Marten still applies its
+own configuration on top of it, whether it was added before or after: everything added with
+`ConfigureNpgsqlDataSourceBuilder()`, such as the pgvector or PostGIS type mappings, and Npgsql logging when
+`DisableNpgsqlLogging = false`.
 
 ## Multi-Host Data Source (Read Replicas)
 
@@ -340,7 +340,7 @@ public interface IConfigureMarten: JasperFx.IConfigureStore<StoreOptions>
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1108-L1118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1169-L1179' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're working with multiple databases class like so:
@@ -403,7 +403,7 @@ public interface IAsyncConfigureMarten: JasperFx.IAsyncConfigureStore<StoreOptio
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1120-L1131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1181-L1192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As an example from the tests, here's a custom version that uses the Feature Management service:

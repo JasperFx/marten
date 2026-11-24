@@ -276,7 +276,7 @@ session.EjectAllOfType(typeof(ApiDocsOrder));
 // Only the coffee shop is written
 await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L241-L255' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_eject_all_of_type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L240-L254' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_eject_all_of_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Ejecting all pending changes from a Session
@@ -468,7 +468,7 @@ var options = new SessionOptions
 
 await using var session = store.OpenSession(options);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L221-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_session_options_helpers' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L220-L235' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_session_options_helpers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 * `AllowAnyTenant` lets the session open for the default tenant on a store with

@@ -21,7 +21,13 @@ public class compliance_suite_inventory
                 [typeof(BackfillCompliance<,,>)] =
                     "Marten does not run projection backfills yet (marten#5632): a version-bumped single-stream "
                     + "projection writes a new table, so Marten has to keep the old one for a projection that "
-                    + "declares a backfill first. SupportsBackfills stays false until then"
+                    + "declares a backfill first. SupportsBackfills stays false until then",
+                [typeof(CompositeKeepUnchangedMembersCompliance<,,>)] =
+                    "New in JasperFx 3.15.0 (jasperfx#684). Marten does not keep unchanged composite members across "
+                    + "a rebuild yet: its composite teardown still tears down every member rather than asking "
+                    + "CompositeProjection.MembersToTearDownAsync, and its compliance builder does not implement "
+                    + "KeepUnchangedMembers(). That is the adoption marten#5247 tracks; "
+                    + "SupportsKeepingUnchangedCompositeMembers stays false until then"
             });
     }
 

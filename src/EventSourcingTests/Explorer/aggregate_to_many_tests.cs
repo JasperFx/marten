@@ -211,6 +211,36 @@ public class aggregate_to_many_tests: OneOffConfigurationsContext
         });
     }
 
+    [Fact]
+    public async Task finds_an_aggregate_projection_registered_inside_a_composite_projection()
+    {
+        // #6193: AggregateToManyAsync() looked only at the top-level projections, so a projection registered as a
+        // stage of a composite threw "no aggregate projection" although every other aggregate fetch found it
+        StoreOptions(opts =>
+        {
+            opts.Events.AddEventType<MoneyDeposited>();
+            opts.Events.AddEventType<AccountFrozen>();
+
+            opts.Projections.CompositeProjectionFor("Bug6193Balances", x => x.Add<BalanceProjection>());
+        });
+
+        var acctA = Guid.NewGuid();
+        var acctB = Guid.NewGuid();
+        var stream = Guid.NewGuid();
+
+        theSession.Events.Append(stream, new MoneyDeposited(acctA, 100), new MoneyDeposited(acctB, 50),
+            new MoneyDeposited(acctA, 25));
+        await theSession.SaveChangesAsync();
+
+        var aggregates = await theSession.Events.QueryAllRawEvents()
+            .Where(e => e.StreamId == stream)
+            .AggregateToManyAsync<Balance>();
+
+        aggregates.Count.ShouldBe(2);
+        aggregates.Single(x => x.Id == acctA).Amount.ShouldBe(125);
+        aggregates.Single(x => x.Id == acctB).Amount.ShouldBe(50);
+    }
+
     public class UnrelatedAggregate
     {
         public Guid Id { get; set; }

@@ -284,6 +284,27 @@ public static class ConfigurationDocsSamples
         #endregion
     }
 
+    public static void expose_dynamic_tenant_source(IServiceCollection services)
+    {
+        #region sample_expose_dynamic_tenant_source
+
+        services.AddMarten(sp =>
+            {
+                var options = new StoreOptions();
+                options.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+                {
+                    x.ConnectionString = "master database connection string";
+                });
+
+                return options;
+            })
+            // The tenancy is only built from the function above when the store is,
+            // so ask for IDynamicTenantSource<string> to be registered
+            .ExposeDynamicTenantSource();
+
+        #endregion
+    }
+
     public static async Task master_table_tenant_lifecycle_from_services(IServiceProvider services)
     {
         #region sample_master_table_tenant_lifecycle_from_services

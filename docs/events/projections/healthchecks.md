@@ -21,18 +21,13 @@ For example, with a `HighWaterMark` of 1000 and three async projections `ProjA`,
 The healthcheck will only be checked against `Async` projections
 :::
 
-::: warning
-This check only knows about each async projection's plain `{Name}:All` shard of the store registered with
-`AddMarten()`. It doesn't see:
+The check covers every shard of every async projection at its registered version, so a versioned shard such as
+`Trip:V2:All` is checked, and so is each per-tenant shard under `UseTenantPartitionedEvents`, such as
+`Trip:All:tenant1`, which is measured against its own tenant's high water mark. Subscriptions are not checked.
 
-- a projection with a version above 1, whose shard is named like `Trip:V2:All`
-- per-tenant shards under `UseTenantPartitionedEvents`, named like `Trip:All:tenant1`
-- subscriptions
-- a store registered with `AddMartenStore<TStore>()`. There is no `<TStore>` overload of `AddMartenAsyncDaemonHealthCheck()`
-
-The [high water](#high-water-staleness-healthcheck) and [parked identities](#parked-identities-healthcheck) checks
-below both have a `<TStore>` overload.
-:::
+For a store registered with `AddMartenStore<TStore>()`, use `AddMartenAsyncDaemonHealthCheck<TStore>()`
+<Badge type="tip" text="10.0" />. It takes the same arguments, and each store's check is registered as
+`AsyncDaemonHealthCheck:<store type>` with its own settings.
 
 ## Example configuration
 
@@ -51,7 +46,8 @@ app.MapHealthChecks("/health");
 
 If you want to add some time toleration for the healthcheck, you may use additional parameter `maxSameLagTime`.
 A projection is then unhealthy only if it lags by `maxEventLag` or more and its sequence hasn't changed for
-`maxSameLagTime`.
+`maxSameLagTime`. The time is counted from the first check that found it lagging at that sequence, however often the
+check runs in between, and starts again whenever the sequence moves or the projection catches up.
 
 ### Example use case #1 
 
@@ -60,7 +56,7 @@ Assuming that `maxEventLag` = `100` and `maxSameLagTime` = `TimeSpan.FromSeconds
 - `HighWaterMark` is 1000 and async projection was processed to sequence number 850 at 2024-02-07 01:30:00 -> 'Healthy' 
 - `HighWaterMark` is 1000 and async projection was processed to sequence number 850 at 2024-02-07 01:30:30 -> 'Unhealthy' 
 
-It's unhealthy, because the projection haven't progressed since last healthcheck and `maxSameLagTime` elapsed on the same sequence number.
+It's unhealthy, because the projection hasn't progressed since the first check found it lagging and `maxSameLagTime` elapsed on the same sequence number. That holds with checks every 10 seconds in between as well.
 
 ### Example use case #2 
 

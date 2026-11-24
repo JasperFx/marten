@@ -39,11 +39,7 @@ For `CreatedSince(DateTimeOffset)` or `CreatedBefore(DateTimeOffset)` (see [quer
 Marten can create a btree index on the `mt_created_at` column, with `IndexCreatedAt()` in the fluent interface or the
 `[IndexedCreatedAt]` attribute.
 
-::: warning
-Neither of these turns the `mt_created_at` column on, and the column is opt in. Turn it on as well, with
-`Metadata(m => m.CreatedAt.Enabled = true)` or a `[CreatedAtMetadata]` member, or applying the schema fails because the
-index refers to a column that does not exist.
-:::
+The `mt_created_at` column is opt in, and either of these turns it on as well as indexing it.
 
 Using the fluent interface:
 
@@ -55,12 +51,11 @@ using var store = DocumentStore.For(opts =>
     opts.Connection("some connection string");
 
     opts.Schema.For<ApiDocsOrder>()
-        // IndexCreatedAt() does not turn the column on by itself
-        .Metadata(m => m.CreatedAt.Enabled = true)
+        // IndexCreatedAt() turns the opt-in mt_created_at column on as well
         .IndexCreatedAt();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L189-L201' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_index_created_at_via_fluent_interface' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L189-L200' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_index_created_at_via_fluent_interface' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or the attribute:
@@ -68,7 +63,7 @@ Or the attribute:
 <!-- snippet: sample_docs_index_created_at_via_attribute -->
 <a id='snippet-sample_docs_index_created_at_via_attribute'></a>
 ```cs
-// mt_created_at is opt in, so turn the column on as well as indexing it
+// [IndexedCreatedAt] turns the opt-in mt_created_at column on as well
 [IndexedCreatedAt]
 public class ApiDocsAuditEntry
 {

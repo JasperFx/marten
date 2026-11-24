@@ -69,7 +69,7 @@ public class Bug_5784_hilo_allocation_survives_an_outage
         proxy.GoDown();
         try
         {
-            allocationFailure(store).ShouldBeAssignableTo<NpgsqlException>();
+            isConnectionFailure(allocationFailure(store)).ShouldBeTrue();
         }
         finally
         {
@@ -106,6 +106,13 @@ public class Bug_5784_hilo_allocation_survives_an_outage
         using var session = store.LightweightSession();
         return Should.Throw<Exception>(() => session.Store(new NumberedDocument()));
     }
+
+    // Usually Npgsql reports the outage as an NpgsqlException. But when the proxy's reset lands while Npgsql is still
+    // authenticating, setting the socket timeout on the dead socket fails (EINVAL on macOS) and Npgsql lets that
+    // SocketException through unwrapped -- about one run in twenty under load. Either is the outage; what #5784 is
+    // about is what happens after it.
+    private static bool isConnectionFailure(Exception failure) =>
+        failure is NpgsqlException or SocketException or System.IO.IOException;
 }
 
 /// <summary>
