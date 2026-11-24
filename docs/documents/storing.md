@@ -66,6 +66,13 @@ await session.SaveChangesAsync();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StoringDocuments.cs#L10-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_store_mixed_bag_of_document_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: tip Numerically revisioned documents
+For a document with a numeric revision (`IRevisioned`, `ILongVersioned`, a `[Version]` member or a mapped revision),
+`Store()` is not an unconditional upsert. Since Marten 10 it checks the revision the document carries, so storing a
+document you just loaded, unchanged, throws a `ConcurrencyException`. See
+[Numeric Revisioned Documents](/documents/concurrency#numeric-revisioned-documents).
+:::
+
 ## Insert & Update
 
 While `IDocumentSession.Store` will perform either insertion or update depending on the existence of documents, `IDocumentSession` also exposes methods to explicitly control this persistence behavior through `IDocumentSession.Insert` and `IDocumentSession.Update`.

@@ -38,6 +38,15 @@ var store = DocumentStore.For(opts =>
 });
 ```
 
+::: warning UsePostGIS() switches the store to Newtonsoft.Json
+The geometry converters are Newtonsoft.Json converters, so `UsePostGIS()` replaces the store's serializer, System.Text.Json
+by default, with a `JsonNetSerializer` from the `Marten.Newtonsoft` package that `Marten.PostGIS` references. That
+applies to every document type and event in the store, not only the spatial ones. Anything that requires
+System.Text.Json is then unavailable, such as [C# union members](/documents/querying/linq/unions) on `net11.0` and
+[Native AOT publishing](/configuration/aot-publishing). It also replaces any serializer configured before it, and a
+serializer configured after it replaces the one with the geometry converters.
+:::
+
 `UsePostGIS()` is multi-tenant aware. Multi-database setups (single-server-per-tenant, master-table tenancy, sharded tenancy) all create the extension in each tenant database via Marten's `ExtendedSchemaObjects`.
 
 ## Modelling a spatial document

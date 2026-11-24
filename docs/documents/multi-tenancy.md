@@ -415,8 +415,8 @@ be valuable if you frequently query for multiple tenants at one time. We think t
 is a good default approach though. 
 
 ::: tip
-Just like with the codegen-ahead model, you may want to tell Marten about all possible document types
-upfront so that it is better able to add the partitions for each tenant id as needed.
+You may want to tell Marten about all possible document types upfront, with `opts.RegisterDocumentType<T>()` or
+`opts.Schema.For<T>()`, so that it is better able to add the partitions for each tenant id as needed.
 :::
 
 To exempt document types from having partitioned tables, such as for tables you expect to be so small that there's no value and maybe
