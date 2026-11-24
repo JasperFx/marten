@@ -89,6 +89,52 @@ public Task OpenIssues([FromServices] IQuerySession session, [FromQuery] string?
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L82-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_multiple_documents_to_httpcontext' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## A Page of Documents
+
+`WritePaged()` writes one page of a Linq query to the response as the paged JSON envelope described in
+[streaming a paged JSON envelope](/documents/querying/linq/paging#streaming-a-paged-json-envelope): the paging
+metadata and the page's documents, fetched in one round trip:
+
+<!-- snippet: sample_docs_write_paged_to_httpcontext -->
+<a id='snippet-sample_docs_write_paged_to_httpcontext'></a>
+```cs
+app.MapGet("/issues/open/paged", (IQuerySession session, HttpContext context, int page, int pageSize) =>
+    session.Query<Issue>()
+        .Where(x => x.Open)
+        .OrderBy(x => x.Description)
+        // pageNumber is 1-based
+        .WritePaged(context, page, pageSize));
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/HttpContextHelpersDocsSamples.cs#L17-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_write_paged_to_httpcontext' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`pageNumber` starts at 1, and a `pageNumber` or `pageSize` below 1 throws `ArgumentOutOfRangeException`. An empty page is
+still a 200 with an empty `items` array. Like `WriteArray()`, it takes optional `contentType` and `onFoundStatus`
+arguments. For a Minimal API endpoint, the [`StreamPaged<T>`](#typed-streaming-result-types) result type does the same
+thing as an `IResult`.
+
+## Results of Your Own SQL
+
+`WriteJson()` runs a SQL query of your own and writes its rows to the response as a JSON array, without deserializing
+anything. Each row has to be a single JSON value (a query with more than one column has to name the JSON one `data`).
+Use `?` as the placeholder for each value in `parameters`:
+
+<!-- snippet: sample_docs_write_json_to_httpcontext -->
+<a id='snippet-sample_docs_write_json_to_httpcontext'></a>
+```cs
+app.MapGet("/issues/recent", (IQuerySession session, HttpContext context) =>
+    // Every row has to be a single JSON value. The rows go out as one JSON array
+    session.WriteJson(
+        "select jsonb_build_object('id', d.id, 'lastModified', d.mt_last_modified) from mt_doc_issue as d where d.mt_last_modified > ?",
+        context,
+        parameters: [DateTimeOffset.UtcNow.AddDays(-1)]));
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/HttpContextHelpersDocsSamples.cs#L28-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_write_json_to_httpcontext' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The SQL is sent as written, so qualify the table names with your schema if you are not using `public`. The response
+status is `onFoundStatus` (200 by default) even when the query returns no rows, in which case the body is `[]`.
+
 ## Compiled Query Support
 
 The absolute fastest way to invoke querying in Marten is by using [compiled queries](/documents/querying/compiled-queries)

@@ -357,10 +357,6 @@ services.AddMarten(sp =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L36-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_use_scheme_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-::: warning
-Keep note that Marten can be configured to generate static code on startup that contains the scheme name, so it could be beneficial to keep that turned off in the tests.
-:::
-
 Alba hosts by default start with `ASPNETCORE_ENVIRONMENT=Development`. Note that the `OptimizeArtifactWorkflow()` option was completely eliminated in Marten 8.0, as explained here: [Development versus Production Usage](/configuration/optimized_artifact_workflow).
 
 ## Integrating with Wolverine
@@ -418,6 +414,103 @@ services.DisableAllExternalWolverineTransports();
 ## Testing Projections
 
 Testing all types of projections (live, inline, async) is explained here: [Testing Projections](/events/projections/testing).
+
+## Async Projections in Integration Tests
+
+When the host runs the async daemon (`AddAsyncDaemon(DaemonMode.Solo)` or `DaemonMode.HotCold`), a test that appends events
+has to wait for the asynchronous projections and subscriptions before it can assert on what they wrote. Marten has a few
+helpers for that, extension methods on `IHost`. Most of them also have an `IServiceProvider` overload.
+
+### Forcing the daemon to catch up
+
+`ForceAllMartenDaemonActivityToCatchUpAsync()` pauses the daemons, runs every asynchronous projection and subscription up
+to the current high-water mark, and returns the exceptions it hit along the way rather than throwing them. It is in the
+`Marten.Events` namespace. By default (`CatchUpMode.AndResumeNormally`) the daemons start again afterwards.
+`CatchUpMode.AndDoNothing` leaves them stopped, so nothing changes underneath the assertions:
+
+<!-- snippet: sample_docs_force_all_daemon_activity_to_catch_up -->
+<a id='snippet-sample_docs_force_all_daemon_activity_to_catch_up'></a>
+```cs
+// Run every asynchronous projection and subscription up to the current
+// high-water mark, then let the daemon carry on as normal
+var errors = await host.ForceAllMartenDaemonActivityToCatchUpAsync(CancellationToken.None);
+if (errors.Any())
+{
+    throw new AggregateException(errors);
+}
+
+// Or catch up, and leave the daemons stopped so nothing moves while the test asserts
+await host.ForceAllMartenDaemonActivityToCatchUpAsync(CancellationToken.None, CatchUpMode.AndDoNothing);
+
+// ... assertions ...
+
+// Start them again
+await host.ResumeAllDaemonsAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L312-L330' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_force_all_daemon_activity_to_catch_up' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The `ForceAllMartenDaemonActivityToCatchUpAsync<T>()` overload does the same for an
+[ancillary store](/configuration/hostbuilder#ancillary-marten-stores) `T`. This is meant for test
+databases of a small to medium size: it processes everything up to the high-water mark, not just what the test wrote.
+With `DaemonMode.ExternallyManaged`, where something other than Marten runs the projections, it does not drive the daemon
+at all. It only waits for the externally run projections to reach the high-water mark.
+
+### Waiting for your own events
+
+To wait for just the events a test appended, use the read-your-writes wait described in
+[reading your own writes](/events/projections/async-daemon#reading-your-own-writes): after `SaveChangesAsync()`,
+`session.LastAppendedPosition` says where that commit's events are, and `store.WaitForProjectionsAsync()` waits for the
+projections you name to get that far. It returns a result instead of throwing on a timeout:
+
+<!-- snippet: sample_docs_wait_for_projections_in_a_test -->
+<a id='snippet-sample_docs_wait_for_projections_in_a_test'></a>
+```cs
+var store = host.DocumentStore();
+
+await using var session = store.LightweightSession();
+session.Events.StartStream(Guid.NewGuid(), new ApiDocsCounted());
+await session.SaveChangesAsync();
+
+// Wait for this commit's events only, not for everything in the event store
+var result = await store.WaitForProjectionsAsync(session.LastAppendedPosition!, [typeof(ApiDocsTally)],
+    TimeSpan.FromSeconds(10));
+
+if (!result.Reached)
+{
+    throw new TimeoutException(result.ToString());
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L335-L352' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_wait_for_projections_in_a_test' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Pausing the daemons
+
+`PauseAllDaemonsAsync()` stops every running projection and subscription and stops the daemon coordinator from restarting
+them, until `ResumeAllDaemonsAsync()`. Use it to assert on the state before any asynchronous projection has seen a new
+event:
+
+<!-- snippet: sample_docs_pause_and_resume_daemons -->
+<a id='snippet-sample_docs_pause_and_resume_daemons'></a>
+```cs
+// Stop every async projection and subscription, and stop the coordinator
+// from restarting them
+await host.PauseAllDaemonsAsync();
+
+// ... append events and assert on the state before any projection sees them ...
+
+await host.ResumeAllDaemonsAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DocumentApiDocsSamples.cs#L357-L367' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docs_pause_and_resume_daemons' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+`PauseAllDaemonsAsync<T>()` pauses an ancillary store's daemons. `ResumeAllDaemonsAsync()` has no ancillary-store overload;
+to resume those, call `ResumeAsync()` on the store's `IProjectionCoordinator<T>` (in `Marten.Events.Daemon.Coordination`)
+from the container.
+
+Pausing, resuming and forcing a catch-up all resolve the daemon's coordinator from the container, so they need the async
+daemon registered with `DaemonMode.Solo` or `DaemonMode.HotCold`. The one exception is the catch-up under
+`DaemonMode.ExternallyManaged` described above.
 
 ## Additional Tips
 
